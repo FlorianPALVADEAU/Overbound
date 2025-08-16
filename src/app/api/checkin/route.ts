@@ -3,7 +3,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   const { token } = await req.json()
-  const supabase = createSupabaseServer()
+  const supabase = await createSupabaseServer()
   const {
     data: { user },
   } = await supabase.auth.getUser()

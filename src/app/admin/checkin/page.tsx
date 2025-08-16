@@ -1,33 +1,25 @@
-'use client'
-import { BrowserMultiFormatReader } from '@zxing/browser'
-import { useEffect, useRef, useState } from 'react'
+import { NextResponse } from 'next/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
-export default function Checkin() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [result, setResult] = useState<string>('')
+export async function POST(req: Request) {
+  const { token } = await req.json()
+  const supabase = await createSupabaseServer()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  useEffect(() => {
-    const codeReader = new BrowserMultiFormatReader()
-    let stopped = false
-    ;(async () => {
-      const devices = await BrowserMultiFormatReader.listVideoInputDevices()
-      await codeReader.decodeFromVideoDevice(devices[0]?.deviceId, videoRef.current!, (res) => {
-        if (res && !stopped) {
-          setResult(res.getText())
-          fetch('/api/checkin', { method: 'POST', body: JSON.stringify({ token: res.getText() }) })
-          stopped = true
-        }
-      })
-    })()
-    return () => {
-      stopped = true
-    }
-  }, [])
+  // Autorisation admin
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single()
+  if (profile?.role !== 'admin') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  return (
-    <main className="p-6">
-      <video ref={videoRef} className="w-full max-w-md" />
-      <div className="mt-4">{result}</div>
-    </main>
-  )
+  const admin = supabaseAdmin()
+  const { data, error } = await admin
+    .from('registrations')
+    .update({ checked_in: true })
+    .eq('qr_code_token', token)
+    .select('id')
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  return NextResponse.json({ ok: true, id: data?.id })
 }

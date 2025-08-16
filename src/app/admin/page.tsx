@@ -1,7 +1,7 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 
 export default async function AdminPage() {
-  const supabase = createSupabaseServer()
+  const supabase = await createSupabaseServer()
   const {
     data: { user },
   } = await supabase.auth.getUser()
