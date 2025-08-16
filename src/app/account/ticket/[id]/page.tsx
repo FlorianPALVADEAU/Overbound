@@ -2,7 +2,7 @@ import { createSupabaseServer } from '@/lib/supabase/server'
 import QRCode from 'qrcode'
 
 export default async function TicketPage({ params }: { params: { id: string } }) {
-  const supabase = createSupabaseServer()
+  const supabase = await createSupabaseServer()
   const {
     data: { user },
   } = await supabase.auth.getUser()
