@@ -7,6 +7,7 @@
 import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
+import {codeInput} from '@sanity/code-input'
 
 // Go to https://www.sanity.io/docs/api-versioning to learn how API versioning works
 import {apiVersion, dataset, projectId} from './src/sanity/env'
@@ -24,5 +25,16 @@ export default defineConfig({
     // Vision is for querying with GROQ from inside the Studio
     // https://www.sanity.io/docs/the-vision-plugin
     visionTool({defaultApiVersion: apiVersion}),
+    codeInput(),
   ],
 })
+
+// export default defineConfig({
+//   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || process.env.SANITY_PROJECT_ID!,
+//   dataset: process.env.SANITY_DATASET!,
+//   apiVersion: process.env.SANITY_API_VERSION!,
+//   title: 'OverBound Studio',
+//   basePath: '/studio',
+//   plugins: [deskTool({ structure: deskStructure })],
+//   schema: { types: schemaTypes },
+// })

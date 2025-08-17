@@ -1,7 +1,15 @@
-import type {StructureResolver} from 'sanity/structure'
+import type { StructureResolver } from 'sanity/structure'
 
-// https://www.sanity.io/docs/structure-builder-cheat-sheet
 export const structure: StructureResolver = (S) =>
   S.list()
     .title('Content')
-    .items(S.documentTypeListItems())
+    .items([
+      // Singleton "settings" tout en haut
+      S.listItem()
+        .title('Réglages du site')
+        .child(S.editor().schemaType('settings').documentId('settings')),
+      S.divider(),
+      // Tous les autres types sauf "settings"
+      ...S.documentTypeListItems().filter((li) => String(li.getId()) !== 'settings'),
+    ])
+
