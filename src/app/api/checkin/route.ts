@@ -1,4 +1,3 @@
-// src/app/api/checkin/route.ts
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
