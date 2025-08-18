@@ -85,7 +85,7 @@ export function AdminEventsCrud() {
     location: '',
     capacity: '0',
     status: 'draft',
-    external_provider: '',
+    external_provider: 'none',
     external_event_id: '',
     external_url: ''
   })
@@ -119,7 +119,7 @@ export function AdminEventsCrud() {
       location: '',
       capacity: '0',
       status: 'draft',
-      external_provider: '',
+      external_provider: 'none',
       external_event_id: '',
       external_url: ''
     })
@@ -145,7 +145,7 @@ export function AdminEventsCrud() {
       location: event.location,
       capacity: event.capacity.toString(),
       status: event.status,
-      external_provider: event.external_provider || '',
+      external_provider: event.external_provider || 'none',
       external_event_id: event.external_event_id || '',
       external_url: event.external_url || ''
     })
@@ -162,7 +162,7 @@ export function AdminEventsCrud() {
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim('-')
+      .trim()
   }
 
   // Gérer les changements du formulaire
@@ -189,14 +189,19 @@ export function AdminEventsCrud() {
       const method = isCreateMode ? 'POST' : 'PUT'
       const url = isCreateMode ? '/api/admin/events' : `/api/admin/events/${selectedEvent?.id}`
       
+      const dataToSend = {
+        ...formData,
+        capacity: parseInt(formData.capacity) || 0,
+        date: new Date(formData.date).toISOString(),
+        external_provider: formData.external_provider === 'none' ? null : formData.external_provider,
+        external_event_id: formData.external_provider === 'none' ? null : formData.external_event_id,
+        external_url: formData.external_provider === 'none' ? null : formData.external_url
+      }
+      
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          capacity: parseInt(formData.capacity) || 0,
-          date: new Date(formData.date).toISOString()
-        })
+        body: JSON.stringify(dataToSend)
       })
 
       if (!response.ok) {
@@ -522,14 +527,14 @@ export function AdminEventsCrud() {
                     <SelectValue placeholder="Aucun" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun</SelectItem>
+                    <SelectItem value="none">Aucun</SelectItem>
                     <SelectItem value="billetweb">Billetweb</SelectItem>
                     <SelectItem value="adeorun">Adeorun</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {formData.external_provider && (
+              {formData.external_provider && formData.external_provider !== "none" && (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="external_event_id">ID événement externe</Label>
