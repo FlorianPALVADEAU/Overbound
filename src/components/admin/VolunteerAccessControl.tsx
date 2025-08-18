@@ -34,7 +34,7 @@ export function VolunteerAccessControl({ onEventSelect }: VolunteerAccessControl
   useEffect(() => {
     const loadAccessibleEvents = async () => {
       try {
-        const response = await fetch('/api/volunteer/accessible-events')
+        const response = await fetch('/api/volunteers/accessible-events')
         
         if (!response.ok) {
           throw new Error('Erreur lors du chargement des événements')
