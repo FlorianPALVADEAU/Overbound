@@ -20,6 +20,7 @@ export const createSupabaseServer = async () => {
             // La méthode setAll a été appelée depuis un Server Component.
             // Cela peut être ignoré si vous avez un middleware configuré pour
             // rafraîchir les sessions utilisateur.
+            console.log('Erreur lors de la définition des cookies')
           }
         },
       },
