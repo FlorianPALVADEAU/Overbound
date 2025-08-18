@@ -1,14 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 import React, { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, BarChart3, Calendar, UserCheck } from 'lucide-react'
+import { Users, BarChart3, Calendar, UserCheck, Ticket, Trophy, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { AdminStats } from '@/components/admin/AdminStats'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
 import { AdminEventsCrud } from '@/components/admin/AdminEventsCrud'
 import { AdminMembersManagement } from '@/components/admin/AdminMembersManagement'
+import { AdminTicketsCrud } from '@/components/admin/AdminTicketsCrud'
+import { AdminRacesCrud } from '@/components/admin/AdminRacesCrud'
+import { AdminObstaclesCrud } from '@/components/admin/AdminObstaclesCrud'
 
 interface Profile {
   role: 'admin' | 'volunteer'
@@ -58,7 +62,7 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
         {/* Interface Admin avec onglets */}
         {isAdmin && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Tableau de bord
@@ -66,6 +70,18 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
               <TabsTrigger value="events" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Événements
+              </TabsTrigger>
+              <TabsTrigger value="races" className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                Courses
+              </TabsTrigger>
+              <TabsTrigger value="obstacles" className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Obstacles
+              </TabsTrigger>
+              <TabsTrigger value="tickets" className="flex items-center gap-2">
+                <Ticket className="h-4 w-4" />
+                Tickets
               </TabsTrigger>
               <TabsTrigger value="members" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -83,6 +99,18 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
             <TabsContent value="events" className="space-y-6">
               <AdminEventsCrud />
+            </TabsContent>
+
+            <TabsContent value="races" className="space-y-6">
+              <AdminRacesCrud />
+            </TabsContent>
+
+            <TabsContent value="obstacles" className="space-y-6">
+              <AdminObstaclesCrud />
+            </TabsContent>
+
+            <TabsContent value="tickets" className="space-y-6">
+              <AdminTicketsCrud />
             </TabsContent>
 
             <TabsContent value="members" className="space-y-6">

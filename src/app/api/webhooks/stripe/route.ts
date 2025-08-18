@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
         userId: metadata.userId,
         priceId: metadata.priceId,
         created: session.created,
-        currency: session.currency,
         customerDetails: session.customer_details,
         amount: session.amount_total,
       });
