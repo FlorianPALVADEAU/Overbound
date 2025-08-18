@@ -12,7 +12,9 @@ import {
   Clock, 
   Users,
   Zap,
-  Eye
+  Eye,
+  ExternalLink,
+  Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -152,7 +154,7 @@ export default async function RacesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {races.map((race: Race) => (
-              <Card key={race.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={race.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 {/* Image/Logo de la course */}
                 <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/20">
                   {race.logo_url ? (
@@ -173,6 +175,14 @@ export default async function RacesPage() {
                       <Star className="h-3 w-3 mr-1" />
                       {race.difficulty}/10
                     </Badge>
+                  </div>
+
+                  {/* Overlay au hover */}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button variant="secondary" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Voir détails
+                    </Button>
                   </div>
                 </div>
 
@@ -238,8 +248,8 @@ export default async function RacesPage() {
                   <div className="flex gap-2">
                     <Link href={`/races/${race.id}`} className="flex-1">
                       <Button className="w-full">
-                        <Eye className="h-4 w-4 mr-2" />
-                        Voir détails
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Voir événements
                       </Button>
                     </Link>
                   </div>
@@ -293,6 +303,25 @@ export default async function RacesPage() {
                 Vivez des moments inoubliables dans un cadre exceptionnel 
                 avec une organisation de qualité.
               </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Call to action */}
+        <div className="mt-16 text-center">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8">
+              <h2 className="text-2xl font-bold mb-4">Prêt à relever le défi ?</h2>
+              <p className="text-muted-foreground mb-6">
+                Rejoignez des milliers de participants et découvrez le plaisir de se dépasser 
+                dans nos événements sportifs uniques.
+              </p>
+              <Link href="/events">
+                <Button size="lg" className="text-lg px-8">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Voir tous les événements
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
