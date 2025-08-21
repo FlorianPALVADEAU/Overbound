@@ -1,8 +1,9 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import QRCode from 'qrcode'
 
-export default async function TicketPage({ params }: { params: { id: string } }) {
+export default async function TicketPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createSupabaseServer()
+  const { id } = await params
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -11,7 +12,7 @@ export default async function TicketPage({ params }: { params: { id: string } })
   const { data: reg } = await supabase
     .from('registrations')
     .select('id, qr_code_token, tickets(name, events(title, date, location))')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
