@@ -3,12 +3,12 @@ import { NextResponse } from "next/server"
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
-
+    const { id } = await params
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
@@ -52,7 +52,7 @@ export async function PUT(
         description: description || null,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -64,7 +64,7 @@ export async function PUT(
     const { error: deleteError } = await admin
       .from('race_obstacles')
       .delete()
-      .eq('race_id', params.id)
+      .eq('race_id', id)
 
     if (deleteError) {
       console.error('Erreur lors de la suppression des obstacles:', deleteError)
@@ -73,7 +73,7 @@ export async function PUT(
     // Créer les nouvelles associations
     if (obstacle_ids && obstacle_ids.length > 0) {
       const obstacleAssociations = obstacle_ids.map((obstacleId: string, index: number) => ({
-        race_id: params.id,
+        race_id: id,
         obstacle_id: obstacleId,
         order_position: index + 1,
         is_mandatory: true
@@ -116,11 +116,12 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
+    const { id } = await params
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -141,7 +142,7 @@ export async function DELETE(
     const { count: ticketCount } = await supabase
       .from('tickets')
       .select('*', { count: 'exact', head: true })
-      .eq('race_id', params.id)
+      .eq('race_id', id)
 
     if (ticketCount && ticketCount > 0) {
       return NextResponse.json(
@@ -154,7 +155,7 @@ export async function DELETE(
     const { count: eventCount } = await supabase
       .from('event_races')
       .select('*', { count: 'exact', head: true })
-      .eq('race_id', params.id)
+      .eq('race_id', id)
 
     if (eventCount && eventCount > 0) {
       return NextResponse.json(
@@ -170,7 +171,7 @@ export async function DELETE(
     const { error } = await admin
       .from('races')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       throw error

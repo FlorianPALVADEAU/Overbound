@@ -3,12 +3,12 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
-
+    const { id } = await params
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
@@ -55,7 +55,7 @@ export async function PUT(
         external_url: external_url || null,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -73,11 +73,12 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
+    const { id } = await params
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -98,7 +99,7 @@ export async function DELETE(
     const { count } = await supabase
       .from('registrations')
       .select('*', { count: 'exact', head: true })
-      .eq('event_id', params.id)
+      .eq('event_id', id)
 
     if (count && count > 0) {
       return NextResponse.json(
@@ -112,7 +113,7 @@ export async function DELETE(
     const { error } = await admin
       .from('events')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       throw error
