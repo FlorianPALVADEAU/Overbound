@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 // src/app/admin/page.tsx
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { Card, CardContent } from '@/components/ui/card'
@@ -49,7 +50,7 @@ export default async function AdminPage() {
   // Récupérer les statistiques uniquement pour les admins
   if (profile.role === 'admin') {
     // Essayer d'abord admin_overview, puis admin_overview_safe en cas d'erreur
-    let { data: statsData, error: statsError } = await supabase.rpc('admin_overview')
+    const { data: statsData, error: statsError } = await supabase.rpc('admin_overview')
     
     if (statsError) {
       console.log('Tentative avec admin_overview_safe...', statsError.message)
