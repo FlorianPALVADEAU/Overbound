@@ -3,11 +3,12 @@ import { NextResponse } from "next/server"
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
+    const { id } = await params
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -64,7 +65,7 @@ export async function PUT(
         type,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -82,11 +83,12 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
+    const { id } = await params
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -107,7 +109,7 @@ export async function DELETE(
     const { count } = await supabase
       .from('race_obstacles')
       .select('*', { count: 'exact', head: true })
-      .eq('obstacle_id', params.id)
+      .eq('obstacle_id', id)
 
     if (count && count > 0) {
       return NextResponse.json(
@@ -121,7 +123,7 @@ export async function DELETE(
     const { error } = await admin
       .from('obstacles')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       throw error
@@ -163,10 +165,11 @@ export async function GET_PUBLIC() {
 // src/app/api/obstacles/[id]/route.ts
 export async function GET_PUBLIC_BY_ID(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: Promise<{ id: string }> } }
 ) {
   try {
     const supabase = await createSupabaseServer()
+    const { id } = await params
 
     // Récupérer l'obstacle avec les courses qui l'utilisent
     const { data: obstacle, error } = await supabase
@@ -179,7 +182,7 @@ export async function GET_PUBLIC_BY_ID(
           race:races(id, name, type, difficulty, distance_km)
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) {
