@@ -16,12 +16,13 @@ import { notFound, redirect } from 'next/navigation'
 import { DocumentUpload } from '@/components/admin/DocumentUpload'
 
 interface DocumentPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function RegistrationDocumentPage({ params }: DocumentPageProps) {
   const supabase = await createSupabaseServer()
-  
+  const { id } = await params
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -57,7 +58,7 @@ export default async function RegistrationDocumentPage({ params }: DocumentPageP
         location
       )
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
