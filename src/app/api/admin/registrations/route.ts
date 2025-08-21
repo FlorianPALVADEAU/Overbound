@@ -28,23 +28,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    // Utiliser la fonction RPC
-    const { data, error } = await supabase.rpc('get_registrations_with_filters', {
-      event_uuid: eventId,
-      approval_filter: approvalFilter === 'all' ? null : approvalFilter,
-      search_term: searchTerm,
-      limit_count: limitCount,
-      offset_count: offsetCount
-    })
+  const { data, error } = await supabase.rpc('get_registrations_with_filters', {
+    args: {
+      approval: approvalFilter === 'all' ? null : approvalFilter,
+      event_id: eventId || null,
+      search: searchTerm || null,
+      limit: Number.isFinite(limitCount) ? limitCount : 50,
+      offset: Number.isFinite(offsetCount) ? offsetCount : 0,
+    },
+  });
 
-    if (error) {
-      throw error
-    }
+  if (error) throw error;
 
-    return NextResponse.json({
-      registrations: data.registrations || [],
-      totalCount: data.total_count || 0
-    })
+  const rows = data ?? [];
+  const totalCount = rows[0]?.total_count ?? 0;
+
+  return NextResponse.json({
+    registrations: rows,
+    totalCount,
+  });
+
 
   } catch (error) {
     console.error('Erreur GET registrations:', error)
