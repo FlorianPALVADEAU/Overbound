@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -27,13 +28,11 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Eye,
   AlertCircle,
   CheckCircle,
   Clock,
   Mountain,
   Target,
-  MapPin,
   Star
 } from 'lucide-react'
 
@@ -273,8 +272,8 @@ export function AdminRacesCrud() {
 
       setRaces(prev => prev.filter(r => r.id !== race.id))
       setMessage({ type: 'success', text: 'Course supprimée avec succès' })
-      
-    } catch (error) {
+
+    } catch (error: any) {
       setMessage({ type: 'error', text: 'Erreur lors de la suppression' })
     } finally {
       setDeleteLoading(null)

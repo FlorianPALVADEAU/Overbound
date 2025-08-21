@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 // src/app/events/[id]/success/page.tsx
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

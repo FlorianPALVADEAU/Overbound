@@ -1,6 +1,8 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,9 +35,7 @@ import {
   Clock,
   Image,
   Video,
-  Star,
-  Filter
-} from 'lucide-react'
+  Star} from 'lucide-react'
 
 interface Obstacle {
   id: string
@@ -266,7 +266,7 @@ export function AdminObstaclesCrud() {
       setObstacles(prev => prev.filter(o => o.id !== obstacle.id))
       setMessage({ type: 'success', text: 'Obstacle supprimé avec succès' })
       
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Erreur lors de la suppression' })
     } finally {
       setDeleteLoading(null)
@@ -439,7 +439,7 @@ export function AdminObstaclesCrud() {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         {obstacle.image_url && (
                           <div className="flex items-center gap-1">
-                            <Image className="h-4 w-4" />
+                            <img className="h-4 w-4 object-cover rounded" src={obstacle.image_url} alt={obstacle.name} />
                             <span>Image</span>
                           </div>
                         )}
