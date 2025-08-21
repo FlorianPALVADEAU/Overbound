@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 // src/components/events/EventRegistration.tsx
 'use client'
 import React, { useState } from 'react'

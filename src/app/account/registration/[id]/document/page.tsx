@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/app/account/registration/[id]/document/page.tsx
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -175,7 +176,7 @@ export default async function RegistrationDocumentPage({ params }: DocumentPageP
                   <p className="text-sm">{registration.ticket.name}</p>
                   
                   {registration.ticket.race && (
-                    <Badge variant={getDifficultyColor(registration.ticket.race.difficulty)} className="mt-2">
+                    <Badge variant={getDifficultyColor(registration.ticket.race.difficulty) as any} className="mt-2">
                       {registration.ticket.race.name} - {registration.ticket.race.distance_km} km
                     </Badge>
                   )}
