@@ -8,11 +8,10 @@ import { notFound } from 'next/navigation'
 
 export const revalidate = 60
 
-type Props = { params: { slug: string } }
-
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params }: { params: any }) {
+  const { slug } = await Promise.resolve(params)
   const [post, settings] = await Promise.all([
-    client.fetch(postBySlugQuery, { slug: params.slug }),
+    client.fetch(postBySlugQuery, { slug }),
     client.fetch(settingsQuery),
   ])
   if (!post) return { title: 'Article introuvable — OverBound' }
@@ -23,8 +22,9 @@ export async function generateMetadata({ params }: Props) {
   return { title, description, openGraph: { title, description, images } }
 }
 
-export default async function BlogPostPage({ params }: Props) {
-  const post = await client.fetch(postBySlugQuery, { slug: params.slug })
+export default async function BlogPostPage({ params }: { params: any }) {
+  const { slug } = await Promise.resolve(params)
+  const post = await client.fetch(postBySlugQuery, { slug })
   if (!post) return notFound()
 
   return (

@@ -18,15 +18,17 @@ import { notFound, redirect } from 'next/navigation'
 import Stripe from 'stripe'
 
 interface SuccessPageProps {
-  params: { id: string }
-  searchParams: { session_id?: string }
+  params: any
+  searchParams: any
 }
 
 export default async function EventSuccessPage({ params, searchParams }: SuccessPageProps) {
-  const { session_id } = searchParams
+  const resolvedSearch = await Promise.resolve(searchParams)
+  const { session_id } = resolvedSearch || {}
+  const { id } = await Promise.resolve(params)
 
   if (!session_id) {
-    redirect(`/events/${params.id}`)
+    redirect(`/events/${id}`)
   }
 
   const supabase = await createSupabaseServer()
@@ -39,12 +41,12 @@ export default async function EventSuccessPage({ params, searchParams }: Success
   try {
     session = await stripe.checkout.sessions.retrieve(session_id)
   } catch (error) {
-    console.error('Erreur récupération session Stripe:', error)
-    redirect(`/events/${params.id}`)
+  console.error('Erreur récupération session Stripe:', error)
+  redirect(`/events/${id}`)
   }
 
   if (!session || session.payment_status !== 'paid') {
-    redirect(`/events/${params.id}`)
+    redirect(`/events/${id}`)
   }
 
   // Récupérer l'inscription créée

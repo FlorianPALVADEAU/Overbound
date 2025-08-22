@@ -165,7 +165,7 @@ export function VolunteerAccessControl({ onEventSelect }: VolunteerAccessControl
 
       {/* Interface de check-in */}
       {selectedEvent && (
-        <VolunteerCheckin eventId={selectedEvent.id} />
+        <VolunteerCheckin />
       )}
     </div>
   )
