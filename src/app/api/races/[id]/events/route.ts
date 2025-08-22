@@ -3,10 +3,11 @@ import { createSupabaseServer } from '@/lib/supabase/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServer()
+    const { id } = await params
 
     // Récupérer les événements qui ont des tickets pour cette course
     const { data: events, error } = await supabase
@@ -22,7 +23,7 @@ export async function GET(
           race_id
         )
       `)
-      .eq('tickets.race_id', params.id)
+      .eq('tickets.race_id', id)
       .in('status', ['on_sale', 'sold_out'])
       .gte('date', new Date().toISOString())
       .order('date', { ascending: true })
