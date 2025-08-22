@@ -14,7 +14,7 @@ export async function sendTicketEmail(params: {
   manageUrl: string
 }) {
   return resend.emails.send({
-    from: 'OverBound <noreply@mail.overbound.com>',
+    from: 'OverBound <no-reply@overbound-race.com>',
     to: params.to,
     subject: `Ton billet — ${params.eventTitle}`,
     react: TicketEmail(params),

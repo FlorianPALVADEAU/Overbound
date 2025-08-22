@@ -35,13 +35,13 @@ export default function TicketEmail({
             </Text>
             <Hr />
             <Img src={qrUrl} alt="QR Code" width="180" height="180" />
-            <Text>Garde ce QR — on le scannera au check‑in.</Text>
+            <Text>Garde ce QR — on le scannera au check-in.</Text>
             <Text>
               Gérer mon inscription : <Link href={manageUrl}>{manageUrl}</Link>
             </Text>
             <Hr />
             <Text style={{ fontSize: 12, color: '#666' }}>
-              Email transactionnel. Pour l’assistance : support@overbound.com
+              Email transactionnel. Pour l'assistance : contact@overbound-race.com
             </Text>
           </Section>
         </Container>
