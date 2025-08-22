@@ -1,8 +1,10 @@
-// app/api/webhooks/stripe/route.ts
+// src/app/api/webhooks/stripe/route.ts
 import Stripe from 'stripe';
 import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
+import { sendTicketEmail } from '@/lib/email';
+import * as QRCode from 'qrcode';
 
 export const runtime = 'nodejs';
 
@@ -49,6 +51,17 @@ export async function POST(request: NextRequest) {
         const qrToken = uuidv4();
         const transferToken = uuidv4();
 
+        const fullEvent = await admin
+          .from('events')
+          .select('*')
+          .eq('id', event_id)
+          .single();
+
+        if (!fullEvent) {
+          console.error('Événement introuvable:', event_id);
+          return new Response('Événement introuvable', { status: 404 });
+        }
+
         // Créer la commande
         const { data: order, error: orderError } = await admin
           .from('orders')
@@ -69,6 +82,18 @@ export async function POST(request: NextRequest) {
         if (orderError) {
           console.error('Erreur création commande:', orderError);
           throw orderError;
+        }
+
+        // Récupérer les informations du ticket
+        const { data: ticket, error: ticketError } = await admin
+          .from('tickets')
+          .select('*')
+          .eq('id', ticket_id)
+          .single();
+
+        if (ticketError || !ticket) {
+          console.error('Erreur récupération ticket:', ticketError);
+          throw ticketError || new Error('Ticket introuvable');
         }
 
         // Créer l'inscription
@@ -102,17 +127,19 @@ export async function POST(request: NextRequest) {
           amount: session.amount_total
         });
 
-        // TODO: Envoyer l'email de confirmation avec le QR code
-        // await sendTicketEmail({
-        //   to: registration.email,
-        //   participantName: registration.participant_name,
-        //   eventTitle: event.title,
-        //   eventDate: event.date,
-        //   eventLocation: event.location,
-        //   ticketName: ticket.name,
-        //   qrUrl: `data:image/png;base64,${qrCodeBase64}`,
-        //   manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/account/ticket/${registration.id}`
-        // });
+        // Générer le QR code en base64
+        const qrCodeBase64 = await QRCode.toDataURL(qrToken).then(url => url.split(',')[1]);
+
+        await sendTicketEmail({
+          to: registration.email,
+          participantName: registration.participant_name,
+          eventTitle: fullEvent.data?.title,
+          eventDate: fullEvent.data?.date,
+          eventLocation: fullEvent.data?.location,
+          ticketName: ticket.name,
+          qrUrl: `data:image/png;base64,${qrCodeBase64}`,
+          manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/account/ticket/${registration.id}`
+        });
 
       } catch (error) {
         console.error('Erreur lors de la création de l\'inscription:', error);
