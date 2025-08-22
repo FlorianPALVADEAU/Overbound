@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: Promise<{ id: string }> } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServer()
@@ -83,7 +83,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: Promise<{ id: string }> } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServer()
@@ -165,7 +165,7 @@ export async function GET_PUBLIC() {
 // src/app/api/obstacles/[id]/route.ts
 export async function GET_PUBLIC_BY_ID(
   request: Request,
-  { params }: { params: { id: Promise<{ id: string }> } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createSupabaseServer()
