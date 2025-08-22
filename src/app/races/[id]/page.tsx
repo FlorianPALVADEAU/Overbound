@@ -26,7 +26,7 @@ import EventRegistration from '@/components/events/EventRegistration'
 import { Button } from '@/components/ui/button'
 
 interface EventDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
