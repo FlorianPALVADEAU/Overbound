@@ -5,13 +5,14 @@ import Link from "next/link";
 export const runtime = "nodejs";
 
 type Props = {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function BillingPage({ searchParams }: Props) {
-  const success = searchParams?.success === "1";
-  const canceled = searchParams?.canceled === "1";
-  const sessionId = (searchParams?.session_id as string) || undefined;
+  const params = await searchParams;
+  const success = params?.success === "1";
+  const canceled = params?.canceled === "1";
+  const sessionId = (params?.session_id as string) || undefined;
 
   let session: Stripe.Checkout.Session | null = null;
   let error: string | null = null;
