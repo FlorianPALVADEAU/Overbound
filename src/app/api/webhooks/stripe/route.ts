@@ -1,102 +1,133 @@
-// src/app/api/webhooks/stripe/route.ts
-import Stripe from 'stripe';
-import { NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { v4 as uuidv4 } from 'uuid';
-import { sendTicketEmail } from '@/lib/email';
-import * as QRCode from 'qrcode';
+// src/app/api/webhooks/stripe/route.ts (Updated for PaymentIntents)
+import Stripe from 'stripe'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { v4 as uuidv4 } from 'uuid'
+import { sendTicketEmail } from '@/lib/email'
+import * as QRCode from 'qrcode'
 
-export const runtime = 'nodejs';
+export const runtime = 'nodejs'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
-});
+})
 
 export async function POST(request: NextRequest) {
-  const body = await request.text();
-  const signature = request.headers.get('stripe-signature') as string;
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const body = await request.text()
+  const signature = request.headers.get('stripe-signature') as string
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
-  let event: Stripe.Event;
+  let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, signature, endpointSecret);
+    event = stripe.webhooks.constructEvent(body, signature, endpointSecret)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err);
-    return new Response(`Webhook Error: ${err}`, { status: 400 });
+    console.error('Webhook signature verification failed:', err)
+    return new Response(`Webhook Error: ${err}`, { status: 400 })
   }
 
-  const admin = supabaseAdmin();
+  const admin = supabaseAdmin()
 
   switch (event.type) {
-    case 'checkout.session.completed':
-    case 'checkout.session.async_payment_succeeded': {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const metadata = session.metadata || {};
+    case 'payment_intent.succeeded': {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent
+      const metadata = paymentIntent.metadata || {}
 
       const {
         user_id,
         event_id,
         ticket_id,
-        participant_name,
-        race_id
-      } = metadata;
+        participant_email,
+        event_title,
+        ticket_name,
+        race_id,
+        upsells: upsellsJson
+      } = metadata
 
       if (!user_id || !event_id || !ticket_id) {
-        console.error('Métadonnées manquantes dans la session Stripe:', metadata);
-        return new Response('Métadonnées manquantes', { status: 400 });
+        console.error('Métadonnées manquantes dans le PaymentIntent:', metadata)
+        return new Response('Métadonnées manquantes', { status: 400 })
       }
 
       try {
-        // Générer un token QR unique
-        const qrToken = uuidv4();
-        const transferToken = uuidv4();
+        // Check if registration already exists
+        const { data: existingReg } = await admin
+          .from('registrations')
+          .select('id')
+          .eq('stripe_payment_intent_id', paymentIntent.id)
+          .single()
 
-        const fullEvent = await admin
+        if (existingReg) {
+          console.log('Registration already exists for PaymentIntent:', paymentIntent.id)
+          return new Response('ok', { status: 200 })
+        }
+
+        // Parse upsells
+        let upsells = []
+        try {
+          upsells = upsellsJson ? JSON.parse(upsellsJson) : []
+        } catch (e) {
+          console.warn('Could not parse upsells JSON:', upsellsJson)
+        }
+
+        // Generate unique tokens
+        const qrToken = uuidv4()
+        const transferToken = uuidv4()
+
+        // Get full event details
+        const { data: event, error: eventError } = await admin
           .from('events')
           .select('*')
           .eq('id', event_id)
-          .single();
+          .single()
 
-        if (!fullEvent) {
-          console.error('Événement introuvable:', event_id);
-          return new Response('Événement introuvable', { status: 404 });
+        if (eventError || !event) {
+          console.error('Event not found:', event_id, eventError)
+          return new Response('Event not found', { status: 404 })
         }
 
-        // Créer la commande
+        // Get ticket details
+        const { data: ticket, error: ticketError } = await admin
+          .from('tickets')
+          .select('*')
+          .eq('id', ticket_id)
+          .single()
+
+        if (ticketError || !ticket) {
+          console.error('Ticket not found:', ticket_id, ticketError)
+          return new Response('Ticket not found', { status: 404 })
+        }
+
+        // Create order
         const { data: order, error: orderError } = await admin
           .from('orders')
           .insert({
             user_id,
             event_id,
             ticket_id,
-            stripe_session_id: session.id,
-            amount_total: session.amount_total || 0,
-            currency: session.currency || 'eur',
+            stripe_payment_intent_id: paymentIntent.id,
+            amount_total: paymentIntent.amount,
+            currency: paymentIntent.currency,
             payment_status: 'paid',
-            customer_email: session.customer_details?.email || session.customer_email,
-            customer_name: participant_name || session.customer_details?.name,
+            customer_email: participant_email,
+            customer_name: metadata.participant_name || participant_email,
+            metadata: {
+              upsells: upsells,
+              paymentIntent: {
+                id: paymentIntent.id,
+                created: paymentIntent.created,
+                payment_method: paymentIntent.payment_method
+              }
+            }
           })
           .select()
-          .single();
+          .single()
 
         if (orderError) {
-          console.error('Erreur création commande:', orderError);
-          throw orderError;
+          console.error('Error creating order:', orderError)
+          throw orderError
         }
 
-        // Récupérer les informations du ticket
-        const { data: ticket, error: ticketError } = await admin
-          .from('tickets')
-          .select('*')
-          .eq('id', ticket_id)
-          .single();
-
-        if (ticketError || !ticket) {
-          console.error('Erreur récupération ticket:', ticketError);
-          throw ticketError || new Error('Ticket introuvable');
-        }
-
-        // Créer l'inscription
+        // Create registration
         const { data: registration, error: registrationError } = await admin
           .from('registrations')
           .insert({
@@ -104,60 +135,104 @@ export async function POST(request: NextRequest) {
             event_id,
             ticket_id,
             order_id: order.id,
-            email: session.customer_details?.email || session.customer_email,
-            participant_name: participant_name || session.customer_details?.name,
+            email: participant_email,
+            participant_name: metadata.participant_name || participant_email,
             qr_code_token: qrToken,
             transfer_token: transferToken,
-            approval_status: 'approved', // Auto-approuvé pour les paiements réussis
+            stripe_payment_intent_id: paymentIntent.id,
+            approval_status: 'approved',
             race_id: race_id || null,
+            metadata: {
+              upsells: upsells,
+              created_via: 'webhook'
+            }
           })
           .select()
-          .single();
+          .single()
 
         if (registrationError) {
-          console.error('Erreur création inscription:', registrationError);
-          throw registrationError;
+          console.error('Error creating registration:', registrationError)
+          throw registrationError
         }
 
-        console.log('Inscription créée avec succès:', {
+        // Create upsell records
+        if (upsells && upsells.length > 0) {
+          const upsellRecords = upsells.map((upsell: any) => ({
+            registration_id: registration.id,
+            name: upsell.name,
+            price_cents: upsell.price,
+            currency: paymentIntent.currency,
+            options: upsell.options || {},
+            metadata: {
+              original_upsell_id: upsell.id,
+              type: upsell.digital ? 'digital' : 'physical'
+            }
+          }))
+
+          const { error: upsellError } = await admin
+            .from('registration_upsells')
+            .insert(upsellRecords)
+
+          if (upsellError) {
+            console.error('Error creating upsells:', upsellError)
+          }
+        }
+
+        console.log('Registration created successfully via webhook:', {
           registration_id: registration.id,
+          order_id: order.id,
           user_id,
           event_id,
-          ticket_id,
-          amount: session.amount_total
-        });
+          payment_intent_id: paymentIntent.id,
+          amount: paymentIntent.amount
+        })
 
-        // Générer le QR code en base64
-        const qrCodeBase64 = await QRCode.toDataURL(qrToken).then(url => url.split(',')[1]);
+        // Send confirmation email
+        try {
+          const qrCodeBase64 = await QRCode.toDataURL(qrToken).then(url => url.split(',')[1])
 
-        await sendTicketEmail({
-          to: registration.email,
-          participantName: registration.participant_name,
-          eventTitle: fullEvent.data?.title,
-          eventDate: fullEvent.data?.date,
-          eventLocation: fullEvent.data?.location,
-          ticketName: ticket.name,
-          qrUrl: `data:image/png;base64,${qrCodeBase64}`,
-          manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/account/ticket/${registration.id}`
-        });
+          await sendTicketEmail({
+            to: registration.email,
+            participantName: registration.participant_name,
+            eventTitle: event_title || event.title,
+            eventDate: event.date,
+            eventLocation: event.location,
+            ticketName: ticket_name || ticket.name,
+            qrUrl: `data:image/png;base64,${qrCodeBase64}`,
+            manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/account/ticket/${registration.id}`
+          })
+
+          console.log('Confirmation email sent to:', registration.email)
+        } catch (emailError) {
+          console.error('Error sending confirmation email:', emailError)
+        }
 
       } catch (error) {
-        console.error('Erreur lors de la création de l\'inscription:', error);
-        return new Response('Erreur interne', { status: 500 });
+        console.error('Error processing payment_intent.succeeded:', error)
+        return new Response('Error processing registration', { status: 500 })
       }
-      break;
+      break
     }
     
-    case 'checkout.session.expired': {
-      const session = event.data.object as Stripe.Checkout.Session;
-      console.log('Session Stripe expirée:', session.id);
-      break;
+    case 'payment_intent.payment_failed': {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent
+      console.log('Payment failed:', paymentIntent.id, paymentIntent.last_payment_error?.message)
+      
+      // Optionally, you could store failed payment attempts for analytics
+      // or send notification emails to users about payment failures
+      break
+    }
+
+    case 'payment_intent.canceled': {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent
+      console.log('Payment canceled:', paymentIntent.id)
+      break
     }
 
     default:
-      console.log(`Événement Stripe non géré: ${event.type}`);
-      break;
+      console.log(`Unhandled Stripe event type: ${event.type}`)
+      break
   }
 
-  return new Response('ok', { status: 200 });
+  return new Response('ok', { status: 200 })
 }
