@@ -1,5 +1,8 @@
 'use client'
+import DistanceFormatsAndDifficulties from '@/components/homepage/DistanceFormatsAndDifficulties';
 import HeroHeader from '@/components/homepage/HeroHeader';
+import NextEvents from '@/components/homepage/NextEvents';
+import RallyingSlur from '@/components/homepage/RallyingSlur';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 import { Button } from '@/components/ui/button';
 
@@ -29,9 +32,12 @@ function CheckoutButton() {
 
 export default function Home() {
   return (
-    <>
+    <div className="w-full h-full flex flex-col pb-20">
       <HeroHeader />
       <WhatsOverbound />
-    </>
+      <NextEvents />
+      <RallyingSlur />
+      <DistanceFormatsAndDifficulties />
+    </div>
   );
 }
