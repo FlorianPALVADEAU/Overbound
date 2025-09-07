@@ -6,7 +6,7 @@ const WhatsOverbound = () => {
   return (
     <>
       {/* Version desktop : ton design original exact */}
-      <div className="hidden lg:flex h-[80vh] w-full items-center justify-center gap-24 py-12">
+      <div className="hidden lg:flex h-[80vh] w-full items-center justify-center gap-24 py-20 pt-40">
         <div className='w-auto h-full flex justify-center items-center gap-6 mb-8'>
           <img
             src="https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
