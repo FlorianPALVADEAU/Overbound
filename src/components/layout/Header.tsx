@@ -76,27 +76,29 @@ export function Header({ user, profile }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto px-32">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+      {/* Container responsive avec max-width et padding adaptatifs */}
+      <div className="mx-auto px-4 lg:px-32">
+        <div className="flex h-14 sm:h-16 items-center justify-between">
+          
+          {/* Logo - responsive text visibility */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <CalendarIcon className="h-4 w-4" />
               </div>
-              <span className="hidden font-bold sm:inline-block">
+              <span className="hidden text-lg font-bold sm:inline-block lg:text-xl">
                 OverBound
               </span>
             </Link>
           </div>
 
-          {/* Navigation Desktop */}
-          <nav className="hidden md:flex items-center space-x-6">
+          {/* Navigation Desktop - hidden sur mobile/tablet */}
+          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base"
               >
                 {item.name}
               </Link>
@@ -104,7 +106,7 @@ export function Header({ user, profile }: HeaderProps) {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -152,21 +154,22 @@ export function Header({ user, profile }: HeaderProps) {
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>
-                <Button asChild>
+                <Button size="sm" className="text-xs sm:text-sm" asChild>
                   <Link href="/auth/login">S'inscrire</Link>
                 </Button>
               </div>
             )}
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
+            {/* Mobile menu button - affiché seulement sur mobile/tablet */}
+            <div className="lg:hidden">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="h-8 w-8 p-0"
               >
                 {mobileMenuOpen ? (
                   <XIcon className="h-5 w-5" />
@@ -178,22 +181,36 @@ export function Header({ user, profile }: HeaderProps) {
           </div>
         </div>
 
-        {/* Navigation Mobile */}
+        {/* Navigation Mobile - améliorée avec animations */}
         {mobileMenuOpen && (
-          <div className="border-t pb-3 pt-4 md:hidden">
+          <div className="border-t pb-3 pt-4 lg:hidden">
             <div className="space-y-1">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                  className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <item.icon className="mr-3 h-4 w-4" />
+                  <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
                   {item.name}
                 </Link>
               ))}
             </div>
+            
+            {/* Boutons auth sur mobile si pas connecté */}
+            {!user && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex flex-col space-y-2 px-3">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/auth/login">Se connecter</Link>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link href="/auth/login">S'inscrire</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 'use client'
 import HeroHeader from '@/components/homepage/HeroHeader';
+import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 import { Button } from '@/components/ui/button';
 
 function CheckoutButton() {
@@ -30,6 +31,7 @@ export default function Home() {
   return (
     <>
       <HeroHeader />
+      <WhatsOverbound />
     </>
   );
 }
