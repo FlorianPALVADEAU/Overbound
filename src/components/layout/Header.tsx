@@ -69,8 +69,8 @@ export function Header({ user, profile }: HeaderProps) {
   const userNavigation = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
-    ...(profile?.role === 'admin' ? [
-      { name: 'Administration', href: '/admin', icon: SettingsIcon },
+    ...(profile?.role === 'admin' || profile?.role === 'volunteer' ? [
+      { name: 'Administration', href: '/dashboard', icon: SettingsIcon },
     ] : []),
   ] : []
 
