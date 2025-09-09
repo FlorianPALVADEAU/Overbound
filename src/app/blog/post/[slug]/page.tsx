@@ -1,31 +1,37 @@
+'use client'
+import axiosClient from '@/app/api/axiosClient'
+import { fetchSinglePost, useGetPost } from '@/app/api/blog/blogQueries'
 import RichText from '@/components/RichText'
 import { client } from '@/sanity/lib/client'
 import { urlFor } from '@/sanity/lib/image'
 import { postBySlugQuery, settingsQuery } from '@/sanity/lib/queries'
 import { notFound } from 'next/navigation'
 
-
-
-export const revalidate = 60
-
 export async function generateMetadata({ params }: { params: any }) {
   const { slug } = await Promise.resolve(params)
   const [post, settings] = await Promise.all([
-    client.fetch(postBySlugQuery, { slug }),
-    client.fetch(settingsQuery),
+    fetchSinglePost(slug),
+    axiosClient.get(settingsQuery),
   ])
   if (!post) return { title: 'Article introuvable — OverBound' }
-  const title = `${post.title} — ${settings?.siteTitle || 'OverBound'}`
-  const description = post.excerpt || settings?.description
-  const og = post.ogImage || settings?.ogImage
+  const title = `${post.title} — ${settings.data?.siteTitle || 'OverBound'}`
+  const description = post.excerpt || settings.data?.description
+  const og = post.ogImage || settings.data?.ogImage
   const images = og ? [{ url: urlFor(og).width(1200).height(630).url() }] : []
   return { title, description, openGraph: { title, description, images } }
 }
 
-export default async function BlogPostPage({ params }: { params: any }) {
-  const { slug } = await Promise.resolve(params)
-  const post = await client.fetch(postBySlugQuery, { slug })
-  if (!post) return notFound()
+export default function BlogPostPage({ params }: { params: any }) {
+  const { slug } = params
+  const { data: post, isLoading, error } = useGetPost(slug)
+
+  if (isLoading) {
+    return <div>Chargement...</div>
+  }
+
+  if (error || !post) {
+    return <div>Article introuvable.</div>
+  }
 
   return (
     <article className="max-w-3xl mx-auto p-6">

@@ -179,7 +179,7 @@ export function Footer() {
         {/* Copyright */}
         <div className="mt-8 pt-8 border-t text-center sm:text-left">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} OverBound. Tous droits réservés.
+            &copy; {new Date().getFullYear()} OverBound™. Tous droits réservés.
           </p>
         </div>
       </div>

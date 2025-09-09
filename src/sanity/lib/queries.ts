@@ -27,3 +27,9 @@ export const postBySlugQuery = groq`
 }`
 
 export const settingsQuery = groq`*[_type == "settings"][0]{siteTitle, description, ogImage}`
+
+export const FAQsQuery = groq`*[_type == "question"]{
+  _id,
+  title,
+  answer
+}`
