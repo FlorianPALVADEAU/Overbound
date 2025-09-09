@@ -6,7 +6,6 @@ import { BrandBanner } from './HeroHeader'
 import SubHeadings from '../globals/SubHeadings'
 import { Button } from '../ui/button'
 import { UUID } from '@/types/base.type'
-import { v4 as randomUUID } from 'uuid'
 
 enum TestimonialTypeEnum {
   VIDEO = 'video',
@@ -26,7 +25,7 @@ type TestimonialType = {
 
 const testimonials: TestimonialType[] = [
   {
-    id: randomUUID(),
+    id: "testimonial-1" as UUID,
     name: "Marie Dubois",
     age: 28,
     rating: 5,
@@ -36,7 +35,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-2" as UUID,
     name: "Thomas Martin",
     age: 34,
     rating: 5,
@@ -46,7 +45,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-3" as UUID,
     name: "Sophie Laurent",
     age: 25,
     rating: 4,
@@ -56,7 +55,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-4" as UUID,
     name: "Kevin Rousseau", 
     age: 31,
     rating: 5,
@@ -66,7 +65,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-5" as UUID,
     name: "Amélie Bernard",
     age: 29,
     rating: 5,
@@ -76,7 +75,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-6" as UUID,
     name: "Lucas Moreau",
     age: 26,
     rating: 5,
@@ -86,7 +85,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-7" as UUID,
     name: "Emma Leroy", 
     age: 32,
     rating: 4,
@@ -96,7 +95,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-8" as UUID,
     name: "Alexandre Petit",
     age: 27,
     rating: 5,
@@ -106,7 +105,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-9" as UUID,
     name: "Camille Roux",
     age: 30,
     rating: 5,
@@ -116,7 +115,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-10" as UUID,
     name: "Julien Fabre",
     age: 35,
     rating: 5,
@@ -126,7 +125,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-11" as UUID,
     name: "Léa Girard",
     age: 24,
     rating: 4,
@@ -136,7 +135,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: randomUUID(),
+    id: "testimonial-12" as UUID,
     name: "Maxime Blanc",
     age: 29,
     rating: 5,
@@ -152,7 +151,7 @@ const testimonials: TestimonialType[] = [
 
 
   {
-    id: randomUUID(),
+    id: "testimonial-13" as UUID,
     name: "Chloé Simon",
     age: 26,
     rating: 5,
@@ -162,7 +161,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
+    id: "testimonial-14" as UUID,
     name: "Antoine Durand",
     age: 33,
     rating: 4,
@@ -172,77 +171,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
-    name: "Manon Robert",
-    age: 22,
-    rating: 5,
-    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
-    mediaUrl: "hhttps://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Nancy",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Hugo Bertrand",
-    age: 28,
-    rating: 5,
-    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Grenoble",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Clara Morel",
-    age: 31,
-    rating: 4,
-    comment: "Très bien organisé ! Les défis étaient variés et l'encadrement parfait.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Dijon",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Valentin Fournier",
-    age: 27,
-    rating: 5,
-    comment: "Sensationnel ! Une expérience qui marque et qui donne envie de se dépasser encore plus.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Angers",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Sarah Dubois",
-    age: 25,
-    rating: 5,
-    comment: "Incroyable aventure ! Chaque moment était intense et parfaitement orchestré. Bravo à toute l'équipe !",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Tours",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Quentin Lambert",
-    age: 30,
-    rating: 5,
-    comment: "L'Overbound a dépassé toutes mes attentes ! Une journée inoubliable remplie d'émotions fortes.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Metz",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Antoine Durand",
-    age: 33,
-    rating: 4,
-    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Lyon",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
+    id: "testimonial-15" as UUID,
     name: "Manon Robert",
     age: 22,
     rating: 5,
@@ -252,7 +181,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
+    id: "testimonial-16" as UUID,
     name: "Hugo Bertrand",
     age: 28,
     rating: 5,
@@ -262,7 +191,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
+    id: "testimonial-17" as UUID,
     name: "Clara Morel",
     age: 31,
     rating: 4,
@@ -272,7 +201,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
+    id: "testimonial-18" as UUID,
     name: "Valentin Fournier",
     age: 27,
     rating: 5,
@@ -282,7 +211,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
+    id: "testimonial-19" as UUID,
     name: "Sarah Dubois",
     age: 25,
     rating: 5,
@@ -292,7 +221,7 @@ const testimonials: TestimonialType[] = [
     type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: randomUUID(),
+    id: "testimonial-20" as UUID,
     name: "Quentin Lambert",
     age: 30,
     rating: 5,
@@ -305,8 +234,10 @@ const testimonials: TestimonialType[] = [
 
 const SocialProof = () => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  
+  // Create a deterministic shuffle based on testimonial IDs to avoid hydration mismatch
   const shuffledTestimonials = testimonials
-    .map(value => ({ value, sort: Math.random() }))
+    .map((value, index) => ({ value, sort: value.id.charCodeAt(value.id.length - 1) + index }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ value }) => value)
 
