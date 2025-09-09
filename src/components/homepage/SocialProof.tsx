@@ -27,6 +27,16 @@ type TestimonialType = {
 const testimonials: TestimonialType[] = [
   {
     id: randomUUID(),
+    name: "Quentin Lambert",
+    age: 30,
+    rating: 5,
+    comment: "L'Overbound a dépassé toutes mes attentes ! Une journée inoubliable remplie d'émotions fortes.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Metz",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
     name: "Marie Dubois",
     age: 28,
     rating: 5,
@@ -34,6 +44,96 @@ const testimonials: TestimonialType[] = [
     mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     location: "Paris",
     type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Quentin Lambert",
+    age: 30,
+    rating: 5,
+    comment: "L'Overbound a dépassé toutes mes attentes ! Une journée inoubliable remplie d'émotions fortes.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Metz",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },  
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },  
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },  
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Hugo Bertrand",
+    age: 28,
+    rating: 5,
+    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Grenoble",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
     id: randomUUID(),
@@ -57,6 +157,56 @@ const testimonials: TestimonialType[] = [
   },
   {
     id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+    {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Hugo Bertrand",
+    age: 28,
+    rating: 5,
+    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Grenoble",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Valentin Fournier",
+    age: 27,
+    rating: 5,
+    comment: "Sensationnel ! Une expérience qui marque et qui donne envie de se dépasser encore plus.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Angers",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
     name: "Kevin Rousseau", 
     age: 31,
     rating: 5,
@@ -67,6 +217,16 @@ const testimonials: TestimonialType[] = [
   },
   {
     id: randomUUID(),
+    name: "Hugo Bertrand",
+    age: 28,
+    rating: 5,
+    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Grenoble",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
     name: "Amélie Bernard",
     age: 29,
     rating: 5,
@@ -74,6 +234,16 @@ const testimonials: TestimonialType[] = [
     mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     location: "Nice",
     type: TestimonialTypeEnum.VIDEO
+  },
+    {
+    id: randomUUID(),
+    name: "Hugo Bertrand",
+    age: 28,
+    rating: 5,
+    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Grenoble",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
     id: randomUUID(),
@@ -145,20 +315,14 @@ const testimonials: TestimonialType[] = [
     location: "Marseille",
     type: TestimonialTypeEnum.VIDEO
   },
-
-
-
-
-
-
   {
     id: randomUUID(),
-    name: "Chloé Simon",
-    age: 26,
+    name: "Sarah Dubois",
+    age: 25,
     rating: 5,
-    comment: "Fantastique ! J'ai découvert des capacités que je ne soupçonnais pas avoir.",
+    comment: "Incroyable aventure ! Chaque moment était intense et parfaitement orchestré. Bravo à toute l'équipe !",
     mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Toulouse",
+    location: "Tours",
     type: TestimonialTypeEnum.COMMENT
   },
   {
@@ -171,6 +335,17 @@ const testimonials: TestimonialType[] = [
     location: "Lyon",
     type: TestimonialTypeEnum.COMMENT
   },
+  {
+    id: randomUUID(),
+    name: "Chloé Simon",
+    age: 26,
+    rating: 5,
+    comment: "Fantastique ! J'ai découvert des capacités que je ne soupçonnais pas avoir.",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Toulouse",
+    type: TestimonialTypeEnum.VIDEO
+  },
+
   {
     id: randomUUID(),
     name: "Manon Robert",
@@ -181,36 +356,7 @@ const testimonials: TestimonialType[] = [
     location: "Nancy",
     type: TestimonialTypeEnum.COMMENT
   },
-  {
-    id: randomUUID(),
-    name: "Hugo Bertrand",
-    age: 28,
-    rating: 5,
-    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Grenoble",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Clara Morel",
-    age: 31,
-    rating: 4,
-    comment: "Très bien organisé ! Les défis étaient variés et l'encadrement parfait.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Dijon",
-    type: TestimonialTypeEnum.COMMENT
-  },
-  {
-    id: randomUUID(),
-    name: "Valentin Fournier",
-    age: 27,
-    rating: 5,
-    comment: "Sensationnel ! Une expérience qui marque et qui donne envie de se dépasser encore plus.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Angers",
-    type: TestimonialTypeEnum.COMMENT
-  },
+
   {
     id: randomUUID(),
     name: "Sarah Dubois",
@@ -247,19 +393,79 @@ const testimonials: TestimonialType[] = [
     age: 22,
     rating: 5,
     comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     location: "Nancy",
-    type: TestimonialTypeEnum.COMMENT
+    type: TestimonialTypeEnum.VIDEO
   },
   {
     id: randomUUID(),
-    name: "Hugo Bertrand",
-    age: 28,
+    name: "Manon Robert",
+    age: 22,
     rating: 5,
-    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
-    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Grenoble",
-    type: TestimonialTypeEnum.COMMENT
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
     id: randomUUID(),
@@ -283,35 +489,142 @@ const testimonials: TestimonialType[] = [
   },
   {
     id: randomUUID(),
-    name: "Sarah Dubois",
-    age: 25,
-    rating: 5,
-    comment: "Incroyable aventure ! Chaque moment était intense et parfaitement orchestré. Bravo à toute l'équipe !",
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
     mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Tours",
+    location: "Lyon",
     type: TestimonialTypeEnum.COMMENT
   },
   {
     id: randomUUID(),
-    name: "Quentin Lambert",
-    age: 30,
-    rating: 5,
-    comment: "L'Overbound a dépassé toutes mes attentes ! Une journée inoubliable remplie d'émotions fortes.",
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
     mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
-    location: "Metz",
+    location: "Lyon",
     type: TestimonialTypeEnum.COMMENT
-  }
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Nancy",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
 ]
 
 const SocialProof = () => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
-  const shuffledTestimonials = testimonials
-    .map(value => ({ value, sort: Math.random() }))
-    .sort((a, b) => a.sort - b.sort)
-    .map(({ value }) => value)
+  const [visibleCount, setVisibleCount] = useState(21) // Nombre initial d'éléments à afficher
+  const [isLoading, setIsLoading] = useState(false)
 
   const toggleVideo = (id: string) => {
     setPlayingVideo(playingVideo === id ? null : id)
+  }
+
+  const loadMore = () => {
+    setIsLoading(true)
+    setTimeout(() => {
+      setVisibleCount(prev => Math.min(prev + 15, testimonials.length))
+      setIsLoading(false)
+    }, 500)
   }
 
   const renderStars = (rating: number) => {
@@ -367,7 +680,7 @@ const SocialProof = () => {
       </div>
 
       {/* Details */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-t-none rounded-b-2xl p-4 sm:p-5">
+      <div className="absolute left-[6%] bottom-6 w-7/8 h-min-2/5 bg-white/95 rounded-lg p-4 sm:p-5">
         {/* Rating */}
         <div className="flex items-center gap-1 mb-2 sm:mb-3">
           {renderStars(testimonial.rating)}
@@ -448,12 +761,31 @@ const SocialProof = () => {
         {/* Testimonials Masonry Grid */}
         <div className="w-full">
           <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
-            {shuffledTestimonials.map((testimonial: TestimonialType) => (
+            {testimonials.slice(0, visibleCount).map((testimonial: TestimonialType) => (
               testimonial.type === TestimonialTypeEnum.VIDEO 
                 ? renderVideoTestimonial(testimonial)
                 : renderCommentTestimonial(testimonial)
             ))}
           </div>
+
+          {/* Load More Button */}
+          {visibleCount < testimonials.length && (
+            <div className="flex justify-center mt-8 sm:mt-12">
+              <Button
+                onClick={loadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Chargement...
+                  </div>
+                ) : (
+                  `Voir plus de témoignages (${testimonials.length - visibleCount} restants)`
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Brand Banner Section */}
@@ -463,18 +795,18 @@ const SocialProof = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="w-full flex flex-col items-start justify-start gap-2">
+        <div className="w-full flex flex-col items-start justify-start gap-4">
           <SubHeadings title="Overbound, en chiffres" />
-          <div className="w-full flex flex-col sm:flex-row justify-center sm:justify-around items-center gap-4 sm:gap-2">
-            <div className="w-full sm:w-1/3 h-48 sm:h-60 bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-2">1,500+</div>
-              <div className="text-gray-600 text-sm sm:text-base text-center">Participants satisfaits</div>
+          <div className="w-full flex flex-col sm:flex-row justify-center sm:justify-between items-center ">
+            <div className="w-full sm:w-[30%] h-48 sm:h-60 bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-2">1</div>
+              <div className="text-gray-600 text-sm sm:text-base text-center">Tribu en or</div>
             </div>
-            <div className="w-full sm:w-1/3 h-48 sm:h-60 bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center">
+            <div className="w-full sm:w-[30%] h-48 sm:h-60 bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center">
               <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-green-600 mb-2">4.8/5</div>
               <div className="text-gray-600 text-sm sm:text-base text-center">Note moyenne</div>
             </div>
-            <div className="w-full sm:w-1/3 h-48 sm:h-60 bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center">
+            <div className="w-full sm:w-[30%] h-48 sm:h-60 bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center">
               <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-purple-600 mb-2">98%</div>
               <div className="text-gray-600 text-sm sm:text-base text-center">Recommandent l'expérience</div>
             </div>
