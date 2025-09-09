@@ -1,4 +1,5 @@
 'use client'
+import CTA from '@/components/homepage/CTA';
 import DistanceFormatsAndDifficulties from '@/components/homepage/DistanceFormatsAndDifficulties';
 import HeroHeader from '@/components/homepage/HeroHeader';
 import NextEvents from '@/components/homepage/NextEvents';
@@ -42,6 +43,7 @@ export default function Home() {
       <DistanceFormatsAndDifficulties />
       <ObstaclesOverview />
       <SocialProof />
+      <CTA />
     </div>
   );
 }
