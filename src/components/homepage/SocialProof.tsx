@@ -1,195 +1,314 @@
+'use client'
 import React, { useState } from 'react'
 import { Star, Play, Pause } from 'lucide-react'
 import Headings from '../globals/Headings'
 import { BrandBanner } from './HeroHeader'
 import SubHeadings from '../globals/SubHeadings'
 import { Button } from '../ui/button'
+import { UUID } from '@/types/base.type'
+import { v4 as randomUUID } from 'uuid'
 
-const testimonials = [
+enum TestimonialTypeEnum {
+  VIDEO = 'video',
+  COMMENT = 'comment'
+}
+
+type TestimonialType = {
+  id: UUID
+  name: string
+  age: number
+  rating: number
+  comment: string
+  mediaUrl: string
+  location: string
+  type: TestimonialTypeEnum
+}
+
+const testimonials: TestimonialType[] = [
   {
-    id: 1,
+    id: randomUUID(),
     name: "Marie Dubois",
     age: 28,
     rating: 5,
     comment: "L'Overbound a complètement changé ma vie ! J'ai découvert des limites que je ne pensais pas pouvoir dépasser.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    location: "Paris"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Paris",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 2, 
+    id: randomUUID(),
     name: "Thomas Martin",
     age: 34,
     rating: 5,
     comment: "Une expérience incroyable ! L'équipe est fantastique et les obstacles sont vraiment bien pensés. Chaque défi était unique et parfaitement adapté à notre niveau.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    location: "Lyon"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    location: "Lyon",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 3,
+    id: randomUUID(),
     name: "Sophie Laurent",
     age: 25,
     rating: 4,
     comment: "Défi relevé ! C'était intense mais tellement gratifiant. Je recommande à 100%.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    location: "Marseille"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    location: "Marseille",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 4,
+    id: randomUUID(),
     name: "Kevin Rousseau", 
     age: 31,
     rating: 5,
     comment: "L'adrénaline pure ! J'ai adoré chaque seconde et j'ai hâte de revenir pour la prochaine édition. Une aventure inoubliable qui m'a poussé à me dépasser.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    location: "Toulouse"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    location: "Toulouse",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 5, 
+    id: randomUUID(),
     name: "Amélie Bernard",
     age: 29,
     rating: 5,
     comment: "Fantastique ! Une organisation parfaite et des défis qui nous font vraiment sortir de notre zone de confort.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    location: "Nice"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    location: "Nice",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 6,
+    id: randomUUID(),
     name: "Lucas Moreau",
     age: 26,
     rating: 5,
     comment: "Wow ! Une expérience qui dépasse toutes mes attentes. L'équipe d'encadrement est top !",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    location: "Bordeaux"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Bordeaux",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 7,
+    id: randomUUID(),
     name: "Emma Leroy", 
     age: 32,
     rating: 4,
     comment: "Très belle découverte ! J'ai pu me dépasser et vivre des moments intenses avec d'autres passionnés.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    location: "Lille"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    location: "Lille",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 8, 
+    id: randomUUID(),
     name: "Alexandre Petit",
     age: 27,
     rating: 5,
     comment: "Incroyable ! Chaque obstacle était un nouveau défi. L'ambiance était fantastique du début à la fin.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    location: "Nantes"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    location: "Nantes",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 9,
+    id: randomUUID(),
     name: "Camille Roux",
     age: 30,
     rating: 5,
     comment: "L'Overbound m'a permis de sortir totalement de ma zone de confort. Une aventure inoubliable !",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    location: "Strasbourg"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    location: "Strasbourg",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 10,
+    id: randomUUID(),
     name: "Julien Fabre",
     age: 35,
     rating: 5,
     comment: "Parfait pour les amateurs de sensations fortes ! L'organisation était impeccable.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    location: "Montpellier"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    location: "Montpellier",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 11,
+    id: randomUUID(),
     name: "Léa Girard",
     age: 24,
     rating: 4,
     comment: "Super expérience ! Même si j'étais débutante, j'ai réussi à relever tous les défis.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    location: "Rennes"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    location: "Rennes",
+    type: TestimonialTypeEnum.VIDEO
   },
   {
-    id: 12,
+    id: randomUUID(),
     name: "Maxime Blanc",
     age: 29,
     rating: 5,
     comment: "Une journée mémorable ! L'adrénaline, les défis, l'équipe... tout était parfait. Je reviens l'année prochaine !",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    location: "Marseille"
+    mediaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    location: "Marseille",
+    type: TestimonialTypeEnum.VIDEO
   },
+
+
+
+
+
+
   {
-    id: 13,
+    id: randomUUID(),
     name: "Chloé Simon",
     age: 26,
     rating: 5,
     comment: "Fantastique ! J'ai découvert des capacités que je ne soupçonnais pas avoir.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    location: "Toulouse"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Toulouse",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 14,
+    id: randomUUID(),
     name: "Antoine Durand",
     age: 33,
     rating: 4,
     comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    location: "Lyon"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 15,
+    id: randomUUID(),
     name: "Manon Robert",
     age: 22,
     rating: 5,
     comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    location: "Nancy"
+    mediaUrl: "hhttps://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Nancy",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 16,
+    id: randomUUID(),
     name: "Hugo Bertrand",
     age: 28,
     rating: 5,
     comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    location: "Grenoble"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Grenoble",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 17,
+    id: randomUUID(),
     name: "Clara Morel",
     age: 31,
     rating: 4,
     comment: "Très bien organisé ! Les défis étaient variés et l'encadrement parfait.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    location: "Dijon"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Dijon",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 18,
+    id: randomUUID(),
     name: "Valentin Fournier",
     age: 27,
     rating: 5,
     comment: "Sensationnel ! Une expérience qui marque et qui donne envie de se dépasser encore plus.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    location: "Angers"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Angers",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 19,
+    id: randomUUID(),
     name: "Sarah Dubois",
     age: 25,
     rating: 5,
     comment: "Incroyable aventure ! Chaque moment était intense et parfaitement orchestré. Bravo à toute l'équipe !",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    location: "Tours"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Tours",
+    type: TestimonialTypeEnum.COMMENT
   },
   {
-    id: 20,
+    id: randomUUID(),
     name: "Quentin Lambert",
     age: 30,
     rating: 5,
     comment: "L'Overbound a dépassé toutes mes attentes ! Une journée inoubliable remplie d'émotions fortes.",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    location: "Metz"
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Metz",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Antoine Durand",
+    age: 33,
+    rating: 4,
+    comment: "Très bonne organisation et des obstacles vraiment créatifs. Une belle aventure !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Lyon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Manon Robert",
+    age: 22,
+    rating: 5,
+    comment: "Expérience unique ! J'ai ri, j'ai eu peur, j'ai triomphé. Que demander de plus ?",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Nancy",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Hugo Bertrand",
+    age: 28,
+    rating: 5,
+    comment: "L'Overbound, c'est l'aventure ultime ! Parfait pour tester ses limites en s'amusant.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Grenoble",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Clara Morel",
+    age: 31,
+    rating: 4,
+    comment: "Très bien organisé ! Les défis étaient variés et l'encadrement parfait.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Dijon",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Valentin Fournier",
+    age: 27,
+    rating: 5,
+    comment: "Sensationnel ! Une expérience qui marque et qui donne envie de se dépasser encore plus.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Angers",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Sarah Dubois",
+    age: 25,
+    rating: 5,
+    comment: "Incroyable aventure ! Chaque moment était intense et parfaitement orchestré. Bravo à toute l'équipe !",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Tours",
+    type: TestimonialTypeEnum.COMMENT
+  },
+  {
+    id: randomUUID(),
+    name: "Quentin Lambert",
+    age: 30,
+    rating: 5,
+    comment: "L'Overbound a dépassé toutes mes attentes ! Une journée inoubliable remplie d'émotions fortes.",
+    mediaUrl: "https://imgs.search.brave.com/dZdpbogNh8mudIRhimLEsXDq6Z1k_9dZV_i_20CkhzM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cG5nYWxsLmNvbS93/cC1jb250ZW50L3Vw/bG9hZHMvNS9Vc2Vy/LVByb2ZpbGUtUE5H/LnBuZw",
+    location: "Metz",
+    type: TestimonialTypeEnum.COMMENT
   }
 ]
 
 const SocialProof = () => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  const shuffledTestimonials = testimonials
+    .map(value => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value)
 
   const toggleVideo = (id: string) => {
     setPlayingVideo(playingVideo === id ? null : id)
@@ -206,6 +325,118 @@ const SocialProof = () => {
     ))
   }
 
+  // Fonction pour rendre un témoignage vidéo
+  const renderVideoTestimonial = (testimonial: TestimonialType) => (
+    <div
+      key={testimonial.id}
+      className="relative mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 bg-gray-900"
+    >
+      {/* Video */}
+      <div 
+        className="relative w-full aspect-[9/16] sm:aspect-[3/4] lg:aspect-[2/3] overflow-hidden flex items-center justify-center cursor-pointer"
+        onClick={() => toggleVideo(testimonial.id.toString())}
+      >
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src={testimonial.mediaUrl}
+          loop
+          muted
+          playsInline
+          ref={(video) => {
+            if (video) {
+              if (playingVideo === testimonial.id.toString()) {
+                video.play()
+              } else {
+                video.pause()
+              }
+            }
+          }}
+        />
+        <div className="absolute inset-0 bg-black/40 hover:bg-black/30 transition-all duration-300"></div>
+
+        <Button
+          onClick={() => toggleVideo(testimonial.id.toString())}
+          className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group-hover:scale-110"
+        >
+          {playingVideo === testimonial.id.toString() ? (
+            <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
+          ) : (
+            <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />
+          )}
+        </Button>
+      </div>
+
+      {/* Details */}
+      <div className="bg-white/95 backdrop-blur-sm rounded-t-none rounded-b-2xl p-4 sm:p-5">
+        {/* Rating */}
+        <div className="flex items-center gap-1 mb-2 sm:mb-3">
+          {renderStars(testimonial.rating)}
+          <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700">
+            {testimonial.rating}/5
+          </span>
+        </div>
+
+        {/* Comment */}
+        <p className="text-gray-800 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4 line-clamp-4">
+          "{testimonial.comment}"
+        </p>
+
+        {/* User Info */}
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
+              {testimonial.name}
+            </h4>
+            <p className="text-gray-500 text-xs">
+              {testimonial.age} ans • {testimonial.location}
+            </p>
+          </div>
+          <div className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
+            ✓ Vérifié
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  // Fonction pour rendre un témoignage commentaire
+  const renderCommentTestimonial = (testimonial: TestimonialType) => (
+    <div
+      key={testimonial.id}
+      className="relative mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 bg-white border border-gray-100"
+    >
+      <div className="p-4 sm:p-6">
+        {/* Rating */}
+        <div className="flex items-center gap-1 mb-3 sm:mb-4">
+          {renderStars(testimonial.rating)}
+          <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700">
+            {testimonial.rating}/5
+          </span>
+        </div>
+
+        {/* Comment */}
+        <blockquote className="text-gray-800 text-sm sm:text-base leading-relaxed mb-4 sm:mb-6 italic">
+          "{testimonial.comment}"
+        </blockquote>
+
+        {/* User Info */}
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+              {testimonial.name}
+            </h4>
+            <p className="text-gray-500 text-xs sm:text-sm">
+              {testimonial.age} ans • {testimonial.location}
+            </p>
+          </div>
+          <div className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
+            ✓ Vérifié
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <section className="w-full items-center justify-center gap-12 py-16 pt-24 px-4 sm:px-6 lg:px-8 xl:px-32 bg-gradient-to-b from-gray-50 to-white">
       <Headings
@@ -217,74 +448,10 @@ const SocialProof = () => {
         {/* Testimonials Masonry Grid */}
         <div className="w-full">
           <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
-            {testimonials.map((testimonial) => (
-              <div
-                key={testimonial.id}
-                className="relative mb-4 break-inside-avoid rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 bg-gray-900"
-              >
-                {/* Video */}
-                <div className="relative w-full aspect-[9/16] sm:aspect-[3/4] lg:aspect-[2/3] overflow-hidden">
-                  <video
-                    className="absolute inset-0 w-full h-full object-cover"
-                    src={testimonial.videoUrl}
-                    loop
-                    muted
-                    playsInline
-                    ref={(video) => {
-                      if (video) {
-                        if (playingVideo === testimonial.id.toString()) {
-                          video.play()
-                        } else {
-                          video.pause()
-                        }
-                      }
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/40 hover:bg-black/30 transition-all duration-300"></div>
-
-                  <Button
-                    onClick={() => toggleVideo(testimonial.id.toString())}
-                    className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group-hover:scale-110"
-                  >
-                    {playingVideo === testimonial.id.toString() ? (
-                      <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
-                    ) : (
-                      <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />
-                    )}
-                  </Button>
-                </div>
-
-                {/* Details */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-t-none rounded-b-2xl p-4 sm:p-5">
-                  {/* Rating */}
-                  <div className="flex items-center gap-1 mb-2 sm:mb-3">
-                    {renderStars(testimonial.rating)}
-                    <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700">
-                      {testimonial.rating}/5
-                    </span>
-                  </div>
-
-                  {/* Comment */}
-                  <p className="text-gray-800 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4 line-clamp-4">
-                    "{testimonial.comment}"
-                  </p>
-
-                  {/* User Info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
-                        {testimonial.name}
-                      </h4>
-                      <p className="text-gray-500 text-xs">
-                        {testimonial.age} ans • {testimonial.location}
-                      </p>
-                    </div>
-                    <div className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
-                      ✓ Vérifié
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {shuffledTestimonials.map((testimonial: TestimonialType) => (
+              testimonial.type === TestimonialTypeEnum.VIDEO 
+                ? renderVideoTestimonial(testimonial)
+                : renderCommentTestimonial(testimonial)
             ))}
           </div>
         </div>
