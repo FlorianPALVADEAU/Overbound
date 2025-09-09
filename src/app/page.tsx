@@ -1,11 +1,13 @@
 'use client'
 import CTA from '@/components/homepage/CTA';
 import DistanceFormatsAndDifficulties from '@/components/homepage/DistanceFormatsAndDifficulties';
+import FAQ from '@/components/homepage/FAQ';
 import HeroHeader from '@/components/homepage/HeroHeader';
 import NextEvents from '@/components/homepage/NextEvents';
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview';
 import RallyingSlur from '@/components/homepage/RallyingSlur';
 import SocialProof from '@/components/homepage/SocialProof';
+import VolunteersAppeal from '@/components/homepage/VolunteersAppeal';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 import { Button } from '@/components/ui/button';
 
@@ -44,6 +46,9 @@ export default function Home() {
       <ObstaclesOverview />
       <SocialProof />
       <CTA />
+      <FAQ />
+      {/* <RelevantBlogArticles /> */}
+      <VolunteersAppeal />
     </div>
   );
 }

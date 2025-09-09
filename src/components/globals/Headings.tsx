@@ -9,7 +9,7 @@ export type HeadingsProps = {
 
 const Headings = ({ title, description, cta, sx }: HeadingsProps) => {
     return (
-        <div className={`w-full h-auto flex ${cta ? 'flex-row justify-between items-center' : 'flex-col justify-start items-start'} gap-2 text-left ${sx}`}>
+        <div className={`w-full h-auto flex ${cta ? 'flex-col lg:flex-row justify-start lg:justify-between items-start lg:items-end' : 'flex-col justify-start items-start'} gap-2 text-left ${sx}`}>
             <div className='flex flex-col gap-2'>
                 <h2 className='text-3xl sm:text-4xl md:text-5xl font-bold'>
                     {title}

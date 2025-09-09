@@ -1,13 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { client } from '@/sanity/lib/client'
+'use client'
 import { urlFor } from '@/sanity/lib/image'
-import { postsQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
+import { useGetPosts } from '../api/blog/blogQueries'
 
-export const revalidate = 60 // ISR 60s
+export default function BlogIndex() {
+  const { data: posts, isLoading, isError } = useGetPosts()
 
-export default async function BlogIndex() {
-  const posts = await client.fetch(postsQuery)
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (isError) {
+    return <div>Error loading posts.</div>
+  }
 
   return (
     <main className="max-w-5xl mx-auto p-6">
