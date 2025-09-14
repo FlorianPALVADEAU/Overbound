@@ -58,10 +58,10 @@ export function Header({ user, profile }: HeaderProps) {
   }
 
   const navigation = [
-    { name: 'Les courses', href: '/races', icon: MedalIcon },
-    { name: 'Les obstacles', href: '/obstacles', icon: BrickWallIcon },
+    { name: 'Courses', href: '/races', icon: MedalIcon },
+    { name: 'Obstacles', href: '/obstacles', icon: BrickWallIcon },
     { name: 'Entrainements', href: '/trainings', icon: DumbbellIcon },
-    { name: 'Shop', href: '/shop', icon: ShoppingBagIcon },
+    // { name: 'Shop', href: '/shop', icon: ShoppingBagIcon },
     { name: 'Blog', href: '/blog', icon: BookOpenTextIcon },
     { name: 'À propos', href: '/about', icon: InfoIcon },
   ]
@@ -77,11 +77,11 @@ export function Header({ user, profile }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Container responsive avec max-width et padding adaptatifs */}
-      <div className="mx-auto px-4 lg:px-32">
-        <div className="flex h-14 sm:h-16 items-center justify-between">
+      <div className="w-full mx-auto px-4 lg:px-32">
+        <div className="w-full relative flex h-14 sm:h-16 items-center justify-between">
           
           {/* Logo - responsive text visibility */}
-          <div className="flex items-center">
+          <div className="flex items-between">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <CalendarIcon className="h-4 w-4" />
@@ -92,18 +92,21 @@ export function Header({ user, profile }: HeaderProps) {
             </Link>
           </div>
 
-          {/* Navigation Desktop - hidden sur mobile/tablet */}
-          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base"
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+          <div className="absolute flex w-full h-full items-center justify-center">
+            {/* Navigation Desktop - hidden sur mobile/tablet */}
+            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+          </div>
 
           {/* Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
