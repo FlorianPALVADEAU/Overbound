@@ -6,16 +6,10 @@ import { settingsQuery } from '@/sanity/lib/queries'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-type PageParams = {
-  params: {
-    slug: string
-  }
-}
-
 async function loadPost(slug: string) {
   try {
     return await fetchSinglePost(slug)
-  } catch (error) {
+  } catch {
     return null
   }
 }
@@ -23,19 +17,19 @@ async function loadPost(slug: string) {
 async function loadSettings() {
   try {
     return await client.fetch(settingsQuery)
-  } catch (error) {
+  } catch {
     return null
   }
 }
 
-export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
-  const slug = params.slug
+export async function generateMetadata(
+  props: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await props.params
   const [post, settings] = await Promise.all([loadPost(slug), loadSettings()])
 
   if (!post) {
-    return {
-      title: 'Article introuvable — OverBound',
-    }
+    return { title: 'Article introuvable — OverBound' }
   }
 
   const siteTitle = settings?.siteTitle || 'OverBound'
@@ -55,8 +49,10 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   }
 }
 
-export default async function BlogPostPage({ params }: PageParams) {
-  const slug = params.slug
+export default async function BlogPostPage(
+  props: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await props.params
   const post = await loadPost(slug)
 
   if (!post) {
@@ -73,7 +69,11 @@ export default async function BlogPostPage({ params }: PageParams) {
         </div>
         {post.mainImage && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={urlFor(post.mainImage).width(1200).height(600).url()} alt="" className="rounded-2xl w-full" />
+          <img
+            src={urlFor(post.mainImage).width(1200).height(600).url()}
+            alt=""
+            className="rounded-2xl w-full"
+          />
         )}
       </header>
 
