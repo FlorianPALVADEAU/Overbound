@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react'
 import { Button } from '../ui/button'
+import Link from 'next/link'
 
 const WhatsOverbound = () => {
   return (
@@ -40,9 +41,11 @@ const WhatsOverbound = () => {
               Overbound sert à recréer ce que notre société a perdu : la force du collectif, le dépassement de soi, et la fierté d'avoir accompli quelque chose de grand.
             </p>
           </div>
-          <Button variant={'secondary'} className="lg:w-56 lg:h-14 md:w-48 md:h-12 xs:w-48 xs:h-12 text-md font-semibold">
-            Je veux en savoir plus
-          </Button>
+          <Link href="/about" className="w-full lg:w-auto">
+            <Button variant={'secondary'} className="lg:w-56 lg:h-14 md:w-48 md:h-12 xs:w-48 xs:h-12 text-md font-semibold">
+              Je veux en savoir plus
+            </Button>
+          </Link>
         </div>
       </div>
 

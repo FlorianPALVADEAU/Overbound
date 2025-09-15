@@ -9,6 +9,7 @@ import { QuestionType } from '@/types/Question'
 import { Button } from '../ui/button'
 import { ArrowDown } from 'lucide-react'
 import { v4 as uuid } from 'uuid';
+import Link from 'next/link'
 
 const FAQ = () => {
     const emptyQuestion = {id: '', title: '', answer: ''}
@@ -55,7 +56,19 @@ const FAQ = () => {
             <Headings 
                 title="FAQ" 
                 cta={
-                    <Button variant="outline">Voir plus</Button>
+                        <Link href="/obstacles">
+                            <Button 
+                                variant={'outline'} 
+                                className="
+                                    w-full sm:w-44 md:w-48 xl:w-48 
+                                    h-10 sm:h-11 md:h-12
+                                    text-sm sm:text-base
+                                    mt-2 sm:mt-0
+                                "
+                            >
+                                Voir tout
+                            </Button>
+                        </Link>
                 }
                 sx='flex-row! justify-between!'
             />

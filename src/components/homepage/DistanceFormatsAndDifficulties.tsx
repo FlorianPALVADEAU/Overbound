@@ -4,6 +4,7 @@ import Headings from "../globals/Headings";
 import SubHeadings from "../globals/SubHeadings";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 const steps = [
 	{
@@ -13,7 +14,7 @@ const steps = [
 	},
 	{
 		title: "Étape 2",
-		text: "🟢 Découverte : Obstacles classiques, pas de contraintes.\n🟡 Élevée : Obstacles plus exigeants, pas de contraintes.\n🔴 Légende : Obstacles plus exigeants, chevilles & mains lestées.",
+		text: "🟢 Standard : Obstacles classiques, pas de contraintes.\n🟡 Guerrier : Obstacles plus exigeants, pas de contraintes.\n🔴 Légende : Obstacles plus exigeants, chevilles & mains lestées.",
 		image: "https://images.unsplash.com/photo-1602389569471-5df5bde61968?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
 	},
 	{
@@ -58,7 +59,9 @@ const FormatCard: React.FC<FormatCardProps> = ({ title, distance, buttonText, do
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex justify-end z-1">
-				<Button className="w-58 h-14">{buttonText}</Button>
+				<Link href="/events">
+					<Button className="w-58 h-14">{buttonText}</Button>
+				</Link>
 			</CardContent>
 		</Card>
 	);

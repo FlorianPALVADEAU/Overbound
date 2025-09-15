@@ -1,504 +1,468 @@
-// src/app/events/page.tsx
-/* eslint-disable react/no-unescaped-entities */
-import { createSupabaseServer } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { Calendar, MapPin, Navigation, Ticket as TicketIcon, Timer, ArrowLeft, Star, Mountain, Users, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Trophy,
-  Clock,
-  Search,
-  ArrowRight,
-  Sparkles
-} from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import Headings from '@/components/globals/Headings'
+import { useGetEventsWithTickets } from '../api/events/eventsQueries'
+import type { EventWithTickets } from '@/types/Event'
+import type { Ticket as TicketType } from '@/types/Ticket'
+import type { EventStatus } from '@/types/base.type'
 import Link from 'next/link'
+import ObstaclesPage from '../obstacles/page'
+import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
+import FAQ from '@/components/homepage/FAQ'
+import SubHeadings from '@/components/globals/SubHeadings'
+import WhichDistanceForMe from '@/components/WhichDistanceForMe'
+import { BrandBanner } from '@/components/homepage/HeroHeader'
 
-interface Event {
-  id: string
-  title: string
-  subtitle?: string
-  date: string
-  location: string
-  capacity: number
-  status: 'draft' | 'on_sale' | 'sold_out' | 'closed'
-  image_url?: string
-  registrations_count?: number
-  tickets?: {
-    id: string
-    name: string
-    base_price_cents: number
-    currency: string
-    race?: {
-      name: string
-      distance_km: number
-      difficulty: number
-    }
-  }[]
+const EventsMap = dynamic(() => import('@/components/events/EventsMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+      Chargement de la carte...
+    </div>
+  )
+})
+
+const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
+  draft: 'Bientôt disponible',
+  on_sale: 'Inscriptions ouvertes',
+  sold_out: 'Complet',
+  cancelled: 'Événement annulé',
+  completed: 'Événement passé'
 }
 
-export default async function EventsPage() {
-  const supabase = await createSupabaseServer()
+const EVENT_STATUS_STYLES: Record<EventStatus, string> = {
+  draft: 'border-slate-200 bg-slate-50 text-slate-600',
+  on_sale: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  sold_out: 'border-amber-200 bg-amber-50 text-amber-700',
+  cancelled: 'border-red-200 bg-red-50 text-red-700',
+  completed: 'border-blue-200 bg-blue-50 text-blue-700'
+}
 
-  // Récupérer tous les événements avec leurs tickets
-  const { data: events, error } = await supabase
-    .from('events')
-    .select(`
-      *,
-      tickets (
-        id,
-        name,
-        base_price_cents,
-        currency,
-        race:races!tickets_race_id_fkey (
-          name,
-          distance_km,
-          difficulty
-        )
-      )
-    `)
-    .in('status', ['on_sale', 'sold_out'])
-    .gte('date', new Date().toISOString())
-    .order('date', { ascending: true })
+const formatEventDateLong = (value: string) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Date à confirmer'
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date)
+}
 
-  if (error) {
-    console.error('Erreur lors de la récupération des événements:', error)
-  }
+const formatEventDateShort = (value: string) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'À confirmer'
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short'
+  }).format(date)
+}
 
-  // Compter les inscriptions pour chaque événement
-  const eventsWithCount = await Promise.all(
-    (events || []).map(async (event: Event) => {
-      const { count } = await supabase
-        .from('registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', event.id)
+const formatEventTime = (value: string) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
 
-      return {
-        ...event,
-        registrations_count: count || 0
-      }
-    })
-  )
+const formatTicketPrice = (ticket: TicketType | null | undefined) => {
+  if (!ticket?.base_price_cents || !ticket.currency) return 'Tarif communiqué prochainement'
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: ticket.currency.toUpperCase()
+  }).format(ticket.base_price_cents / 100)
+}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'on_sale': return 'default'
-      case 'sold_out': return 'destructive'
-      case 'closed': return 'secondary'
-      default: return 'outline'
-    }
-  }
+const formatDistance = (distance: number | null) => {
+  if (distance === null || distance === undefined) return null
+  return `${distance.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
+}
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'on_sale': return 'Inscriptions ouvertes'
-      case 'sold_out': return 'Complet'
-      case 'closed': return 'Inscriptions fermées'
-      case 'draft': return 'Bientôt disponible'
-      default: return status
-    }
-  }
+const getDifficultyColor = (difficulty: number) => {
+  if (difficulty <= 3) return 'bg-green-100 text-green-800'
+  if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800'
+  return 'bg-red-100 text-red-800'
+}
 
-  const getMinPrice = (tickets: Event['tickets']) => {
-    if (!tickets || tickets.length === 0) return null
-    const minPrice = Math.min(...tickets.map(t => t.base_price_cents))
-    const currency = tickets[0].currency
-    return {
-      price: minPrice,
-      currency,
-      formatted: (minPrice / 100).toLocaleString('fr-FR', {
-        style: 'currency',
-        currency: currency.toUpperCase()
+const startOfToday = () => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today
+}
+
+const EventsSkeleton = () => (
+  <div className="space-y-3">
+    {Array.from({ length: 4 }).map((_, index) => (
+      <div key={index} className="rounded-2xl border border-border bg-background p-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
+        <div className="mt-3 space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+export default function EventsPage() {
+  const { data, isLoading, isError, error, isFetching } = useGetEventsWithTickets()
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+
+  const upcomingEvents = useMemo(() => {
+    if (!data) return [] as EventWithTickets[]
+    const referenceDate = startOfToday()
+
+    return data
+      .filter((event) => {
+        const eventDate = new Date(event.date)
+        if (Number.isNaN(eventDate.getTime())) return true
+        return eventDate >= referenceDate
       })
-    }
-  }
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }, [data])
 
-  const upcomingEvents = eventsWithCount.filter(event => 
-    new Date(event.date) > new Date()
+  const eventsWithCoordinates = useMemo(
+    () =>
+      upcomingEvents.filter(
+        (event) => Number.isFinite(event.latitude) && Number.isFinite(event.longitude)
+      ),
+    [upcomingEvents]
   )
 
-  // Séparer les événements en catégories
-  const thisWeekEvents = upcomingEvents.filter(event => {
-    const eventDate = new Date(event.date)
-    const now = new Date()
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-    return eventDate <= weekFromNow
-  })
+  useEffect(() => {
+    if (!upcomingEvents.length) {
+      setSelectedEventId(null)
+      return
+    }
 
-  const laterEvents = upcomingEvents.filter(event => {
-    const eventDate = new Date(event.date)
-    const now = new Date()
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-    return eventDate > weekFromNow
-  })
+    // Vérifier si l'événement sélectionné existe encore
+    if (selectedEventId) {
+      const stillAvailable = upcomingEvents.some((event) => event.id === selectedEventId)
+      if (!stillAvailable) {
+        setSelectedEventId(null)
+      }
+    }
+  }, [upcomingEvents, selectedEventId])
+
+  const selectedEvent = useMemo(
+    () => upcomingEvents.find((event) => event.id === selectedEventId) ?? null,
+    [selectedEventId, upcomingEvents]
+  )
+
+  const handleBackToList = () => {
+    setSelectedEventId(null)
+  }
+
+  const handleEventSelect = (eventId: string) => {
+    setSelectedEventId(eventId)
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Header avec recherche */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-primary/10 rounded-full">
-              <Calendar className="h-12 w-12 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold mb-4">Événements OverBound</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Découvrez nos prochains événements sportifs et relevez de nouveaux défis ! 
-            Des courses accessibles aux défis extrêmes, trouvez l'événement qui vous correspond.
-          </p>
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-16">
+      <div className="w-full container mx-auto py-10 px-4 sm:px-10">
+        <section className="mb-12 text-center ">
+          <h1 className="sr-only">Événements Overbound</h1>
+          <Headings
+            title="Partez à la conquête de nos prochains défis"
+            description="Visualisez nos événements sur la carte, trouvez les courses proches de chez vous et plongez dans les détails de chaque ticket disponible."
+          />
+        </section>
 
-          {/* Barre de recherche */}
-          <div className="max-w-xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un événement, lieu ou course..."
-                className="pl-10 pr-4 h-12 text-base"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Calendar className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold">{upcomingEvents.length}</div>
-              <p className="text-sm text-muted-foreground">Événements à venir</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Users className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold">
-                {upcomingEvents.reduce((sum, event) => sum + (event.registrations_count || 0), 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">Participants inscrits</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Trophy className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold">
-                {upcomingEvents.reduce((sum, event) => sum + (event.capacity || 0), 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">Places disponibles</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Événements cette semaine */}
-        {thisWeekEvents.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <Sparkles className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Cette semaine</h2>
-              <Badge variant="secondary">{thisWeekEvents.length}</Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {thisWeekEvents.map((event) => {
-                const availableSpots = event.capacity - (event.registrations_count || 0)
-                const isSoldOut = event.status === 'sold_out' || availableSpots <= 0
-                const minPrice = getMinPrice(event.tickets)
-                const isUpcoming = new Date(event.date) > new Date()
-                const isToday = new Date(event.date).toDateString() === new Date().toDateString()
-                const daysUntil = Math.ceil((new Date(event.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-
-                return (
-                  <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                    {/* Image de l'événement */}
-                    <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/20">
-                      {event.image_url ? (
-                        <img 
-                          src={event.image_url} 
-                          alt={event.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <Trophy className="h-16 w-16 text-primary/40" />
-                        </div>
-                      )}
-                      
-                      {/* Badge de statut */}
-                      <div className="absolute top-4 right-4">
-                        <Badge variant={getStatusColor(event.status)}>
-                          {getStatusLabel(event.status)}
-                        </Badge>
-                      </div>
-
-                      {/* Badge urgence */}
-                      {isToday && (
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-red-500 text-white animate-pulse">
-                            Aujourd'hui !
-                          </Badge>
-                        </div>
-                      )}
-                      {!isToday && daysUntil <= 7 && daysUntil > 0 && (
-                        <div className="absolute top-4 left-4">
-                          <Badge variant="secondary">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {daysUntil} jour{daysUntil > 1 ? 's' : ''}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-
-                    <CardHeader>
-                      <CardTitle className="text-xl line-clamp-1">{event.title}</CardTitle>
-                      {event.subtitle && (
-                        <p className="text-muted-foreground line-clamp-2">{event.subtitle}</p>
-                      )}
-                    </CardHeader>
-
-                    <CardContent>
-                      {/* Informations principales */}
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {new Date(event.date).toLocaleDateString('fr-FR', {
-                              weekday: 'short',
-                              day: 'numeric',
-                              month: 'short'
-                            })} à {new Date(event.date).toLocaleTimeString('fr-FR', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="truncate">{event.location}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span>{availableSpots} places disponibles</span>
-                        </div>
-                      </div>
-
-                      {/* Prix et inscription */}
-                      <div className="space-y-3">
-                        {minPrice && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">À partir de :</span>
-                            <span className="font-bold text-primary">{minPrice.formatted}</span>
-                          </div>
-                        )}
-
-                        {/* Barre de progression */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Inscriptions</span>
-                            <span>{event.registrations_count} / {event.capacity}</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-1.5">
-                            <div 
-                              className={`rounded-full h-1.5 transition-all ${
-                                isSoldOut ? 'bg-red-500' : 'bg-primary'
-                              }`}
-                              style={{ 
-                                width: `${Math.min(100, ((event.registrations_count || 0) / event.capacity) * 100)}%` 
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        {/* Action */}
-                        <Link href={`/events/${event.id}`} className="block">
-                          <Button 
-                            className="w-full group" 
-                            disabled={!isUpcoming}
-                            variant={isSoldOut ? "outline" : "default"}
-                          >
-                            {!isUpcoming ? (
-                              <>
-                                <Clock className="h-4 w-4 mr-2" />
-                                Terminé
-                              </>
-                            ) : isSoldOut ? (
-                              <>
-                                <Users className="h-4 w-4 mr-2" />
-                                Complet
-                              </>
-                            ) : (
-                              <>
-                                <Trophy className="h-4 w-4 mr-2" />
-                                S'inscrire
-                                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                              </>
-                            )}
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+        {isError && (
+          <div className="mb-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-left text-red-700">
+            Une erreur est survenue lors du chargement des événements : {error?.message}
           </div>
         )}
 
-        {/* Autres événements */}
-        {laterEvents.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-6">
-              <Calendar className="h-6 w-6 text-muted-foreground" />
-              <h2 className="text-2xl font-bold">Prochainement</h2>
-              <Badge variant="outline">{laterEvents.length}</Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {laterEvents.map((event) => {
-                const availableSpots = event.capacity - (event.registrations_count || 0)
-                const isSoldOut = event.status === 'sold_out' || availableSpots <= 0
-                const minPrice = getMinPrice(event.tickets)
-                const isUpcoming = new Date(event.date) > new Date()
-
-                return (
-                  <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                    {/* Image de l'événement */}
-                    <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/20">
-                      {event.image_url ? (
-                        <img 
-                          src={event.image_url} 
-                          alt={event.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <Trophy className="h-16 w-16 text-primary/40" />
-                        </div>
-                      )}
-                      
-                      {/* Badge de statut */}
-                      <div className="absolute top-4 right-4">
-                        <Badge variant={getStatusColor(event.status)}>
-                          {getStatusLabel(event.status)}
-                        </Badge>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+          {/* Barre de gauche - Liste ou Détail */}
+          <section className="order-2 lg:order-1 lg:col-span-2">
+            {selectedEvent ? (
+              /* Mode Détail - Événement sélectionné */
+              <div className="space-y-6">
+                <Card className="border border-border">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleBackToList}
+                        className="p-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-semibold leading-tight">
+                          {selectedEvent.title}
+                        </CardTitle>
+                        {selectedEvent.subtitle && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {selectedEvent.subtitle}
+                          </p>
+                        )}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={`${EVENT_STATUS_STYLES[selectedEvent.status]} text-xs font-medium`}
+                      >
+                        {EVENT_STATUS_LABELS[selectedEvent.status]}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {formatEventDateLong(selectedEvent.date)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {formatEventTime(selectedEvent.date)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedEvent.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedEvent.capacity} places disponibles</span>
                       </div>
                     </div>
 
-                    <CardHeader>
-                      <CardTitle className="text-xl line-clamp-1">{event.title}</CardTitle>
-                      {event.subtitle && (
-                        <p className="text-muted-foreground line-clamp-2">{event.subtitle}</p>
-                      )}
-                    </CardHeader>
-
-                    <CardContent>
-                      {/* Informations principales */}
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {new Date(event.date).toLocaleDateString('fr-FR', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long'
-                            })}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="truncate">{event.location}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span>{availableSpots} places disponibles</span>
-                        </div>
+                    {selectedEvent.description && (
+                      <div>
+                        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                          Description
+                        </h3>
+                        <p className="text-sm leading-relaxed text-foreground/80">
+                          {selectedEvent.description}
+                        </p>
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                      {/* Prix et inscription */}
-                      <div className="space-y-3">
-                        {minPrice && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">À partir de :</span>
-                            <span className="font-bold text-primary">{minPrice.formatted}</span>
-                          </div>
-                        )}
-
-                        {/* Barre de progression */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Inscriptions</span>
-                            <span>{event.registrations_count} / {event.capacity}</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-1.5">
-                            <div 
-                              className={`rounded-full h-1.5 transition-all ${
-                                isSoldOut ? 'bg-red-500' : 'bg-primary'
-                              }`}
-                              style={{ 
-                                width: `${Math.min(100, ((event.registrations_count || 0) / event.capacity) * 100)}%` 
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        {/* Action */}
-                        <Link href={`/events/${event.id}`} className="block">
-                          <Button 
-                            className="w-full group" 
-                            disabled={!isUpcoming}
-                            variant={isSoldOut ? "outline" : "default"}
+                {/* Tickets disponibles */}
+                <Card className="border border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Formats disponibles ({selectedEvent.tickets?.length || 0})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedEvent.tickets && selectedEvent.tickets.length ? (
+                      <div className="space-y-4">
+                        {selectedEvent.tickets.map((ticket) => (
+                          <div
+                            key={ticket.id}
+                            className="rounded-lg border border-border bg-background p-4"
                           >
-                            {!isUpcoming ? (
-                              <>
-                                <Clock className="h-4 w-4 mr-2" />
-                                Terminé
-                              </>
-                            ) : isSoldOut ? (
-                              <>
-                                <Users className="h-4 w-4 mr-2" />
-                                Complet
-                              </>
-                            ) : (
-                              <>
-                                <Trophy className="h-4 w-4 mr-2" />
-                                S'inscrire
-                                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                              </>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-base mb-1">
+                                  {ticket.name}
+                                </h4>
+                                {ticket.description && (
+                                  <p className="text-sm text-muted-foreground mb-3">
+                                    {ticket.description}
+                                  </p>
+                                )}
+                                
+                                <div className="flex flex-wrap items-center gap-3 text-xs">
+                                  {formatDistance(ticket.distance_km) && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Mountain className="h-3 w-3 mr-1" />
+                                      {formatDistance(ticket.distance_km)}
+                                    </Badge>
+                                  )}
+                                  {ticket.quota && (
+                                    <Badge variant="outline" className="text-xs">
+                                      Places : {ticket.quota}
+                                    </Badge>
+                                  )}
+                                  {ticket.requires_document && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Document requis
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-primary mb-2">
+                                  {formatTicketPrice(ticket)}
+                                </div>
+                                <Link href={`/events/${selectedEvent.id}?ticket=${ticket.id}`}>
+                                  <Button size="sm" className="w-full">
+                                    S'inscrire
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                            
+                            {(ticket.sales_start || ticket.sales_end) && (
+                              <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                                {ticket.sales_start && (
+                                  <span className="mr-4">
+                                    Ouverture : {formatEventDateShort(ticket.sales_start)}
+                                  </span>
+                                )}
+                                {ticket.sales_end && (
+                                  <span>
+                                    Clôture : {formatEventDateShort(ticket.sales_end)}
+                                  </span>
+                                )}
+                              </div>
                             )}
-                          </Button>
-                        </Link>
+                          </div>
+                        ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          </div>
-        )}
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                        Les informations sur les tickets seront bientôt disponibles.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              /* Mode Liste - Preview des événements */
+              <Card className="border border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Timer className="h-5 w-5 text-primary" />
+                    Événements à venir ({upcomingEvents.length})
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Cliquez sur un événement pour voir les détails et les tickets disponibles
+                  </p>
+                </CardHeader>
+                <CardContent className="max-h-[640px] space-y-3 overflow-y-auto pr-2">
+                  {isLoading && !data ? (
+                    <EventsSkeleton />
+                  ) : upcomingEvents.length ? (
+                    upcomingEvents.map((event) => {
+                      const ticketsCount = event.tickets?.length ?? 0
+                      const statusLabel = EVENT_STATUS_LABELS[event.status]
+                      const statusClasses = EVENT_STATUS_STYLES[event.status]
+                      const minPrice = event.tickets && event.tickets.length > 0 
+                        ? Math.min(...event.tickets.map(t => t.base_price_cents || 0))
+                        : null
 
-        {/* Aucun événement */}
-        {upcomingEvents.length === 0 && (
-          <Card className="max-w-md mx-auto">
-            <CardContent className="text-center py-12">
-              <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun événement à venir</h3>
-              <p className="text-muted-foreground mb-4">
-                Tous nos événements sont actuellement complets ou fermés.
-              </p>
-              <Link href="/races">
-                <Button>Découvrir nos courses</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+                      return (
+                        <button
+                          key={event.id}
+                          type="button"
+                          onClick={() => handleEventSelect(event.id)}
+                          className="group w-full rounded-lg border border-border bg-background p-4 text-left transition-all hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-base leading-tight mb-1">
+                                {event.title}
+                              </h3>
+                              {event.subtitle && (
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {event.subtitle}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className={`${statusClasses} whitespace-nowrap text-xs font-medium`}>
+                              {statusLabel}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatEventDateShort(event.date)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {event.location}
+                              </span>
+                            </div>
+                            
+                            <div className="text-right">
+                              {minPrice && minPrice > 0 && (
+                                <div className="text-sm font-semibold text-primary">
+                                  dès {(minPrice / 100).toFixed(0)}€
+                                </div>
+                              )}
+                              <div className="text-xs text-muted-foreground">
+                                {ticketsCount} format{ticketsCount > 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border/60 bg-background p-6 text-center text-muted-foreground">
+                      Aucun événement à afficher pour le moment. Revenez bientôt !
+                    </div>
+                  )}
+
+                  {!isLoading && isFetching && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      Mise à jour des données...
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </section>
+
+          {/* Carte à droite */}
+          <section className="order-1 lg:order-2 lg:col-span-3">
+            <div className="relative h-[420px] overflow-hidden rounded-3xl border border-border bg-muted lg:h-[640px]">
+              {isLoading && !eventsWithCoordinates.length ? (
+                <Skeleton className="h-full w-full" />
+              ) : eventsWithCoordinates.length ? (
+                <EventsMap
+                  events={eventsWithCoordinates}
+                  selectedEventId={selectedEventId}
+                  onSelectEvent={setSelectedEventId}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center p-10 text-center text-muted-foreground">
+                  <div>
+                    <Navigation className="mx-auto mb-4 h-10 w-10" />
+                    <p className="text-base font-medium">Aucun événement géolocalisé disponible pour le moment.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Dès que nous aurons des épreuves géolocalisées, elles apparaîtront ici.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+      </div>
+      <WhichDistanceForMe />
+      <ObstaclesOverview />
+      <FAQ />
+      <div className="w-full flex flex-col gap-2 px-4 sm:px-10 lg:px-32">
+        <SubHeadings title="Ils nous font confiance" />
+        <BrandBanner />
       </div>
     </main>
   )
