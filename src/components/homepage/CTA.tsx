@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button } from '../ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
 
 const CTA = () => {
   return (
@@ -14,12 +15,14 @@ const CTA = () => {
                     Les premiers guerriers écriront l'histoire d'Overbound. Seras-tu l'un d'eux ?
                 </p>
             </div>
-            <Button 
-                className='w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold'
-                variant='destructive'
-            >
-                Je m'inscris maintenant
-            </Button>
+            <Link href="/events">
+                <Button 
+                    className='w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold'
+                    variant='destructive'
+                >
+                    Je m'inscris maintenant
+                </Button>
+            </Link>
         </div>
         
         {/* Image de fond responsive */}

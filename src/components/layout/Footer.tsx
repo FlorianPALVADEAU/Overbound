@@ -7,7 +7,7 @@ export function Footer() {
         { name: 'Les courses', href: '/races'},
         { name: 'Les obstacles', href: '/obstacles'},
         { name: 'Entrainements', href: '/trainings'},
-        { name: 'Shop', href: '/shop'},
+        // { name: 'Shop', href: '/shop'},
         { name: 'Blog', href: '/blog'},
         { name: 'À propos', href: '/about'},
     ],

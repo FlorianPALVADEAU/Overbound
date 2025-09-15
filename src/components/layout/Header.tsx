@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -58,7 +57,7 @@ export function Header({ user, profile }: HeaderProps) {
   }
 
   const navigation = [
-    { name: 'Courses', href: '/races', icon: MedalIcon },
+    { name: 'Courses', href: '/events', icon: MedalIcon },
     { name: 'Obstacles', href: '/obstacles', icon: BrickWallIcon },
     { name: 'Entrainements', href: '/trainings', icon: DumbbellIcon },
     // { name: 'Shop', href: '/shop', icon: ShoppingBagIcon },
@@ -81,7 +80,7 @@ export function Header({ user, profile }: HeaderProps) {
         <div className="w-full relative flex h-14 sm:h-16 items-center justify-between">
           
           {/* Logo - responsive text visibility */}
-          <div className="flex items-between">
+          <div className="flex items-between z-10">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <CalendarIcon className="h-4 w-4" />

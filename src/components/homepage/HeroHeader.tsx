@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 export const BrandBanner = () => {
     return (
@@ -66,7 +67,7 @@ export const HeroHeader = () => {
                     </div>
                     <div className="flex flex-col items-start gap-2">
                         <Button className="w-full sm:w-48 md:w-48 lg:w-64 h-12 sm:h-12 md:h-12 lg:h-16 bg-red-600 hover:bg-red-700 text-lg sm:text-xl font-semibold">
-                            Je me lance !
+                            <Link href="/events" className="w-full h-full flex items-center justify-center">Je m'inscris maintenant</Link>
                         </Button>
                         <p className="text-sm text-gray-300 italic">Déjà 50+ avis positifs récoltés !</p>
                     </div>

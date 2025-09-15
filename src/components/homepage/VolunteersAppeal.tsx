@@ -56,7 +56,7 @@ const VolunteersAppeal = () => {
                 <div className='w-full lg:w-3/5 h-auto flex flex-col justify-start items-start gap-4 sm:gap-5 md:gap-6'>
                     <div className='text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed space-y-4'>
                         <p>
-                            Overbound™ ne serait rien sans ses volontaires.
+                            Overbound ne serait rien sans ses volontaires.
                             Être volontaire, ce n'est pas "aider dans l'ombre", c'est être au coeur de l'action.
                         </p>
                         <p>

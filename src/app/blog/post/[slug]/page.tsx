@@ -1,36 +1,66 @@
-'use client'
-import axiosClient from '@/app/api/axiosClient'
-import { fetchSinglePost, useGetPost } from '@/app/api/blog/blogQueries'
+import { fetchSinglePost } from '@/app/api/blog/blogQueries'
 import RichText from '@/components/RichText'
 import { client } from '@/sanity/lib/client'
 import { urlFor } from '@/sanity/lib/image'
-import { postBySlugQuery, settingsQuery } from '@/sanity/lib/queries'
+import { settingsQuery } from '@/sanity/lib/queries'
+import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-export async function generateMetadata({ params }: { params: any }) {
-  const { slug } = await Promise.resolve(params)
-  const [post, settings] = await Promise.all([
-    fetchSinglePost(slug),
-    axiosClient.get(settingsQuery),
-  ])
-  if (!post) return { title: 'Article introuvable — OverBound' }
-  const title = `${post.title} — ${settings.data?.siteTitle || 'OverBound'}`
-  const description = post.excerpt || settings.data?.description
-  const og = post.ogImage || settings.data?.ogImage
-  const images = og ? [{ url: urlFor(og).width(1200).height(630).url() }] : []
-  return { title, description, openGraph: { title, description, images } }
+type PageParams = {
+  params: {
+    slug: string
+  }
 }
 
-export default function BlogPostPage({ params }: { params: any }) {
-  const { slug } = params
-  const { data: post, isLoading, error } = useGetPost(slug)
+async function loadPost(slug: string) {
+  try {
+    return await fetchSinglePost(slug)
+  } catch (error) {
+    return null
+  }
+}
 
-  if (isLoading) {
-    return <div>Chargement...</div>
+async function loadSettings() {
+  try {
+    return await client.fetch(settingsQuery)
+  } catch (error) {
+    return null
+  }
+}
+
+export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
+  const slug = params.slug
+  const [post, settings] = await Promise.all([loadPost(slug), loadSettings()])
+
+  if (!post) {
+    return {
+      title: 'Article introuvable — OverBound',
+    }
   }
 
-  if (error || !post) {
-    return <div>Article introuvable.</div>
+  const siteTitle = settings?.siteTitle || 'OverBound'
+  const title = `${post.title} — ${siteTitle}`
+  const description = post.excerpt || settings?.description
+  const ogImage = post.ogImage || settings?.ogImage
+  const ogImageUrl = ogImage ? urlFor(ogImage).width(1200).height(630).url() : undefined
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: ogImageUrl ? [ogImageUrl] : undefined,
+    },
+  }
+}
+
+export default async function BlogPostPage({ params }: PageParams) {
+  const slug = params.slug
+  const post = await loadPost(slug)
+
+  if (!post) {
+    notFound()
   }
 
   return (

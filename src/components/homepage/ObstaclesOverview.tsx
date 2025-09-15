@@ -5,6 +5,7 @@ import Headings from '@/components/globals/Headings'
 import { Button } from '@/components/ui/button'
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel'
 import { useGetObstacles } from '@/app/api/obstacles/obstaclesQueries'
+import Link from 'next/link'
 
 const ObstaclesOverview = () => {
 
@@ -17,17 +18,19 @@ const ObstaclesOverview = () => {
                     title="Quelques obstacles"
                     description="Découvre une sélection d'obstacles emblématiques qui te mettront au défi lors de l'Overbound."
                     cta={
-                        <Button 
-                            variant={'outline'} 
-                            className="
-                                w-full sm:w-44 md:w-48 xl:w-48 
-                                h-10 sm:h-11 md:h-12
-                                text-sm sm:text-base
-                                mt-2 sm:mt-0
-                            "
-                        >
-                            Voir tout
-                        </Button>
+                        <Link href="/obstacles">
+                            <Button 
+                                variant={'outline'} 
+                                className="
+                                    w-full sm:w-44 md:w-48 xl:w-48 
+                                    h-10 sm:h-11 md:h-12
+                                    text-sm sm:text-base
+                                    mt-2 sm:mt-0
+                                "
+                            >
+                                Voir tout
+                            </Button>
+                        </Link>
                     }
                     sx='mb-4 sm:mb-6 md:mb-8'
                 />

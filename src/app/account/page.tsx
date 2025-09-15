@@ -191,7 +191,7 @@ export default async function AccountPage() {
                 <p className="text-muted-foreground mb-4">
                   Tu n'as pas encore d'inscription à un événement.
                 </p>
-                <Link href="/">
+                <Link href="/events">
                   <Button>Découvrir les événements</Button>
                 </Link>
               </div>

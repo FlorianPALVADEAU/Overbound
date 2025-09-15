@@ -1,4 +1,5 @@
 import { Timestamp, EventStatus, UUID } from "./base.type";
+import type { Ticket } from "./Ticket";
 
 export interface Event {
   id: UUID;
@@ -12,8 +13,17 @@ export interface Event {
   external_provider: string | null;
   external_event_id: string | null;
   external_url: string | null;
+  description: string;
+  image_url: string | null;
+  latitude: number;
+  longitude: number;
+
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+export interface EventWithTickets extends Event {
+  tickets: Ticket[] | null;
 }
 
 export interface EventFilters {

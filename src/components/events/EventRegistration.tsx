@@ -1,5 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
-// src/components/events/EventRegistration.tsx
 'use client'
 import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
