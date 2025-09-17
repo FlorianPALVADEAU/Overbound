@@ -4,13 +4,22 @@ import { Button } from '../ui/button'
 import Headings from '../globals/Headings'
 import Link from 'next/link'
 import { useGetEvents } from '@/app/api/events/eventsQueries'
+import { Skeleton } from '../ui/skeleton'
+import Image from 'next/image'
 
 const NextEvents = () => {
 	
 	const { data, isLoading, isError } = useGetEvents()
 
 	return (
-		<div className='w-full min-h-[60vh] xl:h-[80vh] py-12 sm:py-16 xl:py-20 px-4 sm:px-6 xl:px-32'>
+		<div className='w-full min-h-[60vh] xl:h-[80vh] py-12 sm:py-16 xl:py-20 px-4 sm:px-6 xl:px-32 relative overflow-hidden'>
+			<Image 
+				src={"/images/decoration-1.png"} 
+				alt="Background" 
+				className='object-cover object-center absolute -z-10 -right-20 -top-2 opacity-15'
+				height={'600'}
+				width={'600'}
+			/>
 			<div className='flex flex-col gap-8 sm:gap-10 xl:gap-12 h-full'>
 				<Headings 
 					title="Parce qu'il n'y a qu'une seule première fois."
@@ -22,7 +31,7 @@ const NextEvents = () => {
 					<div className='flex flex-col xl:flex-row xl:items-center gap-6 sm:gap-8 xl:gap-12 flex-1'>
 						{
 							isLoading ? (
-								<p>Chargement des événements...</p>
+								<Skeleton className="object-cover w-full xl:w-4/6 h-48 sm:h-64 md:h-72 xl:h-[50vh] rounded-lg shadow-lg" />
 							) : isError ? (
 								<img 
 									src="https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
@@ -48,16 +57,16 @@ const NextEvents = () => {
 
 						<div className='w-full xl:w-2/6 flex flex-col gap-6 xl:gap-4 xl:h-full xl:justify-between'>
 							<div className='flex flex-col gap-3 xl:gap-2'>
-								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-800 leading-relaxed'>
+								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
 									Le 12 octobre 2025, la première édition d'Overbound prendra vie à Plaisir.
 								</p>
-								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-700 leading-relaxed'>
+								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
 									Un parcours sauvage de 6 & 12 km, sculpté par la nature, où l'eau glacée, la boue et les obstacles inédits mettront à l'épreuve ta force et ton mental.
 								</p>
-								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-700 leading-relaxed'>
+								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
 									Pas de décors artificiels, pas de compromis : juste toi, les éléments, et la tribu .
 								</p>
-								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-800 font-medium leading-relaxed'>
+								<p className='text-base sm:text-lg xl:text-lg text-justify text-white font-medium leading-relaxed'>
 									Es-tu prêt à écrire l'histoire avec nous ?
 								</p>
 							</div>

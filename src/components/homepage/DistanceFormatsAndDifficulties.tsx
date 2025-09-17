@@ -60,7 +60,7 @@ const FormatCard: React.FC<FormatCardProps> = ({ title, distance, buttonText, do
 			</CardHeader>
 			<CardContent className="flex justify-end z-1">
 				<Link href="/events">
-					<Button className="w-58 h-14">{buttonText}</Button>
+					<Button className="w-58 h-14 bg-gradient-to-r from-[#26AA26] to-[#1e8a1e] text-white border-0">{buttonText}</Button>
 				</Link>
 			</CardContent>
 		</Card>
@@ -145,7 +145,10 @@ export default function DistanceFormatsAndDifficulties() {
 	}, [stepRefs.current.length]);
 
 	return (
-		<section className="w-full items-center justify-center gap-24 py-20 pt-40 px-4 sm:px-6 xl:px-32">
+		<section 
+			className="w-full items-center justify-center gap-24 py-20 pt-40 px-4 sm:px-6 xl:px-32"
+			style={{backgroundColor: '#141414'}}
+		>
 			<div className="flex flex-col gap-8 sm:gap-10 xl:gap-12 h-full">
 				<Headings
 					title="Distances, Formats & Difficulté"
@@ -169,7 +172,7 @@ export default function DistanceFormatsAndDifficulties() {
 
 				<SubHeadings 
 					title="Peu importe ton niveau, il y a un format rien que pour toi" 
-					sx="mt-12"
+					sx="mt-12 text-white"
 				/>
 				{/* === TIMELINE === */}
 				<div className="relative flex flex-col lg:flex-row w-full gap-12">
@@ -236,7 +239,7 @@ export default function DistanceFormatsAndDifficulties() {
 								height: lineBounds.height,
 								width: 6,
 							}}
-							className="absolute left-6 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 rounded-full shadow-sm"
+							className="absolute left-6 bg-gradient-to-b from-[#26AA26] via-[#26AA26] to-[#1e8a1e] rounded-full shadow-sm"
 						/>
 
 						<div className="flex flex-col gap-16 lg:gap-20">
@@ -257,18 +260,18 @@ export default function DistanceFormatsAndDifficulties() {
 												? lastPointRef
 												: null
 										}
-										className={`absolute left-[15px] top-8 w-5 h-5 rounded-full border-3 transition-all duration-700 ease-out ${
+										className={`absolute left-[17px] top-8 w-5 h-5 rounded-full border-3 transition-all duration-700 ease-out ${
 											activeStep >= index
-												? "bg-blue-500 border-blue-600 shadow-lg shadow-blue-200"
+												? "bg-[#26AA26] border-[#1e8a1e] shadow-lg shadow-[#26AA26]/30"
 												: "bg-white border-gray-300"
 										}`}
 										animate={{
 											scale: activeStep === index ? 1.4 : activeStep > index ? 1.1 : 1,
 											boxShadow:
 												activeStep === index
-													? "0 0 20px rgba(59, 130, 246, 0.4)"
+													? "0 0 20px rgba(38, 170, 38, 0.4)"
 													: activeStep > index
-													? "0 0 10px rgba(59, 130, 246, 0.2)"
+													? "0 0 10px rgba(38, 170, 38, 0.2)"
 													: "0 2px 4px rgba(0, 0, 0, 0.1)",
 										}}
 										transition={{ duration: 0.5, ease: "easeOut" }}
@@ -277,7 +280,7 @@ export default function DistanceFormatsAndDifficulties() {
 									{/* Pulse effect pour l'étape active */}
 									{activeStep === index && (
 										<motion.div
-											className="absolute left-[13px] top-[30px] w-6 h-6 rounded-full bg-blue-400 opacity-30"
+											className="absolute left-[15px] top-[30px] w-6 h-6 rounded-full bg-[#26AA26] opacity-30"
 											animate={{
 												scale: [1, 1.8, 1],
 												opacity: [0.3, 0, 0.3],
@@ -301,16 +304,16 @@ export default function DistanceFormatsAndDifficulties() {
 										viewport={{ once: true, margin: "-10%" }}
 									>
 										<Card
-											className={`transition-all duration-700 ease-out transform ${
-												activeStep === index
-													? "shadow-xl border-blue-200 scale-[1.02] bg-blue-50/50"
+											className={`transition-all duration-700 ease-out transform bg-gray-200  ${
+												activeStep !== index
+													? "shadow-xl border-[#26AA26]/50 scale-[1.02] bg-[#26AA26]/5"
 													: "shadow-md hover:shadow-lg"
 											}`}
 										>
 											<CardHeader>
 												<CardTitle
 													className={`transition-all duration-500 ${
-														activeStep === index ? "text-blue-600" : "text-gray-800"
+														activeStep !== index ? "text-[#26AA26]" : "text-gray-800"
 													}`}
 												>
 													{step.title}
@@ -319,10 +322,10 @@ export default function DistanceFormatsAndDifficulties() {
 											<CardContent>
 												<motion.p
 													className={`whitespace-pre-line transition-colors duration-500 ${
-														activeStep === index ? "text-gray-700" : "text-gray-600"
+														activeStep !== index ? "text-gray-700" : "text-gray-600"
 													}`}
 													animate={{
-														color: activeStep === index ? "#374151" : "#6B7280",
+														color: activeStep !== index ? "#374151" : "#6B7280",
 													}}
 												>
 													{step.text}
