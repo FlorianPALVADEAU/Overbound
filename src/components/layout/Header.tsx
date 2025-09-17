@@ -166,7 +166,7 @@ export function Header({ user, profile }: HeaderProps) {
             )}
 
             {/* Mobile menu button - affiché seulement sur mobile/tablet */}
-            <div className="lg:hidden">
+            <div className="lg:hidden z-10">
               <Button
                 variant="ghost"
                 size="sm"
@@ -185,7 +185,7 @@ export function Header({ user, profile }: HeaderProps) {
 
         {/* Navigation Mobile - améliorée avec animations */}
         {mobileMenuOpen && (
-          <div className="border-t pb-3 pt-4 lg:hidden">
+          <div className="absolute border-t pb-3 pt-4 z-10 lg:hidden bg-secondary w-full left-0">
             <div className="space-y-1">
               {navigation.map((item) => (
                 <Link
