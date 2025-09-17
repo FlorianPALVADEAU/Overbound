@@ -155,7 +155,7 @@ export function Header({ user, profile }: HeaderProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 z-10">
                 <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>

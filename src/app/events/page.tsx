@@ -188,10 +188,10 @@ export default function EventsPage() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
           {/* Barre de gauche - Liste ou Détail */}
-          <section className="order-2 lg:order-1 lg:col-span-2">
+          <section className="h-full order-2 lg:order-1 lg:col-span-2">
             {selectedEvent ? (
               /* Mode Détail - Événement sélectionné */
-              <div className="space-y-6">
+              <div className="h-full space-y-6">
                 <Card className="border border-border">
                   <CardHeader>
                     <div className="flex items-center gap-3">
@@ -343,7 +343,7 @@ export default function EventsPage() {
               </div>
             ) : (
               /* Mode Liste - Preview des événements */
-              <Card className="border border-border">
+              <Card className="h-full border border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <Timer className="h-5 w-5 text-primary" />

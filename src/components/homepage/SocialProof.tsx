@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Star, Play, Pause } from 'lucide-react'
 import Headings from '../globals/Headings'
 import { BrandBanner } from './HeroHeader'
@@ -9,9 +9,8 @@ import { testimonials, TestimonialType, TestimonialTypeEnum } from '@/datas/Test
 
 const SocialProof = () => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
-  const [visibleCount, setVisibleCount] = useState(21) // Nombre initial d'éléments à afficher
+  const [visibleCount, setVisibleCount] = useState(0) // Nombre initial d'éléments à afficher
   const [isLoading, setIsLoading] = useState(false)
-
   const toggleVideo = (id: string) => {
     setPlayingVideo(playingVideo === id ? null : id)
   }
@@ -23,6 +22,30 @@ const SocialProof = () => {
       setIsLoading(false)
     }, 500)
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1280px)')
+    const updateVisibleCount = (matches: boolean) => {
+      setVisibleCount(matches ? 21 : 6)
+    }
+
+    updateVisibleCount(mediaQuery.matches)
+
+    const handleMediaQueryChange = (event: MediaQueryListEvent) => {
+      updateVisibleCount(event.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleMediaQueryChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaQueryChange)
+    }
+  }, [])
+  
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
