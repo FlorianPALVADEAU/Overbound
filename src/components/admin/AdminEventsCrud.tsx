@@ -45,6 +45,8 @@ interface Event {
   subtitle?: string
   date: string
   location: string
+  latitude?: number
+  longitude?: number
   capacity: number
   status: 'draft' | 'on_sale' | 'sold_out' | 'closed'
   external_provider?: string
@@ -60,6 +62,8 @@ interface EventFormData {
   subtitle: string
   date: string
   location: string
+  latitude: string
+  longitude: string
   capacity: string
   status: string
   external_provider: string
@@ -83,6 +87,8 @@ export function AdminEventsCrud() {
     subtitle: '',
     date: '',
     location: '',
+    latitude: '',
+    longitude: '',
     capacity: '0',
     status: 'draft',
     external_provider: 'none',
@@ -117,6 +123,8 @@ export function AdminEventsCrud() {
       subtitle: '',
       date: '',
       location: '',
+      latitude: '',
+      longitude: '',
       capacity: '0',
       status: 'draft',
       external_provider: 'none',
@@ -143,6 +151,8 @@ export function AdminEventsCrud() {
       subtitle: event.subtitle || '',
       date: new Date(event.date).toISOString().slice(0, 16),
       location: event.location,
+      latitude: event.latitude?.toString() || '',
+      longitude: event.longitude?.toString() || '',
       capacity: event.capacity.toString(),
       status: event.status,
       external_provider: event.external_provider || 'none',
@@ -192,6 +202,8 @@ export function AdminEventsCrud() {
       const dataToSend = {
         ...formData,
         capacity: parseInt(formData.capacity) || 0,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         date: new Date(formData.date).toISOString(),
         external_provider: formData.external_provider === 'none' ? null : formData.external_provider,
         external_event_id: formData.external_provider === 'none' ? null : formData.external_event_id,
@@ -370,6 +382,12 @@ export function AdminEventsCrud() {
                       </div>
                     </div>
 
+                    {(event.latitude && event.longitude) && (
+                      <div className="mt-3 text-sm text-muted-foreground">
+                        <span className="font-medium">Coordonnées:</span> {event.latitude}, {event.longitude}
+                      </div>
+                    )}
+
                     {event.external_provider && (
                       <div className="mt-3 text-sm text-muted-foreground">
                         <span className="font-medium">Prestataire externe:</span> {event.external_provider}
@@ -478,6 +496,33 @@ export function AdminEventsCrud() {
                 onChange={(e) => handleFormChange('location', e.target.value)}
                 placeholder="Forêt de Fontainebleau, 77300 Fontainebleau"
               />
+            </div>
+
+            {/* Coordonnées */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={formData.latitude}
+                  onChange={(e) => handleFormChange('latitude', e.target.value)}
+                  placeholder="48.8566"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={formData.longitude}
+                  onChange={(e) => handleFormChange('longitude', e.target.value)}
+                  placeholder="2.3522"
+                />
+              </div>
             </div>
 
             {/* Capacité et statut */}
