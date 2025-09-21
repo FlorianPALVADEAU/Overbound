@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { headers } from 'next/headers'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { createSupabaseServer } from '@/lib/supabase/server'
@@ -8,6 +9,9 @@ interface LayoutProps {
 }
 
 export async function Layout({ children }: LayoutProps) {
+  const headersList = await headers()
+  const pathname = headersList.get('next-url') || headersList.get('x-invoke-path') || ''
+
   const supabase = await createSupabaseServer()
   
   const {
@@ -22,7 +26,8 @@ export async function Layout({ children }: LayoutProps) {
       .eq('id', user.id)
       .single()    
     profile = data
-  }
+  }    
+    
 
   return (
     <div className="flex min-h-screen flex-col">

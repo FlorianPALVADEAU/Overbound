@@ -1,4 +1,3 @@
-// src/app/api/registrations/create/route.ts
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'

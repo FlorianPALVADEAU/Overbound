@@ -31,7 +31,13 @@ const MapViewport = ({
       ? events.find((event) => event.id === selectedEventId)
       : undefined
 
-    if (selected) {
+    if (
+      selected &&
+      typeof selected.latitude === 'number' &&
+      typeof selected.longitude === 'number' &&
+      Number.isFinite(selected.latitude) &&
+      Number.isFinite(selected.longitude)
+    ) {
       // Zoom sur l'événement sélectionné
       map.flyTo([selected.latitude, selected.longitude], Math.max(map.getZoom(), 10), {
         duration: 0.8
@@ -98,7 +104,7 @@ export const EventsMap = ({ events, selectedEventId, onSelectEvent }: EventsMapP
       <MapViewport events={eventsWithCoordinates} selectedEventId={selectedEventId} />
 
       {eventsWithCoordinates.map((event) => {
-        const position: [number, number] = [event.latitude, event.longitude]
+        const position: [number, number] = [event.latitude as number, event.longitude as number]
         const isActive = event.id === selectedEventId
         const ticketsCount = event.tickets?.length ?? 0
 

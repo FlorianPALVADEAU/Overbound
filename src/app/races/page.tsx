@@ -1,5 +1,4 @@
 /* eslint-disable react/no-unescaped-entities */
-// src/app/races/page.tsx
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

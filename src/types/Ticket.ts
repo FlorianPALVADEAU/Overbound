@@ -24,6 +24,8 @@ export interface Ticket {
   description?: string | null
   distance_km: number | null
   base_price_cents: number | null
+  sales_start?: Timestamp | null
+  sales_end?: Timestamp | null
   regular_price_cents?: number | null
   is_early_bird?: boolean
   early_bird_end?: Timestamp | null

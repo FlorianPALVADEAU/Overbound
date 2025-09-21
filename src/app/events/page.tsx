@@ -34,7 +34,8 @@ const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
   on_sale: 'Inscriptions ouvertes',
   sold_out: 'Complet',
   cancelled: 'Événement annulé',
-  completed: 'Événement passé'
+  completed: 'Événement passé',
+  closed: 'Inscriptions closes'
 }
 
 const EVENT_STATUS_STYLES: Record<EventStatus, string> = {
@@ -42,7 +43,8 @@ const EVENT_STATUS_STYLES: Record<EventStatus, string> = {
   on_sale: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   sold_out: 'border-amber-200 bg-amber-50 text-amber-700',
   cancelled: 'border-red-200 bg-red-50 text-red-700',
-  completed: 'border-blue-200 bg-blue-50 text-blue-700'
+  completed: 'border-blue-200 bg-blue-50 text-blue-700',
+  closed: 'border-gray-200 bg-gray-50 text-gray-700'
 }
 
 const formatEventDateLong = (value: string) => {
@@ -291,9 +293,9 @@ export default function EventsPage() {
                                       {formatDistance(ticket.distance_km)}
                                     </Badge>
                                   )}
-                                  {ticket.quota && (
+                                  {ticket.max_participants && (
                                     <Badge variant="outline" className="text-xs">
-                                      Places : {ticket.quota}
+                                      Places : {ticket.max_participants}
                                     </Badge>
                                   )}
                                   {ticket.requires_document && (
