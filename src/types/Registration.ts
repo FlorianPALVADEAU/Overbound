@@ -20,6 +20,9 @@ export interface Registration {
   approved_by: UUID | null;
   approved_at: Timestamp | null;
   rejection_reason: string | null;
+  guarantor_user_id?: UUID;
+  affiliation_token?: string;
+  is_affiliated: boolean;
 }
 
 export interface MyRegistration {
@@ -45,4 +48,27 @@ export interface RegistrationFilters {
   checked_in?: boolean;
   date_from?: string;
   date_to?: string;
+}
+
+export interface RegistrationSignature {
+  registration_id: UUID;
+  regulation_version: string;
+  signed_at: Timestamp;
+  signature_data?: string; // Base64 ou référence
+}
+
+export interface Upsell {
+  id: UUID;
+  name: string;
+  price_cents: number;
+  event_id?: UUID;
+  type: 'tshirt' | 'photos' | 'other';
+}
+
+export interface OrderItem {
+  order_id: UUID;
+  item_id: UUID;
+  item_type: 'ticket' | 'upsell';
+  quantity: number;
+  price_cents: number;
 }
