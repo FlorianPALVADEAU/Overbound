@@ -24,7 +24,11 @@ import {
   BrickWallIcon,
   DumbbellIcon,
   ShoppingBagIcon,
-  BookOpenTextIcon
+  BookOpenTextIcon,
+  ChevronDownIcon,
+  MapPinIcon,
+  ClockIcon,
+  TrophyIcon
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -45,8 +49,25 @@ interface HeaderProps {
   } | null
 }
 
+type NavigationItemType = {
+  name: string
+  href: string
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+}
+
+type DropdownItemType = {
+  name: string
+  href: string
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  highlight?: boolean
+}
+
+
+
 export function Header({ user, profile }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false)
+  const [mobileEventsOpen, setMobileEventsOpen] = useState(false)
   const router = useRouter()
   const supabase = createSupabaseBrowser()
 
@@ -56,8 +77,7 @@ export function Header({ user, profile }: HeaderProps) {
     router.refresh()
   }
 
-  const navigation = [
-    { name: 'Courses', href: '/events', icon: MedalIcon },
+  const navigation: NavigationItemType[] = [
     { name: 'Obstacles', href: '/obstacles', icon: BrickWallIcon },
     { name: 'Entrainements', href: '/trainings', icon: DumbbellIcon },
     // { name: 'Shop', href: '/shop', icon: ShoppingBagIcon },
@@ -65,7 +85,17 @@ export function Header({ user, profile }: HeaderProps) {
     { name: 'À propos', href: '/about', icon: InfoIcon },
   ]
 
-  const userNavigation = user ? [
+  const eventsDropdownItems: DropdownItemType[] = [
+    { name: 'Toutes les courses', href: '/events', icon: MedalIcon },
+    { name: 'Le rite du guerrier', href: '/events/rite-du-guerrier', icon: CalendarIcon },
+    { name: 'La voie du héros', href: '/events/voie-du-heros', icon: MapPinIcon },
+    { name: 'Tribal Royale', href: '/events/tribal-royale', icon: MapPinIcon },
+    { name: 'Tribal Kids', href: '/events/tribal-kids', icon: MapPinIcon },
+    { name: 'Volunteers', href: '/events/results', icon: TrophyIcon, highlight: true },
+    { name: 'Archives', href: '/events/archives', icon: ClockIcon },
+  ]
+
+  const userNavigation: NavigationItemType[] = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
     ...(profile?.role === 'admin' || profile?.role === 'volunteer' ? [
@@ -93,12 +123,48 @@ export function Header({ user, profile }: HeaderProps) {
 
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
-            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+            <nav className="h-full hidden lg:flex items-center align-center space-x-6 xl:space-x-8">
+              {/* Dropdown Courses */}
+              <DropdownMenu 
+                open={eventsDropdownOpen} 
+                onOpenChange={setEventsDropdownOpen}
+              >
+                <DropdownMenuTrigger asChild className='h-full cursor-pointer outline-none'>
+                  <Link 
+                    href="/events"
+                    className="h-full flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base group"
+                    onMouseEnter={() => setEventsDropdownOpen(true)}
+                    onMouseLeave={() => setEventsDropdownOpen(false)}
+                  >
+                    Courses
+                    <ChevronDownIcon className="ml-1 h-3 w-3 transition-transform group-hover:rotate-180" />
+                  </Link>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  className="w-full 5 p-2 ml-12 -mt-1" 
+                  align="center"
+                  onMouseEnter={() => setEventsDropdownOpen(true)}
+                  onMouseLeave={() => setEventsDropdownOpen(false)}
+                >
+                  {eventsDropdownItems.map((item, index) => (
+                    <DropdownMenuItem key={item.name + index} asChild>
+                      <Link 
+                        href={item.href} 
+                        className="cursor-pointer rounded-md p-5 hover:bg-accent/80 transition-colors group"
+                      >
+                        <p className="text-sm font-medium">{item.name}</p>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Autres liens de navigation */}
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base"
+                  className="h-full flex align-center items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base"
                 >
                   {item.name}
                 </Link>
@@ -187,11 +253,51 @@ export function Header({ user, profile }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="absolute border-t pb-3 pt-4 z-10 lg:hidden bg-secondary w-full left-0">
             <div className="space-y-1">
+              {/* Dropdown Courses pour mobile */}
+              <div className="space-y-1">
+                <button
+                  onClick={() => setMobileEventsOpen(!mobileEventsOpen)}
+                  className="w-full flex items-center justify-between rounded-md px-3 py-3 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <div className="flex items-center">
+                    <MedalIcon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    Courses
+                  </div>
+                  <ChevronDownIcon 
+                    className={`h-4 w-4 transition-transform ${mobileEventsOpen ? 'rotate-180' : ''}`} 
+                  />
+                </button>
+                
+                {mobileEventsOpen && (
+                  <div className="ml-6 space-y-1 border-l-2 border-border pl-4">
+                    {eventsDropdownItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="flex items-center rounded-md px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        onClick={() => {
+                          setMobileMenuOpen(false)
+                          setMobileEventsOpen(false)
+                        }}
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary mr-3">
+                          <item.icon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Autres liens de navigation */}
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  className="flex items-center rounded-md px-3 py-3 text-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />

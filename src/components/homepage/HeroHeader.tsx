@@ -61,7 +61,7 @@ export const HeroHeader = () => {
                             Relève le défi ultime.
                         </h1>
                         <p className="text-lg md:text-2xl max-w-2xl mb-6 text-left">
-                            Inspirée des rites tribaux et de l'esprit collectif. Prépare-toi à une
+                            Inspirée des rites tribaux et de l'esprit collectif. Prépare-toi à vivre une
                             expérience unique.
                         </p>
                     </div>
