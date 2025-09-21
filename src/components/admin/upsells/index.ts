@@ -1,0 +1,1 @@
+export { UpsellsSection } from './UpsellsSection'

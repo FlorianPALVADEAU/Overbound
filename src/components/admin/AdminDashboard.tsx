@@ -4,15 +4,17 @@ import React, { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, BarChart3, Calendar, UserCheck, Ticket, Trophy, Zap } from 'lucide-react'
+import { Users, BarChart3, Calendar, UserCheck, Ticket, Trophy, Zap, Percent, Package } from 'lucide-react'
 import Link from 'next/link'
 import { AdminStats } from '@/components/admin/AdminStats'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
-import { AdminEventsCrud } from '@/components/admin/AdminEventsCrud'
-import { AdminMembersManagement } from '@/components/admin/AdminMembersManagement'
-import { AdminTicketsCrud } from '@/components/admin/AdminTicketsCrud'
-import { AdminRacesCrud } from '@/components/admin/AdminRacesCrud'
-import { AdminObstaclesCrud } from '@/components/admin/AdminObstaclesCrud'
+import { EventsSection } from '@/components/admin/events'
+import { RegistrationsSection } from '@/components/admin/registrations'
+import { TicketsSection } from '@/components/admin/tickets'
+import { RacesSection } from '@/components/admin/races'
+import { ObstaclesSection } from '@/components/admin/obstacles'
+import { PromotionalCodesSection } from '@/components/admin/promotional-codes'
+import { UpsellsSection } from '@/components/admin/upsells'
 
 interface Profile {
   role: 'admin' | 'volunteer'
@@ -62,7 +64,7 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
         {/* Interface Admin avec onglets */}
         {isAdmin && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Tableau de bord
@@ -83,6 +85,14 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 <Ticket className="h-4 w-4" />
                 Tickets
               </TabsTrigger>
+              <TabsTrigger value="promocodes" className="flex items-center gap-2">
+                <Percent className="h-4 w-4" />
+                Codes promo
+              </TabsTrigger>
+              <TabsTrigger value="upsells" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Upsells
+              </TabsTrigger>
               <TabsTrigger value="members" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Membres
@@ -98,23 +108,31 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
             </TabsContent>
 
             <TabsContent value="events" className="space-y-6">
-              <AdminEventsCrud />
+              <EventsSection />
             </TabsContent>
 
             <TabsContent value="races" className="space-y-6">
-              <AdminRacesCrud />
+              <RacesSection />
             </TabsContent>
 
             <TabsContent value="obstacles" className="space-y-6">
-              <AdminObstaclesCrud />
+              <ObstaclesSection />
             </TabsContent>
 
             <TabsContent value="tickets" className="space-y-6">
-              <AdminTicketsCrud />
+              <TicketsSection />
+            </TabsContent>
+
+            <TabsContent value="promocodes" className="space-y-6">
+              <PromotionalCodesSection />
+            </TabsContent>
+
+            <TabsContent value="upsells" className="space-y-6">
+              <UpsellsSection />
             </TabsContent>
 
             <TabsContent value="members" className="space-y-6">
-              <AdminMembersManagement eventId={selectedEventId} />
+              <RegistrationsSection eventId={selectedEventId} />
             </TabsContent>
 
             <TabsContent value="checkin" className="space-y-6">
