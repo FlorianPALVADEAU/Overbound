@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
-import React, { useState } from 'react'
+import Link from 'next/link'
+import React, { useMemo, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, BarChart3, Calendar, UserCheck, Ticket, Trophy, Zap, Percent, Package } from 'lucide-react'
-import Link from 'next/link'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { AdminStats } from '@/components/admin/AdminStats'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
 import { EventsSection } from '@/components/admin/events'
@@ -15,6 +15,9 @@ import { RacesSection } from '@/components/admin/races'
 import { ObstaclesSection } from '@/components/admin/obstacles'
 import { PromotionalCodesSection } from '@/components/admin/promotional-codes'
 import { UpsellsSection } from '@/components/admin/upsells'
+import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { ADMIN_NAV_ITEMS } from '@/components/admin/adminNavItems'
+import { useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 
 interface Profile {
   role: 'admin' | 'volunteer'
@@ -22,133 +25,141 @@ interface Profile {
 }
 
 interface AdminDashboardProps {
-  user: any
+  user: User
   profile: Profile
-  stats?: any
+  stats?: Record<string, unknown> | null
 }
 
 export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState('overview')
+  const { activeTab, setActiveTab } = useAdminDashboardStore()
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>()
 
   const isAdmin = profile.role === 'admin'
   const isVolunteer = profile.role === 'volunteer'
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+  const activeTabLabel = useMemo(
+    () => ADMIN_NAV_ITEMS.find((item) => item.value === activeTab)?.label ?? 'Tableau de bord',
+    [activeTab]
+  )
+
+  if (isVolunteer && !isAdmin) {
+    return (
+      <main className="min-h-screen bg-muted/30">
+        <div className="mx-auto max-w-4xl space-y-6 p-6">
+          <header className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">
-                {isAdmin ? 'Administration' : 'Bénévole - Check-in'}
-              </h1>
+              <h1 className="text-3xl font-bold">Bénévole - Check-in</h1>
               <p className="text-muted-foreground">
                 Bienvenue {profile.full_name || user.email}
               </p>
             </div>
             <div className="flex gap-2">
-              <Badge variant={isAdmin ? 'default' : 'secondary'}>
-                {isAdmin ? 'Administrateur' : 'Bénévole'}
-              </Badge>
+              <Badge variant="secondary">Bénévole</Badge>
               <Link href="/account">
                 <Button variant="outline" size="sm">
                   Mon compte
                 </Button>
               </Link>
             </div>
+          </header>
+          <VolunteerAccessControl />
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <div className="flex min-h-screen w-full flex-col md:flex-row md:gap-6 lg:gap-10 px-0 md:px-6 lg:px-10 py-6">
+        <AdminSidebar profileRole={profile.role} fullName={profile.full_name || user.email} />
+        <div className="flex-1 overflow-hidden rounded-t-3xl bg-background shadow md:rounded-3xl">
+          <div className="flex flex-col gap-4 border-b border-border bg-background/80 px-4 py-4 backdrop-blur md:px-6 lg:px-10">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Bienvenue</p>
+                <h1 className="text-2xl font-semibold lg:text-3xl">
+                  {profile.full_name || user.email}
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">Administrateur</Badge>
+                <Link href="/account">
+                  <Button variant="outline" size="sm">
+                    Mon compte
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="md:hidden">
+              <Select
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as AdminTabValue)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ADMIN_NAV_ITEMS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <p className="hidden text-sm font-medium text-muted-foreground md:block">
+              Section actuelle : {activeTabLabel}
+            </p>
+          </div>
+
+          <div className="space-y-6 px-4 py-6 md:px-6 lg:px-10">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as AdminTabValue)}
+              className="space-y-6"
+            >
+              <TabsContent value="overview" className="space-y-6">
+                <AdminStats stats={stats} />
+              </TabsContent>
+
+              <TabsContent value="events" className="space-y-6">
+                <EventsSection />
+              </TabsContent>
+
+              <TabsContent value="races" className="space-y-6">
+                <RacesSection />
+              </TabsContent>
+
+              <TabsContent value="obstacles" className="space-y-6">
+                <ObstaclesSection />
+              </TabsContent>
+
+              <TabsContent value="tickets" className="space-y-6">
+                <TicketsSection />
+              </TabsContent>
+
+              <TabsContent value="promocodes" className="space-y-6">
+                <PromotionalCodesSection />
+              </TabsContent>
+
+              <TabsContent value="upsells" className="space-y-6">
+                <UpsellsSection />
+              </TabsContent>
+
+              <TabsContent value="members" className="space-y-6">
+                <RegistrationsSection eventId={selectedEventId} />
+              </TabsContent>
+
+              <TabsContent value="checkin" className="space-y-6">
+                <VolunteerAccessControl onEventSelect={setSelectedEventId} />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
-
-        {/* Interface Admin avec onglets */}
-        {isAdmin && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-9">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Tableau de bord
-              </TabsTrigger>
-              <TabsTrigger value="events" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Événements
-              </TabsTrigger>
-              <TabsTrigger value="races" className="flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
-                Courses
-              </TabsTrigger>
-              <TabsTrigger value="obstacles" className="flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Obstacles
-              </TabsTrigger>
-              <TabsTrigger value="tickets" className="flex items-center gap-2">
-                <Ticket className="h-4 w-4" />
-                Tickets
-              </TabsTrigger>
-              <TabsTrigger value="promocodes" className="flex items-center gap-2">
-                <Percent className="h-4 w-4" />
-                Codes promo
-              </TabsTrigger>
-              <TabsTrigger value="upsells" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Upsells
-              </TabsTrigger>
-              <TabsTrigger value="members" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Membres
-              </TabsTrigger>
-              <TabsTrigger value="checkin" className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4" />
-                Check-in
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-6">
-              <AdminStats stats={stats} />
-            </TabsContent>
-
-            <TabsContent value="events" className="space-y-6">
-              <EventsSection />
-            </TabsContent>
-
-            <TabsContent value="races" className="space-y-6">
-              <RacesSection />
-            </TabsContent>
-
-            <TabsContent value="obstacles" className="space-y-6">
-              <ObstaclesSection />
-            </TabsContent>
-
-            <TabsContent value="tickets" className="space-y-6">
-              <TicketsSection />
-            </TabsContent>
-
-            <TabsContent value="promocodes" className="space-y-6">
-              <PromotionalCodesSection />
-            </TabsContent>
-
-            <TabsContent value="upsells" className="space-y-6">
-              <UpsellsSection />
-            </TabsContent>
-
-            <TabsContent value="members" className="space-y-6">
-              <RegistrationsSection eventId={selectedEventId} />
-            </TabsContent>
-
-            <TabsContent value="checkin" className="space-y-6">
-              <VolunteerAccessControl 
-                onEventSelect={setSelectedEventId}
-              />
-            </TabsContent>
-          </Tabs>
-        )}
-
-        {/* Interface Bénévole */}
-        {isVolunteer && (
-          <VolunteerAccessControl />
-        )}
       </div>
-    </main>
+    </div>
   )
 }
 

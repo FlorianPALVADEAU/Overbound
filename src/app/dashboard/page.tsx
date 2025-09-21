@@ -1,5 +1,4 @@
 /* eslint-disable react/no-unescaped-entities */
-// src/app/admin/page.tsx
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,7 +46,6 @@ export default async function AdminPage() {
 
   let stats = null
   
-  // Récupérer les statistiques uniquement pour les admins
   if (profile.role === 'admin') {
     // Essayer d'abord admin_overview, puis admin_overview_safe en cas d'erreur
     const { data: statsData, error: statsError } = await supabase.rpc('admin_overview')

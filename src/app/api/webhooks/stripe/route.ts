@@ -1,4 +1,3 @@
-// src/app/api/webhooks/stripe/route.ts (Updated for PaymentIntents)
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
