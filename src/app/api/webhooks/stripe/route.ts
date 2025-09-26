@@ -42,6 +42,11 @@ export async function POST(request: NextRequest) {
         upsells: upsellsJson
       } = metadata
 
+      if ((!ticket_id || ticket_id.trim() === '') && metadata.ticket_selections) {
+        console.log('Webhook skip: handled by multi-inscription flow for PaymentIntent', paymentIntent.id)
+        return new Response('ok', { status: 200 })
+      }
+
       if (!user_id || !event_id || !ticket_id) {
         console.error('Métadonnées manquantes dans le PaymentIntent:', metadata)
         return new Response('Métadonnées manquantes', { status: 400 })
@@ -101,22 +106,12 @@ export async function POST(request: NextRequest) {
           .from('orders')
           .insert({
             user_id,
-            event_id,
-            ticket_id,
-            stripe_payment_intent_id: paymentIntent.id,
+            email: participant_email,
+            status: 'paid',
             amount_total: paymentIntent.amount,
             currency: paymentIntent.currency,
-            payment_status: 'paid',
-            customer_email: participant_email,
-            customer_name: metadata.participant_name || participant_email,
-            metadata: {
-              upsells: upsells,
-              paymentIntent: {
-                id: paymentIntent.id,
-                created: paymentIntent.created,
-                payment_method: paymentIntent.payment_method
-              }
-            }
+            provider: 'stripe',
+            provider_order_id: paymentIntent.id,
           })
           .select()
           .single()
@@ -141,10 +136,6 @@ export async function POST(request: NextRequest) {
             stripe_payment_intent_id: paymentIntent.id,
             approval_status: 'approved',
             race_id: race_id || null,
-            metadata: {
-              upsells: upsells,
-              created_via: 'webhook'
-            }
           })
           .select()
           .single()
@@ -161,11 +152,6 @@ export async function POST(request: NextRequest) {
             name: upsell.name,
             price_cents: upsell.price,
             currency: paymentIntent.currency,
-            options: upsell.options || {},
-            metadata: {
-              original_upsell_id: upsell.id,
-              type: upsell.digital ? 'digital' : 'physical'
-            }
           }))
 
           const { error: upsellError } = await admin

@@ -3,24 +3,20 @@ import { createSupabaseServer } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
+import {
+  Calendar,
+  MapPin,
+  Users,
   Trophy,
   Clock,
-  Star,
-  Target,
-  Mountain,
-  Zap,
   ArrowLeft,
   AlertTriangle,
   CheckCircle,
-  Info
+  Info,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import EventRegistration from '@/components/events/EventRegistration'
+import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
 import { Button } from '@/components/ui/button'
 
 interface EventDetailPageProps {
@@ -100,34 +96,6 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       .single()
     
     existingRegistration = data
-  }
-
-  const getDifficultyColor = (difficulty: number) => {
-    if (difficulty <= 3) return 'bg-green-100 text-green-800'
-    if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800'
-    return 'bg-red-100 text-red-800'
-  }
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'trail': return 'bg-blue-100 text-blue-800'
-      case 'obstacle': return 'bg-orange-100 text-orange-800'
-      case 'urbain': return 'bg-purple-100 text-purple-800'
-      case 'nature': return 'bg-green-100 text-green-800'
-      case 'extreme': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getPublicColor = (targetPublic: string) => {
-    switch (targetPublic) {
-      case 'débutant': return 'bg-emerald-100 text-emerald-800'
-      case 'intermédiaire': return 'bg-amber-100 text-amber-800'
-      case 'expert': return 'bg-red-100 text-red-800'
-      case 'famille': return 'bg-pink-100 text-pink-800'
-      case 'pro': return 'bg-indigo-100 text-indigo-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
   }
 
   const getStatusColor = (status: string) => {
@@ -309,148 +277,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Colonne principale - Formats disponibles */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Formats de course disponibles */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Formats disponibles
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!event.tickets || event.tickets.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Aucun format de ticket disponible pour cet événement.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {event.tickets.map((ticket: any) => (
-                      <div key={ticket.id} className="border rounded-lg p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-xl font-semibold">{ticket.name}</h3>
-                              {ticket.requires_document && (
-                                <Badge variant="secondary">
-                                  Document requis
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            {ticket.description && (
-                              <p className="text-muted-foreground mb-4">{ticket.description}</p>
-                            )}
-
-                            {/* Informations sur la course associée */}
-                            {ticket.race && (
-                              <div className="space-y-3 mb-4">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge variant="outline" className={getTypeColor(ticket.race.type)}>
-                                    {ticket.race.type === 'trail' ? 'Trail' :
-                                     ticket.race.type === 'obstacle' ? 'Course d\'obstacles' :
-                                     ticket.race.type === 'urbain' ? 'Course urbaine' :
-                                     ticket.race.type === 'nature' ? 'Course nature' :
-                                     ticket.race.type === 'extreme' ? 'Course extrême' : ticket.race.type}
-                                  </Badge>
-                                  <Badge variant="outline" className={getDifficultyColor(ticket.race.difficulty)}>
-                                    <Star className="h-3 w-3 mr-1" />
-                                    Difficulté {ticket.race.difficulty}/10
-                                  </Badge>
-                                  <Badge variant="outline" className={getPublicColor(ticket.race.target_public)}>
-                                    <Target className="h-3 w-3 mr-1" />
-                                    {ticket.race.target_public === 'débutant' ? 'Débutant' :
-                                     ticket.race.target_public === 'intermédiaire' ? 'Intermédiaire' :
-                                     ticket.race.target_public === 'expert' ? 'Expert' :
-                                     ticket.race.target_public === 'famille' ? 'Famille' :
-                                     ticket.race.target_public === 'pro' ? 'Professionnel' : ticket.race.target_public}
-                                  </Badge>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Mountain className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">Distance: {ticket.race.distance_km} km</span>
-                                  </div>
-                                  
-                                  {ticket.race.obstacles && ticket.race.obstacles.length > 0 && (
-                                    <div className="flex items-center gap-2">
-                                      <Zap className="h-4 w-4 text-muted-foreground" />
-                                      <span className="text-sm">{ticket.race.obstacles.length} obstacles</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {ticket.race.description && (
-                                  <p className="text-sm text-muted-foreground italic">
-                                    {ticket.race.description}
-                                  </p>
-                                )}
-
-                                {/* Aperçu des obstacles */}
-                                {ticket.race.obstacles && ticket.race.obstacles.length > 0 && (
-                                  <div className="mt-3">
-                                    <p className="text-sm font-medium mb-2">Obstacles inclus :</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {ticket.race.obstacles
-                                        .sort((a: any, b: any) => a.order_position - b.order_position)
-                                        .slice(0, 5)
-                                        .map((obstacleWrapper: any) => (
-                                          <Badge key={obstacleWrapper.obstacle.id} variant="secondary" className="text-xs">
-                                            {obstacleWrapper.obstacle.name}
-                                          </Badge>
-                                        ))}
-                                      {ticket.race.obstacles.length > 5 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          +{ticket.race.obstacles.length - 5} autres
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Documents requis */}
-                            {ticket.requires_document && ticket.document_types && ticket.document_types.length > 0 && (
-                              <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                                <p className="text-sm font-medium text-orange-800 mb-1">Documents requis :</p>
-                                <ul className="text-sm text-orange-700 space-y-1">
-                                  {ticket.document_types.map((type: string) => (
-                                    <li key={type}>
-                                      • {type === 'medical_certificate' ? 'Certificat médical' :
-                                          type === 'sports_license' ? 'Licence sportive' :
-                                          type === 'insurance' ? 'Attestation d\'assurance' :
-                                          type === 'id_document' ? 'Pièce d\'identité' :
-                                          type === 'parental_authorization' ? 'Autorisation parentale' : type}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Prix */}
-                          <div className="text-right ml-6">
-                            <div className="text-2xl font-bold text-primary">
-                              {(ticket.base_price_cents / 100).toLocaleString('fr-FR', {
-                                style: 'currency',
-                                currency: ticket.currency.toUpperCase()
-                              })}
-                            </div>
-                            {ticket.max_participants > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Max {ticket.max_participants} participants
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <EventTicketListWithRegistration
+              event={event}
+              tickets={event.tickets || []}
+              availableSpots={availableSpots}
+              user={user}
+            />
 
             {/* Informations importantes */}
             <Card>
@@ -499,17 +331,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
           {/* Colonne latérale - Inscription */}
           <div className="lg:col-span-1">
-            {!existingRegistration && (
-              <EventRegistration 
-                event={event}
-                tickets={event.tickets || []}
-                user={user}
-                availableSpots={availableSpots}
-              />
-            )}
-
             {/* Météo et conseils */}
-            <Card className="mt-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
