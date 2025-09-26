@@ -52,7 +52,7 @@ import type { PromotionalCode } from '@/types/PromotionalCode'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
-import type { RegistrationSummary } from '@/store/useRegistrationStore'
+import type { RegistrationSummary, RegistrationDraft } from '@/store/useRegistrationStore'
 
 interface EventTicket extends Ticket {
   race?: Ticket['race'] & {
@@ -258,7 +258,7 @@ export default function MultiStepEventRegistration({
             description: '',
             discount_percent: null,
             discount_amount: null,
-            currency: registrationDraft.summary.currency,
+            currency: registrationDraft.summary.currency as any,
           })
           setPromoInput(registrationDraft.promoCode)
         } else {
