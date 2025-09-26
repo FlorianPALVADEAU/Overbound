@@ -10,32 +10,36 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { 
-      ticketId, 
-      eventId, 
-      userId, 
-      userEmail, 
+    const {
+      eventId,
+      userId,
+      userEmail,
+      ticketSelections = [],
+      participants = [],
       upsells = [],
-      amount,
-      currency = 'eur'
+      promoCode = null,
     } = await request.json()
 
-    if (!ticketId || !eventId || !userId || !amount) {
-      return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+    if (!eventId || !userId || !userEmail || ticketSelections.length === 0) {
+      return NextResponse.json({ error: 'Paramètres insuffisants.' }, { status: 400 })
     }
 
     const supabase = await createSupabaseServer()
 
-    // Verify user is authenticated
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user || user.id !== userId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+      return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
     }
 
-    // Get ticket and event details for validation
-    const { data: ticket, error: ticketError } = await supabase
+    const ticketIds = ticketSelections.map((item: any) => item.ticketId)
+
+    const { data: tickets, error: ticketsError } = await supabase
       .from('tickets')
-      .select(`
+      .select(
+        `
         *,
         event:events (
           id,
@@ -44,96 +48,181 @@ export async function POST(request: NextRequest) {
           location,
           status,
           capacity
-        ),
-        race:races!tickets_race_id_fkey (
-          id,
-          name,
-          distance_km
         )
-      `)
-      .eq('id', ticketId)
-      .single()
+      `,
+      )
+      .in('id', ticketIds)
 
-    if (ticketError || !ticket) {
-      return NextResponse.json({ error: 'Ticket introuvable' }, { status: 404 })
+    if (ticketsError || !tickets || tickets.length === 0) {
+      return NextResponse.json({ error: 'Impossible de récupérer les billets.' }, { status: 404 })
     }
 
-    // Verify event availability
-    const { count: registrationCount } = await supabase
+    const eventRef = tickets[0]?.event
+    if (!eventRef || eventRef.id !== eventId) {
+      return NextResponse.json({ error: "Les billets ne correspondent pas à l'événement demandé." }, { status: 400 })
+    }
+
+    if (eventRef.status !== 'on_sale') {
+      return NextResponse.json({ error: 'Inscriptions fermées pour cet événement.' }, { status: 409 })
+    }
+
+    const totalRequestedParticipants = ticketSelections.reduce(
+      (accumulator: number, item: { quantity: number }) => accumulator + (item.quantity || 0),
+      0,
+    )
+
+    const { count: existingRegistrationsCount } = await supabase
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', eventId)
 
-    const availableSpots = ticket.event.capacity - (registrationCount || 0)
-    
-    if (availableSpots <= 0) {
-      return NextResponse.json({ error: 'Événement complet' }, { status: 409 })
+    const availableSpots = (eventRef.capacity || 0) - (existingRegistrationsCount || 0)
+
+    if (availableSpots <= 0 || totalRequestedParticipants > availableSpots) {
+      return NextResponse.json({ error: "Plus assez de places disponibles pour l'ensemble des participants." }, { status: 409 })
     }
 
-    if (ticket.event.status !== 'on_sale') {
-      return NextResponse.json({ error: 'Inscriptions fermées' }, { status: 409 })
-    }
-
-    // Check if user is already registered
     const { data: existingRegistration } = await supabase
       .from('registrations')
       .select('id')
       .eq('user_id', userId)
       .eq('event_id', eventId)
-      .single()
+      .maybeSingle()
 
     if (existingRegistration) {
-      return NextResponse.json({ error: 'Vous êtes déjà inscrit à cet événement' }, { status: 409 })
+      return NextResponse.json({ error: 'Vous êtes déjà inscrit à cet événement.' }, { status: 409 })
     }
 
-    // Calculate total and validate amount
-    let calculatedTotal = ticket.base_price_cents
-    const upsellItems = []
+    const ticketPriceMap = new Map<string, number>()
+    const ticketCurrencyMap = new Map<string, string>()
 
-    for (const upsell of upsells) {
-      calculatedTotal += upsell.price_cents
-      upsellItems.push({
-        id: upsell.id,
-        name: upsell.name,
-        price: upsell.price_cents,
-        options: upsell.options || {}
-      })
+    for (const ticket of tickets) {
+      if (ticket.base_price_cents == null) {
+        return NextResponse.json({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, { status: 422 })
+      }
+      ticketPriceMap.set(ticket.id, ticket.base_price_cents)
+      ticketCurrencyMap.set(ticket.id, (ticket.currency || 'eur').toLowerCase())
     }
 
-    // Verify the amount matches our calculation
-    if (Math.abs(calculatedTotal - amount) > 1) { // Allow 1 cent difference for rounding
-      return NextResponse.json({ error: 'Montant incorrect' }, { status: 400 })
+    const ticketSubtotal = ticketSelections.reduce((accumulator: number, item: { ticketId: string; quantity: number }) => {
+      const unitPrice = ticketPriceMap.get(item.ticketId) || 0
+      return accumulator + unitPrice * (item.quantity || 0)
+    }, 0)
+
+    const { data: upsellRows } = await supabase
+      .from('upsells')
+      .select('*')
+      .eq('event_id', eventId)
+
+    const upsellMap = new Map<string, any>()
+    for (const row of upsellRows || []) {
+      upsellMap.set(row.id, row)
     }
 
-    // Create PaymentIntent
+    const upsellSubtotal = upsells.reduce((accumulator: number, item: { upsellId: string; quantity: number }) => {
+      const upsell = upsellMap.get(item.upsellId)
+      if (!upsell) {
+        return accumulator
+      }
+      return accumulator + upsell.price_cents * (item.quantity || 0)
+    }, 0)
+
+    let discountAmount = 0
+    let appliedPromo = null
+
+    if (promoCode) {
+      const { data: promo, error: promoError } = await supabase
+        .from('promotional_codes')
+        .select(
+          `
+          id,
+          code,
+          discount_percent,
+          discount_amount,
+          currency,
+          is_active,
+          valid_from,
+          valid_until,
+          usage_limit,
+          used_count,
+          events:promotional_code_events(event_id)
+        `,
+        )
+        .ilike('code', String(promoCode).trim().toUpperCase())
+        .maybeSingle()
+
+      if (!promoError && promo) {
+        const now = new Date()
+        const validFrom = promo.valid_from ? new Date(promo.valid_from) : null
+        const validUntil = promo.valid_until ? new Date(promo.valid_until) : null
+
+        const allowedEvents = (promo.events || []).map((event: { event_id: string }) => event.event_id)
+        const matchesEvent = allowedEvents.length === 0 || allowedEvents.includes(eventId)
+
+        const withinDates = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)
+        const usageAvailable =
+          promo.usage_limit == null || promo.used_count < promo.usage_limit
+
+        if (promo.is_active && matchesEvent && withinDates && usageAvailable) {
+          if (promo.discount_percent && promo.discount_percent > 0) {
+            discountAmount = Math.round(ticketSubtotal * (promo.discount_percent / 100))
+          } else if (promo.discount_amount && promo.discount_amount > 0) {
+            discountAmount = promo.discount_amount
+          }
+          discountAmount = Math.min(discountAmount, ticketSubtotal)
+          appliedPromo = {
+            id: promo.id,
+            code: promo.code,
+            discount_percent: promo.discount_percent,
+            discount_amount: promo.discount_amount,
+            currency: promo.currency,
+          }
+        }
+      }
+    }
+
+    const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0)
+
+    if (totalAmount <= 0) {
+      return NextResponse.json({ error: 'Montant total invalide.' }, { status: 422 })
+    }
+
+    const currency = ticketCurrencyMap.values().next().value || 'eur'
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: calculatedTotal,
-      currency: currency.toLowerCase(),
+      amount: totalAmount,
+      currency,
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
         user_id: userId,
         event_id: eventId,
-        ticket_id: ticketId,
-        participant_email: userEmail,
-        event_title: ticket.event.title,
-        ticket_name: ticket.name,
-        race_id: ticket.race?.id || '',
-        upsells: JSON.stringify(upsellItems),
+        ticket_selections: JSON.stringify(ticketSelections),
+        participants: JSON.stringify(participants),
+        upsells: JSON.stringify(upsells),
+        promo_code: appliedPromo?.code || '',
+        discount_applied: discountAmount.toString(),
+        event_title: eventRef.title,
       },
-      description: `${ticket.event.title} - ${ticket.name}`,
       receipt_email: userEmail,
+      description: `${eventRef.title} - Billets et options`,
     })
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id
+      paymentIntentId: paymentIntent.id,
+      pricing: {
+        ticketTotal: ticketSubtotal,
+        upsellTotal: upsellSubtotal,
+        discountAmount,
+        totalDue: totalAmount,
+        currency,
+      },
     })
-
   } catch (error) {
     console.error('Erreur création PaymentIntent:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur lors de la préparation du paiement.' }, { status: 500 })
   }
 }
 

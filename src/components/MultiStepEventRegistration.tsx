@@ -1,693 +1,1436 @@
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Progress } from '@/components/ui/progress'
+'use client'
+
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { 
-  Calendar, 
-  MapPin, 
-  CheckCircle,
+  Alert,
+  AlertDescription,
+} from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import {
   AlertTriangle,
-  Clock,
-  Users,
-  Trophy,
-  CreditCard,
-  FileText,
-  Upload,
-  Shirt,
-  Camera,
-  ChevronRight,
+  CalendarDays,
+  CheckCircle,
   ChevronLeft,
-  X,
-  Loader2
+  ChevronRight,
+  FileText,
+  Gift,
+  Loader2,
+  MapPin,
+  Minus,
+  Plus,
+  ShieldAlert,
+  Ticket as TicketIcon,
+  Users,
 } from 'lucide-react'
-import EmbeddedStripeCheckout from './EmbeddedStripeCheckout'
+import type { Event } from '@/types/Event'
+import type { Ticket } from '@/types/Ticket'
+import type { Upsell } from '@/types/Upsell'
+import type { PromotionalCode } from '@/types/PromotionalCode'
+import SignaturePad from '@/components/forms/SignaturePad'
+import { REGULATION_VERSION } from '@/constants/registration'
+import { useRegistrationStore } from '@/store/useRegistrationStore'
+import type { RegistrationSummary } from '@/store/useRegistrationStore'
 
-// Mock data - replace with your actual interfaces
-const mockEvent = {
-  id: 'event-1',
-  title: 'Trail des Collines 2024',
-  date: '2024-12-15T09:00:00Z',
-  location: 'Fontainebleau, France',
-  capacity: 200,
-  status: 'on_sale'
+interface EventTicket extends Ticket {
+  race?: Ticket['race'] & {
+    type?: string | null
+    target_public?: string | null
+    description?: string | null
+    obstacles?: Array<{
+      order_position: number
+      is_mandatory: boolean
+      obstacle: {
+        id: string
+        name: string
+      }
+    }>
+  }
 }
 
-const mockTickets = [
-  {
-    id: 'ticket-1',
-    name: 'Trail 10km',
-    description: 'Course trail de 10km en forêt',
-    base_price_cents: 2500,
-    currency: 'eur',
-    requires_document: true,
-    race: {
-      id: 'race-1',
-      name: 'Trail Nature',
-      distance_km: 10,
-      difficulty: 4
-    }
-  },
-  {
-    id: 'ticket-2',
-    name: 'Trail 21km',
-    description: 'Course trail de 21km avec obstacles',
-    base_price_cents: 3500,
-    currency: 'eur',
-    requires_document: true,
-    race: {
-      id: 'race-2',
-      name: 'Trail Expert',
-      distance_km: 21,
-      difficulty: 7
-    }
-  }
-]
-
-const mockUpsells = [
-  {
-    id: 'upsell-1',
-    name: 'T-shirt Technique',
-    description: 'T-shirt technique officiel de l\'événement',
-    price_cents: 2000,
-    currency: 'eur',
-    image: '👕',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL']
-  },
-  {
-    id: 'upsell-2',
-    name: 'Pack Photo',
-    description: 'Toutes vos photos de course en haute définition',
-    price_cents: 1500,
-    currency: 'eur',
-    image: '📸',
-    digital: true
-  },
-  {
-    id: 'upsell-3',
-    name: 'Ravitaillement Premium',
-    description: 'Ravitaillement renforcé avec produits bio',
-    price_cents: 800,
-    currency: 'eur',
-    image: '🥤'
-  }
-]
-
-type User = {
-  id: string;
-  email: string;
-};
-
-interface MultiStepEventRegistrationProps {
-  user?: User;
-  availableSpots?: number;
+type EventUser = {
+  id: string
+  email: string
+  fullName?: string | null
 }
 
-export default function MultiStepEventRegistration({ user, availableSpots = 50 }: MultiStepEventRegistrationProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [selectedTicket, setSelectedTicket] = useState<any>(null)
-  const [selectedUpsells, setSelectedUpsells] = useState<any[]>([])
-  const [documentFile, setDocumentFile] = useState<any>(null)
+type EventUpsell = Upsell & {
+  options?: {
+    sizes?: string[]
+  }
+}
+
+type StepKey = 'tickets' | 'participants' | 'options' | 'confirmation'
+
+type Participant = {
+  id: string
+  ticketId: string
+  firstName: string
+  lastName: string
+  email: string
+  birthDate: string
+  emergencyContactName: string
+  emergencyContactPhone: string
+  medicalInfo: string
+  licenseNumber: string
+}
+
+type SelectedUpsellState = Record<string, { quantity: number; meta?: Record<string, string> }>
+
+type TicketSelections = Record<string, number>
+
+type AppliedPromo = Pick<
+  PromotionalCode,
+  | 'id'
+  | 'code'
+  | 'description'
+  | 'discount_percent'
+  | 'discount_amount'
+  | 'currency'
+>
+
+export interface MultiStepEventRegistrationProps {
+  event: Event
+  tickets: EventTicket[]
+  upsells: EventUpsell[]
+  user: EventUser | null
+  availableSpots: number
+  initialTicketId?: string | null
+}
+
+interface PricingSummary {
+  ticketTotal: number
+  upsellTotal: number
+  discountAmount: number
+  totalDue: number
+  currency: string
+}
+
+const steps: Array<{ id: StepKey; title: string; description: string }> = [
+  {
+    id: 'tickets',
+    title: 'Billets',
+    description: 'Choisissez les formats et quantités souhaités.',
+  },
+  {
+    id: 'participants',
+    title: 'Participants',
+    description: 'Renseignez les informations pour chaque coureur.',
+  },
+  {
+    id: 'options',
+    title: 'Options',
+    description: 'Ajoutez des extras et des codes promotionnels.',
+  },
+  {
+    id: 'confirmation',
+    title: 'Confirmation',
+    description: 'Validez la décharge et procédez au paiement.',
+  },
+]
+
+const formatPrice = (valueInCents: number, currency: string) => {
+  return (valueInCents / 100).toLocaleString('fr-FR', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+  })
+}
+
+const calculatePromoDiscount = (
+  promo: AppliedPromo | null,
+  ticketSubtotal: number,
+): number => {
+  if (!promo || ticketSubtotal <= 0) return 0
+
+  if (promo.discount_percent && promo.discount_percent > 0) {
+    return Math.min(ticketSubtotal, Math.round(ticketSubtotal * (promo.discount_percent / 100)))
+  }
+
+  if (promo.discount_amount && promo.discount_amount > 0) {
+    return Math.min(ticketSubtotal, promo.discount_amount)
+  }
+
+  return 0
+}
+
+const joinName = (first: string, last: string) => `${first.trim()} ${last.trim()}`.trim()
+
+export default function MultiStepEventRegistration({
+  event,
+  tickets,
+  upsells,
+  user,
+  availableSpots,
+  initialTicketId = null,
+}: MultiStepEventRegistrationProps) {
+  const router = useRouter()
+  const [stepIndex, setStepIndex] = useState(0)
+  const [ticketSelections, setTicketSelections] = useState<TicketSelections>({})
+  const [participants, setParticipants] = useState<Participant[]>([])
+  const [selectedUpsells, setSelectedUpsells] = useState<SelectedUpsellState>({})
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null)
+  const [promoInput, setPromoInput] = useState('')
+  const [promoError, setPromoError] = useState<string | null>(null)
+  const [disclaimerRead, setDisclaimerRead] = useState(false)
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
-  const [clientSecret, setClientSecret] = useState(null)
-  const [paymentProcessing, setPaymentProcessing] = useState(false)
-  
-  // Mock user for demo
-  const mockUser = user || { id: 'user-1', email: 'demo@example.com' }
+  const [signatureImage, setSignatureImage] = useState<string | null>(null)
+  const [pricing, setPricing] = useState<PricingSummary | null>(null)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [isCreatingPaymentIntent, setIsCreatingPaymentIntent] = useState(false)
+  const [submissionMessage, setSubmissionMessage] = useState<{
+    type: 'error' | 'success'
+    text: string
+  } | null>(null)
+  const initializationKeyRef = useRef<string | null>(null)
 
-  const formatPrice = (priceInCents: number, currency: string): string => {
-    return (priceInCents / 100).toLocaleString('fr-FR', {
-      style: 'currency',
-      currency: currency.toUpperCase()
-    })
-  }
+  const registrationDraft = useRegistrationStore((state) => state.draft)
+  const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
+  const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
+  const registrationHasHydrated = useRegistrationStore((state) => state.hasHydrated)
+  const lastSavedDraftRef = useRef<string | null>(null)
 
-  const getTotalPrice = () => {
-    let total = selectedTicket ? selectedTicket.base_price_cents : 0
-    selectedUpsells.forEach(upsell => {
-      total += upsell.price_cents
-    })
-    return total
-  }
+  const defaultCurrency = useMemo(() => {
+    const firstTicketCurrency = tickets.find((ticket) => ticket.currency)?.currency
+    return (firstTicketCurrency || 'eur').toLowerCase()
+  }, [tickets])
 
-  const handleTicketSelect = (ticket: any) => {
-    setSelectedTicket(ticket)
-  }
+  useEffect(() => {
+    if (!registrationHasHydrated) {
+      return
+    }
 
-  const handleUpsellToggle = (upsell: any, options = {}) => {
-    setSelectedUpsells((prev: any) => {
-      const existing = prev.find((item: any) => item.id === upsell.id)
-      if (existing) {
-        return prev.filter((item: any) => item.id !== upsell.id)
+    const key = `${event.id}-${initialTicketId ?? ''}`
+
+    if (initializationKeyRef.current !== key) {
+      initializationKeyRef.current = key
+
+      if (registrationDraft && registrationDraft.eventId === event.id) {
+        const selectionRecord: TicketSelections = {}
+        registrationDraft.ticketSelections.forEach((selection) => {
+          if (selection.quantity > 0) {
+            selectionRecord[selection.ticketId] = selection.quantity
+          }
+        })
+        setTicketSelections(selectionRecord)
+
+        setParticipants(
+          registrationDraft.participants.map((participant) => ({
+            ...participant,
+          })),
+        )
+
+        const upsellRecord: SelectedUpsellState = {}
+        registrationDraft.upsells.forEach((item) => {
+          upsellRecord[item.upsellId] = {
+            quantity: item.quantity,
+            meta: item.meta || {},
+          }
+        })
+        setSelectedUpsells(upsellRecord)
+
+        if (registrationDraft.promoCode) {
+          setAppliedPromo({
+            id: registrationDraft.promoCode,
+            code: registrationDraft.promoCode,
+            description: '',
+            discount_percent: null,
+            discount_amount: null,
+            currency: registrationDraft.summary.currency,
+          })
+          setPromoInput(registrationDraft.promoCode)
+        } else {
+          setAppliedPromo(null)
+          setPromoInput('')
+        }
+
+        setPromoError(null)
+        setDisclaimerRead(registrationDraft.disclaimer.read)
+        setDisclaimerAccepted(registrationDraft.disclaimer.accepted)
+        setSignatureImage(registrationDraft.signature.imageDataUrl)
+        setClientSecret(registrationDraft.clientSecret)
+        setPaymentIntentId(registrationDraft.paymentIntentId)
+        setPricing(registrationDraft.summary)
+        setStepIndex(0)
+        setSubmissionMessage(null)
+        return
+      }
+
+      setStepIndex(0)
+      setSubmissionMessage(null)
+
+      if (initialTicketId && tickets.some((ticket) => ticket.id === initialTicketId)) {
+        setTicketSelections({ [initialTicketId]: 1 })
+      } else if (tickets.length === 1) {
+        setTicketSelections({ [tickets[0].id]: 1 })
       } else {
-        return [...prev, { ...upsell, options }]
+        setTicketSelections({})
+      }
+
+      setParticipants([])
+      setSelectedUpsells({})
+      setAppliedPromo(null)
+      setPromoInput('')
+      setPromoError(null)
+      setDisclaimerRead(false)
+      setDisclaimerAccepted(false)
+      setSignatureImage(null)
+      setClientSecret(null)
+      setPaymentIntentId(null)
+      setPricing(null)
+    }
+  }, [registrationHasHydrated, registrationDraft, event.id, initialTicketId, tickets])
+
+  const ticketMap = useMemo(() => {
+    return Object.fromEntries(tickets.map((ticket) => [ticket.id, ticket])) as Record<string, EventTicket>
+  }, [tickets])
+
+  const selectedTicketSlots = useMemo(() => {
+    const slots: string[] = []
+    Object.entries(ticketSelections).forEach(([ticketId, quantity]) => {
+      for (let index = 0; index < quantity; index += 1) {
+        slots.push(ticketId)
+      }
+    })
+    return slots
+  }, [ticketSelections])
+
+  const totalParticipants = selectedTicketSlots.length
+
+  useEffect(() => {
+    setParticipants((previous) => {
+      if (selectedTicketSlots.length === 0) return []
+
+      let next = previous.slice(0, selectedTicketSlots.length)
+
+      if (next.length < selectedTicketSlots.length) {
+        const startIndex = next.length
+        const newParticipants = selectedTicketSlots
+          .slice(startIndex)
+          .map((ticketId, index) => ({
+            id: `participant-${startIndex + index + 1}`,
+            ticketId,
+            firstName: '',
+            lastName: '',
+            email: index === 0 && user?.email ? user.email : '',
+            birthDate: '',
+            emergencyContactName: '',
+            emergencyContactPhone: '',
+            medicalInfo: '',
+            licenseNumber: '',
+          }))
+        next = [...next, ...newParticipants]
+      } else {
+        next = next.map((participant, index) => ({
+          ...participant,
+          ticketId: selectedTicketSlots[index] ?? participant.ticketId,
+        }))
+      }
+
+      return next
+    })
+
+    setClientSecret(null)
+    setPaymentIntentId(null)
+    setPricing(null)
+  }, [selectedTicketSlots, user?.email])
+
+  const ticketSubtotal = useMemo(() => {
+    return selectedTicketSlots.reduce((accumulator, ticketId) => {
+      const ticket = ticketMap[ticketId]
+      if (!ticket || !ticket.base_price_cents) return accumulator
+      return accumulator + ticket.base_price_cents
+    }, 0)
+  }, [selectedTicketSlots, ticketMap])
+
+  const upsellSubtotal = useMemo(() => {
+    return Object.entries(selectedUpsells).reduce((accumulator, [upsellId, config]) => {
+      const upsell = upsells.find((item) => item.id === upsellId)
+      if (!upsell) return accumulator
+      return accumulator + config.quantity * upsell.price_cents
+    }, 0)
+  }, [selectedUpsells, upsells])
+
+  const discountAmount = useMemo(() => calculatePromoDiscount(appliedPromo, ticketSubtotal), [appliedPromo, ticketSubtotal])
+
+  const totalDue = useMemo(() => Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0), [ticketSubtotal, upsellSubtotal, discountAmount])
+
+  const computedPricing: PricingSummary = useMemo(() => ({
+    ticketTotal: ticketSubtotal,
+    upsellTotal: upsellSubtotal,
+    discountAmount,
+    totalDue,
+    currency: defaultCurrency,
+  }), [defaultCurrency, discountAmount, ticketSubtotal, totalDue, upsellSubtotal])
+
+  const summaryPricing = pricing ?? computedPricing
+
+  useEffect(() => {
+    if (!registrationHasHydrated) {
+      return
+    }
+
+    if (!user) {
+      clearRegistrationDraft()
+      lastSavedDraftRef.current = null
+      return
+    }
+
+    const ticketSelectionArray = Object.entries(ticketSelections).map(([ticketId, quantity]) => ({
+      ticketId,
+      quantity,
+    }))
+
+    const participantsPayload = participants.map((participant) => ({ ...participant }))
+
+    const upsellsPayload = Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+      upsellId,
+      quantity: config.quantity,
+      meta: config.meta || {},
+    }))
+
+    const summaryPayload: RegistrationSummary = {
+      ticketTotal: summaryPricing.ticketTotal,
+      upsellTotal: summaryPricing.upsellTotal,
+      discountAmount: summaryPricing.discountAmount,
+      totalDue: summaryPricing.totalDue,
+      currency: summaryPricing.currency,
+    }
+
+    const signaturePayload = {
+      imageDataUrl: signatureImage,
+      regulationVersion: REGULATION_VERSION,
+      signedAt:
+        signatureImage && registrationDraft?.signature.imageDataUrl === signatureImage
+          ? registrationDraft?.signature.signedAt ?? new Date().toISOString()
+          : signatureImage
+            ? new Date().toISOString()
+            : null,
+    }
+
+    const disclaimerPayload = {
+      read: disclaimerRead,
+      accepted: disclaimerAccepted,
+    }
+
+    const draftPayload: RegistrationDraft = {
+      eventId: event.id,
+      userId: user.id,
+      userEmail: user.email || '',
+      paymentIntentId: paymentIntentId ?? null,
+      clientSecret: clientSecret ?? null,
+      ticketSelections: ticketSelectionArray,
+      participants: participantsPayload,
+      upsells: upsellsPayload,
+      promoCode: appliedPromo?.code || null,
+      summary: summaryPayload,
+      signature: signaturePayload,
+      disclaimer: disclaimerPayload,
+    }
+
+    const serialized = JSON.stringify(draftPayload)
+    if (lastSavedDraftRef.current === serialized) {
+      return
+    }
+
+    lastSavedDraftRef.current = serialized
+    setRegistrationDraft(draftPayload)
+  }, [
+    registrationHasHydrated,
+    registrationDraft,
+    user,
+    event.id,
+    ticketSelections,
+    participants,
+    selectedUpsells,
+    appliedPromo?.code,
+    summaryPricing.ticketTotal,
+    summaryPricing.upsellTotal,
+    summaryPricing.discountAmount,
+    summaryPricing.totalDue,
+    summaryPricing.currency,
+    clientSecret,
+    paymentIntentId,
+    signatureImage,
+    disclaimerRead,
+    disclaimerAccepted,
+    setRegistrationDraft,
+    clearRegistrationDraft,
+  ])
+
+  const stepProgress = ((stepIndex + 1) / steps.length) * 100
+  const currentStepId = steps[stepIndex]?.id || 'tickets'
+
+  const handleTicketQuantityChange = (ticketId: string, nextQuantity: number) => {
+    setTicketSelections((previous) => {
+      const clampedQuantity = Math.max(0, nextQuantity)
+      const draft = { ...previous }
+      if (clampedQuantity === 0) {
+        delete draft[ticketId]
+      } else {
+        draft[ticketId] = clampedQuantity
+      }
+      return draft
+    })
+  }
+
+  const handleParticipantChange = (
+    participantId: string,
+    field: keyof Participant,
+    value: string,
+  ) => {
+    setParticipants((previous) =>
+      previous.map((participant) =>
+        participant.id === participantId
+          ? {
+              ...participant,
+              [field]: value,
+            }
+          : participant,
+      ),
+    )
+  }
+
+  const handleUpsellChange = (upsellId: string, quantity: number) => {
+    setSelectedUpsells((previous) => {
+      if (quantity <= 0) {
+        const { [upsellId]: _removed, ...rest } = previous
+        return rest
+      }
+      return {
+        ...previous,
+        [upsellId]: {
+          ...previous[upsellId],
+          quantity,
+        },
       }
     })
   }
 
-  const handleNext = async () => {
-    if (currentStep === 2) {
-      // Moving to payment step - create PaymentIntent
-      await createPaymentIntent()
-    }
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1)
-    }
+  const handleUpsellSizeChange = (upsellId: string, size: string) => {
+    setSelectedUpsells((previous) => {
+      const existing = previous[upsellId]
+      if (!existing) {
+        return {
+          ...previous,
+          [upsellId]: {
+            quantity: 1,
+            meta: { size },
+          },
+        }
+      }
+      return {
+        ...previous,
+        [upsellId]: {
+          ...existing,
+          meta: {
+            ...(existing.meta || {}),
+            size,
+          },
+        },
+      }
+    })
   }
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
+  const resetPaymentIntent = () => {
+    setClientSecret(null)
+    setPaymentIntentId(null)
+    setPricing(null)
   }
 
-  const createPaymentIntent = async () => {
-    setLoading(true)
-    setMessage(null)
-    
+  useEffect(() => {
+    resetPaymentIntent()
+  }, [appliedPromo, selectedUpsells])
+
+  const validatePromoCode = useCallback(async () => {
+    const normalized = promoInput.trim().toUpperCase()
+    if (!normalized) {
+      setPromoError('Merci de saisir un code promo.')
+      return
+    }
+
     try {
-      const response = await fetch('/api/stripe/create-payment-intent', {
+      const response = await fetch('/api/promotions/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          ticketId: selectedTicket.id,
-          eventId: mockEvent.id,
-          userId: mockUser.id,
-          userEmail: mockUser.email,
-          upsells: selectedUpsells,
-          amount: getTotalPrice(),
-          currency: selectedTicket.currency
-        })
+          code: normalized,
+          eventId: event.id,
+        }),
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erreur lors de la création du paiement')
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error || "Code promo invalide")
       }
 
-      const { clientSecret } = await response.json()
-      setClientSecret(clientSecret)
-    } catch (error: any) {
-      console.error('Erreur création PaymentIntent:', error)
-      setMessage({
-        type: 'error',
-        text: error.message || 'Erreur lors de la préparation du paiement'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleFileUpload = (e: any) => {
-    const file = e.target.files[0]
-    if (file) {
-      setDocumentFile(file)
-    }
-  }
-
-  const handlePaymentSuccess = async (paymentIntent: any) => {
-    setPaymentProcessing(true)
-    
-    try {
-      // Create registration after successful payment
-      const response = await fetch('/api/registrations/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentIntentId: paymentIntent.id,
-          ticketId: selectedTicket.id,
-          eventId: mockEvent.id,
-          userId: mockUser.id,
-          upsells: selectedUpsells,
-          documentFile: documentFile ? documentFile.name : null
-        })
-      })
-
-      if (response.ok) {
-        setMessage({
-          type: 'success',
-          text: '🎉 Inscription réussie ! Un email de confirmation vous a été envoyé.'
-        })
-        
-        // Close dialog after success
-        setTimeout(() => {
-          setIsOpen(false)
-          // Optionally redirect to success page
-          window.location.href = `/events/${mockEvent.id}/success`
-        }, 2000)
-      }
+      const data = (await response.json()) as { promotionalCode: AppliedPromo }
+      setAppliedPromo(data.promotionalCode)
+      setPromoError(null)
     } catch (error) {
-      console.error('Erreur création inscription:', error)
-      setMessage({
-        type: 'error',
-        text: 'Paiement réussi mais erreur lors de la création de l\'inscription. Contactez le support.'
-      })
-    } finally {
-      setPaymentProcessing(false)
+      setAppliedPromo(null)
+      setPromoError(error instanceof Error ? error.message : "Impossible d'appliquer ce code")
     }
+  }, [event.id, promoInput])
+
+  const removePromo = () => {
+    setAppliedPromo(null)
+    setPromoInput('')
+    setPromoError(null)
   }
 
-  const handlePaymentError = (error: any) => {
-    setMessage({
-      type: 'error',
-      text: error.message || 'Erreur lors du paiement'
-    })
+  const ensurePaymentIntent = useCallback(async () => {
+    if (!user) {
+      setSubmissionMessage({
+        type: 'error',
+        text: 'Connectez-vous pour continuer votre inscription.',
+      })
+      return null
+    }
+
+    if (totalDue <= 0) {
+      setSubmissionMessage({
+        type: 'error',
+        text: 'Le montant total doit être supérieur à zéro.',
+      })
+      return null
+    }
+
+    setIsCreatingPaymentIntent(true)
+    setSubmissionMessage(null)
+
+    try {
+      const response = await fetch('/api/stripe/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          userId: user.id,
+          userEmail: user.email,
+          ticketSelections: Object.entries(ticketSelections).map(([ticketId, quantity]) => ({
+            ticketId,
+            quantity,
+          })),
+          participants: participants.map((participant) => ({
+            ticketId: participant.ticketId,
+            email: participant.email,
+            firstName: participant.firstName,
+            lastName: participant.lastName,
+          })),
+          upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+            upsellId,
+            quantity: config.quantity,
+            meta: config.meta || {},
+          })),
+          promoCode: appliedPromo?.code || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error || 'Impossible de préparer le paiement')
+      }
+
+      const data = await response.json() as {
+        clientSecret: string
+        paymentIntentId: string
+        pricing: PricingSummary
+      }
+
+      setClientSecret(data.clientSecret)
+      setPaymentIntentId(data.paymentIntentId)
+      setPricing(data.pricing)
+      return data
+    } catch (error) {
+      setSubmissionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Erreur lors de la création du paiement',
+      })
+      throw error
+    } finally {
+      setIsCreatingPaymentIntent(false)
+    }
+  }, [appliedPromo?.code, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
+
+  const proceedToNextStep = async () => {
+    if (stepIndex === steps.length - 1) return
+
+    if (steps[stepIndex + 1]?.id === 'confirmation') {
+      try {
+        await ensurePaymentIntent()
+      } catch {
+        return
+      }
+    }
+
+    setStepIndex((index) => index + 1)
+    setSubmissionMessage(null)
   }
 
-  const canProceedFromStep1 = selectedTicket !== null
-  const canProceedFromStep2 = true // Always can proceed from upsells
-  const canProceedFromStep3 = (!selectedTicket?.requires_document || documentFile) && disclaimerAccepted
+  const goToPreviousStep = () => {
+    setStepIndex((index) => Math.max(0, index - 1))
+    setSubmissionMessage(null)
+  }
 
-  const stepProgress = (currentStep / 3) * 100
+  const handleProceedToPayment = async () => {
+    if (!user) {
+      setSubmissionMessage({
+        type: 'error',
+        text: 'Connectez-vous pour continuer votre inscription.',
+      })
+      return
+    }
 
-  // Step 1: Ticket Selection
-  const renderTicketSelection = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-semibold mb-2">Choisissez votre format</h3>
-        <p className="text-muted-foreground">Sélectionnez le type de course qui vous convient</p>
-      </div>
-      
-      <div className="space-y-4">
-        {mockTickets.map((ticket) => (
-          <div
+    if (!disclaimerRead || !disclaimerAccepted) {
+      setSubmissionMessage({
+        type: 'error',
+        text: 'Merci de lire et accepter la décharge de responsabilité.',
+      })
+      return
+    }
+
+    if (!signatureImage) {
+      setSubmissionMessage({
+        type: 'error',
+        text: 'Merci de dessiner votre signature pour valider.',
+      })
+      return
+    }
+
+    let localClientSecret = clientSecret
+    let localPaymentIntentId = paymentIntentId
+    let localPricing = pricing
+
+    try {
+      if (!localClientSecret || !localPaymentIntentId) {
+        const paymentData = await ensurePaymentIntent()
+        if (!paymentData) {
+          return
+        }
+        localClientSecret = paymentData.clientSecret
+        localPaymentIntentId = paymentData.paymentIntentId
+        localPricing = paymentData.pricing
+      }
+    } catch {
+      return
+    }
+
+    if (!localClientSecret || !localPaymentIntentId) {
+      setSubmissionMessage({
+        type: 'error',
+        text: 'Impossible de préparer le paiement. Merci de réessayer.',
+      })
+      return
+    }
+
+    const payload = {
+      eventId: event.id,
+      userId: user.id,
+      userEmail: user.email,
+      paymentIntentId: localPaymentIntentId,
+      clientSecret: localClientSecret,
+      ticketSelections: Object.entries(ticketSelections).map(([ticketId, quantity]) => ({
+        ticketId,
+        quantity,
+      })),
+      participants: participants.map((participant) => ({
+        id: participant.id,
+        ticketId: participant.ticketId,
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        email: participant.email,
+        birthDate: participant.birthDate,
+        emergencyContactName: participant.emergencyContactName,
+        emergencyContactPhone: participant.emergencyContactPhone,
+        medicalInfo: participant.medicalInfo,
+        licenseNumber: participant.licenseNumber,
+      })),
+      upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+        upsellId,
+        quantity: config.quantity,
+        meta: config.meta || {},
+      })),
+      promoCode: appliedPromo?.code || null,
+      summary: localPricing ?? summaryPricing,
+      signature: {
+        imageDataUrl: signatureImage,
+        regulationVersion: REGULATION_VERSION,
+        signedAt: new Date().toISOString(),
+      },
+      disclaimer: {
+        read: disclaimerRead,
+        accepted: disclaimerAccepted,
+      },
+    }
+
+    setRegistrationDraft(payload)
+    router.push(`/events/${event.id}/register/payment`)
+  }
+
+  const isTicketsStepValid = totalParticipants > 0
+
+  const isParticipantsStepValid =
+    participants.length === totalParticipants &&
+    participants.every((participant) =>
+      participant.firstName.trim() &&
+      participant.lastName.trim() &&
+      participant.email.trim(),
+    )
+
+  const isConfirmationStepValid = disclaimerRead && disclaimerAccepted && Boolean(signatureImage)
+
+  const canContinue = (() => {
+    switch (currentStepId) {
+      case 'tickets':
+        return isTicketsStepValid
+      case 'participants':
+        return isParticipantsStepValid
+      case 'options':
+        return true
+      case 'confirmation':
+        return isConfirmationStepValid
+      default:
+        return false
+    }
+  })()
+
+  const renderTicketStep = () => (
+    <div className="space-y-4">
+      {tickets.map((ticket) => {
+        const quantity = ticketSelections[ticket.id] ?? 0
+        const isSelected = quantity > 0
+        const currency = (ticket.currency || defaultCurrency).toLowerCase()
+        return (
+          <Card
             key={ticket.id}
-            className={`border rounded-lg p-4 cursor-pointer transition-all ${
-              selectedTicket?.id === ticket.id 
-                ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                : 'border-border hover:border-primary/50'
-            }`}
-            onClick={() => handleTicketSelect(ticket)}
+            className={`transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h4 className="font-semibold">{ticket.name}</h4>
-                  {ticket.requires_document && (
-                    <Badge variant="secondary" className="text-xs">
-                      <FileText className="h-3 w-3 mr-1" />
+            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-2">
+                <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                  <TicketIcon className="h-4 w-4 text-primary" />
+                  {ticket.name}
+                </CardTitle>
+                {ticket.description && (
+                  <CardDescription>{ticket.description}</CardDescription>
+                )}
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  {ticket.race?.distance_km ? (
+                    <Badge variant="outline" className="gap-1">
+                      <Users className="h-3 w-3" />
+                      {ticket.race.distance_km} km
+                    </Badge>
+                  ) : null}
+                  {ticket.requires_document ? (
+                    <Badge variant="secondary" className="gap-1">
+                      <FileText className="h-3 w-3" />
                       Document requis
                     </Badge>
-                  )}
-                  {selectedTicket?.id === ticket.id && (
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
-                {ticket.race && (
-                  <div className="text-xs text-muted-foreground">
-                    {ticket.race.distance_km} km • Difficulté {ticket.race.difficulty}/10
-                  </div>
-                )}
-              </div>
-              <div className="text-right ml-4">
-                <div className="text-lg font-bold text-primary">
-                  {formatPrice(ticket.base_price_cents, ticket.currency)}
+                  ) : null}
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+              <div className="flex flex-col items-end gap-3">
+                <div className="text-lg font-semibold text-primary">
+                  {ticket.base_price_cents !== null && ticket.base_price_cents !== undefined
+                    ? formatPrice(ticket.base_price_cents, currency)
+                    : 'Tarif à venir'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={quantity === 0}
+                    onClick={() => handleTicketQuantityChange(ticket.id, quantity - 1)}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <div className="w-10 text-center text-sm font-semibold">{quantity}</div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleTicketQuantityChange(ticket.id, quantity + 1)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        )
+      })}
+
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          {availableSpots > 0
+            ? `${availableSpots} places restantes sur l'événement. Dépêchez-vous !`
+            : "L'événement affiche complet. Vous pouvez rejoindre la liste d'attente."}
+        </AlertDescription>
+      </Alert>
     </div>
   )
 
-  // Step 2: Upsells Selection
-  const renderUpsellSelection = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-semibold mb-2">Améliorez votre expérience</h3>
-        <p className="text-muted-foreground">Ajoutez des options pour enrichir votre participation</p>
-      </div>
-      
-      <div className="space-y-4">
-        {mockUpsells.map((upsell) => {
-          const isSelected = selectedUpsells.some(item => item.id === upsell.id)
-          
-          return (
-            <div
-              key={upsell.id}
-              className={`border rounded-lg p-4 transition-all ${
-                isSelected 
-                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                  : 'border-border'
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                <div className="text-2xl">{upsell.image}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-semibold">{upsell.name}</h4>
-                    {upsell.digital && <Badge variant="outline">Digital</Badge>}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{upsell.description}</p>
-                  
-                  {upsell.sizes && (
-                    <div className="space-y-2 mb-3">
-                      <Label className="text-xs">Taille :</Label>
-                      <div className="flex gap-2">
-                        {upsell.sizes.map(size => (
-                          <Button
-                            key={size}
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            {size}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-primary">
-                      {formatPrice(upsell.price_cents, upsell.currency)}
-                    </div>
-                    <Button
-                      variant={isSelected ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleUpsellToggle(upsell)}
-                    >
-                      {isSelected ? (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Ajouté
-                        </>
-                      ) : (
-                        'Ajouter'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+  const renderParticipantsStep = () => (
+    <div className="space-y-4">
+      {participants.length === 0 ? (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Ajoutez au moins un billet pour renseigner les participants.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
-      {selectedUpsells.length === 0 && (
-        <div className="text-center p-6 border-2 border-dashed border-muted rounded-lg">
-          <p className="text-muted-foreground">Aucun extra sélectionné - vous pouvez continuer sans options supplémentaires</p>
-        </div>
-      )}
+      {participants.map((participant, index) => {
+        const ticket = ticketMap[participant.ticketId]
+        return (
+          <Card key={participant.id}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-base">
+                <span>Participant {index + 1}</span>
+                {ticket ? (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <TicketIcon className="h-3 w-3" />
+                    {ticket.name}
+                  </Badge>
+                ) : null}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-firstName`}>Prénom</Label>
+                <Input
+                  id={`${participant.id}-firstName`}
+                  value={participant.firstName}
+                  onChange={(event) => handleParticipantChange(participant.id, 'firstName', event.target.value)}
+                  placeholder="Camille"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-lastName`}>Nom</Label>
+                <Input
+                  id={`${participant.id}-lastName`}
+                  value={participant.lastName}
+                  onChange={(event) => handleParticipantChange(participant.id, 'lastName', event.target.value)}
+                  placeholder="Martin"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-email`}>Email</Label>
+                <Input
+                  id={`${participant.id}-email`}
+                  type="email"
+                  value={participant.email}
+                  onChange={(event) => handleParticipantChange(participant.id, 'email', event.target.value)}
+                  placeholder="camille.martin@email.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-birthDate`}>Date de naissance</Label>
+                <Input
+                  id={`${participant.id}-birthDate`}
+                  type="date"
+                  value={participant.birthDate}
+                  onChange={(event) => handleParticipantChange(participant.id, 'birthDate', event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-emergency`}>Contact d'urgence</Label>
+                <Input
+                  id={`${participant.id}-emergency`}
+                  value={participant.emergencyContactName}
+                  onChange={(event) => handleParticipantChange(participant.id, 'emergencyContactName', event.target.value)}
+                  placeholder="Nom et prénom"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-emergencyPhone`}>Téléphone d'urgence</Label>
+                <Input
+                  id={`${participant.id}-emergencyPhone`}
+                  value={participant.emergencyContactPhone}
+                  onChange={(event) => handleParticipantChange(participant.id, 'emergencyContactPhone', event.target.value)}
+                  placeholder="06 xx xx xx xx"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor={`${participant.id}-medical`}>Informations médicales (optionnel)</Label>
+                <Textarea
+                  id={`${participant.id}-medical`}
+                  rows={3}
+                  value={participant.medicalInfo}
+                  onChange={(event) => handleParticipantChange(participant.id, 'medicalInfo', event.target.value)}
+                  placeholder="Allergies, traitement en cours, etc."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${participant.id}-license`}>Licence / dossard (optionnel)</Label>
+                <Input
+                  id={`${participant.id}-license`}
+                  value={participant.licenseNumber}
+                  onChange={(event) => handleParticipantChange(participant.id, 'licenseNumber', event.target.value)}
+                  placeholder="Numéro de licence"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   )
 
-  // Step 3: Document Upload + Disclaimer + Payment
-  const renderFinalStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-semibold mb-2">Finaliser votre inscription</h3>
-        <p className="text-muted-foreground">Dernières étapes avant le paiement</p>
-      </div>
+  const renderOptionsStep = () => (
+    <div className="space-y-4">
+      {upsells.length === 0 ? (
+        <Alert>
+          <Gift className="h-4 w-4" />
+          <AlertDescription>Pas d'options additionnelles disponibles pour cet événement.</AlertDescription>
+        </Alert>
+      ) : null}
 
-      {/* Document Upload */}
-      {selectedTicket?.requires_document && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <FileText className="h-4 w-4" />
-              Document justificatif requis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Veuillez télécharger un certificat médical ou une attestation d'assurance.
-              </p>
-              
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                {documentFile ? (
-                  <div className="space-y-2">
-                    <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
-                    <p className="font-medium">{documentFile.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(documentFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDocumentFile(null)}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Supprimer
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
-                    <p className="text-sm font-medium">Télécharger un document</p>
-                    <p className="text-xs text-muted-foreground">PDF, JPG, PNG • Max 10MB</p>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="document-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const input = document.getElementById('document-upload');
-                        if (input) input.click();
-                      }}
-                    >
-                      Choisir un fichier
-                    </Button>
-                  </div>
+      {upsells.map((upsell) => {
+        const selection = selectedUpsells[upsell.id]
+        const quantity = selection?.quantity ?? 0
+        const isSelected = quantity > 0
+        return (
+          <Card key={upsell.id} className={`transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}>
+            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-2">
+                <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-primary" />
+                  {upsell.name}
+                </CardTitle>
+                {upsell.description && (
+                  <CardDescription>{upsell.description}</CardDescription>
                 )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex flex-col items-end gap-3">
+                <div className="text-lg font-semibold text-primary">
+                  {formatPrice(upsell.price_cents, (upsell.currency || defaultCurrency).toLowerCase())}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={quantity === 0}
+                    onClick={() => handleUpsellChange(upsell.id, quantity - 1)}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <div className="w-10 text-center text-sm font-semibold">{quantity}</div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleUpsellChange(upsell.id, quantity + 1)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
 
-      {/* Disclaimer */}
+                {upsell.type === 'tshirt' ? (
+                  <Select
+                    value={selection?.meta?.size || ''}
+                    onValueChange={(value) => handleUpsellSizeChange(upsell.id, value)}
+                    disabled={quantity === 0}
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Choisir une taille" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </div>
+            </CardHeader>
+          </Card>
+        )
+      })}
+
+    </div>
+  )
+
+  const renderConfirmationStep = () => (
+    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <AlertTriangle className="h-4 w-4" />
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4" />
             Décharge de responsabilité
           </CardTitle>
+          <CardDescription>
+            Merci de lire attentivement ce texte avant de signer électroniquement.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 bg-muted/30 rounded-lg text-sm max-h-32 overflow-y-auto">
-              <p className="mb-2 font-medium">Conditions de participation :</p>
-              <p className="mb-2">
-                Je déclare participer à cet événement en pleine connaissance des risques encourus 
-                et dégage les organisateurs de toute responsabilité en cas d'accident.
-              </p>
-              <p className="mb-2">
-                Je certifie être en parfaite condition physique et apte à participer à cette épreuve sportive.
-              </p>
-              <p>
-                Je m'engage à respecter le règlement de l'épreuve et les consignes de sécurité.
-              </p>
-            </div>
-            
-            <div className="flex items-start space-x-2">
+        <CardContent className="space-y-3">
+          <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-dashed border-muted/60 p-4 text-sm leading-relaxed">
+            <p>
+              Je reconnais participer à la course Overbound en pleine connaissance des risques inhérents aux activités sportives de pleine nature.
+              J'atteste être en condition physique adéquate et disposer des certificats nécessaires le cas échéant.
+            </p>
+            <p>
+              Je dégage Overbound, ses organisateurs, partenaires et bénévoles de toute responsabilité en cas d'accident ou de dommage matériel me concernant.
+              Je m'engage à respecter le règlement de l'événement ainsi que les consignes de sécurité communiquées avant et pendant la course.
+            </p>
+            <p>
+              Je comprends que ma sécurité dépend de ma vigilance et m'engage à signaler tout problème de santé susceptible d'altérer ma participation.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
               <Checkbox
-                id="disclaimer"
-                checked={disclaimerAccepted}
-                onCheckedChange={checked => setDisclaimerAccepted(checked === true)}
+                id="disclaimer-read"
+                checked={disclaimerRead}
+                onCheckedChange={(checked) => setDisclaimerRead(checked === true)}
               />
-              <Label htmlFor="disclaimer" className="text-sm leading-relaxed">
-                Je déclare avoir lu et accepter les conditions de participation et la décharge de responsabilité
+              <Label htmlFor="disclaimer-read" className="text-sm leading-relaxed">
+                J'ai lu et compris l'intégralité de la décharge de responsabilité.
+              </Label>
+            </div>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="disclaimer-accepted"
+                checked={disclaimerAccepted}
+                onCheckedChange={(checked) => setDisclaimerAccepted(checked === true)}
+              />
+              <Label htmlFor="disclaimer-accepted" className="text-sm leading-relaxed">
+                J'accepte sans réserve les conditions ci-dessus et je renonce à tout recours contre Overbound.
               </Label>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Payment Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Récapitulatif
-          </CardTitle>
+          <CardTitle className="text-base">Signature manuscrite</CardTitle>
+          <CardDescription>
+            Dessinez votre signature comme sur un document officiel. Elle sera jointe à votre dossier.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {selectedTicket && (
-              <div className="flex justify-between">
-                <span>{selectedTicket.name}</span>
-                <span>{formatPrice(selectedTicket.base_price_cents, selectedTicket.currency)}</span>
-              </div>
-            )}
-            
-            {selectedUpsells.map(upsell => (
-              <div key={upsell.id} className="flex justify-between text-sm">
-                <span>{upsell.name}</span>
-                <span>{formatPrice(upsell.price_cents, upsell.currency)}</span>
-              </div>
-            ))}
-            
-            <div className="border-t pt-3">
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span className="text-primary">
-                  {formatPrice(getTotalPrice(), selectedTicket?.currency || 'eur')}
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Embedded Stripe Checkout */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Paiement sécurisé</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {paymentProcessing ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="font-medium">Finalisation de votre inscription...</p>
-              <p className="text-sm text-muted-foreground">Veuillez patienter, ne fermez pas cette fenêtre</p>
-            </div>
-          ) : (
-            <EmbeddedStripeCheckout
-              clientSecret={clientSecret ?? ''}
-              onSuccess={handlePaymentSuccess}
-              onError={handlePaymentError}
-              totalAmount={getTotalPrice()}
-              currency={selectedTicket?.currency || 'eur'}
-              loading={loading}
-            />
-          )}
+        <CardContent className="space-y-3">
+          <SignaturePad onChange={setSignatureImage} />
+          <p className="text-xs text-muted-foreground">
+            Une fois cette étape validée, vous serez redirigé vers la page de paiement sécurisé Stripe.
+          </p>
         </CardContent>
       </Card>
     </div>
   )
 
+  const stepContent: Record<StepKey, React.ReactNode> = {
+    tickets: renderTicketStep(),
+    participants: renderParticipantsStep(),
+    options: renderOptionsStep(),
+    confirmation: renderConfirmationStep(),
+  }
+
+  const selectedUpsellList = useMemo(() => {
+    return Object.entries(selectedUpsells)
+      .filter(([, config]) => config.quantity > 0)
+      .map(([id, config]) => {
+        const upsell = upsells.find((item) => item.id === id)
+        if (!upsell) return null
+        return {
+          upsell,
+          quantity: config.quantity,
+          meta: config.meta || {},
+        }
+      })
+      .filter(Boolean) as Array<{
+      upsell: EventUpsell
+      quantity: number
+      meta: Record<string, string>
+    }>
+  }, [selectedUpsells, upsells])
+
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            S'inscrire à l'événement
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Button 
-              onClick={() => setIsOpen(true)}
-              className="w-full"
-              disabled={availableSpots <= 0}
-            >
-              {availableSpots <= 0 ? 'Événement complet' : 'Commencer l\'inscription'}
-            </Button>
-            
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>• Processus en 3 étapes</p>
-              <p>• Paiement sécurisé intégré</p>
-              <p>• Confirmation immédiate</p>
-            </div>
+    <section className="mx-auto max-w-6xl space-y-6 py-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Inscription à {event.title}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <CalendarDays className="h-4 w-4" />
+              {new Date(event.date).toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </span>
+            <Separator orientation="vertical" className="hidden h-4 md:block" />
+            <span className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              {event.location}
+            </span>
+            <Separator orientation="vertical" className="hidden h-4 md:block" />
+            <span className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {availableSpots > 0 ? `${availableSpots} places restantes` : 'Complet'}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Button asChild variant="outline">
+          <Link href={`/events/${event.id}`}>Retour à l'événement</Link>
+        </Button>
+      </div>
 
-      {/* Multi-step Registration Dialog */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Inscription - {mockEvent.title}</DialogTitle>
-            <DialogDescription>
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4" />
-                {new Date(mockEvent.date).toLocaleDateString('fr-FR')} à {mockEvent.location}
-              </div>
-            </DialogDescription>
-          </DialogHeader>
+      {user ? null : (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Vous devez être connecté pour poursuivre votre inscription.{' '}
+            <a href={`/auth/login?next=/events/${event.id}`} className="underline">
+              Se connecter
+            </a>
+          </AlertDescription>
+        </Alert>
+      )}
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Étape {currentStep} sur 3</span>
+      <Card>
+        <CardContent className="space-y-6 pt-6">
+          <div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Étape {stepIndex + 1} sur {steps.length}</span>
               <span>{Math.round(stepProgress)}%</span>
             </div>
             <Progress value={stepProgress} className="h-2" />
           </div>
 
-          {/* Step Content */}
-          <div className="py-4">
-            {currentStep === 1 && renderTicketSelection()}
-            {currentStep === 2 && renderUpsellSelection()}
-            {currentStep === 3 && renderFinalStep()}
-          </div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(320px,1fr)]">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold">{steps[stepIndex]?.title}</h3>
+                <p className="text-sm text-muted-foreground">{steps[stepIndex]?.description}</p>
+              </div>
 
-          {/* Navigation - Hidden during payment processing */}
-          {!paymentProcessing && (
-            <div className="flex justify-between pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={currentStep === 1 ? () => setIsOpen(false) : handleBack}
-                disabled={loading}
-              >
-                {currentStep === 1 ? 'Annuler' : (
-                  <>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
+              <div>{stepContent[currentStepId]}</div>
+
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                {stepIndex === 0 ? (
+                  <Button asChild variant="outline">
+                    <Link href={`/events/${event.id}`}>
+                      <ChevronLeft className="mr-1 h-4 w-4" />
+                      Retour à l'événement
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={goToPreviousStep}>
+                    <ChevronLeft className="mr-1 h-4 w-4" />
                     Précédent
-                  </>
+                  </Button>
                 )}
-              </Button>
 
-              {currentStep < 3 ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={
-                    loading ||
-                    (currentStep === 1 && !canProceedFromStep1) ||
-                    (currentStep === 2 && !canProceedFromStep2)
-                  }
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Préparation...
-                    </>
+                {stepIndex < steps.length - 1 ? (
+                  <Button onClick={proceedToNextStep} disabled={!canContinue || !user}>
+                    Suivant
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleProceedToPayment}
+                    disabled={!canContinue || !user || isCreatingPaymentIntent}
+                  >
+                    {isCreatingPaymentIntent ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Préparation du paiement...
+                      </>
+                    ) : (
+                      'Procéder au paiement sécurisé'
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {submissionMessage ? (
+                <Alert variant={submissionMessage.type === 'success' ? 'default' : 'destructive'}>
+                  {submissionMessage.type === 'success' ? (
+                    <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <>
-                      Suivant
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </>
+                    <AlertTriangle className="h-4 w-4" />
                   )}
-                </Button>
+                  <AlertDescription>{submissionMessage.text}</AlertDescription>
+                </Alert>
               ) : null}
             </div>
-          )}
 
-          {/* Error/Success Messages */}
-          {message && (
-            <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-              {message.type === 'error' ? (
-                <AlertTriangle className="h-4 w-4" />
-              ) : (
-                <CheckCircle className="h-4 w-4" />
-              )}
-              <AlertDescription>{message.text}</AlertDescription>
-            </Alert>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+            <aside className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Résumé de la commande</CardTitle>
+                  <CardDescription>Mettez à jour vos choix pour ajuster le total.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                  <div className="space-y-3">
+                    <div className="text-xs uppercase text-muted-foreground">Code promotionnel</div>
+                    {appliedPromo ? (
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/10 p-4">
+                        <div>
+                          <p className="text-sm font-semibold text-primary">Code {appliedPromo.code}</p>
+                          {appliedPromo.description ? (
+                            <p className="text-xs text-muted-foreground">{appliedPromo.description}</p>
+                          ) : null}
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={removePromo}>
+                          Retirer
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                        <Input
+                          value={promoInput}
+                          onChange={(event) => setPromoInput(event.target.value.toUpperCase())}
+                          placeholder="EX: OVERBOUND10"
+                          className="md:max-w-xs"
+                        />
+                        <Button type="button" onClick={validatePromoCode}>Appliquer</Button>
+                      </div>
+                    )}
+                    {promoError ? <p className="text-xs text-destructive">{promoError}</p> : null}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase text-muted-foreground">Billets</div>
+                    {selectedTicketSlots.length === 0 ? (
+                      <p className="text-muted-foreground">Aucun billet sélectionné.</p>
+                    ) : (
+                      selectedTicketSlots.map((ticketId, index) => {
+                        const ticket = ticketMap[ticketId]
+                        const participant = participants[index]
+                        if (!ticket) return null
+                        return (
+                          <div key={`${ticketId}-${index}`} className="flex items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <p className="font-medium">{ticket.name}</p>
+                              {participant?.firstName || participant?.lastName ? (
+                                <p className="text-xs text-muted-foreground">{joinName(participant.firstName, participant.lastName)}</p>
+                              ) : null}
+                            </div>
+                            <span className="font-medium">
+                              {ticket.base_price_cents ? formatPrice(ticket.base_price_cents, (ticket.currency || defaultCurrency).toLowerCase()) : '—'}
+                            </span>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase text-muted-foreground">Options</div>
+                    {selectedUpsellList.length === 0 ? (
+                      <p className="text-muted-foreground">Aucune option ajoutée.</p>
+                    ) : (
+                      selectedUpsellList.map(({ upsell, quantity, meta }) => (
+                        <div key={upsell.id} className="flex items-center justify-between gap-3">
+                          <div className="space-y-0.5">
+                            <p className="font-medium">{quantity} × {upsell.name}</p>
+                            {meta.size ? (
+                              <p className="text-xs text-muted-foreground">Taille {meta.size}</p>
+                            ) : null}
+                          </div>
+                          <span className="font-medium">
+                            {formatPrice(upsell.price_cents * quantity, (upsell.currency || defaultCurrency).toLowerCase())}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Sous-total billets</span>
+                      <span>{formatPrice(summaryPricing.ticketTotal, summaryPricing.currency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Options</span>
+                      <span>{formatPrice(summaryPricing.upsellTotal, summaryPricing.currency)}</span>
+                    </div>
+                    {summaryPricing.discountAmount > 0 ? (
+                      <div className="flex items-center justify-between text-sm text-emerald-600">
+                        <span>Réduction</span>
+                        <span>- {formatPrice(summaryPricing.discountAmount, summaryPricing.currency)}</span>
+                      </div>
+                    ) : null}
+                    <Separator />
+                    <div className="flex items-center justify-between text-base font-semibold">
+                      <span>Total à régler</span>
+                      <span>{formatPrice(summaryPricing.totalDue, summaryPricing.currency)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Participants</CardTitle>
+                  <CardDescription>Les informations seront visibles par l'équipe Overbound.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {participants.length === 0 ? (
+                    <p className="text-muted-foreground">Aucun participant renseigné.</p>
+                  ) : (
+                    participants.map((participant) => {
+                      const ticket = ticketMap[participant.ticketId]
+                      return (
+                        <div key={participant.id} className="rounded-lg border border-muted/60 p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{joinName(participant.firstName, participant.lastName) || 'Participant'}</span>
+                            {ticket ? <Badge variant="outline">{ticket.name}</Badge> : null}
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {participant.email || 'Email à renseigner'}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </CardContent>
+              </Card>
+            </aside>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
   )
 }
