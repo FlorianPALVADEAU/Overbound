@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 async function ensureAdmin() {
   const supabase = await createSupabaseServer()
@@ -28,8 +29,8 @@ function sanitizeOptions(options: any) {
   if (!options) return null
   const sizes = Array.isArray(options.sizes)
     ? options.sizes
-        .map((size) => (typeof size === 'string' ? size.trim() : ''))
-        .filter((size) => size.length > 0)
+        .map((size: string) => (typeof size === 'string' ? size.trim() : ''))
+        .filter((size: string) => size.length > 0)
     : []
   if (sizes.length === 0) return null
   return { sizes }
@@ -66,7 +67,7 @@ async function fetchUpsell(id: string) {
   return data
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+const handlePut = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { error } = await ensureAdmin()
     if (error) return error
@@ -97,7 +98,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+const handleDelete = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { error } = await ensureAdmin()
     if (error) return error
@@ -118,3 +119,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const PUT = withRequestLogging(handlePut, {
+  actionType: 'Mise à jour upsell admin',
+})
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression upsell admin',
+})
