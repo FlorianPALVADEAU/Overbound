@@ -2,6 +2,10 @@ import { Currency, Timestamp, UUID } from './base.type'
 
 export type UpsellType = 'tshirt' | 'photos' | 'other'
 
+export interface UpsellOptions {
+  sizes?: string[] | null
+}
+
 export interface Upsell {
   id: UUID
   name: string
@@ -13,6 +17,7 @@ export interface Upsell {
   is_active: boolean
   stock_quantity?: number | null
   image_url?: string | null
+  options?: UpsellOptions | null
   created_at: Timestamp
   updated_at: Timestamp
   event?: {

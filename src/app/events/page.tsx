@@ -310,7 +310,7 @@ export default function EventsPage() {
                                 <div className="text-lg font-bold text-primary mb-2">
                                   {formatTicketPrice(ticket)}
                                 </div>
-                                <Link href={`/events/${selectedEvent.id}?ticket=${ticket.id}`}>
+                                <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
                                   <Button size="sm" className="w-full">
                                     S'inscrire
                                   </Button>

@@ -41,6 +41,12 @@ export function UpsellCard({ upsell, onEdit, onDelete, isDeleting }: UpsellCardP
               <p className="text-sm text-muted-foreground line-clamp-2">{upsell.description}</p>
             )}
 
+            {upsell.type === 'tshirt' && upsell.options?.sizes && upsell.options.sizes.length > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Tailles : {upsell.options.sizes.join(', ')}
+              </p>
+            ) : null}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Store className="h-4 w-4 text-muted-foreground" />

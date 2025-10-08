@@ -38,6 +38,7 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
       is_active: true,
       stock_quantity: '',
       image_url: '',
+      sizes: '',
     }
   }
 
@@ -51,6 +52,10 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
     is_active: upsell.is_active,
     stock_quantity: upsell.stock_quantity?.toString() || '',
     image_url: upsell.image_url || '',
+    sizes:
+      upsell.type === 'tshirt' && upsell.options?.sizes && upsell.options.sizes.length > 0
+        ? upsell.options.sizes.join(', ')
+        : '',
   }
 }
 
@@ -128,6 +133,19 @@ export function UpsellsSection() {
       is_active: values.is_active,
       stock_quantity: values.stock_quantity ? parseInt(values.stock_quantity, 10) : null,
       image_url: values.image_url || null,
+      options:
+        values.type === 'tshirt'
+          ? {
+              sizes: values.sizes
+                .split(/[\n,]/)
+                .map((size) => size.trim())
+                .filter((size) => size.length > 0),
+            }
+          : null,
+    }
+
+    if (payload.options && payload.options.sizes && payload.options.sizes.length === 0) {
+      payload.options = null
     }
 
     try {

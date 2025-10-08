@@ -35,6 +35,7 @@ export default function SignaturePad({ onChange, height = 220 }: SignaturePadPro
       const context = canvas.getContext('2d')
       if (!context) return
       contextRef.current = context
+      context.setTransform(1, 0, 0, 1, 0, 0)
       context.scale(ratio, ratio)
       context.lineCap = 'round'
       context.lineJoin = 'round'
@@ -107,7 +108,7 @@ export default function SignaturePad({ onChange, height = 220 }: SignaturePadPro
       <div className="rounded-lg border border-muted bg-white shadow-sm">
         <canvas
           ref={canvasRef}
-          className="w-full touch-manipulation"
+          className="w-full touch-none"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={endDrawing}
@@ -126,9 +127,8 @@ export default function SignaturePad({ onChange, height = 220 }: SignaturePadPro
 
 function getCoordinates(event: React.PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) {
   const rect = canvas.getBoundingClientRect()
-  const ratio = window.devicePixelRatio || 1
   return {
-    x: (event.clientX - rect.left) * ratio,
-    y: (event.clientY - rect.top) * ratio,
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
   }
 }

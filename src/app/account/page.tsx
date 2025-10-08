@@ -1,12 +1,13 @@
 /* eslint-disable react/no-unescaped-entities */
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { CalendarIcon, MapPinIcon, TicketIcon, QrCodeIcon, UserIcon, LogOutIcon, DownloadIcon } from 'lucide-react'
+import { TicketIcon, UserIcon, LogOutIcon } from 'lucide-react'
 import Link from 'next/link'
+import QRCode from 'qrcode'
+import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
 
 export default async function AccountPage() {
   const supabase = await createSupabaseServer()
@@ -41,53 +42,53 @@ export default async function AccountPage() {
     .single()
 
   // Récupérer les inscriptions avec toutes les informations nécessaires
-  const { data: registrations } = await supabase
-    .from('registrations')
-    .select(`
-      id,
-      checked_in,
-      qr_code_token,
-      transfer_token,
-      created_at,
-      tickets (
-        id,
-        name,
-        price,
-        currency,
-        events (
-          id,
-          title,
-          description,
-          date,
-          location,
-          image_url,
-          status
-        )
-      ),
-      orders (
-        id,
-        amount_total,
-        currency,
-        payment_status,
-        stripe_session_id,
-        invoice_url,
-        created_at
-      )
-    `)
+  const { data: registrations, error } = await supabase
+    .from('my_registrations')
+    .select('*')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    .order('registration_id', { ascending: false })
 
-  // Récupérer les statistiques utilisateur
-  const { data: stats } = await supabase
-    .from('registrations')
-    .select('checked_in')
-    .eq('user_id', user.id)
+  if (error) {
+    console.error('[account] registrations fetch error', error)
+  }
 
-  const totalEvents = registrations?.length || 0
-  const checkedInEvents = stats?.filter(s => s.checked_in).length || 0
-  const upcomingEvents = registrations?.filter(r => 
-    r.tickets?.[0]?.events?.[0]?.date && new Date(r.tickets[0].events[0].date) > new Date()
-  ).length || 0
+  const registrationIds = (registrations ?? []).map((registration) => registration.registration_id)
+
+  const admin = supabaseAdmin()
+  let transferTokensMap = new Map<string, string | null>()
+
+  if (registrationIds.length > 0) {
+    const { data: tokenRows, error: tokenError } = await admin
+      .from('registrations')
+      .select('id, transfer_token')
+      .in('id', registrationIds)
+
+    if (tokenError) {
+      console.error('[account] transfer token fetch error', tokenError)
+    } else if (tokenRows) {
+      transferTokensMap = new Map(tokenRows.map((row) => [row.id as string, row.transfer_token]))
+    }
+  }
+
+  const registrationsWithQr = await Promise.all(
+    (registrations ?? []).map(async (registration) => ({
+      ...registration,
+      transfer_token: transferTokensMap.get(registration.registration_id) ?? null,
+      qr_code_data_url:
+        registration.qr_code_token && registration.qr_code_token.length > 0
+          ? await QRCode.toDataURL(registration.qr_code_token)
+          : null,
+    })),
+  )
+
+  const now = new Date()
+  const totalEvents = registrationsWithQr.length
+  const checkedInEvents = registrationsWithQr.filter((entry) => entry.checked_in).length
+  const upcomingEvents = registrationsWithQr.filter((entry) => {
+    if (!entry.event_date) return false
+    const eventDate = new Date(entry.event_date)
+    return eventDate > now
+  }).length
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -119,7 +120,12 @@ export default async function AccountPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link href="/account/tickets">
+                    <Button variant="outline" size="sm">
+                      Mes billets
+                    </Button>
+                  </Link>
                   {profile?.role === 'admin' && (
                     <Link href="/admin">
                       <Button variant="outline" size="sm">
@@ -129,7 +135,7 @@ export default async function AccountPage() {
                   )}
                   <Link href="/logout">
                     <Button variant="outline" size="sm">
-                      <LogOutIcon className="h-4 w-4 mr-2" />
+                      <LogOutIcon className="mr-2 h-4 w-4" />
                       Déconnexion
                     </Button>
                   </Link>
@@ -184,8 +190,8 @@ export default async function AccountPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!registrations || registrations.length === 0 ? (
-              <div className="text-center py-12">
+            {registrationsWithQr.length === 0 ? (
+              <div className="py-12 text-center">
                 <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">Aucune inscription</h3>
                 <p className="text-muted-foreground mb-4">
@@ -196,148 +202,7 @@ export default async function AccountPage() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-6">
-                {registrations.map((registration, index) => {
-                  const event = registration.tickets?.[0]?.events?.[0]
-                  const ticket = registration.tickets?.[0]
-                  const order = registration.orders
-                  const isUpcoming = event && new Date(event.date) > new Date()
-                  const isPast = event && new Date(event.date) < new Date()
-
-                  return (
-                    <div key={registration.id}>
-                      <div className="flex flex-col lg:flex-row gap-6 p-6 rounded-lg border bg-card">
-                        {/* Image de l'événement */}
-                        <div className="flex-shrink-0">
-                          <div className="w-full lg:w-48 h-32 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center overflow-hidden">
-                            {event?.image_url ? (
-                              <img 
-                                src={event.image_url} 
-                                alt={event.title}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <CalendarIcon className="h-12 w-12 text-primary/40" />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Informations de l'événement */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h3 className="text-xl font-semibold mb-1">
-                                {event?.title || 'Événement'}
-                              </h3>
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {ticket?.name}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              {registration.checked_in ? (
-                                <Badge variant="default" className="bg-green-100 text-green-800">
-                                  ✓ Présent
-                                </Badge>
-                              ) : isUpcoming ? (
-                                <Badge variant="secondary">À venir</Badge>
-                              ) : isPast ? (
-                                <Badge variant="outline">Terminé</Badge>
-                              ) : null}
-                              {event?.status && (
-                                <Badge variant="outline">
-                                  {event.status}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            {event?.date && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                <span>
-                                  {new Date(event.date).toLocaleString('fr-FR', {
-                                    dateStyle: 'full',
-                                    timeStyle: 'short'
-                                  })}
-                                </span>
-                              </div>
-                            )}
-                            
-                            {event?.location && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-                                <span>{event.location}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {event?.description && (
-                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                              {event.description}
-                            </p>
-                          )}
-
-                          {/* Informations de commande */}
-                          {order && order.length > 0 && (
-                            <div className="bg-muted/30 rounded-lg p-3 mb-4">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-4">
-                                  <span>
-                                    <strong>Prix:</strong> {(order[0].amount_total / 100).toFixed(2)} {order[0].currency?.toUpperCase()}
-                                  </span>
-                                  <span>
-                                    <strong>Statut:</strong> 
-                                    <Badge 
-                                      variant={order[0].payment_status === 'paid' ? 'default' : 'secondary'}
-                                      className="ml-1"
-                                    >
-                                      {order[0].payment_status === 'paid' ? 'Payé' : order[0].payment_status}
-                                    </Badge>
-                                  </span>
-                                  <span className="text-muted-foreground">
-                                    {new Date(order[0].created_at).toLocaleDateString('fr-FR')}
-                                  </span>
-                                </div>
-                                {order[0].invoice_url && (
-                                  <Link href={order[0].invoice_url} target="_blank">
-                                    <Button variant="outline" size="sm">
-                                      <DownloadIcon className="h-4 w-4 mr-1" />
-                                      Facture
-                                    </Button>
-                                  </Link>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="flex gap-2 flex-wrap">
-                            <Link href={`/account/ticket/${registration.id}`}>
-                              <Button variant="default" size="sm">
-                                <QrCodeIcon className="h-4 w-4 mr-2" />
-                                Voir le billet
-                              </Button>
-                            </Link>
-                            
-                            {isUpcoming && (
-                              <Link href={`/events/${event?.id}`}>
-                                <Button variant="outline" size="sm">
-                                  Détails de l'événement
-                                </Button>
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {index < registrations.length - 1 && (
-                        <Separator className="my-6" />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              <AccountRegistrationsList registrations={registrationsWithQr} />
             )}
           </CardContent>
         </Card>
