@@ -75,7 +75,8 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
     )
   }
 
-  const eventDate = registration.event?.date ? new Date(registration.event.date) : null
+  const eDate = registration.event?.[0]?.date
+  const eventDate = eDate ? new Date(eDate) : null
   const formattedEventDate = eventDate
     ? eventDate.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
     : null
@@ -92,8 +93,8 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-lg border bg-card p-4">
-              <h2 className="text-lg font-semibold">{registration.event?.title ?? 'Événement'}</h2>
-              <p className="text-sm text-muted-foreground">{registration.ticket?.name}</p>
+              <h2 className="text-lg font-semibold">{registration.event?.[0]?.title ?? 'Événement'}</h2>
+              <p className="text-sm text-muted-foreground">{registration.ticket?.[0]?.name}</p>
               <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {formattedEventDate ? (
                   <div className="flex items-center gap-2">
@@ -101,10 +102,10 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
                     <span>{formattedEventDate}</span>
                   </div>
                 ) : null}
-                {registration.event?.location ? (
+                {registration.event?.[0]?.location ? (
                   <div className="flex items-center gap-2">
                     <MapPinIcon className="h-4 w-4" />
-                    <span>{registration.event.location}</span>
+                    <span>{registration.event?.[0]?.location}</span>
                   </div>
                 ) : null}
               </div>

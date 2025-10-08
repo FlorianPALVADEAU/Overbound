@@ -1,10 +1,11 @@
-import { createSupabaseServer, supabaseAdmin } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
-export async function PUT(
-  request: Request,
+const handlePut = async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
@@ -81,10 +82,10 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
+const handleDelete = async (
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> => {
   try {
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
@@ -136,3 +137,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const PUT = withRequestLogging(handlePut, {
+  actionType: 'Mise à jour obstacle admin',
+})
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression obstacle admin',
+})

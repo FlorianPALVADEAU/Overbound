@@ -13,6 +13,7 @@ export const ADMIN_TAB_VALUES = [
   'upsells',
   'members',
   'checkin',
+  'logs',
 ] as const
 
 export type AdminTabValue = (typeof ADMIN_TAB_VALUES)[number]

@@ -281,7 +281,15 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               event={event}
               tickets={event.tickets || []}
               availableSpots={availableSpots}
-              user={user}
+              user={
+                user
+                  ? {
+                      id: user.id,
+                      email: user.email ?? '',
+                      
+                    }
+                  : null
+              }
             />
 
             {/* Informations importantes */}

@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 async function ensureAdmin() {
   const supabase = await createSupabaseServer()
@@ -69,7 +70,7 @@ async function fetchPromotionalCode(id: string) {
   return data
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+const handlePut = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { error } = await ensureAdmin()
     if (error) return error
@@ -117,7 +118,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+const handleDelete = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { error } = await ensureAdmin()
     if (error) return error
@@ -138,3 +139,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const PUT = withRequestLogging(handlePut, {
+  actionType: 'Mise à jour code promo admin',
+})
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression code promo admin',
+})

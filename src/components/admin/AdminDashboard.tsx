@@ -15,6 +15,7 @@ import { RacesSection } from '@/components/admin/races'
 import { ObstaclesSection } from '@/components/admin/obstacles'
 import { PromotionalCodesSection } from '@/components/admin/promotional-codes'
 import { UpsellsSection } from '@/components/admin/upsells'
+import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { ADMIN_NAV_ITEMS } from '@/components/admin/adminNavItems'
 import { useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
@@ -154,6 +155,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="checkin" className="space-y-6">
                 <VolunteerAccessControl onEventSelect={setSelectedEventId} />
+              </TabsContent>
+
+              <TabsContent value="logs" className="space-y-6">
+                <AdminLogsSection />
               </TabsContent>
             </Tabs>
           </div>

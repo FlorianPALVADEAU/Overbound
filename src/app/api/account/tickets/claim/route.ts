@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
-export async function POST(request: Request) {
+const handlePost = async (request: NextRequest) => {
   try {
     const supabase = await createSupabaseServer()
     const {
@@ -77,3 +78,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Transfert billet',
+})

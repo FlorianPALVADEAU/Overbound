@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 async function ensureAdmin() {
   const supabase = await createSupabaseServer()
@@ -28,8 +29,8 @@ function sanitizeOptions(options: any) {
   if (!options) return null
   const sizes = Array.isArray(options.sizes)
     ? options.sizes
-        .map((size) => (typeof size === 'string' ? size.trim() : ''))
-        .filter((size) => size.length > 0)
+        .map((size: string) => (typeof size === 'string' ? size.trim() : ''))
+        .filter((size: string) => size.length > 0)
     : []
   if (sizes.length === 0) return null
   return { sizes }
@@ -88,7 +89,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+const handlePost = async (request: NextRequest) => {
   try {
     const { error } = await ensureAdmin()
     if (error) return error
@@ -116,3 +117,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Création upsell admin',
+})
