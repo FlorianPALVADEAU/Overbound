@@ -13,6 +13,7 @@ export interface AdminUpsellPayload {
   is_active: boolean
   stock_quantity?: number | null
   image_url?: string | null
+  options?: Upsell['options'] | null
 }
 
 interface UpsellsResponse {

@@ -112,7 +112,8 @@ export async function POST(request: NextRequest) {
     const { data: upsellRows } = await supabase
       .from('upsells')
       .select('*')
-      .eq('event_id', eventId)
+      .eq('is_active', true)
+      .or(`event_id.eq.${eventId},event_id.is.null`)
 
     const upsellMap = new Map<string, any>()
     for (const row of upsellRows || []) {

@@ -29,6 +29,7 @@ export interface UpsellFormValues {
   is_active: boolean
   stock_quantity: string
   image_url: string
+  sizes: string
 }
 
 interface UpsellFormDialogProps {
@@ -51,6 +52,7 @@ const DEFAULT_VALUES: UpsellFormValues = {
   is_active: true,
   stock_quantity: '',
   image_url: '',
+  sizes: '',
 }
 
 export function UpsellFormDialog({
@@ -79,9 +81,26 @@ export function UpsellFormDialog({
   )
 
   const handleChange = (field: keyof UpsellFormValues, value: string | boolean) => {
-    setValues((prev) => ({ ...prev, [field]: value }))
-  }
+    setValues((prev) => {
+      if (field === 'type') {
+        const nextType = value as Upsell['type']
+        const nextValues = { ...prev, type: nextType }
+        if (nextType === 'tshirt' && (!prev.sizes || prev.sizes.trim().length === 0)) {
+          nextValues.sizes = 'XS,S,M,L,XL,XXL'
+        }
+        if (nextType !== 'tshirt') {
+          nextValues.sizes = ''
+        }
+        return nextValues
+      }
 
+      if (field === 'sizes') {
+        return { ...prev, sizes: String(value) }
+      }
+
+      return { ...prev, [field]: value }
+    })
+  }
   const handleSubmit = () => {
     onSubmit(values)
   }
@@ -152,6 +171,21 @@ export function UpsellFormDialog({
               </Select>
             </div>
           </div>
+
+          {values.type === 'tshirt' ? (
+            <div className="space-y-2">
+              <Label htmlFor="upsell-sizes">Tailles disponibles</Label>
+              <Input
+                id="upsell-sizes"
+                value={values.sizes}
+                onChange={(event) => handleChange('sizes', event.target.value)}
+                placeholder="Ex: XS,S,M,L,XL,XXL"
+              />
+              <p className="text-xs text-muted-foreground">
+                Entrez les tailles séparées par une virgule. L'ordre sera conservé dans l'interface.
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">

@@ -24,6 +24,17 @@ async function ensureAdmin() {
   return { supabase }
 }
 
+function sanitizeOptions(options: any) {
+  if (!options) return null
+  const sizes = Array.isArray(options.sizes)
+    ? options.sizes
+        .map((size) => (typeof size === 'string' ? size.trim() : ''))
+        .filter((size) => size.length > 0)
+    : []
+  if (sizes.length === 0) return null
+  return { sizes }
+}
+
 function sanitizePayload(body: any) {
   return {
     name: body.name,
@@ -35,6 +46,7 @@ function sanitizePayload(body: any) {
     is_active: body.is_active ?? true,
     stock_quantity: body.stock_quantity ?? null,
     image_url: body.image_url || null,
+    options: sanitizeOptions(body.options),
   }
 }
 

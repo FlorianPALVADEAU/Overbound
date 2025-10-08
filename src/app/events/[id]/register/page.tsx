@@ -61,15 +61,20 @@ export default async function EventRegisterPage({ params, searchParams }: EventR
 
   const availableSpots = Math.max(event.capacity - (totalRegistrations || 0), 0)
 
+  // fetch upsells that are either linked to an event, or that are global (not linked to any event and now is before valid_until)
+
   const { data: upsellsData } = await supabase
     .from('upsells')
     .select('*')
-    .eq('event_id', event.id)
     .eq('is_active', true)
+    .or(`event_id.eq.${event.id},event_id.is.null`)
+    .order('created_at', { ascending: false })
 
+
+    
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto max-w-7xl px-4 pb-12 pt-8">
+      <div className="container mx-auto w-full px-4 pb-12 pt-8">
         <MultiStepEventRegistration
           event={event}
           tickets={event.tickets || []}

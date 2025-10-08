@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
     const { data: upsellRows } = await admin
       .from('upsells')
       .select('*')
-      .eq('event_id', eventId)
+      .eq('is_active', true)
+      .or(`event_id.eq.${eventId},event_id.is.null`)
 
     const upsellMap = new Map<string, any>()
     for (const row of upsellRows || []) {
@@ -174,6 +175,7 @@ export async function POST(request: NextRequest) {
           provider: 'internal',
           provider_registration_id: paymentIntent.id,
           qr_code_token: qr,
+          transfer_token: transfer,
           checked_in: false,
           claim_status: 'pending',
           approval_status: 'approved',

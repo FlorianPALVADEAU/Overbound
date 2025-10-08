@@ -47,7 +47,7 @@ import {
 } from 'lucide-react'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
-import type { Upsell } from '@/types/Upsell'
+import type { Upsell, UpsellOptions } from '@/types/Upsell'
 import type { PromotionalCode } from '@/types/PromotionalCode'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { REGULATION_VERSION } from '@/constants/registration'
@@ -77,8 +77,65 @@ type EventUser = {
 }
 
 type EventUpsell = Upsell & {
-  options?: {
-    sizes?: string[]
+  options?: UpsellOptions | null
+}
+
+const DEFAULT_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+
+const resolveUpsellSizes = (upsell: EventUpsell) => {
+  const sizes = upsell.options?.sizes
+  return sizes && sizes.length > 0 ? sizes : DEFAULT_TSHIRT_SIZES
+}
+
+const extractTshirtSizes = (meta?: Record<string, any>): string[] => {
+  if (!meta) return []
+  if (Array.isArray(meta.sizes)) {
+    return meta.sizes.filter((size): size is string => typeof size === 'string' && size.length > 0)
+  }
+  if (typeof meta.size === 'string' && meta.size.trim().length > 0) {
+    return [meta.size]
+  }
+  return []
+}
+
+const normalizeTshirtSizes = (
+  meta: Record<string, any> | undefined,
+  quantity: number,
+  availableSizes: string[],
+): string[] => {
+  if (quantity <= 0) return []
+  const fallback = availableSizes[0] ?? DEFAULT_TSHIRT_SIZES[0]
+  const initial = extractTshirtSizes(meta)
+  const normalized = initial
+    .slice(0, quantity)
+    .map((size) => (availableSizes.includes(size) ? size : fallback))
+
+  const result = [...normalized]
+  while (result.length < quantity) {
+    result.push(fallback)
+  }
+
+  if (result.length > quantity) {
+    return result.slice(0, quantity)
+  }
+
+  return result
+}
+
+const buildTshirtMeta = (
+  meta: Record<string, any> | undefined,
+  quantity: number,
+  availableSizes: string[],
+): Record<string, any> => {
+  if (quantity <= 0) {
+    return {}
+  }
+  const sizes = normalizeTshirtSizes(meta, quantity, availableSizes)
+  const baseMeta = { ...(meta || {}) }
+  delete baseMeta.size
+  return {
+    ...baseMeta,
+    sizes,
   }
 }
 
@@ -97,7 +154,7 @@ type Participant = {
   licenseNumber: string
 }
 
-type SelectedUpsellState = Record<string, { quantity: number; meta?: Record<string, string> }>
+type SelectedUpsellState = Record<string, { quantity: number; meta?: Record<string, any> }>
 
 type TicketSelections = Record<string, number>
 
@@ -357,6 +414,51 @@ export default function MultiStepEventRegistration({
     setPricing(null)
   }, [selectedTicketSlots, user?.email])
 
+  useEffect(() => {
+    setSelectedUpsells((previous) => {
+      if (upsells.length === 0) {
+        return previous
+      }
+
+      let hasChanges = false
+      const nextState: SelectedUpsellState = { ...previous }
+      const maxPerTicket = selectedTicketSlots.length
+
+      upsells.forEach((upsell) => {
+        if (upsell.type !== 'tshirt') {
+          return
+        }
+
+        const entry = nextState[upsell.id]
+        if (!entry) {
+          return
+        }
+
+        const availableSizes = resolveUpsellSizes(upsell)
+        const allowedQuantity = Math.min(entry.quantity, maxPerTicket)
+
+        if (allowedQuantity <= 0) {
+          delete nextState[upsell.id]
+          hasChanges = true
+          return
+        }
+
+        const normalizedMeta = buildTshirtMeta(entry.meta, allowedQuantity, availableSizes)
+        const metaChanged = JSON.stringify(entry.meta ?? {}) !== JSON.stringify(normalizedMeta)
+
+        if (entry.quantity !== allowedQuantity || metaChanged) {
+          nextState[upsell.id] = {
+            quantity: allowedQuantity,
+            ...(Object.keys(normalizedMeta).length > 0 ? { meta: normalizedMeta } : {}),
+          }
+          hasChanges = true
+        }
+      })
+
+      return hasChanges ? nextState : previous
+    })
+  }, [selectedTicketSlots.length, upsells])
+
   const ticketSubtotal = useMemo(() => {
     return selectedTicketSlots.reduce((accumulator, ticketId) => {
       const ticket = ticketMap[ticketId]
@@ -515,40 +617,75 @@ export default function MultiStepEventRegistration({
 
   const handleUpsellChange = (upsellId: string, quantity: number) => {
     setSelectedUpsells((previous) => {
-      if (quantity <= 0) {
+      const upsell = upsells.find((item) => item.id === upsellId)
+      const maxAllowed =
+        upsell?.type === 'tshirt' ? selectedTicketSlots.length : Number.MAX_SAFE_INTEGER
+      const nextQuantity = Math.min(Math.max(0, quantity), maxAllowed)
+      const existing = previous[upsellId]
+
+      let nextMeta = existing?.meta ? { ...existing.meta } : {}
+
+      if (upsell?.type === 'tshirt') {
+        const availableSizes = resolveUpsellSizes(upsell)
+        nextMeta = buildTshirtMeta(existing?.meta, nextQuantity, availableSizes)
+      }
+
+      if (nextQuantity === 0 && Object.keys(nextMeta).length === 0) {
+        if (!existing) {
+          return previous
+        }
         const { [upsellId]: _removed, ...rest } = previous
         return rest
       }
+
+      const nextEntry = {
+        quantity: nextQuantity,
+        ...(Object.keys(nextMeta).length > 0 ? { meta: nextMeta } : {}),
+      }
+
       return {
         ...previous,
-        [upsellId]: {
-          ...previous[upsellId],
-          quantity,
-        },
+        [upsellId]: nextEntry,
       }
     })
   }
 
-  const handleUpsellSizeChange = (upsellId: string, size: string) => {
+  const handleUpsellSizeChange = (upsellId: string, index: number, size: string) => {
     setSelectedUpsells((previous) => {
-      const existing = previous[upsellId]
-      if (!existing) {
-        return {
-          ...previous,
-          [upsellId]: {
-            quantity: 1,
-            meta: { size },
-          },
-        }
+      const upsell = upsells.find((item) => item.id === upsellId)
+      if (!upsell) {
+        return previous
       }
+
+      const existing = previous[upsellId]
+      if (!existing || existing.quantity <= index) {
+        return previous
+      }
+
+      const availableSizes = resolveUpsellSizes(upsell)
+      if (!availableSizes.includes(size)) {
+        return previous
+      }
+
+      const normalizedSizes = normalizeTshirtSizes(existing.meta, existing.quantity, availableSizes)
+      if (normalizedSizes[index] === size) {
+        return previous
+      }
+      normalizedSizes[index] = size
+
+      const baseMeta = { ...(existing.meta || {}) }
+      delete baseMeta.size
+
+      const nextMeta = {
+        ...baseMeta,
+        sizes: normalizedSizes,
+      }
+
       return {
         ...previous,
         [upsellId]: {
           ...existing,
-          meta: {
-            ...(existing.meta || {}),
-            size,
-          },
+          meta: nextMeta,
         },
       }
     })
@@ -1019,6 +1156,14 @@ export default function MultiStepEventRegistration({
         const selection = selectedUpsells[upsell.id]
         const quantity = selection?.quantity ?? 0
         const isSelected = quantity > 0
+        const availableSizes = upsell.type === 'tshirt' ? resolveUpsellSizes(upsell) : []
+        const selectedSizes =
+          upsell.type === 'tshirt' ? normalizeTshirtSizes(selection?.meta, quantity, availableSizes) : []
+        const maxQuantityForUpsell = upsell.type === 'tshirt' ? selectedTicketSlots.length : undefined
+        const addDisabled =
+          upsell.type === 'tshirt'
+            ? !maxQuantityForUpsell || quantity >= maxQuantityForUpsell
+            : false
         return (
           <Card key={upsell.id} className={`transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}>
             <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -1050,29 +1195,43 @@ export default function MultiStepEventRegistration({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
+                    disabled={addDisabled}
                     onClick={() => handleUpsellChange(upsell.id, quantity + 1)}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
 
+                {upsell.type === 'tshirt' && quantity > 0 ? (
+                  <div className="flex w-full flex-col items-end gap-2">
+                    {selectedSizes.map((size, index) => (
+                      <div key={`${upsell.id}-size-${index}`} className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">T-shirt #{index + 1}</span>
+                        <Select
+                          value={size}
+                          onValueChange={(value) => handleUpsellSizeChange(upsell.id, index, value)}
+                        >
+                          <SelectTrigger className="w-[160px]">
+                            <SelectValue placeholder="Choisir une taille" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableSizes.map((availableSize) => (
+                              <SelectItem key={availableSize} value={availableSize}>
+                                {availableSize}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
                 {upsell.type === 'tshirt' ? (
-                  <Select
-                    value={selection?.meta?.size || ''}
-                    onValueChange={(value) => handleUpsellSizeChange(upsell.id, value)}
-                    disabled={quantity === 0}
-                  >
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Choisir une taille" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-                        <SelectItem key={size} value={size}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <p className="text-xs text-muted-foreground text-right">
+                    {selectedTicketSlots.length > 0
+                      ? `Maximum ${selectedTicketSlots.length} t-shirt${selectedTicketSlots.length > 1 ? 's' : ''} (${quantity}/${selectedTicketSlots.length} sélectionné${quantity > 1 ? 's' : ''}).`
+                      : 'Sélectionnez au moins un billet pour ajouter un t-shirt.'}
+                  </p>
                 ) : null}
               </div>
             </CardHeader>
@@ -1174,12 +1333,95 @@ export default function MultiStepEventRegistration({
       .filter(Boolean) as Array<{
       upsell: EventUpsell
       quantity: number
-      meta: Record<string, string>
+      meta: Record<string, any>
     }>
   }, [selectedUpsells, upsells])
 
+  type UpsellSummaryItem = {
+    id: string
+    label: string
+    quantity: number
+    amount: number
+    currency: string
+    details: string[]
+  }
+
+  const humanizeMetaKey = (key: string) =>
+    key
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+
+  const upsellSummaryItems = useMemo(() => {
+    const items: UpsellSummaryItem[] = []
+
+    selectedUpsellList.forEach(({ upsell, quantity, meta }) => {
+      const currency = (upsell.currency || defaultCurrency).toLowerCase()
+
+      if (upsell.type === 'tshirt') {
+        const availableSizes = resolveUpsellSizes(upsell)
+        const sizes = normalizeTshirtSizes(meta, quantity, availableSizes)
+        sizes.forEach((size, index) => {
+          items.push({
+            id: `${upsell.id}-${index}`,
+            label: upsell.name,
+            quantity: 1,
+            amount: upsell.price_cents,
+            currency,
+            details: [`Taille ${size}`],
+          })
+        })
+        return
+      }
+
+      const details: string[] = []
+      if (meta && typeof meta === 'object') {
+        Object.entries(meta).forEach(([key, value]) => {
+          if (value === null || value === undefined) {
+            return
+          }
+          if (key === 'sizes' && Array.isArray(value)) {
+            const formattedSizes = value.filter((size): size is string => typeof size === 'string' && size.length > 0)
+            if (formattedSizes.length > 0) {
+              details.push(`Tailles : ${formattedSizes.join(', ')}`)
+            }
+            return
+          }
+          if (key === 'size' && typeof value === 'string' && value.length > 0) {
+            details.push(`Taille ${value}`)
+            return
+          }
+
+          if (Array.isArray(value)) {
+            const serialized = value.map((entry) => String(entry)).join(', ')
+            if (serialized.length > 0) {
+              details.push(`${humanizeMetaKey(key)} : ${serialized}`)
+            }
+            return
+          }
+
+          if (typeof value === 'object') {
+            return
+          }
+
+          details.push(`${humanizeMetaKey(key)} : ${String(value)}`)
+        })
+      }
+
+      items.push({
+        id: upsell.id,
+        label: upsell.name,
+        quantity,
+        amount: upsell.price_cents * quantity,
+        currency,
+        details,
+      })
+    })
+
+    return items
+  }, [defaultCurrency, selectedUpsellList])
+
   return (
-    <section className="mx-auto max-w-6xl space-y-6 py-6">
+    <section className="mx-auto w-full space-y-6 py-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">Inscription à {event.title}</h1>
@@ -1356,19 +1598,21 @@ export default function MultiStepEventRegistration({
 
                   <div className="space-y-2">
                     <div className="text-xs uppercase text-muted-foreground">Options</div>
-                    {selectedUpsellList.length === 0 ? (
+                    {upsellSummaryItems.length === 0 ? (
                       <p className="text-muted-foreground">Aucune option ajoutée.</p>
                     ) : (
-                      selectedUpsellList.map(({ upsell, quantity, meta }) => (
-                        <div key={upsell.id} className="flex items-center justify-between gap-3">
+                      upsellSummaryItems.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-3">
                           <div className="space-y-0.5">
-                            <p className="font-medium">{quantity} × {upsell.name}</p>
-                            {meta.size ? (
-                              <p className="text-xs text-muted-foreground">Taille {meta.size}</p>
-                            ) : null}
+                            <p className="font-medium">{item.quantity} × {item.label}</p>
+                            {item.details.map((detail, index) => (
+                              <p key={`${item.id}-detail-${index}`} className="text-xs text-muted-foreground">
+                                {detail}
+                              </p>
+                            ))}
                           </div>
                           <span className="font-medium">
-                            {formatPrice(upsell.price_cents * quantity, (upsell.currency || defaultCurrency).toLowerCase())}
+                            {formatPrice(item.amount, item.currency)}
                           </span>
                         </div>
                       ))
