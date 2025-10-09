@@ -1,37 +1,25 @@
+'use client'
+
 import { ReactNode } from 'react'
-import { headers } from 'next/headers'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { useSession } from '@/app/api/session/sessionQueries'
 
 interface LayoutProps {
   children: ReactNode
 }
 
-export async function Layout({ children }: LayoutProps) {
-  const headersList = await headers()
-  const pathname = headersList.get('next-url') || headersList.get('x-invoke-path') || ''
-
-  const supabase = await createSupabaseServer()
+export function Layout({ children }: LayoutProps) {
+  const { data, isLoading } = useSession()
   
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  let profile = null
-  if (user) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('full_name, role')
-      .eq('id', user.id)
-      .single()    
-    profile = data
-  }    
-    
-
   return (
     <div className="flex min-h-screen flex-col">
-      <Header user={user} profile={profile} />
+      <Header
+        user={data?.user ?? null}
+        profile={data?.profile ?? null}
+        alerts={data?.alerts ?? null}
+        isLoading={isLoading}
+      />
       <main className="flex-1">{children}</main>
       <Footer />
     </div>

@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
 import React, { useMemo, useState } from 'react'
-import type { User } from '@supabase/supabase-js'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -25,8 +24,17 @@ interface Profile {
   full_name?: string
 }
 
+interface DashboardUser {
+  id: string
+  email?: string | null
+  user_metadata?: {
+    full_name?: string
+    avatar_url?: string
+  }
+}
+
 interface AdminDashboardProps {
-  user: User
+  user: DashboardUser
   profile: Profile
   stats?: Record<string, unknown> | null
 }

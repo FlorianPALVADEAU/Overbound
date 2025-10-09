@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const handlePost = async (request: NextRequest) => {
@@ -38,19 +38,43 @@ const handlePost = async (request: NextRequest) => {
       )
     }
 
-    // Utiliser la fonction RPC
-    const { data, error } = await supabase.rpc('update_registration_approval', {
-      registration_uuid: registration_id,
-      new_status: status,
-      reason: reason || null
-    })
+    const adminClient = supabaseAdmin()
+    const now = new Date().toISOString()
 
-    if (error) {
-      throw error
+    const updatePayload =
+      status === 'approved'
+        ? {
+            approval_status: 'approved' as const,
+            rejection_reason: null,
+            approved_at: now,
+            approved_by: user.id,
+          }
+        : {
+            approval_status: 'rejected' as const,
+            rejection_reason: reason || null,
+            approved_at: null,
+            approved_by: user.id,
+          }
+
+    const { data: updatedRegistration, error: updateError } = await adminClient
+      .from('registrations')
+      .update(updatePayload)
+      .eq('id', registration_id)
+      .select('id, approval_status, rejection_reason, approved_at, approved_by')
+      .single()
+
+    if (updateError) {
+      throw updateError
     }
 
-    return NextResponse.json({ result: data })
+    if (!updatedRegistration) {
+      return NextResponse.json(
+        { error: 'Inscription introuvable' },
+        { status: 404 }
+      )
+    }
 
+    return NextResponse.json({ registration: updatedRegistration })
   } catch (error) {
     console.error('Erreur approval:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

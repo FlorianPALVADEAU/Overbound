@@ -4,15 +4,14 @@ import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Search } from 'lucide-react'
+import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import type { Obstacle } from '@/types/Obstacle'
-import { ObstacleFormDialog, ObstacleFormValues } from './ObstacleFormDialog'
-import { ObstacleList } from './ObstacleList'
-import { ObstaclesEmptyState } from './ObstaclesEmptyState'
+import { ObstacleFormDialog, type ObstacleFormValues } from './ObstacleFormDialog'
 import { ObstaclePreviewDialog } from './ObstaclePreviewDialog'
 import {
   adminObstaclesQueryKey,
@@ -50,6 +49,9 @@ function buildFormValues(obstacle?: Obstacle): ObstacleFormValues {
   }
 }
 
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleDateString('fr-FR', { dateStyle: 'medium' })
+
 export function ObstaclesSection() {
   const queryClient = useQueryClient()
   const {
@@ -72,10 +74,11 @@ export function ObstaclesSection() {
   const filteredObstacles = useMemo(() => {
     let result = [...obstacles]
 
-    if (searchTerm) {
+    if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase()
       result = result.filter((obstacle) =>
-        obstacle.name.toLowerCase().includes(term) || obstacle.description?.toLowerCase().includes(term)
+        obstacle.name.toLowerCase().includes(term) ||
+        obstacle.description?.toLowerCase().includes(term)
       )
     }
 
@@ -91,8 +94,6 @@ export function ObstaclesSection() {
     return result
   }, [obstacles, searchTerm, typeFilter, difficultyFilter])
 
-  const hasObstacles = filteredObstacles.length > 0
-
   const handleCreateClick = () => {
     setDialogMode('create')
     setSelectedObstacle(null)
@@ -105,6 +106,10 @@ export function ObstaclesSection() {
     setSelectedObstacle(obstacle)
     setFormValues(buildFormValues(obstacle))
     setDialogOpen(true)
+  }
+
+  const handlePreview = (obstacle: Obstacle) => {
+    setPreviewObstacle(obstacle)
   }
 
   const handleDelete = async (obstacle: Obstacle) => {
@@ -183,92 +188,98 @@ export function ObstaclesSection() {
     }
   }
 
+  const columns = useMemo<AdminDataGridColumn<Obstacle>[]>(() => {
+    return [
+      {
+        key: 'name',
+        header: 'Obstacle',
+        cell: (obstacle) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">{obstacle.name}</span>
+            {obstacle.description ? (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {obstacle.description}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'type',
+        header: 'Type',
+        cell: (obstacle) => (
+          <Badge variant="secondary" className="capitalize">
+            {obstacle.type}
+          </Badge>
+        ),
+      },
+      {
+        key: 'difficulty',
+        header: 'Difficulté',
+        cell: (obstacle) => <span>{obstacle.difficulty}/10</span>,
+      },
+      {
+        key: 'media',
+        header: 'Médias',
+        cell: (obstacle) => (
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant={obstacle.image_url ? 'default' : 'secondary'}>
+              Image {obstacle.image_url ? '✓' : '—'}
+            </Badge>
+            <Badge variant={obstacle.video_url ? 'default' : 'secondary'}>
+              Vidéo {obstacle.video_url ? '✓' : '—'}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        key: 'updated',
+        header: 'Mise à jour',
+        cell: (obstacle) => (
+          <span className="text-sm text-muted-foreground">{formatDateTime(obstacle.updated_at)}</span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'w-[210px]',
+        cell: (obstacle) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => handlePreview(obstacle)}>
+              Voir
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleEdit(obstacle)}>
+              Modifier
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(obstacle)}
+              disabled={deleteLoadingId === obstacle.id}
+            >
+              {deleteLoadingId === obstacle.id ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </div>
+        ),
+      },
+    ]
+  }, [deleteLoadingId])
+
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Card className="p-8 text-center text-muted-foreground">
-          Chargement des obstacles...
-        </Card>
-      )
-    }
-
-    if (obstaclesError) {
-      return (
-        <Card className="p-8 text-center text-destructive">
-          {(obstaclesError as Error).message || 'Erreur lors du chargement des obstacles'}
-        </Card>
-      )
-    }
-
-    if (!hasObstacles) {
-      return <ObstaclesEmptyState onCreate={handleCreateClick} />
-    }
-
-    return (
-      <ObstacleList
-        obstacles={filteredObstacles}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onPreview={setPreviewObstacle}
-        deleteLoadingId={deleteLoadingId}
-      />
-    )
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gestion des obstacles</h2>
-          <p className="text-muted-foreground">Créez et maintenez votre catalogue d'obstacles.</p>
+          <h2 className="text-2xl font-bold">Catalogue obstacles</h2>
+          <p className="text-muted-foreground">
+            Centralise et gère les obstacles disponibles pour les courses.
+          </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouvel obstacle
         </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Rechercher un obstacle"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-        </div>
-        <Select value={typeFilter} onValueChange={(value: typeof typeFilter) => setTypeFilter(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les types</SelectItem>
-            <SelectItem value="force">Force</SelectItem>
-            <SelectItem value="agilité">Agilité</SelectItem>
-            <SelectItem value="endurance">Endurance</SelectItem>
-            <SelectItem value="technique">Technique</SelectItem>
-            <SelectItem value="mental">Mental</SelectItem>
-            <SelectItem value="équilibre">Équilibre</SelectItem>
-            <SelectItem value="vitesse">Vitesse</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={difficultyFilter}
-          onValueChange={(value: typeof difficultyFilter) => setDifficultyFilter(value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Difficulté" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les difficultés</SelectItem>
-            <SelectItem value="1-3">Facile (1-3)</SelectItem>
-            <SelectItem value="4-6">Intermédiaire (4-6)</SelectItem>
-            <SelectItem value="7-10">Difficile (7-10)</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {message && (
@@ -277,7 +288,74 @@ export function ObstaclesSection() {
         </Alert>
       )}
 
-      {renderContent()}
+      {obstaclesError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {(obstaclesError as Error).message || 'Impossible de charger les obstacles'}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AdminDataGrid
+        data={filteredObstacles}
+        columns={columns}
+        loading={isLoading}
+        emptyMessage={
+          searchTerm || typeFilter !== 'all' || difficultyFilter !== 'all'
+            ? 'Aucun obstacle ne correspond aux filtres appliqués.'
+            : 'Aucun obstacle enregistré pour le moment.'
+        }
+        toolbar={
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher par nom ou description…"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les types</SelectItem>
+                <SelectItem value="force">Force</SelectItem>
+                <SelectItem value="agilité">Agilité</SelectItem>
+                <SelectItem value="technique">Technique</SelectItem>
+                <SelectItem value="endurance">Endurance</SelectItem>
+                <SelectItem value="mental">Mental</SelectItem>
+                <SelectItem value="équilibre">Équilibre</SelectItem>
+                <SelectItem value="vitesse">Vitesse</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={difficultyFilter}
+              onValueChange={(value) => setDifficultyFilter(value as typeof difficultyFilter)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Difficulté" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les difficultés</SelectItem>
+                <SelectItem value="1-3">Facile (1-3)</SelectItem>
+                <SelectItem value="4-6">Intermédiaire (4-6)</SelectItem>
+                <SelectItem value="7-10">Difficile (7-10)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        meta={
+          <span>
+            {filteredObstacles.length} obstacle{filteredObstacles.length > 1 ? 's' : ''} affiché
+          </span>
+        }
+        getRowId={(obstacle) => obstacle.id}
+      />
 
       <ObstacleFormDialog
         open={dialogOpen}
@@ -288,9 +366,16 @@ export function ObstaclesSection() {
         onSubmit={handleSubmit}
       />
 
-      <ObstaclePreviewDialog obstacle={previewObstacle} open={Boolean(previewObstacle)} onOpenChange={(open) => {
-        if (!open) setPreviewObstacle(null)
-      }} />
+      <ObstaclePreviewDialog
+        obstacle={previewObstacle}
+        open={Boolean(previewObstacle)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewObstacle(null)
+          }
+        }}
+      />
     </div>
   )
 }
+

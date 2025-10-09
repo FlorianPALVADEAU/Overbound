@@ -1,138 +1,183 @@
-/* eslint-disable react/no-unescaped-entities */
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+'use client'
+
+import Link from 'next/link'
+import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { TicketIcon, UserIcon, LogOutIcon } from 'lucide-react'
-import Link from 'next/link'
-import QRCode from 'qrcode'
 import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
 
-export default async function AccountPage() {
-  const supabase = await createSupabaseServer()
-  
-  // Récupérer l'utilisateur connecté
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  
-  if (!user) {
+import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+function LoadingView() {
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="container mx-auto max-w-6xl space-y-8 p-6">
+        <Card>
+          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-16 w-16 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Skeleton className="h-9 w-28 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={`account-skeleton-${index}`}>
+              <CardContent className="space-y-2 p-6">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-6 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card>
+          <CardContent className="space-y-4 p-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={`account-list-skeleton-${index}`} className="flex items-center justify-between rounded-lg border border-dashed border-muted/40 p-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  )
+}
+
+function UnauthorizedView() {
+  return (
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <Card className="max-w-md w-full">
+        <CardContent className="text-center p-8 space-y-4">
+          <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">Connexion requise</h2>
+            <p className="text-sm text-muted-foreground">
+              Connecte-toi pour voir tes inscriptions et gérer ton compte.
+            </p>
+          </div>
+          <Link href="/auth/login">
+            <Button>Se connecter</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    </main>
+  )
+}
+
+export default function AccountPage() {
+  const { data, isLoading, error, refetch } = useAccountRegistrations()
+
+  if (isLoading) {
+    return <LoadingView />
+  }
+
+  if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full">
-          <CardContent className="text-center p-8">
-            <UserIcon className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Connexion requise</h2>
-            <p className="text-muted-foreground mb-4">Connecte-toi pour voir tes inscriptions et gérer ton compte.</p>
-            <Link href="/auth/login">
-              <Button>Se connecter</Button>
-            </Link>
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
+        <Card className="max-w-md">
+          <CardContent className="space-y-4 p-6 text-center">
+            <p className="font-semibold text-destructive">Impossible de charger vos données</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <Button onClick={() => refetch()}>Réessayer</Button>
           </CardContent>
         </Card>
       </main>
     )
   }
 
-  // Récupérer le profil utilisateur
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url, role')
-    .eq('id', user.id)
-    .single()
-
-  // Récupérer les inscriptions avec toutes les informations nécessaires
-  const { data: registrations, error } = await supabase
-    .from('my_registrations')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('registration_id', { ascending: false })
-
-  if (error) {
-    console.error('[account] registrations fetch error', error)
+  if (!data?.user) {
+    return <UnauthorizedView />
   }
 
-  const registrationIds = (registrations ?? []).map((registration) => registration.registration_id)
-
-  const admin = supabaseAdmin()
-  let transferTokensMap = new Map<string, string | null>()
-
-  if (registrationIds.length > 0) {
-    const { data: tokenRows, error: tokenError } = await admin
-      .from('registrations')
-      .select('id, transfer_token')
-      .in('id', registrationIds)
-
-    if (tokenError) {
-      console.error('[account] transfer token fetch error', tokenError)
-    } else if (tokenRows) {
-      transferTokensMap = new Map(tokenRows.map((row) => [row.id as string, row.transfer_token]))
-    }
-  }
-
-  const registrationsWithQr = await Promise.all(
-    (registrations ?? []).map(async (registration) => ({
-      ...registration,
-      transfer_token: transferTokensMap.get(registration.registration_id) ?? null,
-      qr_code_data_url:
-        registration.qr_code_token && registration.qr_code_token.length > 0
-          ? await QRCode.toDataURL(registration.qr_code_token)
-          : null,
-    })),
+  const { user, profile, stats, registrations } = data
+  const needsDocumentAction = registrations.some(
+    (registration) => registration.document_requires_attention,
   )
-
-  const now = new Date()
-  const totalEvents = registrationsWithQr.length
-  const checkedInEvents = registrationsWithQr.filter((entry) => entry.checked_in).length
-  const upcomingEvents = registrationsWithQr.filter((entry) => {
-    if (!entry.event_date) return false
-    const eventDate = new Date(entry.event_date)
-    return eventDate > now
-  }).length
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto p-6 max-w-6xl">
-        {/* Header avec profil */}
         <div className="mb-8">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || user.email} />
-                    <AvatarFallback className="text-lg">
-                        {profile?.full_name 
-                        ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
-                        : user.email?.[0].toUpperCase()
-                        }
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h1 className="text-2xl font-bold">
-                      {profile?.full_name || 'Athlète'}
-                    </h1>
-                    <p className="text-muted-foreground">{user.email}</p>
-                    {profile?.role === 'admin' && (
+                  <div className="relative">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || user.email || undefined} />
+                      <AvatarFallback className="text-lg">
+                        {profile?.full_name
+                          ? profile.full_name.split(' ').map((n) => n[0]).join('').toUpperCase()
+                          : user.email?.[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {needsDocumentAction ? (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[11px] font-bold leading-none text-white">
+                        !
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-bold">{profile?.full_name || 'Athlète'}</h1>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    {profile?.role === 'admin' ? (
                       <Badge variant="secondary" className="mt-1">
                         Administrateur
                       </Badge>
-                    )}
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Link href="/account/tickets">
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={
+                        needsDocumentAction
+                          ? 'relative border-destructive text-destructive hover:bg-destructive/10'
+                          : undefined
+                      }
+                    >
+                      {needsDocumentAction ? (
+                        <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[10px] font-bold leading-none text-white">
+                          !
+                        </span>
+                      ) : null}
                       Mes billets
                     </Button>
                   </Link>
-                  {profile?.role === 'admin' && (
+                  {profile?.role === 'admin' ? (
                     <Link href="/admin">
                       <Button variant="outline" size="sm">
                         Administration
                       </Button>
                     </Link>
-                  )}
+                  ) : null}
                   <Link href="/logout">
                     <Button variant="outline" size="sm">
                       <LogOutIcon className="mr-2 h-4 w-4" />
@@ -145,8 +190,15 @@ export default async function AccountPage() {
           </Card>
         </div>
 
-        {/* Statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {needsDocumentAction ? (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>
+              Action requise : complète ou mets à jour tes documents pour valider tes inscriptions. Tes billets restent inactifs tant que la validation n&apos;est pas terminée.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -154,10 +206,9 @@ export default async function AccountPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalEvents}</div>
+              <div className="text-2xl font-bold">{stats.totalEvents}</div>
             </CardContent>
           </Card>
-          
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -165,10 +216,9 @@ export default async function AccountPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{upcomingEvents}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.upcomingEvents}</div>
             </CardContent>
           </Card>
-          
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -176,12 +226,11 @@ export default async function AccountPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{checkedInEvents}</div>
+              <div className="text-2xl font-bold text-green-600">{stats.checkedInEvents}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Liste des inscriptions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -190,19 +239,19 @@ export default async function AccountPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {registrationsWithQr.length === 0 ? (
+            {registrations.length === 0 ? (
               <div className="py-12 text-center">
                 <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">Aucune inscription</h3>
                 <p className="text-muted-foreground mb-4">
-                  Tu n'as pas encore d'inscription à un événement.
+                  Tu n&apos;as pas encore d&apos;inscription à un événement.
                 </p>
                 <Link href="/events">
                   <Button>Découvrir les événements</Button>
                 </Link>
               </div>
             ) : (
-              <AccountRegistrationsList registrations={registrationsWithQr} />
+              <AccountRegistrationsList registrations={registrations} />
             )}
           </CardContent>
         </Card>

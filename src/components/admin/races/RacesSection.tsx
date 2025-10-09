@@ -1,17 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Plus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search } from 'lucide-react'
+import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import type { Race } from '@/types/Race'
 import type { Obstacle } from '@/types/Obstacle'
-import { RaceFormDialog, RaceFormValues } from './RaceFormDialog'
-import { RacesEmptyState } from './RacesEmptyState'
-import { RaceList } from './RaceList'
+import { RaceFormDialog, type RaceFormValues } from './RaceFormDialog'
 import {
   adminRacesQueryKey,
   createAdminRace,
@@ -53,6 +54,11 @@ function buildFormValues(race?: Race): RaceFormValues {
   }
 }
 
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleDateString('fr-FR', {
+    dateStyle: 'medium',
+  })
+
 export function RacesSection() {
   const queryClient = useQueryClient()
   const {
@@ -65,6 +71,7 @@ export function RacesSection() {
     isLoading: obstaclesLoading,
     error: obstaclesError,
   } = useAdminObstacles()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedRace, setSelectedRace] = useState<Race | null>(null)
@@ -72,11 +79,32 @@ export function RacesSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-
-  const hasRaces = races.length > 0
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | Race['type']>('all')
 
   const combinedLoading = racesLoading || obstaclesLoading
   const combinedError = racesError || obstaclesError
+
+  const filteredRaces = useMemo(() => {
+    let result = [...races]
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      result = result.filter((race) => {
+        return (
+          race.name.toLowerCase().includes(term) ||
+          race.target_public.toLowerCase().includes(term) ||
+          race.description?.toLowerCase().includes(term)
+        )
+      })
+    }
+
+    if (typeFilter !== 'all') {
+      result = result.filter((race) => race.type === typeFilter)
+    }
+
+    return result
+  }, [races, searchTerm, typeFilter])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -164,51 +192,107 @@ export function RacesSection() {
     }
   }
 
+  const columns = useMemo<AdminDataGridColumn<Race>[]>(() => {
+    return [
+      {
+        key: 'name',
+        header: 'Format',
+        cell: (race) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">{race.name}</span>
+            {race.description ? (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {race.description}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'type',
+        header: 'Type & public',
+        cell: (race) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="capitalize">
+              {race.type}
+            </Badge>
+            <Badge variant="outline" className="capitalize">
+              {race.target_public}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        key: 'distance',
+        header: 'Distance',
+        cell: (race) => (
+          <span>
+            {race.distance_km ? `${race.distance_km} km` : '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'difficulty',
+        header: 'Difficulté',
+        cell: (race) => (
+          <span>
+            {race.difficulty}/10
+          </span>
+        ),
+      },
+      {
+        key: 'obstacles',
+        header: 'Obstacles',
+        cell: (race) => (
+          <span>
+            {race.obstacles?.length ?? 0} obstacle{(race.obstacles?.length ?? 0) > 1 ? 's' : ''}
+          </span>
+        ),
+      },
+      {
+        key: 'updated',
+        header: 'Mise à jour',
+        cell: (race) => (
+          <span className="text-sm text-muted-foreground">{formatDateTime(race.updated_at)}</span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'w-[160px]',
+        cell: (race) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleEdit(race)}>
+              Modifier
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(race)}
+              disabled={deleteLoadingId === race.id}
+            >
+              {deleteLoadingId === race.id ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </div>
+        ),
+      },
+    ]
+  }, [deleteLoadingId])
+
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
-
-  const renderContent = () => {
-    if (combinedLoading) {
-      return (
-        <Card className="p-8 text-center text-muted-foreground">
-          Chargement des courses...
-        </Card>
-      )
-    }
-
-    if (combinedError) {
-      return (
-        <Card className="p-8 text-center text-destructive">
-          {(combinedError as Error).message || 'Erreur lors du chargement des courses'}
-        </Card>
-      )
-    }
-
-    if (!hasRaces) {
-      return <RacesEmptyState onCreate={handleCreateClick} />
-    }
-
-    return (
-      <RaceList
-        races={races}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        deleteLoadingId={deleteLoadingId}
-      />
-    )
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gestion des courses</h2>
+          <h2 className="text-2xl font-bold">Formats de course</h2>
           <p className="text-muted-foreground">
-            Créer et gérer les différents types de courses et leurs obstacles.
+            Gère les formats, leurs obstacles et leurs cibles.
           </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle course
+          <Plus className="mr-2 h-4 w-4" />
+          Nouveau format
         </Button>
       </div>
 
@@ -218,17 +302,72 @@ export function RacesSection() {
         </Alert>
       )}
 
-      {renderContent()}
+      {combinedError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {(combinedError as Error).message || 'Impossible de charger les formats'}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AdminDataGrid
+        data={filteredRaces}
+        columns={columns}
+        loading={combinedLoading}
+        emptyMessage={
+          searchTerm || typeFilter !== 'all'
+            ? 'Aucun format ne correspond aux filtres appliqués.'
+            : 'Aucun format enregistré. Créez une course pour structurer vos billets.'
+        }
+        toolbar={
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher par nom, public ou description…"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Select
+              value={typeFilter}
+              onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les types</SelectItem>
+                <SelectItem value="trail">Trail</SelectItem>
+                <SelectItem value="obstacle">Obstacle</SelectItem>
+                <SelectItem value="urbain">Urbain</SelectItem>
+                <SelectItem value="nature">Nature</SelectItem>
+                <SelectItem value="extreme">Extrême</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        meta={
+          <span>
+            {filteredRaces.length} format{filteredRaces.length > 1 ? 's' : ''} affiché
+          </span>
+        }
+        getRowId={(race) => race.id}
+      />
 
       <RaceFormDialog
         open={dialogOpen}
         mode={dialogMode}
-        obstacles={obstacles}
         initialValues={formValues}
         loading={submitting}
+        obstacles={obstacles as Obstacle[]}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
       />
     </div>
   )
 }
+
