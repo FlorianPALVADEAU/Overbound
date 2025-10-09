@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import storageClient from './storage'
+import { validateDocument } from './validators'
 
 export async function POST(request: Request) {
   try {
@@ -44,42 +46,87 @@ export async function POST(request: Request) {
       )
     }
 
-    // Valider le fichier
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'Fichier trop volumineux (max 10MB)' },
-        { status: 400 }
-      )
+    const validationError = validateDocument(file)
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Type de fichier non autorisé (PDF, JPG, PNG uniquement)' },
-        { status: 400 }
-      )
-    }
-
-    // Upload vers Supabase Storage
+    const bucketName = 'registration-documents'
+    const desiredFileSizeLimit = 20 * 1024 * 1024 // 20MB
     const fileName = `${registrationId}-${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabase.storage
-      .from('registration-documents')
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
+
+    const ensureBucket = async () => {
+      const {
+        data: bucketData,
+        error: bucketError,
+      } = await storageClient.storage.getBucket(bucketName)
+
+      if (bucketError && bucketError.status === 404) {
+        const { error: createError } = await storageClient.storage.createBucket(bucketName, {
+          public: false,
+          fileSizeLimit: `${desiredFileSizeLimit}`,
+        })
+
+        if (createError && createError.status !== 409) {
+          throw createError
+        }
+      } else if (bucketError && bucketError.status !== 200) {
+        throw bucketError
+      } else if (bucketData) {
+        const currentLimit = Number((bucketData as Record<string, any>).file_size_limit ?? 0)
+        if (!currentLimit || currentLimit < desiredFileSizeLimit) {
+          const { error: updateError } = await storageClient.storage.updateBucket(bucketName, {
+            fileSizeLimit: `${desiredFileSizeLimit}`,
+          })
+          if (updateError) {
+            throw updateError
+          }
+        }
+      }
+    }
+
+    try {
+      await ensureBucket()
+    } catch (bucketSetupError) {
+      console.error('Erreur préparation bucket:', bucketSetupError)
+      return NextResponse.json({ error: 'Stockage indisponible pour le moment' }, { status: 500 })
+    }
+
+    const upload = async () =>
+      storageClient.storage
+        .from(bucketName)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+    let { error: uploadError } = await upload()
+
+    if (
+      uploadError &&
+      String(uploadError.message ?? '').toLowerCase().includes('exceeded the maximum allowed size')
+    ) {
+      const { error: updateError } = await storageClient.storage.updateBucket(bucketName, {
+        fileSizeLimit: `${desiredFileSizeLimit}`,
       })
+
+      if (updateError) {
+        console.error('Erreur mise à jour quota bucket:', updateError)
+        throw updateError
+      }
+
+      const retry = await upload()
+      uploadError = retry.error
+    }
 
     if (uploadError) {
       throw uploadError
     }
 
-    // Obtenir l'URL publique
-    const { data: { publicUrl } } = supabase.storage
-      .from('registration-documents')
-      .getPublicUrl(fileName)
+    const {
+      data: { publicUrl },
+    } = storageClient.storage.from(bucketName).getPublicUrl(fileName)
 
-    // Mettre à jour l'inscription avec les infos du document
     const { error: updateError } = await supabase
       .from('registrations')
       .update({

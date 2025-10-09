@@ -1,24 +1,52 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+'use client'
 
-export default async function AdminPage() {
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+import AdminDashboard from '@/components/admin/AdminDashboard'
+import { useAdminOverview } from '@/app/api/admin/overview/overviewQueries'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user?.id)
-    .single()
+export default function AdminPage() {
+  const { data, isLoading, error, refetch } = useAdminOverview()
 
-  if (profile?.role !== 'admin') return <div>Accès refusé</div>
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/20">
+        <div className="text-sm text-muted-foreground">Chargement du tableau de bord…</div>
+      </main>
+    )
+  }
 
-  const { data: stats } = await supabase.rpc('admin_overview') // optionnel si tu crées une RPC
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/20 p-6">
+        <Card className="max-w-md">
+          <CardContent className="space-y-4 p-6 text-center">
+            <p className="font-semibold text-destructive">Impossible de charger le tableau de bord</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <Button onClick={() => refetch()}>Réessayer</Button>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  if (!data || data.profile.role !== 'admin') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/20">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-sm font-medium text-muted-foreground">Accès administrateur requis.</p>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold">Admin</h1>
-      <pre className="mt-4 bg-neutral-100 p-4 rounded">{JSON.stringify(stats, null, 2)}</pre>
-    </main>
+    <AdminDashboard
+      user={data.user as any}
+      profile={{ role: 'admin', full_name: data.profile.full_name ?? undefined }}
+      stats={data.stats}
+    />
   )
 }

@@ -1,185 +1,134 @@
+'use client'
+
 /* eslint-disable react/no-unescaped-entities */
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { Trophy, Target, Star, Eye } from 'lucide-react'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
-  Trophy, 
-  Mountain, 
-  Target, 
-  Star, 
-  Clock, 
-  Users,
-  Zap,
-  Eye,
-  ExternalLink,
-  Calendar
-} from 'lucide-react'
-import Link from 'next/link'
+import { useRaces, type RaceListItem } from '@/app/api/races/racesQueries'
 
-interface Race {
-  id: string
-  name: string
-  logo_url?: string
-  type: string
-  difficulty: number
-  target_public: string
-  distance_km: number
-  description?: string
-  obstacles?: Array<{
-    obstacle: {
-      id: string
-      name: string
-      type: string
-      difficulty: number
-    }
-    order_position: number
-    is_mandatory: boolean
-  }>
+const RACE_TYPES: Record<string, string> = {
+  trail: 'Trail',
+  obstacle: "Course d'obstacles",
+  urbain: 'Course urbaine',
+  nature: 'Course nature',
+  extreme: 'Course extrême',
 }
 
-const RACE_TYPES = {
-  'trail': 'Trail',
-  'obstacle': 'Course d\'obstacles',
-  'urbain': 'Course urbaine',
-  'nature': 'Course nature',
-  'extreme': 'Course extrême'
+const TARGET_PUBLICS: Record<string, string> = {
+  débutant: 'Débutant',
+  intermédiaire: 'Intermédiaire',
+  expert: 'Expert',
+  famille: 'Famille',
+  pro: 'Professionnel',
 }
 
-const TARGET_PUBLICS = {
-  'débutant': 'Débutant',
-  'intermédiaire': 'Intermédiaire',
-  'expert': 'Expert',
-  'famille': 'Famille',
-  'pro': 'Professionnel'
+const getDifficultyColor = (difficulty: number) => {
+  if (difficulty <= 3) return 'bg-green-100 text-green-800 border-green-200'
+  if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  return 'bg-red-100 text-red-800 border-red-200'
 }
 
-export default async function RacesPage() {
-  const supabase = await createSupabaseServer()
-
-  // Récupérer toutes les courses avec leurs obstacles
-  const { data: races, error } = await supabase
-    .from('races')
-    .select(`
-      *,
-      obstacles:race_obstacles!race_obstacles_race_id_fkey(
-        order_position,
-        is_mandatory,
-        obstacle:obstacles!race_obstacles_obstacle_id_fkey(id, name, type, difficulty)
-      )
-    `)
-    .order('difficulty', { ascending: true })
-
-  if (error) {
-    console.error('Erreur lors de la récupération des courses:', error)
+const getTypeColor = (type: string) => {
+  switch (type) {
+    case 'trail':
+      return 'bg-blue-100 text-blue-800'
+    case 'obstacle':
+      return 'bg-orange-100 text-orange-800'
+    case 'urbain':
+      return 'bg-purple-100 text-purple-800'
+    case 'nature':
+      return 'bg-green-100 text-green-800'
+    case 'extreme':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
   }
+}
 
-  const getDifficultyColor = (difficulty: number) => {
-    if (difficulty <= 3) return 'bg-green-100 text-green-800 border-green-200'
-    if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    return 'bg-red-100 text-red-800 border-red-200'
+const getPublicColor = (targetPublic: string) => {
+  switch (targetPublic) {
+    case 'débutant':
+      return 'bg-emerald-100 text-emerald-800'
+    case 'intermédiaire':
+      return 'bg-amber-100 text-amber-800'
+    case 'expert':
+      return 'bg-red-100 text-red-800'
+    case 'famille':
+      return 'bg-pink-100 text-pink-800'
+    case 'pro':
+      return 'bg-indigo-100 text-indigo-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
   }
+}
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'trail': return 'bg-blue-100 text-blue-800'
-      case 'obstacle': return 'bg-orange-100 text-orange-800'
-      case 'urbain': return 'bg-purple-100 text-purple-800'
-      case 'nature': return 'bg-green-100 text-green-800'
-      case 'extreme': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getPublicColor = (targetPublic: string) => {
-    switch (targetPublic) {
-      case 'débutant': return 'bg-emerald-100 text-emerald-800'
-      case 'intermédiaire': return 'bg-amber-100 text-amber-800'
-      case 'expert': return 'bg-red-100 text-red-800'
-      case 'famille': return 'bg-pink-100 text-pink-800'
-      case 'pro': return 'bg-indigo-100 text-indigo-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
+export default function RacesPage() {
+  const { data: races = [], isLoading, error, refetch } = useRaces()
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-primary/10 rounded-full">
+      <div className="container mx-auto max-w-7xl p-6">
+        <div className="mb-12 text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-primary/10 p-4">
               <Trophy className="h-12 w-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4">Nos Courses</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Découvrez notre gamme complète de courses sportives, des parcours familiaux 
-            aux défis extrêmes. Chaque course est conçue pour offrir une expérience unique 
-            et mémorable.
+          <h1 className="mb-4 text-4xl font-bold">Nos Courses</h1>
+          <p className="mx-auto max-w-3xl text-xl text-muted-foreground">
+            Découvrez notre gamme complète de courses sportives, des parcours familiaux aux défis extrêmes. Chaque course est conçue pour offrir une expérience unique et mémorable.
           </p>
         </div>
 
-        {/* Filtres rapides */}
-        <div className="flex flex-wrap justify-center gap-3 mb-8">
-          <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-            Toutes les courses
-          </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-            Débutant
-          </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-            Intermédiaire
-          </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-            Expert
-          </Badge>
-          <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-            Famille
-          </Badge>
-        </div>
-
-        {/* Liste des courses */}
-        {!races || races.length === 0 ? (
-          <Card className="max-w-md mx-auto">
-            <CardContent className="text-center py-12">
-              <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucune course disponible</h3>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20 text-muted-foreground">
+            Chargement des courses…
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-20">
+            <Card className="max-w-md">
+              <CardContent className="space-y-3 p-6 text-center">
+                <p className="font-semibold text-destructive">Impossible de charger les courses</p>
+                <p className="text-sm text-muted-foreground">{error.message}</p>
+                <Button variant="outline" onClick={() => refetch()}>
+                  Réessayer
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        ) : races.length === 0 ? (
+          <Card className="mx-auto max-w-md">
+            <CardContent className="py-12 text-center">
+              <Trophy className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 text-lg font-semibold">Aucune course disponible</h3>
               <p className="text-muted-foreground">
                 Les courses seront bientôt disponibles. Revenez plus tard !
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {races.map((race: Race) => (
-              <Card key={race.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                {/* Image/Logo de la course */}
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {races.map((race: RaceListItem) => (
+              <Card key={race.id} className="overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/20">
                   {race.logo_url ? (
-                    <img 
-                      src={race.logo_url} 
-                      alt={race.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={race.logo_url} alt={race.name} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex items-center justify-center h-full">
+                    <div className="flex h-full items-center justify-center">
                       <Trophy className="h-16 w-16 text-primary/40" />
                     </div>
                   )}
-                  
-                  {/* Badge de difficulté */}
                   <div className="absolute top-4 right-4">
                     <Badge variant="outline" className={getDifficultyColor(race.difficulty)}>
-                      <Star className="h-3 w-3 mr-1" />
+                      <Star className="mr-1 h-3 w-3" />
                       {race.difficulty}/10
                     </Badge>
                   </div>
-
-                  {/* Overlay au hover */}
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity hover:opacity-100">
                     <Button variant="secondary" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
+                      <Eye className="mr-2 h-4 w-4" />
                       Voir détails
                     </Button>
                   </div>
@@ -189,66 +138,53 @@ export default async function RacesPage() {
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-xl">{race.name}</CardTitle>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className={getTypeColor(race.type)}>
-                      {RACE_TYPES[race.type as keyof typeof RACE_TYPES] || race.type}
+                      {RACE_TYPES[race.type] || race.type}
                     </Badge>
                     <Badge variant="outline" className={getPublicColor(race.target_public)}>
-                      <Target className="h-3 w-3 mr-1" />
-                      {TARGET_PUBLICS[race.target_public as keyof typeof TARGET_PUBLICS] || race.target_public}
+                      {TARGET_PUBLICS[race.target_public] || race.target_public}
                     </Badge>
                   </div>
                 </CardHeader>
 
-                <CardContent>
-                  {/* Description */}
-                  {race.description && (
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                      {race.description}
-                    </p>
-                  )}
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    {race.description ?? "Pas de description disponible."}
+                  </p>
 
-                  {/* Informations principales */}
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mountain className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{race.distance_km} km</span>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="font-medium text-foreground">Distance :</span>
+                      {race.distance_km ? `${race.distance_km} km` : 'À venir'}
                     </div>
-                    
-                    {race.obstacles && race.obstacles.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Zap className="h-4 w-4 text-muted-foreground" />
-                        <span>{race.obstacles.length} obstacle(s)</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="font-medium text-foreground">Public :</span>
+                      {TARGET_PUBLICS[race.target_public] || race.target_public}
+                    </div>
                   </div>
 
-                  {/* Obstacles principaux */}
-                  {race.obstacles && race.obstacles.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium mb-2">Obstacles inclus :</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {race.obstacles.slice(0, 3).map(({ obstacle }) => (
-                          <Badge key={obstacle.id} variant="secondary" className="text-xs">
-                            {obstacle.name}
+                  {race.obstacles && race.obstacles.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Obstacles mis en avant :</p>
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        {race.obstacles.slice(0, 3).map((entry) => (
+                          <Badge key={entry.obstacle.id} variant="outline">
+                            {entry.obstacle.name}
                           </Badge>
                         ))}
-                        {race.obstacles.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{race.obstacles.length - 3} autres
-                          </Badge>
-                        )}
+                        {race.obstacles.length > 3 ? (
+                          <Badge variant="outline">+{race.obstacles.length - 3}</Badge>
+                        ) : null}
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Link href={`/races/${race.id}`} className="flex-1">
-                      <Button className="w-full">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Voir événements
+                  <div className="flex items-center justify-between pt-2">
+                    <Link href={`/races/${race.id}`}>
+                      <Button variant="default" size="sm">
+                        Découvrir la course
                       </Button>
                     </Link>
                   </div>
@@ -257,73 +193,6 @@ export default async function RacesPage() {
             ))}
           </div>
         )}
-
-        {/* Section d'informations */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Pour tous les niveaux
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Nos courses sont conçues pour accueillir tous les niveaux, 
-                des débutants aux athlètes confirmés.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Obstacles variés
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Chaque course propose des défis uniques avec une variété 
-                d'obstacles testant force, agilité et endurance.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
-                Expérience mémorable
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Vivez des moments inoubliables dans un cadre exceptionnel 
-                avec une organisation de qualité.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Call to action */}
-        <div className="mt-16 text-center">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <h2 className="text-2xl font-bold mb-4">Prêt à relever le défi ?</h2>
-              <p className="text-muted-foreground mb-6">
-                Rejoignez des milliers de participants et découvrez le plaisir de se dépasser 
-                dans nos événements sportifs uniques.
-              </p>
-              <Link href="/events">
-                <Button size="lg" className="text-lg px-8">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Voir tous les événements
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </main>
   )

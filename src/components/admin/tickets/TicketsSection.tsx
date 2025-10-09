@@ -4,15 +4,14 @@ import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Search } from 'lucide-react'
+import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import type { Ticket } from '@/types/Ticket'
-import { TicketFormDialog, TicketFormValues } from './TicketFormDialog'
-import { TicketList } from './TicketList'
-import { TicketsEmptyState } from './TicketsEmptyState'
+import { TicketFormDialog, type TicketFormValues } from './TicketFormDialog'
 import {
   adminTicketsQueryKey,
   createAdminTicket,
@@ -57,6 +56,16 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
   }
 }
 
+const formatPrice = (cents: number | null | undefined, currency?: string | null) => {
+  if (cents == null) {
+    return 'Tarif non défini'
+  }
+  return (cents / 100).toLocaleString('fr-FR', {
+    style: 'currency',
+    currency: (currency || 'EUR').toUpperCase(),
+  })
+}
+
 export function TicketsSection() {
   const queryClient = useQueryClient()
   const {
@@ -74,6 +83,7 @@ export function TicketsSection() {
     isLoading: racesLoading,
     error: racesError,
   } = useAdminRaces()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
@@ -84,10 +94,13 @@ export function TicketsSection() {
   const [eventFilter, setEventFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
+  const combinedLoading = ticketsLoading || eventsLoading || racesLoading
+  const combinedError = ticketsError || eventsError || racesError
+
   const filteredTickets = useMemo(() => {
     let result = [...tickets]
 
-    if (searchTerm) {
+    if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase()
       result = result.filter((ticket) => {
         const matchesName = ticket.name.toLowerCase().includes(term)
@@ -103,10 +116,6 @@ export function TicketsSection() {
 
     return result
   }, [tickets, searchTerm, eventFilter])
-
-  const hasTickets = filteredTickets.length > 0
-  const combinedLoading = ticketsLoading || eventsLoading || racesLoading
-  const combinedError = ticketsError || eventsError || racesError
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -195,75 +204,120 @@ export function TicketsSection() {
     }
   }
 
+  const columns = useMemo<AdminDataGridColumn<Ticket>[]>(() => {
+    return [
+      {
+        key: 'ticket',
+        header: 'Ticket',
+        cell: (ticket) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">{ticket.name}</span>
+            {ticket.description ? (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {ticket.description}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'event',
+        header: 'Événement',
+        cell: (ticket) => (
+          <div className="flex flex-col gap-1">
+            <span>{ticket.event?.title ?? '—'}</span>
+            {ticket.event?.date ? (
+              <span className="text-xs text-muted-foreground">
+                {new Date(ticket.event.date).toLocaleDateString('fr-FR')}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'race',
+        header: 'Format',
+        cell: (ticket) =>
+          ticket.race ? (
+            <div className="flex flex-col gap-1">
+              <span>{ticket.race.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {ticket.race.distance_km ? `${ticket.race.distance_km} km • ` : ''}
+                Difficulté {ticket.race.difficulty}/10
+              </span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: 'pricing',
+        header: 'Tarif & quotas',
+        cell: (ticket) => (
+          <div className="flex flex-col">
+            <span>{formatPrice(ticket.base_price_cents, ticket.currency)}</span>
+            <span className="text-xs text-muted-foreground">
+              Max {ticket.max_participants || '∞'} participant{ticket.max_participants > 1 ? 's' : ''}
+            </span>
+          </div>
+        ),
+      },
+      {
+        key: 'documents',
+        header: 'Documents',
+        cell: (ticket) => (
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant={ticket.requires_document ? 'default' : 'secondary'}>
+              {ticket.requires_document ? 'Document requis' : 'Aucun document'}
+            </Badge>
+            {ticket.document_types && ticket.document_types.length > 0
+              ? ticket.document_types.map((type) => (
+                  <Badge key={type} variant="outline" className="text-xs capitalize">
+                    {type.replace('_', ' ')}
+                  </Badge>
+                ))
+              : null}
+          </div>
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'w-[180px]',
+        cell: (ticket) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleEdit(ticket)}>
+              Modifier
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(ticket)}
+              disabled={deleteLoadingId === ticket.id}
+            >
+              {deleteLoadingId === ticket.id ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </div>
+        ),
+      },
+    ]
+  }, [deleteLoadingId])
+
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
-
-  const renderContent = () => {
-    if (combinedLoading) {
-      return (
-        <Card className="p-8 text-center text-muted-foreground">
-          Chargement des tickets...
-        </Card>
-      )
-    }
-
-    if (combinedError) {
-      return (
-        <Card className="p-8 text-center text-destructive">
-          {(combinedError as Error).message || 'Erreur lors du chargement des tickets'}
-        </Card>
-      )
-    }
-
-    if (!hasTickets) {
-      return <TicketsEmptyState onCreate={handleCreateClick} />
-    }
-
-    return (
-      <TicketList
-        tickets={filteredTickets}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        deleteLoadingId={deleteLoadingId}
-      />
-    )
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gestion des tickets</h2>
-          <p className="text-muted-foreground">Créez et modifiez vos billets et leurs contraintes.</p>
+          <h2 className="text-2xl font-bold">Gestion des billets</h2>
+          <p className="text-muted-foreground">
+            Paramètre les billets, leurs tarifs et les documents nécessaires.
+          </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouveau ticket
         </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Rechercher un ticket"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-        </div>
-        <Select value={eventFilter} onValueChange={(value) => setEventFilter(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filtrer par événement" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les événements</SelectItem>
-            {events.map((event) => (
-              <SelectItem key={event.id} value={event.id}>
-                {event.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {message && (
@@ -272,18 +326,70 @@ export function TicketsSection() {
         </Alert>
       )}
 
-      {renderContent()}
+      {combinedError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {(combinedError as Error).message || 'Impossible de charger les tickets'}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AdminDataGrid
+        data={filteredTickets}
+        columns={columns}
+        loading={combinedLoading}
+        emptyMessage={
+          searchTerm || eventFilter !== 'all'
+            ? 'Aucun ticket ne correspond aux filtres appliqués.'
+            : 'Aucun ticket disponible. Crée un ticket pour proposer une inscription.'
+        }
+        toolbar={
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher par nom, événement ou format…"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Select value={eventFilter} onValueChange={setEventFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Événement" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les événements</SelectItem>
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        meta={
+          <span>
+            {filteredTickets.length} ticket{filteredTickets.length > 1 ? 's' : ''} affiché
+          </span>
+        }
+        getRowId={(ticket) => ticket.id}
+      />
 
       <TicketFormDialog
         open={dialogOpen}
         mode={dialogMode}
-        events={events}
-        races={races}
         initialValues={formValues}
         loading={submitting}
+        events={events}
+        races={races}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
       />
     </div>
   )
 }
+

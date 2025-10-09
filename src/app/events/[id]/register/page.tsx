@@ -1,90 +1,78 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect } from 'react'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import MultiStepEventRegistration from '@/components/MultiStepEventRegistration'
-import { notFound, redirect } from 'next/navigation'
+import { useSession } from '@/app/api/session/sessionQueries'
+import { useEventRegisterData } from '@/app/api/events/[id]/register-data/registerDataQueries'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
-interface EventRegisterPageProps {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ ticket?: string | string[] }>
-}
+export default function EventRegisterPage() {
+  const params = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const ticketQueryParam = searchParams?.get('ticket') ?? null
+  const { data: session, isLoading: sessionLoading } = useSession()
 
-export default async function EventRegisterPage({ params, searchParams }: EventRegisterPageProps) {
-  const { id } = await params
-  const { ticket } = await searchParams
-  const supabase = await createSupabaseServer()
+  useEffect(() => {
+    if (!sessionLoading && !session?.user) {
+      const nextUrl = `/events/${params.id}/register${ticketQueryParam ? `?ticket=${ticketQueryParam}` : ''}`
+      router.replace(`/auth/login?next=${encodeURIComponent(nextUrl)}`)
+    }
+  }, [session?.user, sessionLoading, router, params.id, ticketQueryParam])
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data, isLoading, error, refetch } = useEventRegisterData(params.id, ticketQueryParam, {
+    enabled: Boolean(session?.user),
+  })
 
-  const ticketQueryParam = typeof ticket === 'string' ? ticket : Array.isArray(ticket) ? ticket[0] : null
-
-  if (!user) {
-    const nextUrl = `/events/${id}/register${ticketQueryParam ? `?ticket=${ticketQueryParam}` : ''}`
-    redirect(`/auth/login?next=${encodeURIComponent(nextUrl)}`)
+  if (sessionLoading || (session && !session.user)) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-sm text-muted-foreground">Chargement…</div>
+      </main>
+    )
   }
 
-  const { data: event, error: eventError } = await supabase
-    .from('events')
-    .select(`
-      *,
-      tickets (
-        id,
-        name,
-        description,
-        base_price_cents,
-        currency,
-        max_participants,
-        requires_document,
-        document_types,
-        race:races!tickets_race_id_fkey (
-          id,
-          name,
-          type,
-          difficulty,
-          target_public,
-          distance_km,
-          description
-        )
-      )
-    `)
-    .eq('id', id)
-    .single()
-
-  if (eventError || !event) {
-    notFound()
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+        <div className="text-sm text-muted-foreground">Chargement des informations d'inscription…</div>
+      </main>
+    )
   }
 
-  const { count: totalRegistrations } = await supabase
-    .from('registrations')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id)
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto max-w-lg px-6 py-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Impossible de charger l'événement</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>{error.message}</p>
+              <Button onClick={() => refetch()}>Réessayer</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    )
+  }
 
-  const availableSpots = Math.max(event.capacity - (totalRegistrations || 0), 0)
+  if (!data) {
+    return null
+  }
 
-  // fetch upsells that are either linked to an event, or that are global (not linked to any event and now is before valid_until)
-
-  const { data: upsellsData } = await supabase
-    .from('upsells')
-    .select('*')
-    .eq('is_active', true)
-    .or(`event_id.eq.${event.id},event_id.is.null`)
-    .order('created_at', { ascending: false })
-
-
-    
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto w-full px-4 pb-12 pt-8">
         <MultiStepEventRegistration
-          event={event}
-          tickets={event.tickets || []}
-          upsells={upsellsData || []}
-          user={{
-            id: user.id,
-            email: user.email ?? '',
-            fullName: user.user_metadata?.full_name || null,
-          }}
-          availableSpots={availableSpots}
+          event={data.event}
+          tickets={data.tickets}
+          upsells={data.upsells}
+          user={data.user}
+          availableSpots={data.availableSpots}
           initialTicketId={ticketQueryParam}
         />
       </div>

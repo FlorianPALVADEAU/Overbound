@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
           transfer_token: transfer,
           checked_in: false,
           claim_status: 'pending',
-          approval_status: 'approved',
+          approval_status: 'pending',
           race_id: ticket.race?.id || null,
           promotional_code_id: promotionalCodeId,
         })

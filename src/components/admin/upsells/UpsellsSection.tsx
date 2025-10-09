@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Plus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search } from 'lucide-react'
+import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import type { Upsell } from '@/types/Upsell'
-import { UpsellFormDialog, UpsellFormValues } from './UpsellFormDialog'
-import { UpsellsEmptyState } from './UpsellsEmptyState'
-import { UpsellList } from './UpsellList'
+import { UpsellFormDialog, type UpsellFormValues } from './UpsellFormDialog'
 import {
   adminUpsellsQueryKey,
   createAdminUpsell,
@@ -59,6 +60,12 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
   }
 }
 
+const formatPrice = (cents: number, currency: string) =>
+  (cents / 100).toLocaleString('fr-FR', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+  })
+
 export function UpsellsSection() {
   const queryClient = useQueryClient()
   const {
@@ -67,6 +74,7 @@ export function UpsellsSection() {
     error: upsellsError,
   } = useAdminUpsells()
   const { data: events = [] } = useAdminEvents()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedUpsell, setSelectedUpsell] = useState<Upsell | null>(null)
@@ -74,8 +82,30 @@ export function UpsellsSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
-  const hasUpsells = upsells.length > 0
+  const filteredUpsells = useMemo(() => {
+    let result = [...upsells]
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      result = result.filter((upsell) => {
+        return (
+          upsell.name.toLowerCase().includes(term) ||
+          upsell.description?.toLowerCase().includes(term)
+        )
+      })
+    }
+
+    if (statusFilter !== 'all') {
+      result = result.filter((upsell) =>
+        statusFilter === 'active' ? upsell.is_active : !upsell.is_active
+      )
+    }
+
+    return result
+  }, [upsells, searchTerm, statusFilter])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -177,48 +207,108 @@ export function UpsellsSection() {
     }
   }
 
+  const columns = useMemo<AdminDataGridColumn<Upsell>[]>(() => {
+    return [
+      {
+        key: 'upsell',
+        header: 'Upsell',
+        cell: (upsell) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">{upsell.name}</span>
+            {upsell.description ? (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {upsell.description}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'price',
+        header: 'Tarif',
+        cell: (upsell) => (
+          <span className="font-medium text-primary">
+            {formatPrice(upsell.price_cents, upsell.currency)}
+          </span>
+        ),
+      },
+      {
+        key: 'type',
+        header: 'Type',
+        cell: (upsell) => (
+          <Badge variant="secondary" className="capitalize">
+            {upsell.type}
+          </Badge>
+        ),
+      },
+      {
+        key: 'event',
+        header: 'Événement',
+        cell: (upsell) => (
+          <div className="flex flex-col text-xs">
+            <span>{upsell.event?.title ?? 'Global'}</span>
+            {upsell.event?.date ? (
+              <span className="text-muted-foreground">
+                {new Date(upsell.event.date).toLocaleDateString('fr-FR')}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'stock',
+        header: 'Stock',
+        cell: (upsell) => (
+          <span>
+            {upsell.stock_quantity != null ? upsell.stock_quantity : 'Illimité'}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Statut',
+        cell: (upsell) => (
+          <Badge variant={upsell.is_active ? 'default' : 'secondary'}>
+            {upsell.is_active ? 'Actif' : 'Inactif'}
+          </Badge>
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'w-[160px]',
+        cell: (upsell) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleEdit(upsell)}>
+              Modifier
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(upsell)}
+              disabled={deleteLoadingId === upsell.id}
+            >
+              {deleteLoadingId === upsell.id ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </div>
+        ),
+      },
+    ]
+  }, [deleteLoadingId])
+
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Card className="p-8 text-center text-muted-foreground">
-          Chargement des upsells...
-        </Card>
-      )
-    }
-
-    if (upsellsError) {
-      return (
-        <Card className="p-8 text-center text-destructive">
-          {(upsellsError as Error).message || 'Erreur lors du chargement des upsells'}
-        </Card>
-      )
-    }
-
-    if (!hasUpsells) {
-      return <UpsellsEmptyState onCreate={handleCreateClick} />
-    }
-
-    return (
-      <UpsellList
-        upsells={upsells}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        deleteLoadingId={deleteLoadingId}
-      />
-    )
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Upsells</h2>
-          <p className="text-muted-foreground">Gérez les produits complémentaires pour vos événements.</p>
+          <h2 className="text-2xl font-bold">Upsells & options</h2>
+          <p className="text-muted-foreground">
+            Propose des options additionnelles pour enrichir l’expérience participant.
+          </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouvel upsell
         </Button>
       </div>
@@ -229,14 +319,65 @@ export function UpsellsSection() {
         </Alert>
       )}
 
-      {renderContent()}
+      {upsellsError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {(upsellsError as Error).message || 'Impossible de charger les upsells'}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AdminDataGrid
+        data={filteredUpsells}
+        columns={columns}
+        loading={isLoading}
+        emptyMessage={
+          searchTerm || statusFilter !== 'all'
+            ? 'Aucun upsell ne correspond aux filtres appliqués.'
+            : 'Aucun upsell enregistré pour le moment.'
+        }
+        toolbar={
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher par nom ou description…"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="active">Actifs</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        meta={
+          <span>
+            {filteredUpsells.length} upsell{filteredUpsells.length > 1 ? 's' : ''} affiché
+          </span>
+        }
+        getRowId={(upsell) => upsell.id}
+      />
 
       <UpsellFormDialog
         open={dialogOpen}
         mode={dialogMode}
-        events={events}
         initialValues={formValues}
         loading={submitting}
+        events={events}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
       />

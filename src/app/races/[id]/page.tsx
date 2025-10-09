@@ -290,9 +290,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <Alert className="mb-8">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Déjà inscrit !</strong> Vous êtes inscrit à cet événement avec le ticket "{Array.isArray(existingRegistration.ticket) ? existingRegistration.ticket[0]?.name : existingRegistration.ticket?.name}".
+              <strong>Déjà inscrit !</strong> Vous disposez d'une inscription avec le ticket "{Array.isArray(existingRegistration.ticket) ? existingRegistration.ticket[0]?.name : existingRegistration.ticket?.name}".
               {existingRegistration.checked_in ? " Vous avez été enregistré comme présent." : " N'oubliez pas de vous présenter le jour J !"}
-              {" "}
+              Vous pouvez toutefois enregistrer d'autres personnes ou reprendre un nouveau billet si besoin.
+              {' '}
               <Link href="/account" className="underline">Gérer mes inscriptions</Link>
             </AlertDescription>
           </Alert>

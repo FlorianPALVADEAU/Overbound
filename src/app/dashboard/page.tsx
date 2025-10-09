@@ -1,38 +1,50 @@
-/* eslint-disable react/no-unescaped-entities */
-import { createSupabaseServer } from '@/lib/supabase/server'
+'use client'
+
+import { redirect } from 'next/navigation'
+import AdminDashboard from '@/components/admin/AdminDashboard'
+import { useSession } from '@/app/api/session/sessionQueries'
+import { useAdminOverview } from '@/app/api/admin/overview/overviewQueries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Users } from 'lucide-react'
 import Link from 'next/link'
-import AdminDashboard from '@/components/admin/AdminDashboard'
-import { redirect } from 'next/navigation'
 
-export default async function AdminPage() {
-  const supabase = await createSupabaseServer()
-  
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function DashboardPage() {
+  const { data: session, isLoading: sessionLoading } = useSession()
+  const { data, isLoading, error, refetch } = useAdminOverview()
 
-  if (!user) {
-    redirect('/auth/login')
+  if (sessionLoading || isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-sm text-muted-foreground">Chargement…</div>
+      </main>
+    )
   }
 
-  // Récupérer le profil avec le rôle
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, full_name')
-    .eq('id', user.id)
-    .single()
+  if (!session?.user) {
+    redirect('/auth/login?next=/dashboard')
+  }
 
-  if (!profile || !['admin', 'volunteer'].includes(profile.role)) {
+  if (error) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full">
-          <CardContent className="text-center p-8">
-            <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Accès refusé</h2>
-            <p className="text-muted-foreground mb-4">
+        <Card className="max-w-md">
+          <CardContent className="space-y-4 p-6 text-center">
+            <p className="font-semibold text-destructive">Impossible de charger le tableau de bord</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <Button onClick={() => refetch()}>Réessayer</Button>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  if (!data || !['admin', 'volunteer'].includes(data.profile.role || '')) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md">
+          <CardContent className="text-center space-y-4">
+            <p className="text-lg font-semibold">Accès refusé</p>
+            <p className="text-sm text-muted-foreground">
               Tu n'as pas les permissions nécessaires pour accéder à cette page.
             </p>
             <Link href="/account">
@@ -44,31 +56,11 @@ export default async function AdminPage() {
     )
   }
 
-  let stats = null
-  
-  if (profile.role === 'admin') {
-    // Essayer d'abord admin_overview, puis admin_overview_safe en cas d'erreur
-    const { data: statsData, error: statsError } = await supabase.rpc('admin_overview')
-    
-    if (statsError) {
-      console.log('Tentative avec admin_overview_safe...', statsError.message)
-      const { data: safeStatsData, error: safeStatsError } = await supabase.rpc('admin_overview_safe')
-      
-      if (safeStatsError) {
-        console.error('Erreur stats (safe):', safeStatsError)
-      } else {
-        stats = safeStatsData
-      }
-    } else {
-      stats = statsData
-    }
-  }
-
   return (
-    <AdminDashboard 
-      user={user} 
-      profile={profile} 
-      stats={stats} 
+    <AdminDashboard
+      user={data.user as any}
+      profile={{ role: data.profile.role as any, full_name: data.profile.full_name ?? undefined }}
+      stats={data.stats}
     />
   )
 }

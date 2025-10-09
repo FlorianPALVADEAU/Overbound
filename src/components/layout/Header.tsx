@@ -32,21 +32,13 @@ import {
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { SessionProfile, SessionResponse, SessionUser } from '@/app/api/session/sessionQueries'
 
 interface HeaderProps {
-  user?: {
-    id: string
-    email?: string
-    user_metadata?: {
-      full_name?: string
-      avatar_url?: string
-    }
-  } | null
-  profile?: {
-    full_name?: string
-    avatar_url?: string
-    role?: string
-  } | null
+  user?: SessionUser | null
+  profile?: SessionProfile | null
+  isLoading?: boolean
+  alerts?: SessionResponse['alerts'] | null
 }
 
 type NavigationItemType = {
@@ -64,7 +56,7 @@ type DropdownItemType = {
 
 
 
-export function Header({ user, profile }: HeaderProps) {
+export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false)
   const [mobileEventsOpen, setMobileEventsOpen] = useState(false)
@@ -95,10 +87,33 @@ export function Header({ user, profile }: HeaderProps) {
     { name: 'Archives', href: '/events/archives', icon: ClockIcon },
   ]
 
+  const rawRoleCandidates = [
+    profile?.role,
+    (user?.user_metadata as Record<string, any> | undefined)?.role,
+    (user?.user_metadata as Record<string, any> | undefined)?.roles,
+    (user as Record<string, any> | undefined)?.app_metadata?.role,
+    (user as Record<string, any> | undefined)?.app_metadata?.roles,
+  ]
+
+  const normalizedRoles = rawRoleCandidates.flatMap((value) => {
+    if (!value) {
+      return []
+    }
+
+    const toArray = Array.isArray(value) ? value : String(value).split(',')
+
+    return toArray
+      .map((role) => String(role).trim().toLowerCase())
+      .filter(Boolean)
+  })
+
+  const hasDashboardAccess = normalizedRoles.some((role) => role.includes('admin') || role === 'volunteer' || role === 'staff')
+  const needsDocumentAttention = Boolean(alerts?.needs_document_action)
+
   const userNavigation: NavigationItemType[] = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
-    ...(profile?.role === 'admin' || profile?.role === 'volunteer' ? [
+    ...(hasDashboardAccess ? [
       { name: 'Administration', href: '/dashboard', icon: SettingsIcon },
     ] : []),
   ] : []
@@ -175,7 +190,9 @@ export function Header({ user, profile }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {user ? (
+            {isLoading ? (
+              <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+            ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -191,6 +208,11 @@ export function Header({ user, profile }: HeaderProps) {
                         }
                       </AvatarFallback>
                     </Avatar>
+                    {needsDocumentAttention ? (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-destructive text-[9px] font-bold leading-none text-white">
+                        !
+                      </span>
+                    ) : null}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -205,14 +227,27 @@ export function Header({ user, profile }: HeaderProps) {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  {userNavigation.map((item) => (
-                    <DropdownMenuItem key={item.name} asChild>
-                      <Link href={item.href} className="cursor-pointer">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
+                  {userNavigation.map((item) => {
+                    const showDocumentIndicator =
+                      needsDocumentAttention &&
+                      (item.href === '/account' || item.href === '/account/tickets')
+
+                    return (
+                      <DropdownMenuItem key={item.name} asChild>
+                        <Link href={item.href} className="flex w-full items-center justify-between gap-3">
+                          <span className="flex items-center">
+                            <item.icon className="mr-2 h-4 w-4" />
+                            {item.name}
+                          </span>
+                          {showDocumentIndicator ? (
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[11px] font-bold leading-none text-white">
+                              !
+                            </span>
+                          ) : null}
+                        </Link>
+                      </DropdownMenuItem>
+                    )
+                  })}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
                     <LogOutIcon className="mr-2 h-4 w-4" />

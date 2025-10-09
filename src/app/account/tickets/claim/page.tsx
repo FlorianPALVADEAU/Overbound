@@ -1,53 +1,51 @@
+'use client'
+
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CalendarIcon, MapPinIcon } from 'lucide-react'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { useSession } from '@/app/api/session/sessionQueries'
+import { useClaimDetails } from '@/app/api/account/tickets/claim/claimQueries'
+import { ClaimTicketButton } from '@/components/account/ClaimTicketButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ClaimTicketButton } from '@/components/account/ClaimTicketButton'
 
-interface ClaimTicketsPageProps {
-  searchParams: Promise<{ token?: string }>
-}
+export default function ClaimTicketPage() {
+  const searchParams = useSearchParams()
+  const token = searchParams?.get('token') ?? ''
+  const router = useRouter()
+  const { data: session, isLoading: sessionLoading } = useSession()
+  const { data, isLoading, error, refetch } = useClaimDetails(token, Boolean(token))
 
-export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPageProps) {
-  const { token } = await searchParams
+  useEffect(() => {
+    if (!sessionLoading && !session?.user) {
+      router.replace(`/auth/login?next=${encodeURIComponent(`/account/tickets/claim?token=${token}`)}`)
+    }
+  }, [session?.user, sessionLoading, router, token])
 
-  if (!token || typeof token !== 'string') {
-    redirect('/account/tickets')
-  }
-
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect(`/auth/login?next=${encodeURIComponent(`/account/tickets/claim?token=${token}`)}`)
-  }
-
-  const admin = supabaseAdmin()
-  const { data: registration, error } = await admin
-    .from('registrations')
-    .select(
-      `
-        id,
-        user_id,
-        transfer_token,
-        claim_status,
-        qr_code_token,
-        ticket:tickets(id, name),
-        event:events(id, title, date, location)
-      `,
+  if (!token) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto max-w-2xl px-6 py-12">
+          <Card>
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              Lien de transfert invalide.
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     )
-    .eq('transfer_token', token)
-    .maybeSingle()
+  }
+
+  if (isLoading || sessionLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+        <div className="text-sm text-muted-foreground">Chargement du billet…</div>
+      </main>
+    )
+  }
 
   if (error) {
-    console.error('[claim] fetch error', error)
-  }
-
-  if (!registration) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto max-w-2xl px-6 py-12">
@@ -56,17 +54,12 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
               <CardTitle>Billet introuvable</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
-              <p>
-                Ce lien de transfert n&apos;est plus valide ou le billet a déjà été récupéré. Demande
-                au titulaire du billet de vérifier le lien ou de t&apos;en envoyer un nouveau.
-              </p>
+              <p>{error.message}</p>
               <div className="flex gap-2">
                 <Link href="/account/tickets">
                   <Button variant="outline">Retour à mes billets</Button>
                 </Link>
-                <Link href="/events">
-                  <Button>Découvrir les événements</Button>
-                </Link>
+                <Button onClick={() => refetch()}>Réessayer</Button>
               </div>
             </CardContent>
           </Card>
@@ -75,14 +68,15 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
     )
   }
 
-  const eDate = registration.event?.[0]?.date
-  const eventDate = eDate ? new Date(eDate) : null
+  if (!data?.registration) {
+    return null
+  }
+
+  const registration = data.registration
+  const eventDate = registration.event?.date ? new Date(registration.event.date) : null
   const formattedEventDate = eventDate
     ? eventDate.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
     : null
-
-  const alreadyClaimed = registration.user_id === user.id
-  const isTokenAvailable = registration.transfer_token === token
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -93,8 +87,8 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-lg border bg-card p-4">
-              <h2 className="text-lg font-semibold">{registration.event?.[0]?.title ?? 'Événement'}</h2>
-              <p className="text-sm text-muted-foreground">{registration.ticket?.[0]?.name}</p>
+              <h2 className="text-lg font-semibold">{registration.event?.title ?? 'Événement'}</h2>
+              <p className="text-sm text-muted-foreground">{registration.ticket?.name}</p>
               <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {formattedEventDate ? (
                   <div className="flex items-center gap-2">
@@ -102,33 +96,22 @@ export default async function ClaimTicketPage({ searchParams }: ClaimTicketsPage
                     <span>{formattedEventDate}</span>
                   </div>
                 ) : null}
-                {registration.event?.[0]?.location ? (
+                {registration.event?.location ? (
                   <div className="flex items-center gap-2">
                     <MapPinIcon className="h-4 w-4" />
-                    <span>{registration.event?.[0]?.location}</span>
+                    <span>{registration.event.location}</span>
                   </div>
                 ) : null}
               </div>
             </div>
 
-            {alreadyClaimed ? (
-              <div className="rounded-lg border border-emerald-400/40 bg-emerald-100/40 p-4 text-sm text-emerald-900">
-                Ce billet est déjà associé à ton compte.
-              </div>
-            ) : !isTokenAvailable ? (
-              <div className="rounded-lg border border-amber-400/50 bg-amber-100/50 p-4 text-sm text-amber-900">
-                Ce lien a déjà été utilisé. Demande au titulaire du billet de t&apos;en envoyer un
-                nouveau.
-              </div>
-            ) : (
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <p>
-                  En récupérant ce billet, il sera associé à ton compte Overbound et apparaîtra dans
-                  ta liste de billets. Le titulaire actuel recevra une notification de transfert.
-                </p>
-                <ClaimTicketButton token={token} />
-              </div>
-            )}
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>
+                En récupérant ce billet, il sera associé à ton compte Overbound et apparaîtra dans ta
+                liste de billets. Le titulaire actuel recevra une notification de transfert.
+              </p>
+              <ClaimTicketButton token={token} />
+            </div>
 
             <div className="flex gap-2">
               <Link href="/account/tickets">

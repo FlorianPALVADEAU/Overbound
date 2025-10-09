@@ -1,63 +1,86 @@
-import { redirect } from 'next/navigation'
+'use client'
+
 import Link from 'next/link'
-import QRCode from 'qrcode'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
-export default async function AccountTicketsPage() {
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function AccountTicketsPage() {
+  const router = useRouter()
+  const { data, isLoading, error, refetch } = useAccountRegistrations()
 
-  if (!user) {
-    redirect('/auth/login?next=/account/tickets')
+  useEffect(() => {
+    if (!isLoading && data?.user === null) {
+      router.replace('/auth/login?next=/account/tickets')
+    }
+  }, [data?.user, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto max-w-5xl space-y-6 px-6 py-8">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-32 rounded-md" />
+              <Skeleton className="h-9 w-48 rounded-md" />
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={`ticket-skeleton-${index}`} className="flex flex-col gap-3 rounded-lg border border-dashed border-muted/40 p-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-52" />
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                  <Skeleton className="h-8 w-24 rounded-md" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    )
   }
-
-  const { data: registrations, error } = await supabase
-    .from('my_registrations')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('event_date', { ascending: true })
 
   if (error) {
-    console.error('[account/tickets] registrations fetch error', error)
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
+        <Card className="max-w-md">
+          <CardContent className="space-y-4 p-6 text-center">
+            <p className="font-semibold text-destructive">Impossible de récupérer vos billets</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <Button onClick={() => refetch()}>Réessayer</Button>
+          </CardContent>
+        </Card>
+      </main>
+    )
   }
 
-  const registrationIds = (registrations ?? []).map((registration) => registration.registration_id)
-  const admin = supabaseAdmin()
-  let transferTokensMap = new Map<string, string | null>()
-
-  if (registrationIds.length > 0) {
-    const { data: tokenRows, error: tokenError } = await admin
-      .from('registrations')
-      .select('id, transfer_token')
-      .in('id', registrationIds)
-
-    if (tokenError) {
-      console.error('[account/tickets] transfer token fetch error', tokenError)
-    } else if (tokenRows) {
-      transferTokensMap = new Map(tokenRows.map((row) => [row.id as string, row.transfer_token]))
-    }
+  if (!data?.user) {
+    return null
   }
 
-  const registrationsWithQr = await Promise.all(
-    (registrations ?? []).map(async (registration) => ({
-      ...registration,
-      transfer_token: transferTokensMap.get(registration.registration_id) ?? null,
-      qr_code_data_url:
-        registration.qr_code_token && registration.qr_code_token.length > 0
-          ? await QRCode.toDataURL(registration.qr_code_token)
-          : null,
-    })),
-  )
-
-  const upcomingRegistrations = registrationsWithQr.filter((registration) => {
+  const upcomingRegistrations = data.registrations.filter((registration) => {
     if (!registration.event_date) return false
     return new Date(registration.event_date) >= new Date()
   })
+  const needsDocumentAction = data.registrations.some(
+    (registration) => registration.document_requires_attention,
+  )
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -78,6 +101,14 @@ export default async function AccountTicketsPage() {
             </Link>
           </div>
         </div>
+
+        {needsDocumentAction ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Tes billets nécessitent toujours un document validé. Fourni ou mets à jour tes pièces justificatives pour obtenir un accès complet.
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         <Card>
           <CardHeader>

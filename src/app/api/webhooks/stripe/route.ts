@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
             qr_code_token: qrToken,
             transfer_token: transferToken,
             stripe_payment_intent_id: paymentIntent.id,
-            approval_status: 'approved',
+            approval_status: 'pending',
             race_id: race_id || null,
           })
           .select()

@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Plus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search } from 'lucide-react'
+import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import type { PromotionalCode } from '@/types/PromotionalCode'
-import { PromotionalCodeFormDialog, PromotionalCodeFormValues } from './PromotionalCodeFormDialog'
-import { PromotionalCodesEmptyState } from './PromotionalCodesEmptyState'
-import { PromotionalCodeList } from './PromotionalCodeList'
+import { PromotionalCodeFormDialog, type PromotionalCodeFormValues } from './PromotionalCodeFormDialog'
 import {
   adminPromotionalCodesQueryKey,
   createAdminPromotionalCode,
@@ -65,6 +66,26 @@ function buildFormValues(code?: PromotionalCode): PromotionalCodeFormValues {
   }
 }
 
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+
+const discountLabel = (code: PromotionalCode) => {
+  if (code.discount_percent) {
+    return `-${code.discount_percent}%`
+  }
+  if (code.discount_amount) {
+    return `-${(code.discount_amount / 100).toLocaleString('fr-FR', {
+      style: 'currency',
+      currency: code.currency.toUpperCase(),
+    })}`
+  }
+  return '—'
+}
+
 export function PromotionalCodesSection() {
   const queryClient = useQueryClient()
   const {
@@ -73,6 +94,7 @@ export function PromotionalCodesSection() {
     error: promotionalCodesError,
   } = useAdminPromotionalCodes()
   const { data: events = [] } = useAdminEvents()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedCode, setSelectedCode] = useState<PromotionalCode | null>(null)
@@ -80,8 +102,31 @@ export function PromotionalCodesSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
-  const hasCodes = promotionalCodes.length > 0
+  const filteredCodes = useMemo(() => {
+    let result = [...promotionalCodes]
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      result = result.filter((code) => {
+        return (
+          code.code.toLowerCase().includes(term) ||
+          code.name.toLowerCase().includes(term) ||
+          code.description?.toLowerCase().includes(term)
+        )
+      })
+    }
+
+    if (statusFilter !== 'all') {
+      result = result.filter((code) =>
+        statusFilter === 'active' ? code.is_active : !code.is_active
+      )
+    }
+
+    return result
+  }, [promotionalCodes, searchTerm, statusFilter])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -201,48 +246,89 @@ export function PromotionalCodesSection() {
     }
   }
 
+  const columns = useMemo<AdminDataGridColumn<PromotionalCode>[]>(() => {
+    return [
+      {
+        key: 'code',
+        header: 'Code',
+        cell: (code) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold uppercase">{code.code}</span>
+            <span className="text-xs text-muted-foreground">{code.name}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'discount',
+        header: 'Remise',
+        cell: (code) => (
+          <span className="font-medium text-primary">{discountLabel(code)}</span>
+        ),
+      },
+      {
+        key: 'validity',
+        header: 'Validité',
+        cell: (code) => (
+          <div className="flex flex-col text-xs text-muted-foreground">
+            <span>Du {formatDate(code.valid_from)}</span>
+            <span>Au {formatDate(code.valid_until)}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'usage',
+        header: 'Utilisation',
+        cell: (code) => (
+          <span>
+            {code.used_count} / {code.usage_limit ?? '∞'} utilisés
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Statut',
+        cell: (code) => (
+          <Badge variant={code.is_active ? 'default' : 'secondary'}>
+            {code.is_active ? 'Actif' : 'Inactif'}
+          </Badge>
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'w-[160px]',
+        cell: (code) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleEdit(code)}>
+              Modifier
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(code)}
+              disabled={deleteLoadingId === code.id}
+            >
+              {deleteLoadingId === code.id ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </div>
+        ),
+      },
+    ]
+  }, [deleteLoadingId])
+
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Card className="p-8 text-center text-muted-foreground">
-          Chargement des codes promotionnels...
-        </Card>
-      )
-    }
-
-    if (promotionalCodesError) {
-      return (
-        <Card className="p-8 text-center text-destructive">
-          {(promotionalCodesError as Error).message || 'Erreur lors du chargement des codes promotionnels'}
-        </Card>
-      )
-    }
-
-    if (!hasCodes) {
-      return <PromotionalCodesEmptyState onCreate={handleCreateClick} />
-    }
-
-    return (
-      <PromotionalCodeList
-        promotionalCodes={promotionalCodes}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        deleteLoadingId={deleteLoadingId}
-      />
-    )
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Codes promotionnels</h2>
-          <p className="text-muted-foreground">Gérez les réductions et promotions disponibles.</p>
+          <p className="text-muted-foreground">
+            Crée des codes de réduction et attribue-les à tes événements.
+          </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouveau code
         </Button>
       </div>
@@ -253,17 +339,69 @@ export function PromotionalCodesSection() {
         </Alert>
       )}
 
-      {renderContent()}
+      {promotionalCodesError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {(promotionalCodesError as Error).message || 'Impossible de charger les codes promotionnels'}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AdminDataGrid
+        data={filteredCodes}
+        columns={columns}
+        loading={isLoading}
+        emptyMessage={
+          searchTerm || statusFilter !== 'all'
+            ? 'Aucun code ne correspond aux filtres appliqués.'
+            : 'Aucun code promotionnel enregistré.'
+        }
+        toolbar={
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher par code, nom ou description…"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="active">Actifs</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        meta={
+          <span>
+            {filteredCodes.length} code{filteredCodes.length > 1 ? 's' : ''} affiché
+          </span>
+        }
+        getRowId={(code) => code.id}
+      />
 
       <PromotionalCodeFormDialog
         open={dialogOpen}
         mode={dialogMode}
-        events={events}
         initialValues={formValues}
         loading={submitting}
+        events={events}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
       />
     </div>
   )
 }
+

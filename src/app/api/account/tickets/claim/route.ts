@@ -2,6 +2,57 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
+export const runtime = 'nodejs'
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createSupabaseServer()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
+    }
+
+    const token = request.nextUrl.searchParams.get('token')?.trim()
+    if (!token) {
+      return NextResponse.json({ error: 'Lien invalide.' }, { status: 400 })
+    }
+
+    const admin = supabaseAdmin()
+    const { data: registration, error } = await admin
+      .from('registrations')
+      .select(
+        `
+          id,
+          user_id,
+          transfer_token,
+          claim_status,
+          qr_code_token,
+          ticket:tickets(id, name),
+          event:events(id, title, date, location)
+        `,
+      )
+      .eq('transfer_token', token)
+      .maybeSingle()
+
+    if (error) {
+      console.error('[claim] lookup detail error', error)
+      return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
+    }
+
+    if (!registration) {
+      return NextResponse.json({ error: 'Ce billet n’existe plus ou a été réclamé.' }, { status: 404 })
+    }
+
+    return NextResponse.json({ registration })
+  } catch (error) {
+    console.error('[claim] detail unexpected error', error)
+    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
+  }
+}
+
 const handlePost = async (request: NextRequest) => {
   try {
     const supabase = await createSupabaseServer()

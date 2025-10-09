@@ -7,6 +7,7 @@ import {
   MapPinIcon,
   QrCodeIcon,
   Share2,
+  AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +47,10 @@ export interface AccountRegistrationItem {
   order_status: string | null
   invoice_url: string | null
   order_created_at: string | null
+  approval_status: 'pending' | 'approved' | 'rejected'
+  document_url: string | null
+  requires_document: boolean
+  document_requires_attention: boolean
 }
 
 interface AccountRegistrationsListProps {
@@ -123,6 +128,28 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
         const isShareDialogOpen =
           activeDialog?.type === 'share' && activeDialog.id === registration.registration_id
 
+        const documentStatusBadge = (() => {
+          if (!registration.requires_document) {
+            return null
+          }
+
+          if (!registration.document_url) {
+            return { label: 'Document manquant', variant: 'destructive' as const }
+          }
+
+          if (registration.approval_status === 'rejected') {
+            return { label: 'Document rejeté', variant: 'destructive' as const }
+          }
+
+          if (registration.approval_status !== 'approved') {
+            return { label: 'Validation en attente', variant: 'secondary' as const }
+          }
+
+          return null
+        })()
+
+        const showDocumentIndicator = registration.document_requires_attention
+
         return (
           <div key={registration.registration_id}>
             <div className="flex flex-col gap-6 rounded-lg border bg-card p-6 lg:flex-row">
@@ -147,6 +174,12 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                       <Badge variant="secondary">À venir</Badge>
                     ) : isPast ? (
                       <Badge variant="outline">Terminé</Badge>
+                    ) : null}
+                    {documentStatusBadge ? (
+                      <Badge variant={documentStatusBadge.variant} className="flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {documentStatusBadge.label}
+                      </Badge>
                     ) : null}
                   </div>
                 </div>
@@ -203,6 +236,27 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
+                  {registration.requires_document ? (
+                    <Link href={`/account/registration/${registration.registration_id}/document`}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={
+                          showDocumentIndicator
+                            ? 'relative border-destructive text-destructive hover:bg-destructive/10'
+                            : undefined
+                        }
+                      >
+                        {showDocumentIndicator ? (
+                          <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[10px] font-bold leading-none text-white">
+                            !
+                          </span>
+                        ) : null}
+                        Envoyer mon document
+                      </Button>
+                    </Link>
+                  ) : null}
+
                   <Dialog
                     open={isQrDialogOpen}
                     onOpenChange={(open) =>
@@ -212,7 +266,20 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                     }
                   >
                     <DialogTrigger asChild>
-                      <Button variant="default" size="sm">
+                      <Button
+                        variant={showDocumentIndicator ? 'outline' : 'default'}
+                        size="sm"
+                        className={
+                          showDocumentIndicator
+                            ? 'relative border-destructive text-destructive hover:bg-destructive/10'
+                            : undefined
+                        }
+                      >
+                        {showDocumentIndicator ? (
+                          <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[10px] font-bold leading-none text-white">
+                            !
+                          </span>
+                        ) : null}
                         <QrCodeIcon className="mr-2 h-4 w-4" />
                         Voir le billet
                       </Button>

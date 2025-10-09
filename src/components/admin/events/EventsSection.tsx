@@ -1,15 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Plus } from 'lucide-react'
-import { EventFormDialog, EventFormValues } from './EventFormDialog'
-import { EventsEmptyState } from './EventsEmptyState'
-import { EventList } from './EventList'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search } from 'lucide-react'
+import { EventFormDialog, type EventFormValues } from './EventFormDialog'
 import type { Event } from '@/types/Event'
 import {
   adminEventsQueryKey,
@@ -19,6 +19,7 @@ import {
   useAdminEvents,
   type AdminEventPayload,
 } from '@/app/api/admin/events/eventsQueries'
+import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -78,6 +79,30 @@ function toPayload(values: EventFormValues): AdminEventPayload {
   }
 }
 
+const statusVariant = (status: Event['status']) => {
+  switch (status) {
+    case 'on_sale':
+      return 'default' as const
+    case 'draft':
+      return 'secondary' as const
+    case 'sold_out':
+    case 'closed':
+      return 'outline' as const
+    case 'cancelled':
+      return 'destructive' as const
+    case 'completed':
+      return 'secondary' as const
+    default:
+      return 'secondary' as const
+  }
+}
+
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+
 export function EventsSection() {
   const queryClient = useQueryClient()
   const {
@@ -92,8 +117,29 @@ export function EventsSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | Event['status']>('all')
 
-  const hasEvents = events.length > 0
+  const filteredEvents = useMemo(() => {
+    let result = [...events]
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      result = result.filter((event) => {
+        return (
+          event.title.toLowerCase().includes(term) ||
+          event.slug.toLowerCase().includes(term) ||
+          event.location.toLowerCase().includes(term)
+        )
+      })
+    }
+
+    if (statusFilter !== 'all') {
+      result = result.filter((event) => event.status === statusFilter)
+    }
+
+    return result
+  }, [events, searchTerm, statusFilter])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -171,59 +217,149 @@ export function EventsSection() {
     }
   }
 
-  const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Card className="p-8 text-center text-muted-foreground">
-          Chargement des événements...
-        </Card>
-      )
-    }
-
-    if (queryError) {
-      return (
-        <Card className="p-8 text-center text-destructive">
-          {(queryError as Error).message || 'Erreur lors du chargement des événements'}
-        </Card>
-      )
-    }
-
-    if (!hasEvents) {
-      return <EventsEmptyState onCreate={handleCreateClick} />
-    }
-
-    return (
-      <EventList
-        events={events}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        deleteLoadingId={deleteLoadingId}
-      />
-    )
-  }
+  const columns = useMemo<AdminDataGridColumn<Event>[]>(() => {
+    return [
+      {
+        key: 'title',
+        header: 'Événement',
+        cell: (event) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">{event.title}</span>
+            <span className="text-xs text-muted-foreground">Slug : {event.slug}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'date',
+        header: 'Date & heure',
+        cell: (event) => <span>{formatDateTime(event.date)}</span>,
+      },
+      {
+        key: 'location',
+        header: 'Lieu',
+        cell: (event) => (
+          <div className="flex flex-col">
+            <span>{event.location}</span>
+            <span className="text-xs text-muted-foreground">Capacité : {event.capacity}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Statut',
+        cell: (event) => (
+          <Badge variant={statusVariant(event.status)} className="capitalize">
+            {event.status.replace('_', ' ')}
+          </Badge>
+        ),
+      },
+      {
+        key: 'updated_at',
+        header: 'Dernière mise à jour',
+        cell: (event) => (
+          <span className="text-sm text-muted-foreground">{formatDateTime(event.updated_at)}</span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        className: 'w-[170px]',
+        cell: (event) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
+              Modifier
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(event)}
+              disabled={deleteLoadingId === event.id}
+            >
+              {deleteLoadingId === event.id ? 'Suppression…' : 'Supprimer'}
+            </Button>
+          </div>
+        ),
+      },
+    ]
+  }, [deleteLoadingId])
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestion des événements</h2>
-          <p className="text-muted-foreground">Créer, modifier et gérer vos événements sportifs.</p>
+          <p className="text-muted-foreground">
+            Gérez vos événements, leurs statuts et leurs capacités.
+          </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouvel événement
         </Button>
       </div>
 
       {message && (
-        <Alert variant={alertVariant}>
+        <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
           <AlertDescription>{message.text}</AlertDescription>
         </Alert>
       )}
 
-      {renderContent()}
+      {queryError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {queryError.message || 'Impossible de charger les événements'}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <AdminDataGrid
+        data={filteredEvents}
+        columns={columns}
+        loading={isLoading}
+        emptyMessage={
+          searchTerm || statusFilter !== 'all'
+            ? 'Aucun événement ne correspond aux filtres appliqués.'
+            : 'Aucun événement enregistré. Créez votre premier événement pour commencer.'
+        }
+        toolbar={
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher par titre, slug ou lieu…"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="draft">Brouillon</SelectItem>
+                <SelectItem value="on_sale">En vente</SelectItem>
+                <SelectItem value="sold_out">Complet</SelectItem>
+                <SelectItem value="closed">Clôturé</SelectItem>
+                <SelectItem value="cancelled">Annulé</SelectItem>
+                <SelectItem value="completed">Terminé</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        meta={
+          <span>
+            {filteredEvents.length} événement{filteredEvents.length > 1 ? 's' : ''} affiché
+          </span>
+        }
+        getRowId={(event) => event.id}
+      />
 
       <EventFormDialog
         open={dialogOpen}
@@ -236,3 +372,4 @@ export function EventsSection() {
     </div>
   )
 }
+
