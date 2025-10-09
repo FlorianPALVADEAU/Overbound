@@ -421,15 +421,40 @@ export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
                             Check-in
                           </Badge>
                         ) : null}
-                        {registration.document_url ? (
-                          <Badge variant="outline" className="border-sky-200 text-sky-600">
-                            Document reçu
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-amber-200 text-amber-600">
-                            Document manquant
-                          </Badge>
-                        )}
+                        {registration.requires_document ? (
+                          (() => {
+                            const hasDocument = Boolean(registration.document_url?.trim())
+                            if (!hasDocument) {
+                              return (
+                                <Badge variant="outline" className="border-amber-200 text-amber-600">
+                                  Document manquant
+                                </Badge>
+                              )
+                            }
+
+                            if (registration.approval_status === 'approved') {
+                              return (
+                                <Badge variant="outline" className="border-emerald-200 text-emerald-600">
+                                  Document validé
+                                </Badge>
+                              )
+                            }
+
+                            if (registration.approval_status === 'rejected') {
+                              return (
+                                <Badge variant="outline" className="border-red-200 text-red-600">
+                                  Document rejeté
+                                </Badge>
+                              )
+                            }
+
+                            return (
+                              <Badge variant="outline" className="border-sky-200 text-sky-600">
+                                Validation en cours
+                              </Badge>
+                            )
+                          })()
+                        ) : null}
                       </div>
                     </TableCell>
                     <TableCell>{formatDateTime(registration.created_at)}</TableCell>
@@ -439,7 +464,7 @@ export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewDocument(registration)}
-                          disabled={!registration.document_url}
+                          disabled={!registration.document_url?.trim()}
                         >
                           Voir doc
                         </Button>

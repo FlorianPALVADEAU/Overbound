@@ -52,7 +52,8 @@ export async function POST(request: Request) {
     }
 
     const bucketName = 'registration-documents'
-    const desiredFileSizeLimit = 20 * 1024 * 1024 // 20MB
+    const desiredFileSizeLimitBytes = 20 * 1024 * 1024 // 20MB
+    const desiredFileSizeLimit = `${desiredFileSizeLimitBytes}`
     const fileName = `${registrationId}-${Date.now()}-${file.name}`
 
     const ensureBucket = async () => {
@@ -61,22 +62,21 @@ export async function POST(request: Request) {
         error: bucketError,
       } = await storageClient.storage.getBucket(bucketName)
 
-      if (bucketError && bucketError.status === 404) {
-        const { error: createError } = await storageClient.storage.createBucket(bucketName, {
-          public: false,
-          fileSizeLimit: `${desiredFileSizeLimit}`,
-        })
-
-        if (createError && createError.status !== 409) {
-          throw createError
-        }
-      } else if (bucketError && bucketError.status !== 200) {
+      if (bucketError) {
         throw bucketError
       } else if (bucketData) {
-        const currentLimit = Number((bucketData as Record<string, any>).file_size_limit ?? 0)
-        if (!currentLimit || currentLimit < desiredFileSizeLimit) {
+        const currentLimitRaw = (bucketData as Record<string, any>).file_size_limit as string | null
+        const currentLimit = currentLimitRaw ? parseInt(currentLimitRaw, 10) : null
+        const needsPublic = !(bucketData as Record<string, any>).public
+        const needsLimitUpdate =
+          !currentLimit ||
+          Number.isNaN(currentLimit) ||
+          currentLimit < desiredFileSizeLimitBytes
+
+        if (needsPublic || needsLimitUpdate) {
           const { error: updateError } = await storageClient.storage.updateBucket(bucketName, {
-            fileSizeLimit: `${desiredFileSizeLimit}`,
+            public: true,
+            fileSizeLimit: desiredFileSizeLimit,
           })
           if (updateError) {
             throw updateError
@@ -107,7 +107,8 @@ export async function POST(request: Request) {
       String(uploadError.message ?? '').toLowerCase().includes('exceeded the maximum allowed size')
     ) {
       const { error: updateError } = await storageClient.storage.updateBucket(bucketName, {
-        fileSizeLimit: `${desiredFileSizeLimit}`,
+        public: true,
+        fileSizeLimit: desiredFileSizeLimit,
       })
 
       if (updateError) {
@@ -123,14 +124,13 @@ export async function POST(request: Request) {
       throw uploadError
     }
 
-    const {
-      data: { publicUrl },
-    } = storageClient.storage.from(bucketName).getPublicUrl(fileName)
+    // Stocker le chemin complet du fichier dans le bucket
+    const documentPath = `${bucketName}/${fileName}`
 
     const { error: updateError } = await supabase
       .from('registrations')
       .update({
-        document_url: publicUrl,
+        document_url: documentPath,
         document_filename: file.name,
         document_size: file.size,
         approval_status: 'pending'
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      document_url: publicUrl,
+      document_url: documentPath,
       filename: file.name,
       size: file.size
     })
