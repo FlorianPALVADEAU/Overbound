@@ -236,7 +236,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
-                  {registration.requires_document ? (
+                  {registration.requires_document && registration.approval_status !== 'approved' ? (
                     <Link href={`/account/registration/${registration.registration_id}/document`}>
                       <Button
                         variant="outline"
@@ -252,7 +252,14 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                             !
                           </span>
                         ) : null}
-                        Envoyer mon document
+                        {/* HERE */}
+                        {
+                          registration.approval_status === 'rejected' ? (
+                            'Mettre à jour mon document'
+                          ) : (
+                            'Envoyer mon document'
+                          )
+                        }
                       </Button>
                     </Link>
                   ) : null}
@@ -274,12 +281,8 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                             ? 'relative border-destructive text-destructive hover:bg-destructive/10'
                             : undefined
                         }
+                        disabled={!registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || showDocumentIndicator}
                       >
-                        {showDocumentIndicator ? (
-                          <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[10px] font-bold leading-none text-white">
-                            !
-                          </span>
-                        ) : null}
                         <QrCodeIcon className="mr-2 h-4 w-4" />
                         Voir le billet
                       </Button>
