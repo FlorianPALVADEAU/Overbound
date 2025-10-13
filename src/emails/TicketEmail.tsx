@@ -25,7 +25,7 @@ export default function TicketEmail({
       <Body style={{ fontFamily: 'Arial, sans-serif' }}>
         <Container>
           <Section>
-            <Img src="https://overbound.com/logo.png" alt="OverBound" width="120" />
+            <Img src="https://overbound-race.com/logo.png" alt="OverBound" width="120" />
             <Text>Salut {participantName},</Text>
             <Text>Merci pour ton inscription à <b>{eventTitle}</b>.</Text>
             <Text>

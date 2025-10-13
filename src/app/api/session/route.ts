@@ -12,11 +12,18 @@ export async function GET() {
       return NextResponse.json({ user: null, profile: null })
     }
 
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
-      .select('full_name, role')
+      .select('full_name, phone, date_of_birth, role')
       .eq('id', user.id)
       .single()
+    const profile =
+      profileData !== null
+        ? {
+            ...profileData,
+            avatar_url: (user.user_metadata as Record<string, any> | undefined)?.avatar_url ?? null,
+          }
+        : null
 
     let needsDocumentAction = false
     try {
@@ -61,6 +68,7 @@ export async function GET() {
       user: {
         id: user.id,
         email: user.email,
+        created_at: user.created_at,
         user_metadata: user.user_metadata,
       },
       profile: profile ?? null,

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CalendarIcon, MapPinIcon } from 'lucide-react'
 import { useSession } from '@/app/api/session/sessionQueries'
@@ -10,7 +10,7 @@ import { ClaimTicketButton } from '@/components/account/ClaimTicketButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-export default function ClaimTicketPage() {
+function ClaimTicketPageInner() {
   const searchParams = useSearchParams()
   const token = searchParams?.get('token') ?? ''
   const router = useRouter()
@@ -125,5 +125,19 @@ export default function ClaimTicketPage() {
         </Card>
       </div>
     </main>
+  )
+}
+
+export default function ClaimTicketPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+          <div className="text-sm text-muted-foreground">Chargement du billet…</div>
+        </main>
+      }
+    >
+      <ClaimTicketPageInner />
+    </Suspense>
   )
 }

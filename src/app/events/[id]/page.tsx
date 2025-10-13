@@ -198,7 +198,10 @@ export default function EventDetailPage() {
 
         <EventTicketListWithRegistration
           event={event}
-          tickets={event.tickets || []}
+          tickets={(event.tickets as any[] | undefined)?.map((ticket) => ({
+            ...ticket,
+            race: ticket.race ?? undefined,
+          })) ?? []}
           availableSpots={availableSpots}
           user={user ? { id: user.id, email: user.email ?? '' } : null}
         />

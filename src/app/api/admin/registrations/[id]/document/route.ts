@@ -5,9 +5,10 @@ const BUCKET_NAME = 'registration-documents'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const params = await context.params
     const supabase = await createSupabaseServer()
     const {
       data: { user },
@@ -85,4 +86,3 @@ export async function GET(
     return NextResponse.json({ error: 'Impossible de récupérer le document' }, { status: 500 })
   }
 }
-

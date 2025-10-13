@@ -3,12 +3,15 @@ import { useQuery } from '@tanstack/react-query'
 export interface SessionProfile {
   full_name?: string | null
   avatar_url?: string | null
+  phone?: string | null
+  date_of_birth?: string | null
   role?: string | null
 }
 
 export interface SessionUser {
   id: string
   email?: string | null
+  created_at?: string | null
   user_metadata?: {
     full_name?: string
     avatar_url?: string

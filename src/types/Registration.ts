@@ -90,4 +90,6 @@ export interface AdminRegistration extends Registration {
   notification_preferences?: NotificationPreference | null
   upsells?: Upsell[] | null
   signatures?: RegistrationSignature[] | null
+  requires_document: boolean,
+  claim_status: ClaimStatus
 }

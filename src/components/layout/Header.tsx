@@ -109,6 +109,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const hasDashboardAccess = normalizedRoles.some((role) => role.includes('admin') || role === 'volunteer' || role === 'staff')
   const needsDocumentAttention = Boolean(alerts?.needs_document_action)
+  const needsProfileCompletion = Boolean(
+    user && (!profile?.full_name || !profile?.phone || !profile?.date_of_birth),
+  )
+  const attentionNeeded = needsDocumentAttention || needsProfileCompletion
 
   const userNavigation: NavigationItemType[] = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
@@ -208,7 +212,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                         }
                       </AvatarFallback>
                     </Avatar>
-                    {needsDocumentAttention ? (
+                    {attentionNeeded ? (
                       <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-destructive text-[9px] font-bold leading-none text-white">
                         !
                       </span>
@@ -228,9 +232,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   </div>
                   <DropdownMenuSeparator />
                   {userNavigation.map((item) => {
-                    const showDocumentIndicator =
-                      needsDocumentAttention &&
-                      (item.href === '/account' || item.href === '/account/tickets')
+                    const showIndicator =
+                      (needsDocumentAttention &&
+                        (item.href === '/account' || item.href === '/account/tickets')) ||
+                      (needsProfileCompletion && item.href === '/account')
 
                     return (
                       <DropdownMenuItem key={item.name} asChild>
@@ -239,7 +244,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                             <item.icon className="mr-2 h-4 w-4" />
                             {item.name}
                           </span>
-                          {showDocumentIndicator ? (
+                          {showIndicator ? (
                             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[11px] font-bold leading-none text-white">
                               !
                             </span>

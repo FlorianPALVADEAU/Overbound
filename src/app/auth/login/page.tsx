@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 'use client'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,7 @@ import { useSearchParams } from 'next/navigation'
 
 type AuthMode = 'magic-link' | 'password' | 'signup'
 
-export default function Login() {
+function LoginInner() {
   const [authMode, setAuthMode] = useState<AuthMode>('magic-link')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -533,5 +533,19 @@ export default function Login() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function Login() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-background to-muted/20">
+          <div className="text-sm text-muted-foreground">Chargement de la page de connexion…</div>
+        </main>
+      }
+    >
+      <LoginInner />
+    </Suspense>
   )
 }

@@ -74,6 +74,7 @@ type EventUser = {
   id: string
   email: string
   fullName?: string | null
+  date_of_birth?: string | null
 }
 
 type EventUpsell = Upsell & {
@@ -392,7 +393,7 @@ export default function MultiStepEventRegistration({
             firstName: '',
             lastName: '',
             email: index === 0 && user?.email ? user.email : '',
-            birthDate: '',
+            birthDate: index === 0 && user?.date_of_birth ? user.date_of_birth : '',
             emergencyContactName: '',
             emergencyContactPhone: '',
             medicalInfo: '',
@@ -1125,15 +1126,6 @@ export default function MultiStepEventRegistration({
                   value={participant.medicalInfo}
                   onChange={(event) => handleParticipantChange(participant.id, 'medicalInfo', event.target.value)}
                   placeholder="Allergies, traitement en cours, etc."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-license`}>Licence / dossard (optionnel)</Label>
-                <Input
-                  id={`${participant.id}-license`}
-                  value={participant.licenseNumber}
-                  onChange={(event) => handleParticipantChange(participant.id, 'licenseNumber', event.target.value)}
-                  placeholder="Numéro de licence"
                 />
               </div>
             </CardContent>
