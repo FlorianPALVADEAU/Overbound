@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { processAccountEngagementEmails } from '@/lib/email/engagement'
 
 export const runtime = 'nodejs'
 
@@ -15,11 +16,18 @@ export async function GET() {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
-      .select('full_name, avatar_url, role')
+      .select('full_name, phone, date_of_birth, role')
       .eq('id', user.id)
       .single()
+    const profile =
+      profileData !== null
+        ? {
+            ...profileData,
+            avatar_url: (user.user_metadata as Record<string, any> | undefined)?.avatar_url ?? null,
+          }
+        : null
 
     const { data: registrations, error } = await supabase
       .from('my_registrations')
@@ -68,7 +76,7 @@ export async function GET() {
       if (metaError) {
         console.error('[account api] registration meta error', metaError)
       } else if (metaRows) {
-        for (const row of metaRows as RegistrationMetaRow[]) {
+        for (const row of metaRows as any[]) {
           const requiresDocument = Boolean(row.ticket?.requires_document)
           registrationMetaMap.set(row.id, {
             transfer_token: row.transfer_token ?? null,
@@ -118,13 +126,22 @@ export async function GET() {
       return eventDate > now
     }).length
 
+    await processAccountEngagementEmails({
+      userId: user.id,
+      email: user.email ?? '',
+      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
+      userCreatedAt: user.created_at ?? null,
+      profile,
+    })
+
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         user_metadata: user.user_metadata,
+        created_at: user.created_at,
       },
-      profile: profile ?? null,
+      profile,
       stats: {
         totalEvents,
         checkedInEvents,

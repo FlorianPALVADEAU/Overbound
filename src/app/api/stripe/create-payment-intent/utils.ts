@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import type { NextResponse } from 'next/server'
 import { NextResponse as NextResponseConstructor } from 'next/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 
 type SupabaseSessionClient = Awaited<ReturnType<typeof createSupabaseServer>>
 

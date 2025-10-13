@@ -7,6 +7,7 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventRegisterData } from '@/app/api/events/[id]/register-data/registerDataQueries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
 
 export default function EventRegisterPage() {
   const params = useParams<{ id: string }>()
@@ -14,19 +15,20 @@ export default function EventRegisterPage() {
   const router = useRouter()
   const ticketQueryParam = searchParams?.get('ticket') ?? null
   const { data: session, isLoading: sessionLoading } = useSession()
+  const { data: accountRegistrations, isLoading: accountRegistrationsLoading } = useAccountRegistrations()
 
   useEffect(() => {
-    if (!sessionLoading && !session?.user) {
+    if (!sessionLoading && !session?.user && !accountRegistrationsLoading) {
       const nextUrl = `/events/${params.id}/register${ticketQueryParam ? `?ticket=${ticketQueryParam}` : ''}`
       router.replace(`/auth/login?next=${encodeURIComponent(nextUrl)}`)
     }
-  }, [session?.user, sessionLoading, router, params.id, ticketQueryParam])
+  }, [session?.user, sessionLoading, accountRegistrationsLoading, router, params.id, ticketQueryParam])
 
   const { data, isLoading, error, refetch } = useEventRegisterData(params.id, ticketQueryParam, {
     enabled: Boolean(session?.user),
   })
 
-  if (sessionLoading || (session && !session.user)) {
+  if (sessionLoading || (session && !session.user) || accountRegistrationsLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-sm text-muted-foreground">Chargement…</div>
@@ -69,9 +71,17 @@ export default function EventRegisterPage() {
       <div className="container mx-auto w-full px-4 pb-12 pt-8">
         <MultiStepEventRegistration
           event={data.event}
-          tickets={data.tickets}
+          tickets={data.tickets.map(ticket => ({
+            ...ticket,
+            race: ticket.race === null ? undefined : ticket.race,
+          }))}
           upsells={data.upsells}
-          user={data.user}
+          user={{
+            id: data.user.id,
+            email: data.user.email,
+            fullName: data.user.fullName,
+            date_of_birth: accountRegistrations?.profile?.date_of_birth || null,
+          }}
           availableSpots={data.availableSpots}
           initialTicketId={ticketQueryParam}
         />

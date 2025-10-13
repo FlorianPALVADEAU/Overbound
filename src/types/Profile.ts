@@ -4,6 +4,7 @@ export interface Profile {
   id: UUID; // ref to auth.users.id
   full_name: string | null;
   phone: string | null;
+  date_of_birth: string | null;
   role: UserRole;
   created_at: Timestamp;
 }

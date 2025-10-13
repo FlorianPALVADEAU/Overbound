@@ -18,7 +18,7 @@ export type EventStatus =
   | 'completed'
 
 export type OrderStatus = 'paid' | 'pending' | 'cancelled' | 'refunded'
-export type ClaimStatus = 'pending' | 'approved' | 'rejected'
+export type ClaimStatus = 'pending' | 'approved' | 'rejected' | 'transferred'
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
 export type UserRole = 'user' | 'volunteer' | 'admin'
 export type Provider = 'internal' | 'stripe' | 'paypal' | 'external'
