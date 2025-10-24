@@ -17,6 +17,7 @@ import { UpsellsSection } from '@/components/admin/upsells'
 import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { ADMIN_NAV_ITEMS } from '@/components/admin/adminNavItems'
+import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 
 interface Profile {
@@ -167,6 +168,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="logs" className="space-y-6">
                 <AdminLogsSection />
+              </TabsContent>
+
+              <TabsContent value="emails" className="space-y-6">
+                <AdminEmailPlayground />
               </TabsContent>
             </Tabs>
           </div>

@@ -11,6 +11,7 @@ import {
   Users,
   UserCheck,
   ScrollText,
+  Mail,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AdminTabValue } from '@/store/useAdminDashboardStore'
@@ -32,4 +33,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'members', label: 'Membres', icon: Users },
   { value: 'checkin', label: 'Check-in', icon: UserCheck },
   { value: 'logs', label: 'Logs', icon: ScrollText },
+  { value: 'emails', label: 'Emails', icon: Mail },
 ]

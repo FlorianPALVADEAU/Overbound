@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendTicketEmail } from '@/lib/email'
+import { notifyDocumentRequired } from '@/lib/email/documents'
 import * as QRCode from 'qrcode'
 
 export const runtime = 'nodejs'
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
           throw orderError
         }
 
+        const participantName = (metadata.participant_name as string | undefined) || participant_email
+
         // Create registration
         const { data: registration, error: registrationError } = await admin
           .from('registrations')
@@ -130,7 +133,6 @@ export async function POST(request: NextRequest) {
             ticket_id,
             order_id: order.id,
             email: participant_email,
-            participant_name: metadata.participant_name || participant_email,
             qr_code_token: qrToken,
             transfer_token: transferToken,
             stripe_payment_intent_id: paymentIntent.id,
@@ -172,13 +174,28 @@ export async function POST(request: NextRequest) {
           amount: paymentIntent.amount
         })
 
+        if (ticket.requires_document) {
+          try {
+            await notifyDocumentRequired({
+              registrationId: registration.id,
+              userId: registration.user_id,
+              participantName,
+              eventTitle: event_title || event.title,
+              email: registration.email,
+              requiredDocuments: ticket.document_types ?? [],
+            })
+          } catch (documentEmailError) {
+            console.error('Error sending document required email:', documentEmailError)
+          }
+        }
+
         // Send confirmation email
         try {
           const qrCodeBase64 = await QRCode.toDataURL(qrToken).then(url => url.split(',')[1])
 
           await sendTicketEmail({
             to: registration.email,
-            participantName: registration.participant_name,
+            participantName,
             eventTitle: event_title || event.title,
             eventDate: event.date,
             eventLocation: event.location,

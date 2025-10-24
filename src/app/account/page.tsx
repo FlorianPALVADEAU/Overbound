@@ -269,6 +269,12 @@ export default function AccountPage() {
                     {formattedBirthdate || 'Non renseignée'}
                   </p>
                 </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm text-muted-foreground">Emails d’actualités OverBound</p>
+                  <p className="text-base font-medium">
+                    {profile?.marketing_opt_in ? 'Activés' : 'Désactivés'}
+                  </p>
+                </div>
               </div>
               {profileIncomplete && !isEditingProfile ? (
                 <Alert variant="default">

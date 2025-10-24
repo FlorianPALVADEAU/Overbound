@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendTicketEmail } from '@/lib/email'
+import { notifyDocumentRequired } from '@/lib/email/documents'
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION } from '@/constants/registration'
 
@@ -190,7 +191,21 @@ export async function POST(request: NextRequest) {
         throw registrationError
       }
 
-      createdRegistrations.push({ registration, ticket, participant })
+      const derivedName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim()
+      const participantName = derivedName || participant.email || registration.email || null
+
+      createdRegistrations.push({ registration, ticket, participant, participantName })
+
+      if (ticket.requires_document) {
+        await notifyDocumentRequired({
+          registrationId: registration.id,
+          userId: registration.user_id,
+          participantName,
+          eventTitle: eventRow.title,
+          email: registration.email,
+          requiredDocuments: ticket.document_types ?? [],
+        })
+      }
 
       if (signatureImage) {
         const signatureRecord = {
@@ -254,13 +269,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    for (const { registration, ticket } of createdRegistrations) {
+    for (const { registration, ticket, participantName } of createdRegistrations) {
       try {
         const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
 
         await sendTicketEmail({
           to: registration.email,
-          participantName: registration.participant_name,
+          participantName: participantName || registration.email,
           eventTitle: eventRow.title,
           eventDate: eventRow.date,
           eventLocation: eventRow.location,

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Switch } from '@/components/ui/switch'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -20,14 +21,18 @@ interface AccountProfileFormProps {
 }
 
 type FormFieldKey = 'full_name' | 'phone' | 'date_of_birth'
+type BooleanFieldKey = 'marketing_opt_in'
 
 interface FormValues {
   full_name: string
   phone: string
   date_of_birth: string
+  marketing_opt_in: boolean
 }
 
-type UpdatePayload = Partial<Record<FormFieldKey, string | null>>
+type UpdatePayload = Partial<Record<FormFieldKey, string | null>> & {
+  marketing_opt_in?: boolean
+}
 
 interface UpdateProfileResponse {
   success: boolean
@@ -36,6 +41,7 @@ interface UpdateProfileResponse {
 }
 
 const FORM_FIELDS: FormFieldKey[] = ['full_name', 'phone', 'date_of_birth']
+const BOOLEAN_FIELDS: BooleanFieldKey[] = ['marketing_opt_in']
 
 const normalize = (value: string) => value.trim()
 
@@ -47,8 +53,9 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       full_name: profile?.full_name ?? '',
       phone: profile?.phone ?? '',
       date_of_birth: profile?.date_of_birth ?? '',
+      marketing_opt_in: Boolean(profile?.marketing_opt_in),
     }),
-    [profile?.full_name, profile?.phone, profile?.date_of_birth],
+    [profile?.full_name, profile?.phone, profile?.date_of_birth, profile?.marketing_opt_in],
   )
 
   const [savedValues, setSavedValues] = useState<FormValues>(initialValues)
@@ -86,6 +93,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
           full_name: updatedProfile.full_name ?? '',
           phone: updatedProfile.phone ?? '',
           date_of_birth: updatedProfile.date_of_birth ?? '',
+          marketing_opt_in: Boolean((updatedProfile as any).marketing_opt_in),
         }
         setSavedValues(nextValues)
         setFormValues(nextValues)
@@ -97,6 +105,11 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             if (field in sentPayload) {
               const value = sentPayload[field]
               merged[field] = value ?? ''
+            }
+          })
+          BOOLEAN_FIELDS.forEach((field) => {
+            if (field in sentPayload) {
+              merged[field] = Boolean(sentPayload[field as BooleanFieldKey])
             }
           })
           setFormValues(merged)
@@ -112,12 +125,20 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
           prev
             ? {
                 ...prev,
-                profile: data.profile ?? {
-                  ...(prev.profile ?? {}),
-                  ...Object.fromEntries(
-                    Object.entries(sentPayload).map(([key, value]) => [key, value ?? null]),
-                  ),
-                },
+                profile:
+                  data.profile ??
+                  {
+                    ...(prev.profile ?? {}),
+                    ...Object.fromEntries(
+                      Object.entries(sentPayload).map(([key, value]) => [key, value ?? null]),
+                    ),
+                    ...BOOLEAN_FIELDS.reduce<Record<string, boolean>>((accumulator, field) => {
+                      if (field in sentPayload) {
+                        accumulator[field] = Boolean(sentPayload[field as BooleanFieldKey])
+                      }
+                      return accumulator
+                    }, {}),
+                  },
               }
             : prev,
       )
@@ -159,6 +180,12 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       }
     })
 
+    BOOLEAN_FIELDS.forEach((field) => {
+      if (formValues[field] !== savedValues[field]) {
+        payload[field] = formValues[field]
+      }
+    })
+
     return payload
   }
 
@@ -175,7 +202,8 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
     () =>
       FORM_FIELDS.some(
         (field) => normalize(formValues[field]) !== normalize(savedValues[field]),
-      ),
+      ) ||
+      BOOLEAN_FIELDS.some((field) => formValues[field] !== savedValues[field]),
     [formValues, savedValues],
   )
 
@@ -228,6 +256,28 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             max={maxBirthdate}
             onChange={handleChange('date_of_birth')}
           />
+        </div>
+        <div className="flex flex-col gap-2 md:col-span-2">
+          <Label htmlFor="account-marketing-opt-in">Préférences de communication</Label>
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Recevoir les emails d’actualités</p>
+              <p className="text-sm text-muted-foreground">
+                Nouveaux événements, offres partenaires et contenus exclusifs. Tu peux te désabonner à tout moment.
+              </p>
+            </div>
+            <Switch
+              id="account-marketing-opt-in"
+              checked={formValues.marketing_opt_in}
+              onCheckedChange={(checked) => {
+                setFormValues((prev) => ({ ...prev, marketing_opt_in: checked }))
+                if (feedback) {
+                  setFeedback(null)
+                }
+              }}
+              aria-label="Activer ou désactiver les emails marketing"
+            />
+          </div>
         </div>
       </div>
 

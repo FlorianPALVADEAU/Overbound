@@ -5,6 +5,7 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   date_of_birth: string | null;
+  marketing_opt_in?: boolean | null;
   role: UserRole;
   created_at: Timestamp;
 }

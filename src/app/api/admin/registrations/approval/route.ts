@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { notifyDocumentApproved, notifyDocumentRejected } from '@/lib/email/documents'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const handlePost = async (request: NextRequest) => {
@@ -60,7 +61,18 @@ const handlePost = async (request: NextRequest) => {
       .from('registrations')
       .update(updatePayload)
       .eq('id', registration_id)
-      .select('id, approval_status, rejection_reason, approved_at, approved_by')
+      .select(
+        `
+          id,
+          user_id,
+          email,
+          approval_status,
+          rejection_reason,
+          approved_at,
+          approved_by,
+          event:events(id, title)
+        `,
+      )
       .single()
 
     if (updateError) {
@@ -74,7 +86,53 @@ const handlePost = async (request: NextRequest) => {
       )
     }
 
-    return NextResponse.json({ registration: updatedRegistration })
+    const normalizedEvent = Array.isArray(updatedRegistration.event)
+      ? updatedRegistration.event[0] ?? null
+      : updatedRegistration.event ?? null
+
+    const { data: participantProfile } = await adminClient
+      .from('profiles')
+      .select('id, full_name')
+      .eq('id', updatedRegistration.user_id)
+      .maybeSingle()
+
+    const participantName =
+      (updatedRegistration as any).participant_name ??
+      participantProfile?.full_name ??
+      updatedRegistration.email ??
+      null
+
+    if (updatedRegistration.email) {
+      try {
+        if (status === 'approved') {
+          await notifyDocumentApproved({
+            registrationId: updatedRegistration.id,
+            userId: updatedRegistration.user_id,
+            participantName,
+            eventTitle: normalizedEvent?.title ?? 'Ton événement',
+            email: updatedRegistration.email,
+          })
+        } else {
+          await notifyDocumentRejected({
+            registrationId: updatedRegistration.id,
+            userId: updatedRegistration.user_id,
+            participantName,
+            eventTitle: normalizedEvent?.title ?? 'Ton événement',
+            email: updatedRegistration.email,
+            reason: reason || updatedRegistration.rejection_reason || undefined,
+          })
+        }
+      } catch (notificationError) {
+        console.error('Erreur envoi email document status:', notificationError)
+      }
+    }
+
+    return NextResponse.json({
+      registration: {
+        ...updatedRegistration,
+        participant_name: participantName,
+      },
+    })
   } catch (error) {
     console.error('Erreur approval:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

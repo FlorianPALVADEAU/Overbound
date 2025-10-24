@@ -14,6 +14,7 @@ export const ADMIN_TAB_VALUES = [
   'members',
   'checkin',
   'logs',
+  'emails',
 ] as const
 
 export type AdminTabValue = (typeof ADMIN_TAB_VALUES)[number]
