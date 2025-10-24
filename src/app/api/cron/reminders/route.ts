@@ -99,7 +99,7 @@ async function sendEventPrepBatch(admin: ReturnType<typeof supabaseAdmin>, weeks
 
   let sent = 0
   for (const row of registrations) {
-    if (!row.email || !row.event) {
+    if (!row.email || !row.event || !row.user_id) {
       continue
     }
 
@@ -194,7 +194,7 @@ async function sendPostEventThankYouBatch(admin: ReturnType<typeof supabaseAdmin
 
   let sent = 0
   for (const row of registrations) {
-    if (!row.email || !row.event) continue
+    if (!row.email || !row.event || !row.user_id) continue
 
     const alreadySent = await getLastEmailLog({
       userId: row.user_id,
