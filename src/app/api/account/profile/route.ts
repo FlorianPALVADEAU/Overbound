@@ -40,6 +40,22 @@ const updateProfileSchema = z.object({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Le format de la date doit être YYYY-MM-DD.' }),
   ),
+  marketing_opt_in: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) return undefined
+      if (typeof value === 'string') {
+        const normalized = value.toLowerCase()
+        if (['true', '1', 'yes', 'on'].includes(normalized)) return true
+        if (['false', '0', 'no', 'off'].includes(normalized)) return false
+        return undefined
+      }
+      return value
+    })
+    .refine((value) => value === undefined || typeof value === 'boolean', {
+      message: 'Valeur de consentement invalide.',
+    }),
 })
 
 const validateBirthdate = (date: string) => {
@@ -93,7 +109,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Aucun champ à mettre à jour.' }, { status: 400 })
     }
 
-    const updatePayload: Record<string, string | null> = {}
+    const updatePayload: Record<string, string | boolean | null> = {}
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) {
         updatePayload[key] = value
@@ -104,7 +120,7 @@ export async function PATCH(request: NextRequest) {
       .from('profiles')
       .update(updatePayload)
       .eq('id', user.id)
-      .select('full_name, phone, date_of_birth, role')
+      .select('full_name, phone, date_of_birth, marketing_opt_in, role')
       .single()
 
     if (updateError) {

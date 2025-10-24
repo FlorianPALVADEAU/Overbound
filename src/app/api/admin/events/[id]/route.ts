@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
+import { notifyEventUpdate } from '@/lib/email/eventUpdates'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
 const handlePut = async (
   request: NextRequest,
@@ -24,6 +28,12 @@ const handlePut = async (
     if (!profile || profile.role !== 'admin') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
+
+    const { data: existingEvent } = await supabase
+      .from('events')
+      .select('id, status, title, date, location, subtitle, slug')
+      .eq('id', id)
+      .single()
 
     const body = await request.json()
     const {
@@ -63,6 +73,30 @@ const handlePut = async (
     if (error) {
       throw error
     }
+
+    await maybeSendNewEventAnnouncement(event, existingEvent?.status ?? null)
+    await notifyEventUpdate({
+      previous: existingEvent
+        ? {
+            id,
+            title: existingEvent.title,
+            date: existingEvent.date,
+            location: existingEvent.location,
+            slug: existingEvent.slug,
+          }
+        : null,
+      current: {
+        id,
+        title: event.title,
+        date: event.date,
+        location: event.location,
+        slug: event.slug,
+      },
+      statusMessage:
+        existingEvent?.status !== event.status && event.status === 'cancelled'
+          ? 'L’événement est annulé. Nous reviendrons vers toi prochainement concernant les modalités.'
+          : undefined,
+    })
 
     return NextResponse.json({ event })
 
@@ -135,3 +169,36 @@ export const PUT = withRequestLogging(handlePut, {
 export const DELETE = withRequestLogging(handleDelete, {
   actionType: 'Suppression événement admin',
 })
+
+const maybeSendNewEventAnnouncement = async (
+  event: Record<string, any>,
+  previousStatus?: string | null,
+) => {
+  if (!event || event.status !== 'on_sale') {
+    return
+  }
+
+  if (previousStatus === 'on_sale') {
+    return
+  }
+
+  try {
+    const recipients = await getMarketingOptInRecipients()
+    if (recipients.length === 0) {
+      return
+    }
+
+    await dispatchNewEventAnnouncement({
+      recipients,
+      eventTitle: event.title ?? 'Nouvel événement OverBound',
+      eventDate: event.date
+        ? new Date(event.date).toLocaleDateString('fr-FR', { dateStyle: 'long' })
+        : '',
+      eventLocation: event.location ?? '',
+      eventUrl: `${SITE_URL}/events/${event.slug ?? event.id ?? ''}`,
+      highlight: event.subtitle ?? null,
+    })
+  } catch (error) {
+    console.error('[marketing] new event announcement error', error)
+  }
+}

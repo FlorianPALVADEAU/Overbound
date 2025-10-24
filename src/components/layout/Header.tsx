@@ -84,7 +84,6 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Tribal Royale', href: '/events/tribal-royale', icon: MapPinIcon },
     { name: 'Tribal Kids', href: '/events/tribal-kids', icon: MapPinIcon },
     { name: 'Volunteers', href: '/events/results', icon: TrophyIcon, highlight: true },
-    { name: 'Archives', href: '/events/archives', icon: ClockIcon },
   ]
 
   const rawRoleCandidates = [
@@ -169,7 +168,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     <DropdownMenuItem key={item.name + index} asChild>
                       <Link 
                         href={item.href} 
-                        className="cursor-pointer rounded-md p-5 hover:bg-accent/80 transition-colors group"
+                        className={`cursor-pointer rounded-md p-5 hover:bg-accent/80 transition-colors group ${item.highlight ? 'bg-primary/10' : ''}`}
                       >
                         <p className="text-sm font-medium">{item.name}</p>
                       </Link>

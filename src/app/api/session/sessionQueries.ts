@@ -5,6 +5,7 @@ export interface SessionProfile {
   avatar_url?: string | null
   phone?: string | null
   date_of_birth?: string | null
+  marketing_opt_in?: boolean | null
   role?: string | null
 }
 

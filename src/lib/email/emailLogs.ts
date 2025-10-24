@@ -5,6 +5,18 @@ export type EngagementEmailType =
   | 'profile_nudge'
   | 'event_prep'
   | 'post_event_thankyou'
+  | 'document_required'
+  | 'document_approved'
+  | 'document_rejected'
+  | 'marketing_new_event'
+  | 'marketing_price_change'
+  | 'marketing_promo'
+  | 'reactivation_inactive'
+  | 'reactivation_abandoned_checkout'
+  | 'event_updated'
+  | 'admin_digest'
+  | 'volunteer_recruitment'
+  | 'volunteer_assignment'
 
 interface EmailLogRecord {
   id: string

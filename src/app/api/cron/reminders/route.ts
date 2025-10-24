@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { sendEventPrepEmail, sendPostEventThankYouEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
+import { sendInactiveUserWinback, sendAbandonedCheckoutReminders } from '@/lib/email/reactivation'
+import { sendAdminDigest } from '@/lib/email/adminDigest'
+import { sendVolunteerRecruitmentDigest } from '@/lib/email/volunteers'
 
 export const runtime = 'nodejs'
 
@@ -13,9 +16,9 @@ const EVENTS_URL = `${BASE_URL}/events`
 
 interface RegistrationWithEvent {
   id: string
-  user_id: string
+  user_id: string | null
   email: string | null
-  participant_name: string | null
+  participant_name?: string | null
   checked_in: boolean
   event: {
     id: string
@@ -38,8 +41,20 @@ export async function GET() {
   }
 
   const thankYouSent = await sendPostEventThankYouBatch(admin)
+  const inactiveSent = await sendInactiveUserWinback()
+  const abandonedSent = await sendAbandonedCheckoutReminders()
+  const adminDigestSent = await sendAdminDigest({ lookbackMinutes: 60 })
+  const volunteerRecruitmentSent = await sendVolunteerRecruitmentDigest({ lookaheadDays: 30 })
 
-  return NextResponse.json({ ok: true, prepSent, thankYouSent })
+  return NextResponse.json({
+    ok: true,
+    prepSent,
+    thankYouSent,
+    inactiveSent,
+    abandonedSent,
+    adminDigestSent,
+    volunteerRecruitmentSent,
+  })
 }
 
 async function sendEventPrepBatch(admin: ReturnType<typeof supabaseAdmin>, weeksRemaining: number) {
@@ -56,7 +71,6 @@ async function sendEventPrepBatch(admin: ReturnType<typeof supabaseAdmin>, weeks
         id,
         user_id,
         email,
-        participant_name,
         checked_in,
         event:events!inner(
           id,
@@ -81,6 +95,8 @@ async function sendEventPrepBatch(admin: ReturnType<typeof supabaseAdmin>, weeks
       event: Array.isArray(row.event) ? row.event[0] ?? null : row.event ?? null,
     }))
 
+  const profileNames = await getProfileNames(admin, registrations)
+
   let sent = 0
   for (const row of registrations) {
     if (!row.email || !row.event) {
@@ -98,11 +114,16 @@ async function sendEventPrepBatch(admin: ReturnType<typeof supabaseAdmin>, weeks
     }
 
     const checklist = getPrepChecklist(weeksRemaining)
+    const participantName =
+      row.participant_name ??
+      (row.user_id ? profileNames.get(row.user_id) ?? null : null) ??
+      row.email ??
+      'Athlète'
 
     try {
       await sendEventPrepEmail({
         to: row.email,
-        participantName: row.participant_name || 'Athlète',
+        participantName,
         eventTitle: row.event.title,
         eventDate: new Date(row.event.date).toLocaleDateString('fr-FR', {
           dateStyle: 'full',
@@ -144,7 +165,6 @@ async function sendPostEventThankYouBatch(admin: ReturnType<typeof supabaseAdmin
         id,
         user_id,
         email,
-        participant_name,
         checked_in,
         event:events!inner(
           id,
@@ -170,6 +190,8 @@ async function sendPostEventThankYouBatch(admin: ReturnType<typeof supabaseAdmin
       event: Array.isArray(row.event) ? row.event[0] ?? null : row.event ?? null,
     }))
 
+  const profileNames = await getProfileNames(admin, registrations)
+
   let sent = 0
   for (const row of registrations) {
     if (!row.email || !row.event) continue
@@ -184,12 +206,18 @@ async function sendPostEventThankYouBatch(admin: ReturnType<typeof supabaseAdmin
       continue
     }
 
+    const participantName =
+      row.participant_name ??
+      (row.user_id ? profileNames.get(row.user_id) ?? null : null) ??
+      row.email ??
+      'Athlète'
+
     const feedbackUrl = `${FEEDBACK_BASE_URL}?event=${row.event.id}`
 
     try {
       await sendPostEventThankYouEmail({
         to: row.email,
-        participantName: row.participant_name || 'Athlète',
+        participantName,
         eventTitle: row.event.title,
         feedbackUrl,
         nextEventUrl: EVENTS_URL,
@@ -249,4 +277,35 @@ function getPrepChecklist(weeksRemaining: number) {
         'Consulte les informations de course dans ton espace perso.',
       ]
   }
+}
+
+async function getProfileNames(
+  admin: ReturnType<typeof supabaseAdmin>,
+  registrations: RegistrationWithEvent[],
+) {
+  const userIds = Array.from(
+    new Set(
+      registrations
+        .map((registration) => registration.user_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  )
+
+  if (userIds.length === 0) {
+    return new Map<string, string | null>()
+  }
+
+  const { data, error } = await admin
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', userIds)
+
+  if (error) {
+    console.error('[cron] profile lookup error', error)
+    return new Map<string, string | null>()
+  }
+
+  return new Map(
+    (data ?? []).map((profile: any) => [profile.id as string, (profile.full_name as string | null) ?? null]),
+  )
 }
