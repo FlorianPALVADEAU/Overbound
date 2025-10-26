@@ -13,7 +13,7 @@ export function Footer() {
     ],
     legal: [
       { name: 'Conditions générales', href: '/cgu' },
-      { name: 'Politique de confidentialité', href: '/privacy' },
+      { name: 'Politique de confidentialité', href: '/privacy-policies' },
       { name: 'Mentions légales', href: '/legal' },
     ],
     social: [

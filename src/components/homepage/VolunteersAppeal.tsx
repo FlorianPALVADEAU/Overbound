@@ -4,43 +4,16 @@ import SubHeadings from '../globals/SubHeadings'
 import { Card } from '../ui/card'
 import Image from 'next/image'
 import { Button } from '../ui/button'
-
-const VolunteerBanner = () => {
-    return (
-        <div className='py-[15px] lg:py-[30px] relative overflow-hidden bg-neutral-200 flex flex-row text-black'>
-                {Array.from({ length: 10 }).map((_, index) => (
-                    <div key={index} className='shrink-0 flex items-center justify-around whitespace-nowrap w-fit animate-marquee'>
-                        <p className='shrink-0 text-2xl text-uppercase my-0 mx-[125px] font-semibold'>
-                            VOLONTAIRES
-                        </p>
-                    </div>
-                ))}
-            <style jsx>{`
-                @keyframes marquee {
-                    from {
-                        left: translateX(0);
-                    }
-                    to {
-                        transform: translateX(-100%);
-                    }
-                }
-
-                .animate-marquee {
-                    animation: marquee 5s linear infinite;
-                }
-            `}</style>
-        </div>
-    )
-}
+import AnimatedBanner from './AnimatedBanner'
 
 const VolunteersAppeal = () => {
   return (
     <section className='text-white w-full min-h-[screen] flex flex-col justify-between items-center relative overflow-hidden' style={{backgroundColor: '#141414'}}>
         {/* Effet de fond subtil avec le vert d'accent */}
         <div className='absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(38,170,38,0.08),transparent_50%)]'></div>
-        
-        <VolunteerBanner />
-        
+
+        <AnimatedBanner title="Volontaires" />
+
         <div className='relative z-10 w-full h-auto flex flex-col justify-start items-start gap-8 sm:gap-10 md:gap-12 py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-16 xl:px-32'>
             <div className='w-full'>
                 <Headings
@@ -126,7 +99,7 @@ const VolunteersAppeal = () => {
             </div>
         </div>
 
-        <VolunteerBanner />
+        <AnimatedBanner title="Volontaires" />
     </section>
   )
 }

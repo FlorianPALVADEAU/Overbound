@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from 'react'
 import { Star, Play, Pause } from 'lucide-react'
 import Headings from '../globals/Headings'
-import { BrandBanner } from './HeroHeader'
 import SubHeadings from '../globals/SubHeadings'
 import { Button } from '../ui/button'
 import { testimonials, TestimonialType, TestimonialTypeEnum } from '@/datas/Testimonials'
+import AnimatedBanner from './AnimatedBanner'
+import { PARTNERS_DATA } from '@/datas/Partners'
 
 const SocialProof = () => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
@@ -211,7 +212,9 @@ const SocialProof = () => {
         {/* Brand Banner Section */}
         <div className="w-full flex flex-col gap-2">
           <SubHeadings title="Ils nous font confiance" />
-          <BrandBanner />
+          <AnimatedBanner
+              images={PARTNERS_DATA.map(partner => partner.logo)}
+          />
         </div>
 
         {/* Stats Section */}

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
 
+const isValidUuid = (value: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value)
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -8,6 +10,9 @@ export async function GET(
   try {
     const supabase = await createSupabaseServer()
     const { id } = await params
+    if (!isValidUuid(id)) {
+      return NextResponse.json({ error: 'Identifiant de course invalide' }, { status: 400 })
+    }
 
     // Récupérer les événements qui ont des tickets pour cette course
     const { data: events, error } = await supabase
