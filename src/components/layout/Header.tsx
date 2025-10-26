@@ -92,7 +92,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'La voie du héros', href: '/races/voie-du-heros', icon: MapPinIcon },
     { name: 'Tribal Royale', href: '/races/tribale-royale', icon: MapPinIcon },
     { name: 'Tribal Kids', href: '/races/tribale-kids', icon: MapPinIcon },
-    { name: 'Bénévoles', href: '/volunteers', icon: TrophyIcon, highlight: true },
+    { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]
 
   const trainingsDropdownItems: DropdownItemType[] = [
@@ -107,11 +107,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
     { name: 'Équipe', href: '/about/team', icon: CalendarIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
+    { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]
 
   const navItems: NavItem[] = [
     { type: 'dropdown', name: 'Courses', href: '/events', icon: MedalIcon, items: eventsDropdownItems },
-    { type: 'dropdown', name: 'Entrainements', href: '/trainings', icon: DumbbellIcon, items: trainingsDropdownItems },
+    { type: 'dropdown', name: 'Entrainements', icon: DumbbellIcon, items: trainingsDropdownItems },
     ...navigation.map((item) => ({ ...item, type: 'link' as const })),
     { type: 'dropdown', name: 'À propos', icon: InfoIcon, items: aboutDropdownItems },
   ]
@@ -172,12 +173,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
-            <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
+            <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex ">
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
                   <div
                     key={item.name}
-                    className="flex h-full items-center hover:text-foreground cursor-pointer"
+                    className="flex h-full items-center hover:text-primary cursor-pointer"
                     onMouseEnter={() => setOpenDropdown(item.name)}
                     onMouseLeave={() => setOpenDropdown(null)}
                   >
@@ -188,19 +189,20 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="cursor-pointer outline-none flex h-full items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base group"
+                          className="cursor-pointer outline-none flex h-full items-center uppercase text-sm font-medium text-foreground hover:text-primary xl:text-base group"
                         >
                           {item.name}
                           <ChevronDownIcon className="ml-1 h-3 w-3 transition-transform group-hover:rotate-180" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="min-w-[220px] p-2">
+                      <DropdownMenuContent align="start" className="min-w-[220px] -mt-1 -ml-1 border-t-0 rounded-t-none bg-background" forceMount>
                         {item.href ? (
                           <>
                             <DropdownMenuItem asChild>
                               <Link
                                 href={item.href}
-                                className="outline-none flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                                // no border radius on bottom to connect with dropdown items
+                                className=" outline-none flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
                               >
                                 Voir toutes les {item.name.toLowerCase()}
                                 <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
@@ -231,7 +233,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="cursor-pointer flex h-full items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground xl:text-base"
+                    className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
                   >
                     {item.name}
                   </Link>
