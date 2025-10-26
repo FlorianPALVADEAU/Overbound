@@ -2,7 +2,7 @@ import Image from "next/image"
 
 const AnimatedBanner = ({ title, images }: { title?: string, images?: string[] }) => {
     return (
-        <div className='py-[15px] lg:py-[30px] relative overflow-hidden bg-neutral-200 flex flex-row text-black'>
+        <div className='py-[15px] lg:py-[30px] max-h-32 relative overflow-hidden bg-neutral-200 flex flex-row text-black'>
             {/* fade-in effect */}
             <div className='pointer-events-none absolute left-0 top-0 bottom-0 w-1/3 bg-gradient-to-r from-white to-transparent z-[1]'></div>
             {Array.from({ length: 10 }).map((_, index) => (
