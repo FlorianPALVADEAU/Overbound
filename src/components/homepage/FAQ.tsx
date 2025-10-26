@@ -72,7 +72,7 @@ const FAQ = () => {
                 <Headings 
                     title="FAQ" 
                     cta={
-                            <Link href="/obstacles">
+                            <Link href="/about/faq">
                                 <Button 
                                     variant={'outline'} 
                                     className="

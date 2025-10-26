@@ -2,36 +2,8 @@
 import React from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
-
-export const BrandBanner = () => {
-    return (
-        <div className="w-full py-6">
-            {/* Version desktop : ton design original */}
-            <div className="hidden lg:shown w-full mx-auto px-4 lg:flex items-center justify-center space-x-40 overflow-x-hidden">
-                {['Brand1', 'Brand2', 'Brand3', 'Brand4', 'Brand5', 'Brand6', 'Brand7'].map((brand, index) => (
-                    <div key={index} className="flex-shrink-0">
-                        <div className="h-12 w-32 bg-gray-300 flex items-center justify-center rounded-lg">
-                            {brand}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Version mobile/tablette : scroll horizontal */}
-            <div className="lg:hidden w-full mx-auto px-4">
-                <div className="flex items-center space-x-6 overflow-x-auto pb-2 scrollbar-hide">
-                    {['Brand1', 'Brand2', 'Brand3', 'Brand4', 'Brand5'].map((brand, index) => (
-                        <div key={index} className="flex-shrink-0">
-                            <div className="h-10 w-24 sm:h-12 sm:w-32 bg-gray-300 flex items-center justify-center rounded-lg text-sm">
-                                {brand}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
+import AnimatedBanner from "./AnimatedBanner";
+import { PARTNERS_DATA } from "@/datas/Partners";
 
 export const HeroHeader = () => {
     return (
@@ -73,7 +45,9 @@ export const HeroHeader = () => {
                     </div>
                 </div>
             </section>
-            <BrandBanner />
+            <AnimatedBanner 
+                images={PARTNERS_DATA.map(partner => partner.logo)}
+            />
         </>
     );
 }

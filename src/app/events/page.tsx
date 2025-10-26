@@ -18,7 +18,8 @@ import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
 import FAQ from '@/components/homepage/FAQ'
 import SubHeadings from '@/components/globals/SubHeadings'
 import WhichDistanceForMe from '@/components/WhichDistanceForMe'
-import { BrandBanner } from '@/components/homepage/HeroHeader'
+import AnimatedBanner from '@/components/homepage/AnimatedBanner'
+import { PARTNERS_DATA } from '@/datas/Partners'
 
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), {
   ssr: false,
@@ -172,7 +173,7 @@ export default function EventsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-16">
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="w-full container mx-auto py-10 px-4 sm:px-10">
         <section className="mb-12 text-center ">
           <h1 className="sr-only">Événements Overbound</h1>
@@ -296,11 +297,6 @@ export default function EventsPage() {
                                   {ticket.max_participants && (
                                     <Badge variant="outline" className="text-xs">
                                       Places : {ticket.max_participants}
-                                    </Badge>
-                                  )}
-                                  {ticket.requires_document && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Document requis
                                     </Badge>
                                   )}
                                 </div>
@@ -462,10 +458,7 @@ export default function EventsPage() {
       <WhichDistanceForMe />
       <ObstaclesOverview />
       <FAQ />
-      <div className="w-full flex flex-col gap-2 px-4 sm:px-10 lg:px-32">
-        <SubHeadings title="Ils nous font confiance" />
-        <BrandBanner />
-      </div>
+      <AnimatedBanner images={PARTNERS_DATA.map(partner => partner.logo)} />
     </main>
   )
 }

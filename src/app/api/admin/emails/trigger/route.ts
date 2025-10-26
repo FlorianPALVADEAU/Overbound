@@ -196,7 +196,7 @@ const handlePost = async (request: NextRequest) => {
           lastEventTitle: 'OverBound Grenoble 2024',
           eventsUrl: EVENTS_URL,
           highlightEventTitle: 'Tribal Royale',
-          highlightEventUrl: `${EVENTS_URL}/tribal-royale`,
+          highlightEventUrl: `${EVENTS_URL}/tribale-royale`,
         })
         return 'Relance inactifs envoyée.'
       },
