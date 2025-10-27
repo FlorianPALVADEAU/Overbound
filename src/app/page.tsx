@@ -5,7 +5,6 @@ import FAQ from '@/components/homepage/FAQ';
 import HeroHeader from '@/components/homepage/HeroHeader';
 import NextEvents from '@/components/homepage/NextEvents';
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview';
-import RallyingSlur from '@/components/homepage/RallyingSlur';
 import SocialProof from '@/components/homepage/SocialProof';
 import VolunteersAppeal from '@/components/homepage/VolunteersAppeal';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
@@ -41,7 +40,6 @@ export default function Home() {
       <HeroHeader />
       <WhatsOverbound />
       <NextEvents />
-      <RallyingSlur />
       <DistanceFormatsAndDifficulties />
       <ObstaclesOverview />
       <SocialProof />

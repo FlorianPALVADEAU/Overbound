@@ -18,7 +18,7 @@ const CTA = () => {
             <Link href="/events">
                 <Button 
                     className='w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold'
-                    variant='destructive'
+                    variant='default'
                 >
                     Je m'inscris maintenant
                 </Button>
