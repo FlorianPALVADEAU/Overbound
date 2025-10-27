@@ -52,13 +52,6 @@ export function TicketCard({ ticket, onEdit, onDelete, isDeleting }: TicketCardP
             </div>
 
             {ticket.description && <p className="text-sm text-muted-foreground">{ticket.description}</p>}
-
-            {requiresDoc && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FileText className="h-4 w-4" />
-                <span>Documents requis : {ticket.document_types?.join(', ')}</span>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center gap-2 ml-4">

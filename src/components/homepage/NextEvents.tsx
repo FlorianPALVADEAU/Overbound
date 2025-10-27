@@ -5,7 +5,6 @@ import Headings from '../globals/Headings'
 import Link from 'next/link'
 import { useGetEvents } from '@/app/api/events/eventsQueries'
 import { Skeleton } from '../ui/skeleton'
-import Image from 'next/image'
 
 const NextEvents = () => {
 	
@@ -13,13 +12,6 @@ const NextEvents = () => {
 
 	return (
 		<div className='w-full min-h-[60vh] xl:h-[80vh] py-12 sm:py-16 xl:py-20 px-4 sm:px-6 xl:px-32 relative overflow-hidden'>
-			<Image 
-				src={"/images/decoration-1.png"} 
-				alt="Background" 
-				className='object-cover object-center absolute -z-10 -right-20 -top-2 opacity-15'
-				height={'600'}
-				width={'600'}
-			/>
 			<div className='flex flex-col gap-8 sm:gap-10 xl:gap-12 h-full'>
 				<Headings 
 					title="Parce qu'il n'y a qu'une seule première fois."

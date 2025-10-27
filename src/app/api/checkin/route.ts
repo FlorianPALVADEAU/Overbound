@@ -111,7 +111,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `✅ ${updatedRegistration.email} enregistré avec succès !`,
+      message: `${updatedRegistration.email} enregistré avec succès !`,
       registration: {
         id: updatedRegistration.id,
         email: updatedRegistration.email,

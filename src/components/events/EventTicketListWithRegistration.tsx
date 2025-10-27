@@ -197,17 +197,6 @@ export default function EventTicketListWithRegistration({
                         ) : null}
                       </div>
                     ) : null}
-
-                    {ticket.requires_document && ticket.document_types && ticket.document_types.length > 0 ? (
-                      <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
-                        <p className="font-medium text-orange-800 mb-2">Documents requis :</p>
-                        <ul className="space-y-1">
-                          {ticket.document_types.map((type) => (
-                            <li key={type}>• {type}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
                   </div>
 
                   <div className="flex w-full max-w-xs flex-col gap-4">

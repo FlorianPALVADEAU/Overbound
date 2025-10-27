@@ -7,6 +7,7 @@ import { Button } from '../ui/button'
 import { testimonials, TestimonialType, TestimonialTypeEnum } from '@/datas/Testimonials'
 import AnimatedBanner from './AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
+import Image from 'next/image'
 
 const SocialProof = () => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
@@ -172,10 +173,18 @@ const SocialProof = () => {
   )
 
   return (
-    <section className="w-full items-center justify-center gap-12 py-16 pt-24 px-4 sm:px-6 lg:px-8 xl:px-32 bg-gradient-to-b from-gray-50 to-white">
+    <section className="w-full relative items-center justify-center gap-12 py-16 pt-48 px-4 sm:px-6 lg:px-8 xl:px-32 bg-gradient-to-b from-gray-50 to-white">
+      <Image
+        src="/images/mountain-vector.svg"
+        alt="Background"
+        className='object-cover object-center absolute w-full -top-15 -right-0 mt-10 rotate-180'
+        height={'600'}
+        width={'600'}
+      />
       <Headings
         title="Ils ont relevé le défi"
         description="Découvrez les témoignages de nos participants qui ont vécu l'expérience Overbound"
+        sx='text-black'
       />
 
       <div className="w-full h-full flex flex-col justify-center items-center gap-16 lg:gap-32 my-8 lg:my-12">
