@@ -58,7 +58,7 @@ export function VolunteerCheckin() {
   const stopCamera = useCallback(() => {
     cameraControlsRef.current?.stop?.()
     cameraControlsRef.current = null
-    codeReaderRef.current?.reset?.()
+    ;(codeReaderRef.current as any)?.reset?.()
     codeReaderRef.current = null
   }, [])
   const [stats, setStats] = useState<Stats>({
@@ -252,7 +252,7 @@ export function VolunteerCheckin() {
             const text = result.getText()
             ctrl?.stop?.()
             cameraControlsRef.current = null
-            codeReaderRef.current?.reset?.()
+            ;(codeReaderRef.current as any)?.reset?.()
             setScannerOpen(false)
             void submitScan(text)
           }
