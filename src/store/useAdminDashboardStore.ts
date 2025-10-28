@@ -10,6 +10,7 @@ export const ADMIN_TAB_VALUES = [
   'obstacles',
   'tickets',
   'promocodes',
+  'promotions',
   'upsells',
   'members',
   'checkin',

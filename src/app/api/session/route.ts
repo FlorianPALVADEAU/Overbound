@@ -35,7 +35,12 @@ export async function GET() {
           id,
           approval_status,
           document_url,
-          ticket:tickets(requires_document)
+          ticket:tickets(
+            requires_document,
+            events (
+              date
+            )
+          )
         `,
         )
         .eq('user_id', user.id)
@@ -43,13 +48,26 @@ export async function GET() {
       type RegistrationAlertRow = {
         approval_status: 'pending' | 'approved' | 'rejected' | null
         document_url: string | null
-        ticket: { requires_document: boolean | null } | null
+        ticket:
+          | {
+              requires_document: boolean | null
+              events?: Array<{ date: string | null }> | null
+            }
+          | null
       }
 
+      const now = new Date()
       needsDocumentAction = ((registrationMeta as RegistrationAlertRow[] | null) ?? []).some(
         ({ ticket, approval_status, document_url }) => {
           const requiresDocument = Boolean(ticket?.requires_document)
           if (!requiresDocument) {
+            return false
+          }
+
+          const eventDateRaw = ticket?.events?.[0]?.date ?? null
+          const eventDate = eventDateRaw ? new Date(eventDateRaw) : null
+          const isUpcoming = !eventDate || eventDate >= now
+          if (!isUpcoming) {
             return false
           }
 

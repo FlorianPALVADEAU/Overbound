@@ -88,6 +88,8 @@ export async function GET() {
       }
     }
 
+    const now = new Date()
+
     const registrationsWithQr = await Promise.all(
       (registrations ?? []).map(async (registration) => {
         const meta = registrationMetaMap.get(registration.registration_id) ?? {
@@ -102,8 +104,12 @@ export async function GET() {
             ? await QRCode.toDataURL(registration.qr_code_token)
             : null
 
+        const eventDate = registration.event_date ? new Date(registration.event_date) : null
+        const isEventUpcoming = !eventDate || eventDate >= now
         const documentRequiresAttention =
-          meta.requires_document && (meta.approval_status !== 'approved' || !meta.document_url)
+          meta.requires_document &&
+          (meta.approval_status !== 'approved' || !meta.document_url) &&
+          isEventUpcoming
 
         return {
           ...registration,
@@ -117,7 +123,6 @@ export async function GET() {
       }),
     )
 
-    const now = new Date()
     const totalEvents = registrationsWithQr.length
     const checkedInEvents = registrationsWithQr.filter((entry) => entry.checked_in).length
     const upcomingEvents = registrationsWithQr.filter((entry) => {

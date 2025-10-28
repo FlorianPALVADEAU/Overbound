@@ -12,6 +12,7 @@ import {
   UserCheck,
   ScrollText,
   Mail,
+  Megaphone,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AdminTabValue } from '@/store/useAdminDashboardStore'
@@ -29,6 +30,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'obstacles', label: 'Obstacles', icon: Zap },
   { value: 'tickets', label: 'Tickets', icon: Ticket },
   { value: 'promocodes', label: 'Codes promo', icon: Percent },
+  { value: 'promotions', label: 'Promotions', icon: Megaphone },
   { value: 'upsells', label: 'Upsells', icon: Package },
   { value: 'members', label: 'Membres', icon: Users },
   { value: 'checkin', label: 'Check-in', icon: UserCheck },
