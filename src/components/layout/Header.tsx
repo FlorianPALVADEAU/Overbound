@@ -162,11 +162,11 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="flex items-between z-10">
             <Link href="/" className="flex items-center space-x-2">
               <Image
-                src="/images/LOGO_FULL.webp"
+                src="/images/totem_logo_white.png"
                 alt="OverBound Logo"
-                width={120}
+                width={64}
                 height={64}
-                className="w-28 sm:w-32 md:w-36 lg:w-40 h-auto"
+                className="w-8 md:w-10 lg:w-12 h-auto"
               />
             </Link>
           </div>

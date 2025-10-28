@@ -13,6 +13,7 @@ import { TicketsSection } from '@/components/admin/tickets'
 import { RacesSection } from '@/components/admin/races'
 import { ObstaclesSection } from '@/components/admin/obstacles'
 import { PromotionalCodesSection } from '@/components/admin/promotional-codes'
+import { PromotionsSection } from '@/components/admin/promotions'
 import { UpsellsSection } from '@/components/admin/upsells'
 import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
@@ -152,6 +153,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="promocodes" className="space-y-6">
                 <PromotionalCodesSection />
+              </TabsContent>
+
+              <TabsContent value="promotions" className="space-y-6">
+                <PromotionsSection />
               </TabsContent>
 
               <TabsContent value="upsells" className="space-y-6">

@@ -129,6 +129,10 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
           activeDialog?.type === 'share' && activeDialog.id === registration.registration_id
 
         const documentStatusBadge = (() => {
+          if (isPast) {
+            return null
+          }
+
           if (!registration.requires_document) {
             return null
           }
