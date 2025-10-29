@@ -293,7 +293,9 @@ function RegisterInner() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          En créant un compte, tu acceptes nos conditions d’utilisation et notre politique de confidentialité.
+          En vous connectant, vous acceptez nos&nbsp;
+          <Link href="/cgu" className="text-primary underline-offset-4 hover:underline">conditions d’utilisation</Link>&nbsp;et notre &nbsp;
+          <Link href="/privacy-policies" className="text-primary underline-offset-4 hover:underline">politique de confidentialité</Link>.
         </p>
       </div>
     </main>

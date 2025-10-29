@@ -4,7 +4,15 @@ import { Button } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
-    <main className='relative flex h-[70vh] flex-col items-center justify-center overflow-hidden bg-neutral-200'>
+    <main className='relative flex h-full flex-col items-center justify-center overflow-hidden bg-neutral-200'>
+      <Image
+        src='/images/mountain-vector.svg'
+        alt='Illustration montagne'
+        width={1200}
+        height={600}
+        className='pointer-events-none z-1 relative top-0 lg:top-[10%] rotate-180 left-1/2 w-[140%] max-w-none -translate-x-1/2'
+        priority
+      />
       <div className='absolute inset-0 pointer-events-none'>
         <div className='absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/70 to-transparent' />
         <div className='absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-white/80 to-transparent' />
@@ -27,21 +35,12 @@ export default function NotFound() {
           <Link href='/'>Revenir à l&apos;accueil</Link>
         </Button>
       </section>
-
       <Image
         src='/images/mountain-vector.svg'
         alt='Illustration montagne'
         width={1200}
         height={600}
-        className='pointer-events-none absolute bottom-[-10%] left-1/2 w-[140%] max-w-none -translate-x-1/2'
-        priority
-      />
-      <Image
-        src='/images/mountain-vector.svg'
-        alt='Illustration montagne'
-        width={1200}
-        height={600}
-        className='pointer-events-none absolute top-[-10%] rotate-180 left-1/2 w-[140%] max-w-none -translate-x-1/2'
+        className='pointer-events-none absolute bottom-[-1%] lg:bottom-[-5%] left-1/2 w-[140%] max-w-none -translate-x-1/2'
         priority
       />
     </main>
