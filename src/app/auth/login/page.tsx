@@ -206,6 +206,15 @@ function LoginInner() {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <Link
+                  href="/auth/reset"
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
