@@ -17,6 +17,7 @@ export type EngagementEmailType =
   | 'admin_digest'
   | 'volunteer_recruitment'
   | 'volunteer_assignment'
+  | 'support_contact'
 
 interface EmailLogRecord {
   id: string

@@ -30,7 +30,8 @@ import {
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { SessionProfile, SessionResponse, SessionUser } from '@/app/api/session/sessionQueries'
+import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -71,9 +72,16 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createSupabaseBrowser()
+  const queryClient = useQueryClient()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
+    queryClient.setQueryData(SESSION_QUERY_KEY, {
+      user: null,
+      profile: null,
+      alerts: null,
+    } as SessionResponse)
+    await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY })
     router.push('/')
     router.refresh()
   }
@@ -317,7 +325,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>
                 <Button size="sm" className="text-xs sm:text-sm" asChild>
-                  <Link href="/auth/login">S'inscrire</Link>
+                  <Link href="/auth/register">S'inscrire</Link>
                 </Button>
               </div>
             )}
@@ -410,7 +418,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     <Link href="/auth/login">Se connecter</Link>
                   </Button>
                   <Button size="sm" asChild>
-                    <Link href="/auth/login">S'inscrire</Link>
+                    <Link href="/auth/register">S'inscrire</Link>
                   </Button>
                 </div>
               </div>

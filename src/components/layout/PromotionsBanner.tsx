@@ -75,15 +75,15 @@ export function PromotionsBanner() {
                     rel={isExternalLink(promotion.link_url) ? 'noopener noreferrer' : undefined}
                     className="flex h-full flex-col items-center justify-center px-4 py-2 text-center text-sm font-semibold uppercase tracking-wide text-black transition hover:brightness-110"
                   >
-                    {title ? <span className="leading-tight font-black text-[1.05rem]">{title}</span> : null}
+                    {title ? <span className="leading-tight font-black text-[0.9rem] lg:text-[1.05rem]">{title}</span> : null}
                     <div className="flex gap-2" >
                       {description ? (
-                        <span className="leading-tight text-xxs sm:text-xs font-normal uppercase tracking-wide text-black/90">
+                        <span className="leading-tight text-[0.55rem] sm:text-xs font-normal uppercase tracking-wide text-black/90 wrap-break-word">
                           {description}
+                          {linkLabel ? (
+                            <span className="leading-tight underline underline-offset-4 text-[0.5rem] lg:text-xs">{linkLabel}</span>
+                          ) : null}
                         </span>
-                      ) : null}
-                      {linkLabel ? (
-                        <span className="leading-tight underline underline-offset-4 !text-xs">{linkLabel}</span>
                       ) : null}
                     </div>
                   </Link>
@@ -98,7 +98,7 @@ export function PromotionsBanner() {
             <Button
               type="button"
               onClick={handlePrev}
-              className="absolute left-3 top-1/2 hidden -translate-y-1/2 w-1/12 h-full bg-transparent p-3 text-gray-400 sm:flex hover:bg-transparent shadow-none cursor-pointer"
+              className="absolute left-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-transparent p-2 text-gray-400 shadow-none hover:bg-transparent hover:text-gray-600 focus-visible:ring-0 lg:flex"
               aria-label="Promotion précédente"
             >
               <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -106,7 +106,7 @@ export function PromotionsBanner() {
             <Button
               type="button"
               onClick={handleNext}
-              className="absolute right-3 top-1/2 hidden -translate-y-1/2 w-1/12 h-full bg-transparent p-3 text-gray-400 sm:flex hover:bg-transparent shadow-none cursor-pointer"
+              className="absolute right-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-transparent p-2 text-gray-400 shadow-none hover:bg-transparent hover:text-gray-600 focus-visible:ring-0 lg:flex"
               aria-label="Promotion suivante"
             >
               <ChevronRight className="h-6 w-6" aria-hidden="true" />

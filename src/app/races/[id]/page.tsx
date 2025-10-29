@@ -219,9 +219,9 @@ export default function RaceDetailPage() {
             className="mb-6 rounded-full border border-border/50 bg-background/60 px-6 text-muted-foreground backdrop-blur transition hover:bg-background/80 hover:text-foreground"
             asChild
           >
-            <Link href="/races">
+            <Link href="/events">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour aux courses
+              Retour aux événements
             </Link>
           </Button>
 

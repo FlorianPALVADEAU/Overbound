@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OverBound - Événements Sportifs",
-  description: "La plateforme de référence pour découvrir et participer aux événements sportifs et de bien-être.",
+  title: "Overbound Race - Course d'obstacles uniques et personnalisables",
+  description: "La première course d'obstacles à proposer des choix de parcours personnalisables, inspirée des rites tribaux et de l'esprit collectif.",
 };
 
 

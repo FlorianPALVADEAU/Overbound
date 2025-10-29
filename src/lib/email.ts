@@ -16,6 +16,8 @@ import EventUpdateEmail from '@/emails/EventUpdateEmail'
 import AdminDigestEmail from '@/emails/AdminDigestEmail'
 import VolunteerRecruitmentEmail from '@/emails/VolunteerRecruitmentEmail'
 import VolunteerAssignmentEmail from '@/emails/VolunteerAssignmentEmail'
+import SupportContactEmail from '@/emails/SupportContactEmail'
+import SupportContactConfirmationEmail from '@/emails/SupportContactConfirmationEmail'
 import { renderEmail } from '@/lib/email/render'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
@@ -163,6 +165,72 @@ export async function sendDocumentRejectedEmail(params: {
     from: FROM,
     to: params.to,
     subject: `Action requise — document à mettre à jour pour ${params.eventTitle}`,
+    html,
+  })
+}
+
+export async function sendSupportContactEmail(params: {
+  to: string
+  requesterName: string
+  requesterEmail: string
+  reason?: string
+  message: string
+  submittedAt: string
+  attachment?: {
+    filename: string
+    content: string
+    contentType: string
+  } | null
+}) {
+  const html = await renderEmail(
+    SupportContactEmail({
+      fullName: params.requesterName,
+      email: params.requesterEmail,
+      reason: params.reason,
+      message: params.message,
+      submittedAt: params.submittedAt,
+      hasAttachment: Boolean(params.attachment),
+    }),
+  )
+
+  return resend.emails.send({
+    from: FROM,
+    to: params.to,
+    replyTo: params.requesterEmail,
+    subject: `Support Overbound — ${params.reason || 'Nouvelle demande'}`,
+    html,
+    attachments: params.attachment
+      ? [
+          {
+            filename: params.attachment.filename,
+            content: params.attachment.content,
+            contentType: params.attachment.contentType,
+          },
+        ]
+      : undefined,
+  })
+}
+
+export async function sendSupportContactConfirmationEmail(params: {
+  to: string
+  requesterName: string
+  reason?: string
+  message: string
+  submittedAt: string
+}) {
+  const html = await renderEmail(
+    SupportContactConfirmationEmail({
+      fullName: params.requesterName,
+      reason: params.reason,
+      message: params.message,
+      submittedAt: params.submittedAt,
+    }),
+  )
+
+  return resend.emails.send({
+    from: FROM,
+    to: params.to,
+    subject: 'Nous avons bien reçu ta demande',
     html,
   })
 }

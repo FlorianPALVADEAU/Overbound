@@ -14,13 +14,12 @@ const AnimatedBanner = ({ title, images }: { title?: string, images?: string[] }
                         )}
                         {images && (
                             images.map((src, imgIndex) => (
-                                <div key={imgIndex} className='mx-[50px]'>
+                                <div key={imgIndex} className='mx-[25px] md:mx-[50px] w-16 h-16 md:w-20 md:h-20 lg:w-28 lg:h-28 relative'>
                                     <Image
                                         src={src}
                                         alt={`Banner Image ${imgIndex + 1}`}
-                                        width={100}
-                                        height={50}
-                                        className='h-10 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 object-contain'
+                                        fill
+                                        className='object-contain'
                                     />
                                 </div>
                             ))
