@@ -28,8 +28,15 @@ export const postBySlugQuery = groq`
 
 export const settingsQuery = groq`*[_type == "settings"][0]{siteTitle, description, ogImage}`
 
-export const FAQsQuery = groq`*[_type == "question"]{
+export const FAQsQuery = groq`*[_type == "question"] | order(category asc, coalesce(order, 999) asc, title asc) {
   _id,
   title,
-  answer
+  shortAnswer,
+  "answer": coalesce(answer, []),
+  category,
+  subCategory,
+  order,
+  audiences,
+  keywords,
+  relatedLinks
 }`

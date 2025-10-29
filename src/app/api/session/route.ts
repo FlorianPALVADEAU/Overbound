@@ -66,7 +66,7 @@ export async function GET() {
 
           const eventDateRaw = ticket?.events?.[0]?.date ?? null
           const eventDate = eventDateRaw ? new Date(eventDateRaw) : null
-          const isUpcoming = !eventDate || eventDate >= now
+          const isUpcoming = eventDate ? eventDate >= now : false
           if (!isUpcoming) {
             return false
           }

@@ -260,12 +260,6 @@ export default function ObstaclesPage() {
                   description="Explorez nos courses et événements pour tester vos compétences sur ces obstacles passionnants."
                 />
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/races">
-                    <Button size="lg" className="text-lg px-8">
-                      <Zap className="h-5 w-5 mr-2" />
-                      Voir les courses
-                    </Button>
-                  </Link>
                   <Link href="/events">
                     <Button variant="outline" size="lg" className="text-lg px-8">
                       <Target className="h-5 w-5 mr-2" />

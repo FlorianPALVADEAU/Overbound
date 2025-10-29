@@ -105,7 +105,7 @@ export async function GET() {
             : null
 
         const eventDate = registration.event_date ? new Date(registration.event_date) : null
-        const isEventUpcoming = !eventDate || eventDate >= now
+        const isEventUpcoming = eventDate ? eventDate >= now : false
         const documentRequiresAttention =
           meta.requires_document &&
           (meta.approval_status !== 'approved' || !meta.document_url) &&
