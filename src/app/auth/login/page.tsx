@@ -90,17 +90,31 @@ function LoginInner() {
   const signInWithGoogle = async () => {
     setLoading(true)
     setMessage(null)
-
+  
     try {
+      const siteUrlFromEnv = process.env.NEXT_PUBLIC_SITE_URL
+      const originFallback = typeof window !== 'undefined' ? window.location.origin : undefined
+  
+      const base = siteUrlFromEnv ?? originFallback
+      if (!base) {
+        console.error('[auth] No base URL available for redirect. NEXT_PUBLIC_SITE_URL is not set and window is undefined.')
+        setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+        setLoading(false)
+        return
+      }
+  
       const target = resolveNextPath()
+      const redirectTo = `${base.replace(/\/$/, '')}/auth/callback?next=${encodeURIComponent(target)}`
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`,
+          redirectTo,
         },
       })
-
+  
       if (error) {
+        console.error('[login] signInWithOAuth error', error)
         setMessage({ type: 'error', text: error.message })
         setLoading(false)
       }
@@ -110,6 +124,7 @@ function LoginInner() {
       setLoading(false)
     }
   }
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
