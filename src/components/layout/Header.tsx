@@ -210,7 +210,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                               <Link
                                 href={item.href}
                                 // no border radius on bottom to connect with dropdown items
-                                className=" outline-none flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                                className=" outline-none flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-white cursor-pointer"
                               >
                                 Voir toutes les {item.name.toLowerCase()}
                                 <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
@@ -350,21 +350,18 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
         {/* Navigation Mobile - améliorée avec animations */}
         {mobileMenuOpen && (
-          <div className="absolute left-0 z-10 w-full border-t bg-secondary pb-3 pt-4 lg:hidden">
+          <div className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
             <div className="space-y-1">
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
-                  <div key={item.name} className="space-y-1">
+                  <div key={item.name}>
                     <button
                       onClick={() =>
                         setMobileDropdownOpen((current) => (current === item.name ? null : item.name))
                       }
-                      className="flex w-full items-center justify-between rounded-md px-3 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      className="flex w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-[#26AA26]"
                     >
-                      {/* <div className="flex items-center">
-                        {item.icon ? <item.icon className="mr-3 h-5 w-5 flex-shrink-0" /> : null}
-                        {item.name}
-                      </div> */}
+                      <span>{item.name}</span>
                       <ChevronDownIcon
                         className={`h-4 w-4 transition-transform ${
                           mobileDropdownOpen === item.name ? 'rotate-180' : ''
@@ -372,25 +369,22 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       />
                     </button>
                     {mobileDropdownOpen === item.name ? (
-                      <div className="ml-6 space-y-1 border-l-2 border-border pl-4">
+                      <div className="space-y-1 px-6 pb-3 pt-1">
                         {item.items.map((subItem) => (
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            className={`flex items-center rounded-md px-3 py-3 text-sm font-medium transition-colors ${
+                            className={`block w-full px-4 py-2 text-sm font-medium transition-colors ${
                               subItem.highlight
-                                ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                ? 'text-[#26AA26] hover:text-[#1e8a1e]'
+                                : 'text-muted-foreground hover:text-foreground'
                             }`}
                             onClick={() => {
                               setMobileMenuOpen(false)
                               setMobileDropdownOpen(null)
                             }}
                           >
-                            <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                              <subItem.icon className="h-4 w-4" />
-                            </div>
-                            <span className="font-medium">{subItem.name}</span>
+                            {subItem.name}
                           </Link>
                         ))}
                       </div>
@@ -400,10 +394,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center rounded-md px-3 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
                     {item.name}
                   </Link>
                 ),
@@ -412,12 +405,21 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
             {/* Boutons auth sur mobile si pas connecté */}
             {!user && (
-              <div className="mt-4 border-t pt-4">
-                <div className="flex flex-col space-y-2 px-3">
-                  <Button variant="ghost" size="sm" asChild>
+              <div className="mt-5 border-t border-border/60 pt-4">
+                <div className="flex flex-col space-y-3 px-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="h-11 rounded-full border-[#26AA26] text-[#26AA26] hover:bg-[#26AA26]/10"
+                  >
                     <Link href="/auth/login">Se connecter</Link>
                   </Button>
-                  <Button size="sm" asChild>
+                  <Button
+                    size="sm"
+                    asChild
+                    className="h-11 rounded-full bg-[#26AA26] text-white hover:bg-[#1e8a1e]"
+                  >
                     <Link href="/auth/register">S'inscrire</Link>
                   </Button>
                 </div>
