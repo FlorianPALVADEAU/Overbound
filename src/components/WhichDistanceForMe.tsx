@@ -16,17 +16,6 @@ const WhichDistanceForMe: React.FC = () => {
     const [finalResult, setFinalResult] = useState<FinalResult | null>(null)
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
 
-    const SubHeadings: React.FC<SubHeadingsProps> = ({ title, description }) => (
-        <div className="text-center max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-                {title}
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">
-                {description}
-            </p>
-        </div>
-    )
-
     const getCurrentQuestion = (): Question | undefined => {
         return questionsData.questions.find(q => q.id === currentQuestion)
     }
@@ -84,8 +73,8 @@ const WhichDistanceForMe: React.FC = () => {
     const currentQ = getCurrentQuestion()
 
     return (
-		<section className="w-full items-center justify-center gap-24 py-20 pt-40 px-4 sm:px-6 xl:px-32">
-			<div className="w-full flex flex-col gap-8 sm:gap-10 xl:gap-12 h-full">
+		<section className="w-full items-center justify-center gap-24 py-20 px-4 sm:px-6 xl:px-32">
+			<div className="w-full flex flex-col gap-8 sm:gap-10 xl:gap-12 h-auto">
                 <Headings 
                     title="Quelle distance est faite pour moi ?" 
                     description="Si vous hésitez encore sur quel format choisir, voici un questionnaire rapide pour vous orienter vers la bonne distance."
