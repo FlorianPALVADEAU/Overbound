@@ -21,7 +21,7 @@ export default function NotFound() {
       <section className='relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 lg:px-8 lg:py-24'>
         <div className='flex flex-col items-center gap-4 text-center sm:gap-6'>
           <span className='inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[#26AA26] shadow-sm sm:text-sm'>
-            Erreur 404
+            404
           </span>
           <h1 className='text-3xl font-bold text-neutral-900 sm:text-4xl md:text-5xl lg:text-6xl'>
             Oups... tu viens de quitter le sentier balisé
