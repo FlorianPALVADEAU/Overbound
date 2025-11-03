@@ -239,11 +239,11 @@ const SocialProof = () => {
   )
 
   return (
-    <section className="relative flex w-full flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-12 pt-32 sm:px-6 lg:px-8 xl:px-24">
+    <section className="relative flex w-full flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-12 pt-40 sm:px-6 lg:px-8 xl:px-24">
       <Image
         src="/images/mountain-vector.svg"
         alt="Background"
-        className="pointer-events-none absolute -top-24 right-0 w-full max-w-5xl rotate-180 object-cover object-center opacity-50"
+        className="pointer-events-none absolute -top-2 right-0 w-screen rotate-180 object-cover object-center"
         height={600}
         width={600}
       />

@@ -5,7 +5,41 @@ import SubHeadings from "../globals/SubHeadings";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import Link from "next/link";
-
+import { Mountain, Sparkles, Star, Waves, ArrowRight } from "lucide-react";
+const DISTANCES = [
+  {
+    name: 'Le rite du Guerrier',
+    distance: '6 km',
+    obstacles: '20 obstacles emblématiques',
+    effort: 'Intensité explosive · idéal pour débuter ou revenir',
+    badge: { icon: <Mountain className='h-5 w-5' />, label: 'Format sprint' },
+    href: '/races/rite-du-guerrier',
+  },
+  {
+    name: 'La voie du Héros',
+    distance: '12 km',
+    obstacles: '35 obstacles techniques',
+    effort: 'Endurance + portés · progression intermédiaire',
+    badge: { icon: <Sparkles className='h-5 w-5' />, label: 'Format intermédiaire' },
+    href: '/races/voie-du-heros',
+  },
+  {
+    name: 'Tribal Royale',
+    distance: '24 km',
+    obstacles: '50+ obstacles extrêmes',
+    effort: 'Format élite · mental, grip et portés lourds',
+    badge: { icon: <Star className='h-5 w-5' />, label: 'Format élite' },
+    href: '/races/tribale-royale',
+  },
+  {
+    name: 'Tribal Kids',
+    distance: '1 / 2 / 3 km',
+    obstacles: '15 obstacles ludiques et sécurisés',
+    effort: 'Pour les 6-14 ans · esprit collectif',
+    badge: { icon: <Waves className='h-5 w-5' />, label: 'Format famille' },
+    href: '/races/tribale-kids',
+  },
+]
 const steps = [
 	{
 		title: "Étape 1",
@@ -155,19 +189,59 @@ export default function DistanceFormatsAndDifficulties() {
 					description="Choisissez votre parcours et préparez-vous à relever le défi."
 				/>
 
-				{/* Grille des courses */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 auto-rows-[350px]">
-					<FormatCard title="Le rite du Guerrier" distance="6km" buttonText="Je découvre le rite" />
-					<FormatCard title="La voie du Héros" distance="12km" buttonText="Je deviens un Héros" />
-					<FormatCard title="Tribal Royale" distance="24km" buttonText="Je relève le défi" />
-					<FormatCard
-						title="Volontaires"
-						distance="1 course gratuite !"
-						buttonText="J'aide la tribu Overbound"
-						doubleHeight={true}
-					/>
-					<FormatCard title="Tribal Kids" distance="1km, 2km & 3km" buttonText="Mon enfant est un guerrier" />
-				</div>
+
+      <div className='relative z-10 mx-auto flex w-full flex-col gap-10'>
+
+        <div className='grid gap-6 md:grid-cols-2 xl:grid-cols-4'>
+          {DISTANCES.map((format) => (
+            <Card
+              key={format.name}
+              className='group flex h-full flex-col border border-border/60 bg-background/90 transition hover:-translate-y-1 hover:border-primary/30 hover:shadow-primary/20'
+            >
+              <CardHeader className='space-y-3'>
+                <span className='inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary'>
+                  {format.badge.icon}
+                  {format.badge.label}
+                </span>
+                <CardTitle className='text-2xl text-foreground'>{format.name}</CardTitle>
+                <p className='text-sm font-medium text-muted-foreground'>{format.distance}</p>
+              </CardHeader>
+              <CardContent className='flex flex-1 flex-col justify-between space-y-4 text-sm text-muted-foreground'>
+                <div className='space-y-2'>
+                  <p className='font-semibold text-foreground'>{format.obstacles}</p>
+                  <p className='leading-relaxed'>{format.effort}</p>
+                </div>
+                <Button
+                  asChild
+                  size='sm'
+                  className='w-full justify-between rounded-full bg-primary text-white hover:bg-primary/90'
+                >
+                  <Link href={format.href}>
+                    <span>Découvrir ce format</span>
+                    <ArrowRight className='h-4 w-4 transition group-hover:translate-x-1' />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className='rounded-3xl border border-border/60 bg-background/80 p-6'>
+          <div className='flex flex-col gap-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left'>
+            <div className='space-y-2'>
+              <h3 className='text-xl font-semibold text-foreground'>Besoin d’un coup de pouce pour choisir&nbsp;?</h3>
+              <p className='text-sm text-muted-foreground'>
+                Utilise notre questionnaire ou contacte la tribu pour une recommandation personnalisée.
+              </p>
+            </div>
+            <div className='flex flex-col gap-3 sm:flex-row'>
+              <Button asChild size='lg' className='h-12 rounded-full bg-primary text-white hover:bg-primary/90'>
+                <Link href='/trainings/what-race-for-me'>Choisir mon format</Link>
+              </Button> 
+            </div>
+          </div>
+        </div>
+      </div>
 
 
 				<SubHeadings 
