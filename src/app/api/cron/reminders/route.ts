@@ -174,7 +174,6 @@ async function sendPostEventThankYouBatch(admin: ReturnType<typeof supabaseAdmin
         )
       `,
     )
-    .eq('checked_in', true)
     .not('email', 'is', null)
     .gte('events.date', start.toISOString())
     .lte('events.date', end.toISOString())

@@ -11,6 +11,7 @@ export const runtime = 'nodejs'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
 })
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -192,16 +193,17 @@ export async function POST(request: NextRequest) {
         // Send confirmation email
         try {
           const qrCodeBase64 = await QRCode.toDataURL(qrToken).then(url => url.split(',')[1])
+          const eventDateLabel = new Date(event.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })
 
           await sendTicketEmail({
             to: registration.email,
             participantName,
             eventTitle: event_title || event.title,
-            eventDate: event.date,
+            eventDate: eventDateLabel,
             eventLocation: event.location,
             ticketName: ticket_name || ticket.name,
             qrUrl: `data:image/png;base64,${qrCodeBase64}`,
-            manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/account/ticket/${registration.id}`
+            manageUrl: `${siteUrl}/account/ticket/${registration.id}`
           })
 
           console.log('Confirmation email sent to:', registration.email)

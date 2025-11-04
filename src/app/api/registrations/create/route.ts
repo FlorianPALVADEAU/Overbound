@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       disclaimer = { read: false, accepted: false },
     } = await request.json()
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
+
     if (!paymentIntentId || !eventId || !userId || ticketSelections.length === 0 || participants.length === 0) {
       return NextResponse.json({ error: 'Paramètres manquants.' }, { status: 400 })
     }
@@ -272,16 +274,17 @@ export async function POST(request: NextRequest) {
     for (const { registration, ticket, participantName } of createdRegistrations) {
       try {
         const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
+        const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })
 
         await sendTicketEmail({
           to: registration.email,
           participantName: participantName || registration.email,
           eventTitle: eventRow.title,
-          eventDate: eventRow.date,
+          eventDate: eventDateLabel,
           eventLocation: eventRow.location,
           ticketName: ticket.name,
           qrUrl: `data:image/png;base64,${qrCodeBase64}`,
-          manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/account/ticket/${registration.id}`,
+          manageUrl: `${siteUrl}/account/ticket/${registration.id}`,
         })
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)
