@@ -27,12 +27,15 @@ export async function sendAdminDigest({ lookbackMinutes = 60 }: AdminDigestOptio
     return 0
   }
 
-  const since = new Date(Date.now() - lookbackMinutes * 60 * 1000)
+  const now = new Date()
+  const since = new Date(now.getTime() - lookbackMinutes * 60 * 1000)
+  const periodStartIso = since.toISOString()
+  const periodEndIso = now.toISOString()
 
   const { data: logs, error } = await admin
     .from('admin_request_logs')
     .select('created_at, summary, status_code, user_email, action_type, path, duration_ms')
-    .gte('created_at', since.toISOString())
+    .gte('created_at', periodStartIso)
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -55,14 +58,14 @@ export async function sendAdminDigest({ lookbackMinutes = 60 }: AdminDigestOptio
     durationMs: log.duration_ms ?? null,
   }))
 
-  const periodLabel = `${since.toLocaleString('fr-FR')} → ${new Date().toLocaleString('fr-FR')}`
+  const periodLabel = `${since.toLocaleString('fr-FR')} → ${now.toLocaleString('fr-FR')}`
 
   await Promise.all(
     recipients.map(async (recipient) => {
       const alreadySent = await getLastEmailLog({
         userId: recipient.userId,
         emailType: 'admin_digest',
-        contextFilters: { period_label: periodLabel },
+        contextFilters: { period_start: periodStartIso, period_end: periodEndIso },
       })
 
       if (alreadySent) {
@@ -83,7 +86,8 @@ export async function sendAdminDigest({ lookbackMinutes = 60 }: AdminDigestOptio
         email: recipient.email,
         emailType: 'admin_digest',
         context: {
-          period_label: periodLabel,
+          period_start: periodStartIso,
+          period_end: periodEndIso,
         },
       })
     }),
@@ -96,7 +100,7 @@ const getAdminRecipients = async (admin = supabaseAdmin()): Promise<AdminRecipie
   const { data: profiles, error } = await admin
     .from('profiles')
     .select('id, full_name, role')
-    .eq('role', 'admin')
+    .in('role', ['admin', 'super_admin'])
 
   if (error || !profiles || profiles.length === 0) {
     return []
