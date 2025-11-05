@@ -44,10 +44,90 @@ export async function GET(request: Request) {
     const totalCount = rows[0]?.total_count ?? 0
 
     const registrationIds = rows.map((row: any) => row.id).filter(Boolean)
+    const eventIds = Array.from(
+      new Set(
+        rows
+          .map((row: any) => row.event_id)
+          .filter((value: string | null) => Boolean(value)),
+      ),
+    ) as string[]
+    const ticketIds = Array.from(
+      new Set(
+        rows
+          .map((row: any) => row.ticket_id)
+          .filter((value: string | null) => Boolean(value)),
+      ),
+    ) as string[]
+    const orderIds = Array.from(
+      new Set(
+        rows
+          .map((row: any) => row.order_id)
+          .filter((value: string | null) => Boolean(value)),
+      ),
+    ) as string[]
+
+    const adminClient = supabaseAdmin()
+
+    const [eventsResult, ticketsResult, ordersResult] = await Promise.all([
+      eventIds.length
+        ? adminClient
+            .from('events')
+            .select('id, title, date, location')
+            .in('id', eventIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+      ticketIds.length
+        ? adminClient
+            .from('tickets')
+            .select('id, name, distance_km')
+            .in('id', ticketIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+      orderIds.length
+        ? adminClient
+            .from('orders')
+            .select('id, amount_total, currency, status')
+            .in('id', orderIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+    ])
+
+    if (eventsResult.error) {
+      console.error('[admin registrations] events fetch error', eventsResult.error)
+    }
+    if (ticketsResult.error) {
+      console.error('[admin registrations] tickets fetch error', ticketsResult.error)
+    }
+    if (ordersResult.error) {
+      console.error('[admin registrations] orders fetch error', ordersResult.error)
+    }
+
+    const eventMap = new Map<string, any>()
+    for (const event of eventsResult.data ?? []) {
+      eventMap.set(event.id, {
+        id: event.id,
+        title: event.title ?? null,
+        date: event.date ?? null,
+        location: event.location ?? null,
+      })
+    }
+    const ticketMap = new Map<string, any>()
+    for (const ticket of ticketsResult.data ?? []) {
+      ticketMap.set(ticket.id, {
+        id: ticket.id,
+        name: ticket.name ?? null,
+        distance_km: ticket.distance_km ?? null,
+      })
+    }
+    const orderMap = new Map<string, any>()
+    for (const order of ordersResult.data ?? []) {
+      orderMap.set(order.id, {
+        id: order.id,
+        amount_total: order.amount_total ?? null,
+        currency: order.currency ?? null,
+        status: order.status ?? null,
+      })
+    }
 
     const documentMetaMap = new Map<string, any>()
     if (registrationIds.length > 0) {
-      const adminClient = supabaseAdmin()
       const { data: documentRows, error: documentError } = await adminClient
         .from('registrations')
         .select(
@@ -57,7 +137,9 @@ export async function GET(request: Request) {
           document_filename,
           document_size,
           approval_status,
-          ticket:tickets(requires_document)
+          ticket:tickets(id, name, distance_km, requires_document),
+          event:events(id, title, date, location),
+          order:orders(id, amount_total, currency, status)
         `,
         )
         .in('id', registrationIds)
@@ -77,6 +159,30 @@ export async function GET(request: Request) {
             approval_status: approvalStatus,
             document_requires_attention:
               requiresDocument && (approvalStatus !== 'approved' || !documentUrl),
+            event: row.event
+              ? {
+                  id: row.event.id,
+                  title: row.event.title ?? null,
+                  date: row.event.date ?? null,
+                  location: row.event.location ?? null,
+                }
+              : null,
+            ticket: row.ticket
+              ? {
+                  id: row.ticket.id,
+                  name: row.ticket.name ?? null,
+                  distance_km: row.ticket.distance_km ?? null,
+                  requires_document: requiresDocument,
+                }
+              : null,
+            order: row.order
+              ? {
+                  id: row.order.id,
+                  amount_total: row.order.amount_total ?? null,
+                  currency: row.order.currency ?? null,
+                  status: row.order.status ?? null,
+                }
+              : null,
           })
         }
       }
@@ -86,6 +192,21 @@ export async function GET(request: Request) {
       const meta = documentMetaMap.get(row.id) || {}
       return {
         ...row,
+        event:
+          meta.event ??
+          row.event ??
+          eventMap.get(row.event_id ?? '') ??
+          null,
+        ticket:
+          meta.ticket ??
+          row.ticket ??
+          ticketMap.get(row.ticket_id ?? '') ??
+          null,
+        order:
+          meta.order ??
+          row.order ??
+          orderMap.get(row.order_id ?? '') ??
+          null,
         approval_status: meta.approval_status ?? row.approval_status,
         document_url: meta.document_url ?? row.document_url ?? null,
         document_filename: meta.document_filename ?? row.document_filename ?? null,

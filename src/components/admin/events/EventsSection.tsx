@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
+import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ import {
   updateAdminEvent,
   useAdminEvents,
   type AdminEventPayload,
+  type AdminEventSummary,
 } from '@/app/api/admin/events/eventsQueries'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 
@@ -112,7 +114,7 @@ export function EventsSection() {
   } = useAdminEvents()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<AdminEventSummary | null>(null)
   const [formValues, setFormValues] = useState<EventFormValues>(buildFormValues())
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
@@ -148,14 +150,14 @@ export function EventsSection() {
     setDialogOpen(true)
   }
 
-  const handleEdit = (event: Event) => {
+  const handleEdit = (event: AdminEventSummary) => {
     setDialogMode('edit')
     setSelectedEvent(event)
     setFormValues(buildFormValues(event))
     setDialogOpen(true)
   }
 
-  const handleDelete = async (event: Event) => {
+  const handleDelete = async (event: AdminEventSummary) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer "${event.title}" ?`)) {
       return
     }
@@ -163,7 +165,7 @@ export function EventsSection() {
     setDeleteLoadingId(event.id)
     try {
       await deleteAdminEvent(event.id)
-      queryClient.setQueryData<Event[]>(adminEventsQueryKey, (previous) => {
+      queryClient.setQueryData<AdminEventSummary[]>(adminEventsQueryKey, (previous) => {
         if (!previous) return []
         return previous.filter((item) => item.id !== event.id)
       })
@@ -191,14 +193,14 @@ export function EventsSection() {
       const payload = toPayload(values)
       if (dialogMode === 'create') {
         const created = await createAdminEvent(payload)
-        queryClient.setQueryData<Event[]>(adminEventsQueryKey, (previous) => {
+        queryClient.setQueryData<AdminEventSummary[]>(adminEventsQueryKey, (previous) => {
           if (!previous) return [created]
           return [created, ...previous]
         })
         setMessage({ type: 'success', text: 'Événement créé avec succès' })
       } else if (selectedEvent) {
         const updated = await updateAdminEvent(selectedEvent.id, payload)
-        queryClient.setQueryData<Event[]>(adminEventsQueryKey, (previous) => {
+        queryClient.setQueryData<AdminEventSummary[]>(adminEventsQueryKey, (previous) => {
           if (!previous) return [updated]
           return previous.map((item) => (item.id === selectedEvent.id ? updated : item))
         })
@@ -217,7 +219,7 @@ export function EventsSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<Event>[]>(() => {
+  const columns = useMemo<AdminDataGridColumn<AdminEventSummary>[]>(() => {
     return [
       {
         key: 'title',
@@ -254,6 +256,22 @@ export function EventsSection() {
         ),
       },
       {
+        key: 'attendees',
+        header: 'Participants',
+        cell: (event) => (
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-foreground">
+              {(event.registrations_count ?? 0).toLocaleString('fr-FR')} coureur
+              {event.registrations_count === 1 ? '' : 's'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {(event.volunteer_applications_count ?? 0).toLocaleString('fr-FR')} bénévole
+              {event.volunteer_applications_count === 1 ? '' : 's'}
+            </span>
+          </div>
+        ),
+      },
+      {
         key: 'updated_at',
         header: 'Dernière mise à jour',
         cell: (event) => (
@@ -263,9 +281,12 @@ export function EventsSection() {
       {
         key: 'actions',
         header: '',
-        className: 'w-[170px]',
+        className: 'w-[220px]',
         cell: (event) => (
           <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" asChild>
+              <Link href={`/dashboard/events/${event.id}`}>Voir</Link>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
               Modifier
             </Button>
@@ -281,7 +302,7 @@ export function EventsSection() {
         ),
       },
     ]
-  }, [deleteLoadingId])
+  }, [deleteLoadingId, handleDelete, handleEdit])
 
   return (
     <div className="space-y-6">
@@ -372,4 +393,3 @@ export function EventsSection() {
     </div>
   )
 }
-

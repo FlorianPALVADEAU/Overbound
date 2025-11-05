@@ -51,13 +51,13 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className='relative overflow-hidden border-t bg-background text-foreground'>
-      <div className='relative flex w-full flex-col gap-16 py-24 lg:py-28'>
+      <div className='relative flex w-full flex-col gap-12 pt-16 sm:gap-16 sm:pt-24 lg:pt-28'>
         <span className='pointer-events-none absolute right-[-5%] top-0 hidden text-[18vw] font-black uppercase leading-none text-foreground/2 lg:block'>
           Overbound
         </span>
 
-        <div className='relative z-10 space-y-4 text-center sm:text-left sm:px-6 xl:px-32'>
-          <Link href="/" className="flex items-center">
+        <div className='relative z-10 space-y-4 px-6 text-center sm:text-left sm:px-6 xl:px-32'>
+          <Link href="/" className="flex items-center justify-center sm:justify-start">
             <Image
               src="/images/totem_logo_white.png"
               alt="OverBound Logo"
@@ -74,7 +74,7 @@ export function Footer() {
           </p>
         </div>
 
-        <div className='relative z-10 grid gap-12 border-y border-border/60 py-12 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-4 sm:px-6 xl:px-32'>
+        <div className='relative z-10 grid gap-8 border-y border-border/60 px-6 py-12 text-sm text-muted-foreground sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:gap-12 xl:px-32'>
           {LINK_GROUPS.map((group) => (
             <div key={group.title} className='space-y-4'>
               <h3 className='text-sm font-semibold uppercase tracking-[0.35em] text-foreground/70'>{group.title}</h3>
@@ -91,7 +91,7 @@ export function Footer() {
           ))}
         </div>
 
-        <div className='relative z-10 flex flex-col gap-6 sm:px-6 xl:px-32 xl:py-40 border-t border-border/60 pt-8 text-center text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:text-left'>
+        <div className='-mt-4 relative z-10 flex flex-col gap-6 px-6 pb-12 text-center text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-left xl:px-32'>
           <div className='flex flex-wrap items-center justify-center gap-4 sm:justify-start'>
             {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
               <Link key={label} href={href} className='flex items-center gap-2 transition hover:text-primary'>

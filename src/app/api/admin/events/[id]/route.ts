@@ -6,6 +6,126 @@ import { notifyEventUpdate } from '@/lib/email/eventUpdates'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
+const handleGet = async (
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> => {
+  try {
+    const supabase = await createSupabaseServer()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    const { id } = await params
+
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    }
+
+    const admin = supabaseAdmin()
+    const { data: event, error: eventError } = await admin.from('events').select('*').eq('id', id).single()
+
+    if (eventError || !event) {
+      return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
+    }
+
+    const [
+      { count: registrationsTotal, error: registrationsTotalError },
+      { count: registrationsApproved, error: registrationsApprovedError },
+      { count: registrationsPending, error: registrationsPendingError },
+      { count: registrationsCheckedIn, error: registrationsCheckedInError },
+      { count: volunteersTotal, error: volunteersError },
+    ] = await Promise.all([
+      admin.from('registrations').select('id', { head: true, count: 'exact' }).eq('event_id', id),
+      admin
+        .from('registrations')
+        .select('id', { head: true, count: 'exact' })
+        .eq('event_id', id)
+        .eq('approval_status', 'approved'),
+      admin
+        .from('registrations')
+        .select('id', { head: true, count: 'exact' })
+        .eq('event_id', id)
+        .eq('approval_status', 'pending'),
+      admin
+        .from('registrations')
+        .select('id', { head: true, count: 'exact' })
+        .eq('event_id', id)
+        .eq('checked_in', true),
+      admin.from('volunteer_applications').select('id', { head: true, count: 'exact' }).eq('event_id', id),
+    ])
+
+    if (registrationsTotalError) {
+      console.error('[admin event detail] total registrations count error', registrationsTotalError)
+    }
+    if (registrationsApprovedError) {
+      console.error('[admin event detail] approved registrations count error', registrationsApprovedError)
+    }
+    if (registrationsPendingError) {
+      console.error('[admin event detail] pending registrations count error', registrationsPendingError)
+    }
+    if (registrationsCheckedInError) {
+      console.error('[admin event detail] checked-in registrations count error', registrationsCheckedInError)
+    }
+    if (volunteersError) {
+      console.error('[admin event detail] volunteers count error', volunteersError)
+    }
+
+    const { data: registrationsOrders, error: registrationsOrdersError } = await admin
+      .from('registrations')
+      .select('order:orders(amount_total, currency, status)')
+      .eq('event_id', id)
+
+    if (registrationsOrdersError) {
+      console.error('[admin event detail] registrations orders fetch error', registrationsOrdersError)
+    }
+
+    let totalRevenueCents = 0
+    let revenueCurrency: string | null = null
+    if (registrationsOrders) {
+      for (const registration of registrationsOrders) {
+        const order = (registration as { order?: { amount_total: number | null; currency: string | null; status: string | null } }).order
+        if (!order || order.amount_total == null || order.status !== 'paid') continue
+        totalRevenueCents += order.amount_total
+        if (!revenueCurrency && order.currency) {
+          revenueCurrency = order.currency
+        }
+      }
+    }
+
+    return NextResponse.json({
+      event,
+      stats: {
+        registrations: {
+          total: registrationsTotal ?? 0,
+          approved: registrationsApproved ?? 0,
+          pending: registrationsPending ?? 0,
+          checked_in: registrationsCheckedIn ?? 0,
+        },
+        volunteers: {
+          total: volunteersTotal ?? 0,
+        },
+        revenue: {
+          total_cents: totalRevenueCents,
+          currency: revenueCurrency,
+        },
+      },
+    })
+  } catch (error) {
+    console.error('[admin event detail] unexpected error', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
 const handlePut = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -168,6 +288,10 @@ export const PUT = withRequestLogging(handlePut, {
 
 export const DELETE = withRequestLogging(handleDelete, {
   actionType: 'Suppression événement admin',
+})
+
+export const GET = withRequestLogging(handleGet, {
+  actionType: 'Consultation événement admin',
 })
 
 const maybeSendNewEventAnnouncement = async (
