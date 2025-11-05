@@ -107,7 +107,7 @@ export default function NutritionPage() {
           <div className='absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
           <div className='absolute inset-0 bg-gradient-to-b from-background/20 via-background/80 to-background' />
         </div>
-        <div className='relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+        <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
           <div className='max-w-3xl space-y-6 text-center lg:text-left'>
             <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
               Préparation Overbound
@@ -137,7 +137,7 @@ export default function NutritionPage() {
       </section>
 
       <section id='fundamentaux' className='border-y border-border/50 bg-background/80 py-14'>
-        <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+        <div className='mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
           <Headings
             title='Les 3 piliers nutritionnels Overbound'
             description="Nos courses t’exigent une énergie stable, un système digestif solide et une récupération accélérée. Voici comment répartir tes efforts."
@@ -169,7 +169,7 @@ export default function NutritionPage() {
         </div>
       </section>
 
-      <section className='mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8'>
+      <section className='mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8'>
         <div className='grid gap-10 lg:grid-cols-[1.3fr,1fr] lg:items-start'>
           <div className='space-y-6'>
             <h2 className='text-2xl font-semibold sm:text-3xl md:text-4xl'>Exemple de journée type</h2>
@@ -219,7 +219,7 @@ export default function NutritionPage() {
       </section>
 
       <section className='relative bg-gradient-to-b from-background to-background/40 py-16 sm:py-20'>
-        <div className='mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-6 lg:px-8'>
+        <div className='mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8'>
           <div className='grid gap-8 lg:grid-cols-2 lg:items-center'>
             <div className='space-y-4 text-center lg:text-left'>
               <h2 className='text-2xl font-semibold sm:text-3xl md:text-4xl'>

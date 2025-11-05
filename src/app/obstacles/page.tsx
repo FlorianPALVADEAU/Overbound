@@ -70,8 +70,7 @@ const difficultyLabel = (difficulty: number) => {
   return 'Expert'
 }
 
-const heroBackground =
-  "url('https://images.unsplash.com/photo-1552346053-c33aa8d3ad83?q=80&w=1400&auto=format&fit=crop')"
+const heroImageSrc = 'https://images.unsplash.com/photo-1552346053-c33aa8d3ad83?q=80&w=1400&auto=format&fit=crop'
 
 const ObstacleSkeleton = () => (
   <Card className='overflow-hidden'>
@@ -144,9 +143,17 @@ export default function ObstaclesPage() {
       <main className='relative min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground'>
         <section className='relative isolate overflow-hidden py-20 sm:py-24'>
           <div className='absolute inset-0'>
-            <div className='h-full w-full bg-cover bg-center' style={{ backgroundImage: heroBackground }} />
-            <div className='absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
-            <div className='absolute inset-0 bg-gradient-to-b from-background/20 via-background/75 to-background' />
+            <Image
+              src={heroImageSrc}
+              alt='Athlète Overbound franchissant un obstacle'
+              fill
+              sizes='100vw'
+              className='object-cover object-center'
+              priority
+            />
+            <div className='pointer-events-none absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
+            <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
+            <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
           </div>
           <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
             <div className='max-w-3xl space-y-6 text-center lg:text-left'>

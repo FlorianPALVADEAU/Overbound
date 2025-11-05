@@ -201,7 +201,7 @@ const FAQPageContent = ({ faqs }: FAQPageContentProps) => {
 
       {searchTerm.trim() ? <SearchResults searchTerm={searchTerm} results={searchResults} /> : null}
 
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 sm:px-6 sm:pb-16">
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 pb-12 sm:px-6 sm:pb-16">
         {CATEGORY_META.map((meta) => {
           const items = grouped[meta.value]
           if (!items || items.length === 0) {
@@ -235,7 +235,7 @@ const Header = ({
 }) => (
   <section className="relative overflow-hidden bg-white">
     <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#26AA26]/10 via-transparent to-transparent" />
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:flex-row lg:items-center lg:gap-16 lg:py-24">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:flex-row lg:items-center lg:gap-16 lg:py-24">
       <div className="flex-1 space-y-6 text-center lg:text-left">
         <span className="inline-flex items-center gap-2 rounded-full bg-[#26AA26]/10 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-[#26AA26]">
           <ShieldCheck className="h-4 w-4" />
@@ -432,7 +432,7 @@ const FAQEntry = ({ faq }: { faq: FAQDocument }) => {
 
 const Footer = () => (
   <footer className="bg-[#0f1b12] py-12 text-white">
-    <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-6 px-4 text-center sm:flex-row sm:text-left">
+    <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-6 px-4 text-center sm:flex-row sm:text-left">
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-[#26AA26]">Overbound FAQ</p>
         <h3 className="text-2xl font-bold">Tu veux aller plus loin ?</h3>

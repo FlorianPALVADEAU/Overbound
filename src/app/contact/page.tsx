@@ -277,7 +277,7 @@ const ContactPage = () => {
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f6f8f5] to-white">
       <section className="relative overflow-hidden bg-white">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#26AA26]/10 via-transparent to-transparent" />
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:gap-20 lg:py-24">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:gap-20 lg:py-24">
           <div className="flex-1 space-y-7 text-center lg:text-left">
             <span className="inline-flex items-center gap-2 rounded-full bg-[#26AA26]/10 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-[#26AA26]">
               <LifeBuoy className="h-4 w-4" />
@@ -340,7 +340,7 @@ const ContactPage = () => {
         </div>
       </section>
 
-      <section id="channels" className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+      <section id="channels" className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">Choisis comment nous contacter</h2>
           <p className="mt-2 text-sm text-gray-600 sm:text-base">
@@ -385,7 +385,7 @@ const ContactPage = () => {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6" id="support-inscription">
+      <section className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6" id="support-inscription">
         <div className="flex flex-col gap-6 rounded-3xl border border-[#26AA26]/10 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:p-8 lg:flex-row lg:items-center lg:gap-10">
           <div className="flex-1 space-y-3">
             <p className="text-sm font-semibold uppercase tracking-wide text-[#26AA26]">Gagne du temps</p>
@@ -434,7 +434,7 @@ const ContactPage = () => {
         </div>
       </section>
 
-      <section id="contact-form" className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+      <section id="contact-form" className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">
         <div className="rounded-3xl border border-[#26AA26]/10 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:p-8">
           <div className="grid gap-8 lg:grid-cols-[1.1fr,1fr]">
             <div className="space-y-6">
@@ -659,7 +659,7 @@ const ContactPage = () => {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6" id="support-documents">
+      <section className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6" id="support-documents">
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-3xl border border-[#26AA26]/10 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:p-8">
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Adresse du siège</h2>
@@ -723,7 +723,7 @@ const ContactPage = () => {
         </div>
       </section>
 
-      <section id="support-benevoles" className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+      <section id="support-benevoles" className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">
         <div className="rounded-3xl border border-[#26AA26]/10 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -744,7 +744,7 @@ const ContactPage = () => {
       </section>
 
       <footer className="bg-[#0f1b12] py-12 text-white">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-6 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-[#26AA26]">Overbound Support</p>
             <h3 className="text-2xl font-bold">On se parle bientôt ?</h3>

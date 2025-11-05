@@ -1,14 +1,14 @@
-'use client'
+"use client"
 
 import { useMemo } from 'react'
-import Headings from '../globals/Headings'
+import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { client } from '@/sanity/lib/client'
 import { FAQsQuery } from '@/sanity/lib/queries'
-import { QuestionType } from '@/types/Question'
+import type { QuestionType } from '@/types/Question'
+import Headings from '../globals/Headings'
 import { Button } from '../ui/button'
-import Link from 'next/link'
-import { FAQQuestionCard } from './FAQQuestionCard'
+import { FAQQuestionCard } from '../homepage/FAQQuestionCard'
 
 const mapQuestion = (item: any): QuestionType => ({
   id: item._id ?? item.id ?? '',
@@ -19,43 +19,45 @@ const mapQuestion = (item: any): QuestionType => ({
   relatedLinks: Array.isArray(item.relatedLinks) ? item.relatedLinks : [],
 })
 
-const fetchGeneralFAQs = async (): Promise<QuestionType[]> => {
+const fetchVolunteerFAQs = async (): Promise<QuestionType[]> => {
   try {
     const res = await client.fetch(FAQsQuery)
-    return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'general')
+    return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'volunteers')
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
 
     if (message.includes('project user not found')) {
       const publicClient = client.withConfig({ token: undefined, useCdn: true })
       const res = await publicClient.fetch(FAQsQuery)
-      return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'general')
+      return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'volunteers')
     }
 
     throw error
   }
 }
 
-const FAQ = () => {
+export const VolunteerFAQSection = () => {
   const {
-    data: questions,
+    data,
     isLoading,
     isError,
     error,
   } = useQuery<QuestionType[]>({
-    queryKey: ['faq', 'general'],
-    queryFn: fetchGeneralFAQs,
+    queryKey: ['faq', 'volunteers'],
+    queryFn: fetchVolunteerFAQs,
     retry: 1,
   })
 
-  const generalFAQs = useMemo(() => (Array.isArray(questions) ? questions : []), [questions])
-  const showEmptyState = !isLoading && !isError && generalFAQs.length === 0
+  const volunteerQuestions = useMemo(() => (Array.isArray(data) ? data : []), [data])
+
+  const showEmptyState = !isLoading && !isError && volunteerQuestions.length === 0
 
   return (
     <section className='relative flex h-auto w-full flex-col items-start justify-start gap-12 overflow-hidden bg-[#141414] px-4 py-12 sm:px-6 sm:py-16 xl:px-32 xl:py-40'>
       <div className='relative z-10 w-full'>
         <Headings
-          title='FAQ'
+          title='FAQ - Bénévoles'
+          description='Toutes les réponses pour savoir comment se vit l’expérience côté tribu organisatrice.'
           cta={
             <Link href='/about/faq'>
               <Button
@@ -74,29 +76,26 @@ const FAQ = () => {
         {isLoading
           ? Array.from({ length: 6 }).map((_, index) => (
               <FAQQuestionCard
-                key={`faq-skeleton-${index}`}
-                question={{ id: '', title: '', category: 'general', answer: [] }}
+                key={`volunteer-faq-skeleton-${index}`}
+                question={{ id: '', title: '', category: 'volunteers', answer: [] }}
                 loading
               />
             ))
-          : generalFAQs.map((faq) => <FAQQuestionCard key={faq.id} question={faq} />)}
+          : volunteerQuestions.map((question) => <FAQQuestionCard key={question.id} question={question} />)}
       </div>
 
       {showEmptyState ? (
-        <p className='relative z-10 text-sm text-gray-300 sm:text-base'>
-          Aucune question générale n’est disponible pour le moment. Consulte notre centre d’aide complet pour plus
-          d’informations.
+        <p className='relative z-10 text-sm text-white/70 sm:text-base'>
+          Aucune question volontaire n’est disponible pour le moment. Reviens bientôt, la tribu met à jour son centre
+          d’aide.
         </p>
       ) : null}
 
       {isError ? (
         <p className='relative z-10 text-sm text-red-300 sm:text-base'>
-          Impossible de charger les questions pour le moment&nbsp;:{' '}
-          {error instanceof Error ? error.message : 'Réessaie dans quelques minutes.'}
+          Impossible de charger les questions volontaires pour le moment&nbsp;: {error instanceof Error ? error.message : 'Réessaie dans quelques minutes.'}
         </p>
       ) : null}
     </section>
   )
 }
-
-export default FAQ

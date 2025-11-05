@@ -8,7 +8,7 @@ import { PARTNERS_DATA } from "@/datas/Partners";
 export const HeroHeader = () => {
     return (
         <>
-            <section className="relative w-full h-[80vh] overflow-hidden">
+            <section className="relative w-full h-[75vh] overflow-hidden">
                 <video
                     autoPlay
                     muted
