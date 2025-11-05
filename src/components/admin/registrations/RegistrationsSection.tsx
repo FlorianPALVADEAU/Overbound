@@ -38,6 +38,7 @@ import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
 
 interface RegistrationsSectionProps {
   eventId?: string
+  lockEventFilter?: boolean
 }
 
 interface MessageState {
@@ -96,7 +97,7 @@ const approvalBadgeLabel = (status: RegistrationApprovalStatus) => {
   }
 }
 
-export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
+export function RegistrationsSection({ eventId, lockEventFilter = false }: RegistrationsSectionProps) {
   const queryClient = useQueryClient()
   const { data: events = [] } = useAdminEvents()
 
@@ -113,17 +114,21 @@ export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
   useEffect(() => {
     if (eventId) {
       setEventFilter(eventId)
+    } else if (!lockEventFilter) {
+      setEventFilter(ALL_EVENTS_VALUE)
     }
-  }, [eventId])
+  }, [eventId, lockEventFilter])
+
+  const effectiveEventFilter = lockEventFilter && eventId ? eventId : eventFilter
 
   const params = useMemo(
     () => ({
-      eventId: eventFilter !== ALL_EVENTS_VALUE ? eventFilter : undefined,
+      eventId: effectiveEventFilter !== ALL_EVENTS_VALUE ? effectiveEventFilter : undefined,
       approvalFilter: statusFilter,
       searchTerm: searchTerm.trim() || undefined,
       limit: DEFAULT_LIMIT,
     }),
-    [eventFilter, statusFilter, searchTerm]
+    [effectiveEventFilter, statusFilter, searchTerm]
   )
 
   const {
@@ -158,11 +163,11 @@ export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
 
   const activeFiltersCount = useMemo(() => {
     let count = 0
-    if (eventFilter !== ALL_EVENTS_VALUE) count += 1
+    if (!lockEventFilter && eventFilter !== ALL_EVENTS_VALUE) count += 1
     if (statusFilter !== 'all') count += 1
     if (searchTerm.trim()) count += 1
     return count
-  }, [eventFilter, statusFilter, searchTerm])
+  }, [eventFilter, lockEventFilter, statusFilter, searchTerm])
 
   const handleViewDocument = (registration: AdminRegistration) => {
     setSelectedRegistration(registration)
@@ -217,7 +222,11 @@ export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
   }
 
   const resetFilters = () => {
-    setEventFilter(ALL_EVENTS_VALUE)
+    if (lockEventFilter && eventId) {
+      setEventFilter(eventId)
+    } else {
+      setEventFilter(ALL_EVENTS_VALUE)
+    }
     setStatusFilter('all')
     setSearchTerm('')
   }
@@ -257,30 +266,39 @@ export function RegistrationsSection({ eventId }: RegistrationsSectionProps) {
         <CardContent className="space-y-4 p-4 md:p-6">
           <div className="grid gap-3 md:grid-cols-4">
             <div className="space-y-1 md:col-span-2">
-              <Label>Recherche</Label>
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Email, événement, ticket…"
-              />
-            </div>
+          <Label>Recherche</Label>
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Email, événement, ticket…"
+          />
+        </div>
 
-            <div className="space-y-1">
-              <Label>Événement</Label>
-              <Select value={eventFilter} onValueChange={setEventFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous les événements" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_EVENTS_VALUE}>Tous les événements</SelectItem>
-                  {events.map((eventOption) => (
-                    <SelectItem key={eventOption.id} value={eventOption.id}>
-                      {eventOption.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {lockEventFilter ? (
+          <div className="space-y-1">
+            <Label>Événement</Label>
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+              {events.find((eventOption) => eventOption.id === eventId)?.title ?? 'Événement sélectionné'}
             </div>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <Label>Événement</Label>
+            <Select value={eventFilter} onValueChange={setEventFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Tous les événements" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_EVENTS_VALUE}>Tous les événements</SelectItem>
+                {events.map((eventOption) => (
+                  <SelectItem key={eventOption.id} value={eventOption.id}>
+                    {eventOption.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
             <div className="space-y-1">
               <Label>Statut</Label>

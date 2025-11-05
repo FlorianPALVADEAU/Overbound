@@ -23,8 +23,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
+    const admin = supabaseAdmin()
+
     // Récupérer tous les événements
-    const { data: events, error } = await supabase
+    const { data: events, error } = await admin
       .from('events')
       .select('*')
       .order('created_at', { ascending: false })
@@ -33,7 +35,37 @@ export async function GET() {
       throw error
     }
 
-    return NextResponse.json({ events })
+    const eventsWithStats = await Promise.all(
+      (events ?? []).map(async (event) => {
+        const [{ count: registrationsCount, error: registrationsError }, { count: volunteersCount, error: volunteersError }] =
+          await Promise.all([
+            admin
+              .from('registrations')
+              .select('id', { head: true, count: 'exact' })
+              .eq('event_id', event.id),
+            admin
+              .from('volunteer_applications')
+              .select('id', { head: true, count: 'exact' })
+              .eq('event_id', event.id),
+          ])
+
+        if (registrationsError) {
+          console.error('[admin events] registrations count error', registrationsError)
+        }
+
+        if (volunteersError) {
+          console.error('[admin events] volunteers count error', volunteersError)
+        }
+
+        return {
+          ...event,
+          registrations_count: registrationsCount ?? 0,
+          volunteer_applications_count: volunteersCount ?? 0,
+        }
+      }),
+    )
+
+    return NextResponse.json({ events: eventsWithStats })
 
   } catch (error) {
     console.error('Erreur GET events:', error)
