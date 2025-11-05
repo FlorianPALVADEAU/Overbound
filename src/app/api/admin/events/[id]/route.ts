@@ -93,9 +93,10 @@ const handleGet = async (
     let revenueCurrency: string | null = null
     if (registrationsOrders) {
       for (const registration of registrationsOrders) {
-        const order = (registration as { order?: { amount_total: number | null; currency: string | null; status: string | null } }).order
+        const order = (registration as unknown as { order?: { amount_total: number | null; currency: string | null; status: string | null } }).order
+
         if (!order || order.amount_total == null || order.status !== 'paid') continue
-        totalRevenueCents += order.amount_total
+        totalRevenueCents += Number(order.amount_total)
         if (!revenueCurrency && order.currency) {
           revenueCurrency = order.currency
         }
