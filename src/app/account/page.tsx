@@ -18,7 +18,7 @@ import { useSession } from '../api/session/sessionQueries'
 function LoadingView() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto max-w-6xl space-y-8 p-6">
+      <div className="container mx-auto max-w-7xl space-y-8 p-6">
         <Card>
           <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
@@ -132,7 +132,7 @@ export default function AccountPage() {
     
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto p-6 max-w-6xl">
+      <div className="container mx-auto p-6 max-w-7xl">
         <div className="mb-8 space-y-6">
           <Card>
             <CardContent className="p-6">

@@ -7,6 +7,7 @@ const categoryOptions = [
   { title: 'Préparation & entraînement', value: 'preparation' },
   { title: 'Logistique & jour J', value: 'logistique' },
   { title: 'Après course & communauté', value: 'apres-course' },
+  { title: 'Volontaires & staff', value: 'volunteers' },
   { title: 'Partenariats & presse', value: 'presse' },
 ]
 

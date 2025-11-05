@@ -212,7 +212,7 @@ export default function RaceDetailPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/80 to-background" />
         </div>
-        <div className="container relative z-10 mx-auto max-w-6xl px-6">
+        <div className="container relative z-10 mx-auto max-w-7xl px-6">
           <Button
             variant="ghost"
             size="sm"
@@ -284,7 +284,7 @@ export default function RaceDetailPage() {
       </section>
 
       <section className="bg-background py-16">
-        <div className="container mx-auto max-w-6xl px-6">
+        <div className="container mx-auto max-w-7xl px-6">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {statsCards.map((stat) => {
               const IconComponent = stat.icon
@@ -307,7 +307,7 @@ export default function RaceDetailPage() {
       </section>
 
       <section className="bg-background py-16">
-        <div className="container mx-auto max-w-6xl px-6">
+        <div className="container mx-auto max-w-7xl px-6">
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-8">
               <div className="rounded-3xl border border-border bg-card p-8">
@@ -441,7 +441,7 @@ export default function RaceDetailPage() {
       </section>
 
       <section id="events" className="bg-background py-16">
-        <div className="container mx-auto max-w-6xl px-6">
+        <div className="container mx-auto max-w-7xl px-6">
           <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <h2 className="text-3xl font-bold text-foreground">Événements associés</h2>

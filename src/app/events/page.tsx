@@ -20,6 +20,92 @@ import SubHeadings from '@/components/globals/SubHeadings'
 import WhichDistanceForMe from '@/components/WhichDistanceForMe'
 import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
+import { v4 as uuid } from 'uuid'
+
+const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => (
+  <div key={ticket?.id || uuid()}>
+    {ticket ? (
+      <div
+        key={ticket.id}
+        className="rounded-lg border border-border bg-background p-4"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h4 className="font-semibold text-base mb-1">
+              {ticket.name}
+            </h4>
+            {ticket.description && (
+              <p className="text-sm text-muted-foreground mb-3">
+                {ticket.description}
+              </p>
+            )}
+            
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {formatDistance(ticket.distance_km) && (
+                <Badge variant="outline" className="text-xs">
+                  <Mountain className="h-3 w-3 mr-1" />
+                  {formatDistance(ticket.distance_km)}
+                </Badge>
+              )}
+              {ticket.max_participants && (
+                <Badge variant="outline" className="text-xs">
+                  Places : {ticket.max_participants}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <div className="text-right">
+            <div className="text-lg font-bold text-primary mb-2">
+              {formatTicketPrice(ticket)}
+            </div>
+            <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
+              <Button size="sm" className="w-full">
+                S'inscrire
+              </Button>
+            </Link>
+          </div>
+        </div>
+        
+        {(ticket.sales_start || ticket.sales_end) && (
+          <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+            {ticket.sales_start && (
+              <span className="mr-4">
+                Ouverture : {formatEventDateShort(ticket.sales_start)}
+              </span>
+            )}
+            {ticket.sales_end && (
+              <span>
+                Clôture : {formatEventDateShort(ticket.sales_end)}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    ) : (
+      <div
+        key="volunteer-ticket"
+        className="rounded-lg border border-border bg-background p-4"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h4 className="font-semibold text-base mb-1">
+              Devenir bénévole
+            </h4>
+            <p className="text-sm text-muted-foreground mb-3">
+              Rejoignez la tribu organisatrice en tant que bénévole et vivez une expérience unique !
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <Link href={`/volunteers#rejoindre`}>
+            <Button size="sm" className="w-full">S'inscrire</Button>
+          </Link>
+        </div>
+      </div>
+    )}
+  </div>
+)
 
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), {
   ssr: false,
@@ -272,64 +358,9 @@ export default function EventsPage() {
                     {selectedEvent.tickets && selectedEvent.tickets.length ? (
                       <div className="space-y-4">
                         {selectedEvent.tickets.map((ticket) => (
-                          <div
-                            key={ticket.id}
-                            className="rounded-lg border border-border bg-background p-4"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-base mb-1">
-                                  {ticket.name}
-                                </h4>
-                                {ticket.description && (
-                                  <p className="text-sm text-muted-foreground mb-3">
-                                    {ticket.description}
-                                  </p>
-                                )}
-                                
-                                <div className="flex flex-wrap items-center gap-3 text-xs">
-                                  {formatDistance(ticket.distance_km) && (
-                                    <Badge variant="outline" className="text-xs">
-                                      <Mountain className="h-3 w-3 mr-1" />
-                                      {formatDistance(ticket.distance_km)}
-                                    </Badge>
-                                  )}
-                                  {ticket.max_participants && (
-                                    <Badge variant="outline" className="text-xs">
-                                      Places : {ticket.max_participants}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-primary mb-2">
-                                  {formatTicketPrice(ticket)}
-                                </div>
-                                <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
-                                  <Button size="sm" className="w-full">
-                                    S'inscrire
-                                  </Button>
-                                </Link>
-                              </div>
-                            </div>
-                            
-                            {(ticket.sales_start || ticket.sales_end) && (
-                              <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
-                                {ticket.sales_start && (
-                                  <span className="mr-4">
-                                    Ouverture : {formatEventDateShort(ticket.sales_start)}
-                                  </span>
-                                )}
-                                {ticket.sales_end && (
-                                  <span>
-                                    Clôture : {formatEventDateShort(ticket.sales_end)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          renderEventTicket(ticket, selectedEvent)
                         ))}
+                        {renderEventTicket(null, selectedEvent)}
                       </div>
                     ) : (
                       <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-6 text-center text-sm text-muted-foreground">

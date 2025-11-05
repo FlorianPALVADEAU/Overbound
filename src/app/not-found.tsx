@@ -18,7 +18,7 @@ export default function NotFound() {
         <div className='absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-white/80 to-transparent' />
       </div>
 
-      <section className='relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 lg:px-8 lg:py-24'>
+      <section className='relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 lg:px-8 lg:py-24'>
         <div className='flex flex-col items-center gap-4 text-center sm:gap-6'>
           <span className='inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[#26AA26] shadow-sm sm:text-sm'>
             404

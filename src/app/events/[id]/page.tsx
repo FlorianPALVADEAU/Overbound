@@ -159,7 +159,7 @@ export default function EventDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/80 to-background" />
         </div>
 
-        <div className="container relative z-10 mx-auto max-w-6xl px-6">
+        <div className="container relative z-10 mx-auto max-w-7xl px-6">
           <div className="flex flex-col gap-4 pb-8 lg:flex-row lg:items-center lg:justify-between">
             <Link href="/events">
               <Button
@@ -298,7 +298,7 @@ export default function EventDetailPage() {
       </section>
 
       <section className="bg-background py-16">
-        <div className="container mx-auto max-w-6xl px-6">
+        <div className="container mx-auto max-w-7xl px-6">
           <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr]">
             <div className="space-y-10">
               <div className="rounded-3xl border border-border bg-card/80 p-8 shadow-lg shadow-primary/10">
@@ -438,7 +438,7 @@ export default function EventDetailPage() {
       </section>
 
       <section id="tickets" className="bg-background py-16">
-        <div className="container mx-auto max-w-6xl px-6">
+        <div className="container mx-auto max-w-7xl px-6">
           <div className="mb-8 space-y-2">
             <h2 className="text-3xl font-bold text-foreground">Réserver mon inscription</h2>
             <p className="text-sm text-muted-foreground">

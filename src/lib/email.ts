@@ -16,13 +16,16 @@ import EventUpdateEmail from '@/emails/EventUpdateEmail'
 import AdminDigestEmail from '@/emails/AdminDigestEmail'
 import VolunteerRecruitmentEmail from '@/emails/VolunteerRecruitmentEmail'
 import VolunteerAssignmentEmail from '@/emails/VolunteerAssignmentEmail'
+import VolunteerApplicationEmail from '@/emails/VolunteerApplicationEmail'
+import VolunteerApplicationConfirmationEmail from '@/emails/VolunteerApplicationConfirmationEmail'
 import SupportContactEmail from '@/emails/SupportContactEmail'
 import SupportContactConfirmationEmail from '@/emails/SupportContactConfirmationEmail'
 import { renderEmail } from '@/lib/email/render'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
-const FROM = 'OverBound <no-reply@overbound-race.com>'
+const UNFORMAL_FROM = 'Florian d\'Overbound <no-reply@overbound-race.com>'
+const FORMAL_FROM = 'Overbound <no-reply@overbound-race.com>'
 
 export async function sendTicketEmail(params: {
   to: string
@@ -37,7 +40,7 @@ export async function sendTicketEmail(params: {
   const html = await renderEmail(TicketEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `Ton billet — ${params.eventTitle}`,
     html,
@@ -54,9 +57,9 @@ export async function sendOnboardingEmail(params: {
   const html = await renderEmail(OnboardingEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
-    subject: 'Bienvenue sur OverBound',
+    subject: 'Bienvenue !',
     html,
   })
 }
@@ -70,9 +73,9 @@ export async function sendProfileCompletionReminderEmail(params: {
   const html = await renderEmail(ProfileCompletionReminderEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
-    subject: 'Complète ton profil OverBound',
+    subject: 'Complète ton profil',
     html,
   })
 }
@@ -95,7 +98,7 @@ export async function sendEventPrepEmail(params: {
   const html = await renderEmail(EventPrepEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `${weeksLabel}`,
     html,
@@ -113,7 +116,7 @@ export async function sendPostEventThankYouEmail(params: {
   const html = await renderEmail(PostEventThankYouEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: FORMAL_FROM,
     to: params.to,
     subject: `Merci pour ${params.eventTitle}`,
     html,
@@ -130,7 +133,7 @@ export async function sendDocumentRequiredEmail(params: {
   const html = await renderEmail(DocumentRequiredEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: FORMAL_FROM,
     to: params.to,
     subject: `Document requis pour ${params.eventTitle}`,
     html,
@@ -145,7 +148,7 @@ export async function sendDocumentApprovedEmail(params: {
   const html = await renderEmail(DocumentApprovedEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `Document validé — ${params.eventTitle}`,
     html,
@@ -162,7 +165,7 @@ export async function sendDocumentRejectedEmail(params: {
   const html = await renderEmail(DocumentRejectedEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: FORMAL_FROM,
     to: params.to,
     subject: `Action requise — document à mettre à jour pour ${params.eventTitle}`,
     html,
@@ -194,7 +197,7 @@ export async function sendSupportContactEmail(params: {
   )
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     replyTo: params.requesterEmail,
     subject: `Support Overbound — ${params.reason || 'Nouvelle demande'}`,
@@ -228,7 +231,7 @@ export async function sendSupportContactConfirmationEmail(params: {
   )
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: 'Nous avons bien reçu ta demande',
     html,
@@ -247,7 +250,7 @@ export async function sendNewEventAnnouncementEmail(params: {
   const html = await renderEmail(NewEventAnnouncementEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `Nouveau : ${params.eventTitle}`,
     html,
@@ -267,7 +270,7 @@ export async function sendPriceChangeReminderEmail(params: {
   const html = await renderEmail(PriceChangeReminderEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `Dernier rappel — tarif ${params.eventTitle}`,
     html,
@@ -287,7 +290,7 @@ export async function sendPromoCampaignEmail(params: {
   const html = await renderEmail(PromoCampaignEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: params.title,
     html,
@@ -305,7 +308,7 @@ export async function sendInactiveUserEmail(params: {
   const html = await renderEmail(InactiveUserEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: 'On repart ensemble ? 🏁',
     html,
@@ -323,7 +326,7 @@ export async function sendAbandonedCheckoutEmail(params: {
   const html = await renderEmail(AbandonedCheckoutEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `Ton inscription à ${params.eventTitle} est presque terminée`,
     html,
@@ -344,7 +347,7 @@ export async function sendEventUpdateEmail(params: {
   const html = await renderEmail(EventUpdateEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: FORMAL_FROM,
     to: params.to,
     subject: `Mise à jour — ${params.eventTitle}`,
     html,
@@ -370,7 +373,7 @@ export async function sendAdminDigestEmail(params: {
   const html = await renderEmail(AdminDigestEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: FORMAL_FROM,
     to: params.to,
     subject: `Digest admin — ${params.periodLabel}`,
     html,
@@ -399,9 +402,9 @@ export async function sendVolunteerRecruitmentEmail(params: {
   const html = await renderEmail(VolunteerRecruitmentEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
-    subject: `Besoin de toi pour ${params.headlineEvent.title}`,
+    subject: `Nous avons besoin de toi pour ${params.headlineEvent.title}`,
     html,
   })
 }
@@ -422,9 +425,59 @@ export async function sendVolunteerAssignmentEmail(params: {
   const html = await renderEmail(VolunteerAssignmentEmail(params))
 
   return resend.emails.send({
-    from: FROM,
+    from: UNFORMAL_FROM,
     to: params.to,
     subject: `Ta mission bénévole — ${params.eventTitle}`,
+    html,
+  })
+}
+
+export async function sendVolunteerApplicationEmail(params: {
+  to: string
+  applicantName: string
+  applicantEmail: string
+  phone?: string | null
+  preferredMission: string
+  availability: string
+  experience?: string | null
+  motivations?: string | null
+  submittedAt: string
+  event?: {
+    id: string | null
+    title: string | null
+    date: string | null
+    location: string | null
+  } | null
+}) {
+  const html = await renderEmail(VolunteerApplicationEmail(params))
+
+  return resend.emails.send({
+    from: FORMAL_FROM,
+    to: params.to,
+    subject: `Nouvelle candidature bénévole — ${params.applicantName}`,
+    html,
+    replyTo: params.applicantEmail,
+  })
+}
+
+export async function sendVolunteerApplicationConfirmationEmail(params: {
+  to: string
+  applicantName: string
+  preferredMission: string
+  submittedAt: string
+  event?: {
+    id: string | null
+    title: string | null
+    date: string | null
+    location: string | null
+  } | null
+}) {
+  const html = await renderEmail(VolunteerApplicationConfirmationEmail(params))
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    subject: 'On a bien reçu ta candidature bénévole',
     html,
   })
 }

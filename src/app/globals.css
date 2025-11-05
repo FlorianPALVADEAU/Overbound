@@ -99,3 +99,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes volunteerPulseWave {
+  0% {
+    transform: translate(var(--tw-translate-x, -50%), var(--tw-translate-y, -50%)) scale(0.6);
+    opacity: 0.45;
+  }
+  60% {
+    transform: translate(var(--tw-translate-x, -50%), var(--tw-translate-y, -50%)) scale(1.2);
+    opacity: 0.12;
+  }
+  100% {
+    transform: translate(var(--tw-translate-x, -50%), var(--tw-translate-y, -50%)) scale(1.7);
+    opacity: 0;
+  }
+}
+
+.volunteer-wave {
+  animation: volunteerPulseWave 6s ease-out infinite;
+  will-change: transform, opacity;
+}
+
+.volunteer-wave--delay-1 {
+  animation-delay: 1.8s;
+}
+
+.volunteer-wave--delay-2 {
+  animation-delay: 3.6s;
+}
+
+.volunteer-wave-container {
+  position: relative;
+  overflow: visible;
+}

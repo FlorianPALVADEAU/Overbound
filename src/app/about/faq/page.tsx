@@ -1,7 +1,7 @@
 import { client } from '@/sanity/lib/client'
 import { FAQsQuery } from '@/sanity/lib/queries'
 import FAQPageContent, { FAQDocument } from './FAQPageContent'
-import { faqFallback } from '@/data/faqFallback'
+import { faqFallback } from '@/datas/faqFallback'
 
 export default async function FAQPage() {
   let faqs: FAQDocument[] | null = null
