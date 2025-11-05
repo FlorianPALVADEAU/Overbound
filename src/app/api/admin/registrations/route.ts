@@ -148,9 +148,14 @@ export async function GET(request: Request) {
         console.error('[admin registrations] document fetch error', documentError)
       } else {
         for (const row of documentRows ?? []) {
-          const requiresDocument = Boolean((row as any)?.ticket?.requires_document)
+          const ticketRecord = Array.isArray((row as any)?.ticket) ? (row as any).ticket[0] : (row as any)?.ticket
+          const eventRecord = Array.isArray((row as any)?.event) ? (row as any).event[0] : (row as any)?.event
+          const orderRecord = Array.isArray((row as any)?.order) ? (row as any).order[0] : (row as any)?.order
+
+          const requiresDocument = Boolean(ticketRecord?.requires_document)
           const approvalStatus = (row as any)?.approval_status ?? 'pending'
           const documentUrl = (row as any)?.document_url ?? null
+
           documentMetaMap.set(row.id, {
             document_url: documentUrl,
             document_filename: row.document_filename ?? null,
@@ -159,28 +164,28 @@ export async function GET(request: Request) {
             approval_status: approvalStatus,
             document_requires_attention:
               requiresDocument && (approvalStatus !== 'approved' || !documentUrl),
-            event: row.event
+            event: eventRecord
               ? {
-                  id: row.event.id,
-                  title: row.event.title ?? null,
-                  date: row.event.date ?? null,
-                  location: row.event.location ?? null,
+                  id: eventRecord.id ?? null,
+                  title: eventRecord.title ?? null,
+                  date: eventRecord.date ?? null,
+                  location: eventRecord.location ?? null,
                 }
               : null,
-            ticket: row.ticket
+            ticket: ticketRecord
               ? {
-                  id: row.ticket.id,
-                  name: row.ticket.name ?? null,
-                  distance_km: row.ticket.distance_km ?? null,
+                  id: ticketRecord.id ?? null,
+                  name: ticketRecord.name ?? null,
+                  distance_km: ticketRecord.distance_km ?? null,
                   requires_document: requiresDocument,
                 }
               : null,
-            order: row.order
+            order: orderRecord
               ? {
-                  id: row.order.id,
-                  amount_total: row.order.amount_total ?? null,
-                  currency: row.order.currency ?? null,
-                  status: row.order.status ?? null,
+                  id: orderRecord.id ?? null,
+                  amount_total: orderRecord.amount_total ?? null,
+                  currency: orderRecord.currency ?? null,
+                  status: orderRecord.status ?? null,
                 }
               : null,
           })
