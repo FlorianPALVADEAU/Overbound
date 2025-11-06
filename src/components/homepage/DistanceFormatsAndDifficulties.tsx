@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Mountain, Sparkles, Star, Waves, ArrowRight } from "lucide-react";
+import NeedHelpChoosingYourFormat from "./NeedHelpChoosingYourFormat";
 const DISTANCES = [
   {
     name: 'Le rite du Guerrier',
@@ -48,7 +49,7 @@ const steps = [
 	},
 	{
 		title: "Étape 2",
-		text: "🟢 Standard : Obstacles classiques, pas de contraintes.\n🟡 Guerrier : Obstacles plus exigeants, pas de contraintes.\n🔴 Légende : Obstacles plus exigeants, chevilles & mains lestées.",
+		text: "Choisis ton format :\n🟢 Standard : Obstacles classiques, pas de contraintes.\n🟡 Guerrier : Obstacles plus exigeants, pas de contraintes.\n🔴 Légende : Obstacles plus exigeants, chevilles & mains lestées.",
 		image: "https://images.unsplash.com/photo-1602389569471-5df5bde61968?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
 	},
 	{
@@ -58,7 +59,7 @@ const steps = [
 	},
 	{
 		title: "Étape 4",
-		text: "Je reçois un mail de confirmation, mon guide d'entraînement et mon kit athlète pour le jour J.",
+		text: "Reçois un mail de confirmation, ton guide d'entraînement et ton kit athlète pour le jour J.",
 		image: "https://images.unsplash.com/photo-1558734918-dfc4fe470147?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
 	},
 ];
@@ -226,21 +227,7 @@ export default function DistanceFormatsAndDifficulties() {
           ))}
         </div>
 
-        <div className='rounded-3xl border border-border/60 bg-background/80 p-6'>
-          <div className='flex flex-col gap-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left'>
-            <div className='space-y-2'>
-              <h3 className='text-xl font-semibold text-foreground'>Besoin d’un coup de pouce pour choisir&nbsp;?</h3>
-              <p className='text-sm text-muted-foreground'>
-                Utilise notre questionnaire ou contacte la tribu pour une recommandation personnalisée.
-              </p>
-            </div>
-            <div className='flex flex-col gap-3 sm:flex-row'>
-              <Button asChild size='lg' className='h-12 rounded-full bg-primary text-white hover:bg-primary/90'>
-                <Link href='/trainings/what-race-for-me'>Choisir mon format</Link>
-              </Button> 
-            </div>
-          </div>
-        </div>
+        <NeedHelpChoosingYourFormat />
       </div>
 
 

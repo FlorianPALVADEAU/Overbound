@@ -74,13 +74,13 @@ const WhichDistanceForMe: React.FC = () => {
 
     return (
 		<section className="w-full items-center justify-center gap-24 py-20 px-4 sm:px-6 xl:px-32">
-			<div className="w-full flex flex-col gap-8 sm:gap-10 xl:gap-12 h-auto">
+			<div className="w-full flex items-center  flex-col gap-8 sm:gap-10 xl:gap-12 h-auto">
                 <Headings 
                     title="Quelle distance est faite pour moi ?" 
                     description="Si vous hésitez encore sur quel format choisir, voici un questionnaire rapide pour vous orienter vers la bonne distance."
                 />
 
-                <div className="w-full min-h-[60vh] flex flex-col items-center justify-center">
+                <div className="w-4/5 min-h-[20vh] rounded-2xl border border-primary/30 bg-primary/10 flex flex-col items-center justify-center">
                     {!formStarted ? (
                         <div className="text-center max-w-2xl mx-auto">
                             <h3 className="text-xl font-semibold mb-4">Prêt à découvrir votre défi ?</h3>
