@@ -21,6 +21,8 @@ import WhichDistanceForMe from '@/components/WhichDistanceForMe'
 import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
 import { v4 as uuid } from 'uuid'
+import EventlistDisplay from '@/components/events/EventlistDisplay'
+import NeedHelpChoosingYourFormat from '@/components/homepage/NeedHelpChoosingYourFormat'
 
 const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => (
   <div key={ticket?.id || uuid()}>
@@ -261,7 +263,7 @@ export default function EventsPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="w-full container mx-auto py-10 px-4 sm:px-10">
-        <section className="mb-12 text-center ">
+        <section className="mb-12 text-center">
           <h1 className="sr-only">Événements Overbound</h1>
           <Headings
             title="Partez à la conquête de nos prochains défis"
@@ -275,7 +277,7 @@ export default function EventsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 mb-8">
           {/* Barre de gauche - Liste ou Détail */}
           <section className="h-full order-2 lg:order-1 lg:col-span-2">
             {selectedEvent ? (
@@ -485,8 +487,9 @@ export default function EventsPage() {
           </section>
         </div>
 
+        <NeedHelpChoosingYourFormat />
       </div>
-      <WhichDistanceForMe />
+      <EventlistDisplay />
       <ObstaclesOverview />
       <FAQ />
       <AnimatedBanner images={PARTNERS_DATA.map(partner => partner.logo)} />
