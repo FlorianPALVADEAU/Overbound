@@ -28,7 +28,8 @@ export async function GET() {
       .select(`
         *,
         event:events(id, title, date, status),
-        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km)
+        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km),
+        price_tiers:ticket_price_tiers(*)
       `)
       .order('created_at', { ascending: false })
 
@@ -103,7 +104,8 @@ const handlePost = async (request: NextRequest) => {
       .select(`
         *,
         event:events(id, title, date, status),
-        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km)
+        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km),
+        price_tiers:ticket_price_tiers(*)
       `)
       .single()
 

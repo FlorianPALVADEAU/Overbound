@@ -17,8 +17,10 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
+import { PricingTimeline } from '@/components/events/PricingTimeline'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
+import { getPriceTiersForTimeline } from '@/lib/pricing'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -147,7 +149,7 @@ export default function EventDetailPage() {
   const formattedTime = new Date(event.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground max-w-7xl mx-auto">
       <section className="relative isolate overflow-hidden py-16">
         <div className="absolute inset-0">
           {event.image_url ? (
@@ -159,7 +161,7 @@ export default function EventDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/80 to-background" />
         </div>
 
-        <div className="container relative z-10 mx-auto max-w-7xl px-6">
+        <div className="container relative z-10">
           <div className="flex flex-col gap-4 pb-8 lg:flex-row lg:items-center lg:justify-between">
             <Link href="/events">
               <Button
@@ -181,13 +183,12 @@ export default function EventDetailPage() {
             </span>
           </div>
 
-          <div className="flex flex-col gap-12 lg:flex-row">
-            <div className="flex-1 space-y-6">
-              <Badge variant={getStatusColor(event.status)} className="border border-primary/30 bg-primary/10 text-primary backdrop-blur">
-                {getStatusLabel(event.status)}
-              </Badge>
-
-              <div className="space-y-4 rounded-3xl border border-border/60 bg-background/70 p-8 backdrop-blur shadow-xl shadow-primary/10">
+          <div className="w-full flex flex-col gap-12">
+            <Badge variant={getStatusColor(event.status)} className="border border-primary/30 bg-primary/10 text-primary backdrop-blur">
+              {getStatusLabel(event.status)}
+            </Badge>
+            <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+              <div className="flex-1 space-y-4 rounded-3xl border border-border/60 bg-background/70 p-8 backdrop-blur shadow-xl shadow-primary/10">
                 <div className="space-y-2">
                   <h1 className="text-4xl font-black tracking-tight lg:text-5xl">{event.title}</h1>
                   {event.subtitle ? (
@@ -265,8 +266,7 @@ export default function EventDetailPage() {
                   </p>
                 </div>
               </div>
-
-              <div className="w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)]">
+              <div className="h-full w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] lg:w-auto">
                 <div className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground/80">À partir de</p>
                   <p className="text-4xl font-extrabold">
@@ -445,6 +445,23 @@ export default function EventDetailPage() {
               Choisissez le format qui correspond à votre niveau : chaque billet est limité, ne tardez pas.
             </p>
           </div>
+
+          {/* Pricing Timeline - Show only if tickets have price tiers */}
+          {(() => {
+            const ticketWithTiers = tickets.find(
+              (ticket) => ticket.price_tiers && ticket.price_tiers.length > 0
+            )
+            return ticketWithTiers ? (
+              <div className="mb-12 rounded-2xl border-2 border-border/60 p-8 backdrop-blur bg-accent-foreground text-black shadow-lg">
+                <PricingTimeline
+                  tiers={getPriceTiersForTimeline(ticketWithTiers)}
+                  currency={ticketWithTiers.currency}
+                  eventDate={event.date}
+                />
+              </div>
+            ) : null
+          })()}
+
           <EventTicketListWithRegistration
             event={event}
             tickets={tickets}

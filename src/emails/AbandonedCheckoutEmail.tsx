@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Link, Preview, Section, Text } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface AbandonedCheckoutEmailProps {
   fullName?: string | null
@@ -17,34 +18,28 @@ export function AbandonedCheckoutEmail({
   incentive,
 }: AbandonedCheckoutEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Ton inscription à {eventTitle} t’attend</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              {fullName ? `${fullName}, tout est prêt pour ton inscription` : 'Ton inscription est presque finalisée'}
-            </Text>
-            <Text style={styles.paragraph}>
-              Tu étais sur le point de rejoindre <strong>{eventTitle}</strong>
-              {ticketName ? ` — format ${ticketName}` : ''}. Il ne te reste plus qu’une étape.
-            </Text>
-            {incentive ? (
-              <Text style={styles.highlight}>{incentive}</Text>
-            ) : null}
-            <Text style={styles.paragraph}>
-              <Link href={resumeUrl} style={styles.button}>
-                Finaliser mon inscription
-              </Link>
-            </Text>
-            <Text style={styles.secondary}>
-              Besoin d’aide ? Réponds simplement à cet email, on est là pour toi.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout preview={`Ton inscription à ${eventTitle} t’attend`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>
+          {fullName ? `${fullName}, tout est prêt pour ton inscription` : 'Ton inscription est presque finalisée'}
+        </Text>
+        <Text style={styles.paragraph}>
+          Tu étais sur le point de rejoindre <strong>{eventTitle}</strong>
+          {ticketName ? ` — format ${ticketName}` : ''}. Il ne te reste plus qu’une étape.
+        </Text>
+        {incentive ? (
+          <Text style={styles.highlight}>{incentive}</Text>
+        ) : null}
+        <Text style={styles.paragraph}>
+          <Link href={resumeUrl} style={styles.button}>
+            Finaliser mon inscription
+          </Link>
+        </Text>
+        <Text style={styles.secondary}>
+          Besoin d’aide ? Réponds simplement à cet email, on est là pour toi.
+        </Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

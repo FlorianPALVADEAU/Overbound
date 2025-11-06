@@ -25,6 +25,12 @@ type TicketRow = {
   name: string
   base_price_cents: number | null
   currency: string | null
+  price_tiers?: Array<{
+    id: string
+    price_cents: number
+    available_from: string | null
+    available_until: string | null
+  }> | null
   event: {
     id: string
     title: string
@@ -54,6 +60,7 @@ export const fetchTicketsForSelections = async (supabase: SupabaseSessionClient,
     .from('tickets')
     .select(
       `*,
+      price_tiers:ticket_price_tiers(id, price_cents, available_from, available_until),
       event:events (
         id,
         title,
@@ -93,6 +100,35 @@ export const fetchPromo = async (supabase: SupabaseSessionClient, promoCode: str
     )
     .ilike('code', promoCode.trim().toUpperCase())
     .maybeSingle()
+
+/**
+ * Get the current price for a ticket based on price tiers or fallback to base_price_cents
+ */
+export const getCurrentTicketPriceFromRow = (ticket: TicketRow): number => {
+  // If ticket has price tiers, find the active one
+  if (ticket.price_tiers && ticket.price_tiers.length > 0) {
+    const now = new Date()
+    const currentTime = now.getTime()
+
+    // Find the tier that is currently active
+    const activeTier = ticket.price_tiers.find((tier) => {
+      const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+      const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+
+      return currentTime >= startTime && currentTime < endTime
+    })
+
+    if (activeTier) {
+      return activeTier.price_cents
+    }
+
+    // If no active tier found, use the first one as fallback
+    return ticket.price_tiers[0].price_cents
+  }
+
+  // Fallback to base_price_cents if no tiers exist
+  return ticket.base_price_cents ?? 0
+}
 
 export const getTicketSubtotal = (
   ticketSelections: Array<{ ticketId: string; quantity: number }>,

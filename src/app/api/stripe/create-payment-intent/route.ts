@@ -10,6 +10,7 @@ import {
   calcPromo,
   ensureAvailability,
   respondJson,
+  getCurrentTicketPriceFromRow,
 } from './utils'
 
 export const runtime = 'nodejs'
@@ -71,10 +72,14 @@ export async function POST(request: NextRequest) {
     const ticketCurrencyMap = new Map<string, string>()
 
     for (const ticket of tickets) {
-      if (ticket.base_price_cents == null) {
+      // Get current price from tiers or fallback to base_price_cents
+      const currentPrice = getCurrentTicketPriceFromRow(ticket)
+
+      if (currentPrice == null || currentPrice === 0) {
         return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
       }
-      ticketPriceMap.set(ticket.id, ticket.base_price_cents)
+
+      ticketPriceMap.set(ticket.id, currentPrice)
       ticketCurrencyMap.set(ticket.id, (ticket.currency || 'eur').toLowerCase())
     }
 

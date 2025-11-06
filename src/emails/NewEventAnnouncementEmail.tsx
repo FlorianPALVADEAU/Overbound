@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface NewEventAnnouncementEmailProps {
   fullName?: string | null
@@ -10,46 +11,18 @@ interface NewEventAnnouncementEmailProps {
   highlight?: string | null
 }
 
-export function NewEventAnnouncementEmail({
-  fullName,
-  eventTitle,
-  eventDate,
-  eventLocation,
-  eventUrl,
-  highlight,
-}: NewEventAnnouncementEmailProps) {
+export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eventLocation, eventUrl, highlight }: NewEventAnnouncementEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Nouvel événement OverBound — {eventTitle}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              {fullName ? `${fullName},` : 'Salut,'}
-            </Text>
-            <Text style={styles.paragraph}>
-              On vient d’ouvrir les inscriptions pour <strong>{eventTitle}</strong>.
-            </Text>
-            {highlight ? (
-              <Text style={styles.highlight}>{highlight}</Text>
-            ) : null}
-            <Text style={styles.paragraph}>
-              <strong>Date :</strong> {eventDate}<br />
-              <strong>Lieu :</strong> {eventLocation}
-            </Text>
-            <Text style={styles.paragraph}>
-              <Link href={eventUrl} style={styles.button}>
-                Je découvre l’événement
-              </Link>
-            </Text>
-            <Text style={styles.secondary}>
-              Les places partent vite : n’attends pas pour choisir ton format préféré.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout preview={`Nouvel événement OverBound — ${eventTitle}`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>{fullName ? `${fullName},` : 'Salut,'}</Text>
+        <Text style={styles.paragraph}>On vient d’ouvrir les inscriptions pour <strong>{eventTitle}</strong>.</Text>
+        {highlight ? <Text style={styles.highlight}>{highlight}</Text> : null}
+        <Text style={styles.paragraph}><strong>Date :</strong> {eventDate}<br /><strong>Lieu :</strong> {eventLocation}</Text>
+        <Text style={styles.paragraph}><Link href={eventUrl} style={styles.button}>Je découvre l’événement</Link></Text>
+        <Text style={styles.secondary}>Les places partent vite : n’attends pas pour choisir ton format préféré.</Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

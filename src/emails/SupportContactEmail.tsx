@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Hr, Html, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Hr } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface SupportContactEmailProps {
   fullName: string
@@ -10,59 +11,30 @@ interface SupportContactEmailProps {
   hasAttachment?: boolean
 }
 
-export function SupportContactEmail({
-  fullName,
-  email,
-  reason,
-  message,
-  submittedAt,
-  hasAttachment,
-}: SupportContactEmailProps) {
+export function SupportContactEmail({ fullName, email, reason, message, submittedAt, hasAttachment }: SupportContactEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Nouvelle demande de contact Overbound</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>Nouvelle demande de contact</Text>
+    <EmailLayout preview="Nouvelle demande de contact Overbound">
+      <Section style={styles.section}>
+        <Text style={styles.heading}>Nouvelle demande de contact</Text>
 
-            <Text style={styles.paragraph}>
-              <strong>{fullName}</strong> ({email}) vient d&apos;envoyer un message via le formulaire support.
-            </Text>
+        <Text style={styles.paragraph}><strong>{fullName}</strong> ({email}) vient d&apos;envoyer un message via le formulaire support.</Text>
 
-            {reason ? (
-              <Text style={styles.paragraph}>
-                <strong>Motif :</strong> {reason}
-              </Text>
-            ) : null}
+        {reason ? <Text style={styles.paragraph}><strong>Motif :</strong> {reason}</Text> : null}
 
-            <Text style={styles.paragraph}>
-              <strong>Reçu le :</strong> {submittedAt}
-            </Text>
+        <Text style={styles.paragraph}><strong>Reçu le :</strong> {submittedAt}</Text>
 
-            <Hr style={styles.divider} />
+        <Hr style={styles.divider} />
 
-            <Text style={styles.paragraph}>
-              <strong>Message :</strong>
-            </Text>
-            <Text style={styles.message}>{message}</Text>
+        <Text style={styles.paragraph}><strong>Message :</strong></Text>
+        <Text style={styles.message}>{message}</Text>
 
-            <Hr style={styles.divider} />
+        <Hr style={styles.divider} />
 
-            {hasAttachment ? (
-              <Text style={styles.paragraph}>
-                <strong>Dossier joint :</strong> un fichier est attaché à cet e-mail.
-              </Text>
-            ) : null}
+        {hasAttachment ? <Text style={styles.paragraph}><strong>Dossier joint :</strong> un fichier est attaché à cet e-mail.</Text> : null}
 
-            <Text style={styles.secondary}>
-              Pense à répondre directement à {email} ou via l&apos;espace support pour garder une trace de l&apos;échange.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+        <Text style={styles.secondary}>Pense à répondre directement à {email} ou via l&apos;espace support pour garder une trace de l&apos;échange.</Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

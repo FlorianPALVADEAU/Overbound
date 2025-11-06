@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { EventWithTickets } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
+import { getStartingPrice } from '@/lib/pricing'
 
 const statusVariant = (status: string) => {
   switch (status) {
@@ -66,15 +67,25 @@ const formatCurrency = (value: number, currency?: string | null) =>
 
 const findStartingPrice = (tickets: Ticket[] | null | undefined) => {
   if (!tickets || tickets.length === 0) return null
-  const withPrice = tickets.filter((ticket) => typeof ticket.base_price_cents === 'number')
-  if (withPrice.length === 0) return null
-  const cheapest = withPrice.reduce((lowest, ticket) => {
-    if (ticket.base_price_cents == null) return lowest
-    return ticket.base_price_cents < lowest ? ticket.base_price_cents : lowest
-  }, withPrice[0].base_price_cents ?? 0)
-  if (cheapest == null) return null
-  const currency = withPrice.find((ticket) => ticket.base_price_cents === cheapest)?.currency ?? 'EUR'
-  return { amount: cheapest, currency }
+
+  // Get starting prices from all tickets (considering price tiers)
+  const prices = tickets
+    .map((ticket) => {
+      const startingPrice = getStartingPrice(ticket)
+      return startingPrice != null
+        ? { amount: startingPrice, currency: ticket.currency ?? 'EUR' }
+        : null
+    })
+    .filter((price): price is { amount: number; currency: string } => price !== null)
+
+  if (prices.length === 0) return null
+
+  // Find the lowest price
+  const cheapest = prices.reduce((lowest, current) => {
+    return current.amount < lowest.amount ? current : lowest
+  }, prices[0])
+
+  return cheapest
 }
 
 const EventSkeleton = () => (
@@ -137,7 +148,7 @@ const EventlistDisplay = () => {
 
   return (
     <section className='relative w-full bg-gradient-to-b from-background via-muted/10 to-background py-16 sm:py-20'>
-      <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:px-0'>
+      <div className='mx-auto flex w-full max-w-full flex-col gap-10 sm:px-10'>
         <header className='space-y-4 text-center sm:text-left'>
           <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
             Calendrier Overbound
@@ -164,7 +175,7 @@ const EventlistDisplay = () => {
         ) : upcomingEvents.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className='grid gap-6 sm:grid-cols-2'>
+          <div className='w-full grid gap-6 sm:grid-cols-2'>
             {upcomingEvents.map((event: EventWithTickets) => {
               const startingPrice = findStartingPrice(event.tickets)
               const ticketCount = event.tickets?.length ?? 0

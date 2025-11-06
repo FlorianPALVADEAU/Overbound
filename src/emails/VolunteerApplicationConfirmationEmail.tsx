@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface VolunteerEventSnapshot {
   id: string | null
@@ -15,12 +16,7 @@ export interface VolunteerApplicationConfirmationEmailProps {
   event?: VolunteerEventSnapshot | null
 }
 
-export function VolunteerApplicationConfirmationEmail({
-  applicantName,
-  preferredMission,
-  submittedAt,
-  event = null,
-}: VolunteerApplicationConfirmationEmailProps) {
+export function VolunteerApplicationConfirmationEmail({ applicantName, preferredMission, submittedAt, event = null }: VolunteerApplicationConfirmationEmailProps) {
   const formattedEventDate =
     event?.date && !Number.isNaN(Date.parse(event.date))
       ? new Date(event.date).toLocaleDateString('fr-FR', {
@@ -32,68 +28,36 @@ export function VolunteerApplicationConfirmationEmail({
       : null
 
   return (
-    <Html>
-      <Head />
-      <Preview>On a bien reçu ta candidature bénévole</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              {applicantName ? `Merci ${applicantName} !` : 'Merci pour ta candidature !'}
-            </Text>
-            <Text style={styles.paragraph}>
-              On a bien reçu ta candidature pour rejoindre la tribu bénévole Overbound. Notre équipe revient vers toi
-              sous 48&nbsp;heures avec les prochaines étapes.
-            </Text>
-          </Section>
+    <EmailLayout preview="On a bien reçu ta candidature bénévole">
+      <Section style={styles.section}>
+        <Text style={styles.heading}>{applicantName ? `Merci ${applicantName} !` : 'Merci pour ta candidature !'}</Text>
+        <Text style={styles.paragraph}>On a bien reçu ta candidature pour rejoindre la tribu bénévole Overbound. Notre équipe revient vers toi sous 48&nbsp;heures avec les prochaines étapes.</Text>
+      </Section>
 
-          {event ? (
-            <Section style={styles.sectionHighlight}>
-              <Text style={styles.highlightTitle}>{event.title ?? 'Événement Overbound'}</Text>
-              {formattedEventDate ? (
-                <Text style={styles.highlightMeta}>
-                  <strong>Date :</strong> {formattedEventDate}
-                </Text>
-              ) : null}
-              {event.location ? (
-                <Text style={styles.highlightMeta}>
-                  <strong>Lieu :</strong> {event.location}
-                </Text>
-              ) : null}
-            </Section>
-          ) : null}
+      {event ? (
+        <Section style={styles.sectionHighlight}>
+          <Text style={styles.highlightTitle}>{event.title ?? 'Événement Overbound'}</Text>
+          {formattedEventDate ? <Text style={styles.highlightMeta}><strong>Date :</strong> {formattedEventDate}</Text> : null}
+          {event.location ? <Text style={styles.highlightMeta}><strong>Lieu :</strong> {event.location}</Text> : null}
+        </Section>
+      ) : null}
 
-          <Section style={styles.section}>
-            <Text style={styles.subheading}>Ta mission proposée</Text>
-            <Text style={styles.paragraph}>
-              <strong>{preferredMission}</strong>
-            </Text>
-            <Text style={styles.paragraph}>
-              Nous allons vérifier les besoins exacts sur l’événement et te confirmer le créneau idéal au plus vite.
-            </Text>
-          </Section>
+      <Section style={styles.section}>
+        <Text style={styles.subheading}>Ta mission proposée</Text>
+        <Text style={styles.paragraph}><strong>{preferredMission}</strong></Text>
+        <Text style={styles.paragraph}>Nous allons vérifier les besoins exacts sur l’événement et te confirmer le créneau idéal au plus vite.</Text>
+      </Section>
 
-          <Section style={styles.section}>
-            <Text style={styles.paragraph}>
-              Tu as un empêchement ou un complément d’information à partager ? Réponds directement à cet email, on
-              t’accompagne jusqu’au jour J.
-            </Text>
-            <Text style={styles.paragraphSmall}>Candidature reçue le {submittedAt}</Text>
-          </Section>
+      <Section style={styles.section}>
+        <Text style={styles.paragraph}>Tu as un empêchement ou un complément d’information à partager ? Réponds directement à cet email, on t’accompagne jusqu’au jour J.</Text>
+        <Text style={styles.paragraphSmall}>Candidature reçue le {submittedAt}</Text>
+      </Section>
 
-          <Section style={styles.section}>
-            <Text style={styles.secondary}>
-              En attendant, découvre les coulisses de la tribu et les témoignages des bénévoles la saison dernière.
-            </Text>
-            <Text style={styles.paragraph}>
-              <Link href="https://www.instagram.com/overbound_race" style={styles.link}>
-                Voir la tribu sur Instagram
-              </Link>
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      <Section style={styles.section}>
+        <Text style={styles.secondary}>En attendant, découvre les coulisses de la tribu et les témoignages des bénévoles la saison dernière.</Text>
+        <Text style={styles.paragraph}><Link href="https://www.instagram.com/overbound_race" style={styles.link}>Voir la tribu sur Instagram</Link></Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

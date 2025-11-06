@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface PostEventThankYouEmailProps {
   participantName: string
@@ -9,51 +10,22 @@ interface PostEventThankYouEmailProps {
   nextEventUrl: string
 }
 
-export function PostEventThankYouEmail({
-  participantName,
-  eventTitle,
-  photosUrl,
-  feedbackUrl,
-  nextEventUrl,
-}: PostEventThankYouEmailProps) {
+export function PostEventThankYouEmail({ participantName, eventTitle, photosUrl, feedbackUrl, nextEventUrl }: PostEventThankYouEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Merci d’avoir participé à {eventTitle}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              Merci {participantName} !
-            </Text>
-            <Text style={styles.paragraph}>
-              Quelle course ! Merci d’avoir fait vibrer {eventTitle}. On espère que l’expérience t’a plu autant qu’à nous.
-            </Text>
-            {photosUrl ? (
-              <Text style={styles.paragraph}>
-                <Link href={photosUrl} style={styles.link}>
-                  Découvre la galerie photos officielle
-                </Link>
-              </Text>
-            ) : null}
-            <Text style={styles.paragraph}>
-              On adore avoir ton avis : il nous aide à rendre les prochaines éditions encore meilleures.
-            </Text>
-            <Text style={styles.paragraph}>
-              <Link href={feedbackUrl} style={styles.link}>
-                Donner mon feedback (2 minutes)
-              </Link>
-            </Text>
-            <Text style={styles.paragraph}>
-              Tu veux déjà planifier ton prochain défi ?{' '}
-              <Link href={nextEventUrl} style={styles.link}>
-                Explore les événements à venir
-              </Link>
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout preview={`Merci d’avoir participé à ${eventTitle}`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>Merci {participantName} !</Text>
+        <Text style={styles.paragraph}>Quelle course ! Merci d’avoir fait vibrer {eventTitle}. On espère que l’expérience t’a plu autant qu’à nous.</Text>
+        {photosUrl ? (
+          <Text style={styles.paragraph}>
+            <Link href={photosUrl} style={styles.link}>Découvre la galerie photos officielle</Link>
+          </Text>
+        ) : null}
+        <Text style={styles.paragraph}>On adore avoir ton avis : il nous aide à rendre les prochaines éditions encore meilleures.</Text>
+        <Text style={styles.paragraph}><Link href={feedbackUrl} style={styles.link}>Donner mon feedback (2 minutes)</Link></Text>
+        <Text style={styles.paragraph}>Tu veux déjà planifier ton prochain défi ? <Link href={nextEventUrl} style={styles.link}>Explore les événements à venir</Link></Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

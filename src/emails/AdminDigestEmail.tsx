@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface AdminDigestEmailProps {
   periodLabel: string
@@ -17,63 +18,36 @@ interface AdminDigestEmailProps {
   logsUrl: string
 }
 
-export function AdminDigestEmail({
-  periodLabel,
-  totalActions,
-  totalErrors,
-  items,
-  logsUrl,
-}: AdminDigestEmailProps) {
+export function AdminDigestEmail({ periodLabel, totalActions, totalErrors, items, logsUrl }: AdminDigestEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Digest administrateur — {periodLabel}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>Digest administrateur</Text>
-            <Text style={styles.paragraph}>
-              Période&nbsp;: <strong>{periodLabel}</strong>
-            </Text>
-            <Text style={styles.paragraph}>
-              Total actions&nbsp;: <strong>{totalActions}</strong><br />
-              Actions en erreur&nbsp;: <strong>{totalErrors}</strong>
-            </Text>
-            <Text style={styles.paragraph}>
-              <Link href={logsUrl} style={styles.link}>
-                Consulter le journal complet
-              </Link>
-            </Text>
-            <div style={styles.list}>
-              {items.length === 0 ? (
-                <Text style={styles.paragraph}>Aucune action enregistrée dans cette période.</Text>
-              ) : (
-                items.map((item, index) => (
-                  <div key={`${item.timestamp}-${index}`} style={styles.item}>
-                    <Text style={styles.itemHeader}>
-                      {new Date(item.timestamp).toLocaleString('fr-FR', {
-                        dateStyle: 'short',
-                        timeStyle: 'medium',
-                      })}
-                    </Text>
-                    <Text style={styles.itemSummary}>{item.summary}</Text>
-                    <Text style={styles.itemMeta}>
-                      <span>Statut&nbsp;: {item.statusCode ?? '—'}</span>
-                      {item.userEmail ? <span>Utilisateur&nbsp;: {item.userEmail}</span> : null}
-                      {item.actionType ? <span>Action&nbsp;: {item.actionType}</span> : null}
-                      <span>Route&nbsp;: {item.path}</span>
-                      {typeof item.durationMs === 'number' ? (
-                        <span>Durée&nbsp;: {Math.round(item.durationMs)} ms</span>
-                      ) : null}
-                    </Text>
-                  </div>
-                ))
-              )}
-            </div>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout preview={`Digest administrateur — ${periodLabel}`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>Digest administrateur</Text>
+        <Text style={styles.paragraph}>Période&nbsp;: <strong>{periodLabel}</strong></Text>
+        <Text style={styles.paragraph}>Total actions&nbsp;: <strong>{totalActions}</strong><br />Actions en erreur&nbsp;: <strong>{totalErrors}</strong></Text>
+        <Text style={styles.paragraph}><Link href={logsUrl} style={styles.link}>Consulter le journal complet</Link></Text>
+
+        <div style={styles.list}>
+          {items.length === 0 ? (
+            <Text style={styles.paragraph}>Aucune action enregistrée dans cette période.</Text>
+          ) : (
+            items.map((item, index) => (
+              <div key={`${item.timestamp}-${index}`} style={styles.item}>
+                <Text style={styles.itemHeader}>{new Date(item.timestamp).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' })}</Text>
+                <Text style={styles.itemSummary}>{item.summary}</Text>
+                <Text style={styles.itemMeta}>
+                  <span>Statut&nbsp;: {item.statusCode ?? '—'}</span>
+                  {item.userEmail ? <span>Utilisateur&nbsp;: {item.userEmail}</span> : null}
+                  {item.actionType ? <span>Action&nbsp;: {item.actionType}</span> : null}
+                  <span>Route&nbsp;: {item.path}</span>
+                  {typeof item.durationMs === 'number' ? <span>Durée&nbsp;: {Math.round(item.durationMs)} ms</span> : null}
+                </Text>
+              </div>
+            ))
+          )}
+        </div>
+      </Section>
+    </EmailLayout>
   )
 }
 
