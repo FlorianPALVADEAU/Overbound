@@ -20,6 +20,7 @@ import { Clock } from 'lucide-react'
 import type { Event } from '@/types/Event'
 import type { Race } from '@/types/Race'
 import type { Ticket } from '@/types/Ticket'
+import { PriceTierManager, type PriceTierFormValue } from './PriceTierManager'
 
 export interface TicketFormValues {
   event_id: string
@@ -31,6 +32,8 @@ export interface TicketFormValues {
   max_participants: string
   requires_document: boolean
   document_types: string[]
+  price_tiers: PriceTierFormValue[]
+  use_price_tiers: boolean
 }
 
 interface TicketFormDialogProps {
@@ -62,6 +65,15 @@ const DEFAULT_VALUES: TicketFormValues = {
   max_participants: '0',
   requires_document: false,
   document_types: [],
+  price_tiers: [
+    {
+      price_cents: '2000', // 20€ default
+      available_from: '',
+      available_until: '',
+      display_order: 0,
+    },
+  ],
+  use_price_tiers: false,
 }
 
 export function TicketFormDialog({
@@ -90,8 +102,8 @@ export function TicketFormDialog({
     [isCreateMode]
   )
 
-  const handleChange = (field: keyof TicketFormValues, value: string | string[] | boolean) => {
-    setValues((prev) => ({ ...prev, [field]: value }))
+  const handleChange = (field: keyof TicketFormValues, value: TicketFormValues[keyof TicketFormValues]) => {
+    setValues((prev) => ({ ...prev, [field]: value as any }))
   }
 
   const toggleDocumentType = (docType: string) => {
@@ -109,7 +121,13 @@ export function TicketFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="!w-screen max-h-[90vh] overflow-y-auto"
+        style={{ 
+          maxWidth: '1000px'
+
+         }}
+      >
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
@@ -168,17 +186,7 @@ export function TicketFormDialog({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="ticket-price">Prix (centimes) *</Label>
-              <Input
-                id="ticket-price"
-                type="number"
-                min="0"
-                value={values.price}
-                onChange={(event) => handleChange('price', event.target.value)}
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="ticket-currency">Devise *</Label>
               <Select value={values.currency ?? 'eur'} onValueChange={(value) => handleChange('currency', value)}>
@@ -203,6 +211,42 @@ export function TicketFormDialog({
               />
             </div>
           </div>
+
+          {/* Price Tiers Toggle */}
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="font-medium">Tarification progressive</h4>
+                <p className="text-sm text-muted-foreground">
+                  Activer pour configurer plusieurs paliers de prix dans le temps.
+                </p>
+              </div>
+              <Switch
+                checked={values.use_price_tiers}
+                onCheckedChange={(checked) => handleChange('use_price_tiers', Boolean(checked))}
+              />
+            </div>
+          </div>
+
+          {/* Price configuration based on toggle */}
+          {values.use_price_tiers ? (
+            <PriceTierManager
+              tiers={values.price_tiers}
+              currency={values.currency ?? 'eur'}
+              onChange={(tiers) => handleChange('price_tiers', tiers)}
+            />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="ticket-price">Prix (centimes) *</Label>
+              <Input
+                id="ticket-price"
+                type="number"
+                min="0"
+                value={values.price}
+                onChange={(event) => handleChange('price', event.target.value)}
+              />
+            </div>
+          )}
 
           <div className="space-y-3 rounded-lg border p-4">
             <div className="flex items-start justify-between">

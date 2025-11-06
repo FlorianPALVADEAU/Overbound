@@ -8,6 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import Link from 'next/link'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
@@ -17,7 +23,9 @@ import {
   Star,
   Target,
   Zap,
+  Clock,
 } from 'lucide-react'
+import { getCurrentTicketPrice, isPriceChangeImminent } from '@/lib/pricing'
 
 interface EventTicket extends Ticket {
   race?: Ticket['race'] & {
@@ -50,189 +58,179 @@ interface Props {
   user: EventUser | null
 }
 
-const difficultyBadge = (difficulty: number) => {
-  if (difficulty <= 3) return 'bg-green-100 text-green-800'
-  if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
-}
-
-const typeBadge = (type: string) => {
-  switch (type) {
-    case 'trail':
-      return 'bg-blue-100 text-blue-800'
-    case 'obstacle':
-      return 'bg-orange-100 text-orange-800'
-    case 'urbain':
-      return 'bg-purple-100 text-purple-800'
-    case 'nature':
-      return 'bg-green-100 text-green-800'
-    case 'extreme':
-      return 'bg-red-100 text-red-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
-
-const publicBadge = (target: string) => {
-  switch (target) {
-    case 'débutant':
-      return 'bg-emerald-100 text-emerald-800'
-    case 'intermédiaire':
-      return 'bg-amber-100 text-amber-800'
-    case 'expert':
-      return 'bg-red-100 text-red-800'
-    case 'famille':
-      return 'bg-pink-100 text-pink-800'
-    case 'pro':
-      return 'bg-indigo-100 text-indigo-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
-
 export default function EventTicketListWithRegistration({
   event,
   tickets,
   availableSpots,
   user,
 }: Props) {
+  // Group tickets by race name (or ticket name if no race)
+  const groupedTickets = tickets.reduce((groups, ticket) => {
+    const groupKey = ticket.race?.name || ticket.name
+    if (!groups[groupKey]) {
+      groups[groupKey] = []
+    }
+    groups[groupKey].push(ticket)
+    return groups
+  }, {} as Record<string, EventTicket[]>)
+
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Formats disponibles</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           {tickets.length === 0 ? (
             <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted p-4 text-sm text-muted-foreground">
               <AlertTriangle className="h-4 w-4" />
               Aucun billet n'est disponible pour le moment.
             </div>
           ) : (
-            tickets.map((ticket) => (
-              <div key={ticket.id} className="border rounded-lg p-6 space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-xl font-semibold">{ticket.name}</h3>
-                      {ticket.requires_document ? (
-                        <Badge variant="secondary">Document requis</Badge>
-                      ) : null}
-                    </div>
+            <Accordion type="multiple" className="space-y-3 py-6">
+              {Object.entries(groupedTickets).map(([raceName, raceTickets]) => {
+                // Use the first ticket's race data for the header
+                const referenceTicket = raceTickets[0]
 
-                    {ticket.description ? (
-                      <p className="text-muted-foreground">{ticket.description}</p>
-                    ) : null}
+                // Find the lowest price across all variants
+                const lowestPrice = Math.min(
+                  ...raceTickets.map(ticket => getCurrentTicketPrice(ticket) ?? Infinity)
+                )
 
-                    {ticket.race ? (
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {ticket.race.type ? (
-                            <Badge variant="outline" className={typeBadge(ticket.race.type)}>
-                              {ticket.race.type === 'trail'
-                                ? 'Trail'
-                                : ticket.race.type === 'obstacle'
-                                  ? "Course d'obstacles"
-                                  : ticket.race.type === 'urbain'
-                                    ? 'Course urbaine'
-                                    : ticket.race.type === 'nature'
-                                      ? 'Course nature'
-                                      : ticket.race.type === 'extreme'
-                                        ? 'Course extrême'
-                                        : ticket.race.type}
-                            </Badge>
-                          ) : null}
-                          {typeof ticket.race.difficulty === 'number' ? (
-                            <Badge variant="outline" className={difficultyBadge(ticket.race.difficulty)}>
-                              <Star className="h-3 w-3 mr-1" />
-                              Difficulté {ticket.race.difficulty}/10
-                            </Badge>
-                          ) : null}
-                          {ticket.race.target_public ? (
-                            <Badge variant="outline" className={publicBadge(ticket.race.target_public)}>
-                              <Target className="h-3 w-3 mr-1" />
-                              {ticket.race.target_public}
-                            </Badge>
-                          ) : null}
-                        </div>
+                return (
+                  <AccordionItem
+                    key={raceName}
+                    value={raceName}
+                    className="border-2 rounded-xl px-6 hover:border-primary/30 transition-all"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-5">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        {/* Left: Race info */}
+                        <div className="flex flex-col items-start gap-3 text-left flex-1">
+                          {/* Race name */}
+                          <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                            {raceName}
+                          </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          {ticket.race.distance_km ? (
-                            <div className="flex items-center gap-2">
-                              <Mountain className="h-4 w-4 text-muted-foreground" />
-                              Distance : {ticket.race.distance_km} km
-                            </div>
-                          ) : null}
-                          {ticket.race.obstacles && ticket.race.obstacles.length > 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Zap className="h-4 w-4 text-muted-foreground" />
-                              {ticket.race.obstacles.length} obstacles
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {ticket.race.description ? (
-                          <p className="text-sm text-muted-foreground italic">{ticket.race.description}</p>
-                        ) : null}
-
-                        {ticket.race.obstacles && ticket.race.obstacles.length > 0 ? (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Obstacles inclus :</p>
-                            <div className="flex flex-wrap gap-1">
-                              {ticket.race.obstacles
-                                .sort((a, b) => a.order_position - b.order_position)
-                                .slice(0, 5)
-                                .map((obstacleWrapper) => (
-                                  <Badge key={obstacleWrapper.obstacle.id} variant="secondary" className="text-xs">
-                                    {obstacleWrapper.obstacle.name}
-                                  </Badge>
-                                ))}
-                              {ticket.race.obstacles.length > 5 ? (
-                                <Badge variant="outline" className="text-xs">
-                                  +{ticket.race.obstacles.length - 5} autres
-                                </Badge>
-                              ) : null}
-                            </div>
+                          {/* Race info badges */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {referenceTicket.race?.distance_km && (
+                              <Badge variant="secondary" className="gap-1 font-semibold">
+                                <Mountain className="h-3.5 w-3.5" />
+                                {referenceTicket.race.distance_km} km
+                              </Badge>
+                            )}
+                            {typeof referenceTicket.race?.difficulty === 'number' && (
+                              <Badge variant="secondary" className="gap-1 font-semibold">
+                                <Star className="h-3.5 w-3.5" />
+                                Niveau {referenceTicket.race.difficulty}/10
+                              </Badge>
+                            )}
+                            {referenceTicket.race?.target_public && (
+                              <Badge variant="outline" className="font-semibold">
+                                <Target className="h-3.5 w-3.5 mr-1" />
+                                {referenceTicket.race.target_public}
+                              </Badge>
+                            )}
                           </div>
-                        ) : null}
+                        </div>
+
+                        {/* Right: Price badge */}
+                        {lowestPrice !== Infinity && (
+                          <div className="flex flex-col items-end gap-1 ml-4">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              À partir de
+                            </span>
+                            <span className="text-2xl font-bold text-primary">
+                              {(lowestPrice / 100).toLocaleString('fr-FR', {
+                                style: 'currency',
+                                currency: referenceTicket.currency?.toUpperCase() || 'EUR',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    ) : null}
-                  </div>
+                    </AccordionTrigger>
 
-                  <div className="flex w-full max-w-xs flex-col gap-4">
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        {ticket.base_price_cents != null && ticket.currency
-                          ? (ticket.base_price_cents / 100).toLocaleString('fr-FR', {
-                              style: 'currency',
-                              currency: ticket.currency.toUpperCase(),
-                            })
-                          : 'Tarif à venir'}
-                      </p>
-                      {ticket.max_participants > 0 ? (
-                        <p className="text-xs text-muted-foreground">Max {ticket.max_participants} participants</p>
-                      ) : null}
-                    </div>
+                    <AccordionContent className="pt-4 pb-4">
+                      {/* Race description */}
+                      {referenceTicket.race?.description && (
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {referenceTicket.race.description}
+                        </p>
+                      )}
 
-                    {availableSpots <= 0 ? (
-                      <Button className="w-full" disabled>
-                        Complet
-                      </Button>
-                    ) : (
-                      <Button asChild className="w-full">
-                        <Link
-                          href={user
-                            ? `/events/${event.id}/register?ticket=${ticket.id}`
-                            : `/auth/login?next=${encodeURIComponent(`/events/${event.id}/register?ticket=${ticket.id}`)}`}
-                        >
-                          S'inscrire
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
+                      {/* Ticket variants grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {raceTickets.map((ticket) => {
+                          const currentPrice = getCurrentTicketPrice(ticket)
+                          const priceImminent = isPriceChangeImminent(ticket)
+
+                          return (
+                            <div
+                              key={ticket.id}
+                              className="relative border-2 rounded-xl p-5 hover:border-primary/60 transition-all hover:shadow-lg space-y-4 bg-gradient-to-br from-background to-muted/20"
+                            >
+                              {/* Variant name */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Zap className="h-5 w-5 text-primary" />
+                                  <h4 className="font-bold text-lg">{ticket.name}</h4>
+                                </div>
+                                {ticket.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 pl-7">
+                                    {ticket.description}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Price */}
+                              <div className="space-y-1 pt-2">
+                                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                                  {currentPrice != null && ticket.currency
+                                    ? (currentPrice / 100).toLocaleString('fr-FR', {
+                                        style: 'currency',
+                                        currency: ticket.currency.toUpperCase(),
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0,
+                                      })
+                                    : 'Tarif à venir'}
+                                </div>
+                                {priceImminent && (
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded-md w-fit">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    Prix en hausse bientôt
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* CTA */}
+                              {availableSpots <= 0 ? (
+                                <Button className="w-full" size="lg" disabled>
+                                  Complet
+                                </Button>
+                              ) : (
+                                <Button asChild className="w-full shadow-md hover:shadow-lg transition-shadow" size="lg">
+                                  <Link
+                                    href={user
+                                      ? `/events/${event.id}/register?ticket=${ticket.id}`
+                                      : `/auth/login?next=${encodeURIComponent(`/events/${event.id}/register?ticket=${ticket.id}`)}`}
+                                  >
+                                    Réserver maintenant
+                                  </Link>
+                                </Button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )
+              })}
+            </Accordion>
           )}
         </CardContent>
       </Card>

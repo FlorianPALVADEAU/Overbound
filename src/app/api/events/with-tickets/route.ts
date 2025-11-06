@@ -26,7 +26,8 @@ export async function GET() {
         created_at,
         updated_at,
         description,
-        currency
+        currency,
+        price_tiers:ticket_price_tiers(*)
       )
     `)
     .order('date', { ascending: true })

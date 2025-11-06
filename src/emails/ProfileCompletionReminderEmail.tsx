@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Hr, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link, Hr } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface ProfileCompletionReminderEmailProps {
   fullName?: string | null
@@ -13,45 +14,39 @@ export function ProfileCompletionReminderEmail({
   missingFields,
 }: ProfileCompletionReminderEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Complète ton profil OverBound</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              {fullName ? `Hey ${fullName},` : 'Salut,'}
-            </Text>
+    <EmailLayout preview="Complète ton profil OverBound">
+      <Section style={styles.section}>
+        <Text style={styles.heading}>
+          {fullName ? `Hey ${fullName},` : 'Salut,'}
+        </Text>
 
-            <Text style={styles.paragraph}>
-              Il manque encore quelques informations sur ton profil. Elles nous permettent de te contacter en cas d’urgence et d’accélérer ton check-in le jour J.
-            </Text>
+        <Text style={styles.paragraph}>
+          Il manque encore quelques informations sur ton profil. Elles nous permettent de te contacter en cas d’urgence et d’accélérer ton check-in le jour J.
+        </Text>
 
-            <Text style={styles.paragraph}>
-              Champs à compléter&nbsp;:
-            </Text>
+        <Text style={styles.paragraph}>
+          Champs à compléter&nbsp;:
+        </Text>
 
-            <ul style={styles.list}>
-              {missingFields.map((field) => (
-                <li key={field}>{field}</li>
-              ))}
-            </ul>
+        <ul style={styles.list}>
+          {missingFields.map((field) => (
+            <li key={field}>{field}</li>
+          ))}
+        </ul>
 
-            <Text style={styles.paragraph}>
-              <Link href={accountUrl} style={styles.link}>
-                Mets à jour ton profil en 2 minutes
-              </Link>
-            </Text>
+        <Text style={styles.paragraph}>
+          <Link href={accountUrl} style={styles.link}>
+            Mets à jour ton profil en 2 minutes
+          </Link>
+        </Text>
 
-            <Hr style={styles.divider} />
+        <Hr style={styles.divider} />
 
-            <Text style={styles.secondary}>
-              Completer ces informations nous aide aussi à te proposer des événements adaptés et à t’envoyer des rappels utiles.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+        <Text style={styles.secondary}>
+          Completer ces informations nous aide aussi à te proposer des événements adaptés et à t’envoyer des rappels utiles.
+        </Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

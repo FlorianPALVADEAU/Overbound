@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Img, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface EventPrepEmailProps {
   participantName: string
@@ -20,72 +21,54 @@ export function EventPrepEmail({
   checklist,
   trainingUrl,
 }: EventPrepEmailProps) {
+  const preview = `${eventTitle} — Préparation à ${weeksRemaining} semaine(s)`
+
   return (
-    <Html>
-      <Head />
-      <Preview>{eventTitle} — Préparation à {String(weeksRemaining)} semaine(s)</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.sectionHeader}>
-            <Text style={styles.eyebrow}>Préparation OverBound</Text>
-            <Text style={styles.heading}>
-              {weeksRemaining === 0
-                ? 'C’est presque l’heure !'
-                : `${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''} avant ${eventTitle}`}
-            </Text>
-            <Text style={styles.meta}>
-              {eventDate} • {eventLocation}
-            </Text>
-          </Section>
+    <EmailLayout preview={preview}>
+      <Section style={styles.sectionHeader}>
+        <Text style={styles.eyebrow}>Préparation OverBound</Text>
+        <Text style={styles.heading}>
+          {weeksRemaining === 0
+            ? 'C’est presque l’heure !'
+            : `${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''} avant ${eventTitle}`}
+        </Text>
+        <Text style={styles.meta}>
+          {eventDate} • {eventLocation}
+        </Text>
+      </Section>
 
-          <Section style={styles.section}>
-            <Text style={styles.paragraph}>
-              Salut {participantName},
-            </Text>
-            <Text style={styles.paragraph}>
-              La course approche, voici ta checklist du moment pour rester prêt(e).
-            </Text>
-            <ul style={styles.list}>
-              {checklist.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <Text style={styles.paragraph}>
-              Et pour aller plus loin, on t&apos;a préparé un bloc d’entraînement spécifique.
-            </Text>
-            <Text style={styles.paragraph}>
-              <Link href={trainingUrl} style={styles.link}>
-                Découvrir le plan d’entraînement
-              </Link>
-            </Text>
-          </Section>
+      <Section style={styles.section}>
+        <Text style={styles.paragraph}>Salut {participantName},</Text>
+        <Text style={styles.paragraph}>
+          La course approche, voici ta checklist du moment pour rester prêt(e).
+        </Text>
+        <ul style={styles.list}>
+          {checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <Text style={styles.paragraph}>
+          Et pour aller plus loin, on t&apos;a préparé un bloc d’entraînement spécifique.
+        </Text>
+        <Text style={styles.paragraph}>
+          <Link href={trainingUrl} style={styles.link}>
+            Découvrir le plan d’entraînement
+          </Link>
+        </Text>
+      </Section>
 
-          <Section style={styles.section}>
-            <Text style={styles.paragraphSmall}>
-              Pour toute question, réponds simplement à cet email ou contacte l’équipe via contact@overbound-race.com.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      <Section style={styles.section}>
+        <Text style={styles.paragraphSmall}>
+          Pour toute question, réponds simplement à cet email ou contacte l’équipe via contact@overbound-race.com.
+        </Text>
+      </Section>
+    </EmailLayout>
   )
 }
 
 export default EventPrepEmail
 
 const styles: Record<string, React.CSSProperties> = {
-  body: {
-    backgroundColor: '#f9fafb',
-    fontFamily: 'Arial, sans-serif',
-    color: '#111827',
-    padding: '24px 0',
-  },
-  container: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '32px',
-    maxWidth: '600px',
-  },
   sectionHeader: {
     textAlign: 'center' as const,
     marginBottom: '24px',
@@ -107,22 +90,22 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#6b7280',
   },
   section: {
-    marginBottom: '24px',
+    lineHeight: 1.6,
   },
   paragraph: {
     fontSize: '16px',
-    marginBottom: '12px',
+    margin: '12px 0',
+  },
+  paragraphSmall: {
+    fontSize: '13px',
+    color: '#6b7280',
   },
   list: {
     marginLeft: '18px',
-    marginBottom: '16px',
+    marginBottom: '18px',
   },
   link: {
-    color: '#1d4ed8',
+    color: '#0f172a',
     textDecoration: 'underline',
-  },
-  paragraphSmall: {
-    fontSize: '14px',
-    color: '#6b7280',
   },
 }

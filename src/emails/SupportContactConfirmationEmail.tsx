@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Hr, Html, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Hr } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface SupportContactConfirmationEmailProps {
   fullName: string
@@ -8,53 +9,28 @@ interface SupportContactConfirmationEmailProps {
   submittedAt: string
 }
 
-export function SupportContactConfirmationEmail({
-  fullName,
-  reason,
-  message,
-  submittedAt,
-}: SupportContactConfirmationEmailProps) {
+export function SupportContactConfirmationEmail({ fullName, reason, message, submittedAt }: SupportContactConfirmationEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Nous avons bien reçu ta demande Overbound</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>Merci {fullName.split(' ')[0] ?? fullName},</Text>
+    <EmailLayout preview="Nous avons bien reçu ta demande Overbound">
+      <Section style={styles.section}>
+        <Text style={styles.heading}>Merci {fullName.split(' ')[0] ?? fullName},</Text>
 
-            <Text style={styles.paragraph}>
-              Nous avons bien reçu ta demande et un membre de la tribu support te répondra sous 24&nbsp;h
-              ouvrées (48&nbsp;h pendant les week-ends de course).
-            </Text>
+        <Text style={styles.paragraph}>Nous avons bien reçu ta demande et un membre de la tribu support te répondra sous 24&nbsp;h ouvrées (48&nbsp;h pendant les week-ends de course).</Text>
 
-            {reason ? (
-              <Text style={styles.paragraph}>
-                <strong>Motif indiqué :</strong> {reason}
-              </Text>
-            ) : null}
+        {reason ? <Text style={styles.paragraph}><strong>Motif indiqué :</strong> {reason}</Text> : null}
 
-            <Text style={styles.paragraph}>
-              <strong>Envoyé le :</strong> {submittedAt}
-            </Text>
+        <Text style={styles.paragraph}><strong>Envoyé le :</strong> {submittedAt}</Text>
 
-            <Hr style={styles.divider} />
+        <Hr style={styles.divider} />
 
-            <Text style={styles.paragraph}>
-              <strong>Rappel de ton message :</strong>
-            </Text>
-            <Text style={styles.message}>{message}</Text>
+        <Text style={styles.paragraph}><strong>Rappel de ton message :</strong></Text>
+        <Text style={styles.message}>{message}</Text>
 
-            <Hr style={styles.divider} />
+        <Hr style={styles.divider} />
 
-            <Text style={styles.secondary}>
-              Si tu dois ajouter des précisions ou des pièces jointes, réponds directement à cet e-mail :
-              ta réponse arrivera sur le même fil de conversation.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+        <Text style={styles.secondary}>Si tu dois ajouter des précisions ou des pièces jointes, réponds directement à cet e-mail : ta réponse arrivera sur le même fil de conversation.</Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

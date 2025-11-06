@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Html, Head, Preview, Body, Container, Section, Text, Link, Hr } from '@react-email/components'
+import { Preview, Section, Text, Link, Hr } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface OnboardingEmailProps {
   fullName?: string | null
@@ -10,53 +11,47 @@ interface OnboardingEmailProps {
 
 export function OnboardingEmail({ fullName, accountUrl, eventsUrl, blogUrl }: OnboardingEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Bienvenue sur OverBound</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              Bienvenue{fullName ? ` ${fullName}` : ''} !
-            </Text>
+    <EmailLayout preview="Bienvenue sur OverBound">
+      <Section style={styles.section}>
+        <Text style={styles.heading}>
+          Bienvenue{fullName ? ` ${fullName}` : ''} !
+        </Text>
 
-            <Text style={styles.paragraph}>
-              Merci d’avoir rejoint OverBound. On t’aide à profiter à fond de nos événements et de la communauté.
-            </Text>
+        <Text style={styles.paragraph}>
+          Merci d’avoir rejoint OverBound. On t’aide à profiter à fond de nos événements et de la communauté.
+        </Text>
 
-            <Text style={styles.paragraph}>
-              Voici les trois prochaines actions recommandées :
-            </Text>
+        <Text style={styles.paragraph}>
+          Voici les trois prochaines actions recommandées :
+        </Text>
 
-            <ul style={styles.list}>
-              <li>
-                <b>Complète ton profil</b> pour personnaliser ton expérience et faciliter le check-in.{' '}
-                <Link href={accountUrl} style={styles.link}>Accéder à mon profil</Link>
-              </li>
-              <li>
-                <b>Explore les événements</b> et réserve ta prochaine course.{' '}
-                <Link href={eventsUrl} style={styles.link}>Voir le calendrier</Link>
-              </li>
-              <li>
-                <b>Découvre nos conseils</b> d’entraînement, nutrition et récits d’athlètes.{' '}
-                <Link href={blogUrl} style={styles.link}>Lire le blog</Link>
-              </li>
-            </ul>
+        <ul style={styles.list}>
+          <li>
+            <b>Complète ton profil</b> pour personnaliser ton expérience et faciliter le check-in.{' '}
+            <Link href={accountUrl} style={styles.link}>Accéder à mon profil</Link>
+          </li>
+          <li>
+            <b>Explore les événements</b> et réserve ta prochaine course.{' '}
+            <Link href={eventsUrl} style={styles.link}>Voir le calendrier</Link>
+          </li>
+          <li>
+            <b>Découvre nos conseils</b> d’entraînement, nutrition et récits d’athlètes.{' '}
+            <Link href={blogUrl} style={styles.link}>Lire le blog</Link>
+          </li>
+        </ul>
 
-            <Hr style={styles.divider} />
+        <Hr style={styles.divider} />
 
-            <Text style={styles.secondary}>
-              Tu recevras aussi nos mails essentiels (billets, mises à jour, rappels). Ajoute
-              <br />
-              <Link href="mailto:no-reply@overbound-race.com" style={styles.link}>
-                no-reply@overbound-race.com
-              </Link>{' '}
-              à ton carnet pour ne rien manquer.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+        <Text style={styles.secondary}>
+          Tu recevras aussi nos mails essentiels (billets, mises à jour, rappels). Ajoute
+          <br />
+          <Link href="mailto:no-reply@overbound-race.com" style={styles.link}>
+            no-reply@overbound-race.com
+          </Link>{' '}
+          à ton carnet pour ne rien manquer.
+        </Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

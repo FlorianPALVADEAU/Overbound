@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface DocumentApprovedEmailProps {
   participantName?: string | null
@@ -8,28 +9,18 @@ interface DocumentApprovedEmailProps {
 
 export function DocumentApprovedEmail({ participantName, eventTitle }: DocumentApprovedEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Document validé pour {eventTitle}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              {participantName ? `Bonne nouvelle ${participantName} !` : 'Bonne nouvelle !'}
-            </Text>
-            <Text style={styles.paragraph}>
-              Ton document a été vérifié et validé pour l’événement <strong>{eventTitle}</strong>.
-            </Text>
-            <Text style={styles.paragraph}>
-              Tu es maintenant prêt·e pour le jour J. Garde un œil sur tes emails, nous t’enverrons d’autres informations utiles à l’approche de l’événement.
-            </Text>
-            <Text style={styles.secondary}>
-              Merci de ta réactivité et à très vite sur la ligne de départ !
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout preview={`Document validé pour ${eventTitle}`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>{participantName ? `Bonne nouvelle ${participantName} !` : 'Bonne nouvelle !'}</Text>
+        <Text style={styles.paragraph}>
+          Ton document a été vérifié et validé pour l’événement <strong>{eventTitle}</strong>.
+        </Text>
+        <Text style={styles.paragraph}>
+          Tu es maintenant prêt·e pour le jour J. Garde un œil sur tes emails, nous t’enverrons d’autres informations utiles à l’approche de l’événement.
+        </Text>
+        <Text style={styles.secondary}>Merci de ta réactivité et à très vite sur la ligne de départ !</Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

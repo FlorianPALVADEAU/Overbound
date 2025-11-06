@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Hr, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Hr, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface VolunteerEventSnapshot {
   id: string | null
@@ -20,119 +21,50 @@ export interface VolunteerApplicationEmailProps {
   event?: VolunteerEventSnapshot | null
 }
 
-export function VolunteerApplicationEmail({
-  applicantName,
-  applicantEmail,
-  phone,
-  preferredMission,
-  availability,
-  experience,
-  motivations,
-  submittedAt,
-  event = null,
-}: VolunteerApplicationEmailProps) {
-  const formattedEventDate =
-    event?.date && !Number.isNaN(Date.parse(event.date))
-      ? new Date(event.date).toLocaleString('fr-FR', {
-          dateStyle: 'full',
-          timeStyle: 'short',
-        })
-      : null
+export function VolunteerApplicationEmail({ applicantName, applicantEmail, phone, preferredMission, availability, experience, motivations, submittedAt, event = null }: VolunteerApplicationEmailProps) {
+  const formattedEventDate = event?.date && !Number.isNaN(Date.parse(event.date)) ? new Date(event.date).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : null
 
   return (
-    <Html>
-      <Head />
-      <Preview>Nouvelle candidature bénévole — {applicantName}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>Nouvelle candidature bénévole</Text>
-            <Text style={styles.paragraph}>
-              {applicantName} vient de déposer une candidature pour rejoindre l’équipe bénévole Overbound.
-            </Text>
-          </Section>
+    <EmailLayout preview={`Nouvelle candidature bénévole — ${applicantName}`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>Nouvelle candidature bénévole</Text>
+        <Text style={styles.paragraph}>{applicantName} vient de déposer une candidature pour rejoindre l’équipe bénévole Overbound.</Text>
+      </Section>
 
-          <Section style={styles.section}>
-            <Text style={styles.subheading}>Coordonnées</Text>
-            <Text style={styles.paragraph}>
-              <strong>Nom :</strong> {applicantName}
-              <br />
-              <strong>Email :</strong>{' '}
-              <Link href={`mailto:${applicantEmail}`} style={styles.link}>
-                {applicantEmail}
-              </Link>
-              <br />
-              {phone ? (
-                <>
-                  <strong>Téléphone :</strong>{' '}
-                  <Link href={`tel:${phone}`} style={styles.link}>
-                    {phone}
-                  </Link>
-                  <br />
-                </>
-              ) : null}
-              <strong>Soumis le :</strong> {submittedAt}
-            </Text>
-          </Section>
+      <Section style={styles.section}>
+        <Text style={styles.subheading}>Coordonnées</Text>
+        <Text style={styles.paragraph}>
+          <strong>Nom :</strong> {applicantName}<br />
+          <strong>Email :</strong>{' '}<Link href={`mailto:${applicantEmail}`} style={styles.link}>{applicantEmail}</Link><br />
+          {phone ? (<><strong>Téléphone :</strong>{' '}<Link href={`tel:${phone}`} style={styles.link}>{phone}</Link><br /></>) : null}
+          <strong>Soumis le :</strong> {submittedAt}
+        </Text>
+      </Section>
 
-          {event ? (
-            <Section style={styles.section}>
-              <Text style={styles.subheading}>Événement ciblé</Text>
-              <Text style={styles.paragraph}>
-                <strong>{event.title ?? 'Événement Overbound'}</strong>
-                <br />
-                {formattedEventDate ? (
-                  <>
-                    <strong>Date :</strong> {formattedEventDate}
-                    <br />
-                  </>
-                ) : null}
-                {event.location ? (
-                  <>
-                    <strong>Lieu :</strong> {event.location}
-                    <br />
-                  </>
-                ) : null}
-                {event.id ? (
-                  <>
-                    <strong>ID Supabase :</strong> {event.id}
-                    <br />
-                  </>
-                ) : null}
-              </Text>
-            </Section>
-          ) : null}
-
-          <Section style={styles.section}>
-            <Text style={styles.subheading}>Disponibilités & mission</Text>
-            <Text style={styles.paragraph}>
-              <strong>Créneau proposé :</strong> {availability}
-              <br />
-              <strong>Mission souhaitée :</strong> {preferredMission}
-            </Text>
-          </Section>
-
-          {experience ? (
-            <Section style={styles.section}>
-              <Text style={styles.subheading}>Expérience</Text>
-              <Text style={styles.paragraph}>{experience}</Text>
-            </Section>
-          ) : null}
-
-          {motivations ? (
-            <Section style={styles.section}>
-              <Text style={styles.subheading}>Motivations / message</Text>
-              <Text style={styles.paragraph}>{motivations}</Text>
-            </Section>
-          ) : null}
-
-          <Hr style={styles.divider} />
-          <Text style={styles.footer}>
-            Merci d’accuser réception auprès du bénévole et de l’ajouter aux effectifs de l’événement.
+      {event ? (
+        <Section style={styles.section}>
+          <Text style={styles.subheading}>Événement ciblé</Text>
+          <Text style={styles.paragraph}>
+            <strong>{event.title ?? 'Événement Overbound'}</strong><br />
+            {formattedEventDate ? (<><strong>Date :</strong> {formattedEventDate}<br /></>) : null}
+            {event.location ? (<><strong>Lieu :</strong> {event.location}<br /></>) : null}
+            {event.id ? (<><strong>ID Supabase :</strong> {event.id}<br /></>) : null}
           </Text>
-        </Container>
-      </Body>
-    </Html>
+        </Section>
+      ) : null}
+
+      <Section style={styles.section}>
+        <Text style={styles.subheading}>Disponibilités & mission</Text>
+        <Text style={styles.paragraph}><strong>Créneau proposé :</strong> {availability}<br /><strong>Mission souhaitée :</strong> {preferredMission}</Text>
+      </Section>
+
+      {experience ? (<Section style={styles.section}><Text style={styles.subheading}>Expérience</Text><Text style={styles.paragraph}>{experience}</Text></Section>) : null}
+
+      {motivations ? (<Section style={styles.section}><Text style={styles.subheading}>Motivations / message</Text><Text style={styles.paragraph}>{motivations}</Text></Section>) : null}
+
+      <Hr style={styles.divider} />
+      <Text style={styles.footer}>Merci d’accuser réception auprès du bénévole et de l’ajouter aux effectifs de l’événement.</Text>
+    </EmailLayout>
   )
 }
 

@@ -1,4 +1,5 @@
 import { Currency, DocumentType, Timestamp, UUID } from './base.type'
+import { TicketPriceTier } from './TicketPriceTier'
 
 export interface TicketEventSummary {
   id: UUID
@@ -37,4 +38,5 @@ export interface Ticket {
   updated_at: Timestamp
   event?: TicketEventSummary | null
   race?: TicketRaceSummary | null
+  price_tiers?: TicketPriceTier[]
 }

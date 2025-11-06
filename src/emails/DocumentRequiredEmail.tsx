@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Link } from '@react-email/components'
+import EmailLayout from './EmailLayout'
 
 interface DocumentRequiredEmailProps {
   participantName?: string | null
@@ -15,49 +16,43 @@ export function DocumentRequiredEmail({
   requiredDocuments,
 }: DocumentRequiredEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Documents requis pour {eventTitle}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.section}>
-            <Text style={styles.heading}>
-              {participantName ? `Bonjour ${participantName},` : 'Bonjour,'}
-            </Text>
+    <EmailLayout preview={`Documents requis pour ${eventTitle}`}>
+      <Section style={styles.section}>
+        <Text style={styles.heading}>
+          {participantName ? `Bonjour ${participantName},` : 'Bonjour,'}
+        </Text>
 
-            <Text style={styles.paragraph}>
-              Pour finaliser ton inscription à <strong>{eventTitle}</strong>, nous avons besoin de valider
-              un document avant le départ.
-            </Text>
+        <Text style={styles.paragraph}>
+          Pour finaliser ton inscription à <strong>{eventTitle}</strong>, nous avons besoin de valider
+          un document avant le départ.
+        </Text>
 
-            {requiredDocuments.length > 0 ? (
-              <Text style={styles.paragraph}>
-                Document(s) attendu(s)&nbsp;:
-                <ul style={styles.list}>
-                  {requiredDocuments.map((doc) => (
-                    <li key={doc}>{doc}</li>
-                  ))}
-                </ul>
-              </Text>
-            ) : null}
+        {requiredDocuments.length > 0 ? (
+          <Text style={styles.paragraph}>
+            Document(s) attendu(s)&nbsp;:
+            <ul style={styles.list}>
+              {requiredDocuments.map((doc) => (
+                <li key={doc}>{doc}</li>
+              ))}
+            </ul>
+          </Text>
+        ) : null}
 
-            <Text style={styles.paragraph}>
-              <Link href={uploadUrl} style={styles.link}>
-                Déposer mon document maintenant
-              </Link>
-            </Text>
+        <Text style={styles.paragraph}>
+          <Link href={uploadUrl} style={styles.link}>
+            Déposer mon document maintenant
+          </Link>
+        </Text>
 
-            <Text style={styles.paragraph}>
-              Dès réception, notre équipe vérifiera ton document. Tu seras informé·e par email lorsqu’il sera validé.
-            </Text>
+        <Text style={styles.paragraph}>
+          Dès réception, notre équipe vérifiera ton document. Tu seras informé·e par email lorsqu’il sera validé.
+        </Text>
 
-            <Text style={styles.secondary}>
-              Si tu as déjà envoyé ce document, considère ce message comme un rappel — il peut y avoir un léger délai de traitement.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+        <Text style={styles.secondary}>
+          Si tu as déjà envoyé ce document, considère ce message comme un rappel — il peut y avoir un léger délai de traitement.
+        </Text>
+      </Section>
+    </EmailLayout>
   )
 }
 

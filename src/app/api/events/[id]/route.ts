@@ -27,6 +27,7 @@ export async function GET(
           max_participants,
           requires_document,
           document_types,
+          price_tiers:ticket_price_tiers (*),
           race:races!tickets_race_id_fkey (
             id,
             name,
