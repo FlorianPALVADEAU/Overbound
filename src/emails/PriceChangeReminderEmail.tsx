@@ -10,6 +10,7 @@ interface PriceChangeReminderEmailProps {
   eventUrl: string
   currentPriceLabel: string
   nextPriceLabel?: string | null
+  unsubscribeUrl?: string
 }
 
 export function PriceChangeReminderEmail({
@@ -20,11 +21,12 @@ export function PriceChangeReminderEmail({
   eventUrl,
   currentPriceLabel,
   nextPriceLabel,
+  unsubscribeUrl,
 }: PriceChangeReminderEmailProps) {
   const preview = 'Dernier rappel — tarif change bientôt'
 
   return (
-    <EmailLayout preview={preview}>
+    <EmailLayout preview={preview} unsubscribeUrl={unsubscribeUrl}>
       <Section style={styles.section}>
         <Text style={styles.heading}>
           {fullName ? `${fullName}, dernière chance !` : 'Dernière chance !'}

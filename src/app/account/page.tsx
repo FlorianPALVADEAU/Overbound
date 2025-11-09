@@ -7,9 +7,10 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AlertTriangle, TicketIcon, UserIcon, LogOutIcon } from 'lucide-react'
+import { AlertTriangle, TicketIcon, UserIcon, LogOutIcon, BellIcon } from 'lucide-react'
 import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
 import { AccountProfileForm } from '@/components/account/AccountProfileForm'
+import PreferencesForm from '@/components/preferences/PreferencesForm'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -96,6 +97,7 @@ export default function AccountPage() {
   const { data, isLoading, error, refetch } = useAccountRegistrations()
   const { data: authUser, isLoading: isAuthLoading } = useSession()
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isEditingPreferences, setIsEditingPreferences] = useState(false)
 
   if (isLoading || isAuthLoading) {
     return <LoadingView />
@@ -269,12 +271,6 @@ export default function AccountPage() {
                     {formattedBirthdate || 'Non renseignée'}
                   </p>
                 </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm text-muted-foreground">Emails d’actualités OverBound</p>
-                  <p className="text-base font-medium">
-                    {profile?.marketing_opt_in ? 'Activés' : 'Désactivés'}
-                  </p>
-                </div>
               </div>
               {profileIncomplete && !isEditingProfile ? (
                 <Alert variant="default">
@@ -292,6 +288,56 @@ export default function AccountPage() {
                 />
               ) : null}
             </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="border-b border-border/60 pb-6">
+              <CardTitle className="flex items-center gap-2">
+                <BellIcon className="h-5 w-5" />
+                Préférences de notifications
+              </CardTitle>
+              <CardDescription>
+                Gère tes préférences d'emails marketing et la fréquence à laquelle tu souhaites recevoir nos communications.
+              </CardDescription>
+              <CardAction className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingPreferences((prev) => !prev)}
+                >
+                  {isEditingPreferences ? 'Fermer' : 'Gérer mes préférences'}
+                </Button>
+              </CardAction>
+            </CardHeader>
+            {isEditingPreferences ? (
+              <CardContent className="pt-6">
+                <PreferencesForm
+                  userId={profile?.id || user.id}
+                  userName={profile?.full_name || ''}
+                  initialPreferences={{
+                    marketing_opt_in: profile?.marketing_opt_in || false,
+                  }}
+                />
+              </CardContent>
+            ) : (
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Statut des emails marketing</p>
+                    <p className="text-base font-medium">
+                      {profile?.marketing_opt_in ? (
+                        <span className="text-green-600">Activés - Tu reçois nos communications</span>
+                      ) : (
+                        <span className="text-muted-foreground">Désactivés - Tu ne reçois pas nos emails marketing</span>
+                      )}
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Clique sur "Gérer mes préférences" pour configurer en détail les types d'emails que tu souhaites recevoir et leur fréquence.
+                  </p>
+                </div>
+              </CardContent>
+            )}
           </Card>
         </div>
 

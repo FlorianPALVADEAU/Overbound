@@ -116,7 +116,7 @@ export function PromotionFormDialog({
               id="promotion-link"
               value={values.link_url}
               onChange={(event) => handleChange('link_url', event.target.value)}
-              placeholder="https://overbound.fr/offre"
+              placeholder="https://overbound-race.com/offre"
             />
           </div>
 
