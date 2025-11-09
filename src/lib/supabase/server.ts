@@ -28,10 +28,13 @@ export const createSupabaseServer = async () => {
   )
 }
 
+// Alias pour compatibilité avec les routes API existantes
+export const createClient = createSupabaseServer
+
 // Admin client (service role)
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 export const supabaseAdmin = () =>
-  createClient(
+  createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )

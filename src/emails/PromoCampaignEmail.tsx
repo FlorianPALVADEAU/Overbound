@@ -10,6 +10,7 @@ interface PromoCampaignEmailProps {
   ctaUrl: string
   promoCode?: string | null
   promoDetails?: string | null
+  unsubscribeUrl?: string
 }
 
 export function PromoCampaignEmail({
@@ -20,9 +21,10 @@ export function PromoCampaignEmail({
   ctaUrl,
   promoCode,
   promoDetails,
+  unsubscribeUrl,
 }: PromoCampaignEmailProps) {
   return (
-    <EmailLayout preview={title}>
+    <EmailLayout preview={title} unsubscribeUrl={unsubscribeUrl}>
       <Section style={styles.section}>
         <Text style={styles.heading}>{title}</Text>
         <Text style={styles.paragraph}>{message}</Text>

@@ -9,11 +9,12 @@ interface NewEventAnnouncementEmailProps {
   eventLocation: string
   eventUrl: string
   highlight?: string | null
+  unsubscribeUrl?: string
 }
 
-export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eventLocation, eventUrl, highlight }: NewEventAnnouncementEmailProps) {
+export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eventLocation, eventUrl, highlight, unsubscribeUrl }: NewEventAnnouncementEmailProps) {
   return (
-    <EmailLayout preview={`Nouvel événement OverBound — ${eventTitle}`}>
+    <EmailLayout preview={`Nouvel événement OverBound — ${eventTitle}`} unsubscribeUrl={unsubscribeUrl}>
       <Section style={styles.section}>
         <Text style={styles.heading}>{fullName ? `${fullName},` : 'Salut,'}</Text>
         <Text style={styles.paragraph}>On vient d’ouvrir les inscriptions pour <strong>{eventTitle}</strong>.</Text>

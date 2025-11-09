@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Body, Container, Head, Html, Section, Text } from '@react-email/components'
-
+import { getLogoUrl } from '@/lib/email/config'
 interface EmailLayoutProps {
   preview?: string
   children: React.ReactNode
@@ -9,7 +9,8 @@ interface EmailLayoutProps {
 }
 
 export function EmailLayout({ preview, children, unsubscribeUrl, supportEmail }: EmailLayoutProps) {
-  const logoSrc = 'https://cdn.overbound.app/public/images/LOGO_FULL.webp'
+  // Use absolute URL for email compatibility
+  const logoSrc = getLogoUrl()
 
   return (
     <Html>
@@ -25,27 +26,25 @@ export function EmailLayout({ preview, children, unsubscribeUrl, supportEmail }:
           <Section style={styles.content}>{children}</Section>
 
           <Section style={styles.footer}>
-            <Text style={styles.small}>
-              Vous recevez cet email car vous êtes inscrit·e sur Overbound.
-            </Text>
-            <Text style={styles.small}>
-              Pour arrêter de recevoir nos emails, cliquez ici:{' '}
-              {unsubscribeUrl ? (
-                <a href={unsubscribeUrl} style={styles.link}>
-                  Se désinscrire
-                </a>
-              ) : (
-                ' [lien de désinscription] '
-              )}
-            </Text>
+            {unsubscribeUrl ? (
+              <>
+                <Text style={styles.small}>
+                  Vous recevez cet email car vous êtes inscrit·e sur Overbound.
+                </Text>
+                <Text style={styles.small}>
+                  Pour arrêter de recevoir nos emails, cliquez ici:{' '}
+                  <a href={unsubscribeUrl} style={styles.link}>
+                    Se désinscrire
+                  </a>
+                </Text>
+              </>
+            ) : null}
             <Text style={styles.small}>
               Pour toute question: {supportEmail ? (
                 <a href={`mailto:${supportEmail}`} style={styles.link}>{supportEmail}</a>
-              ) : ('support@overbound.app')}
+              ) : ('contact@overbound-race.com')}
             </Text>
-            <Text style={styles.small}>
-              Conformément au RGPD, vos données sont traitées par Overbound. Vous pouvez exercer vos droits en répondant à cet email ou via votre compte.
-            </Text>
+            {/* RGPD text removed from transactional layout */}
           </Section>
         </Container>
       </Body>
