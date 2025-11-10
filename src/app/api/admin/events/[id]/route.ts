@@ -32,7 +32,11 @@ const handleGet = async (
     }
 
     const admin = supabaseAdmin()
-    const { data: event, error: eventError } = await admin.from('events').select('*').eq('id', id).single()
+    const { data: event, error: eventError } = await admin
+      .from('events')
+      .select('*, price_tiers:event_price_tiers(*)')
+      .eq('id', id)
+      .single()
 
     if (eventError || !event) {
       return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })

@@ -12,6 +12,9 @@ import { useGetEventsWithTickets } from '../api/events/eventsQueries'
 import type { EventWithTickets } from '@/types/Event'
 import type { Ticket as TicketType } from '@/types/Ticket'
 import type { EventStatus } from '@/types/base.type'
+import type { EventPriceTier } from '@/types/EventPriceTier'
+import { getCurrentTicketPrice, getStartingPrice } from '@/lib/pricing'
+import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import Link from 'next/link'
 import ObstaclesPage from '../obstacles/page'
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
@@ -24,50 +27,65 @@ import { v4 as uuid } from 'uuid'
 import EventlistDisplay from '@/components/events/EventlistDisplay'
 import NeedHelpChoosingYourFormat from '@/components/homepage/NeedHelpChoosingYourFormat'
 
-const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => (
-  <div key={ticket?.id || uuid()}>
-    {ticket ? (
-      <div
-        key={ticket.id}
-        className="rounded-lg border border-border bg-background p-4"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h4 className="font-semibold text-base mb-1">
-              {ticket.name}
-            </h4>
-            {ticket.description && (
-              <p className="text-sm text-muted-foreground mb-3">
-                {ticket.description}
-              </p>
-            )}
-            
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              {formatDistance(ticket.distance_km) && (
-                <Badge variant="outline" className="text-xs">
-                  <Mountain className="h-3 w-3 mr-1" />
-                  {formatDistance(ticket.distance_km)}
-                </Badge>
+const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => {
+  const eventPriceTiers = selectedEvent.price_tiers || []
+  const activeTier = getCurrentPriceTier(eventPriceTiers)
+  const hasDiscount = activeTier && activeTier.discount_percentage > 0
+
+  return (
+    <div key={ticket?.id || uuid()}>
+      {ticket ? (
+        <div
+          key={ticket.id}
+          className="rounded-lg border border-border bg-background p-4"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h4 className="font-semibold text-base mb-1">
+                {ticket.name}
+              </h4>
+              {ticket.description && (
+                <p className="text-sm text-muted-foreground mb-3">
+                  {ticket.description}
+                </p>
               )}
-              {ticket.max_participants && (
-                <Badge variant="outline" className="text-xs">
-                  Places : {ticket.max_participants}
-                </Badge>
-              )}
+
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                {formatDistance(ticket.distance_km) && (
+                  <Badge variant="outline" className="text-xs">
+                    <Mountain className="h-3 w-3 mr-1" />
+                    {formatDistance(ticket.distance_km)}
+                  </Badge>
+                )}
+                {ticket.max_participants && (
+                  <Badge variant="outline" className="text-xs">
+                    Places : {ticket.max_participants}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="text-right">
+              <div className="space-y-1 mb-2">
+                {hasDiscount && ticket.final_price_cents && ticket.currency && (
+                  <div className="text-sm text-muted-foreground line-through">
+                    {new Intl.NumberFormat('fr-FR', {
+                      style: 'currency',
+                      currency: ticket.currency.toUpperCase()
+                    }).format(ticket.final_price_cents / 100)}
+                  </div>
+                )}
+                <div className="text-lg font-bold text-primary">
+                  {formatTicketPrice(ticket, eventPriceTiers)}
+                </div>
+              </div>
+              <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
+                <Button size="sm" className="w-full">
+                  S'inscrire
+                </Button>
+              </Link>
             </div>
           </div>
-          
-          <div className="text-right">
-            <div className="text-lg font-bold text-primary mb-2">
-              {formatTicketPrice(ticket)}
-            </div>
-            <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
-              <Button size="sm" className="w-full">
-                S'inscrire
-              </Button>
-            </Link>
-          </div>
-        </div>
         
         {(ticket.sales_start || ticket.sales_end) && (
           <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
@@ -107,7 +125,8 @@ const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTi
       </div>
     )}
   </div>
-)
+  )
+}
 
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), {
   ssr: false,
@@ -165,12 +184,13 @@ const formatEventTime = (value: string) => {
   }).format(date)
 }
 
-const formatTicketPrice = (ticket: TicketType | null | undefined) => {
-  if (!ticket?.base_price_cents || !ticket.currency) return 'Tarif communiqué prochainement'
+const formatTicketPrice = (ticket: TicketType | null | undefined, eventPriceTiers: EventPriceTier[] = []) => {
+  if (!ticket || !ticket.currency) return 'Tarif communiqué prochainement'
+  const currentPrice = getCurrentTicketPrice(ticket, eventPriceTiers)
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: ticket.currency.toUpperCase()
-  }).format(ticket.base_price_cents / 100)
+  }).format(currentPrice / 100)
 }
 
 const formatDistance = (distance: number | null) => {
@@ -392,8 +412,16 @@ export default function EventsPage() {
                       const ticketsCount = event.tickets?.length ?? 0
                       const statusLabel = EVENT_STATUS_LABELS[event.status]
                       const statusClasses = EVENT_STATUS_STYLES[event.status]
-                      const minPrice = event.tickets && event.tickets.length > 0 
-                        ? Math.min(...event.tickets.map(t => t.base_price_cents || 0))
+                      const eventPriceTiers = event.price_tiers || []
+                      const activeTier = getCurrentPriceTier(eventPriceTiers)
+                      const hasDiscount = activeTier && activeTier.discount_percentage > 0
+
+                      const minPrice = event.tickets && event.tickets.length > 0
+                        ? Math.min(...event.tickets.map(t => getStartingPrice(t, eventPriceTiers)))
+                        : null
+
+                      const baseMinPrice = event.tickets && event.tickets.length > 0
+                        ? Math.min(...event.tickets.map(t => getStartingPrice(t, [])))
                         : null
 
                       return (
@@ -433,8 +461,20 @@ export default function EventsPage() {
                             
                             <div className="text-right">
                               {minPrice && minPrice > 0 && (
-                                <div className="text-sm font-semibold text-primary">
-                                  dès {(minPrice / 100).toFixed(0)}€
+                                <div className="flex flex-col items-end gap-0.5">
+                                  {hasDiscount && baseMinPrice && baseMinPrice > minPrice && (
+                                    <div className="text-xs text-muted-foreground line-through">
+                                      {(baseMinPrice / 100).toFixed(0)}€
+                                    </div>
+                                  )}
+                                  <div className="text-sm font-semibold text-primary">
+                                    dès {(minPrice / 100).toFixed(0)}€
+                                  </div>
+                                  {hasDiscount && activeTier && (
+                                    <div className="text-[10px] font-semibold text-green-600">
+                                      -{activeTier.discount_percentage}%
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               <div className="text-xs text-muted-foreground">

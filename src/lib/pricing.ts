@@ -1,65 +1,69 @@
 import { Ticket } from '@/types/Ticket'
-import { TicketPriceTier, getCurrentPriceTier, getNextPriceTier } from '@/types/TicketPriceTier'
+import {
+  EventPriceTier,
+  getCurrentPriceTier,
+  getNextPriceTier,
+  calculateCurrentPrice,
+} from '@/types/EventPriceTier'
 
 /**
- * Get the current price for a ticket based on price tiers or fallback to base_price_cents
- * @param ticket - The ticket with optional price_tiers
+ * Get the current price for a ticket based on event price tiers
+ * @param ticket - The ticket with final_price_cents
+ * @param eventPriceTiers - Array of event price tiers
  * @param now - Current date (defaults to new Date())
- * @returns The current price in cents, or null if no price is available
+ * @returns The current price in cents
  */
-export function getCurrentTicketPrice(ticket: Ticket, now: Date = new Date()): number | null {
-  // If ticket has price tiers, use them
-  if (ticket.price_tiers && ticket.price_tiers.length > 0) {
-    const currentTier = getCurrentPriceTier(ticket.price_tiers, now)
-    if (currentTier) {
-      return currentTier.price_cents
-    }
-    // If no current tier is active, fallback to the first one (for safety)
-    return ticket.price_tiers[0]?.price_cents ?? null
-  }
-
-  // Fallback to base_price_cents if no tiers exist
-  return ticket.base_price_cents ?? null
+export function getCurrentTicketPrice(
+  ticket: Ticket,
+  eventPriceTiers: EventPriceTier[] = [],
+  now: Date = new Date()
+): number {
+  const currentTier = getCurrentPriceTier(eventPriceTiers, now)
+  return calculateCurrentPrice(ticket.final_price_cents, currentTier)
 }
 
 /**
  * Get the next price change information for a ticket
- * @param ticket - The ticket with price_tiers
+ * @param ticket - The ticket with final_price_cents
+ * @param eventPriceTiers - Array of event price tiers
  * @param now - Current date (defaults to new Date())
  * @returns Object with next price and date, or null if no next tier
  */
 export function getNextPriceChange(
   ticket: Ticket,
+  eventPriceTiers: EventPriceTier[] = [],
   now: Date = new Date()
 ): { price_cents: number; date: Date } | null {
-  if (!ticket.price_tiers || ticket.price_tiers.length === 0) {
+  if (!eventPriceTiers || eventPriceTiers.length === 0) {
     return null
   }
 
-  const nextTier = getNextPriceTier(ticket.price_tiers, now)
+  const nextTier = getNextPriceTier(eventPriceTiers, now)
   if (!nextTier || !nextTier.available_from) {
     return null
   }
 
   return {
-    price_cents: nextTier.price_cents,
-    date: new Date(nextTier.available_from)
+    price_cents: calculateCurrentPrice(ticket.final_price_cents, nextTier),
+    date: new Date(nextTier.available_from),
   }
 }
 
 /**
  * Check if a price change is imminent (within specified days)
- * @param ticket - The ticket with price_tiers
+ * @param ticket - The ticket with final_price_cents
+ * @param eventPriceTiers - Array of event price tiers
  * @param daysThreshold - Number of days to consider as "imminent" (default: 7)
  * @param now - Current date (defaults to new Date())
  * @returns True if price change is within the threshold
  */
 export function isPriceChangeImminent(
   ticket: Ticket,
+  eventPriceTiers: EventPriceTier[] = [],
   daysThreshold: number = 7,
   now: Date = new Date()
 ): boolean {
-  const nextChange = getNextPriceChange(ticket, now)
+  const nextChange = getNextPriceChange(ticket, eventPriceTiers, now)
   if (!nextChange) {
     return false
   }
@@ -91,30 +95,34 @@ export function formatPrice(priceCents: number, currency: string = 'EUR'): strin
 }
 
 /**
- * Get the starting (lowest) price from ticket price tiers
- * @param ticket - The ticket with optional price_tiers
- * @returns The lowest price in cents, or null if no price is available
+ * Get the starting (lowest) price from event price tiers
+ * @param ticket - The ticket with final_price_cents
+ * @param eventPriceTiers - Array of event price tiers
+ * @returns The lowest price in cents
  */
-export function getStartingPrice(ticket: Ticket): number | null {
-  if (ticket.price_tiers && ticket.price_tiers.length > 0) {
-    const prices = ticket.price_tiers.map((tier) => tier.price_cents)
-    return Math.min(...prices)
+export function getStartingPrice(ticket: Ticket, eventPriceTiers: EventPriceTier[] = []): number {
+  if (eventPriceTiers && eventPriceTiers.length > 0) {
+    // Find the tier with the highest discount (lowest price)
+    const maxDiscountTier = eventPriceTiers.reduce((max, tier) =>
+      tier.discount_percentage > max.discount_percentage ? tier : max
+    )
+    return calculateCurrentPrice(ticket.final_price_cents, maxDiscountTier)
   }
 
-  return ticket.base_price_cents ?? null
+  return ticket.final_price_cents
 }
 
 /**
  * Get all price tiers sorted by date for timeline display
- * @param ticket - The ticket with price_tiers
+ * @param eventPriceTiers - Array of event price tiers
  * @returns Array of price tiers sorted by available_from date
  */
-export function getPriceTiersForTimeline(ticket: Ticket): TicketPriceTier[] {
-  if (!ticket.price_tiers || ticket.price_tiers.length === 0) {
+export function getPriceTiersForTimeline(eventPriceTiers: EventPriceTier[] = []): EventPriceTier[] {
+  if (!eventPriceTiers || eventPriceTiers.length === 0) {
     return []
   }
 
-  return [...ticket.price_tiers].sort((a, b) => {
+  return [...eventPriceTiers].sort((a, b) => {
     const aTime = a.available_from ? new Date(a.available_from).getTime() : 0
     const bTime = b.available_from ? new Date(b.available_from).getTime() : 0
     return aTime - bTime
@@ -127,7 +135,7 @@ export function getPriceTiersForTimeline(ticket: Ticket): TicketPriceTier[] {
  * @returns Object with isValid flag and error message if invalid
  */
 export function validatePriceTiers(
-  tiers: Array<Partial<TicketPriceTier>>
+  tiers: Array<Partial<EventPriceTier>>
 ): { isValid: boolean; error?: string } {
   if (!tiers || tiers.length === 0) {
     return { isValid: false, error: 'Au moins un palier de prix est requis' }
@@ -144,9 +152,16 @@ export function validatePriceTiers(
   for (let i = 0; i < sortedTiers.length; i++) {
     const tier = sortedTiers[i]
 
-    // Validate price
-    if (!tier.price_cents || tier.price_cents < 0) {
-      return { isValid: false, error: `Palier ${i + 1}: Le prix doit être positif` }
+    // Validate discount percentage
+    if (
+      tier.discount_percentage === undefined ||
+      tier.discount_percentage < 0 ||
+      tier.discount_percentage > 100
+    ) {
+      return {
+        isValid: false,
+        error: `Palier ${i + 1}: Le pourcentage de réduction doit être entre 0 et 100`,
+      }
     }
 
     // Validate date range
@@ -156,7 +171,7 @@ export function validatePriceTiers(
       if (start >= end) {
         return {
           isValid: false,
-          error: `Palier ${i + 1}: La date de début doit être avant la date de fin`
+          error: `Palier ${i + 1}: La date de début doit être avant la date de fin`,
         }
       }
     }
@@ -170,7 +185,7 @@ export function validatePriceTiers(
         if (currentEnd > nextStart) {
           return {
             isValid: false,
-            error: `Paliers ${i + 1} et ${i + 2}: Les périodes se chevauchent`
+            error: `Paliers ${i + 1} et ${i + 2}: Les périodes se chevauchent`,
           }
         }
       }

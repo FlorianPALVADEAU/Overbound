@@ -1,19 +1,31 @@
 'use client'
 
 import { useMemo } from 'react'
-import { TicketPriceTier, sortPriceTiersByDate, getNextPriceTier } from '@/types/TicketPriceTier'
+import {
+  EventPriceTier,
+  sortPriceTiersByDate,
+  getNextPriceTier,
+  calculateCurrentPrice,
+} from '@/types/EventPriceTier'
 import { formatPrice } from '@/lib/pricing'
 import { Currency } from '@/types/base.type'
 import { Badge } from '@/components/ui/badge'
+import { Ticket } from '@/types/Ticket'
 
 interface PricingTimelineProps {
-  tiers: TicketPriceTier[]
+  ticket: Ticket
+  eventPriceTiers: EventPriceTier[]
   currency: Currency | null
   eventDate: string
 }
 
-export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineProps) {
-  const sortedTiers = useMemo(() => sortPriceTiersByDate(tiers), [tiers])
+export function PricingTimeline({
+  ticket,
+  eventPriceTiers,
+  currency,
+  eventDate,
+}: PricingTimelineProps) {
+  const sortedTiers = useMemo(() => sortPriceTiersByDate(eventPriceTiers), [eventPriceTiers])
 
   const nextTier = useMemo(() => getNextPriceTier(sortedTiers), [sortedTiers])
 
@@ -23,15 +35,17 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'TBD'
     const date = new Date(dateString)
-    return date.toLocaleDateString('fr-FR', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).toUpperCase()
+    return date
+      .toLocaleDateString('fr-FR', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+      .toUpperCase()
   }
 
   // Check if a tier is currently active
-  const isActiveTier = (tier: TicketPriceTier) => {
+  const isActiveTier = (tier: EventPriceTier) => {
     const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
     const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
     const currentTime = now.getTime()
@@ -74,13 +88,14 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
             ...sortedTiers.map((tier, index) => ({
               time: tier.available_from ? new Date(tier.available_from).getTime() : 0,
               index: index,
-              type: 'tier' as const
+              type: 'tier' as const,
+              tierName: tier.name,
             })),
             {
               time: new Date(eventDate).getTime(),
               index: sortedTiers.length,
-              type: 'event' as const
-            }
+              type: 'event' as const,
+            },
           ].sort((a, b) => a.time - b.time)
 
           // Find the current position
@@ -94,11 +109,11 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
                 const currentPoint = allPoints[i]
                 const segmentDuration = currentPoint.time - prevPoint.time
                 const segmentProgress = currentTime - prevPoint.time
-                const segmentPercent = (segmentProgress / segmentDuration)
+                const segmentPercent = segmentProgress / segmentDuration
 
                 // Calculate percentage: (previous segments + current segment progress) / total segments
                 const segmentSize = 100 / allPoints.length
-                progressPercent = (i * segmentSize) + (segmentPercent * segmentSize)
+                progressPercent = i * segmentSize + segmentPercent * segmentSize
               }
               break
             }
@@ -113,7 +128,7 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
 
           return (
             <div
-              className="absolute top-1/2 -translate-y-1/2 left-0 h-[10px] bg-gradient-to-r from-primary via-primary to-primary/80 rounded-full transition-all duration-500"
+              className="absolute top-1/2 -translate-y-1/2 left-0 h-[10px] bg-red-500 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           )
@@ -123,7 +138,7 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
         <div className="relative flex justify-between items-center">
           {sortedTiers.map((tier, index) => {
             const active = isActiveTier(tier)
-            const isEven = index % 2 === 0
+            const tierPrice = calculateCurrentPrice(ticket.final_price_cents, tier)
 
             return (
               <div
@@ -153,10 +168,10 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
                 <div className={`absolute -bottom-10 left-1/2 -translate-x-1/2`}>
                   <div
                     className={`text-sm font-bold whitespace-nowrap ${
-                      active ? 'text-primary' : 'text-foreground'
+                      active ? 'text-primary' : 'text-primary/60'
                     }`}
                   >
-                    {formatPrice(tier.price_cents, currency || 'eur')}
+                    {formatPrice(tierPrice, currency || 'eur')}
                   </div>
                 </div>
               </div>
@@ -183,30 +198,35 @@ export function PricingTimeline({ tiers, currency, eventDate }: PricingTimelineP
       </div>
 
       {/* Current price callout */}
-      {sortedTiers.find(isActiveTier) && (
-        <div className="mt-6 p-4 bg-gray-100 rounded-lg border">
-          <div className="flex items-center justify-between">
-            {nextTier && nextTier.available_from && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                Le prix passera à{' '}
-                <span className="font-semibold">
-                  {formatPrice(nextTier.price_cents, currency || 'eur')}
-                </span>{' '}
-                le {formatDate(nextTier.available_from)}
+      {(() => {
+        const activeTier = sortedTiers.find(isActiveTier)
+        if (!activeTier) return null
+
+        const currentPrice = calculateCurrentPrice(ticket.final_price_cents, activeTier)
+        const nextPrice = nextTier
+          ? calculateCurrentPrice(ticket.final_price_cents, nextTier)
+          : null
+
+        return (
+          <div className="mt-6 p-4 bg-gray-100 rounded-lg border">
+            <div className="flex items-center justify-between">
+              {nextTier && nextTier.available_from && nextPrice && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Le prix passera à{' '}
+                  <span className="font-semibold">{formatPrice(nextPrice, currency || 'eur')}</span>{' '}
+                  le {formatDate(nextTier.available_from)}
+                </div>
+              )}
+              <div className="flex flex-col items-end">
+                <span className="text-2xl font-bold text-red-600">
+                  {formatPrice(currentPrice, currency || 'eur')}
+                </span>
+                <span className="text-sm font-medium">Prix actuel :</span>
               </div>
-            )}
-            <div className='flex flex-col items-end'>
-              <span className="text-2xl font-bold text-red-600">
-                {formatPrice(
-                  sortedTiers.find(isActiveTier)!.price_cents,
-                  currency || 'eur'
-                )}
-              </span>
-              <span className="text-sm font-medium">Prix actuel :</span>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

@@ -40,53 +40,19 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
       max_participants: '0',
       requires_document: false,
       document_types: [],
-      price_tiers: [
-        {
-          price_cents: '2000',
-          available_from: '',
-          available_until: '',
-          display_order: 0,
-        },
-      ],
-      use_price_tiers: false,
     }
   }
-
-  // Check if ticket has price tiers
-  const hasPriceTiers = Boolean(ticket.price_tiers && ticket.price_tiers.length > 0)
 
   return {
     event_id: ticket.event_id,
     race_id: ticket.race?.id || 'none',
     name: ticket.name,
     description: ticket.description || '',
-    price: ticket.base_price_cents?.toString() || '0',
+    price: ticket.final_price_cents.toString(),
     currency: ticket.currency || 'eur',
     max_participants: ticket.max_participants.toString(),
     requires_document: ticket.requires_document,
     document_types: ticket.document_types || [],
-    price_tiers: hasPriceTiers
-      ? ticket.price_tiers!.map((tier) => ({
-          id: tier.id,
-          price_cents: tier.price_cents.toString(),
-          // Format date to YYYY-MM-DD
-          available_from: tier.available_from
-            ? new Date(tier.available_from).toISOString().slice(0, 10)
-            : '',
-          available_until: tier.available_until
-            ? new Date(tier.available_until).toISOString().slice(0, 10)
-            : '',
-          display_order: tier.display_order,
-        }))
-      : [
-          {
-            price_cents: ticket.base_price_cents?.toString() || '2000',
-            available_from: '',
-            available_until: '',
-            display_order: 0,
-          },
-        ],
-    use_price_tiers: hasPriceTiers,
   }
 }
 
@@ -194,17 +160,9 @@ export function TicketsSection() {
       return
     }
 
-    // Validate price tiers if enabled
-    if (values.use_price_tiers) {
-      if (!values.price_tiers || values.price_tiers.length === 0) {
-        setMessage({ type: 'error', text: 'Au moins un palier de prix est requis' })
-        return
-      }
-    } else {
-      if (!values.price) {
-        setMessage({ type: 'error', text: 'Le prix est requis' })
-        return
-      }
+    if (!values.price) {
+      setMessage({ type: 'error', text: 'Le prix est requis' })
+      return
     }
 
     setSubmitting(true)
@@ -223,17 +181,13 @@ export function TicketsSection() {
     }
 
     try {
-      let ticketId: string
-
       if (dialogMode === 'create') {
         const created = await createAdminTicket(payload)
-        ticketId = created.id
         queryClient.setQueryData<Ticket[]>(adminTicketsQueryKey, (previous) => {
           if (!previous) return [created]
           return [created, ...previous]
         })
       } else if (selectedTicket) {
-        ticketId = selectedTicket.id
         const updated = await updateAdminTicket(selectedTicket.id, payload)
         queryClient.setQueryData<Ticket[]>(adminTicketsQueryKey, (previous) => {
           if (!previous) return [updated]
@@ -243,39 +197,7 @@ export function TicketsSection() {
         throw new Error('No ticket selected for update')
       }
 
-      // Handle price tiers if enabled
-      if (values.use_price_tiers) {
-        // Delete existing tiers if editing
-        if (dialogMode === 'edit' && selectedTicket?.price_tiers) {
-          await Promise.all(
-            selectedTicket.price_tiers.map((tier) =>
-              axios.delete(`/api/admin/ticket-price-tiers/${tier.id}`)
-            )
-          )
-        }
-
-        // Create new tiers
-        await Promise.all(
-          values.price_tiers.map((tier) =>
-            axios.post('/api/admin/ticket-price-tiers', {
-              ticket_id: ticketId,
-              price_cents: parseInt(tier.price_cents, 10),
-              available_from: tier.available_from || null,
-              available_until: tier.available_until || null,
-              display_order: tier.display_order,
-            })
-          )
-        )
-      } else if (dialogMode === 'edit' && selectedTicket?.price_tiers) {
-        // User disabled price tiers, delete them
-        await Promise.all(
-          selectedTicket.price_tiers.map((tier) =>
-            axios.delete(`/api/admin/ticket-price-tiers/${tier.id}`)
-          )
-        )
-      }
-
-      // Refresh tickets data to get updated tiers
+      // Refresh tickets data
       await queryClient.invalidateQueries({ queryKey: adminTicketsQueryKey })
 
       setMessage({
@@ -345,7 +267,7 @@ export function TicketsSection() {
         header: 'Tarif & quotas',
         cell: (ticket) => (
           <div className="flex flex-col">
-            <span>{formatPrice(ticket.base_price_cents, ticket.currency)}</span>
+            <span>{formatPrice(ticket.final_price_cents, ticket.currency)}</span>
             <span className="text-xs text-muted-foreground">
               Max {ticket.max_participants || '∞'} participant{ticket.max_participants > 1 ? 's' : ''}
             </span>

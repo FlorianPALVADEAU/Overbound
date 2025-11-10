@@ -20,7 +20,8 @@ import EventTicketListWithRegistration from '@/components/events/EventTicketList
 import { PricingTimeline } from '@/components/events/PricingTimeline'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
-import { getPriceTiersForTimeline } from '@/lib/pricing'
+import { getStartingPrice } from '@/lib/pricing'
+import { getCurrentPriceTier } from '@/types/EventPriceTier'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -93,11 +94,21 @@ export default function EventDetailPage() {
       ...ticket,
       race: ticket.race ?? undefined,
     })) ?? []
+  const eventPriceTiers = (event as any).price_tiers || []
+  const activeTier = getCurrentPriceTier(eventPriceTiers)
+  const hasDiscount = activeTier && activeTier.discount_percentage > 0
+
   const ticketPrices = tickets
-    .map((ticket) => (typeof ticket.base_price_cents === 'number' ? ticket.base_price_cents : ticket.regular_price_cents))
+    .map((ticket) => getStartingPrice(ticket, eventPriceTiers))
     .filter((price): price is number => typeof price === 'number')
   const priceCurrency = tickets.find((ticket) => ticket.currency)?.currency ?? 'EUR'
   const lowestPrice = ticketPrices.length > 0 ? Math.min(...ticketPrices) : null
+
+  // Get base price (without discount) for display
+  const baseTicketPrices = tickets
+    .map((ticket) => getStartingPrice(ticket, [])) // No tiers = base price
+    .filter((price): price is number => typeof price === 'number')
+  const baseLowestPrice = baseTicketPrices.length > 0 ? Math.min(...baseTicketPrices) : null
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -269,9 +280,20 @@ export default function EventDetailPage() {
               <div className="h-full w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] lg:w-auto">
                 <div className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground/80">À partir de</p>
-                  <p className="text-4xl font-extrabold">
-                    {lowestPrice !== null ? formatCurrency(lowestPrice) : 'Bientôt en vente'}
-                  </p>
+                  {lowestPrice !== null ? (
+                    <div className="space-y-1">
+                      {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice && (
+                        <p className="text-2xl font-bold line-through text-primary-foreground/60">
+                          {formatCurrency(baseLowestPrice)}
+                        </p>
+                      )}
+                      <p className="text-4xl font-extrabold">
+                        {formatCurrency(lowestPrice)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-4xl font-extrabold">Bientôt en vente</p>
+                  )}
                   <p className="text-sm text-primary-foreground/80">
                     Tarifs évolutifs selon le format choisi et la période d'inscription.
                   </p>
@@ -446,27 +468,24 @@ export default function EventDetailPage() {
             </p>
           </div>
 
-          {/* Pricing Timeline - Show only if tickets have price tiers */}
-          {(() => {
-            const ticketWithTiers = tickets.find(
-              (ticket) => ticket.price_tiers && ticket.price_tiers.length > 0
-            )
-            return ticketWithTiers ? (
-              <div className="mb-12 rounded-2xl border-2 border-border/60 p-8 backdrop-blur bg-accent-foreground text-black shadow-lg">
-                <PricingTimeline
-                  tiers={getPriceTiersForTimeline(ticketWithTiers)}
-                  currency={ticketWithTiers.currency}
-                  eventDate={event.date}
-                />
-              </div>
-            ) : null
-          })()}
+          {/* Pricing Timeline - Show if event has price tiers */}
+          {eventPriceTiers.length > 0 && tickets.length > 0 && (
+            <div className="mb-12 rounded-2xl border-2 border-border/60 p-8 backdrop-blur bg-accent-foreground text-black shadow-lg">
+              <PricingTimeline
+                ticket={tickets[0]}
+                eventPriceTiers={eventPriceTiers}
+                currency={priceCurrency}
+                eventDate={event.date}
+              />
+            </div>
+          )}
 
           <EventTicketListWithRegistration
             event={event}
             tickets={tickets}
             availableSpots={availableSpots}
             user={user ? { id: user.id, email: user.email ?? '' } : null}
+            eventPriceTiers={eventPriceTiers}
           />
         </div>
       </section>

@@ -20,7 +20,6 @@ import { Clock } from 'lucide-react'
 import type { Event } from '@/types/Event'
 import type { Race } from '@/types/Race'
 import type { Ticket } from '@/types/Ticket'
-import { PriceTierManager, type PriceTierFormValue } from './PriceTierManager'
 
 export interface TicketFormValues {
   event_id: string
@@ -32,8 +31,6 @@ export interface TicketFormValues {
   max_participants: string
   requires_document: boolean
   document_types: string[]
-  price_tiers: PriceTierFormValue[]
-  use_price_tiers: boolean
 }
 
 interface TicketFormDialogProps {
@@ -65,15 +62,6 @@ const DEFAULT_VALUES: TicketFormValues = {
   max_participants: '0',
   requires_document: false,
   document_types: [],
-  price_tiers: [
-    {
-      price_cents: '2000', // 20€ default
-      available_from: '',
-      available_until: '',
-      display_order: 0,
-    },
-  ],
-  use_price_tiers: false,
 }
 
 export function TicketFormDialog({
@@ -212,41 +200,21 @@ export function TicketFormDialog({
             </div>
           </div>
 
-          {/* Price Tiers Toggle */}
-          <div className="space-y-3 rounded-lg border p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="font-medium">Tarification progressive</h4>
-                <p className="text-sm text-muted-foreground">
-                  Activer pour configurer plusieurs paliers de prix dans le temps.
-                </p>
-              </div>
-              <Switch
-                checked={values.use_price_tiers}
-                onCheckedChange={(checked) => handleChange('use_price_tiers', Boolean(checked))}
-              />
-            </div>
-          </div>
-
-          {/* Price configuration based on toggle */}
-          {values.use_price_tiers ? (
-            <PriceTierManager
-              tiers={values.price_tiers}
-              currency={values.currency ?? 'eur'}
-              onChange={(tiers) => handleChange('price_tiers', tiers)}
+          {/* Price field */}
+          <div className="space-y-2">
+            <Label htmlFor="ticket-price">Prix final (centimes) *</Label>
+            <p className="text-sm text-muted-foreground">
+              Ce prix correspond au prix final (sans réduction). Les paliers de réduction sont gérés au niveau de l'événement.
+            </p>
+            <Input
+              id="ticket-price"
+              type="number"
+              min="0"
+              value={values.price}
+              onChange={(event) => handleChange('price', event.target.value)}
+              placeholder="10000 = 100€"
             />
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="ticket-price">Prix (centimes) *</Label>
-              <Input
-                id="ticket-price"
-                type="number"
-                min="0"
-                value={values.price}
-                onChange={(event) => handleChange('price', event.target.value)}
-              />
-            </div>
-          )}
+          </div>
 
           <div className="space-y-3 rounded-lg border p-4">
             <div className="flex items-start justify-between">

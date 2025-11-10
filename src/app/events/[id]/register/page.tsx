@@ -84,6 +84,7 @@ export default function EventRegisterPage() {
           }}
           availableSpots={data.availableSpots}
           initialTicketId={ticketQueryParam}
+          eventPriceTiers={data.event.price_tiers || []}
         />
       </div>
     </div>

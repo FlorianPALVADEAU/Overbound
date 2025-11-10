@@ -26,7 +26,7 @@ export async function GET(
           id,
           name,
           description,
-          base_price_cents,
+          final_price_cents,
           currency,
           max_participants,
           requires_document,
@@ -40,7 +40,8 @@ export async function GET(
             distance_km,
             description
           )
-        )
+        ),
+        price_tiers:event_price_tiers(*)
       `,
       )
       .eq('id', id)

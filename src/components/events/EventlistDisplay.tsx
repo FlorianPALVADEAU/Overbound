@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { EventWithTickets } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import { getStartingPrice } from '@/lib/pricing'
+import { getCurrentPriceTier } from '@/types/EventPriceTier'
 
 const statusVariant = (status: string) => {
   switch (status) {
@@ -65,18 +66,22 @@ const formatCurrency = (value: number, currency?: string | null) =>
     maximumFractionDigits: 0,
   }).format(value / 100)
 
-const findStartingPrice = (tickets: Ticket[] | null | undefined) => {
+const findStartingPrice = (tickets: Ticket[] | null | undefined, eventPriceTiers?: any[]) => {
   if (!tickets || tickets.length === 0) return null
 
   // Get starting prices from all tickets (considering price tiers)
   const prices = tickets
     .map((ticket) => {
-      const startingPrice = getStartingPrice(ticket)
-      return startingPrice != null
-        ? { amount: startingPrice, currency: ticket.currency ?? 'EUR' }
+      const startingPrice = getStartingPrice(ticket, eventPriceTiers)
+      return startingPrice != null && ticket.final_price_cents != null
+        ? {
+            amount: startingPrice,
+            baseAmount: ticket.final_price_cents,
+            currency: ticket.currency ?? 'EUR'
+          }
         : null
     })
-    .filter((price): price is { amount: number; currency: string } => price !== null)
+    .filter((price): price is { amount: number; baseAmount: number; currency: string } => price !== null)
 
   if (prices.length === 0) return null
 
@@ -177,7 +182,10 @@ const EventlistDisplay = () => {
         ) : (
           <div className='w-full grid gap-6 sm:grid-cols-2'>
             {upcomingEvents.map((event: EventWithTickets) => {
-              const startingPrice = findStartingPrice(event.tickets)
+              const eventPriceTiers = (event as any).price_tiers || []
+              const activeTier = getCurrentPriceTier(eventPriceTiers)
+              const hasDiscount = activeTier && activeTier.discount_percentage > 0
+              const startingPrice = findStartingPrice(event.tickets, eventPriceTiers)
               const ticketCount = event.tickets?.length ?? 0
               return (
                 <Card
@@ -217,7 +225,21 @@ const EventlistDisplay = () => {
                       {startingPrice ? (
                         <div className='flex items-center gap-2 text-base font-semibold text-foreground'>
                           <Users className='h-4 w-4 text-primary' />
-                          <span>À partir de {formatCurrency(startingPrice.amount, startingPrice.currency)}</span>
+                          <div className='flex flex-col gap-1'>
+                            <div className='flex items-center gap-2'>
+                              {hasDiscount && startingPrice.amount < startingPrice.baseAmount && (
+                                <span className='text-sm text-muted-foreground line-through font-normal'>
+                                  {formatCurrency(startingPrice.baseAmount, startingPrice.currency)}
+                                </span>
+                              )}
+                              <span>À partir de {formatCurrency(startingPrice.amount, startingPrice.currency)}</span>
+                            </div>
+                            {hasDiscount && activeTier && startingPrice.amount < startingPrice.baseAmount && (
+                              <span className='text-xs font-semibold text-green-600'>
+                                -{activeTier.discount_percentage}% ({activeTier.name})
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : null}
                     </div>

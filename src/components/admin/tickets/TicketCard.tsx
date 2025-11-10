@@ -37,7 +37,7 @@ export function TicketCard({ ticket, onEdit, onDelete, isDeleting }: TicketCardP
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <TicketIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{formatCurrency(ticket.base_price_cents, ticket.currency)}</span>
+                <span>{formatCurrency(ticket.final_price_cents, ticket.currency)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
