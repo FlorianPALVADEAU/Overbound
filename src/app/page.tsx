@@ -7,6 +7,7 @@ import NextEvents from '@/components/homepage/NextEvents';
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview';
 import SocialProof from '@/components/homepage/SocialProof';
 import VolunteersAppeal from '@/components/homepage/VolunteersAppeal';
+import RelevantBlogArticles from '@/components/homepage/RelevantBlogArticles';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 
 export default function Home() {
@@ -20,7 +21,7 @@ export default function Home() {
       <SocialProof />
       <CTA />
       <FAQ />
-      {/* <RelevantBlogArticles /> */}
+      <RelevantBlogArticles />
       <VolunteersAppeal />
     </div>
   );

@@ -260,7 +260,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
 
 # Resend (emails)
 RESEND_API_KEY=re_xxx...
-SEND_FROM_EMAIL=noreply@overbound.fr
+SEND_FROM_EMAIL=noreply@overbound-race.com
 
 # App
 NEXT_PUBLIC_SITE_URL=https://overbound-race.com
@@ -269,7 +269,7 @@ NEXT_PUBLIC_SITE_URL=https://overbound-race.com
 ### Configuration Resend
 
 1. Créer un compte sur [resend.com](https://resend.com)
-2. Vérifier le domaine d'envoi (`overbound.fr`)
+2. Vérifier le domaine d'envoi (`overbound-race.com`)
 3. Obtenir l'API key
 4. Configurer les DNS records (SPF, DKIM)
 

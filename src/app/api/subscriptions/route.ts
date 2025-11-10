@@ -97,8 +97,9 @@ export async function PATCH(request: NextRequest) {
 
     const validatedData = schema.parse(body)
 
-    // Get client IP for logging
-    const ip = request.headers.get('x-forwarded-for') || request.ip || null
+    // Get client IP for logging (use headers only; NextRequest has no `ip` property)
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : request.headers.get('x-real-ip') || null
 
     // Process each subscription update
     const updates = Object.entries(validatedData.subscriptions).map(
@@ -166,7 +167,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       )
     }

@@ -312,7 +312,7 @@ export default function AccountPage() {
             {isEditingPreferences ? (
               <CardContent className="pt-6">
                 <PreferencesForm
-                  userId={profile?.id || user.id}
+                  userId={(profile as any)?.id || user.id}
                   userName={profile?.full_name || ''}
                   initialPreferences={{
                     marketing_opt_in: profile?.marketing_opt_in || false,

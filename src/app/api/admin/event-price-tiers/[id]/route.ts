@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     console.error('Erreur PUT event_price_tier:', error)
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Données invalides', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 })
     }
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }

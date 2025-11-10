@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erreur POST event_price_tier:', error)
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Données invalides', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 })
     }
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }

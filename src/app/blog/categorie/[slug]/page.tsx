@@ -1,44 +1,33 @@
 import { client } from '@/sanity/lib/client'
+import { postsByCategorySlugQuery } from '@/sanity/lib/queries'
 import { urlFor } from '@/sanity/lib/image'
-import { paginatedPostsQuery, postsSearchQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
 
-export const dynamic = 'force-static'
 export const revalidate = 60
 
-type SearchParams = Promise<{ page?: string; q?: string }>
+type Params = Promise<{ slug: string }>
+type SearchParams = Promise<{ page?: string }>
 
-export default async function BlogIndex({ searchParams }: { searchParams: SearchParams }) {
-  const { page, q } = await searchParams
+export default async function BlogCategoryPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
+  const { slug } = await params
+  const { page } = await searchParams
   const pageSize = 12
   const current = Math.max(1, parseInt(page || '1', 10) || 1)
   const offset = (current - 1) * pageSize
   const end = offset + pageSize
 
-  const query = (q && q.trim().length > 0)
-    ? postsSearchQuery
-    : paginatedPostsQuery
-  const params = (q && q.trim().length > 0)
-    ? { offset, end, q: `*${q.trim()}*` }
-    : { offset, end }
-  const { items: posts, total } = await client.fetch(query, params)
+  const { category, items, total } = await client.fetch(postsByCategorySlugQuery, { slug, offset, end })
   const pageCount = Math.max(1, Math.ceil((total || 0) / pageSize))
+
+  if (!category) {
+    return <div className="max-w-5xl mx-auto p-6">Catégorie introuvable.</div>
+  }
 
   return (
     <main className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Blog</h1>
-      <form action="/blog" className="mb-6 flex gap-2">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q || ''}
-          placeholder="Rechercher un article (titre, extrait, contenu)"
-          className="flex-1 border rounded-full px-4 py-2"
-        />
-        <button className="border rounded-full px-4">Rechercher</button>
-      </form>
+      <h1 className="text-3xl font-bold mb-6">Catégorie: {category.title}</h1>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts?.map((p: any) => (
+        {items?.map((p: any) => (
           <article key={p._id} className="border rounded-2xl overflow-hidden">
             {p.mainImage && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -60,14 +49,15 @@ export default async function BlogIndex({ searchParams }: { searchParams: Search
       {pageCount > 1 && (
         <nav className="flex items-center justify-center gap-3 mt-8">
           {current > 1 && (
-            <Link href={`/blog?page=${current - 1}${q ? `&q=${encodeURIComponent(q)}` : ''}`} className="px-3 py-1 border rounded-full">Précédent</Link>
+            <Link href={`/blog/categorie/${slug}?page=${current - 1}`} className="px-3 py-1 border rounded-full">Précédent</Link>
           )}
           <span className="text-sm opacity-70">Page {current} / {pageCount}</span>
           {current < pageCount && (
-            <Link href={`/blog?page=${current + 1}${q ? `&q=${encodeURIComponent(q)}` : ''}`} className="px-3 py-1 border rounded-full">Suivant</Link>
+            <Link href={`/blog/categorie/${slug}?page=${current + 1}`} className="px-3 py-1 border rounded-full">Suivant</Link>
           )}
         </nav>
       )}
     </main>
   )
 }
+
