@@ -28,8 +28,7 @@ export async function GET() {
       .select(`
         *,
         event:events(id, title, date, status),
-        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km),
-        price_tiers:ticket_price_tiers(*)
+        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km)
       `)
       .order('created_at', { ascending: false })
 
@@ -95,7 +94,7 @@ const handlePost = async (request: NextRequest) => {
         race_id: race_id || null,
         name,
         description: description || null,
-        base_price_cents: parseInt(price),
+        final_price_cents: parseInt(price),
         max_participants: parseInt(max_participants) || 0,
         requires_document: requires_document || false,
         document_types: document_types || [],
@@ -104,8 +103,7 @@ const handlePost = async (request: NextRequest) => {
       .select(`
         *,
         event:events(id, title, date, status),
-        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km),
-        price_tiers:ticket_price_tiers(*)
+        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km)
       `)
       .single()
 

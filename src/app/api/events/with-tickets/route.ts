@@ -13,8 +13,7 @@ export async function GET() {
         event_id,
         name,
         distance_km,
-        base_price_cents,
-        quota,
+        final_price_cents,
         sales_start,
         sales_end,
         external_ticket_id,
@@ -26,9 +25,9 @@ export async function GET() {
         created_at,
         updated_at,
         description,
-        currency,
-        price_tiers:ticket_price_tiers(*)
-      )
+        currency
+      ),
+      price_tiers:event_price_tiers(*)
     `)
     .order('date', { ascending: true })
 

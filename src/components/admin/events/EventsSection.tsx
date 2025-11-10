@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search } from 'lucide-react'
 import { EventFormDialog, type EventFormValues } from './EventFormDialog'
 import type { Event } from '@/types/Event'
+import type { EventPriceTier } from '@/types/EventPriceTier'
 import {
   adminEventsQueryKey,
   createAdminEvent,
@@ -22,6 +23,7 @@ import {
   type AdminEventSummary,
 } from '@/app/api/admin/events/eventsQueries'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import axiosClient from '@/app/api/axiosClient'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -121,6 +123,8 @@ export function EventsSection() {
   const [message, setMessage] = useState<MessageState | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | Event['status']>('all')
+  const [priceTiers, setPriceTiers] = useState<EventPriceTier[]>([])
+  const [loadingPriceTiers, setLoadingPriceTiers] = useState(false)
 
   const filteredEvents = useMemo(() => {
     let result = [...events]
@@ -147,14 +151,31 @@ export function EventsSection() {
     setDialogMode('create')
     setSelectedEvent(null)
     setFormValues(buildFormValues())
+    setPriceTiers([])
     setDialogOpen(true)
   }
 
-  const handleEdit = (event: AdminEventSummary) => {
+  const handleEdit = async (event: AdminEventSummary) => {
     setDialogMode('edit')
     setSelectedEvent(event)
     setFormValues(buildFormValues(event))
+    setPriceTiers([])
     setDialogOpen(true)
+
+    // Fetch price tiers for this event
+    setLoadingPriceTiers(true)
+    try {
+      const response = await axiosClient.get<{ event: Event & { price_tiers?: EventPriceTier[] } }>(
+        `/admin/events/${event.id}`
+      )
+      if (response.data.event.price_tiers) {
+        setPriceTiers(response.data.event.price_tiers)
+      }
+    } catch (error) {
+      console.error('Error loading price tiers:', error)
+    } finally {
+      setLoadingPriceTiers(false)
+    }
   }
 
   const handleDelete = async (event: AdminEventSummary) => {
@@ -387,8 +408,11 @@ export function EventsSection() {
         mode={dialogMode}
         initialValues={formValues}
         loading={submitting}
+        eventId={selectedEvent?.id}
+        priceTiers={priceTiers}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
+        onPriceTiersChange={setPriceTiers}
       />
     </div>
   )

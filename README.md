@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌍 Overbound – Site officiel
 
-## Getting Started
+**Overbound** est une course à obstacles immersive et scénarisée, pensée pour repousser les limites du corps et de l’esprit.  
+Plus qu’un simple événement sportif, Overbound est un **rite de dépassement de soi**, une expérience collective où chaque participant choisit son niveau de difficulté et découvre une ambiance tribale unique.
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🎯 Mission
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Créer une **expérience OCR iconique**, ancrée dans la nature et tournée vers la performance, l’émotion et la communauté.  
+Overbound vise à redéfinir le rapport entre sport, aventure et identité, en unissant les athlètes autour d’un même cri de ralliement :  
+**Surmonte. Choisis. Deviens.**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## 🧩 Formats proposés
 
-To learn more about Next.js, take a look at the following resources:
+- **6 km – Rite du Guerrier** : environ 20 obstacles, difficultés *Standard* ou *Hardcore*.  
+- **12 km – Voie du Héros** : deux boucles, environ 40 obstacles.  
+- **Tribal Kids** : parcours ludique et sécurisé pour les 6–14 ans.  
+- **Tribal Royale** : format *battle royale* par équipes, élimination progressive.  
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Chaque édition met en avant une **DA forte**, des **obstacles inédits**, et une **ambiance sonore et visuelle** conçue pour immerger les coureurs dès la ligne de départ.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🧱 ADN de la marque
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Authenticité** : 100 % nature, sans artifices décoratifs.  
+- **Communauté** : chaque participant devient membre de la tribu Overbound.  
+- **Innovation** : obstacles signatures comme le *Slammer*, la *Chambre à Gaz* ou l’*Arène Finale*.  
+- **Immersion** : musique, tambours, flammes et symboles tribaux pour une expérience unique.  
+
+
+
+## 📈 Objectifs
+
+- Créer une **chaîne d’événements OCR** scalable et internationalisable.  
+- Proposer une **expérience fluide et connectée** (inscriptions, tracking, partage).  
+- Développer des **partenariats durables** avec marques sportives, collectivités et médias.  
+- Construire une **image forte** sur les réseaux sociaux et dans l’univers du sport outdoor.
+
+
+
+## 🤝 Partenariats
+
+Overbound recherche des partenaires partageant nos valeurs :  
+- Marques sportives (nutrition, équipement, textile)  
+- Entreprises locales (logistique, restauration, événementiel)  
+- Médias et créateurs de contenu spécialisés sport & aventure  
+
+📩 **Contact pro :** [contact@overbound-race.com](mailto:contact@overbound-race.com)
+
+
+
+## 🧭 À propos du site
+
+Le site officiel Overbound centralise :
+- les **informations sur les courses et formats**,
+- les **inscriptions en ligne**,
+- la **présentation de la marque et des partenaires**,
+- et les **actualités de la tribu**.
+
+Design et développement réalisés avec une attention particulière à la **performance**, à la **clarté visuelle**, et à l’**émotion**.
+
+
+
+© 2025 Overbound. Tous droits réservés.

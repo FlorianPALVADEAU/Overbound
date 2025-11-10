@@ -22,12 +22,11 @@ export async function GET(
           id,
           name,
           description,
-          base_price_cents,
+          final_price_cents,
           currency,
           max_participants,
           requires_document,
           document_types,
-          price_tiers:ticket_price_tiers (*),
           race:races!tickets_race_id_fkey (
             id,
             name,
@@ -41,7 +40,8 @@ export async function GET(
               is_mandatory,
               obstacle:obstacles!race_obstacles_obstacle_id_fkey(*))
           )
-        )
+        ),
+        price_tiers:event_price_tiers (*)
       `,
       )
       .eq('id', id)

@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { Event } from '@/types/Event'
+import type { EventPriceTier } from '@/types/EventPriceTier'
+import { EventPriceTierManager } from './EventPriceTierManager'
 import { Clock } from 'lucide-react'
 
 export interface EventFormValues {
@@ -38,8 +40,11 @@ export interface EventFormDialogProps {
   mode: 'create' | 'edit'
   initialValues: EventFormValues
   loading?: boolean
+  eventId?: string
+  priceTiers?: EventPriceTier[]
   onOpenChange: (open: boolean) => void
   onSubmit: (values: EventFormValues) => void
+  onPriceTiersChange?: (tiers: EventPriceTier[]) => void
 }
 
 const DEFAULT_VALUES: EventFormValues = {
@@ -69,13 +74,28 @@ function generateSlug(value: string) {
     .trim()
 }
 
-export function EventFormDialog({ open, mode, initialValues, loading, onOpenChange, onSubmit }: EventFormDialogProps) {
+export function EventFormDialog({
+  open,
+  mode,
+  initialValues,
+  loading,
+  eventId,
+  priceTiers = [],
+  onOpenChange,
+  onSubmit,
+  onPriceTiersChange,
+}: EventFormDialogProps) {
   const [values, setValues] = useState<EventFormValues>(DEFAULT_VALUES)
+  const [localPriceTiers, setLocalPriceTiers] = useState<EventPriceTier[]>(priceTiers)
   const isCreateMode = mode === 'create'
 
   useEffect(() => {
     setValues(initialValues)
   }, [initialValues])
+
+  useEffect(() => {
+    setLocalPriceTiers(priceTiers)
+  }, [priceTiers])
 
   const dialogTitle = useMemo(() => (isCreateMode ? 'Créer un événement' : "Modifier l'événement"), [isCreateMode])
   const dialogDescription = useMemo(
@@ -98,6 +118,11 @@ export function EventFormDialog({ open, mode, initialValues, loading, onOpenChan
 
   const handleSubmit = () => {
     onSubmit(values)
+  }
+
+  const handlePriceTiersChange = (newTiers: EventPriceTier[]) => {
+    setLocalPriceTiers(newTiers)
+    onPriceTiersChange?.(newTiers)
   }
 
   return (
@@ -222,6 +247,20 @@ export function EventFormDialog({ open, mode, initialValues, loading, onOpenChan
               </Select>
             </div>
           </div>
+
+          {!isCreateMode && eventId && (
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h4 className="font-medium text-lg">Paliers de prix</h4>
+              <p className="text-sm text-muted-foreground">
+                Définissez les réductions en pourcentage qui s'appliqueront à tous les tickets de cet événement.
+              </p>
+              <EventPriceTierManager
+                eventId={eventId}
+                tiers={localPriceTiers}
+                onTiersChange={handlePriceTiersChange}
+              />
+            </div>
+          )}
 
           <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
             <h4 className="font-medium">Prestataire externe (optionnel)</h4>

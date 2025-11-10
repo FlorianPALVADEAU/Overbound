@@ -1,5 +1,6 @@
 import { EventStatus, Timestamp, UUID } from './base.type'
 import type { Ticket } from './Ticket'
+import type { EventPriceTier } from './EventPriceTier'
 
 export interface Event {
   id: UUID
@@ -23,6 +24,7 @@ export interface Event {
 
 export interface EventWithTickets extends Event {
   tickets: Ticket[] | null
+  price_tiers?: EventPriceTier[] | null
 }
 
 export interface EventFilters {

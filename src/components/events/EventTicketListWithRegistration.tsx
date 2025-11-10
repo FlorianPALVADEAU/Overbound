@@ -26,6 +26,8 @@ import {
   Clock,
 } from 'lucide-react'
 import { getCurrentTicketPrice, isPriceChangeImminent } from '@/lib/pricing'
+import type { EventPriceTier } from '@/types/EventPriceTier'
+import { getCurrentPriceTier } from '@/types/EventPriceTier'
 
 interface EventTicket extends Ticket {
   race?: Ticket['race'] & {
@@ -56,6 +58,7 @@ interface Props {
   tickets: EventTicket[]
   availableSpots: number
   user: EventUser | null
+  eventPriceTiers?: EventPriceTier[]
 }
 
 export default function EventTicketListWithRegistration({
@@ -63,6 +66,7 @@ export default function EventTicketListWithRegistration({
   tickets,
   availableSpots,
   user,
+  eventPriceTiers = [],
 }: Props) {
   // Group tickets by race name (or ticket name if no race)
   const groupedTickets = tickets.reduce((groups, ticket) => {
@@ -94,8 +98,12 @@ export default function EventTicketListWithRegistration({
 
                 // Find the lowest price across all variants
                 const lowestPrice = Math.min(
-                  ...raceTickets.map(ticket => getCurrentTicketPrice(ticket) ?? Infinity)
+                  ...raceTickets.map(ticket => getCurrentTicketPrice(ticket, eventPriceTiers) ?? Infinity)
                 )
+
+                // Check if there's an active discount
+                const activeTier = getCurrentPriceTier(eventPriceTiers)
+                const hasDiscount = activeTier && activeTier.discount_percentage > 0
 
                 return (
                   <AccordionItem
@@ -141,14 +149,26 @@ export default function EventTicketListWithRegistration({
                             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                               À partir de
                             </span>
-                            <span className="text-2xl font-bold text-primary">
-                              {(lowestPrice / 100).toLocaleString('fr-FR', {
-                                style: 'currency',
-                                currency: referenceTicket.currency?.toUpperCase() || 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {hasDiscount && (
+                                <span className="text-sm font-medium text-muted-foreground line-through">
+                                  {(referenceTicket.final_price_cents / 100).toLocaleString('fr-FR', {
+                                    style: 'currency',
+                                    currency: referenceTicket.currency?.toUpperCase() || 'EUR',
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
+                                </span>
+                              )}
+                              <span className="text-2xl font-bold text-primary">
+                                {(lowestPrice / 100).toLocaleString('fr-FR', {
+                                  style: 'currency',
+                                  currency: referenceTicket.currency?.toUpperCase() || 'EUR',
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                })}
+                              </span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -165,8 +185,9 @@ export default function EventTicketListWithRegistration({
                       {/* Ticket variants grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {raceTickets.map((ticket) => {
-                          const currentPrice = getCurrentTicketPrice(ticket)
-                          const priceImminent = isPriceChangeImminent(ticket)
+                          const currentPrice = getCurrentTicketPrice(ticket, eventPriceTiers)
+                          const priceImminent = isPriceChangeImminent(ticket, eventPriceTiers)
+                          const ticketHasDiscount = hasDiscount
 
                           return (
                             <div
@@ -188,6 +209,16 @@ export default function EventTicketListWithRegistration({
 
                               {/* Price */}
                               <div className="space-y-1 pt-2">
+                                {ticketHasDiscount && (
+                                  <div className="text-sm font-medium text-muted-foreground line-through">
+                                    {(ticket.final_price_cents / 100).toLocaleString('fr-FR', {
+                                      style: 'currency',
+                                      currency: ticket.currency?.toUpperCase() || 'EUR',
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                    })}
+                                  </div>
+                                )}
                                 <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                                   {currentPrice != null && ticket.currency
                                     ? (currentPrice / 100).toLocaleString('fr-FR', {
@@ -198,6 +229,11 @@ export default function EventTicketListWithRegistration({
                                       })
                                     : 'Tarif à venir'}
                                 </div>
+                                {ticketHasDiscount && activeTier && (
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/20 px-2 py-1 rounded-md w-fit">
+                                    -{activeTier.discount_percentage}% ({activeTier.name})
+                                  </div>
+                                )}
                                 {priceImminent && (
                                   <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded-md w-fit">
                                     <Clock className="h-3.5 w-3.5" />

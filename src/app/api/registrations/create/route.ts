@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
 
     const admin = supabaseAdmin()
 
-    // Get event info
+    // Get event info with price tiers
     const { data: eventRow, error: eventError } = await admin
       .from('events')
-      .select('id, title, date, location')
+      .select('id, title, date, location, price_tiers:event_price_tiers(*)')
       .eq('id', eventId)
       .single()
 
@@ -101,10 +101,33 @@ export async function POST(request: NextRequest) {
     // Generate unique tokens
     const generateTokens = () => ({ qr: uuidv4(), transfer: uuidv4() })
 
+    // Calculate ticket subtotal with event price tiers
+    const eventPriceTiers = (eventRow as any).price_tiers || []
     const ticketSubtotal = ticketSelections.reduce((accumulator: number, item: { ticketId: string; quantity: number }) => {
       const ticket = ticketMap.get(item.ticketId)
-      if (!ticket || ticket.base_price_cents == null) return accumulator
-      return accumulator + ticket.base_price_cents * (item.quantity || 0)
+      if (!ticket || ticket.final_price_cents == null) return accumulator
+
+      // Calculate current price based on event price tiers
+      const finalPrice = ticket.final_price_cents
+      let currentPrice = finalPrice
+
+      if (eventPriceTiers.length > 0) {
+        const now = new Date()
+        const currentTime = now.getTime()
+
+        const activeTier = eventPriceTiers.find((tier: any) => {
+          const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+          const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+          return currentTime >= startTime && currentTime < endTime
+        })
+
+        if (activeTier) {
+          const discountMultiplier = 1 - activeTier.discount_percentage / 100
+          currentPrice = Math.round(finalPrice * discountMultiplier)
+        }
+      }
+
+      return accumulator + currentPrice * (item.quantity || 0)
     }, 0)
 
     const { data: upsellRows } = await admin

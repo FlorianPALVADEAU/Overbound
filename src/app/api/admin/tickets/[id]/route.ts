@@ -48,7 +48,7 @@ const handlePut = async (
         race_id: race_id || null,
         name,
         description: description || null,
-        base_price_cents: parseInt(price),
+        final_price_cents: parseInt(price),
         currency: currency || 'eur',
         max_participants: parseInt(max_participants) || 0,
         requires_document: requires_document || false,
@@ -59,8 +59,7 @@ const handlePut = async (
       .select(`
         *,
         event:events(id, title, date, status),
-        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km),
-        price_tiers:ticket_price_tiers(*)
+        race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km)
       `)
       .single()
 

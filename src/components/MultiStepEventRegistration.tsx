@@ -49,6 +49,8 @@ import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell, UpsellOptions } from '@/types/Upsell'
 import type { PromotionalCode } from '@/types/PromotionalCode'
+import type { EventPriceTier } from '@/types/EventPriceTier'
+import { getCurrentPriceTier, calculateCurrentPrice } from '@/types/EventPriceTier'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
@@ -176,6 +178,7 @@ export interface MultiStepEventRegistrationProps {
   user: EventUser | null
   availableSpots: number
   initialTicketId?: string | null
+  eventPriceTiers?: EventPriceTier[]
 }
 
 interface PricingSummary {
@@ -238,6 +241,7 @@ const joinName = (first: string, last: string) => `${first.trim()} ${last.trim()
 export default function MultiStepEventRegistration({
   event,
   tickets,
+  eventPriceTiers = [],
   upsells,
   user,
   availableSpots,
@@ -461,12 +465,19 @@ export default function MultiStepEventRegistration({
   }, [selectedTicketSlots.length, upsells])
 
   const ticketSubtotal = useMemo(() => {
+    const currentTier = getCurrentPriceTier(eventPriceTiers)
     return selectedTicketSlots.reduce((accumulator, ticketId) => {
       const ticket = ticketMap[ticketId]
-      if (!ticket || !ticket.base_price_cents) return accumulator
-      return accumulator + ticket.base_price_cents
+      if (!ticket || !ticket.final_price_cents) return accumulator
+
+      // Apply price tier discount if active
+      const ticketPrice = currentTier
+        ? calculateCurrentPrice(ticket.final_price_cents, currentTier)
+        : ticket.final_price_cents
+
+      return accumulator + ticketPrice
     }, 0)
-  }, [selectedTicketSlots, ticketMap])
+  }, [selectedTicketSlots, ticketMap, eventPriceTiers])
 
   const upsellSubtotal = useMemo(() => {
     return Object.entries(selectedUpsells).reduce((accumulator, [upsellId, config]) => {
@@ -958,12 +969,21 @@ export default function MultiStepEventRegistration({
     }
   })()
 
+  const activeTier = getCurrentPriceTier(eventPriceTiers)
+  const hasActiveDiscount = activeTier && activeTier.discount_percentage > 0
+
   const renderTicketStep = () => (
     <div className="space-y-4">
       {tickets.map((ticket) => {
         const quantity = ticketSelections[ticket.id] ?? 0
         const isSelected = quantity > 0
         const currency = (ticket.currency || defaultCurrency).toLowerCase()
+
+        // Calculate current price with discount
+        const currentPrice = hasActiveDiscount && ticket.final_price_cents
+          ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
+          : ticket.final_price_cents
+
         return (
           <Card
             key={ticket.id}
@@ -994,10 +1014,22 @@ export default function MultiStepEventRegistration({
                 </div>
               </div>
               <div className="flex flex-col items-end gap-3">
-                <div className="text-lg font-semibold text-primary">
-                  {ticket.base_price_cents !== null && ticket.base_price_cents !== undefined
-                    ? formatPrice(ticket.base_price_cents, currency)
-                    : 'Tarif à venir'}
+                <div className="space-y-1 text-right">
+                  {hasActiveDiscount && ticket.final_price_cents !== null && ticket.final_price_cents !== undefined && (
+                    <div className="text-sm font-medium text-muted-foreground line-through">
+                      {formatPrice(ticket.final_price_cents, currency)}
+                    </div>
+                  )}
+                  <div className="text-lg font-semibold text-primary">
+                    {currentPrice !== null && currentPrice !== undefined
+                      ? formatPrice(currentPrice, currency)
+                      : 'Tarif à venir'}
+                  </div>
+                  {/* {hasActiveDiscount && activeTier && (
+                    <div className="text-xs font-semibold text-green-600">
+                      -{activeTier.discount_percentage}% ({activeTier.name})
+                    </div>
+                  )} */}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1569,6 +1601,12 @@ export default function MultiStepEventRegistration({
                         const ticket = ticketMap[ticketId]
                         const participant = participants[index]
                         if (!ticket) return null
+
+                        // Calculate current price with discount
+                        const ticketPrice = activeTier && ticket.final_price_cents
+                          ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
+                          : ticket.final_price_cents
+
                         return (
                           <div key={`${ticketId}-${index}`} className="flex items-center justify-between gap-3">
                             <div className="space-y-0.5">
@@ -1576,10 +1614,22 @@ export default function MultiStepEventRegistration({
                               {participant?.firstName || participant?.lastName ? (
                                 <p className="text-xs text-muted-foreground">{joinName(participant.firstName, participant.lastName)}</p>
                               ) : null}
+                              {hasActiveDiscount && activeTier && ticket.final_price_cents && (
+                                <p className="text-xs text-green-600 font-semibold">
+                                  -{activeTier.discount_percentage}% ({activeTier.name})
+                                </p>
+                              )}
                             </div>
-                            <span className="font-medium">
-                              {ticket.base_price_cents ? formatPrice(ticket.base_price_cents, (ticket.currency || defaultCurrency).toLowerCase()) : '—'}
-                            </span>
+                            <div className="flex flex-col items-end gap-0.5">
+                              {hasActiveDiscount && ticket.final_price_cents && (
+                                <span className="text-xs text-muted-foreground line-through">
+                                  {formatPrice(ticket.final_price_cents, (ticket.currency || defaultCurrency).toLowerCase())}
+                                </span>
+                              )}
+                              <span className="font-medium">
+                                {ticketPrice ? formatPrice(ticketPrice, (ticket.currency || defaultCurrency).toLowerCase()) : '—'}
+                              </span>
+                            </div>
                           </div>
                         )
                       })

@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import EventVolunteersTable from './EventVolunteersTable'
+import { EventPriceTierManager } from './EventPriceTierManager'
+import type { EventPriceTier } from '@/types/EventPriceTier'
 
 type ViewMode = 'all' | 'runners' | 'volunteers'
 
@@ -108,6 +110,7 @@ const StatCard = ({
 export default function AdminEventDetailPage({ eventId }: AdminEventDetailPageProps) {
   const router = useRouter()
   const [viewMode, setViewMode] = useState<ViewMode>('all')
+  const [priceTiers, setPriceTiers] = useState<EventPriceTier[]>([])
   const { data: session, isLoading: sessionLoading } = useSession()
   const {
     data,
@@ -116,6 +119,14 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
     error,
     refetch,
   } = useAdminEventDetail(eventId)
+
+  // Load price tiers when event data is loaded
+  useEffect(() => {
+    if (data?.event) {
+      const eventWithTiers = data.event as any
+      setPriceTiers(eventWithTiers.price_tiers || [])
+    }
+  }, [data])
 
   useEffect(() => {
     if (!sessionLoading && !session?.user) {
@@ -249,6 +260,18 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
             accent="!bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-600"
             description="Commandes payées recensées pour cet événement"
           />
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Paliers de prix</h2>
+          <EventPriceTierManager
+            eventId={eventId}
+            tiers={priceTiers}
+            onTiersChange={(newTiers) => {
+              setPriceTiers(newTiers)
+              refetch() // Rafraîchir les données pour afficher les changements
+            }}
+          />
+        </section>
 
         <section className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-foreground">Gestion des participants</h2>
