@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (validatedData.testMode) {
       try {
         await sendMarketingEmail(
-          'custom_marketing_email',
+          'custom_marketing_email' as any,
           [
             {
               email: user.email!,
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
             })
 
             await resend.emails.send({
-              from: process.env.SEND_FROM_EMAIL || 'noreply@overbound.fr',
+              from: process.env.SEND_FROM_EMAIL || 'noreply@overbound-race.com',
               to: recipient.email,
               subject: `[TEST] ${validatedData.subject}`,
               html: emailHtml,
@@ -134,19 +134,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Remove duplicates (users subscribed to multiple lists)
-    const uniqueSubscribers = Array.from(
-      new Map(
-        subscribers
-          .filter((sub) => sub.users && 'email' in sub.users)
-          .map((sub) => [
-            sub.user_id,
-            {
-              email: (sub.users as { email: string }).email,
-              userId: sub.user_id,
-            },
-          ]),
-      ).values(),
-    )
+        const uniqueSubscribers = Array.from(
+          new Map(
+            subscribers
+              .filter((sub) => {
+                if (!sub.users) return false
+                const u = sub.users as any
+                if (Array.isArray(u)) {
+                  return u.length > 0 && !!u[0]?.email
+                }
+                return !!u.email
+              })
+              .map((sub) => {
+                const u = sub.users as any
+                const email = Array.isArray(u) ? u[0]?.email : u?.email
+                return [
+                  sub.user_id,
+                  {
+                    email: email as string,
+                    userId: sub.user_id,
+                  },
+                ]
+              }),
+          ).values(),
+        )
 
     if (uniqueSubscribers.length === 0) {
       return NextResponse.json(
@@ -158,7 +169,7 @@ export async function POST(request: NextRequest) {
     // Send emails to all subscribers
     try {
       await sendMarketingEmail(
-        'custom_marketing_email',
+        'custom_marketing_email' as any,
         uniqueSubscribers,
         async (recipient: MarketingRecipient) => {
           const { Resend } = await import('resend')
@@ -177,7 +188,7 @@ export async function POST(request: NextRequest) {
           })
 
           await resend.emails.send({
-            from: process.env.SEND_FROM_EMAIL || 'noreply@overbound.fr',
+            from: process.env.SEND_FROM_EMAIL || 'noreply@overbound-race.com',
             to: recipient.email,
             subject: validatedData.subject,
             html: emailHtml,
@@ -210,7 +221,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 },
       )
     }

@@ -278,7 +278,7 @@ Voici ce que reçoit le destinataire :
 │                                             │
 │ Se désinscrire (lien unique)               │  ← Lien automatique
 │                                             │
-│ Pour toute question: support@overbound.fr  │
+│ Pour toute question: support@overbound-race.com  │
 │                                             │
 │ Conformément au RGPD...                    │
 └─────────────────────────────────────────────┘

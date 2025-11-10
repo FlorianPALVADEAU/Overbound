@@ -166,7 +166,7 @@ async function filterRecipientsByDigestFrequency(
 
   try {
     // Query notification preferences for these users
-    const { data: preferences, error } = await supabaseAdmin
+    const { data: preferences, error } = await supabaseAdmin()
       .from('notification_preferences')
       .select('user_id, digest_frequency')
       .in('user_id', userIds)
@@ -256,7 +256,7 @@ export async function getPriceAlertRecipients(): Promise<MarketingRecipient[]> {
  * This is the main function to use for distribution list emails
  */
 export async function sendMarketingEmail(
-  emailType: string,
+  emailType: MarketingEmailType,
   recipients: MarketingRecipient[],
   sendFn: (recipient: MarketingRecipient) => Promise<void>,
   context: Record<string, unknown> = {},

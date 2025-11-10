@@ -10,6 +10,8 @@ const LINK_GROUPS = [
       { label: 'Les courses', href: '/events' },
       { label: 'Les obstacles', href: '/obstacles' },
       { label: 'Blog', href: '/blog' },
+      { label: 'Catégories', href: '/blog/categories' },
+      { label: 'Auteurs', href: '/blog/auteurs' },
     ],
   },
   {

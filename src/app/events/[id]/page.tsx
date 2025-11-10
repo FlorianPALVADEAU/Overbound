@@ -22,6 +22,7 @@ import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { getStartingPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
+import RecentBlogTeaser from '@/components/blog/RecentBlogTeaser'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -489,6 +490,7 @@ export default function EventDetailPage() {
           />
         </div>
       </section>
+      <RecentBlogTeaser />
     </main>
   )
 }

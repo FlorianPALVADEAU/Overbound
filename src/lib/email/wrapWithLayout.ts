@@ -45,7 +45,7 @@ export function wrapHtmlWithLayout(params: {
         </p>
         ` : ''}
         <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
-          Pour toute question: <a href="mailto:support@overbound.fr" style="color: #2563eb; text-decoration: none;">support@overbound.fr</a>
+          Pour toute question: <a href="mailto:support@overbound-race.com" style="color: #2563eb; text-decoration: none;">support@overbound-race.com</a>
         </p>
         <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
           Conformément au RGPD, vos données sont traitées par Overbound. Vous pouvez exercer vos droits en répondant à cet email ou via votre compte.

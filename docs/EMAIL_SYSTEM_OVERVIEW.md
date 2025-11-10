@@ -310,7 +310,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
 
 # Resend (envoi d'emails)
 RESEND_API_KEY=re_xxx...
-SEND_FROM_EMAIL=noreply@overbound.fr
+SEND_FROM_EMAIL=noreply@overbound-race.com
 
 # Application
 NEXT_PUBLIC_SITE_URL=https://overbound-race.com
