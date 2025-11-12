@@ -78,6 +78,17 @@ export default function EventTicketListWithRegistration({
     return groups
   }, {} as Record<string, EventTicket[]>)
 
+  const formatCurrency = (value: number, currency?: string | null) => {
+    const fraction = Math.abs(value) % 100
+    const useCents = fraction !== 0
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: (currency ?? 'EUR').toUpperCase(),
+      minimumFractionDigits: useCents ? 2 : 0,
+      maximumFractionDigits: useCents ? 2 : 0,
+    }).format(value / 100)
+  }
+
   return (
     <>
       <Card>
@@ -150,23 +161,8 @@ export default function EventTicketListWithRegistration({
                               À partir de
                             </span>
                             <div className="flex items-center gap-2">
-                              {hasDiscount && (
-                                <span className="text-sm font-medium text-muted-foreground line-through">
-                                  {(referenceTicket.final_price_cents / 100).toLocaleString('fr-FR', {
-                                    style: 'currency',
-                                    currency: referenceTicket.currency?.toUpperCase() || 'EUR',
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0,
-                                  })}
-                                </span>
-                              )}
                               <span className="text-2xl font-bold text-primary">
-                                {(lowestPrice / 100).toLocaleString('fr-FR', {
-                                  style: 'currency',
-                                  currency: referenceTicket.currency?.toUpperCase() || 'EUR',
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                })}
+                                {formatCurrency(lowestPrice, referenceTicket.currency)}
                               </span>
                             </div>
                           </div>
@@ -211,22 +207,12 @@ export default function EventTicketListWithRegistration({
                               <div className="space-y-1 pt-2">
                                 {ticketHasDiscount && (
                                   <div className="text-sm font-medium text-muted-foreground line-through">
-                                    {(ticket.final_price_cents / 100).toLocaleString('fr-FR', {
-                                      style: 'currency',
-                                      currency: ticket.currency?.toUpperCase() || 'EUR',
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatCurrency(ticket.final_price_cents, ticket.currency)}
                                   </div>
                                 )}
                                 <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                                   {currentPrice != null && ticket.currency
-                                    ? (currentPrice / 100).toLocaleString('fr-FR', {
-                                        style: 'currency',
-                                        currency: ticket.currency.toUpperCase(),
-                                        minimumFractionDigits: 0,
-                                        maximumFractionDigits: 0,
-                                      })
+                                    ? formatCurrency(currentPrice, ticket.currency)
                                     : 'Tarif à venir'}
                                 </div>
                                 {ticketHasDiscount && activeTier && (

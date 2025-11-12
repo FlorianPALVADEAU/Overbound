@@ -80,7 +80,7 @@ const WhichDistanceForMe: React.FC = () => {
                     description="Si vous hésitez encore sur quel format choisir, voici un questionnaire rapide pour vous orienter vers la bonne distance."
                 />
 
-                <div className="w-4/5 min-h-[20vh] rounded-2xl border border-primary/30 bg-primary/10 flex flex-col items-center justify-center">
+                <div className="w-4/5 min-h-[20vh] rounded-2xl flex flex-col items-center justify-center">
                     {!formStarted ? (
                         <div className="text-center max-w-2xl mx-auto">
                             <h3 className="text-xl font-semibold mb-4">Prêt à découvrir votre défi ?</h3>

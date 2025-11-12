@@ -21,7 +21,7 @@ export default function Home() {
       <SocialProof />
       <CTA />
       <FAQ />
-      <RelevantBlogArticles />
+      {/* <RelevantBlogArticles /> */}
       <VolunteersAppeal />
     </div>
   );

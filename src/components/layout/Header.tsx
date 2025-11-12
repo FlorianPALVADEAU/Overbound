@@ -113,7 +113,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const aboutDropdownItems: DropdownItemType[] = [
     { name: 'Le concept', href: '/about/concept', icon: MedalIcon },
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
-    { name: 'Équipe', href: '/about/team', icon: CalendarIcon },
+    // { name: 'Équipe', href: '/about/team', icon: CalendarIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
     { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]

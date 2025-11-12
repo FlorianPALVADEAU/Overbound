@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Calendar, MapPin, Navigation, Ticket as TicketIcon, Timer, ArrowLeft, Star, Mountain, Users, Clock } from 'lucide-react'
+import Image from 'next/image'
+import { Calendar, MapPin, Navigation, Timer, ArrowLeft, Mountain, Users, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import Headings from '@/components/globals/Headings'
 import { useGetEventsWithTickets } from '../api/events/eventsQueries'
 import type { EventWithTickets } from '@/types/Event'
 import type { Ticket as TicketType } from '@/types/Ticket'
@@ -16,18 +16,16 @@ import type { EventPriceTier } from '@/types/EventPriceTier'
 import { getCurrentTicketPrice, getStartingPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import Link from 'next/link'
-import ObstaclesPage from '../obstacles/page'
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
 import FAQ from '@/components/homepage/FAQ'
-import SubHeadings from '@/components/globals/SubHeadings'
-import WhichDistanceForMe from '@/components/WhichDistanceForMe'
 import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
 import { v4 as uuid } from 'uuid'
 import EventlistDisplay from '@/components/events/EventlistDisplay'
 import NeedHelpChoosingYourFormat from '@/components/homepage/NeedHelpChoosingYourFormat'
+import Headings from '@/components/globals/Headings'
 
-const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => {
+  const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => {
   const eventPriceTiers = selectedEvent.price_tiers || []
   const activeTier = getCurrentPriceTier(eventPriceTiers)
   const hasDiscount = activeTier && activeTier.discount_percentage > 0
@@ -184,6 +182,16 @@ const formatEventTime = (value: string) => {
   }).format(date)
 }
 
+const formatCurrencySmart = (valueCents: number, currency: string = 'EUR') => {
+  const frac = Math.abs(valueCents) % 100
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: frac ? 2 : 0,
+    maximumFractionDigits: frac ? 2 : 0,
+  }).format(valueCents / 100)
+}
+
 const formatTicketPrice = (ticket: TicketType | null | undefined, eventPriceTiers: EventPriceTier[] = []) => {
   if (!ticket || !ticket.currency) return 'Tarif communiqué prochainement'
   const currentPrice = getCurrentTicketPrice(ticket, eventPriceTiers)
@@ -280,256 +288,325 @@ export default function EventsPage() {
     setSelectedEventId(eventId)
   }
 
+  const heroImageSrc = 'https://images.unsplash.com/photo-1532444458054-01a7dd3e9fca?q=80&w=1400&auto=format&fit=crop'
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <div className="w-full container mx-auto py-10 px-4 sm:px-10">
-        <section className="mb-12 text-center">
-          <h1 className="sr-only">Événements Overbound</h1>
-          <Headings
-            title="Partez à la conquête de nos prochains défis"
-            description="Visualisez nos événements sur la carte, trouvez les courses proches de chez vous et plongez dans les détails de chaque ticket disponible."
+    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+      {/* Hero Section */}
+      <section className='relative isolate overflow-hidden py-20 sm:py-24'>
+        <div className='absolute inset-0'>
+          <Image
+            src={heroImageSrc}
+            alt='Événements Overbound'
+            fill
+            sizes='100vw'
+            className='object-cover object-center'
+            priority
           />
-        </section>
-
-        {isError && (
-          <div className="mb-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-left text-red-700">
-            Une erreur est survenue lors du chargement des événements : {error?.message}
+          <div className='pointer-events-none absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
+          <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
+          <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
+        </div>
+        <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+          <div className='max-w-3xl space-y-6 text-center lg:text-left'>
+            <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
+              Événements
+            </span>
+            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
+              Partez à la conquête de nos prochains défis
+            </h1>
+            <p className='text-base leading-relaxed text-muted-foreground sm:text-lg'>
+              Visualisez nos événements sur la carte, trouvez les courses proches de chez vous et plongez dans les détails de chaque ticket disponible.
+            </p>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+              <Button asChild size='lg' className='h-12 w-full sm:w-auto'>
+                <Link href='#carte'>Voir la carte</Link>
+              </Button>
+              <Button
+                asChild
+                variant='outline'
+                size='lg'
+                className='h-12 w-full border-primary text-primary hover:bg-primary/10 sm:w-auto'
+              >
+                <Link href='/obstacles'>Découvrir les obstacles</Link>
+              </Button>
+            </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 mb-8">
-          {/* Barre de gauche - Liste ou Détail */}
-          <section className="h-full order-2 lg:order-1 lg:col-span-2">
-            {selectedEvent ? (
-              /* Mode Détail - Événement sélectionné */
-              <div className="h-full space-y-6">
-                <Card className="border border-border">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleBackToList}
-                        className="p-2"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl font-semibold leading-tight">
-                          {selectedEvent.title}
-                        </CardTitle>
-                        {selectedEvent.subtitle && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {selectedEvent.subtitle}
-                          </p>
-                        )}
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={`${EVENT_STATUS_STYLES[selectedEvent.status]} text-xs font-medium`}
-                      >
-                        {EVENT_STATUS_LABELS[selectedEvent.status]}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {formatEventDateLong(selectedEvent.date)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {formatEventTime(selectedEvent.date)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedEvent.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedEvent.capacity} places disponibles</span>
-                      </div>
-                    </div>
+      <div className="relative w-full py-40 bg-white px-4 sm:px-6 xl:px-32">
+        <Image
+          src='/images/mountain-vector.svg'
+          alt='Illustration montagne'
+          width={1200}
+          height={600}
+          className='pointer-events-none z-1 absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-screen max-w-none -translate-x-1/2'
+          priority
+        />
+        <div className='space-y-4 text-center sm:text-left pb-6'>
+          <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+            Calendrier Overbound
+          </span>
+          <div className='space-y-3'>
+            <Headings 
+              title="Les prochains défis à ne pas manquer"
+              sx='text-black' 
+            />
+            <p className='mx-auto max-w-2xl text-sm text-muted-foreground sm:mx-0 sm:text-base'>
+              Sélectionne ta prochaine course, repère les lieux et assure-toi une place avant la clôture des inscriptions.
+              Chaque carte te donne l’essentiel : date, lieu, prix de départ et nombre de formats disponibles.
+            </p>
+          </div>
+        </div>
+        <section id="carte" className="mb-12">
 
-                    {selectedEvent.description && (
-                      <div>
-                        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                          Description
-                        </h3>
-                        <p className="text-sm leading-relaxed text-foreground/80">
-                          {selectedEvent.description}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+          {isError && (
+            <div className="mb-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-left text-red-700">
+              Une erreur est survenue lors du chargement des événements : {error?.message}
+            </div>
+          )}
 
-                {/* Tickets disponibles */}
-                <Card className="border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      Formats disponibles ({selectedEvent.tickets?.length || 0})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {selectedEvent.tickets && selectedEvent.tickets.length ? (
-                      <div className="space-y-4">
-                        {selectedEvent.tickets.map((ticket) => (
-                          renderEventTicket(ticket, selectedEvent)
-                        ))}
-                        {renderEventTicket(null, selectedEvent)}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-                        Les informations sur les tickets seront bientôt disponibles.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              /* Mode Liste - Preview des événements */
-              <Card className="h-full border border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Timer className="h-5 w-5 text-primary" />
-                    Événements à venir ({upcomingEvents.length})
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Cliquez sur un événement pour voir les détails et les tickets disponibles
-                  </p>
-                </CardHeader>
-                <CardContent className="max-h-[640px] space-y-3 overflow-y-auto pr-2">
-                  {isLoading && !data ? (
-                    <EventsSkeleton />
-                  ) : upcomingEvents.length ? (
-                    upcomingEvents.map((event) => {
-                      const ticketsCount = event.tickets?.length ?? 0
-                      const statusLabel = EVENT_STATUS_LABELS[event.status]
-                      const statusClasses = EVENT_STATUS_STYLES[event.status]
-                      const eventPriceTiers = event.price_tiers || []
-                      const activeTier = getCurrentPriceTier(eventPriceTiers)
-                      const hasDiscount = activeTier && activeTier.discount_percentage > 0
-
-                      const minPrice = event.tickets && event.tickets.length > 0
-                        ? Math.min(...event.tickets.map(t => getStartingPrice(t, eventPriceTiers)))
-                        : null
-
-                      const baseMinPrice = event.tickets && event.tickets.length > 0
-                        ? Math.min(...event.tickets.map(t => getStartingPrice(t, [])))
-                        : null
-
-                      return (
-                        <button
-                          key={event.id}
-                          type="button"
-                          onClick={() => handleEventSelect(event.id)}
-                          className="group w-full rounded-lg border border-border bg-background p-4 text-left transition-all hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 mb-8">
+            {/* Barre de gauche - Liste ou Détail */}
+            <section className="h-full order-2 lg:order-1 lg:col-span-2">
+              {selectedEvent ? (
+                /* Mode Détail - Événement sélectionné */
+                <div className="h-full space-y-6">
+                  <Card className="border border-border">
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleBackToList}
+                          className="p-2"
                         >
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-base leading-tight mb-1">
-                                {event.title}
-                              </h3>
-                              {event.subtitle && (
-                                <p className="text-sm text-muted-foreground line-clamp-1">
-                                  {event.subtitle}
-                                </p>
-                              )}
-                            </div>
-                            <Badge variant="outline" className={`${statusClasses} whitespace-nowrap text-xs font-medium`}>
-                              {statusLabel}
-                            </Badge>
-                          </div>
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex-1">
+                          <CardTitle className="text-xl font-semibold leading-tight">
+                            {selectedEvent.title}
+                          </CardTitle>
+                          {selectedEvent.subtitle && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {selectedEvent.subtitle}
+                            </p>
+                          )}
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`${EVENT_STATUS_STYLES[selectedEvent.status]} text-xs font-medium`}
+                        >
+                          {EVENT_STATUS_LABELS[selectedEvent.status]}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {formatEventDateLong(selectedEvent.date)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {formatEventTime(selectedEvent.date)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedEvent.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedEvent.capacity} places disponibles</span>
+                        </div>
+                      </div>
 
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {formatEventDateShort(event.date)}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {event.location}
-                              </span>
+                      {selectedEvent.description && (
+                        <div>
+                          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                            Description
+                          </h3>
+                          <p className="text-sm leading-relaxed text-foreground/80">
+                            {selectedEvent.description}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Tickets disponibles */}
+                  <Card className="border border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        Formats disponibles ({selectedEvent.tickets?.length || 0})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {selectedEvent.tickets && selectedEvent.tickets.length ? (
+                        <div className="space-y-4">
+                          {selectedEvent.tickets.map((ticket) => (
+                            renderEventTicket(ticket, selectedEvent)
+                          ))}
+                          {renderEventTicket(null, selectedEvent)}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                          Les informations sur les tickets seront bientôt disponibles.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                /* Mode Liste - Preview des événements */
+                <Card className="h-full border border-border">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Timer className="h-5 w-5 text-primary" />
+                      Événements à venir ({upcomingEvents.length})
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Cliquez sur un événement pour voir les détails et les tickets disponibles
+                    </p>
+                  </CardHeader>
+                  <CardContent className="max-h-[640px] space-y-3 overflow-y-auto pr-2">
+                    {isLoading && !data ? (
+                      <EventsSkeleton />
+                    ) : upcomingEvents.length ? (
+                      upcomingEvents.map((event) => {
+                        const ticketsCount = event.tickets?.length ?? 0
+                        const statusLabel = EVENT_STATUS_LABELS[event.status]
+                        const statusClasses = EVENT_STATUS_STYLES[event.status]
+                        const eventPriceTiers = event.price_tiers || []
+                        const activeTier = getCurrentPriceTier(eventPriceTiers)
+                        const hasDiscount = activeTier && activeTier.discount_percentage > 0
+
+                        const minPrice = event.tickets && event.tickets.length > 0
+                          ? Math.min(...event.tickets.map(t => getStartingPrice(t, eventPriceTiers)))
+                          : null
+
+                        const baseMinPrice = event.tickets && event.tickets.length > 0
+                          ? Math.min(...event.tickets.map(t => getStartingPrice(t, [])))
+                          : null
+
+                        return (
+                          <button
+                            key={event.id}
+                            type="button"
+                            onClick={() => handleEventSelect(event.id)}
+                            className="group w-full rounded-lg border border-border bg-background p-4 text-left transition-all hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
+                          >
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-base leading-tight mb-1">
+                                  {event.title}
+                                </h3>
+                                {event.subtitle && (
+                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {event.subtitle}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge variant="outline" className={`${statusClasses} whitespace-nowrap text-xs font-medium`}>
+                                {statusLabel}
+                              </Badge>
                             </div>
-                            
-                            <div className="text-right">
-                              {minPrice && minPrice > 0 && (
-                                <div className="flex flex-col items-end gap-0.5">
-                                  {hasDiscount && baseMinPrice && baseMinPrice > minPrice && (
-                                    <div className="text-xs text-muted-foreground line-through">
-                                      {(baseMinPrice / 100).toFixed(0)}€
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {formatEventDateShort(event.date)}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {event.location}
+                                </span>
+                              </div>
+                              
+                              <div className="text-right">
+                                {minPrice && minPrice > 0 && (
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    {hasDiscount && baseMinPrice && baseMinPrice > minPrice && (
+                                      <div className="text-xs text-muted-foreground line-through">
+                                        dès {formatCurrencySmart(baseMinPrice, (event.tickets?.find(t => t.currency)?.currency || 'EUR'))}
+                                      </div>
+                                    )}
+                                    <div className="text-sm font-semibold text-primary">
+                                      {(() => {
+                                        const cur = (event.tickets?.find(t => t.currency)?.currency || 'EUR')
+                                        return `dès ${formatCurrencySmart(minPrice, cur)}`
+                                      })()}
                                     </div>
-                                  )}
-                                  <div className="text-sm font-semibold text-primary">
-                                    dès {(minPrice / 100).toFixed(0)}€
                                   </div>
-                                  {hasDiscount && activeTier && (
-                                    <div className="text-[10px] font-semibold text-green-600">
-                                      -{activeTier.discount_percentage}%
-                                    </div>
-                                  )}
+                                )}
+                                <div className="text-xs text-muted-foreground">
+                                  {ticketsCount} format{ticketsCount > 1 ? 's' : ''}
                                 </div>
-                              )}
-                              <div className="text-xs text-muted-foreground">
-                                {ticketsCount} format{ticketsCount > 1 ? 's' : ''}
                               </div>
                             </div>
-                          </div>
-                        </button>
-                      )
-                    })
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-border/60 bg-background p-6 text-center text-muted-foreground">
-                      Aucun événement à afficher pour le moment. Revenez bientôt !
-                    </div>
-                  )}
+                          </button>
+                        )
+                      })
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border/60 bg-background p-6 text-center text-muted-foreground">
+                        Aucun événement à afficher pour le moment. Revenez bientôt !
+                      </div>
+                    )}
 
-                  {!isLoading && isFetching && (
-                    <p className="text-center text-xs text-muted-foreground">
-                      Mise à jour des données...
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </section>
-
-          {/* Carte à droite */}
-          <section className="order-1 lg:order-2 lg:col-span-3">
-            <div className="relative h-[420px] overflow-hidden rounded-3xl border border-border bg-muted lg:h-[640px]">
-              {isLoading && !eventsWithCoordinates.length ? (
-                <Skeleton className="h-full w-full" />
-              ) : eventsWithCoordinates.length ? (
-                <EventsMap
-                  events={eventsWithCoordinates}
-                  selectedEventId={selectedEventId}
-                  onSelectEvent={setSelectedEventId}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center p-10 text-center text-muted-foreground">
-                  <div>
-                    <Navigation className="mx-auto mb-4 h-10 w-10" />
-                    <p className="text-base font-medium">Aucun événement géolocalisé disponible pour le moment.</p>
-                    <p className="text-sm text-muted-foreground">
-                      Dès que nous aurons des épreuves géolocalisées, elles apparaîtront ici.
-                    </p>
-                  </div>
-                </div>
+                    {!isLoading && isFetching && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        Mise à jour des données...
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
               )}
-            </div>
-          </section>
-        </div>
+            </section>
+
+            {/* Carte à droite */}
+            <section className="order-1 lg:order-2 lg:col-span-3">
+              <div className="relative h-[420px] overflow-hidden rounded-3xl border border-border bg-muted lg:h-[640px]">
+                {isLoading && !eventsWithCoordinates.length ? (
+                  <Skeleton className="h-full w-full" />
+                ) : eventsWithCoordinates.length ? (
+                  <EventsMap
+                    events={eventsWithCoordinates}
+                    selectedEventId={selectedEventId}
+                    onSelectEvent={setSelectedEventId}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center p-10 text-center text-muted-foreground">
+                    <div>
+                      <Navigation className="mx-auto mb-4 h-10 w-10" />
+                      <p className="text-base font-medium">Aucun événement géolocalisé disponible pour le moment.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Dès que nous aurons des épreuves géolocalisées, elles apparaîtront ici.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        </section>
 
         <NeedHelpChoosingYourFormat />
+        <EventlistDisplay />
+        <Image
+          src='/images/mountain-vector.svg'
+          alt='Illustration montagne'
+          width={1200}
+          height={600}
+          className='pointer-events-none z-1 absolute -bottom-10 lg:bottom-[-1%]  left-1/2 w-screen max-w-none -translate-x-1/2'
+          priority
+        />
       </div>
-      <EventlistDisplay />
       <ObstaclesOverview />
       <FAQ />
       <AnimatedBanner images={PARTNERS_DATA.map(partner => partner.logo)} />

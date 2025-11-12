@@ -1,15 +1,15 @@
 import { client } from '@/sanity/lib/client'
-import { urlFor } from '@/sanity/lib/image'
 import { paginatedPostsQuery, postsSearchQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
+import Image from 'next/image'
+import BlogArticleItem from '@/components/blog/BlogArticleItem'
 
-export const dynamic = 'force-static'
 export const revalidate = 60
 
-type SearchParams = Promise<{ page?: string; q?: string }>
-
-export default async function BlogIndex({ searchParams }: { searchParams: SearchParams }) {
-  const { page, q } = await searchParams
+export default async function BlogIndex({ searchParams }: { searchParams?: Promise<{ page?: string; q?: string }> }) {
+  const resolvedParams = await searchParams
+  const page = resolvedParams?.page
+  const q = resolvedParams?.q
   const pageSize = 12
   const current = Math.max(1, parseInt(page || '1', 10) || 1)
   const offset = (current - 1) * pageSize
@@ -25,8 +25,43 @@ export default async function BlogIndex({ searchParams }: { searchParams: Search
   const pageCount = Math.max(1, Math.ceil((total || 0) / pageSize))
 
   return (
-    <main className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Blog</h1>
+    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+      {/* Hero header */}
+      <section className="relative isolate overflow-hidden py-16 sm:py-20">
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero_header_poster.jpg"
+            alt="OverBound Blog"
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
+            priority
+          />
+          <div className="pointer-events-none absolute inset-0 bg-background/40 backdrop-blur-[2px]" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
+        </div>
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
+          <div className="max-w-3xl space-y-3">
+            <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm">
+              La tribu OverBound
+            </span>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Conseils, actus et coulisses</h1>
+            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Entraînement, nutrition, préparation et histoires qui font vibrer nos courses. Tout pour progresser et kiffer sur les obstacles.
+            </p>
+            <div className="flex gap-3">
+              <Link href="/blog/categories" className="px-4 py-2 rounded-full border text-sm hover:bg-background/50">
+                Voir les catégories
+              </Link>
+              <Link href="/blog/auteurs" className="px-4 py-2 rounded-full border text-sm hover:bg-background/50">
+                Nos auteurs
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-6">
       <form action="/blog" className="mb-6 flex gap-2">
         <input
           type="text"
@@ -39,21 +74,7 @@ export default async function BlogIndex({ searchParams }: { searchParams: Search
       </form>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts?.map((p: any) => (
-          <article key={p._id} className="border rounded-2xl overflow-hidden">
-            {p.mainImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={urlFor(p.mainImage).width(800).height(450).url()} alt="" className="w-full h-48 object-cover" />
-            )}
-            <div className="p-4">
-              <h2 className="font-semibold text-lg leading-snug">
-                <Link href={`/blog/post/${p.slug}`}>{p.title}</Link>
-              </h2>
-              {p.excerpt && <p className="text-sm opacity-80 mt-2 line-clamp-3">{p.excerpt}</p>}
-              <div className="text-xs opacity-60 mt-3">
-                {p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('fr-FR') : ''}
-              </div>
-            </div>
-          </article>
+          <BlogArticleItem key={p._id} post={p} />
         ))}
       </div>
 
@@ -68,6 +89,7 @@ export default async function BlogIndex({ searchParams }: { searchParams: Search
           )}
         </nav>
       )}
+      </div>
     </main>
   )
 }

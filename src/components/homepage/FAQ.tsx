@@ -60,7 +60,7 @@ const FAQ = () => {
             <Link href='/about/faq'>
               <Button
                 variant='outline'
-                className='h-10 w-full border-2 border-primary text-sm font-semibold text-[#26AA26] transition-all duration-300 hover:bg-[#26AA26] hover:text-white hover:shadow-lg hover:shadow-[#26AA26]/30 sm:h-11 sm:w-44 sm:text-base md:h-12 md:w-48'
+                className='h-10 cursor-pointer w-full border-2 border-primary text-sm font-semibold text-[#26AA26] transition-all duration-300 hover:bg-[#26AA26] hover:text-white hover:shadow-lg hover:shadow-[#26AA26]/30 sm:h-11 sm:w-44 sm:text-base md:h-12 md:w-48'
               >
                 Voir tout
               </Button>

@@ -111,7 +111,7 @@ export const questionsData: QuestionnaireData = {
         },
         "format_royale": {
             "name": "Tribale Royale",
-            "description": "75 km et plus de 400 obstacles. Le défi ultime, réservé à ceux qui veulent repousser leurs limites et vivre une aventure hors norme.",
+            "description": "Une backyard OCR. Le défi ultime, réservé à ceux qui veulent repousser leurs limites et vivre une aventure hors norme.",
             "icon": "👑"
         },
         "difficulty_standard": {
