@@ -30,7 +30,7 @@ const LINK_GROUPS = [
       { label: 'Volontaires', href: '/volunteers' },
       { label: 'Concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
-      { label: 'Équipe', href: '/about/team' },
+      // { label: 'Équipe', href: '/about/team' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
     ],

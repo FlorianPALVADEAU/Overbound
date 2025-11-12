@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { client } from '@/sanity/lib/client'
 import { recentPostsQuery } from '@/sanity/lib/queries'
-import { urlFor } from '@/sanity/lib/image'
+import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import { Button } from '../ui/button'
+import Headings from '../globals/Headings'
+import SubHeadings from '../globals/SubHeadings'
 
 export default function RecentBlogTeaser() {
   const [posts, setPosts] = useState<any[]>([])
@@ -12,27 +15,28 @@ export default function RecentBlogTeaser() {
   }, [])
   if (!posts.length) return null
   return (
-    <section className="container mx-auto max-w-6xl px-6 mt-16">
-      <div className="flex items-end justify-between mb-4">
-        <h2 className="text-xl font-semibold">Conseils & dernières actus</h2>
-        <Link href="/blog" className="text-sm underline">Voir le blog</Link>
+    <section className="w-full px-4 py-12 flex flex-col gap-12 items-center justify-center">
+      <div className='relative z-10 w-full'>
+        <SubHeadings
+          title='Conseils & dernières actus'
+          cta={
+            <Link href='/blog'>
+              <Button
+                variant='outline'
+                className='h-10 cursor-pointer w-full border-2 border-primary text-sm font-semibold text-[#26AA26] transition-all duration-300 hover:bg-[#26AA26] hover:text-white hover:shadow-lg hover:shadow-[#26AA26]/30 sm:h-11 sm:w-44 sm:text-base md:h-12 md:w-48'
+              >
+                Voir tout
+              </Button>
+            </Link>
+          }
+          sx='flex-row! justify-between!'
+        />
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-auto">
         {posts.map((p) => (
-          <article key={p._id} className="border rounded-2xl overflow-hidden">
-            {p.mainImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={urlFor(p.mainImage).width(800).height(450).url()} alt="" className="w-full h-40 object-cover" />
-            ) : null}
-            <div className="p-4">
-              <h3 className="font-semibold leading-snug">
-                <Link href={`/blog/post/${p.slug}`}>{p.title}</Link>
-              </h3>
-            </div>
-          </article>
+          <BlogArticleItem key={p._id} post={p} imageHeight={176} showExcerpt={false} />
         ))}
       </div>
     </section>
   )
 }
-

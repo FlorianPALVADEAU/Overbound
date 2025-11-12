@@ -166,39 +166,153 @@ export default function RaceDetailPage() {
         : 'Explosif'
   const galleryImages: string[] = race.logo_url ? [race.logo_url] : []
 
-  const statsCards = [
-    {
-      label: 'Format',
-      value: formatRaceType(race.type),
-      icon: Flag,
-      helper: `Pensé pour les profils ${formatTargetPublic(race.target_public).toLowerCase()}`,
-    },
-    {
-      label: 'Intensité',
-      value: `${race.difficulty}/10`,
-      icon: Flame,
-      helper: difficultyLabel,
-    },
-    {
-      label: race.distance_km ? 'Distance' : 'Public cible',
-      value: race.distance_km ? `${race.distance_km} km` : formatTargetPublic(race.target_public),
-      icon: race.distance_km ? Mountain : Target,
-      helper: race.distance_km ? 'Segments de run et ateliers fonctionnels' : "Idéal pour progresser en team ou en solo",
-    },
-    obstacleCount > 0
-      ? {
-          label: 'Obstacles',
-          value: `${obstacleCount} ateliers`,
-          icon: Zap,
-          helper: 'Mix cardio, force et stratégie',
-        }
-      : {
-          label: 'Obstacles',
-          value: 'À venir',
-          icon: Zap,
-          helper: 'Programme en cours de finalisation',
+  // Detect race formats
+  const isTribalRoyale = params.id === 'tribale-royale' || race.name?.toLowerCase().includes('tribal royale')
+  const isTribalKids = params.id === 'tribale-kids' || race.name?.toLowerCase().includes('tribal kids')
+  const isRiteDuGuerrier = params.id === 'rite-du-guerrier' || race.name?.toLowerCase().includes('rite du guerrier')
+  const isVoieDuHeros = params.id === 'voie-du-heros' || race.name?.toLowerCase().includes('voie du héros')
+
+  const statsCards = isTribalRoyale
+    ? [
+        {
+          label: 'Format',
+          value: 'Backyard OCR',
+          icon: Flag,
+          helper: 'Premier format backyard appliqué à l\'OCR au monde',
         },
-  ]
+        {
+          label: 'Intensité',
+          value: '10/10',
+          icon: Flame,
+          helper: 'Mental et physique extrême',
+        },
+        {
+          label: 'Distance',
+          value: '∞ km',
+          icon: Mountain,
+          helper: 'Élimination progressive - le dernier debout gagne',
+        },
+        {
+          label: 'Obstacles',
+          value: '∞ obstacles',
+          icon: Zap,
+          helper: 'Répétés jusqu\'à élimination complète',
+        },
+      ]
+    : isTribalKids
+    ? [
+        {
+          label: 'Format',
+          value: 'Famille',
+          icon: Flag,
+          helper: 'Course d\'obstacles ludique pour les 6-14 ans',
+        },
+        {
+          label: 'Âge',
+          value: '6-14 ans',
+          icon: Target,
+          helper: '3 parcours adaptés par tranche d\'âge',
+        },
+        {
+          label: 'Distance',
+          value: '1 / 2 / 3 km',
+          icon: Mountain,
+          helper: 'Selon l\'âge et le niveau de l\'enfant',
+        },
+        {
+          label: 'Obstacles',
+          value: '15 obstacles',
+          icon: Zap,
+          helper: 'Ludiques, sécurisés et progressifs',
+        },
+      ]
+    : isRiteDuGuerrier
+    ? [
+        {
+          label: 'Format',
+          value: 'Sprint',
+          icon: Flag,
+          helper: 'Format court et explosif - idéal pour débuter en OCR',
+        },
+        {
+          label: 'Intensité',
+          value: '7/10',
+          icon: Flame,
+          helper: 'Accessible mais intense - explosivité et cardio',
+        },
+        {
+          label: 'Distance',
+          value: '6 km',
+          icon: Mountain,
+          helper: 'Distance idéale pour donner tout sans retenue',
+        },
+        {
+          label: 'Obstacles',
+          value: '20 obstacles',
+          icon: Zap,
+          helper: 'Mix équilibré entre technique et puissance',
+        },
+      ]
+    : isVoieDuHeros
+    ? [
+        {
+          label: 'Format',
+          value: 'Intermédiaire',
+          icon: Flag,
+          helper: 'Distance médium - endurance et technique combinées',
+        },
+        {
+          label: 'Intensité',
+          value: '8/10',
+          icon: Flame,
+          helper: 'Exigeant - test d\'endurance et de mental',
+        },
+        {
+          label: 'Distance',
+          value: '12 km',
+          icon: Mountain,
+          helper: 'Endurance nécessaire avec gestion d\'effort',
+        },
+        {
+          label: 'Obstacles',
+          value: '35 obstacles',
+          icon: Zap,
+          helper: 'Portés lourds et obstacles techniques répétés',
+        },
+      ]
+    : [
+        {
+          label: 'Format',
+          value: formatRaceType(race.type),
+          icon: Flag,
+          helper: `Pensé pour les profils ${formatTargetPublic(race.target_public).toLowerCase()}`,
+        },
+        {
+          label: 'Intensité',
+          value: `${race.difficulty}/10`,
+          icon: Flame,
+          helper: difficultyLabel,
+        },
+        {
+          label: race.distance_km ? 'Distance' : 'Public cible',
+          value: race.distance_km ? `${race.distance_km} km` : formatTargetPublic(race.target_public),
+          icon: race.distance_km ? Mountain : Target,
+          helper: race.distance_km ? 'Segments de run et ateliers fonctionnels' : "Idéal pour progresser en team ou en solo",
+        },
+        obstacleCount > 0
+          ? {
+              label: 'Obstacles',
+              value: `${obstacleCount} ateliers`,
+              icon: Zap,
+              helper: 'Mix cardio, force et stratégie',
+            }
+          : {
+              label: 'Obstacles',
+              value: 'À venir',
+              icon: Zap,
+              helper: 'Programme en cours de finalisation',
+            },
+      ]
 
   return (
     <main className="min-h-screen bg-background">
@@ -242,10 +356,66 @@ export default function RaceDetailPage() {
                 </div>
 
                 <h1 className="text-5xl font-black tracking-tight text-foreground md:text-6xl">{race.name}</h1>
-                <p className="mt-4 text-xl leading-relaxed text-muted-foreground">
-                  {race.description ||
-                    "Un format signature Overbound qui combine puissance, endurance et coordination. Préparez votre team pour des runs fractionnés, des ateliers fonctionnels et des obstacles techniques à haute intensité."}
-                </p>
+                {isTribalRoyale ? (
+                  <div className="mt-4 space-y-3">
+                    <Badge className="bg-amber-500 text-white font-bold text-sm">
+                      PREMIÈRE MONDIALE - Format Backyard OCR
+                    </Badge>
+                    <p className="text-xl leading-relaxed text-muted-foreground">
+                      <span className="text-foreground font-semibold">Du jamais vu dans l'OCR :</span> Le premier format backyard appliqué aux courses d'obstacles.
+                      Inspiré du légendaire Barkley Marathons, la Tribal Royale n'a pas de distance fixe.
+                    </p>
+                    <p className="text-lg leading-relaxed text-muted-foreground">
+                      <span className="text-amber-600 font-semibold">Élimination progressive.</span> Chaque tour dure 1h maximum.
+                      Si tu ne reviens pas à temps, tu es éliminé. Le dernier debout gagne.
+                      C'est un test mental et physique extrême réservé aux athlètes d'élite.
+                    </p>
+                  </div>
+                ) : isTribalKids ? (
+                  <div className="mt-4 space-y-3">
+                    <Badge className="bg-purple-500 text-white font-bold text-sm">
+                      FORMAT FAMILLE - 6-14 ans
+                    </Badge>
+                    <p className="text-xl leading-relaxed text-muted-foreground">
+                      <span className="text-foreground font-semibold">L'initiation parfaite à l'OCR :</span> Des parcours d'obstacles ludiques et sécurisés spécialement conçus pour les enfants de 6 à 14 ans.
+                    </p>
+                    <p className="text-lg leading-relaxed text-muted-foreground">
+                      <span className="text-purple-600 font-semibold">3 distances adaptées par âge.</span> 1 km (6-8 ans), 2 km (9-11 ans), 3 km (12-14 ans).
+                      Avec 15 obstacles ludiques, progressifs et totalement sécurisés, les enfants découvrent l'esprit Overbound dans un environnement bienveillant et stimulant.
+                    </p>
+                  </div>
+                ) : isRiteDuGuerrier ? (
+                  <div className="mt-4 space-y-3">
+                    <Badge className="bg-emerald-500 text-white font-bold text-sm">
+                      FORMAT SPRINT - 6 km
+                    </Badge>
+                    <p className="text-xl leading-relaxed text-muted-foreground">
+                      <span className="text-foreground font-semibold">L'initiation explosive à l'OCR :</span> Le Rite du Guerrier est le format parfait pour découvrir l'univers Overbound ou viser un chrono explosif.
+                    </p>
+                    <p className="text-lg leading-relaxed text-muted-foreground">
+                      <span className="text-emerald-600 font-semibold">6 km, 20 obstacles.</span> Distance courte mais intense qui te permet de donner ton maximum du début à la fin.
+                      Accessible aux débutants motivés tout en offrant un vrai défi pour les athlètes confirmés qui cherchent la performance pure.
+                    </p>
+                  </div>
+                ) : isVoieDuHeros ? (
+                  <div className="mt-4 space-y-3">
+                    <Badge className="bg-blue-500 text-white font-bold text-sm">
+                      FORMAT INTERMÉDIAIRE - 12 km
+                    </Badge>
+                    <p className="text-xl leading-relaxed text-muted-foreground">
+                      <span className="text-foreground font-semibold">Le défi équilibré :</span> La Voie du Héros combine endurance, technique et mental pour un test complet de tes capacités.
+                    </p>
+                    <p className="text-lg leading-relaxed text-muted-foreground">
+                      <span className="text-blue-600 font-semibold">12 km, 35 obstacles.</span> Distance médium qui demande gestion d'effort et stratégie.
+                      Avec des portés lourds, des obstacles techniques répétés et une vraie dimension cardio, c'est le tremplin idéal pour progresser vers les formats élite.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-xl leading-relaxed text-muted-foreground">
+                    {race.description ||
+                      "Un format signature Overbound qui combine puissance, endurance et coordination. Préparez votre team pour des runs fractionnés, des ateliers fonctionnels et des obstacles techniques à haute intensité."}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -311,42 +481,211 @@ export default function RaceDetailPage() {
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-8">
               <div className="rounded-3xl border border-border bg-card p-8">
-                <h2 className="text-2xl font-bold text-card-foreground">Philosophie du format</h2>
-                <p className="mt-4 leading-relaxed text-muted-foreground">
-                  Cette course hybride combine l&apos;intensité des runs fractionnés avec une série d&apos;obstacles techniques qui sollicitent
-                  l&apos;ensemble du corps. Chaque transition challenge votre endurance et votre capacité à récupérer sous pression, créant un
-                  format parfait pour ceux qui cherchent à sortir des sentiers battus et découvrir un nouveau style de compétition.
-                </p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">À quoi vous attendre</p>
-                    <p className="mt-1 text-base font-semibold text-foreground">Runs, puissance et coordination</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      Transition rapide entre cardio et ateliers fonctionnels pour garder un rythme élevé tout au long de la course.
+                <h2 className="text-2xl font-bold text-card-foreground">
+                  {isTribalRoyale ? 'Le concept Backyard OCR' : isTribalKids ? 'L\'esprit Tribal Kids' : isRiteDuGuerrier ? 'L\'esprit Sprint' : isVoieDuHeros ? 'Philosophie de la progression' : 'Philosophie du format'}
+                </h2>
+                {isTribalRoyale ? (
+                  <>
+                    <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
+                      <p>
+                        <span className="text-foreground font-semibold">Inspiré du Barkley Marathons</span>, la Tribal Royale introduit
+                        pour la première fois au monde le concept de backyard ultra à l'obstacle course racing.
+                      </p>
+                      <p>
+                        <span className="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 4 km
+                        avec 15+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé.
+                        Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu'à ce qu'il ne reste
+                        qu'un seul concurrent.
+                      </p>
+                      <p>
+                        Ce n'est pas une course de distance, <span className="text-foreground font-semibold">c'est un test de limites absolues</span>.
+                        Mental, physique, stratégie de récupération : tout est mis à l'épreuve. Le dernier debout gagne.
+                      </p>
+                    </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
+                        <p className="text-xs uppercase tracking-wide text-amber-600">Format élimination</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">1h par tour maximum</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Pas d'arrivée en avance. Chaque tour démarre toutes les heures, peu importe quand tu reviens.
+                          Gère ta récupération.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
+                        <p className="text-xs uppercase tracking-wide text-amber-600">Pré-requis</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Niveau élite obligatoire</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Réservé aux athlètes d'élite avec une expérience OCR confirmée. Préparation mentale et physique extrême requise.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
+                        <p className="text-xs uppercase tracking-wide text-amber-600">Objectif</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Le dernier debout gagne</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Pas de classement, pas de chrono. Un seul gagnant : celui qui reste quand tous les autres ont abandonné.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : isTribalKids ? (
+                  <>
+                    <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
+                      <p>
+                        <span className="text-foreground font-semibold">Tribal Kids, c'est bien plus qu'une simple course</span> : c'est une aventure conçue pour initier les enfants à l'univers de l'obstacle course racing dans un cadre ludique, sécurisé et bienveillant.
+                      </p>
+                      <p>
+                        <span className="text-purple-600 font-semibold">Notre approche :</span> Chaque parcours est adapté à l'âge et au développement physique des enfants. Les obstacles sont pensés pour être relevés avec plaisir et confiance, tout en développant coordination, courage et esprit d'équipe.
+                      </p>
+                      <p>
+                        Les enfants découvrent <span className="text-foreground font-semibold">les valeurs Overbound</span> : dépassement de soi, entraide et fierté collective. Un souvenir marquant qui peut éveiller une passion pour le sport et l'aventure.
+                      </p>
+                    </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-purple-500/5 p-4 ring-1 ring-purple-500/20">
+                        <p className="text-xs uppercase tracking-wide text-purple-600">Parcours adapté</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">3 distances par âge</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          1 km pour les 6-8 ans, 2 km pour les 9-11 ans, 3 km pour les 12-14 ans. Chaque parcours est pensé pour leur niveau.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-purple-500/5 p-4 ring-1 ring-purple-500/20">
+                        <p className="text-xs uppercase tracking-wide text-purple-600">Sécurité maximale</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Obstacles sécurisés</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Tous les obstacles sont ludiques, progressifs et totalement sécurisés. Encadrement bienveillant et attentif.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-purple-500/5 p-4 ring-1 ring-purple-500/20">
+                        <p className="text-xs uppercase tracking-wide text-purple-600">Esprit collectif</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Entraide et fierté</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Les enfants apprennent à s'encourager mutuellement et à célébrer les réussites de chacun.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : isRiteDuGuerrier ? (
+                  <>
+                    <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
+                      <p>
+                        <span className="text-foreground font-semibold">Le Rite du Guerrier, c'est l'essence même de l'OCR concentrée sur 6 km</span> : vitesse, explosivité et intensité pure du premier au dernier obstacle.
+                      </p>
+                      <p>
+                        <span className="text-emerald-600 font-semibold">Format sprint :</span> La distance courte te permet de donner ton maximum sans retenue. Pas besoin de gérer ton effort sur la durée, juste de tout donner pendant 30 à 60 minutes d'effort intense.
+                      </p>
+                      <p>
+                        C'est <span className="text-foreground font-semibold">le format idéal pour débuter</span> dans l'univers Overbound ou pour les athlètes confirmés qui recherchent la performance pure et le chrono. Accessible mais exigeant.
+                      </p>
+                    </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-emerald-500/5 p-4 ring-1 ring-emerald-500/20">
+                        <p className="text-xs uppercase tracking-wide text-emerald-600">Format explosif</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Court et intense</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          6 km de course où chaque mètre compte. Tu peux sprinter du début à la fin sans économiser ton énergie.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-emerald-500/5 p-4 ring-1 ring-emerald-500/20">
+                        <p className="text-xs uppercase tracking-wide text-emerald-600">Accessible</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Idéal pour débuter</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          La porte d'entrée parfaite dans l'univers Overbound. Distance accessible avec un vrai défi à relever.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-emerald-500/5 p-4 ring-1 ring-emerald-500/20">
+                        <p className="text-xs uppercase tracking-wide text-emerald-600">Performance</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Vise le chrono</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Format parfait pour battre tes records personnels et te mesurer aux meilleurs sur une distance explosive.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : isVoieDuHeros ? (
+                  <>
+                    <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
+                      <p>
+                        <span className="text-foreground font-semibold">La Voie du Héros est le format de la progression</span> : 12 km qui combinent endurance cardio, technique sur obstacles et mental d'acier.
+                      </p>
+                      <p>
+                        <span className="text-blue-600 font-semibold">Distance intermédiaire :</span> Ni trop courte pour sprinter, ni trop longue pour être réservée aux élites. C'est le format équilibré qui teste toutes tes qualités : cardio, force, technique et gestion d'effort.
+                      </p>
+                      <p>
+                        <span className="text-foreground font-semibold">Tremplin vers l'élite :</span> Ce format est parfait pour ceux qui ont déjà fait le Rite du Guerrier et veulent monter en puissance. Avec 35 obstacles incluant des portés lourds répétés, c'est un vrai test de progression.
+                      </p>
+                    </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-blue-500/5 p-4 ring-1 ring-blue-500/20">
+                        <p className="text-xs uppercase tracking-wide text-blue-600">Endurance</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">12 km d'effort soutenu</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Distance qui demande de la gestion d'effort et de la stratégie. Tu ne peux pas tout donner d'un coup.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-blue-500/5 p-4 ring-1 ring-blue-500/20">
+                        <p className="text-xs uppercase tracking-wide text-blue-600">Technique</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">35 obstacles variés</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Mix complet : portés lourds, grip, agilité. Les obstacles se répètent et testent ta résistance à la fatigue.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-blue-500/5 p-4 ring-1 ring-blue-500/20">
+                        <p className="text-xs uppercase tracking-wide text-blue-600">Progression</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Vers les formats élite</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Le format parfait pour développer ton endurance et ta technique avant de passer aux formats extrêmes.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-4 leading-relaxed text-muted-foreground">
+                      Cette course hybride combine l&apos;intensité des runs fractionnés avec une série d&apos;obstacles techniques qui sollicitent
+                      l&apos;ensemble du corps. Chaque transition challenge votre endurance et votre capacité à récupérer sous pression, créant un
+                      format parfait pour ceux qui cherchent à sortir des sentiers battus et découvrir un nouveau style de compétition.
                     </p>
-                  </div>
-                  <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Pré-requis</p>
-                    <p className="mt-1 text-base font-semibold text-foreground">Condition physique solide</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      Programme idéal pour préparer une compétition hybride ou challenger votre team sur un format explosif.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Ambiance</p>
-                    <p className="mt-1 text-base font-semibold text-foreground">Stade indoor & vibes club</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      DJ set, speaker live et zones spectateurs rapprochées pour des encouragements constants.
-                    </p>
-                  </div>
-                </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">À quoi vous attendre</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Runs, puissance et coordination</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Transition rapide entre cardio et ateliers fonctionnels pour garder un rythme élevé tout au long de la course.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Pré-requis</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Condition physique solide</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          Programme idéal pour préparer une compétition hybride ou challenger votre team sur un format explosif.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Ambiance</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Stade indoor & vibes club</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          DJ set, speaker live et zones spectateurs rapprochées pour des encouragements constants.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="rounded-3xl border border-border bg-card p-8">
-                <h2 className="text-2xl font-bold text-card-foreground">Obstacles signature</h2>
+                <h2 className="text-2xl font-bold text-card-foreground">
+                  {isTribalRoyale ? 'Obstacles extrêmes' : isTribalKids ? 'Obstacles ludiques' : isRiteDuGuerrier ? 'Obstacles explosifs' : isVoieDuHeros ? 'Obstacles techniques' : 'Obstacles signature'}
+                </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Une sélection d&apos;ateliers techniques et puissants conçus pour tester chaque groupe musculaire. Concentrez-vous sur la
-                  posture et l&apos;explosivité pour gagner un temps précieux.
+                  {isTribalRoyale
+                    ? '15+ obstacles extrêmes conçus pour tester tes limites absolues. Grip, portés lourds, technique : chaque obstacle est un test. Tu les répéteras tour après tour jusqu\'à élimination.'
+                    : isTribalKids
+                    ? '15 obstacles ludiques et sécurisés qui permettent aux enfants de développer leur coordination, leur confiance et leur courage dans un cadre amusant et progressif.'
+                    : isRiteDuGuerrier
+                    ? '20 obstacles variés qui mettent à l\'épreuve force, agilité et coordination. Sur un sprint, chaque seconde compte : maîtrise la technique pour enchainer sans perdre de temps.'
+                    : isVoieDuHeros
+                    ? '35 obstacles répétés qui testent ta résistance à la fatigue. Portés lourds, grip prolongé, escalades : les mêmes obstacles reviennent et deviennent de plus en plus durs à mesure que la fatigue s\'installe.'
+                    : 'Une sélection d\'ateliers techniques et puissants conçus pour tester chaque groupe musculaire. Concentrez-vous sur la posture et l\'explosivité pour gagner un temps précieux.'}
                 </p>
                 {obstacleCount > 0 ? (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -426,14 +765,118 @@ export default function RaceDetailPage() {
                 </div>
               </div> */}
 
+              {/* Bouton "Quel format pour moi ?" - sauf pour Tribal Kids */}
+              {!isTribalKids && (
+                <div className="rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-card to-primary/5 p-8 shadow-lg">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div>
+                      <h2 className="text-xl font-semibold text-card-foreground">Pas sûr de ton choix ?</h2>
+                      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                        Réponds à quelques questions et découvre le format Overbound qui correspond le mieux à ton niveau et tes objectifs.
+                      </p>
+                    </div>
+                  </div>
+                  <Button asChild className="w-full bga-primary hover:bg-primary/90 text-primary-foreground">
+                    <Link href="/trainings/what-race-for-me">
+                      Quel format pour moi ?
+                    </Link>
+                  </Button>
+                </div>
+              )}
+
               <div className="rounded-3xl border border-border bg-card p-8">
-                <h2 className="text-xl font-semibold text-card-foreground">Matériel & équipement</h2>
-                <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                  <li>• Chaussures de training stable et grip antidérapant.</li>
-                  <li>• Gants optionnels pour la traction et les manipulations répétées.</li>
-                  <li>• Ceinture hydratation légère ou ravitaillement en libre-service sur zone.</li>
-                  <li>• Tenue respirante et seconde peau pour limiter les frottements.</li>
-                </ul>
+                <h2 className="text-xl font-semibold text-card-foreground">
+                  {isTribalRoyale ? 'Équipement requis' : isTribalKids ? 'Ce qu\'il faut prévoir' : isRiteDuGuerrier ? 'Équipement sprint' : isVoieDuHeros ? 'Équipement intermédiaire' : 'Matériel & équipement'}
+                </h2>
+                {isTribalRoyale ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
+                      <p className="text-xs uppercase tracking-wide text-amber-600 mb-2">Obligatoire</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Chaussures trail avec grip extrême</li>
+                        <li>• Gants résistants (grip répété sur obstacles)</li>
+                        <li>• Lampe frontale (tours de nuit)</li>
+                        <li>• Ravitaillement personnel entre les tours</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Fortement recommandé</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Stratégie de récupération (massage, compression)</li>
+                        <li>• Nutrition adaptée pour effort prolongé</li>
+                        <li>• Mental d'acier et capacité à gérer la fatigue</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : isTribalKids ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-2xl bg-purple-500/5 p-4 ring-1 ring-purple-500/20">
+                      <p className="text-xs uppercase tracking-wide text-purple-600 mb-2">Pour les enfants</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Chaussures de sport confortables (baskets)</li>
+                        <li>• Vêtements de sport adaptés à la météo</li>
+                        <li>• Bouteille d'eau (ravitaillement sur place)</li>
+                        <li>• Tenue de rechange pour après la course</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Pour les parents</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Présence d'un adulte responsable obligatoire</li>
+                        <li>• Possibilité d'accompagner l'enfant sur le parcours</li>
+                        <li>• Zones spectateurs pour encourager</li>
+                        <li>• Vestiaires et douches disponibles sur place</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : isRiteDuGuerrier ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-2xl bg-emerald-500/5 p-4 ring-1 ring-emerald-500/20">
+                      <p className="text-xs uppercase tracking-wide text-emerald-600 mb-2">Essentiel</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Chaussures de trail ou running avec bon grip</li>
+                        <li>• Tenue de sport légère et respirante</li>
+                        <li>• Gants recommandés pour les obstacles à grip</li>
+                        <li>• Pas besoin de ravitaillement (course courte)</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Conseils</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Échauffement complet avant le départ</li>
+                        <li>• Tenue légère pour favoriser la vitesse</li>
+                        <li>• Prévois une tenue de rechange (tu vas être sale !)</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : isVoieDuHeros ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-2xl bg-blue-500/5 p-4 ring-1 ring-blue-500/20">
+                      <p className="text-xs uppercase tracking-wide text-blue-600 mb-2">Obligatoire</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Chaussures de trail avec bon amorti et grip</li>
+                        <li>• Gants robustes (obstacles répétés = usure)</li>
+                        <li>• Système d'hydratation (sac à dos ou ceinture)</li>
+                        <li>• Tenue technique anti-frottements</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-2xl bg-background/40 p-4 ring-1 ring-border">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Recommandé</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li>• Gel énergétique pour maintenir le niveau</li>
+                        <li>• Compression musculaire (mollets, cuisses)</li>
+                        <li>• Stratégie de gestion d'effort préparée</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+                    <li>• Chaussures de training stable et grip antidérapant.</li>
+                    <li>• Gants optionnels pour la traction et les manipulations répétées.</li>
+                    <li>• Ceinture hydratation légère ou ravitaillement en libre-service sur zone.</li>
+                    <li>• Tenue respirante et seconde peau pour limiter les frottements.</li>
+                  </ul>
+                )}
               </div>
             </div>
           </div>

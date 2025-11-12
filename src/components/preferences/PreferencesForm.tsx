@@ -157,50 +157,6 @@ export default function PreferencesForm({
 
       <Separator />
 
-      {/* Digest frequency */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Bell className="w-5 h-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">Fréquence d'envoi</h3>
-        </div>
-
-        <div className="p-4 border rounded-lg space-y-3">
-          <div className="space-y-1">
-            <Label htmlFor="digest-frequency" className="text-base font-medium">
-              Recevoir les emails marketing
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              Choisissez la fréquence à laquelle vous souhaitez recevoir nos emails
-            </p>
-          </div>
-
-          <Select
-            value={localPreferences.digest_frequency}
-            onValueChange={handleDigestFrequencyChange}
-            disabled={isLoading || isFetchingPrefs || !anyMarketingEnabled}
-          >
-            <SelectTrigger id="digest-frequency">
-              <SelectValue placeholder="Sélectionnez une fréquence" />
-            </SelectTrigger>
-            <SelectContent>
-              {DIGEST_FREQUENCY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {!anyMarketingEnabled && (
-            <p className="text-xs text-muted-foreground">
-              Activez au moins un type de communication ci-dessus pour choisir une fréquence
-            </p>
-          )}
-        </div>
-      </div>
-
-      <Separator />
-
       {/* Transactional emails info */}
       <div className="p-4 border rounded-lg bg-muted/30">
         <div className="flex items-center gap-2 mb-2">

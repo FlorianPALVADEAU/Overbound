@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 const NeedHelpChoosingYourFormat = () => {
   return (
-        <div className='rounded-3xl border border-border/60 bg-background/80 p-6'>
+        <div className='rounded-2xl border border-border/60 bg-background/80 p-6'>
             <div className='flex flex-col gap-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left'>
             <div className='space-y-2'>
                 <h3 className='text-xl font-semibold text-foreground'>Besoin d’un coup de pouce pour choisir&nbsp;?</h3>

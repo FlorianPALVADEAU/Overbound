@@ -29,7 +29,7 @@ export const HeroHeader = () => {
                 {/* Container responsive qui garde ton design desktop */}
                 <div className="relative z-10 flex flex-col items-start justify-center gap-8 h-full text-center text-white px-4 sm:px-6 md:px-8 lg:px-32">
                     <div>
-                        <h1 className="text-4xl md:text-7xl font-bold mb-4 text-left">
+                        <h1 className="text-4xl md:text-7xl font-black mb-4 text-left">
                             Relève le défi ultime.
                         </h1>
                         <p className="text-lg md:text-2xl max-w-2xl mb-6 text-left">

@@ -23,7 +23,6 @@ import {
 } from 'lucide-react'
 import { useGetObstacles } from '../api/obstacles/obstaclesQueries'
 import type { Obstacle } from '@/types/Obstacle'
-import Headings from '@/components/globals/Headings'
 
 const OBSTACLE_TYPES: Record<string, string> = {
   climbing: 'Escalade',
@@ -70,7 +69,7 @@ const difficultyLabel = (difficulty: number) => {
   return 'Expert'
 }
 
-const heroImageSrc = 'https://images.unsplash.com/photo-1552346053-c33aa8d3ad83?q=80&w=1400&auto=format&fit=crop'
+const heroImageSrc = 'https://images.unsplash.com/photo-1762544968153-b9b47435fefd?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
 
 const ObstacleSkeleton = () => (
   <Card className='overflow-hidden'>

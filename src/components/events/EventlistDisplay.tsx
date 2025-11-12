@@ -10,6 +10,7 @@ import type { EventWithTickets } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import { getStartingPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
+import Headings from '../globals/Headings'
 
 const statusVariant = (status: string) => {
   switch (status) {
@@ -59,12 +60,16 @@ const formatEventDate = (value: string | null | undefined) => {
   }).format(date)
 }
 
-const formatCurrency = (value: number, currency?: string | null) =>
-  new Intl.NumberFormat('fr-FR', {
+const formatCurrency = (value: number, currency?: string | null) => {
+  const cents = Math.abs(value) % 100
+  const useCents = cents !== 0
+  return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: (currency ?? 'EUR').toUpperCase(),
-    maximumFractionDigits: 0,
+    minimumFractionDigits: useCents ? 2 : 0,
+    maximumFractionDigits: useCents ? 2 : 0,
   }).format(value / 100)
+}
 
 const findStartingPrice = (tickets: Ticket[] | null | undefined, eventPriceTiers?: any[]) => {
   if (!tickets || tickets.length === 0) return null
@@ -138,7 +143,7 @@ const EventlistDisplay = () => {
 
   if (isError) {
     return (
-      <section className='w-full bg-background/95 py-16 sm:py-20'>
+      <section className='w-full py-16 sm:py-20'>
         <div className='mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 text-center'>
           <p className='text-sm text-muted-foreground'>
             {error?.message ?? 'Impossible de charger les événements pour le moment.'}
@@ -152,14 +157,17 @@ const EventlistDisplay = () => {
   }
 
   return (
-    <section className='relative w-full bg-gradient-to-b from-background via-muted/10 to-background py-16 sm:py-20'>
-      <div className='mx-auto flex w-full max-w-full flex-col gap-10 sm:px-10'>
+    <section className='relative w-full py-16 sm:py-20'>
+      <div className='mx-auto flex w-full max-w-full flex-col gap-10'>
         <header className='space-y-4 text-center sm:text-left'>
           <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
             Calendrier Overbound
           </span>
           <div className='space-y-3'>
-            <h2 className='text-3xl font-semibold text-foreground sm:text-4xl'>Les prochains défis à ne pas manquer</h2>
+            <Headings 
+              title="Les prochains défis à ne pas manquer"
+              sx='text-black' 
+            />
             <p className='mx-auto max-w-2xl text-sm text-muted-foreground sm:mx-0 sm:text-base'>
               Sélectionne ta prochaine course, repère les lieux et assure-toi une place avant la clôture des inscriptions.
               Chaque carte te donne l’essentiel : date, lieu, prix de départ et nombre de formats disponibles.

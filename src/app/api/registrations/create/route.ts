@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
     const { data: existingReg } = await supabase
       .from('registrations')
       .select('id')
-      .eq('stripe_payment_intent_id', paymentIntentId)
-      .single()
+      .or(`stripe_payment_intent_id.eq.${paymentIntentId},and(provider.eq.internal,provider_registration_id.eq.${paymentIntentId})`)
+      .maybeSingle()
 
     if (existingReg) {
       return NextResponse.json({ error: 'Inscription déjà créée pour ce paiement' }, { status: 409 })
@@ -199,7 +199,8 @@ export async function POST(request: NextRequest) {
           order_id: order.id,
           email: participant.email || user.email,
           provider: 'internal',
-          provider_registration_id: paymentIntent.id,
+          provider_registration_id: null, // avoid unique collisions across multiple participants
+          stripe_payment_intent_id: paymentIntent.id,
           qr_code_token: qr,
           transfer_token: transfer,
           checked_in: false,

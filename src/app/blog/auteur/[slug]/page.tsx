@@ -1,16 +1,15 @@
 import { client } from '@/sanity/lib/client'
 import { postsByAuthorSlugQuery } from '@/sanity/lib/queries'
-import { urlFor } from '@/sanity/lib/image'
 import Link from 'next/link'
+import Image from 'next/image'
+import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import { urlFor } from '@/sanity/lib/image'
 
 export const revalidate = 60
 
-type Params = Promise<{ slug: string }>
-type SearchParams = Promise<{ page?: string }>
-
-export default async function BlogAuthorPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
+export default async function BlogAuthorPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams?: Promise<{ page?: string }> }) {
   const { slug } = await params
-  const { page } = await searchParams
+  const page = (await searchParams)?.page
   const pageSize = 12
   const current = Math.max(1, parseInt(page || '1', 10) || 1)
   const offset = (current - 1) * pageSize
@@ -24,30 +23,27 @@ export default async function BlogAuthorPage({ params, searchParams }: { params:
   }
 
   return (
-    <main className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-2">Auteur: {author.name}</h1>
-      {author.avatar ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={urlFor(author.avatar).width(120).height(120).url()} alt="" className="rounded-full w-24 h-24 mb-4" />
-      ) : null}
+    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+      <section className="relative isolate overflow-hidden py-14">
+        <div className="absolute inset-0">
+          <Image src="/images/hero_header_poster.jpg" alt="Auteur OverBound" fill sizes="100vw" className="object-cover object-center" />
+          <div className="absolute inset-0 bg-background/45" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
+        </div>
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
+          <h1 className="text-3xl font-bold mb-2">Auteur: {author.name}</h1>
+          {author.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={urlFor(author.avatar).width(120).height(120).url()} alt="" className="rounded-full w-24 h-24 mt-2" />
+          ) : null}
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-6">
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {items?.map((p: any) => (
-          <article key={p._id} className="border rounded-2xl overflow-hidden">
-            {p.mainImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={urlFor(p.mainImage).width(800).height(450).url()} alt="" className="w-full h-48 object-cover" />
-            )}
-            <div className="p-4">
-              <h2 className="font-semibold text-lg leading-snug">
-                <Link href={`/blog/post/${p.slug}`}>{p.title}</Link>
-              </h2>
-              {p.excerpt && <p className="text-sm opacity-80 mt-2 line-clamp-3">{p.excerpt}</p>}
-              <div className="text-xs opacity-60 mt-3">
-                {p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('fr-FR') : ''}
-              </div>
-            </div>
-          </article>
+          <BlogArticleItem key={p._id} post={p} />
         ))}
       </div>
 
@@ -62,6 +58,6 @@ export default async function BlogAuthorPage({ params, searchParams }: { params:
           )}
         </nav>
       )}
+      </div>
     </main>
   )}
-
