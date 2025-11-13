@@ -22,43 +22,7 @@ import {
 	Globe,
 } from "lucide-react";
 import NeedHelpChoosingYourFormat from "./NeedHelpChoosingYourFormat";
-const DISTANCES = [
-	{
-		name: "Le rite du Guerrier",
-		distance: "6 km",
-		obstacles: "20 obstacles emblématiques",
-		effort: "Intensité explosive · idéal pour débuter ou revenir",
-		badge: { icon: <Mountain className="h-5 w-5" />, label: "Format sprint" },
-		href: "/races/rite-du-guerrier",
-	},
-	{
-		name: "La voie du Héros",
-		distance: "12 km",
-		obstacles: "35 obstacles techniques",
-		effort: "Endurance + portés · progression intermédiaire",
-		badge: {
-			icon: <Sparkles className="h-5 w-5" />,
-			label: "Format intermédiaire",
-		},
-		href: "/races/voie-du-heros",
-	},
-	{
-		name: "Tribal Royale",
-		distance: "24 km",
-		obstacles: "50+ obstacles extrêmes",
-		effort: "Format élite · mental, grip et portés lourds",
-		badge: { icon: <Star className="h-5 w-5" />, label: "Format élite" },
-		href: "/races/tribale-royale",
-	},
-	{
-		name: "Tribal Kids",
-		distance: "1 / 2 / 3 km",
-		obstacles: "15 obstacles ludiques et sécurisés",
-		effort: "Pour les 6-14 ans · esprit collectif",
-		badge: { icon: <Waves className="h-5 w-5" />, label: "Format famille" },
-		href: "/races/tribale-kids",
-	},
-];
+
 const steps = [
 	{
 		title: "Étape 1",
@@ -225,12 +189,12 @@ export default function DistanceFormatsAndDifficulties() {
 
 					<div className="relative z-10 mx-auto flex w-full flex-col gap-10">
 						{/* Badge "Première Mondiale" */}
-						<div className="text-center">
-							<Badge className="bg-amber-500/20 text-amber-600 border-amber-500/40 text-sm font-bold uppercase tracking-wider px-4 py-2">
-								<Globe className="h-4 w-4 mr-2 inline" />
-								Première mondiale - Système de difficulté modulaire
-							</Badge>
-						</div>
+							<div className="text-center">
+								<Badge className="bg-amber-500/20 text-amber-600 border-amber-500/40 font-bold px-3 py-1.5 text-xs sm:text-sm w-full sm:w-auto inline-flex items-center justify-center gap-2 whitespace-normal text-center">
+									<Globe className="h-4 w-4" />
+									<span className="leading-snug">Première mondiale — système de difficulté modulaire</span>
+								</Badge>
+							</div>
 
 						<div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
 							<Card className="group hover:-translate-y-1 transition-all border-border/60">
@@ -246,8 +210,7 @@ export default function DistanceFormatsAndDifficulties() {
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										Intensité explosive · idéal pour débuter ou revenir. Format
-										explosif pour découvrir l'OCR.
+										Idéal pour découvrir les courses à obstacles. Un cocktail d'endurance et de fun.
 									</p>
 									<Button
 										asChild
@@ -276,8 +239,7 @@ export default function DistanceFormatsAndDifficulties() {
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										Endurance + portés · progression intermédiaire. Le format de
-										progression pour monter en niveau.
+										Un véritable défi d'endurance et de technique qui saura te mettre à l'épreuve. La mission parfaite pour les coureurs réguliers.
 									</p>
 									<Button
 										asChild
@@ -297,7 +259,7 @@ export default function DistanceFormatsAndDifficulties() {
 								<CardHeader className="space-y-3">
 									<Badge className="bg-amber-500 text-white w-fit">
 										<Crown className="h-4 w-4 mr-1" />
-										Élite
+										Mental
 									</Badge>
 									<CardTitle className="text-2xl">Tribal Royale</CardTitle>
 									<p className="text-sm font-medium text-muted-foreground">
@@ -309,7 +271,7 @@ export default function DistanceFormatsAndDifficulties() {
 										<span className="text-amber-600 font-semibold">
 											Format backyard inédit.
 										</span>{" "}
-										Élimination progressive. Le dernier debout gagne.
+										Élimination progressive. Le dernier debout gagne (qui aura le meilleur mental ?).
 									</p>
 									<Button
 										asChild
@@ -318,7 +280,7 @@ export default function DistanceFormatsAndDifficulties() {
 									>
 										<Link href="/races/tribale-royale">
 											En savoir plus
-											<Crown className="ml-2 h-3 w-3" />
+											<ArrowRight className="ml-2 h-3 w-3" />
 										</Link>
 									</Button>
 								</CardContent>
@@ -337,8 +299,7 @@ export default function DistanceFormatsAndDifficulties() {
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										Pour les 6-14 ans · esprit collectif. Obstacles ludiques et
-										sécurisés. Initiation à l'esprit Overbound.
+										Pour les 6-14 ans, esprit collectif. Possibilité pour les parents d'accompagner leurs enfants. Obstacles ludiques et sécurisés.
 									</p>
 									<Button
 										asChild
@@ -523,7 +484,7 @@ export default function DistanceFormatsAndDifficulties() {
 														{step.title}
 													</CardTitle>
 												</CardHeader>
-												<CardContent>
+											<CardContent>
 													<motion.p
 														className={`whitespace-pre-line transition-colors duration-500 ${activeStep !== index
 																? "text-gray-700"
@@ -535,6 +496,16 @@ export default function DistanceFormatsAndDifficulties() {
 													>
 														{step.text}
 													</motion.p>
+													{index === 1 ? (
+														<div className="mt-4">
+															<Link
+																	href="/about/concept"
+																	className="inline-flex items-center gap-1 rounded-full border border-[#26AA26]/40 px-3 py-1 text-[#26AA26] text-sm underline-offset-4 hover:bg-[#26AA26]/10 hover:underline"
+																>
+																	↗ En savoir plus
+																</Link>
+														</div>
+													) : null}
 												</CardContent>
 											</Card>
 										</motion.div>

@@ -204,7 +204,7 @@ export default function ConceptPage() {
               <CardContent className="relative z-10 space-y-6">
                 <p className="text-muted-foreground leading-relaxed">
                   <span className="text-foreground font-semibold">Une révolution dans l'endurance :</span> Inspiré
-                  du légendaire Barkley Marathons, la Tribal Royale est le{' '}
+                  du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Tribal Royale est le{' '}
                   <span className="text-amber-600 font-bold">tout premier format backyard appliqué à l'OCR</span>.
                 </p>
 

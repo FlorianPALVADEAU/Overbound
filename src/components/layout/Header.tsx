@@ -95,7 +95,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   ]
 
   const eventsDropdownItems: DropdownItemType[] = [
-    // { name: 'Toutes les courses', href: '/events', icon: MedalIcon },
+    { name: 'Voir toutes les courses', href: '/events', icon: MedalIcon },
     { name: 'Le rite du guerrier', href: '/races/rite-du-guerrier', icon: CalendarIcon },
     { name: 'La voie du héros', href: '/races/voie-du-heros', icon: MapPinIcon },
     { name: 'Tribal Royale', href: '/races/tribale-royale', icon: MapPinIcon },
