@@ -276,21 +276,25 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                       )
                     }
                   >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant={showDocumentIndicator ? 'outline' : 'default'}
-                        size="sm"
-                        className={
-                          showDocumentIndicator
-                            ? 'relative border-destructive text-destructive hover:bg-destructive/10'
-                            : undefined
-                        }
-                        disabled={!registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || showDocumentIndicator}
-                      >
-                        <QrCodeIcon className="mr-2 h-4 w-4" />
-                        Voir le billet
-                      </Button>
-                    </DialogTrigger>
+                    {
+                      !registration.checked_in && (
+                        <DialogTrigger asChild>
+                          <Button
+                            variant={showDocumentIndicator ? 'outline' : 'default'}
+                            size="sm"
+                            className={
+                              showDocumentIndicator
+                                ? 'relative border-destructive text-destructive hover:bg-destructive/10'
+                                : undefined
+                            }
+                            disabled={!registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || showDocumentIndicator}
+                          >
+                            <QrCodeIcon className="mr-2 h-4 w-4" />
+                            Voir le billet
+                          </Button>
+                        </DialogTrigger>
+                      )
+                    }
                     <DialogPortal>
                       <DialogOverlay className="bg-black/80 backdrop-blur-md" />
                       <DialogContent
@@ -335,16 +339,20 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                       )
                     }
                   >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!registration.transfer_token}
-                      >
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Transférer
-                      </Button>
-                    </DialogTrigger>
+                    {
+                      !registration.checked_in && (
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!registration.transfer_token || !registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || showDocumentIndicator}
+                          >
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Transférer
+                          </Button>
+                        </DialogTrigger>
+                      )
+                    }
                     <DialogContent className="sm:max-w-lg">
                       <DialogHeader>
                         <DialogTitle>Partager ce billet</DialogTitle>

@@ -76,7 +76,7 @@ export function Footer() {
           </p>
         </div>
 
-        <div className='relative z-10 grid gap-8 border-y border-border/60 px-6 py-12 text-sm text-muted-foreground sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:gap-12 xl:px-32'>
+        <div className='relative z-10 flex justify-between border-y border-border/60 px-6 py-12 text-sm text-muted-foreground sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:gap-12 xl:px-32'>
           {LINK_GROUPS.map((group) => (
             <div key={group.title} className='space-y-4'>
               <h3 className='text-sm font-semibold uppercase tracking-[0.35em] text-foreground/70'>{group.title}</h3>

@@ -133,8 +133,8 @@ export default function RaceDetailPage() {
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-background py-16">
-        <div className="container mx-auto max-w-lg px-6">
+      <main className="min-h-screen bg-background ">
+        <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
           <Card className="border-border bg-card text-card-foreground">
             <CardHeader>
               <CardTitle>Course introuvable</CardTitle>
@@ -326,7 +326,7 @@ export default function RaceDetailPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/80 to-background" />
         </div>
-        <div className="container relative z-10 mx-auto max-w-7xl px-6">
+        <div className="container relative z-10 mx-auto px-4 py-12 sm:px-6 xl:px-32">
           <Button
             variant="ghost"
             size="sm"
@@ -363,7 +363,7 @@ export default function RaceDetailPage() {
                     </Badge>
                     <p className="text-xl leading-relaxed text-muted-foreground">
                       <span className="text-foreground font-semibold">Du jamais vu dans l'OCR :</span> Le premier format backyard appliqué aux courses d'obstacles.
-                      Inspiré du légendaire Barkley Marathons, la Tribal Royale n'a pas de distance fixe.
+                      Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Tribal Royale n'a pas de distance fixe.
                     </p>
                     <p className="text-lg leading-relaxed text-muted-foreground">
                       <span className="text-amber-600 font-semibold">Élimination progressive.</span> Chaque tour dure 1h maximum.
@@ -453,8 +453,8 @@ export default function RaceDetailPage() {
         </div>
       </section>
 
-      <section className="bg-background py-16">
-        <div className="container mx-auto max-w-7xl px-6">
+      <section className="bg-background ">
+        <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {statsCards.map((stat) => {
               const IconComponent = stat.icon
@@ -476,8 +476,8 @@ export default function RaceDetailPage() {
         </div>
       </section>
 
-      <section className="bg-background py-16">
-        <div className="container mx-auto max-w-7xl px-6">
+      <section className="bg-background ">
+        <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-8">
               <div className="rounded-3xl border border-border bg-card p-8">
@@ -488,7 +488,7 @@ export default function RaceDetailPage() {
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
-                        <span className="text-foreground font-semibold">Inspiré du Barkley Marathons</span>, la Tribal Royale introduit
+                        <span className="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a></span>, la Tribal Royale introduit
                         pour la première fois au monde le concept de backyard ultra à l'obstacle course racing.
                       </p>
                       <p>
@@ -513,9 +513,9 @@ export default function RaceDetailPage() {
                       </div>
                       <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
                         <p className="text-xs uppercase tracking-wide text-amber-600">Pré-requis</p>
-                        <p className="mt-1 text-base font-semibold text-foreground">Niveau élite obligatoire</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Mental d'acier obligatoire</p>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          Réservé aux athlètes d'élite avec une expérience OCR confirmée. Préparation mentale et physique extrême requise.
+                          Conçu pour les athlètes avec une préparation physique et mentale extrême. Ce format n'est pas recommandé pour les débutants.
                         </p>
                       </div>
                       <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
@@ -883,8 +883,8 @@ export default function RaceDetailPage() {
         </div>
       </section>
 
-      <section id="events" className="bg-background py-16">
-        <div className="container mx-auto max-w-7xl px-6">
+      <section id="events" className="bg-background ">
+        <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
           <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <h2 className="text-3xl font-bold text-foreground">Événements associés</h2>

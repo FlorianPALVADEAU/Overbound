@@ -219,7 +219,7 @@ export default function OurStoryPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    Inspiré du Barkley Marathons, le Tribal Royale est le premier format backyard appliqué à l'OCR.
+                    Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, le Tribal Royale est le premier format backyard appliqué à l'OCR.
                     Un concept d'élimination progressive inédit qui repousse les limites du mental et du physique.
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -277,7 +277,7 @@ export default function OurStoryPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Overbound, c'est une tribu. Chaque participant, chaque bénévole, chaque partenaire fait partie
+                  Overbound, c'est avant tout une tribu. Chaque participant, chaque bénévole, chaque partenaire fait partie
                   d'une communauté soudée par la passion du dépassement de soi.
                 </p>
               </CardContent>
@@ -347,9 +347,8 @@ export default function OurStoryPage() {
                   d'athlètes passionnés.
                 </p>
                 <p>
-                  <span className="text-foreground font-semibold">Overbound ne sera jamais juste une course.</span>
-                  C'est une expérience complète : entraînements, événements, communauté, valeurs. Une tribu qui partage
-                  la même passion du dépassement de soi.
+                  <span className="text-foreground font-semibold">Overbound ne sera jamais juste une course.</span>&nbsp;
+                  C'est une expérience complète exprimée par une tribu qui partage la même passion du dépassement de soi, et de l'esprit collectif.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">

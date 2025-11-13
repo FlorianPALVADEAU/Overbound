@@ -24,6 +24,7 @@ import { v4 as uuid } from 'uuid'
 import EventlistDisplay from '@/components/events/EventlistDisplay'
 import NeedHelpChoosingYourFormat from '@/components/homepage/NeedHelpChoosingYourFormat'
 import Headings from '@/components/globals/Headings'
+import { PricingExplainer } from '@/components/pricing/PricingExplainer'
 
   const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => {
   const eventPriceTiers = selectedEvent.price_tiers || []
@@ -332,6 +333,13 @@ export default function EventsPage() {
               </Button>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Explainer Section */}
+      <section className="w-full py-16 sm:py-20 bg-muted/30">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <PricingExplainer />
         </div>
       </section>
 

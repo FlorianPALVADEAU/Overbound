@@ -9,6 +9,7 @@ import SocialProof from '@/components/homepage/SocialProof';
 import VolunteersAppeal from '@/components/homepage/VolunteersAppeal';
 import RelevantBlogArticles from '@/components/homepage/RelevantBlogArticles';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
+import { PricingExplainer } from '@/components/pricing/PricingExplainer';
 
 export default function Home() {
   return (
@@ -16,6 +17,10 @@ export default function Home() {
       <HeroHeader />
       <WhatsOverbound />
       <NextEvents />
+      {/* Pricing Explainer Section */}
+      <section className="w-full px-4 py-12 sm:px-6 xl:px-32">
+          <PricingExplainer />
+      </section>
       <DistanceFormatsAndDifficulties />
       <ObstaclesOverview />
       <SocialProof />

@@ -26,13 +26,10 @@ const WhatsOverbound = () => {
               La <span className='text-[#26AA26] font-bold'>première organisation OCR au monde</span> où tu choisis ton niveau de défi sur le même parcours.
             </p>
             <p className='text-center text-sm sm:text-base md:text-lg leading-relaxed text-gray-800'>
-              <span className='font-semibold text-gray-900'>Standard, Guerrier ou Légende :</span> même distance, mais des obstacles adaptés à ton niveau. Une révolution dans l'OCR.
+              <span className='font-semibold text-gray-900'>On souhaite se positionner là ou personne n'a encore mis les pieds</span> pour t'offrir l'experience ultime avec des obstacles adaptés à ton niveau. C'est une réelle révolution dans l'OCR.
             </p>
             <p className='text-center text-sm sm:text-base md:text-lg leading-relaxed text-gray-800'>
-              Du <span className='text-[#26AA26] font-semibold'>sprint 6 km</span> au <span className='text-[#26AA26] font-semibold'>Tribal Royale 24 km</span> (notre format backyard inédit), cours seul ou en équipe dans une atmosphère <span className='font-semibold text-gray-900'>100% européenne</span>, loin du show à l'américaine.
-            </p>
-            <p className='text-center text-sm sm:text-base md:text-lg leading-relaxed text-gray-800'>
-              Chez Overbound : <span className='text-[#26AA26] font-semibold'>vraie difficulté, vraie nature, vrai esprit collectif</span>.
+              Notre mot d'ordre: dépassement de soi. Découvre dès maintenant nos formats de course innovants.
             </p>
           </div>
           <div className='mt-2 sm:mt-3 md:mt-4 w-full sm:w-auto'>
