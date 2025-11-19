@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Headings from '@/components/globals/Headings'
-import Image from 'next/image'
 import { ArrowDownToLine } from 'lucide-react'
 
 const heroBackground =
@@ -14,8 +13,8 @@ const planCategories = [
   {
     title: 'Tribal Sprint',
     subtitle: '5 à 7 km · 6 semaines',
-    gradient: 'from-emerald-500/20 to-emerald-500/5',
-    accent: 'text-emerald-600',
+    gradient: 'from-green-500/20 to-green-500/5',
+    accent: 'text-green-600',
     description:
       'Idéal si tu veux découvrir Overbound ou revenir sur les obstacles avec un volume d’entraînement adaptable.',
     plans: [
@@ -27,8 +26,8 @@ const planCategories = [
   {
     title: 'Voie du Héros',
     subtitle: '8 à 12 km · 8 semaines',
-    gradient: 'from-amber-500/20 to-amber-500/5',
-    accent: 'text-amber-600',
+    gradient: 'from-blue-500/20 to-blue-500/5',
+    accent: 'text-blue-600',
     description:
       'Programmes hybrides course/force pour tenir l’intensité sur un format signature. Adapté aux sportifs réguliers.',
     plans: [
@@ -40,8 +39,8 @@ const planCategories = [
   {
     title: 'Tribal Royale',
     subtitle: '15 km et + · 10 semaines',
-    gradient: 'from-purple-500/20 to-purple-500/5',
-    accent: 'text-purple-600',
+    gradient: 'from-amber-500/20 to-amber-500/5',
+    accent: 'text-amber-600',
     description:
       'Prépa élite avec cycles d’endurance, force maximale et charge progressive. À destination des profils confirmés.',
     plans: [
@@ -129,18 +128,21 @@ export default function TrainingPlansPage() {
                 <p>{category.description}</p>
                 <div className='space-y-3'>
                   {category.plans.map((plan) => (
-                    <Button
-                      key={plan.name}
-                      asChild
-                      variant='outline'
-                      size='sm'
-                      className='w-full justify-between border-primary/30 text-foreground hover:border-primary hover:bg-primary/10'
-                    >
-                      <Link href={plan.href} target='_blank' rel='noopener noreferrer' className='flex w-full items-center justify-between gap-3'>
+                    <div key={plan.name} className='group relative'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        disabled
+                        className='w-full justify-between border-primary/30 text-foreground opacity-50 cursor-not-allowed'
+                      >
                         <span>{plan.name}</span>
                         <ArrowDownToLine className='h-4 w-4 text-primary' />
-                      </Link>
-                    </Button>
+                      </Button>
+                      <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10'>
+                        Ça arrive bientôt !
+                        <div className='absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-foreground' />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </CardContent>
@@ -165,17 +167,21 @@ export default function TrainingPlansPage() {
               </CardHeader>
               <CardContent className='flex flex-1 flex-col justify-between gap-5 text-sm text-muted-foreground'>
                 <p className='leading-relaxed'>{resource.description}</p>
-                <Button
-                  asChild
-                  variant='outline'
-                  size='sm'
-                  className='w-full justify-between border-primary text-primary hover:bg-primary/10'
-                >
-                  <Link href={resource.href} target='_blank' rel='noopener noreferrer' className='flex w-full items-center justify-between gap-3'>
+                <div className='group relative'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    disabled
+                    className='w-full justify-between border-primary text-primary opacity-50 cursor-not-allowed'
+                  >
                     <span>Télécharger le PDF</span>
                     <ArrowDownToLine className='h-4 w-4' />
-                  </Link>
-                </Button>
+                  </Button>
+                  <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10'>
+                    Ça arrive bientôt !
+                    <div className='absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-foreground' />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}

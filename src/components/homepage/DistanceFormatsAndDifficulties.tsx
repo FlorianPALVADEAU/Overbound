@@ -497,13 +497,19 @@ export default function DistanceFormatsAndDifficulties() {
 														{step.text}
 													</motion.p>
 													{index === 1 ? (
-														<div className="mt-4">
+														<div className="mt-4 gap-2 flex">
 															<Link
-																	href="/about/concept"
-																	className="inline-flex items-center gap-1 rounded-full border border-[#26AA26]/40 px-3 py-1 text-[#26AA26] text-sm underline-offset-4 hover:bg-[#26AA26]/10 hover:underline"
-																>
-																	↗ En savoir plus
-																</Link>
+																href="/trainings/what-race-for-me"
+																className="inline-flex items-center gap-1 rounded-full border border-[#26AA26]/40 px-3 py-1 text-[#26AA26] text-sm underline-offset-4 hover:bg-[#26AA26]/10 hover:underline"
+															>
+																↗ Besoin d'aide pour choisir ?
+															</Link>
+															<Link
+																href="/about/concept"
+																className="inline-flex items-center gap-1 rounded-full border border-[#26AA26]/40 px-3 py-1 text-[#26AA26] text-sm underline-offset-4 hover:bg-[#26AA26]/10 hover:underline"
+															>
+																↗ Le concept
+															</Link>
 														</div>
 													) : null}
 												</CardContent>

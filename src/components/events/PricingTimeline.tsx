@@ -9,8 +9,9 @@ import {
 } from '@/types/EventPriceTier'
 import { formatPrice } from '@/lib/pricing'
 import { Currency } from '@/types/base.type'
-import { Badge } from '@/components/ui/badge'
 import { Ticket } from '@/types/Ticket'
+
+type Color = 'emerald' | 'blue' | 'amber' | 'red'
 
 interface PricingTimelineProps {
   ticket: Ticket
@@ -39,9 +40,7 @@ export function PricingTimeline({
       .toLocaleDateString('fr-FR', {
         month: 'short',
         day: 'numeric',
-        year: 'numeric',
       })
-      .toUpperCase()
   }
 
   // Check if a tier is currently active
@@ -52,125 +51,114 @@ export function PricingTimeline({
     return currentTime >= startTime && currentTime < endTime
   }
 
+  // Check if a tier is in the future (not yet started)
+  const isFutureTier = (tier: EventPriceTier) => {
+    const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+    return now.getTime() < startTime
+  }
+
+  // Get color based on tier index
+  const getColor = (index: number, total: number): Color => {
+    const colors: Color[] = ['emerald', 'blue', 'amber', 'red']
+    if (total <= 4) {
+      return colors[index] || 'red'
+    }
+    // For more than 4 tiers, distribute colors evenly
+    const colorIndex = Math.floor((index / (total - 1)) * (colors.length - 1))
+    return colors[colorIndex]
+  }
+
+  const dotBg: Record<Color, string> = {
+    emerald: 'bg-emerald-500',
+    blue: 'bg-blue-500',
+    amber: 'bg-amber-500',
+    red: 'bg-rose-500',
+  }
+
+  const textColor: Record<Color, string> = {
+    emerald: 'text-emerald-600',
+    blue: 'text-blue-600',
+    amber: 'text-amber-600',
+    red: 'text-rose-600',
+  }
+
+  // Get active tier index for progress calculation
+  const getActiveTierIndex = () => {
+    for (let i = 0; i < sortedTiers.length; i++) {
+      if (isActiveTier(sortedTiers[i])) return i
+    }
+    return sortedTiers.length - 1
+  }
+
   if (sortedTiers.length === 0) {
     return null
   }
 
+  const activeTierIndex = getActiveTierIndex()
+  const activeTier = sortedTiers.find(isActiveTier)
+  const currentPrice = activeTier
+    ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
+    : null
+  const nextPrice = nextTier ? calculateCurrentPrice(ticket.final_price_cents, nextTier) : null
+
+  // Calculate progress percentage
+  const totalPoints = sortedTiers.length + 1 // +1 for "Jour J"
+  const progressPercent = ((activeTierIndex + 1) / totalPoints) * 100
+
   return (
-    <div className="text-black w-full">
-      {/* Header with title and next price adjustment */}
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-black text-xl font-bold">Évolution des tarifs</h3>
-        {nextTier && nextTier.available_from && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Prochaine augmentation :</span>
-            <Badge variant="destructive" className="font-semibold">
-              {formatDate(nextTier.available_from)}
-            </Badge>
-          </div>
-        )}
+    <section className="w-full h-auto">
+      {/* En-tête */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold">Évolution des tarifs</h3>
+        <p className="text-sm text-muted-foreground">
+          Plus tôt tu réserves, plus tu économises. <strong>*</strong>
+        </p>
       </div>
 
-      {/* Timeline */}
-      <div className="relative py-12">
-        {/* Background line (gray) - thicker */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[10px] bg-muted rounded-full" />
+      {/* Timeline — Desktop (>= sm) */}
+      <div className="relative hidden py-10 sm:block">
+        {/* Background line (full length placeholder) */}
+        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-gray-200 rounded-full" />
 
-        {/* Progress line (colored up to current date) */}
-        {(() => {
-          if (sortedTiers.length === 0) return null
+        {/* Progress line (solid, colored) */}
+        <div
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-amber-500 rounded-full transition-all duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
 
-          const currentTime = now.getTime()
-
-          // Find which tier we're currently in or past
-          let progressPercent = 0
-          const allPoints = [
-            ...sortedTiers.map((tier, index) => ({
-              time: tier.available_from ? new Date(tier.available_from).getTime() : 0,
-              index: index,
-              type: 'tier' as const,
-              tierName: tier.name,
-            })),
-            {
-              time: new Date(eventDate).getTime(),
-              index: sortedTiers.length,
-              type: 'event' as const,
-            },
-          ].sort((a, b) => a.time - b.time)
-
-          // Find the current position
-          for (let i = 0; i < allPoints.length; i++) {
-            if (currentTime < allPoints[i].time) {
-              // We're between point i-1 and point i
-              if (i === 0) {
-                progressPercent = 0
-              } else {
-                const prevPoint = allPoints[i - 1]
-                const currentPoint = allPoints[i]
-                const segmentDuration = currentPoint.time - prevPoint.time
-                const segmentProgress = currentTime - prevPoint.time
-                const segmentPercent = segmentProgress / segmentDuration
-
-                // Calculate percentage: (previous segments + current segment progress) / total segments
-                const segmentSize = 100 / allPoints.length
-                progressPercent = i * segmentSize + segmentPercent * segmentSize
-              }
-              break
-            }
-          }
-
-          // If we're past all points
-          if (currentTime >= allPoints[allPoints.length - 1].time) {
-            progressPercent = 100
-          }
-
-          progressPercent = Math.min(Math.max(progressPercent, 0), 100)
-
-          return (
-            <div
-              className="absolute top-1/2 -translate-y-1/2 left-0 h-[10px] bg-red-500 rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          )
-        })()}
-
-        {/* Tier points */}
-        <div className="relative flex justify-between items-center">
+        <div className="relative flex items-center justify-between">
           {sortedTiers.map((tier, index) => {
-            const active = isActiveTier(tier)
+            const color = getColor(index, sortedTiers.length)
             const tierPrice = calculateCurrentPrice(ticket.final_price_cents, tier)
+            const active = isActiveTier(tier)
+            const future = isFutureTier(tier)
 
             return (
-              <div
-                key={tier.id}
-                className="flex flex-col items-center relative"
-                style={{
-                  flex: '1 1 0',
-                }}
-              >
-                {/* Date label - alternating top/bottom */}
-                <div className={`absolute -top-10 left-1/2 -translate-x-1/2`}>
-                  <div className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                    {formatDate(tier.available_from)}
-                  </div>
+              <div key={tier.id} className="relative flex flex-1 flex-col items-center">
+                {/* Date au-dessus */}
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-center">
+                  <span className="whitespace-nowrap text-[11px] font-medium text-muted-foreground">
+                    {tier.available_from ? formatDate(tier.available_from) : "Dès l'ouverture"}
+                  </span>
                 </div>
 
-                {/* Circle point - INSIDE the bar */}
-                <div
-                  className={`relative z-10 w-[18px] h-[18px] rounded-full border-[3px] shadow-lg ${
-                    active
-                      ? 'bg-primary border-primary-foreground scale-125 ring-4 ring-primary/30'
-                      : 'bg-background border-border'
-                  } transition-all duration-300`}
-                />
-
-                {/* Price label - alternating bottom/top (opposite of date) */}
-                <div className={`absolute -bottom-10 left-1/2 -translate-x-1/2`}>
+                {/* Point */}
+                <div className="relative">
                   <div
-                    className={`text-sm font-bold whitespace-nowrap ${
-                      active ? 'text-primary' : 'text-primary/60'
-                    }`}
-                  >
+                    className={`z-10 h-3 w-3 rounded-full ${
+                      future ? 'bg-gray-400' : dotBg[color]
+                    } ${active ? 'ring-4 ring-gray-300' : ''}`}
+                  />
+                  {/* Pulse animation for active */}
+                  {active && (
+                    <div className="absolute inset-0 -m-1 animate-ping rounded-full bg-gray-300 opacity-75" />
+                  )}
+                </div>
+
+                {/* Nom du palier + prix en dessous */}
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-center">
+                  <div className="text-xs font-semibold">{tier.name || `Palier ${index + 1}`}</div>
+                  <div className={`text-sm font-bold ${active && !future ? textColor[color] : ''}`}>
                     {formatPrice(tierPrice, currency || 'eur')}
                   </div>
                 </div>
@@ -178,55 +166,105 @@ export function PricingTimeline({
             )
           })}
 
-          {/* Race day marker */}
-          <div className="flex flex-col items-center relative flex-[0_0_auto] ml-12">
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2">
-              <div className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+          {/* Jour J */}
+          <div className="relative flex flex-col items-center flex-[0_0_auto] ml-8">
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-center">
+              <span className="whitespace-nowrap text-[11px] font-medium text-muted-foreground">
                 {formatDate(eventDate)}
-              </div>
+              </span>
             </div>
 
-            <div className="relative z-10 w-[18px] h-[18px] rounded-full border-[3px] bg-background border-border shadow-lg" />
+            <div className="z-10 h-3 w-3 rounded-full bg-gray-400" />
 
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-              <Badge variant="outline" className="font-bold whitespace-nowrap">
-                JOUR J
-              </Badge>
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-center">
+              <div className="text-xs font-semibold text-muted-foreground">Jour J</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Current price callout */}
-      {(() => {
-        const activeTier = sortedTiers.find(isActiveTier)
-        if (!activeTier) return null
+      {/* Timeline — Mobile (< sm) */}
+      <div className="relative sm:hidden">
+        {/* Background line (full length placeholder) */}
+        <div className="absolute left-[7px] top-0 bottom-0 w-0.5 bg-gray-200 rounded-full" />
 
-        const currentPrice = calculateCurrentPrice(ticket.final_price_cents, activeTier)
-        const nextPrice = nextTier
-          ? calculateCurrentPrice(ticket.final_price_cents, nextTier)
-          : null
+        {/* Progress line (solid, colored) */}
+        <div
+          className="absolute left-[7px] top-0 w-0.5 bg-gradient-to-b from-emerald-500 via-blue-500 to-amber-500 rounded-full transition-all duration-500"
+          style={{ height: `${progressPercent}%` }}
+        />
 
-        return (
-          <div className="mt-6 p-4 bg-gray-100 rounded-lg border">
-            <div className="flex items-center justify-between">
-              {nextTier && nextTier.available_from && nextPrice && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Le prix passera à{' '}
-                  <span className="font-semibold">{formatPrice(nextPrice, currency || 'eur')}</span>{' '}
-                  le {formatDate(nextTier.available_from)}
+        <div className="relative flex flex-col">
+          {sortedTiers.map((tier, index) => {
+            const color = getColor(index, sortedTiers.length)
+            const tierPrice = calculateCurrentPrice(ticket.final_price_cents, tier)
+            const active = isActiveTier(tier)
+            const future = isFutureTier(tier)
+
+            return (
+              <div key={tier.id} className="relative pl-8 py-4">
+                {/* Point */}
+                <span
+                  className={`absolute left-1 top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full ${
+                    future ? 'bg-gray-400' : dotBg[color]
+                  } ${active ? 'ring-2 ring-gray-300 ring-offset-1' : ''}`}
+                />
+                {/* Pulse animation for active */}
+                {active && (
+                  <span className="absolute left-0 top-1/2 z-0 h-5 w-5 -translate-y-1/2 animate-ping rounded-full bg-gray-300 opacity-75" />
+                )}
+
+                {/* Textes */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold leading-5">
+                      {tier.name || `Palier ${index + 1}`}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {tier.available_from ? formatDate(tier.available_from) : "Dès l'ouverture"}
+                    </div>
+                  </div>
+                  <div className={`text-sm font-bold ${active && !future ? textColor[color] : ''}`}>
+                    {formatPrice(tierPrice, currency || 'eur')}
+                  </div>
                 </div>
-              )}
-              <div className="flex flex-col items-end">
-                <span className="text-2xl font-bold text-red-600">
-                  {formatPrice(currentPrice, currency || 'eur')}
-                </span>
-                <span className="text-sm font-medium">Prix actuel :</span>
+              </div>
+            )
+          })}
+
+          {/* Jour J */}
+          <div className="relative pl-8 py-4">
+            <span className="absolute left-1 top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-gray-400" />
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold leading-5 text-muted-foreground">Jour J</div>
+                <div className="text-xs text-muted-foreground">{formatDate(eventDate)}</div>
               </div>
             </div>
           </div>
-        )
-      })()}
-    </div>
+        </div>
+      </div>
+
+      {/* Info prix actuel + prochaine augmentation */}
+      <div className="mt-10 flex flex-col gap-1 text-xs text-muted-foreground">
+        {activeTier && currentPrice && (
+          <div className="flex items-center gap-2">
+            <strong>Prix actuel :</strong>
+            <span className="font-bold text-foreground">
+              {formatPrice(currentPrice, currency || 'eur')}
+            </span>
+          </div>
+        )}
+        {nextTier && nextTier.available_from && nextPrice && (
+          <div className="flex items-center gap-2">
+            <strong>*</strong>
+            <span>
+              Passera à {formatPrice(nextPrice, currency || 'eur')} le{' '}
+              {formatDate(nextTier.available_from)}
+            </span>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
