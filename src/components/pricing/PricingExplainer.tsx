@@ -7,7 +7,7 @@ export function PricingExplainer() {
   const tiers = [
     {
       name: "Super Early Bird",
-      date: "Dès ouverture",
+      date: "Dès l'ouverture",
       price: "45€",
       discount: "-40%",
       color: "emerald",
@@ -21,7 +21,7 @@ export function PricingExplainer() {
     },
     {
       name: "Standard",
-      date: "2 mois après l'ouverture",
+      date: "45 jours après l'ouverture",
       price: "65€",
       discount: "-13%",
       color: "amber",

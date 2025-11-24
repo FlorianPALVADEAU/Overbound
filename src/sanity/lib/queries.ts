@@ -22,7 +22,8 @@ export const paginatedPostsQuery = groq`
       publishedAt,
       mainImage,
       "author": author->{name, "slug": slug.current},
-      "categories": categories[]->{title, "slug": slug.current}
+      "categories": categories[]->{title, "slug": slug.current},
+      "readingTime": round(length(pt::text(body)) / 5 / 200)
     },
     "total": count(*[_type == "post" && defined(slug.current)])
   }
@@ -40,7 +41,8 @@ export const postsSearchQuery = groq`
       publishedAt,
       mainImage,
       "author": author->{name, "slug": slug.current},
-      "categories": categories[]->{title, "slug": slug.current}
+      "categories": categories[]->{title, "slug": slug.current},
+      "readingTime": round(length(pt::text(body)) / 5 / 200)
     },
     "total": count(*[_type == "post" && defined(slug.current) && (
       title match $q || excerpt match $q || pt::text(body) match $q
@@ -57,6 +59,18 @@ export const postBySlugQuery = groq`
   publishedAt,
   mainImage,
   body,
+  sections[]{
+    _key,
+    title,
+    layout,
+    accent,
+    body,
+    image{
+      ...,
+      alt,
+      caption
+    }
+  },
   ogImage,
   "author": author->{name, "slug": slug.current, avatar},
   "categories": categories[]->{title, "slug": slug.current}

@@ -4,7 +4,7 @@
 */
 import fs from 'node:fs'
 import path from 'node:path'
-import { sanity, uploadImageFromUrl, upsertBySlug } from './sanityClient'
+import { uploadImageFromUrl, upsertBySlug, sanity } from './sanityClient'
 
 type InputPost = {
   title: string
@@ -49,7 +49,7 @@ async function main() {
     const cats = Array.isArray(it.categories)
       ? it.categories
       : typeof it.categories === 'string'
-      ? it.categories.split(',').map(s => s.trim()).filter(Boolean)
+      ? it.categories.split(',').map((s: string) => s.trim()).filter(Boolean)
       : []
     if (cats.length) {
       categoryRefs = [] as any[]
