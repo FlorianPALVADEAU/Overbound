@@ -95,12 +95,18 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   ]
 
   const eventsDropdownItems: DropdownItemType[] = [
-    { name: 'Voir toutes les courses', href: '/events', icon: MedalIcon },
+    // { name: 'Voir toutes les courses', href: '/events', icon: MedalIcon },
     { name: 'Le rite du guerrier', href: '/races/rite-du-guerrier', icon: CalendarIcon },
     { name: 'La voie du héros', href: '/races/voie-du-heros', icon: MapPinIcon },
     { name: 'Tribal Royale', href: '/races/tribale-royale', icon: MapPinIcon },
     { name: 'Tribal Kids', href: '/races/tribale-kids', icon: MapPinIcon },
     { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
+  ]
+
+  const eventFormatLinks = [
+    { name: 'Standard', href: '/events/formats/standard' },
+    { name: 'Guerrier', href: '/events/formats/guerrier' },
+    { name: 'Légende', href: '/events/formats/legende' },
   ]
 
   const trainingsDropdownItems: DropdownItemType[] = [
@@ -203,37 +209,101 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                           <ChevronDownIcon className="ml-1 h-3 w-3 transition-transform group-hover:rotate-180" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="min-w-[220px] -mt-1 -ml-1 border-t-0 rounded-t-none bg-background" forceMount>
-                        {item.href ? (
-                          <>
-                            <DropdownMenuItem asChild>
-                              <Link
-                                href={item.href}
-                                // no border radius on bottom to connect with dropdown items
-                                className=" outline-none flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-white cursor-pointer"
-                              >
-                                Voir toutes les {item.name.toLowerCase()}
-                                <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                          </>
-                        ) : null}
-                        {item.items.map((subItem) => (
-                          <DropdownMenuItem key={subItem.name} asChild>
-                            <Link
-                              href={subItem.href}
-                              className={`flex items-center gap-3 rounded-md px-3 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer ${
-                                subItem.highlight
-                                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                                  : 'text-muted-foreground hover:text-foreground'
-                              }`}
-                            >
-                              {/* <subItem.icon className="h-4 w-4" /> */}
-                              <span className="font-medium">{subItem.name}</span>
-                            </Link>
-                          </DropdownMenuItem>
-                        ))}
+                      <DropdownMenuContent align="start" className="p-0 min-w-[300px] -mt-1 -ml-1 border-t-0 rounded-t-none bg-background" forceMount>
+                        {item.name === 'Courses' ? (
+                          <div className="grid gap-0 lg:grid-cols-[minmax(220px,1fr)_220px]">
+                            <div className="py-2">
+                              <p className="px-4 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Distances</p>
+                              {item.href ? (
+                                <>
+                                  <DropdownMenuItem asChild>
+                                    <Link
+                                      href={item.href}
+                                      className="outline-none flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white cursor-pointer"
+                                    >
+                                      Voir toutes les {item.name.toLowerCase()}
+                                      <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator className="my-1" />
+                                </>
+                              ) : null}
+                              {item.items.map((subItem) => (
+                                <DropdownMenuItem key={subItem.name} asChild>
+                                  <Link
+                                    href={subItem.href}
+                                    className={`flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer ${
+                                      subItem.highlight
+                                        ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                  >
+                                    <span className="font-medium">{subItem.name}</span>
+                                  </Link>
+                                </DropdownMenuItem>
+                              ))}
+                            </div>
+                            <div className="hidden border-l border-border/70 bg-background/90 py-2 lg:flex lg:flex-col">
+                              <p className="px-4 text-xs uppercase tracking-wide text-muted-foreground">Formats</p>
+                              <div className="mt-2">
+                                <DropdownMenuItem asChild>
+                                  <Link
+                                    href="/events/formats"
+                                    className="outline-none flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white cursor-pointer"
+                                  >
+                                    Voir tous les formats
+                                    <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="my-1" />
+                                {eventFormatLinks.map((format) => (
+                                  <DropdownMenuItem key={format.name} asChild>
+                                    <Link
+                                      href={format.href}
+                                      className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground"
+                                    >
+                                      <span className="font-medium">{format.name}</span>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-2">
+                            {item.href ? (
+                              <>
+                                <DropdownMenuItem asChild>
+                                  <Link
+                                    href={item.href}
+                                    className="outline-none flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white cursor-pointer"
+                                  >
+                                    Voir toutes les {item.name.toLowerCase()}
+                                    <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="my-1" />
+                              </>
+                            ) : null}
+                            {item.name === 'Courses' ? (
+                              <p className="px-6 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Distances</p>
+                            ) : null}
+                            {item.items.map((subItem) => (
+                              <DropdownMenuItem key={subItem.name} asChild>
+                                <Link
+                                  href={subItem.href}
+                                  className={`flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer ${
+                                    subItem.highlight
+                                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                                      : 'text-muted-foreground hover:text-foreground'
+                                  }`}
+                                >
+                                  <span className="font-medium">{subItem.name}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </div>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -387,6 +457,39 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                             {subItem.name}
                           </Link>
                         ))}
+
+                        {item.name === 'Courses' ? (
+                          <div className="mt-3 rounded-2xl border border-border/70 bg-muted/30 px-4 py-4">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Formats</p>
+                            <div className="mt-2 space-y-1">
+                              <Link
+                                href="/events/formats"
+                                className="flex w-full items-center justify-between px-2 py-2 text-sm font-semibold text-white"
+                                onClick={() => {
+                                  setMobileMenuOpen(false)
+                                  setMobileDropdownOpen(null)
+                                }}
+                              >
+                                Voir tous les formats
+                                <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
+                              </Link>
+                              <div className="h-px w-full bg-border/40" />
+                              {eventFormatLinks.map((format) => (
+                                <Link
+                                  key={format.name}
+                                  href={format.href}
+                                  className="block w-full px-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                                  onClick={() => {
+                                    setMobileMenuOpen(false)
+                                    setMobileDropdownOpen(null)
+                                  }}
+                                >
+                                  {format.name}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
