@@ -70,6 +70,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # Increase Node.js heap size for large builds
+          NODE_OPTIONS: --max-old-space-size=4096
           # Required build env vars
           NEXT_PUBLIC_SITE_URL: https://overbound-race.com
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
