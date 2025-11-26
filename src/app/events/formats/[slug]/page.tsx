@@ -83,8 +83,9 @@ export function generateStaticParams() {
   return Object.keys(formatContent).map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const format = formatContent[params.slug as FormatSlug]
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const resolvedParams = await params
+  const format = formatContent[resolvedParams.slug as FormatSlug]
   if (!format) {
     return { title: 'Format OverBound' }
   }
@@ -94,8 +95,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   }
 }
 
-export default function FormatDetailPage({ params }: { params: { slug: string } }) {
-  const format = formatContent[params.slug as FormatSlug]
+export default async function FormatDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params
+  const format = formatContent[resolvedParams.slug as FormatSlug]
   if (!format) {
     notFound()
   }

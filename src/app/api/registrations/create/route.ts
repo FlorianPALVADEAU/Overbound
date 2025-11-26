@@ -6,6 +6,7 @@ import { sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION } from '@/constants/registration'
+import { captureException } from '@/lib/sentry'
 
 export const runtime = 'nodejs'
 
@@ -312,6 +313,12 @@ export async function POST(request: NextRequest) {
         })
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)
+        // Capture email send errors in Sentry
+        captureException(emailError as Error, {
+          context: 'ticket_email_send',
+          registrationId: registration.id,
+          email: registration.email,
+        })
       }
     }
 
@@ -335,9 +342,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Erreur création inscription:', error)
-    return NextResponse.json({ 
+
+    // Capture error in Sentry with context
+    captureException(error, {
+      route: '/api/registrations/create',
+      method: 'POST',
+    })
+
+    return NextResponse.json({
       error: 'Erreur lors de la création de l\'inscription',
-      details: error.message 
+      details: error.message
     }, { status: 500 })
   }
 }

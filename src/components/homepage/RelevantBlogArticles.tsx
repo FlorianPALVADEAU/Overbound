@@ -33,7 +33,7 @@ export default function RelevantBlogArticles() {
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-auto">
         {posts.map((p) => (
-          <BlogArticleItem key={p._id} post={p} imageHeight={176} showExcerpt={false} />
+          <BlogArticleItem key={p._id} post={p} showExcerpt={false} />
         ))}
       </div>
     </section>
