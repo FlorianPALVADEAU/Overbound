@@ -3,7 +3,9 @@ export async function register() {
     await import('./sentry.server.config')
   }
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('./sentry.edge.config')
-  }
+  // Edge runtime disabled to avoid bundle size issues
+  // Most critical errors happen in Node.js API routes and client-side
+  // if (process.env.NEXT_RUNTIME === 'edge') {
+  //   await import('./sentry.edge.config')
+  // }
 }
