@@ -5,6 +5,7 @@ import { sendMarketingEmail } from '@/lib/email/marketing'
 import type { MarketingRecipient } from '@/lib/email/marketing'
 import { generateUnsubscribeUrl } from '@/lib/email/unsubscribe'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
+import { captureException } from '@/lib/sentry'
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -103,6 +104,11 @@ export async function POST(request: NextRequest) {
         })
       } catch (error) {
         console.error('Error sending test email:', error)
+        captureException(error as Error, {
+          context: 'test_email_send',
+          adminEmail: user.email,
+          subject: validatedData.subject,
+        })
         return NextResponse.json(
           { error: 'Failed to send test email' },
           { status: 500 },
@@ -213,6 +219,12 @@ export async function POST(request: NextRequest) {
       })
     } catch (error) {
       console.error('Error sending emails:', error)
+      captureException(error as Error, {
+        context: 'bulk_email_send',
+        listIds: validatedData.listIds,
+        recipientCount: uniqueSubscribers?.length || 0,
+        subject: validatedData.subject,
+      })
       return NextResponse.json(
         { error: 'Failed to send emails to subscribers' },
         { status: 500 },
@@ -225,6 +237,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
+
+    // Capture unexpected errors
+    captureException(error as Error, {
+      route: '/api/admin/distribution-lists/send-email',
+      method: 'POST',
+    })
 
     console.error('Error in send-email route:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

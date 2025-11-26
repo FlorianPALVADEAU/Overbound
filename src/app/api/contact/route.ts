@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendSupportContactEmail, sendSupportContactConfirmationEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
+import { captureException } from '@/lib/sentry'
 
 export const runtime = 'nodejs'
 
@@ -162,6 +163,10 @@ export async function POST(request: NextRequest) {
       })
     } catch (confirmationError) {
       console.error('[contact] failed to send confirmation email', confirmationError)
+      captureException(confirmationError as Error, {
+        context: 'contact_confirmation_email',
+        userEmail: user.email,
+      })
     }
 
     await recordEmailLog({
@@ -179,6 +184,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[contact] failed to handle contact request', error)
+
+    // Capture error in Sentry with context
+    captureException(error as Error, {
+      route: '/api/contact',
+      method: 'POST',
+    })
+
     return NextResponse.json({ error: 'Une erreur est survenue. Réessaie plus tard.' }, { status: 500 })
   }
 }

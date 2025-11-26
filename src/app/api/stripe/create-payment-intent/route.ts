@@ -12,20 +12,26 @@ import {
   respondJson,
   getCurrentTicketPriceFromRow,
 } from './utils'
+import { captureException } from '@/lib/sentry'
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  let eventId: string | undefined
+  let userId: string | undefined
+  let ticketSelections: any[] = []
+  let participants: any[] = []
+  let promoCode: string | null = null
+
   try {
-    const {
-      eventId,
-      userId,
-      userEmail,
-      ticketSelections = [],
-      participants = [],
-      upsells = [],
-      promoCode = null,
-    } = await request.json()
+    const requestBody = await request.json()
+    eventId = requestBody.eventId
+    userId = requestBody.userId
+    const userEmail = requestBody.userEmail
+    ticketSelections = requestBody.ticketSelections || []
+    participants = requestBody.participants || []
+    const upsells = requestBody.upsells || []
+    promoCode = requestBody.promoCode || null
 
     if (!eventId || !userId || !userEmail || ticketSelections.length === 0) {
       return respondJson({ error: 'Paramètres insuffisants.' }, 400)
@@ -147,6 +153,18 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Erreur création PaymentIntent:', error)
+
+    // Capture error in Sentry with context
+    captureException(error as Error, {
+      route: '/api/stripe/create-payment-intent',
+      method: 'POST',
+      eventId,
+      userId,
+      ticketCount: ticketSelections?.length || 0,
+      participantCount: participants?.length || 0,
+      promoCode,
+    })
+
     return respondJson({ error: 'Erreur lors de la préparation du paiement.' }, 500)
   }
 }
