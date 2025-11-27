@@ -129,7 +129,7 @@ export default function OurStoryPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Lancement des premiers événements Overbound avec les formats Rite du Guerrier et Voie du Héros.
+                    Lancement des premiers événements Overbound avec les formats Origin et Horizon.
                     La communauté commence à se former.
                   </p>
                 </CardContent>
@@ -140,11 +140,11 @@ export default function OurStoryPage() {
                   <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-emerald-500/40 mb-4">
                     2025
                   </Badge>
-                  <CardTitle className="text-xl">Tribal Royale</CardTitle>
+                  <CardTitle className="text-xl">Ultra Arena</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Première mondiale : lancement du format Tribal Royale, premier backyard OCR au monde.
+                    Première mondiale : lancement du format Ultra Arena, premier backyard OCR au monde.
                     L'innovation qui marque les esprits.
                   </p>
                 </CardContent>
@@ -186,17 +186,17 @@ export default function OurStoryPage() {
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
                     Pour la première fois au monde, les participants peuvent choisir leur niveau de difficulté
-                    (Standard, Guerrier, Légende) sur un même parcours. Chacun vit sa propre expérience.
+                    (Primal, Fury, Ultra Hardcore) sur un même parcours. Chacun vit sa propre expérience.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/40">
-                      Standard
+                      Primal
                     </Badge>
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                      Guerrier
+                      Fury
                     </Badge>
                     <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/40">
-                      Légende
+                      Ultra Hardcore
                     </Badge>
                   </div>
                 </CardContent>
@@ -214,12 +214,12 @@ export default function OurStoryPage() {
                     </Badge>
                   </div>
                   <CardTitle className="text-2xl">
-                    Tribal Royale - Backyard OCR
+                    Ultra Arena - Backyard OCR
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, le Tribal Royale est le premier format backyard appliqué à l'OCR.
+                    Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, le Ultra Arena est le premier format backyard appliqué à l'OCR.
                     Un concept d'élimination progressive inédit qui repousse les limites du mental et du physique.
                   </p>
                   <div className="flex flex-wrap gap-2">

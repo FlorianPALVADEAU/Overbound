@@ -140,7 +140,7 @@ export default function ConceptPage() {
                       <span className="text-green-600 font-bold text-sm">1-3</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">Standard</p>
+                      <p className="font-semibold text-foreground">Primal</p>
                       <p className="text-xs text-muted-foreground">Obstacles classiques, accessibles</p>
                     </div>
                   </div>
@@ -149,7 +149,7 @@ export default function ConceptPage() {
                       <span className="text-amber-600 font-bold text-sm">4-6</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">Guerrier</p>
+                      <p className="font-semibold text-foreground">Fury</p>
                       <p className="text-xs text-muted-foreground">Obstacles exigeants, technique requise</p>
                     </div>
                   </div>
@@ -158,7 +158,7 @@ export default function ConceptPage() {
                       <span className="text-rose-600 font-bold text-sm">7-10</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">Légende</p>
+                      <p className="font-semibold text-foreground">Ultra Hardcore</p>
                       <p className="text-xs text-muted-foreground">Obstacles extrêmes + lests obligatoires</p>
                     </div>
                   </div>
@@ -182,7 +182,7 @@ export default function ConceptPage() {
               </CardContent>
             </Card>
 
-            {/* Innovation 2 - Tribal Royale */}
+            {/* Innovation 2 - Ultra Arena */}
             <Card className="relative overflow-hidden border-2 border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5 shadow-2xl hover:shadow-amber-500/20 transition-all hover:-translate-y-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
               <CardHeader className="relative z-10 space-y-4 pb-6">
@@ -195,7 +195,7 @@ export default function ConceptPage() {
                   </Badge>
                 </div>
                 <CardTitle className="text-3xl font-bold">
-                  Tribal Royale
+                  Ultra Arena
                   <span className="block text-lg font-normal text-muted-foreground mt-1">
                     Le premier Backyard OCR <span className="font-semibold italic">au monde</span>
                   </span>
@@ -204,7 +204,7 @@ export default function ConceptPage() {
               <CardContent className="relative z-10 space-y-6">
                 <p className="text-muted-foreground leading-relaxed">
                   <span className="text-foreground font-semibold">Une révolution dans l'endurance :</span> Inspiré
-                  du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Tribal Royale est le{' '}
+                  du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Ultra Arena est le{' '}
                   <span className="text-amber-600 font-bold">tout premier format backyard appliqué à l'OCR</span>.
                 </p>
 
@@ -258,8 +258,8 @@ export default function ConceptPage() {
                 </div>
 
                 <Button asChild className="w-full rounded-full bg-amber-600 hover:bg-amber-700" size="lg">
-                  <Link href="/races/tribale-royale">
-                    S'inscrire à la Tribal Royale
+                  <Link href="/races/ultra-arena">
+                    S'inscrire à la Ultra Arena
                   </Link>
                 </Button>
               </CardContent>
@@ -338,7 +338,7 @@ export default function ConceptPage() {
                   <Sparkles className="h-4 w-4 mr-1" />
                   Sprint
                 </Badge>
-                <CardTitle className="text-2xl">Le Rite du Guerrier</CardTitle>
+                <CardTitle className="text-2xl">Le Origin</CardTitle>
                 <p className="text-sm font-medium text-muted-foreground">6 km · 20 obstacles</p>
               </CardHeader>
               <CardContent>
@@ -361,7 +361,7 @@ export default function ConceptPage() {
                   <Mountain className="h-4 w-4 mr-1" />
                   Intermédiaire
                 </Badge>
-                <CardTitle className="text-2xl">La Voie du Héros</CardTitle>
+                <CardTitle className="text-2xl">Horizon</CardTitle>
                 <p className="text-sm font-medium text-muted-foreground">12 km · 35 obstacles</p>
               </CardHeader>
               <CardContent>
@@ -384,7 +384,7 @@ export default function ConceptPage() {
                   <Crown className="h-4 w-4 mr-1" />
                   Élite
                 </Badge>
-                <CardTitle className="text-2xl">Tribal Royale</CardTitle>
+                <CardTitle className="text-2xl">Ultra Arena</CardTitle>
                 <p className="text-sm font-medium text-muted-foreground">∞ km · ∞ obstacles</p>
               </CardHeader>
               <CardContent>

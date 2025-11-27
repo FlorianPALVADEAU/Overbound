@@ -167,10 +167,10 @@ export default function RaceDetailPage() {
   const galleryImages: string[] = race.logo_url ? [race.logo_url] : []
 
   // Detect race formats
-  const isTribalRoyale = params.id === 'tribale-royale' || race.name?.toLowerCase().includes('tribal royale')
+  const isTribalRoyale = params.id === 'ultra-arena' || race.name?.toLowerCase().includes('tribal royale')
   const isTribalKids = params.id === 'tribale-kids' || race.name?.toLowerCase().includes('tribal kids')
-  const isRiteDuGuerrier = params.id === 'rite-du-guerrier' || race.name?.toLowerCase().includes('rite du guerrier')
-  const isVoieDuHeros = params.id === 'voie-du-heros' || race.name?.toLowerCase().includes('voie du héros')
+  const isRiteDuGuerrier = params.id === 'origin' || race.name?.toLowerCase().includes('rite du guerrier')
+  const isVoieDuHeros = params.id === 'horizon' || race.name?.toLowerCase().includes('voie du héros')
 
   const statsCards = isTribalRoyale
     ? [
@@ -363,7 +363,7 @@ export default function RaceDetailPage() {
                     </Badge>
                     <p className="text-xl leading-relaxed text-muted-foreground">
                       <span className="text-foreground font-semibold">Du jamais vu dans l'OCR :</span> Le premier format backyard appliqué aux courses d'obstacles.
-                      Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Tribal Royale n'a pas de distance fixe.
+                      Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Ultra Arena n'a pas de distance fixe.
                     </p>
                     <p className="text-lg leading-relaxed text-muted-foreground">
                       <span className="text-amber-600 font-semibold">Élimination progressive.</span> Chaque tour dure 1h maximum.
@@ -390,7 +390,7 @@ export default function RaceDetailPage() {
                       FORMAT SPRINT - 6 km
                     </Badge>
                     <p className="text-xl leading-relaxed text-muted-foreground">
-                      <span className="text-foreground font-semibold">L'initiation explosive à l'OCR :</span> Le Rite du Guerrier est le format parfait pour découvrir l'univers Overbound ou viser un chrono explosif.
+                      <span className="text-foreground font-semibold">L'initiation explosive à l'OCR :</span> Le Origin est le format parfait pour découvrir l'univers Overbound ou viser un chrono explosif.
                     </p>
                     <p className="text-lg leading-relaxed text-muted-foreground">
                       <span className="text-emerald-600 font-semibold">6 km, 20 obstacles.</span> Distance courte mais intense qui te permet de donner ton maximum du début à la fin.
@@ -403,7 +403,7 @@ export default function RaceDetailPage() {
                       FORMAT INTERMÉDIAIRE - 12 km
                     </Badge>
                     <p className="text-xl leading-relaxed text-muted-foreground">
-                      <span className="text-foreground font-semibold">Le défi équilibré :</span> La Voie du Héros combine endurance, technique et mental pour un test complet de tes capacités.
+                      <span className="text-foreground font-semibold">Le défi équilibré :</span> Horizon combine endurance, technique et mental pour un test complet de tes capacités.
                     </p>
                     <p className="text-lg leading-relaxed text-muted-foreground">
                       <span className="text-blue-600 font-semibold">12 km, 35 obstacles.</span> Distance médium qui demande gestion d'effort et stratégie.
@@ -488,7 +488,7 @@ export default function RaceDetailPage() {
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
-                        <span className="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a></span>, la Tribal Royale introduit
+                        <span className="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a></span>, la Ultra Arena introduit
                         pour la première fois au monde le concept de backyard ultra à l'obstacle course racing.
                       </p>
                       <p>
@@ -568,7 +568,7 @@ export default function RaceDetailPage() {
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
-                        <span className="text-foreground font-semibold">Le Rite du Guerrier, c'est l'essence même de l'OCR concentrée sur 6 km</span> : vitesse, explosivité et intensité pure du premier au dernier obstacle.
+                        <span className="text-foreground font-semibold">Le Origin, c'est l'essence même de l'OCR concentrée sur 6 km</span> : vitesse, explosivité et intensité pure du premier au dernier obstacle.
                       </p>
                       <p>
                         <span className="text-emerald-600 font-semibold">Format sprint :</span> La distance courte te permet de donner ton maximum sans retenue. Pas besoin de gérer ton effort sur la durée, juste de tout donner pendant 30 à 60 minutes d'effort intense.
@@ -605,13 +605,13 @@ export default function RaceDetailPage() {
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
-                        <span className="text-foreground font-semibold">La Voie du Héros est le format de la progression</span> : 12 km qui combinent endurance cardio, technique sur obstacles et mental d'acier.
+                        <span className="text-foreground font-semibold">Horizon est le format de la progression</span> : 12 km qui combinent endurance cardio, technique sur obstacles et mental d'acier.
                       </p>
                       <p>
                         <span className="text-blue-600 font-semibold">Distance intermédiaire :</span> Ni trop courte pour sprinter, ni trop longue pour être réservée aux élites. C'est le format équilibré qui teste toutes tes qualités : cardio, force, technique et gestion d'effort.
                       </p>
                       <p>
-                        <span className="text-foreground font-semibold">Tremplin vers l'élite :</span> Ce format est parfait pour ceux qui ont déjà fait le Rite du Guerrier et veulent monter en puissance. Avec 35 obstacles incluant des portés lourds répétés, c'est un vrai test de progression.
+                        <span className="text-foreground font-semibold">Tremplin vers l'élite :</span> Ce format est parfait pour ceux qui ont déjà fait le Origin et veulent monter en puissance. Avec 35 obstacles incluant des portés lourds répétés, c'est un vrai test de progression.
                       </p>
                     </div>
                     <div className="mt-6 grid gap-4 sm:grid-cols-3">

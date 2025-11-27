@@ -1,4 +1,6 @@
 
+import { FORMAT_LEVELS } from '@/constants/formatLevels'
+
 export interface QuestionOption {
   label: string
   next: string
@@ -100,32 +102,32 @@ export const questionsData: QuestionnaireData = {
     ],
     "results": {
         "format_initiation": {
-            "name": "Initiation Tribale",
+            "name": "Origin",
             "description": "6 km et une vingtaine d'obstacles accessibles. Idéal pour découvrir l'esprit Overbound et s'amuser tout en se testant.",
             "icon": "🌱"
         },
         "format_folie": {
-            "name": "La Folie Tribale",
+            "name": "Horizon",
             "description": "12 km intenses avec une belle variété d'obstacles. Un vrai défi physique et mental, parfait pour se dépasser sans aller dans l'extrême.",
             "icon": "🔥"
         },
         "format_royale": {
-            "name": "Tribale Royale",
+            "name": "Ultra Arena",
             "description": "Une backyard OCR. Le défi ultime, réservé à ceux qui veulent repousser leurs limites et vivre une aventure hors norme.",
             "icon": "👑"
         },
         "difficulty_standard": {
-            "name": "Standard",
+            "name": FORMAT_LEVELS.low.name,
             "description": "Une expérience accessible où les obstacles sont franchissables ou adaptables. Parfait pour découvrir la course en toute sérénité.",
             "icon": "⭐"
         },
         "difficulty_guerrier": {
-            "name": "Guerrier",
+            "name": FORMAT_LEVELS.mid.name,
             "description": "Un défi relevé : obstacles plus exigeants, parfois obligatoires, avec une intensité accrue. Pour les compétiteurs motivés.",
             "icon": "⚔️"
         },
         "difficulty_legende": {
-            "name": "Légende",
+            "name": FORMAT_LEVELS.hard.name,
             "description": "L'épreuve ultime : tous les obstacles sont obligatoires, aucun compromis. Réservé à ceux qui veulent prouver leur détermination totale.",
             "icon": "🏆"
         }

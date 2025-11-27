@@ -30,6 +30,7 @@ const LINK_GROUPS = [
       { label: 'Volontaires', href: '/volunteers' },
       { label: 'Concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
+      { label: 'Presse', href: '/about/press' },
       // { label: 'Équipe', href: '/about/team' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
@@ -38,8 +39,11 @@ const LINK_GROUPS = [
   {
     title: 'Légal',
     links: [
-      { label: 'Conditions générales', href: '/cgu' },
-      { label: 'Politique de confidentialité', href: '/privacy-policies' },
+      { label: 'Mentions légales', href: '/mentions-legales' },
+      { label: 'CGU', href: '/cgu' },
+      { label: 'CGV', href: '/cgv' },
+      { label: 'Confidentialité', href: '/privacy-policies' },
+      { label: 'Cookies', href: '/cookies' },
     ],
   },
 ]
@@ -104,7 +108,7 @@ export function Footer() {
           </div>
           <p className='text-sm'>&copy; {new Date().getFullYear()} Overbound. Tous droits réservés.</p>
           <p className='text-sm text-muted-foreground/80'>
-            Fait avec la sueur et le cœur par des passionnés.
+            Fait avec la sueur et le cœur, par des passionnés.
           </p>
         </div>
       </div>

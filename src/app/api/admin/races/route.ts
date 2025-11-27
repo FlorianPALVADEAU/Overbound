@@ -76,6 +76,7 @@ const handlePost = async (request: NextRequest) => {
       target_public,
       distance_km,
       description,
+      is_universal,
       obstacle_ids
     } = body
 
@@ -89,7 +90,7 @@ const handlePost = async (request: NextRequest) => {
 
     // Utiliser supabaseAdmin pour insérer
     const admin = supabaseAdmin()
-    
+
     // Créer la course
     const { data: race, error: raceError } = await admin
       .from('races')
@@ -100,7 +101,8 @@ const handlePost = async (request: NextRequest) => {
         difficulty: parseInt(difficulty) || 5,
         target_public,
         distance_km: parseFloat(distance_km),
-        description: description || null
+        description: description || null,
+        is_universal: is_universal ?? false
       })
       .select()
       .single()

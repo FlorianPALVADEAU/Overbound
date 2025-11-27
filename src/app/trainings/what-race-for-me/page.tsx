@@ -15,14 +15,14 @@ const formatHighlights = [
     tags: ['Débutant', 'Intensité', 'Fun'],
   },
   {
-    title: 'Voie du Héros',
+    title: 'Horizon',
     subtitle: 'Challenge intermédiaire',
     description:
       '8 à 12 km avec un mix équilibré de course, portés et franchissements techniques pour progresser à chaque obstacle.',
     tags: ['Intermédiaire', 'Endurance', 'Cohésion'],
   },
   {
-    title: 'Tribal Royale',
+    title: 'Ultra Arena',
     subtitle: 'L’épreuve signature',
     description:
       '15 km et plus pour les athlètes en quête de dépassement et d’un format élite taillé pour repousser leurs limites.',
@@ -41,7 +41,7 @@ const preparationSteps = [
     step: '02',
     title: 'Choisis ton format',
     description:
-      'Sprint, voie du héros ou Tribal Royale : compare les distances, le nombre d’obstacles et la cible pour trouver ton challenge.',
+      'Sprint, voie du héros ou Ultra Arena : compare les distances, le nombre d’obstacles et la cible pour trouver ton challenge.',
   },
   {
     step: '03',
