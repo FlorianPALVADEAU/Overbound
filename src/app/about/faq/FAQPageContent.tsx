@@ -107,36 +107,6 @@ const highlightTopics = [
   },
 ]
 
-const SupportCard = () => (
-  <div className="w-full flex flex-col gap-6 rounded-3xl border border-white/40 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
-    <div className="space-y-2">
-      <p className="text-sm font-semibold uppercase tracking-wide text-[#26AA26]">Toujours là pour toi</p>
-      <h3 className="text-2xl font-bold text-gray-900 sm:text-3xl">Besoin d’une réponse personnalisée ?</h3>
-      <p className="text-sm text-gray-600 sm:text-base">
-        Notre équipe support te répond du lundi au vendredi en moins de 24&nbsp;heures (48&nbsp;h en période de course).
-      </p>
-      <div className="flex flex-col gap-3 text-sm text-gray-700 sm:flex-row sm:items-center sm:gap-6">
-        <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4 text-[#26AA26]" />
-          <span>contact@overbound-race.com</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-[#26AA26]" />
-          <span>Formulaire de contact (réponse sous 24&nbsp;h)</span>
-        </div>
-      </div>
-    </div>
-    <div className="flex flex-col gap-3 sm:w-48">
-      <Button asChild className="h-11 bg-[#26AA26] text-white hover:bg-[#1e8a1e]">
-        <Link href="/contact">Contacter le support</Link>
-      </Button>
-      <Button asChild variant="outline" className="h-11 border-[#26AA26] text-[#26AA26] hover:bg-[#26AA26]/10">
-        <Link href="/trainings/what-race-for-me">Trouver mon format</Link>
-      </Button>
-    </div>
-  </div>
-)
-
 interface FAQPageContentProps {
   faqs: FAQDocument[]
 }
@@ -216,7 +186,6 @@ const FAQPageContent = ({ faqs }: FAQPageContentProps) => {
           <CategorySection meta={DEFAULT_CATEGORY_META} faqs={grouped[DEFAULT_CATEGORY_META.value] as FAQDocument[]} />
         ) : null}
         
-        <SupportCard />
       </section>
 
 

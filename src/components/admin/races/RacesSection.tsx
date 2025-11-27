@@ -38,6 +38,7 @@ function buildFormValues(race?: Race): RaceFormValues {
       target_public: 'intermédiaire',
       distance_km: '10',
       description: '',
+      is_universal: false,
       obstacle_ids: [],
     }
   }
@@ -50,6 +51,7 @@ function buildFormValues(race?: Race): RaceFormValues {
     target_public: race.target_public,
     distance_km: race.distance_km?.toString() || '0',
     description: race.description || '',
+    is_universal: race.is_universal,
     obstacle_ids: race.obstacles?.map(({ obstacle }) => obstacle.id) || [],
   }
 }
@@ -160,6 +162,7 @@ export function RacesSection() {
       target_public: values.target_public,
       distance_km: parseFloat(values.distance_km) || 0,
       description: values.description || null,
+      is_universal: values.is_universal,
       obstacle_ids: values.obstacle_ids,
     }
 

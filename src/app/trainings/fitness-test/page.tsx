@@ -31,21 +31,21 @@ export default function FitnessTestPage() {
   // Déterminer le format recommandé
   const getRecommendedFormat = () => {
     if (totalScore >= 18) return {
-      name: 'Tribal Royale',
+      name: 'Ultra Arena',
       color: 'amber',
-      href: '/races/tribale-royale',
+      href: '/races/ultra-arena',
       description: 'Format backyard élite - Tu as le niveau pour viser le sommet'
     }
     if (totalScore >= 10) return {
-      name: 'Voie du Héros',
+      name: 'Horizon',
       color: 'blue',
-      href: '/races/voie-du-heros',
+      href: '/races/horizon',
       description: 'Format intermédiaire 12 km - Parfait pour progresser'
     }
     return {
-      name: 'Rite du Guerrier',
+      name: 'Origin',
       color: 'emerald',
-      href: '/races/rite-du-guerrier',
+      href: '/races/origin',
       description: 'Format sprint 6 km - Idéal pour débuter'
     }
   }

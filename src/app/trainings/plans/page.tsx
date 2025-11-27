@@ -24,20 +24,20 @@ const planCategories = [
     ],
   },
   {
-    title: 'Voie du Héros',
+    title: 'Horizon',
     subtitle: '8 à 12 km · 8 semaines',
     gradient: 'from-blue-500/20 to-blue-500/5',
     accent: 'text-blue-600',
     description:
       'Programmes hybrides course/force pour tenir l’intensité sur un format signature. Adapté aux sportifs réguliers.',
     plans: [
-      { name: 'Voie du Héros · Standard', href: '/docs/plans/heros-standard.pdf' },
-      { name: 'Voie du Héros · Cross-training', href: '/docs/plans/heros-cross-training.pdf' },
-      { name: 'Voie du Héros · Objectif podium', href: '/docs/plans/heros-podium.pdf' },
+      { name: 'Horizon · Primal', href: '/docs/plans/heros-standard.pdf' },
+      { name: 'Horizon · Cross-training', href: '/docs/plans/heros-cross-training.pdf' },
+      { name: 'Horizon · Objectif podium', href: '/docs/plans/heros-podium.pdf' },
     ],
   },
   {
-    title: 'Tribal Royale',
+    title: 'Ultra Arena',
     subtitle: '15 km et + · 10 semaines',
     gradient: 'from-amber-500/20 to-amber-500/5',
     accent: 'text-amber-600',

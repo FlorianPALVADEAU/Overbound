@@ -22,6 +22,7 @@ import {
 	Globe,
 } from "lucide-react";
 import NeedHelpChoosingYourFormat from "./NeedHelpChoosingYourFormat";
+import { FORMAT_LEVELS } from "@/constants/formatLevels";
 
 const steps = [
 	{
@@ -32,7 +33,7 @@ const steps = [
 	},
 	{
 		title: "Étape 2",
-		text: "INNOVATION MONDIALE : Choisis ton niveau de difficulté !\n\n🟢 STANDARD : Obstacles classiques accessibles\n🟡 GUERRIER : Obstacles exigeants, technique requise\n🔴 LÉGENDE : Obstacles extrêmes + lests obligatoires\n\nMême parcours, 3 défis différents. Personne d'autre ne fait ça.",
+		text: `INNOVATION MONDIALE : Choisis ton niveau de difficulté !\n\n🟢 ${FORMAT_LEVELS.low.name.toUpperCase()} : Obstacles classiques accessibles\n🟡 ${FORMAT_LEVELS.mid.name.toUpperCase()} : Obstacles exigeants, technique requise\n🔴 ${FORMAT_LEVELS.hard.name.toUpperCase()} : Obstacles extrêmes + lests obligatoires\n\nMême parcours, 3 défis différents. Personne d'autre ne fait ça.`,
 		image:
 			"https://images.unsplash.com/photo-1602389569471-5df5bde61968?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
 	},
@@ -203,7 +204,7 @@ export default function DistanceFormatsAndDifficulties() {
 										<Mountain className="h-4 w-4 mr-1" />
 										Sprint
 									</Badge>
-									<CardTitle className="text-2xl">Le Rite du Guerrier</CardTitle>
+									<CardTitle className="text-2xl">Origin</CardTitle>
 									<p className="text-sm font-medium text-muted-foreground">
 										6 km · 20 obstacles
 									</p>
@@ -218,7 +219,7 @@ export default function DistanceFormatsAndDifficulties() {
 										className="w-full rounded-full"
 										size="sm"
 									>
-										<Link href="/races/rite-du-guerrier">
+										<Link href="/races/origin">
 											Découvrir
 											<ArrowRight className="ml-2 h-3 w-3 transition group-hover:translate-x-1" />
 										</Link>
@@ -232,7 +233,7 @@ export default function DistanceFormatsAndDifficulties() {
 										<Sparkles className="h-4 w-4 mr-1" />
 										Intermédiaire
 									</Badge>
-									<CardTitle className="text-2xl">La Voie du Héros</CardTitle>
+									<CardTitle className="text-2xl">Horizon</CardTitle>
 									<p className="text-sm font-medium text-muted-foreground">
 										12 km · 35 obstacles
 									</p>
@@ -247,7 +248,7 @@ export default function DistanceFormatsAndDifficulties() {
 										className="w-full rounded-full"
 										size="sm"
 									>
-										<Link href="/races/voie-du-heros">
+										<Link href="/races/horizon">
 											Découvrir
 											<ArrowRight className="ml-2 h-3 w-3 transition group-hover:translate-x-1" />
 										</Link>
@@ -261,7 +262,7 @@ export default function DistanceFormatsAndDifficulties() {
 										<Crown className="h-4 w-4 mr-1" />
 										Mental
 									</Badge>
-									<CardTitle className="text-2xl">Tribal Royale</CardTitle>
+									<CardTitle className="text-2xl">Ultra Arena</CardTitle>
 									<p className="text-sm font-medium text-muted-foreground">
 										∞ km · ∞ obstacles
 									</p>
@@ -278,7 +279,7 @@ export default function DistanceFormatsAndDifficulties() {
 										className="w-full rounded-full bg-amber-600 hover:bg-amber-700"
 										size="sm"
 									>
-										<Link href="/races/tribale-royale">
+										<Link href="/races/ultra-arena">
 											En savoir plus
 											<ArrowRight className="ml-2 h-3 w-3" />
 										</Link>

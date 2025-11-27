@@ -27,6 +27,7 @@ export interface RaceFormValues {
   target_public: Race['target_public']
   distance_km: string
   description: string
+  is_universal: boolean
   obstacle_ids: string[]
 }
 
@@ -48,6 +49,7 @@ const DEFAULT_VALUES: RaceFormValues = {
   target_public: 'intermédiaire',
   distance_km: '10',
   description: '',
+  is_universal: false,
   obstacle_ids: [],
 }
 
@@ -200,6 +202,23 @@ export function RaceFormDialog({
               onChange={(event) => handleChange('description', event.target.value)}
               placeholder="Description détaillée de la course"
             />
+          </div>
+
+          <div className="flex items-center space-x-2 rounded-lg border p-4 bg-muted/30">
+            <Checkbox
+              id="is_universal"
+              checked={values.is_universal}
+              onCheckedChange={(checked) => handleChange('is_universal', checked as unknown as string)}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="is_universal" className="cursor-pointer font-medium">
+                Format universel
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Activer pour les courses sans variantes (Kids, Backyard). Désactiver pour les courses multi-formats
+                (Primal/Fury/Ultra Hardcore).
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3">

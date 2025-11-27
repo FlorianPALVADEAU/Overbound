@@ -34,12 +34,13 @@ const handlePut = async (
       target_public,
       distance_km,
       description,
+      is_universal,
       obstacle_ids
     } = body
 
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
-    
+
     // Mettre à jour la course
     const { data: race, error: raceError } = await admin
       .from('races')
@@ -51,6 +52,7 @@ const handlePut = async (
         target_public,
         distance_km: parseFloat(distance_km),
         description: description || null,
+        is_universal: is_universal ?? false,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)

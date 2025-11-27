@@ -32,6 +32,7 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
+import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -96,17 +97,17 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const eventsDropdownItems: DropdownItemType[] = [
     // { name: 'Voir toutes les courses', href: '/events', icon: MedalIcon },
-    { name: 'Le rite du guerrier', href: '/races/rite-du-guerrier', icon: CalendarIcon },
-    { name: 'La voie du héros', href: '/races/voie-du-heros', icon: MapPinIcon },
-    { name: 'Tribal Royale', href: '/races/tribale-royale', icon: MapPinIcon },
+    { name: 'Origin', href: '/races/origin', icon: CalendarIcon },
+    { name: 'Horizon', href: '/races/horizon', icon: MapPinIcon },
+    { name: 'Ultra Arena', href: '/races/ultra-arena', icon: MapPinIcon },
     { name: 'Tribal Kids', href: '/races/tribale-kids', icon: MapPinIcon },
     { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]
 
   const eventFormatLinks = [
-    { name: 'Standard', href: '/events/formats/standard' },
-    { name: 'Guerrier', href: '/events/formats/guerrier' },
-    { name: 'Légende', href: '/events/formats/legende' },
+    { name: FORMAT_LEVELS.low.name, href: FORMAT_LEVELS.low.path },
+    { name: FORMAT_LEVELS.mid.name, href: FORMAT_LEVELS.mid.path },
+    { name: FORMAT_LEVELS.hard.name, href: FORMAT_LEVELS.hard.path },
   ]
 
   const trainingsDropdownItems: DropdownItemType[] = [

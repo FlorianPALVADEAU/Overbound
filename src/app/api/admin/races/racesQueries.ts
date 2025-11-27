@@ -11,6 +11,7 @@ export interface AdminRacePayload {
   target_public: Race['target_public']
   distance_km: number
   description?: string | null
+  is_universal: boolean
   obstacle_ids: string[]
 }
 

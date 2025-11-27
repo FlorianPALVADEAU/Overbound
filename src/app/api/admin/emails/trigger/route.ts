@@ -86,7 +86,7 @@ const handlePost = async (request: NextRequest) => {
         await sendEventPrepEmail({
           to: user.email!,
           participantName: fullName ?? 'Athlète',
-          eventTitle: 'Tribal Royale',
+          eventTitle: 'Ultra Arena',
           eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           eventLocation: 'Parc de Miribel-Jonage',
           weeksRemaining: 2,
@@ -103,7 +103,7 @@ const handlePost = async (request: NextRequest) => {
         await sendPostEventThankYouEmail({
           to: user.email!,
           participantName: fullName ?? 'Athlète',
-          eventTitle: 'La Voie du Héros',
+          eventTitle: 'Horizon',
           feedbackUrl: `${SITE_URL}/feedback/form`,
           nextEventUrl: EVENTS_URL,
           photosUrl: `${SITE_URL}/blog/photos`,
@@ -142,7 +142,7 @@ const handlePost = async (request: NextRequest) => {
         await sendTicketEmail({
           to: user.email!,
           participantName: fullName ?? 'Athlète',
-          eventTitle: 'Tribal Royale',
+          eventTitle: 'Ultra Arena',
           eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
           eventLocation: 'Lac de Vassivière',
           ticketName: 'Format Élite 12 km',
@@ -195,8 +195,8 @@ const handlePost = async (request: NextRequest) => {
           fullName,
           lastEventTitle: 'OverBound Grenoble 2024',
           eventsUrl: EVENTS_URL,
-          highlightEventTitle: 'Tribal Royale',
-          highlightEventUrl: `${EVENTS_URL}/tribale-royale`,
+          highlightEventTitle: 'Ultra Arena',
+          highlightEventUrl: `${EVENTS_URL}/ultra-arena`,
         })
         return 'Relance inactifs envoyée.'
       },
@@ -204,9 +204,9 @@ const handlePost = async (request: NextRequest) => {
         await sendAbandonedCheckoutEmail({
           to: user.email!,
           fullName,
-          eventTitle: 'La Voie du Héros',
+          eventTitle: 'Horizon',
           ticketName: 'Format Expérience 8 km',
-          resumeUrl: `${EVENTS_URL}/voie-du-heros/register`,
+          resumeUrl: `${EVENTS_URL}/horizon/register`,
           incentive: 'Rappelle-toi : ton panier est toujours réservé pendant 48h.',
         })
         return 'Relance checkout envoyée.'
