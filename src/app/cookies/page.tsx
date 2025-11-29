@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield, CheckCircle2, Settings } from 'lucide-react'
+import { COMPANY_INFO } from '@/constants/companyInfo'
 
 const lastUpdated = '27/11/2024'
 
@@ -241,8 +242,8 @@ export default function CookiesPage() {
             <h2 className="text-2xl font-bold">Contact</h2>
             <p>
               Pour toute question concernant notre utilisation des cookies, vous pouvez nous contacter à l'adresse{' '}
-              <Link href="mailto:privacy@overbound-race.com" className="text-primary hover:underline">
-                privacy@overbound-race.com
+              <Link href={`mailto:${COMPANY_INFO.emails.privacy}`} className="text-primary hover:underline">
+                {COMPANY_INFO.emails.privacy}
               </Link>{' '}
               ou consulter notre{' '}
               <Link href="/privacy-policies" className="text-primary hover:underline">

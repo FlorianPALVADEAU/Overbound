@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { COMPANY_INFO } from '@/constants/companyInfo'
 
 const lastUpdated = '27/11/2024'
 
@@ -24,22 +25,22 @@ export default function MentionsLegalesPage() {
             <h2 className="text-2xl font-bold">Éditeur du site</h2>
             <div className="mt-4 space-y-2">
               <p>
-                <strong>Raison sociale :</strong> Overbound SAS
+                <strong>Raison sociale :</strong> {COMPANY_INFO.legalName}
               </p>
               <p>
-                <strong>Forme juridique :</strong> Société par Actions Simplifiée
+                <strong>Forme juridique :</strong> {COMPANY_INFO.legalForm}
               </p>
               <p>
-                <strong>Capital social :</strong> 50 000 €
+                <strong>Capital social :</strong> {COMPANY_INFO.capital}
               </p>
               <p>
-                <strong>Siège social :</strong> 24 rue du Faubourg Saint-Martin, 75010 Paris, France
+                <strong>Siège social :</strong> {COMPANY_INFO.address.full}
               </p>
               <p>
-                <strong>Immatriculation :</strong> RCS de Paris sous le numéro 922 345 678
+                <strong>Immatriculation :</strong> {COMPANY_INFO.rcs.full}
               </p>
               <p>
-                <strong>Numéro de TVA intracommunautaire :</strong> FR18 922345678
+                <strong>Numéro de TVA intracommunautaire :</strong> {COMPANY_INFO.vat}
               </p>
             </div>
           </section>
@@ -48,7 +49,7 @@ export default function MentionsLegalesPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-bold">Directeur de la publication</h2>
             <p className="mt-4">
-              <strong>Florian Palvadeau</strong>, Président de la société Overbound SAS
+              <strong>{COMPANY_INFO.director.name}</strong>, {COMPANY_INFO.director.title} de la société {COMPANY_INFO.legalName}
             </p>
           </section>
 
@@ -58,21 +59,21 @@ export default function MentionsLegalesPage() {
             <div className="mt-4 space-y-2">
               <p>
                 <strong>Email général :</strong>{' '}
-                <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
-                  contact@overbound-race.com
+                <Link href={`mailto:${COMPANY_INFO.emails.general}`} className="text-primary hover:underline">
+                  {COMPANY_INFO.emails.general}
                 </Link>
               </p>
               <p>
                 <strong>Email support :</strong>{' '}
-                <Link href="mailto:support@overbound-race.com" className="text-primary hover:underline">
-                  support@overbound-race.com
+                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary hover:underline">
+                  {COMPANY_INFO.emails.support}
                 </Link>
               </p>
               <p>
-                <strong>Téléphone :</strong> +33 (0)1 84 80 12 34
+                <strong>Téléphone :</strong> {COMPANY_INFO.contact.phone}
               </p>
               <p>
-                <strong>Horaires du support client :</strong> Du lundi au vendredi, 9h00 – 18h00 (CET)
+                <strong>Horaires du support client :</strong> {COMPANY_INFO.supportHours}
               </p>
             </div>
           </section>
@@ -83,35 +84,33 @@ export default function MentionsLegalesPage() {
             <div className="mt-4 space-y-4">
               <div>
                 <p className="font-semibold">Hébergeur du site web :</p>
-                <p>Vercel Inc.</p>
-                <p>340 S Lemon Ave #4133</p>
-                <p>Walnut, CA 91789, États-Unis</p>
+                <p>{COMPANY_INFO.hosting.web.name}</p>
+                <p>{COMPANY_INFO.hosting.web.address}</p>
                 <p>
                   Site web :{' '}
                   <Link
-                    href="https://vercel.com"
+                    href={COMPANY_INFO.hosting.web.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
-                    https://vercel.com
+                    {COMPANY_INFO.hosting.web.website}
                   </Link>
                 </p>
               </div>
               <div>
                 <p className="font-semibold">Hébergeur de la base de données :</p>
-                <p>Supabase Inc.</p>
-                <p>970 Toa Payoh North #07-04</p>
-                <p>Singapour</p>
+                <p>{COMPANY_INFO.hosting.database.name}</p>
+                <p>{COMPANY_INFO.hosting.database.address}</p>
                 <p>
                   Site web :{' '}
                   <Link
-                    href="https://supabase.com"
+                    href={COMPANY_INFO.hosting.database.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
-                    https://supabase.com
+                    {COMPANY_INFO.hosting.database.website}
                   </Link>
                 </p>
               </div>
@@ -187,8 +186,8 @@ export default function MentionsLegalesPage() {
             <h2 className="text-2xl font-bold">Litiges et réclamations</h2>
             <p className="mt-4">
               En cas de litige ou de réclamation, nous vous invitons à nous contacter en priorité à l'adresse{' '}
-              <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
-                contact@overbound-race.com
+              <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+                {COMPANY_INFO.contact.email}
               </Link>
               .
             </p>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { COMPANY_INFO } from '@/constants/companyInfo'
 
 const lastUpdated = '27/11/2024'
 
@@ -85,26 +86,26 @@ export default function CGVPage() {
               <h2 className="text-2xl font-bold">2. Identification du vendeur</h2>
               <div className="space-y-2 text-sm">
                 <p>
-                  <strong>Vendeur :</strong> Overbound SAS
+                  <strong>Vendeur :</strong> {COMPANY_INFO.legalName}
                 </p>
                 <p>
-                  <strong>Forme juridique :</strong> Société par Actions Simplifiée au capital de 50 000 €
+                  <strong>Forme juridique :</strong> {COMPANY_INFO.legalForm} au capital de {COMPANY_INFO.capital}
                 </p>
                 <p>
-                  <strong>Siège social :</strong> 24 rue du Faubourg Saint-Martin, 75010 Paris, France
+                  <strong>Siège social :</strong> {COMPANY_INFO.address.full}
                 </p>
                 <p>
-                  <strong>RCS :</strong> Paris 922 345 678
+                  <strong>RCS :</strong> {COMPANY_INFO.rcs.full}
                 </p>
                 <p>
-                  <strong>TVA intracommunautaire :</strong> FR18 922345678
+                  <strong>TVA intracommunautaire :</strong> {COMPANY_INFO.vat}
                 </p>
                 <p>
                   <strong>Contact :</strong>{' '}
-                  <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
-                    contact@overbound-race.com
+                  <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+                    {COMPANY_INFO.contact.email}
                   </Link>{' '}
-                  – Tél : +33 (0)1 84 80 12 34
+                  – Tél : {COMPANY_INFO.contact.phone}
                 </p>
               </div>
             </section>
@@ -191,8 +192,8 @@ export default function CGVPage() {
               <p>
                 <strong>Facturation :</strong> Une facture électronique est délivrée et accessible depuis l'espace
                 personnel. Les organisations peuvent demander une facture professionnelle à{' '}
-                <Link href="mailto:billing@overbound-race.com" className="text-primary hover:underline">
-                  billing@overbound-race.com
+                <Link href={`mailto:${COMPANY_INFO.emails.billing}`} className="text-primary hover:underline">
+                  {COMPANY_INFO.emails.billing}
                 </Link>
                 .
               </p>
@@ -228,9 +229,6 @@ export default function CGVPage() {
                   <strong>Délai :</strong> Le transfert doit être demandé au plus tard 7 jours avant l'événement (J-7)
                 </li>
                 <li>
-                  <strong>Frais :</strong> Des frais de dossier de 10 € s'appliquent
-                </li>
-                <li>
                   <strong>Conditions :</strong> Le bénéficiaire doit remplir les conditions de participation et
                   fournir les documents requis
                 </li>
@@ -240,8 +238,8 @@ export default function CGVPage() {
               </ul>
               <p>
                 Pour toute demande de transfert, contactez{' '}
-                <Link href="mailto:support@overbound-race.com" className="text-primary hover:underline">
-                  support@overbound-race.com
+                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary hover:underline">
+                  {COMPANY_INFO.emails.support}
                 </Link>
                 .
               </p>
@@ -283,8 +281,8 @@ export default function CGVPage() {
                 <li>Un certificat médical peut être requis</li>
                 <li>
                   Les demandes doivent être envoyées avant l'événement à{' '}
-                  <Link href="mailto:medical@overbound-race.com" className="text-primary hover:underline">
-                    medical@overbound-race.com
+                  <Link href={`mailto:${COMPANY_INFO.emails.medical}`} className="text-primary hover:underline">
+                    {COMPANY_INFO.emails.medical}
                   </Link>
                 </li>
                 <li>Le remboursement n'est pas automatique et reste à la discrétion d'Overbound</li>
@@ -332,6 +330,7 @@ export default function CGVPage() {
               </p>
               <ul>
                 <li>Des dommages indirects (perte de chance, préjudice commercial, frais de déplacement)</li>
+                <li>Toute blessure ni dommage corporel qui ne résulterait pas d'une erreur de la part d'Overbound, incluant un défaut de conception d'un obstacle</li>
                 <li>Des erreurs de saisie commises par l'acheteur</li>
                 <li>De l'absence de présentation des documents requis</li>
                 <li>Des prestations fournies par des partenaires tiers</li>
@@ -348,8 +347,8 @@ export default function CGVPage() {
               <h2 className="text-2xl font-bold">13. Litiges et médiation</h2>
               <p>
                 <strong>Réclamation :</strong> Toute réclamation doit être adressée en priorité par email à{' '}
-                <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
-                  contact@overbound-race.com
+                <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+                  {COMPANY_INFO.contact.email}
                 </Link>
                 . Overbound s'engage à répondre dans un délai de 7 jours ouvrés.
               </p>
@@ -360,17 +359,17 @@ export default function CGVPage() {
               </p>
               <div className="rounded-lg border bg-muted/30 p-4">
                 <p className="font-semibold">Médiateur de la consommation :</p>
-                <p>CM2C - Centre de médiation de la consommation des conciliateurs de justice</p>
-                <p>14 rue Saint Jean, 75017 Paris</p>
+                <p>{COMPANY_INFO.mediation.name}</p>
+                <p>{COMPANY_INFO.mediation.address}</p>
                 <p>
                   Site web :{' '}
                   <Link
-                    href="https://cm2c.net"
+                    href={COMPANY_INFO.mediation.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
-                    cm2c.net
+                    {COMPANY_INFO.mediation.website.replace('https://', '')}
                   </Link>
                 </p>
               </div>
