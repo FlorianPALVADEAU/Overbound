@@ -41,10 +41,10 @@ const paragraphs = {
     '« Partenaires » : prestataires tiers intervenant dans le cadre des événements (chronométrage, sécurité, restauration, équipementiers, assurances, solutions de paiement).',
   ],
   mentionsLegales: [
-    'Éditeur : Overbound SAS, société par actions simplifiée au capital de 50 000 €, immatriculée au RCS de Paris sous le numéro 922 345 678, ayant son siège social au 24 rue du Faubourg Saint-Martin, 75010 Paris, France.',
-    'Numéro de TVA intracommunautaire : FR18 922345678.',
+    'Éditeur : Overbound SASU, société par actions simplifiée au capital de 5000 €, immatriculée au RCS de Versailles sous le numéro 992 578 229, ayant son siège social au 105 rue de la brèche du houx, Jouars-Pontchartrain, France',
+    'Numéro de TVA intracommunautaire : FR84 992578229.',
     'Directeur de la publication : Florian Palvadeau, Président.',
-    'Email de contact : contact@overbound-race.com – Téléphone : +33 (0)1 84 80 12 34.',
+    'Email de contact : contact@overbound-race.com – Téléphone : +33 (0)6 52 26 60 54.',
     'Hébergement : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis. Sauvegarde des données déportée sur les instances Supabase (Supabase Inc., 970 Toa Payoh North #07-04, Singapour).',
     'Support client : support@overbound-race.com du lundi au vendredi, 9h00 – 18h00 (CET).',
   ],
