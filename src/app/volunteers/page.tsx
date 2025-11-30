@@ -510,7 +510,7 @@ export default function VolunteersPage() {
 
 		<section className='relative bg-accent-foreground'>
 			<Image
-				src='/images/mountain-vector.svg'
+				src='/images/decorations/mountain-vector.svg'
 				alt='Décor montagne'
 				width={1600}
 				height={800}
@@ -557,7 +557,7 @@ export default function VolunteersPage() {
 				</div>
 			</div>
 			<Image
-				src='/images/mountain-vector.svg'
+				src='/images/decorations/mountain-vector.svg'
 				alt='Décor montagne'
 				width={1600}
 				height={800}

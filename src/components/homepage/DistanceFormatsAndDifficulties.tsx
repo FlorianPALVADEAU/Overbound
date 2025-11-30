@@ -308,7 +308,7 @@ export default function DistanceFormatsAndDifficulties() {
 										className="w-full rounded-full"
 										size="sm"
 									>
-										<Link href="/races/tribale-kids">
+										<Link href="/races/tribal-kids">
 											Découvrir
 											<ArrowRight className="ml-2 h-3 w-3 transition group-hover:translate-x-1" />
 										</Link>
@@ -320,7 +320,7 @@ export default function DistanceFormatsAndDifficulties() {
 						<NeedHelpChoosingYourFormat />
 					</div>
 					<Image
-						src="/images/wall-texture.png"
+						src="/images/decorations/wall-texture.png"
 						alt="Wall texture decoration"
 						width={600}
 						height={400}

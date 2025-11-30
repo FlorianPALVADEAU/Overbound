@@ -96,7 +96,7 @@ export default function PressPage() {
         </div>
         <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
           <Image
-            src='/images/mountain-vector.svg'
+            src='/images/decorations/mountain-vector.svg'
             alt='Décor montagne'
             width={1600}
             height={800}

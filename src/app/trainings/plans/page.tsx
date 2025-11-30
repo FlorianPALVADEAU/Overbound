@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Headings from '@/components/globals/Headings'
@@ -12,7 +13,7 @@ const heroBackground =
 const planCategories = [
   {
     title: 'Tribal Sprint',
-    subtitle: '5 à 7 km · 6 semaines',
+    subtitle: '6 km · 6 semaines',
     gradient: 'from-green-500/20 to-green-500/5',
     accent: 'text-green-600',
     description:
@@ -25,7 +26,7 @@ const planCategories = [
   },
   {
     title: 'Horizon',
-    subtitle: '8 à 12 km · 8 semaines',
+    subtitle: '12 km · 8 semaines',
     gradient: 'from-blue-500/20 to-blue-500/5',
     accent: 'text-blue-600',
     description:
@@ -38,7 +39,7 @@ const planCategories = [
   },
   {
     title: 'Ultra Arena',
-    subtitle: '15 km et + · 10 semaines',
+    subtitle: '∞ km · 10 semaines',
     gradient: 'from-amber-500/20 to-amber-500/5',
     accent: 'text-amber-600',
     description:
@@ -71,6 +72,13 @@ const bonusResources = [
 ]
 
 export default function TrainingPlansPage() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
+  const filteredPlans = useMemo(() => {
+    if (selectedCategory === 'all') return planCategories
+    return planCategories.filter((category) => category.title === selectedCategory)
+  }, [selectedCategory])
+
   return (
     <main className='relative min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground'>
       <section className='relative isolate overflow-hidden py-20 sm:py-24'>
@@ -114,8 +122,27 @@ export default function TrainingPlansPage() {
           description='Chaque programme comprend : 4 à 6 séances hebdo, guidelines nutrition/hydratation, focus technique obstacles et indicateurs de progression.'
         />
 
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end'>
+          <label className='text-sm font-semibold text-muted-foreground' htmlFor='plan-category'>
+            Filtrer par format
+          </label>
+          <select
+            id='plan-category'
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            className='w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-64'
+          >
+            <option value='all'>Tous les formats</option>
+            {planCategories.map((category) => (
+              <option key={category.title} value={category.title}>
+                {category.title} ({category.subtitle})
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
-          {planCategories.map((category) => (
+          {filteredPlans.map((category) => (
             <Card
               key={category.title}
               className={`border-none bg-gradient-to-br ${category.gradient} shadow-xl shadow-primary/10 backdrop-blur`}

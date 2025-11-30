@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Mountain, Sparkles, Crown, Users } from 'lucide-react'
 import WhichDistanceForMe from '@/components/WhichDistanceForMe'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
+import { RACE_FORMATS, FormatTemplate } from '@/constants/raceFormats'
 
 const distanceFormats = [
   {
@@ -143,7 +144,7 @@ export default function FormatsPage() {
 
       <div className="relative bg-white flex flex-col items-center justify-center">
         <Image
-          src="/images/mountain-vector.svg"
+          src="/images/decorations/mountain-vector.svg"
           alt="Décor montagne"
           width={1600}
           height={800}
@@ -166,37 +167,25 @@ export default function FormatsPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {distanceFormats.map((format) => (
-              <Card
-                key={format.name}
-                className="group relative overflow-hidden border-border/60 bg-background/90 shadow-lg shadow-primary/5 backdrop-blur transition hover:-translate-y-1"
-              >
-                <CardContent className="relative flex h-full flex-col gap-4 p-6">
-                  <Badge className={`${format.badge.className} w-fit`}>
-                    {format.badge.label === 'Sprint' && <Sparkles className="mr-1 h-4 w-4" />}
-                    {format.badge.label === 'Intermédiaire' && <Mountain className="mr-1 h-4 w-4" />}
-                    {format.badge.label === 'Élite' && <Crown className="mr-1 h-4 w-4" />}
-                    {format.badge.label === 'Famille' && <Users className="mr-1 h-4 w-4" />}
-                    {format.badge.label}
-                  </Badge>
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-semibold tracking-tight">{format.name}</h3>
-                    <p className="text-sm font-medium text-muted-foreground">{format.distance}</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{format.description}</p>
-                  <div className="mt-auto flex items-center justify-between">
-                    <Link href="/trainings/what-race-for-me" className="text-xs font-semibold text-primary hover:underline">
-                      Trouver ma distance →
-                    </Link>
-                    <Button asChild size="sm" variant="outline" className="rounded-full">
-                      <Link href={format.href}>
-                        Découvrir
-                        <ArrowRight className="ml-2 h-3 w-3" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            {distanceFormats.map((format, index) => (
+              <Link key={format.name + index} href={format.href} className="group block h-full">
+                <Card className="relative h-full overflow-hidden border-border/60 bg-background/90 shadow-lg shadow-primary/5 backdrop-blur transition hover:-translate-y-1">
+                  <CardContent className="relative flex h-full flex-col gap-4 p-6">
+                    <Badge className={`${format.badge.className} w-fit`}>
+                      {format.badge.label === 'Sprint' && <Sparkles className="mr-1 h-4 w-4" />}
+                      {format.badge.label === 'Intermédiaire' && <Mountain className="mr-1 h-4 w-4" />}
+                      {format.badge.label === 'Élite' && <Crown className="mr-1 h-4 w-4" />}
+                      {format.badge.label === 'Famille' && <Users className="mr-1 h-4 w-4" />}
+                      {format.badge.label}
+                    </Badge>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-semibold tracking-tight group-hover:underline">{format.name}</h3>
+                      <p className="text-sm font-medium text-muted-foreground">{format.distance}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{format.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </section>
@@ -224,7 +213,7 @@ export default function FormatsPage() {
             {difficulties.map((format) => (
               <Card
                 key={format.name}
-                className={`group relative overflow-hidden border-0 bg-background/80 shadow-xl shadow-primary/10 backdrop-blur ${format.border}`}
+                className={`group relative overflow-hidden border-0 shadow-xl shadow-primary/10 backdrop-blur ${format.border}`}
               >
                 <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${format.gradient} opacity-80`} />
                 <CardContent className="relative flex flex-col gap-4 p-6">
@@ -256,18 +245,215 @@ export default function FormatsPage() {
                       </li>
                     ))}
                   </ul>
-
-                  <div className="flex flex-wrap items-center gap-3 pt-2">
-                    <Button asChild size="sm" className="rounded-full px-4 py-2">
-                      <Link href={format.href}>Découvrir les règles →</Link>
-                    </Button>
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      S&apos;applique à {distanceFormats.length} distances
-                    </span>
-                  </div>
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </section>
+
+        {/* Comparison Table Section */}
+        <section className="relative z-10 mx-auto w-screen max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Tableau comparatif</p>
+            <h2 className="mt-2 text-3xl font-semibold text-black">Comparaison détaillée des formats</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vue d'ensemble complète pour t'aider à choisir le format qui correspond le mieux à tes capacités et objectifs
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-border/60 shadow-xl">
+            <table className="w-full border-collapse bg-card">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="sticky left-0 z-10 bg-muted/50 p-4 text-left text-sm font-semibold text-foreground">
+                    Critère
+                  </th>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const badgeClasses = formatId === 'origin'
+                      ? 'mx-auto w-fit bg-green-500/20 text-green-700'
+                      : formatId === 'horizon'
+                      ? 'mx-auto w-fit bg-blue-500/20 text-blue-700'
+                      : formatId === 'ultra-arena'
+                      ? 'mx-auto w-fit bg-amber-500 text-white'
+                      : 'mx-auto w-fit bg-purple-500/20 text-purple-700'
+                    const badgeLabel = formatId === 'origin'
+                      ? 'Sprint'
+                      : formatId === 'horizon'
+                      ? 'Intermédiaire'
+                      : formatId === 'ultra-arena'
+                      ? 'Élite'
+                      : 'Famille'
+                    return (
+                      <th key={formatId} className="p-4 text-center text-sm font-semibold text-foreground">
+                        <div className="flex flex-col gap-1">
+                          <span>{format.name}</span>
+                          <Badge className={badgeClasses}>{badgeLabel}</Badge>
+                        </div>
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {/* Distance */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Distance</td>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const distance = format.statsCards.find(s => s.label === 'Distance')?.value || '-'
+                    return (
+                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
+                        {distance}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Obstacles */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Obstacles</td>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const obstacles = format.statsCards.find(s => s.label === 'Obstacles')?.value || '-'
+                    return (
+                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
+                        {obstacles}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Intensité */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Intensité</td>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const intensity = format.statsCards.find(s => s.label === 'Intensité')?.value || '-'
+                    return (
+                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
+                        {intensity}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Niveau requis */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Niveau requis</td>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const fitnessLevel = format.prerequisites?.fitnessLevel || '-'
+                    return (
+                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
+                        {fitnessLevel}/10
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Temps estimé */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Temps estimé</td>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const timeMin = format.estimatedTimeMin
+                    const timeMax = format.estimatedTimeMax
+                    const time = timeMin && timeMax ? `${timeMin}-${timeMax} min` : 'Variable'
+                    return (
+                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
+                        {time}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Type de parcours */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Type de parcours</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Trail + obstacles</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Trail + obstacles</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Boucle répétitive</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Parcours sécurisé</td>
+                </tr>
+
+                {/* Grip/Préhension */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Grip/Préhension</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Modéré</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Important</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Extrême</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Minimal</td>
+                </tr>
+
+                {/* Endurance cardio */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Endurance cardio</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">8/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">10/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">3/10</td>
+                </tr>
+
+                {/* Force requise */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Force requise</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">7/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">9/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">3/10</td>
+                </tr>
+
+                {/* Agilité/Technique */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Agilité/Technique</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">7/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">8/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">4/10</td>
+                </tr>
+
+                {/* Mental requis */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Mental requis</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">7/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">10/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">2/10</td>
+                </tr>
+
+
+                {/* Âge minimum */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Âge minimum</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">16 ans</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">16 ans</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">18 ans</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6 ans</td>
+                </tr>
+
+                {/* Préparation recommandée */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Préparation recommandée</td>
+                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
+                    const format = RACE_FORMATS[formatId]
+                    const weeks = format.prerequisites?.trainingWeeks || 0
+                    const preparation = weeks === 0
+                      ? 'Aucune'
+                      : weeks < 6
+                      ? `${weeks} semaines`
+                      : weeks >= 24
+                      ? '6+ mois'
+                      : `${weeks} semaines`
+                    return (
+                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
+                        {preparation}
+                      </td>
+                    )
+                  })}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -275,7 +461,7 @@ export default function FormatsPage() {
           <WhichDistanceForMe />
         </section>
        <Image
-          src="/images/mountain-vector.svg"
+          src="/images/decorations/mountain-vector.svg"
           alt="Décor montagne"
           width={1600}
           height={800}
