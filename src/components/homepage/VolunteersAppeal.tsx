@@ -104,12 +104,11 @@ const VolunteersAppeal = () => {
                 <div className='relative grid items-center gap-8 lg:grid-cols-2 h-[500px]'>
                     {/* Image à gauche avec overlay */}
                         <Image
-                            src="/images/hero_header_poster.jpg"
-                            alt="Volontaires Overbound"
+                            src="/images/images/a-group-of-friend-celebrating-after-a-race.avif"
+                            alt="Un groupe d'amis bénévoles célébrant après une course"
                             width={600}
                             height={400}
                             className="w-auto h-full rounded-xl object-cover"
-                            priority
                         />
 
                     {/* Texte et CTA à droite */}

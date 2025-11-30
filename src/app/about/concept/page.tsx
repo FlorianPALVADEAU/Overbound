@@ -29,8 +29,8 @@ export default function ConceptPage() {
       <section className="relative w-full overflow-hidden bg-neutral-200">
         <div className="absolute inset-0">
           <Image
-            src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop"
-            alt="Overbound Concept"
+            src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
+            alt="Jeune homme portant des troncs d'arbres sur les épaules lors d'une course d'obstacles, criant vers la caméra de manière énergique"
             fill
             className="object-cover object-center"
             priority

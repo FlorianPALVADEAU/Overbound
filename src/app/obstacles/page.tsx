@@ -143,18 +143,18 @@ export default function ObstaclesPage() {
         <section className='relative isolate overflow-hidden py-20 sm:py-24'>
           <div className='absolute inset-0'>
             <Image
-              src={heroImageSrc}
+              src={"/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif"}
               alt='Athlète Overbound franchissant un obstacle'
               fill
               sizes='100vw'
-              className='object-cover object-center'
+              className='object-cover object-bottom'
               priority
             />
-            <div className='pointer-events-none absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
+            <div className='pointer-events-none absolute inset-0 bg-background/15 backdrop-blur-[3px]' />
             <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
             <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
           </div>
-          <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+          <div className='py-20 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
             <div className='max-w-3xl space-y-6 text-center lg:text-left'>
               <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
                 Parcours Overbound

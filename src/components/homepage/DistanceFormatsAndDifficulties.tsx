@@ -29,25 +29,25 @@ const steps = [
 		title: "Étape 1",
 		text: "Choisis un format qui te plaît et qui semble adapté à ton niveau physique. Si tu ne sais pas par où commencer, nous recommandons le format 6km ou 12km.",
 		image:
-			"https://images.unsplash.com/photo-1492337384533-a211c15b6d64?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+			"/images/images/young-lady-smiling-below-barbed-wires.avif",
 	},
 	{
 		title: "Étape 2",
 		text: `INNOVATION MONDIALE : Choisis ton niveau de difficulté !\n\n🟢 ${FORMAT_LEVELS.low.name.toUpperCase()} : Obstacles classiques accessibles\n🟡 ${FORMAT_LEVELS.mid.name.toUpperCase()} : Obstacles exigeants, technique requise\n🔴 ${FORMAT_LEVELS.hard.name.toUpperCase()} : Obstacles extrêmes + lests obligatoires\n\nMême parcours, 3 défis différents. Personne d'autre ne fait ça.`,
 		image:
-			"https://images.unsplash.com/photo-1602389569471-5df5bde61968?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+			"/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif",
 	},
 	{
 		title: "Étape 3",
 		text: "Remplis un formulaire simple et 100% sécurisé, ajoute les extras de ton choix, effectue le paiement et ta place sera réservée.",
 		image:
-			"https://images.unsplash.com/photo-1498581444814-7e44d2fbe0e2?q=80&w=1098&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+			"/images/images/a-sporty-man-laughing-facing-forward-and-looking-to-the-left.avif",
 	},
 	{
 		title: "Étape 4",
 		text: "Reçois un mail de confirmation, ton guide d'entraînement et ton kit athlète pour le jour J.",
 		image:
-			"https://images.unsplash.com/photo-1558734918-dfc4fe470147?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+			"/images/images/overbound-headband-on-chains-with-grass-in-background.avif",
 	},
 ];
 

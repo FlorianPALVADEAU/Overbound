@@ -133,17 +133,17 @@ function BlogHero() {
     <section className="relative isolate overflow-hidden py-16 sm:py-20">
       <div className="absolute inset-0">
         <Image
-          src="/images/hero_header_poster.jpg"
+          src="/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.avif"
           alt="OverBound Blog"
           fill
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-top"
           priority
         />
         <div className="pointer-events-none absolute inset-0 bg-background/40 backdrop-blur-[2px]" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
       </div>
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 my-20">
         <div className="max-w-3xl space-y-3">
           <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm">
             La tribu OverBound

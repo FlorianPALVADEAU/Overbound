@@ -20,7 +20,7 @@ const LINK_GROUPS = [
       { label: 'Entraînements', href: '/trainings' },
       { label: 'Plans d’entraînement', href: '/trainings/plans' },
       { label: 'Test de fitness', href: '/trainings/fitness-test' },
-      { label: 'Nutrition', href: '/trainings/nutrition' },
+      // { label: 'Nutrition', href: '/trainings/nutrition' },
       { label: 'Quel format pour moi ?', href: '/trainings/what-race-for-me' },
     ],
   },

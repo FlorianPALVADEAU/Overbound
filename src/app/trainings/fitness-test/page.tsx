@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Activity, Zap, Dumbbell, CheckCircle2, ArrowRight, Trophy, Target } from 'lucide-react'
 
-const heroImageSrc = 'https://images.unsplash.com/photo-1517832606294-5fbdc7dcd837?q=80&w=1400&auto=format&fit=crop'
+const heroImageSrc = 
+  "/images/images/warm-up-of-many-participants-in-the-grass.avif"
 
 type TestResults = {
   // Circuit OCR complet
@@ -307,7 +308,7 @@ export default function FitnessTestPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
       {/* Hero Section */}
-      <section className='relative isolate overflow-hidden py-20 sm:py-24'>
+      <section className='relative isolate overflow-hidden sm:py-24'>
         <div className='absolute inset-0'>
           <Image
             src={heroImageSrc}
@@ -320,7 +321,7 @@ export default function FitnessTestPage() {
           <div className='pointer-events-none absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
         </div>
-        <div className='relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 sm:px-6 lg:px-8 text-center'>
+        <div className='my-30 relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 sm:px-6 lg:px-8 text-center'>
           <Badge className="mx-auto bg-primary/10 text-primary border-primary/40">
             <Target className="h-4 w-4 mr-2" />
             Test interactif
@@ -332,210 +333,225 @@ export default function FitnessTestPage() {
             Circuit course + obstacles pour simuler une vraie course OCR et découvrir ton format idéal
           </p>
         </div>
-        <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
-          <Image
-            src='/images/decorations/mountain-vector.svg'
-            alt='Décor montagne'
-            width={1600}
-            height={800}
-            className='w-[220%] max-w-none sm:w-[170%] md:w-[140%]'
-            priority
-          />
-        </div>
       </section>
 
-      {/* Test interactif */}
-      {currentStep < steps.length && (
-        <section className="py-16 relative z-10">
-          <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            {/* Barre de progression */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-muted-foreground">
-                  Étape {currentStep + 1} sur {steps.length}
-                </span>
-                <span className="text-sm font-semibold text-muted-foreground">{Math.round(progress)}%</span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Carte de test */}
-            <Card className="border-2 border-border/40 shadow-2xl">
-            <CardHeader className="space-y-4 pb-6">
-              <div className="flex items-center gap-4">
-                <div className={`rounded-2xl p-4 ${
-                  currentStepData.color === 'emerald' ? 'bg-emerald-500/10' :
-                  currentStepData.color === 'red' ? 'bg-red-500/10' :
-                  'bg-amber-500/10'
-                }`}>
-                  <currentStepData.icon className={`h-8 w-8 ${
-                    currentStepData.color === 'emerald' ? 'text-emerald-600' :
-                    currentStepData.color === 'red' ? 'text-red-600' :
-                    'text-amber-600'
-                  }`} />
+      <section className='relative isolate overflow-hidden bg-white'>
+        <Image
+          src='/images/decorations/mountain-vector.svg'
+          alt='Décor montagne'
+          width={1600}
+          height={800}
+          className='w-screen -mt-1 rotate-180'
+          priority
+        />
+        <Image
+          src="/images/decorations/wall-texture.png"
+          alt="Wall texture decoration"
+          width={600}
+          height={400}
+          className="w-full h-full absolute top-0 left-0 object-cover opacity-60 -z-1 rotate-180"
+        />
+        {/* Test interactif */}
+        {currentStep < steps.length && (
+          <section className="py-16 relative z-10">
+            <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              {/* Barre de progression */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-muted-foreground">
+                    Étape {currentStep + 1} sur {steps.length}
+                  </span>
+                  <span className="text-sm font-semibold text-muted-foreground">{Math.round(progress)}%</span>
                 </div>
-                <div className="flex-1">
-                  <CardTitle className="text-2xl">{currentStepData.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">{currentStepData.subtitle}</p>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-500 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
               </div>
-            </CardHeader>
 
-            <CardContent className="space-y-6 pb-8">
-              {currentStepData.content}
-
-              {/* Navigation */}
-              <div className="flex gap-3 pt-6 border-t">
-                {!isFirstStep && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentStep(prev => prev - 1)}
-                    className="flex-1"
-                  >
-                    Retour
-                  </Button>
-                )}
-                {!isLastStep ? (
-                  <Button
-                    onClick={() => setCurrentStep(prev => prev + 1)}
-                    className="flex-1"
-                  >
-                    Suivant
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => setCurrentStep(prev => prev + 1)}
-                    className="flex-1"
-                    disabled={totalScore === 0}
-                  >
-                    Voir mes résultats
-                    <Trophy className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Résumé des scores (visible dès qu'on a un score) */}
-          {totalScore > 0 && currentStep < steps.length && (
-            <Card className="mt-6 border-2 border-primary/30 bg-gradient-to-br from-card to-primary/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Ton score actuel</p>
-                    <p className="text-3xl font-bold text-foreground">{totalScore}/30</p>
+              {/* Carte de test */}
+              <Card className="border-2 border-border/40 shadow-2xl">
+              <CardHeader className="space-y-4 pb-6">
+                <div className="flex items-center gap-4">
+                  <div className={`rounded-2xl p-4 ${
+                    currentStepData.color === 'emerald' ? 'bg-emerald-500/10' :
+                    currentStepData.color === 'red' ? 'bg-red-500/10' :
+                    'bg-amber-500/10'
+                  }`}>
+                    <currentStepData.icon className={`h-8 w-8 ${
+                      currentStepData.color === 'emerald' ? 'text-emerald-600' :
+                      currentStepData.color === 'red' ? 'text-red-600' :
+                      'text-amber-600'
+                    }`} />
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground mb-1">Format recommandé</p>
-                    <Badge className={`${
-                      recommendedFormat.color === 'emerald' ? 'bg-emerald-500' :
-                      recommendedFormat.color === 'blue' ? 'bg-blue-500' :
-                      'bg-amber-500'
-                    } text-white font-bold`}>
-                      {recommendedFormat.name}
-                    </Badge>
+                  <div className="flex-1">
+                    <CardTitle className="text-2xl">{currentStepData.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">{currentStepData.subtitle}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
-      )}
-
-      {/* Résultats finaux */}
-      {currentStep === steps.length && totalScore > 0 && (
-        <section className="py-16 relative z-10">
-          <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center space-y-6 mb-12">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
-                <Trophy className="h-10 w-10 text-primary" />
-              </div>
-              <h2 className="text-3xl font-bold sm:text-4xl">Tes résultats</h2>
-              <div className="inline-flex items-center gap-2 text-5xl font-bold">
-                <span className="text-primary">{totalScore}</span>
-                <span className="text-muted-foreground">/</span>
-                <span className="text-muted-foreground">30</span>
-              </div>
-            </div>
-
-            {/* Détail des scores */}
-            <div className="grid gap-4 md:grid-cols-3 mb-8">
-              <Card className="border-2 border-emerald-500/20 bg-gradient-to-br from-background to-emerald-500/5">
-                <CardContent className="p-6 text-center">
-                  <Activity className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground mb-1">Circuit OCR</p>
-                  <p className="text-3xl font-bold text-emerald-600">{scores.cardio}/15</p>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-red-500/20 bg-gradient-to-br from-background to-red-500/5">
-                <CardContent className="p-6 text-center">
-                  <Dumbbell className="h-8 w-8 text-red-600 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground mb-1">Grip & Gainage</p>
-                  <p className="text-3xl font-bold text-red-600">{scores.force}/10</p>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5">
-                <CardContent className="p-6 text-center">
-                  <Zap className="h-8 w-8 text-amber-600 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground mb-1">Ressenti</p>
-                  <p className="text-3xl font-bold text-amber-600">{scores.explosivite}/5</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Format recommandé */}
-            <Card className={`border-2 ${
-              recommendedFormat.color === 'emerald' ? 'border-emerald-500/20 bg-gradient-to-br from-background to-emerald-500/5' :
-              recommendedFormat.color === 'blue' ? 'border-blue-500/20 bg-gradient-to-br from-background to-blue-500/5' :
-              'border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5'
-            } shadow-2xl`}>
-              <CardHeader>
-                <Badge className={`w-fit ${
-                  recommendedFormat.color === 'emerald' ? 'bg-emerald-500' :
-                  recommendedFormat.color === 'blue' ? 'bg-blue-500' :
-                  'bg-amber-500'
-                } text-white font-bold text-sm mb-4`}>
-                  FORMAT RECOMMANDÉ
-                </Badge>
-                <CardTitle className="text-3xl">{recommendedFormat.name}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <p className="text-lg text-muted-foreground">{recommendedFormat.description}</p>
-                <div className="flex gap-3">
-                  <Button asChild size="lg" className="flex-1">
-                    <Link href={recommendedFormat.href}>
-                      Découvrir ce format
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="lg" className="flex-1">
-                    <Link href="/events">
-                      Trouver un événement
-                    </Link>
-                  </Button>
+
+              <CardContent className="space-y-6 pb-8">
+                {currentStepData.content}
+
+                {/* Navigation */}
+                <div className="flex gap-3 pt-6 border-t">
+                  {!isFirstStep && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep(prev => prev - 1)}
+                      className="flex-1"
+                    >
+                      Retour
+                    </Button>
+                  )}
+                  {!isLastStep ? (
+                    <Button
+                      onClick={() => setCurrentStep(prev => prev + 1)}
+                      className="flex-1"
+                    >
+                      Suivant
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => setCurrentStep(prev => prev + 1)}
+                      className="flex-1"
+                      disabled={totalScore === 0}
+                    >
+                      Voir mes résultats
+                      <Trophy className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setCurrentStep(0)
-                    setResults({})
-                    setScores({ cardio: 0, force: 0, explosivite: 0 })
-                  }}
-                  className="w-full"
-                >
-                  Recommencer le test
-                </Button>
               </CardContent>
             </Card>
+
+            {/* Résumé des scores (visible dès qu'on a un score) */}
+            {totalScore > 0 && currentStep < steps.length && (
+              <Card className="mt-6 border-2 border-primary/30 bg-gradient-to-br from-card to-primary/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Ton score actuel</p>
+                      <p className="text-3xl font-bold text-foreground">{totalScore}/30</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground mb-1">Format recommandé</p>
+                      <Badge className={`${
+                        recommendedFormat.color === 'emerald' ? 'bg-emerald-500' :
+                        recommendedFormat.color === 'blue' ? 'bg-blue-500' :
+                        'bg-amber-500'
+                      } text-white font-bold`}>
+                        {recommendedFormat.name}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </section>
-      )}
+        )}
+
+        {/* Résultats finaux */}
+        {currentStep === steps.length && totalScore > 0 && (
+          <section className="pt-16 relative z-10">
+            <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <div className="text-center space-y-6 mb-12">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
+                  <Trophy className="h-10 w-10 text-primary" />
+                </div>
+                <h2 className="text-3xl font-bold sm:text-4xl">Tes résultats</h2>
+                <div className="inline-flex items-center gap-2 text-5xl font-bold">
+                  <span className="text-primary">{totalScore}</span>
+                  <span className="text-muted-foreground">/</span>
+                  <span className="text-muted-foreground">30</span>
+                </div>
+              </div>
+
+              {/* Détail des scores */}
+              <div className="grid gap-4 md:grid-cols-3 mb-8">
+                <Card className="border-2 border-emerald-500/20 bg-gradient-to-br from-background to-emerald-500/5">
+                  <CardContent className="p-6 text-center">
+                    <Activity className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">Circuit OCR</p>
+                    <p className="text-3xl font-bold text-emerald-600">{scores.cardio}/15</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-red-500/20 bg-gradient-to-br from-background to-red-500/5">
+                  <CardContent className="p-6 text-center">
+                    <Dumbbell className="h-8 w-8 text-red-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">Grip & Gainage</p>
+                    <p className="text-3xl font-bold text-red-600">{scores.force}/10</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5">
+                  <CardContent className="p-6 text-center">
+                    <Zap className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">Ressenti</p>
+                    <p className="text-3xl font-bold text-amber-600">{scores.explosivite}/5</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Format recommandé */}
+              <Card className={`border-2 ${
+                recommendedFormat.color === 'emerald' ? 'border-emerald-500/20 bg-gradient-to-br from-background to-emerald-500/5' :
+                recommendedFormat.color === 'blue' ? 'border-blue-500/20 bg-gradient-to-br from-background to-blue-500/5' :
+                'border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5'
+              } shadow-2xl`}>
+                <CardHeader>
+                  <Badge className={`w-fit ${
+                    recommendedFormat.color === 'emerald' ? 'bg-emerald-500' :
+                    recommendedFormat.color === 'blue' ? 'bg-blue-500' :
+                    'bg-amber-500'
+                  } text-white font-bold text-sm mb-4`}>
+                    FORMAT RECOMMANDÉ
+                  </Badge>
+                  <CardTitle className="text-3xl">{recommendedFormat.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-lg text-muted-foreground">{recommendedFormat.description}</p>
+                  <div className="flex gap-3">
+                    <Button asChild size="lg" className="flex-1">
+                      <Link href={recommendedFormat.href}>
+                        Découvrir ce format
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" className="flex-1">
+                      <Link href="/events">
+                        Trouver un événement
+                      </Link>
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setCurrentStep(0)
+                      setResults({})
+                      setScores({ cardio: 0, force: 0, explosivite: 0 })
+                    }}
+                    className="w-full"
+                  >
+                    Recommencer le test
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+        <Image
+          src='/images/decorations/mountain-vector.svg'
+          alt='Décor montagne'
+          width={1600}
+          height={800}
+          className='w-screen -mb-1'
+          priority
+        />
+      </section>
     </main>
   )
 }

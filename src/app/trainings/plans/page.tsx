@@ -8,7 +8,7 @@ import Headings from '@/components/globals/Headings'
 import { ArrowDownToLine } from 'lucide-react'
 
 const heroBackground =
-  "url('https://images.unsplash.com/photo-1517832207067-4db24a2ae47c?q=80&w=1400&auto=format&fit=crop')"
+  "url('/images/images/sport-coach-warming-up-participant.avif')"
 
 const planCategories = [
   {

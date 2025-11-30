@@ -113,7 +113,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const trainingsDropdownItems: DropdownItemType[] = [
     { name: 'Plans d\'entraînement', href: '/trainings/plans', icon: MedalIcon },
     { name: 'Test de fitness', href: '/trainings/fitness-test', icon: CalendarIcon },
-    { name: 'Nutrition', href: '/trainings/nutrition', icon: MapPinIcon },
+    // { name: 'Nutrition', href: '/trainings/nutrition', icon: MapPinIcon },
     { name: 'Quelle course est faite pour moi ?', href: '/trainings/what-race-for-me', icon: MapPinIcon },
   ]
 
