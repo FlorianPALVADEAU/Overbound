@@ -6,29 +6,29 @@ import Headings from '@/components/globals/Headings'
 import WhichDistanceForMe from '@/components/WhichDistanceForMe'
 import Image from 'next/image'
 
-const formatHighlights = [
-  {
-    title: 'Sprint Tribal',
-    subtitle: 'Format court et explosif',
-    description:
-      '5 à 7 km pour ceux qui veulent goûter à l’expérience Overbound sans compromis sur les obstacles emblématiques.',
-    tags: ['Débutant', 'Intensité', 'Fun'],
-  },
-  {
-    title: 'Horizon',
-    subtitle: 'Challenge intermédiaire',
-    description:
-      '8 à 12 km avec un mix équilibré de course, portés et franchissements techniques pour progresser à chaque obstacle.',
-    tags: ['Intermédiaire', 'Endurance', 'Cohésion'],
-  },
-  {
-    title: 'Ultra Arena',
-    subtitle: 'L’épreuve signature',
-    description:
-      '15 km et plus pour les athlètes en quête de dépassement et d’un format élite taillé pour repousser leurs limites.',
-    tags: ['Expert', 'Performance', 'Élite'],
-  },
-]
+// const formatHighlights = [
+//   {
+//     title: 'Sprint Tribal',
+//     subtitle: 'Format court et explosif',
+//     description:
+//       '5 à 7 km pour ceux qui veulent goûter à l’expérience Overbound sans compromis sur les obstacles emblématiques.',
+//     tags: ['Débutant', 'Intensité', 'Fun'],
+//   },
+//   {
+//     title: 'Horizon',
+//     subtitle: 'Challenge intermédiaire',
+//     description:
+//       '8 à 12 km avec un mix équilibré de course, portés et franchissements techniques pour progresser à chaque obstacle.',
+//     tags: ['Intermédiaire', 'Endurance', 'Cohésion'],
+//   },
+//   {
+//     title: 'Ultra Arena',
+//     subtitle: 'L’épreuve signature',
+//     description:
+//       '15 km et plus pour les athlètes en quête de dépassement et d’un format élite taillé pour repousser leurs limites.',
+//     tags: ['Expert', 'Performance', 'Élite'],
+//   },
+// ]
 
 const preparationSteps = [
   {
@@ -56,18 +56,19 @@ export default function WhatRaceForMePage() {
     <main className='min-h-screen maw-w-screen overflow-y-hidden bg-gradient-to-b from-background via-muted/20 to-background text-foreground'>
       <section className='relative isolate overflow-hidden py-20 sm:py-24'>
         <div className='absolute inset-0'>
-          <div
-            className='h-full w-full bg-cover bg-center'
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?q=80&w=1420&auto=format&fit=crop')",
-            }}
+          <Image
+            src='/images/images/old-lady-ramping-below-barbed-wires.avif'
+            alt='Athlète Overbound courant en montée sur un sentier de montagne'
+            fill
+            sizes='100vw'
+            className='object-cover object-center'
+            priority
           />
           <div className='absolute inset-0 bg-background/40 backdrop-blur-[3px]' />
           <div className='absolute inset-0 bg-gradient-to-b from-background/15 via-background/80 to-background' />
         </div>
 
-        <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 sm:px-6 lg:px-8'>
+        <div className='py-20 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 sm:px-6 lg:px-8'>
           <div className='max-w-3xl space-y-6 text-center lg:text-left'>
             <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
               Trouve ton format
@@ -94,7 +95,7 @@ export default function WhatRaceForMePage() {
             </div>
           </div>
 
-          <div className='grid gap-6 md:grid-cols-3'>
+          {/* <div className='grid gap-6 md:grid-cols-3'>
             {formatHighlights.map((format) => (
               <Card
                 key={format.title}
@@ -116,7 +117,7 @@ export default function WhatRaceForMePage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 

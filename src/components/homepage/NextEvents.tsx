@@ -5,6 +5,7 @@ import Headings from '../globals/Headings'
 import Link from 'next/link'
 import { useGetEvents } from '@/app/api/events/eventsQueries'
 import { Skeleton } from '../ui/skeleton'
+import Image from 'next/image'
 
 const NextEvents = () => {
 	
@@ -25,9 +26,11 @@ const NextEvents = () => {
 							isLoading ? (
 								<Skeleton className="object-cover w-full xl:w-4/6 h-48 sm:h-64 md:h-72 xl:h-[50vh] rounded-lg shadow-lg" />
 							) : isError ? (
-								<img 
-									src="https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-									alt="Événement Overbound"
+								<Image
+									src="/images/images/a-sunny-mood-with-runners-ready-to-go.avif"
+									alt="Une vague de coureurs prêts à se lancer dans une course Overbound, sous un ciel ensoleillé."
+									width={400}
+									height={400}
 									className="object-cover w-full h-48 sm:h-64 md:h-72 xl:h-[50vh] rounded-lg shadow-lg"
 								/>
 							) : (
@@ -36,9 +39,11 @@ const NextEvents = () => {
 										<Link 
 											href={`/events/${data[0].id}`}
 										>
-											<img 
-												src="https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-												alt={data && data.length > 0 ? data[0].title : "Événement Overbound"}
+											<Image
+												src="/images/images/a-sunny-mood-with-runners-ready-to-go.avif"
+												alt="Une vague de coureurs prêts à se lancer dans une course Overbound, sous un ciel ensoleillé."
+												width={400}
+												height={400}
 												className="object-cover w-full h-48 sm:h-64 md:h-72 xl:h-[50vh] rounded-lg shadow-lg"
 											/>
 										</Link>

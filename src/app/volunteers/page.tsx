@@ -448,18 +448,19 @@ export default function VolunteersPage() {
     <main className='relative min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground'>
 		<section className='relative isolate overflow-hidden py-20 sm:py-24'>
 			<div className='absolute inset-0'>
-				<div
-					className='h-full w-full bg-cover bg-center'
-					style={{
-						backgroundImage:
-							"url('https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop')",
-					}}
+				<Image
+					src='/images/images/two-sporty-mens-staring-at-the-camera-with-pride.avif'
+					alt='Deux hommes sportifs regardant la caméra avec fierté'
+					fill
+					sizes='100vw'
+					className='object-cover object-center'
+					priority
 				/>
 				<div className='absolute inset-0 bg-background/55 backdrop-blur-[3px]' />
 				<div className='absolute inset-0 bg-gradient-to-b from-background/20 via-background/70 to-background' />
 			</div>
 
-			<div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+			<div className='py-12 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
 				<div className='max-w-3xl space-y-6 text-center lg:text-left'>
 					<span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
 						Volontaires Overbound
@@ -507,65 +508,82 @@ export default function VolunteersPage() {
 			))}
 			</div>
 		</section>
-
-		<section className='relative bg-accent-foreground'>
+		<div className='relative bg-white'>
 			<Image
-				src='/images/decorations/mountain-vector.svg'
-				alt='Décor montagne'
-				width={1600}
-				height={800}
-				className='w-screen rotate-180 absolute top-[-2%]'
-				priority
+				src="/images/decorations/wall-texture.png"
+				alt="Wall texture decoration"
+				width={600}
+				height={400}
+				className="w-full h-full absolute top-0 left-0 object-cover opacity-50 -z-0"
 			/>
 
-			<div className='mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 sm:px-6 lg:px-8 sm:pb-20 md:pb-30 pt-50'>
-				<SubHeadings
-					title='Ils ont donné de leur temps, ils ont gagné une tribu'
-					description='Les volontaires Overbound parlent d’amitié, de fierté, de frissons. Pas de “bénévolat”, mais d’expérience de vie.'
-					sx='text-black'
-				/>
-				<div className='grid gap-6 md:grid-cols-3'>
-					{testimonials.map((testimonal) => (
-						<Card key={testimonal.name} className='border border-primary/20 bg-background/90 shadow-lg shadow-primary/10'>
-							<CardContent className='space-y-4 p-6 text-sm leading-relaxed text-muted-foreground'>
-							<p className='italic'>&ldquo;{testimonal.quote}&rdquo;</p>
-							<p className='text-sm font-semibold text-primary'>{testimonal.name}</p>
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			</div>
-		</section>
 
-		<section className='relative flex items-center justify-center overflow-hidden bg-accent-foreground pb-50'>
-			<div className='volunteer-wave-container relative z-10 flex w-full max-w-7xl flex-col gap-12 overflow-hidden rounded-2xl border border-primary/30 bg-primary/20 px-30 sm:py-20 md:py-30'>
-				<SubHeadings
-					title='Ce que tu reçois en retour'
-					description='Pour chaque heure donnée, tu repars avec de la gratitude, un dossard offert et une famille.'
-					sx='relative z-10 text-black'
+			<section className='relative'>
+				<Image
+					src='/images/decorations/mountain-vector.svg'
+					alt='Décor montagne'
+					width={1600}
+					height={800}
+					className='w-screen rotate-180 absolute top-[-2%]'
+					priority
 				/>
 
-				<div className='relative z-10 grid gap-6 md:grid-cols-3'>
-					{rewards.map((reward) => (
-						<Card key={reward.title} className='border border-border/60 bg-background/90 shadow-lg shadow-primary/5'>
-							<CardHeader>
-							<CardTitle className='text-xl text-foreground'>{reward.title}</CardTitle>
-							</CardHeader>
-							<CardContent className='text-sm leading-relaxed text-muted-foreground'>{reward.description}</CardContent>
-						</Card>
-					))}
+				<div className='mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 sm:px-6 lg:px-8 sm:pb-20 md:pb-30 pt-50'>
+					<SubHeadings
+						title='Ils ont donné de leur temps, ils ont gagné une tribu'
+						description='Les volontaires Overbound parlent d’amitié, de fierté, de frissons. Pas de “bénévolat”, mais d’expérience de vie.'
+						sx='text-black'
+					/>
+					<div className='grid gap-6 md:grid-cols-3'>
+						{testimonials.map((testimonal) => (
+							<Card key={testimonal.name} className='border border-primary/20 bg-background/90 shadow-lg shadow-primary/10'>
+								<CardContent className='space-y-4 p-6 text-sm leading-relaxed text-muted-foreground'>
+								<p className='italic'>&ldquo;{testimonal.quote}&rdquo;</p>
+								<p className='text-sm font-semibold text-primary'>{testimonal.name}</p>
+								</CardContent>
+							</Card>
+						))}
+					</div>
 				</div>
-			</div>
-			<Image
-				src='/images/decorations/mountain-vector.svg'
-				alt='Décor montagne'
-				width={1600}
-				height={800}
-				className='w-screen absolute bottom-[-2%]'
-				priority
-			/>
-		</section>
+			</section>
 
+			<section className='relative flex items-center justify-center overflow-hidden pb-50'>
+				<div className='volunteer-wave-container relative z-10 flex w-full max-w-7xl flex-col gap-12 overflow-hidden rounded-2xl border border-primary/30 bg-primary/20 px-30 sm:py-20 md:py-30 shadow-lg shadow-primary/30'>
+					<Image
+						src="/images/images/a-group-of-friend-celebrating-after-a-race.avif"
+						alt="Un groupe d'amis bénévoles d'Overbound célébrant après une course ensemble, heureux et fiers"
+						width={600}
+						height={400}
+						className="w-full h-full absolute top-0 left-0 object-cover opacity-30 rounded-2xl -z-1"
+					/>
+					<SubHeadings
+						title='Ce que tu reçois en retour'
+						description='Pour chaque heure donnée, tu repars avec de la gratitude, un dossard offert et une famille.'
+						sx='relative z-10 text-black'
+					/>
+
+					<div className='relative z-10 grid gap-6 md:grid-cols-3'>
+						{rewards.map((reward) => (
+							<Card key={reward.title} className='border border-border/60 bg-background/90 shadow-lg shadow-primary/5'>
+								<CardHeader>
+								<CardTitle className='text-xl text-foreground'>{reward.title}</CardTitle>
+								</CardHeader>
+								<CardContent className='text-sm leading-relaxed text-muted-foreground'>{reward.description}</CardContent>
+							</Card>
+						))}
+					</div>
+				</div>
+				<Image
+					src='/images/decorations/mountain-vector.svg'
+					alt='Décor montagne'
+					width={1600}
+					height={800}
+					className='w-screen absolute bottom-[-2%]'
+					priority
+				/>
+			</section>
+
+		</div>
 		<section
 			id='rejoindre'
 			className='relative overflow-hidden bg-muted/40 py-20 sm:py-24'

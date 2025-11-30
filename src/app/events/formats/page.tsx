@@ -87,9 +87,6 @@ const difficulties = [
   },
 ]
 
-const heroImageSrc =
-  'https://images.unsplash.com/photo-1762544968153-b9b47435fefd?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-
 export const metadata = {
   title: 'Formats OverBound — Distances & Difficultés',
   description: 'Choisis ta distance, puis module la difficulté pour vivre l’expérience OverBound à ton intensité.',
@@ -101,8 +98,8 @@ export default function FormatsPage() {
       <section className="relative isolate overflow-hidden py-20 sm:py-24">
         <div className="absolute inset-0">
           <Image
-            src={heroImageSrc}
-            alt="Athlètes Overbound en pleine course"
+            src={"/images/images/a-young-men-carrying-a-wooden-log-on-his-shoulder-staring-at-the-camera.avif"}
+            alt="Un coureur d'OverBound portant un tronc d'arbre sur son épaule et regardant la caméra d'un air déterminé"
             fill
             sizes="100vw"
             className="object-cover object-center"
@@ -113,7 +110,7 @@ export default function FormatsPage() {
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
+        <div className="py-20 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl space-y-6 text-center lg:text-left">
             <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary sm:text-sm">
               Formats OverBound
