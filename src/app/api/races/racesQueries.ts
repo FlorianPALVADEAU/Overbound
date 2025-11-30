@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
+import { FormatTemplate } from '../../../constants/raceFormats'
 
 export interface RaceListItem {
   estimated_time_min: number | undefined
   estimated_time_max: number | undefined
   ideal_profile: string[] | undefined
   prerequisites: { fitnessLevel: number; trainingWeeks: number; skills: string[] } | undefined
-  progression_from: import("/Users/florianpalvadeau/Projects/Overbound/src/constants/raceFormats").FormatTemplate[] | undefined
-  progression_to: import("/Users/florianpalvadeau/Projects/Overbound/src/constants/raceFormats").FormatTemplate[] | undefined
+  progression_from: FormatTemplate[] | undefined
+  progression_to: FormatTemplate[] | undefined
   format_template: string | null | undefined
   id: string
   name: string
