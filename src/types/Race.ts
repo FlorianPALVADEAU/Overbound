@@ -17,6 +17,14 @@ export interface Race {
   distance_km: number | null
   description?: string | null
   is_universal: boolean // True for single-format races (Kids, Backyard), false for multi-format (Primal/Fury/Ultra Hardcore)
+  format_template?: string | null
+  estimated_time_min?: number | null
+  estimated_time_max?: number | null
+  prerequisites?: any | null
+  ideal_profile?: any | null
+  progression_from?: string[] | null
+  progression_to?: string[] | null
+  gallery_images?: any | null
   created_at: Timestamp
   updated_at: Timestamp
   obstacles?: RaceObstacle[] | null

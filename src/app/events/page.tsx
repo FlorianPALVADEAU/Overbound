@@ -345,7 +345,7 @@ export default function EventsPage() {
 
       <div className="relative w-full py-40 bg-white px-4 sm:px-6 xl:px-32">
         <Image
-          src='/images/mountain-vector.svg'
+          src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}
@@ -607,7 +607,7 @@ export default function EventsPage() {
         <NeedHelpChoosingYourFormat />
         <EventlistDisplay />
         <Image
-          src='/images/mountain-vector.svg'
+          src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}

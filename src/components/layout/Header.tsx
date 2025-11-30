@@ -100,7 +100,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Origin', href: '/races/origin', icon: CalendarIcon },
     { name: 'Horizon', href: '/races/horizon', icon: MapPinIcon },
     { name: 'Ultra Arena', href: '/races/ultra-arena', icon: MapPinIcon },
-    { name: 'Tribal Kids', href: '/races/tribale-kids', icon: MapPinIcon },
+    { name: 'Tribal Kids', href: '/races/tribal-kids', icon: MapPinIcon },
     { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]
 

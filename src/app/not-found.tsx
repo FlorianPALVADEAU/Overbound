@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <main className='relative flex h-full flex-col items-center justify-center overflow-hidden bg-neutral-200'>
       <Image
-        src='/images/mountain-vector.svg'
+        src='/images/decorations/mountain-vector.svg'
         alt='Illustration montagne'
         width={1200}
         height={600}
@@ -36,7 +36,7 @@ export default function NotFound() {
         </Button>
       </section>
       <Image
-        src='/images/mountain-vector.svg'
+        src='/images/decorations/mountain-vector.svg'
         alt='Illustration montagne'
         width={1200}
         height={600}

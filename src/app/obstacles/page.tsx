@@ -183,7 +183,7 @@ export default function ObstaclesPage() {
           </div>
           <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
             <Image
-              src='/images/mountain-vector.svg'
+              src='/images/decorations/mountain-vector.svg'
               alt='Décor montagne'
               width={1600}
               height={800}
@@ -198,7 +198,7 @@ export default function ObstaclesPage() {
           className='relative z-10 mx-auto flex w-screen flex-col gap-10 px-4 pb-16 sm:px-6 lg:px-8 lg:pt-16 !py-40 bg-accent-foreground'
         >
           <Image
-            src='/images/mountain-vector.svg'
+            src='/images/decorations/mountain-vector.svg'
             alt='Illustration montagne'
             width={1200}
             height={600}
@@ -330,7 +330,7 @@ export default function ObstaclesPage() {
             ) : null}
 
             <Image
-              src='/images/mountain-vector.svg'
+              src='/images/decorations/mountain-vector.svg'
               alt='Illustration montagne'
               width={1200}
               height={600}

@@ -146,7 +146,7 @@ export default function WhatRaceForMePage() {
 
       <section id='questionnaire' className='relative z-10 mx-auto py-50 w-full px-4 sm:px-6 lg:px-8 bg-white'>
         <Image
-          src='/images/mountain-vector.svg'
+          src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}
@@ -166,7 +166,7 @@ export default function WhatRaceForMePage() {
           <WhichDistanceForMe />
         </div>
         <Image
-          src='/images/mountain-vector.svg'
+          src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}

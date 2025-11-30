@@ -4,11 +4,15 @@ import { useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Flag, Flame, Mountain, Target, Zap, MapPin } from 'lucide-react'
+import { ArrowLeft, Flag, Flame, Mountain, Target, Zap, MapPin, CheckCircle2, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useRaceById } from '@/app/api/races/racesQueries'
+import { getFormatConfig, FORMAT_TEMPLATES } from '@/constants/raceFormats'
+import Image from 'next/image'
+import Headings from '@/components/globals/Headings'
+import SubHeadings from '@/components/globals/SubHeadings'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -166,120 +170,35 @@ export default function RaceDetailPage() {
         : 'Explosif'
   const galleryImages: string[] = race.logo_url ? [race.logo_url] : []
 
-  // Detect race formats
-  const isTribalRoyale = params.id === 'ultra-arena' || race.name?.toLowerCase().includes('tribal royale')
-  const isTribalKids = params.id === 'tribale-kids' || race.name?.toLowerCase().includes('tribal kids')
-  const isRiteDuGuerrier = params.id === 'origin' || race.name?.toLowerCase().includes('rite du guerrier')
-  const isVoieDuHeros = params.id === 'horizon' || race.name?.toLowerCase().includes('voie du héros')
+  // Get format config
+  const formatConfig = getFormatConfig(params.id, race.name, race.format_template)
 
-  const statsCards = isTribalRoyale
-    ? [
-        {
-          label: 'Format',
-          value: 'Backyard OCR',
-          icon: Flag,
-          helper: 'Premier format backyard appliqué à l\'OCR au monde',
-        },
-        {
-          label: 'Intensité',
-          value: '10/10',
-          icon: Flame,
-          helper: 'Mental et physique extrême',
-        },
-        {
-          label: 'Distance',
-          value: '∞ km',
-          icon: Mountain,
-          helper: 'Élimination progressive - le dernier debout gagne',
-        },
-        {
-          label: 'Obstacles',
-          value: '∞ obstacles',
-          icon: Zap,
-          helper: 'Répétés jusqu\'à élimination complète',
-        },
-      ]
-    : isTribalKids
-    ? [
-        {
-          label: 'Format',
-          value: 'Famille',
-          icon: Flag,
-          helper: 'Course d\'obstacles ludique pour les 6-14 ans',
-        },
-        {
-          label: 'Âge',
-          value: '6-14 ans',
-          icon: Target,
-          helper: '3 parcours adaptés par tranche d\'âge',
-        },
-        {
-          label: 'Distance',
-          value: '1 / 2 / 3 km',
-          icon: Mountain,
-          helper: 'Selon l\'âge et le niveau de l\'enfant',
-        },
-        {
-          label: 'Obstacles',
-          value: '15 obstacles',
-          icon: Zap,
-          helper: 'Ludiques, sécurisés et progressifs',
-        },
-      ]
-    : isRiteDuGuerrier
-    ? [
-        {
-          label: 'Format',
-          value: 'Sprint',
-          icon: Flag,
-          helper: 'Format court et explosif - idéal pour débuter en OCR',
-        },
-        {
-          label: 'Intensité',
-          value: '7/10',
-          icon: Flame,
-          helper: 'Accessible mais intense - explosivité et cardio',
-        },
-        {
-          label: 'Distance',
-          value: '6 km',
-          icon: Mountain,
-          helper: 'Distance idéale pour donner tout sans retenue',
-        },
-        {
-          label: 'Obstacles',
-          value: '20 obstacles',
-          icon: Zap,
-          helper: 'Mix équilibré entre technique et puissance',
-        },
-      ]
-    : isVoieDuHeros
-    ? [
-        {
-          label: 'Format',
-          value: 'Intermédiaire',
-          icon: Flag,
-          helper: 'Distance médium - endurance et technique combinées',
-        },
-        {
-          label: 'Intensité',
-          value: '8/10',
-          icon: Flame,
-          helper: 'Exigeant - test d\'endurance et de mental',
-        },
-        {
-          label: 'Distance',
-          value: '12 km',
-          icon: Mountain,
-          helper: 'Endurance nécessaire avec gestion d\'effort',
-        },
-        {
-          label: 'Obstacles',
-          value: '35 obstacles',
-          icon: Zap,
-          helper: 'Portés lourds et obstacles techniques répétés',
-        },
-      ]
+  // Detect race formats (keep for legacy compatibility with other sections)
+  const isUltraArena = params.id === 'ultra-arena'
+  const isTribalKids = params.id === 'tribal-kids'
+  const isOrigin = params.id === 'origin'
+  const isHorizon = params.id === 'horizon'
+
+  // Build stats cards from format config or fallback to legacy data
+  const statsCards = formatConfig
+    ? (() => {
+        const cards = [...formatConfig.statsCards]
+
+        // Add estimated time card if available
+        const estimatedTimeMin = race.estimated_time_min ?? formatConfig.estimatedTimeMin
+        const estimatedTimeMax = race.estimated_time_max ?? formatConfig.estimatedTimeMax
+
+        if (estimatedTimeMin && estimatedTimeMax) {
+          cards.push({
+            label: 'Temps estimé',
+            value: `${estimatedTimeMin}-${estimatedTimeMax} min`,
+            icon: Clock,
+            helper: 'Durée moyenne pour terminer ce parcours',
+          })
+        }
+
+        return cards
+      })()
     : [
         {
           label: 'Format',
@@ -356,7 +275,7 @@ export default function RaceDetailPage() {
                 </div>
 
                 <h1 className="text-5xl font-black tracking-tight text-foreground md:text-6xl">{race.name}</h1>
-                {isTribalRoyale ? (
+                {isUltraArena ? (
                   <div className="mt-4 space-y-3">
                     <Badge className="bg-amber-500 text-white font-bold text-sm">
                       PREMIÈRE MONDIALE - Format Backyard OCR
@@ -384,7 +303,7 @@ export default function RaceDetailPage() {
                       Avec 15 obstacles ludiques, progressifs et totalement sécurisés, les enfants découvrent l'esprit Overbound dans un environnement bienveillant et stimulant.
                     </p>
                   </div>
-                ) : isRiteDuGuerrier ? (
+                ) : isOrigin ? (
                   <div className="mt-4 space-y-3">
                     <Badge className="bg-emerald-500 text-white font-bold text-sm">
                       FORMAT SPRINT - 6 km
@@ -397,7 +316,7 @@ export default function RaceDetailPage() {
                       Accessible aux débutants motivés tout en offrant un vrai défi pour les athlètes confirmés qui cherchent la performance pure.
                     </p>
                   </div>
-                ) : isVoieDuHeros ? (
+                ) : isHorizon ? (
                   <div className="mt-4 space-y-3">
                     <Badge className="bg-blue-500 text-white font-bold text-sm">
                       FORMAT INTERMÉDIAIRE - 12 km
@@ -482,9 +401,9 @@ export default function RaceDetailPage() {
             <div className="lg:col-span-2 space-y-8">
               <div className="rounded-3xl border border-border bg-card p-8">
                 <h2 className="text-2xl font-bold text-card-foreground">
-                  {isTribalRoyale ? 'Le concept Backyard OCR' : isTribalKids ? 'L\'esprit Tribal Kids' : isRiteDuGuerrier ? 'L\'esprit Sprint' : isVoieDuHeros ? 'Philosophie de la progression' : 'Philosophie du format'}
+                  {isUltraArena ? 'Le concept Backyard OCR' : isTribalKids ? 'L\'esprit Tribal Kids' : isOrigin ? 'L\'esprit Sprint' : isHorizon ? 'Philosophie de la progression' : 'Philosophie du format'}
                 </h2>
-                {isTribalRoyale ? (
+                {isUltraArena ? (
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
@@ -564,7 +483,7 @@ export default function RaceDetailPage() {
                       </div>
                     </div>
                   </>
-                ) : isRiteDuGuerrier ? (
+                ) : isOrigin ? (
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
@@ -601,7 +520,7 @@ export default function RaceDetailPage() {
                       </div>
                     </div>
                   </>
-                ) : isVoieDuHeros ? (
+                ) : isHorizon ? (
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
@@ -673,57 +592,6 @@ export default function RaceDetailPage() {
               </div>
 
               <div className="rounded-3xl border border-border bg-card p-8">
-                <h2 className="text-2xl font-bold text-card-foreground">
-                  {isTribalRoyale ? 'Obstacles extrêmes' : isTribalKids ? 'Obstacles ludiques' : isRiteDuGuerrier ? 'Obstacles explosifs' : isVoieDuHeros ? 'Obstacles techniques' : 'Obstacles signature'}
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {isTribalRoyale
-                    ? '15+ obstacles extrêmes conçus pour tester tes limites absolues. Grip, portés lourds, technique : chaque obstacle est un test. Tu les répéteras tour après tour jusqu\'à élimination.'
-                    : isTribalKids
-                    ? '15 obstacles ludiques et sécurisés qui permettent aux enfants de développer leur coordination, leur confiance et leur courage dans un cadre amusant et progressif.'
-                    : isRiteDuGuerrier
-                    ? '20 obstacles variés qui mettent à l\'épreuve force, agilité et coordination. Sur un sprint, chaque seconde compte : maîtrise la technique pour enchainer sans perdre de temps.'
-                    : isVoieDuHeros
-                    ? '35 obstacles répétés qui testent ta résistance à la fatigue. Portés lourds, grip prolongé, escalades : les mêmes obstacles reviennent et deviennent de plus en plus durs à mesure que la fatigue s\'installe.'
-                    : 'Une sélection d\'ateliers techniques et puissants conçus pour tester chaque groupe musculaire. Concentrez-vous sur la posture et l\'explosivité pour gagner un temps précieux.'}
-                </p>
-                {obstacleCount > 0 ? (
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    {race.obstacles
-                      ?.sort((a, b) => a.order_position - b.order_position)
-                      .slice(0, 6)
-                      .map((item) => (
-                        <div
-                          key={item.obstacle.id}
-                          className="rounded-2xl bg-background/40 p-4 ring-1 ring-border transition hover:ring-primary/60"
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="font-semibold text-foreground">{item.obstacle.name}</p>
-                            {item.is_mandatory ? (
-                              <Badge variant="outline" className="border-primary/60 text-primary">
-                                Obligatoire
-                              </Badge>
-                            ) : null}
-                          </div>
-                          <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-                            Intensité {item.obstacle.difficulty}/10 • {item.obstacle.type}
-                          </p>
-                        </div>
-                      ))}
-                    {obstacleCount > 6 ? (
-                      <div className="flex items-center justify-center rounded-2xl border border-dashed border-border bg-background/30 p-4 text-sm text-muted-foreground">
-                        +{obstacleCount - 6} autres ateliers au programme
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="mt-6 rounded-2xl border border-dashed border-border bg-background/30 p-6 text-sm text-muted-foreground">
-                    Les obstacles seront dévoilés prochainement.
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-3xl border border-border bg-card p-8">
                 <h2 className="text-2xl font-bold text-card-foreground">Galerie & ambiance</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Aperçu du flow et de la mise en scène Overbound. Inspirez-vous, partagez vos entraînements et préparez votre team pour le
@@ -786,9 +654,9 @@ export default function RaceDetailPage() {
 
               <div className="rounded-3xl border border-border bg-card p-8">
                 <h2 className="text-xl font-semibold text-card-foreground">
-                  {isTribalRoyale ? 'Équipement requis' : isTribalKids ? 'Ce qu\'il faut prévoir' : isRiteDuGuerrier ? 'Équipement sprint' : isVoieDuHeros ? 'Équipement intermédiaire' : 'Matériel & équipement'}
+                  {isUltraArena ? 'Équipement requis' : isTribalKids ? 'Ce qu\'il faut prévoir' : isOrigin ? 'Équipement sprint' : isHorizon ? 'Équipement intermédiaire' : 'Matériel & équipement'}
                 </h2>
-                {isTribalRoyale ? (
+                {isUltraArena ? (
                   <div className="mt-4 space-y-4">
                     <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
                       <p className="text-xs uppercase tracking-wide text-amber-600 mb-2">Obligatoire</p>
@@ -829,13 +697,12 @@ export default function RaceDetailPage() {
                       </ul>
                     </div>
                   </div>
-                ) : isRiteDuGuerrier ? (
+                ) : isOrigin ? (
                   <div className="mt-4 space-y-4">
                     <div className="rounded-2xl bg-emerald-500/5 p-4 ring-1 ring-emerald-500/20">
                       <p className="text-xs uppercase tracking-wide text-emerald-600 mb-2">Essentiel</p>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li>• Chaussures de trail ou running avec bon grip</li>
-                        <li>• Tenue de sport légère et respirante</li>
                         <li>• Gants recommandés pour les obstacles à grip</li>
                         <li>• Pas besoin de ravitaillement (course courte)</li>
                       </ul>
@@ -844,12 +711,12 @@ export default function RaceDetailPage() {
                       <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Conseils</p>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li>• Échauffement complet avant le départ</li>
-                        <li>• Tenue légère pour favoriser la vitesse</li>
+                        <li>• Tenue légère pour favoriser la vitesse (😎)</li>
                         <li>• Prévois une tenue de rechange (tu vas être sale !)</li>
                       </ul>
                     </div>
                   </div>
-                ) : isVoieDuHeros ? (
+                ) : isHorizon ? (
                   <div className="mt-4 space-y-4">
                     <div className="rounded-2xl bg-blue-500/5 p-4 ring-1 ring-blue-500/20">
                       <p className="text-xs uppercase tracking-wide text-blue-600 mb-2">Obligatoire</p>
@@ -883,72 +750,373 @@ export default function RaceDetailPage() {
         </div>
       </section>
 
-      <section id="events" className="bg-background ">
-        <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
-          <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground">Événements associés</h2>
-              <p className="text-sm text-muted-foreground">
-                Retrouvez toutes les dates qui proposent ce format. Inscriptions limitées : choisissez votre arène.
-              </p>
+
+      <div className='relative bg-white'>
+        <Image
+          src='/images/decorations/mountain-vector.svg'
+          alt='Décor montagne'
+          width={1600}
+          height={800}
+          className='relative w-screen -mt-1 rotate-180'
+          priority
+        />
+        <section className='bg-transparent'>
+          <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
+            <SubHeadings
+              title='Comparaison des formats'
+              description='Découvrez comment ce format se positionne par rapport aux autres parcours Overbound'
+              sx='text-black my-6'
+            />
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse rounded-2xl bg-card overflow-hidden shadow-lg">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="p-4 text-left text-sm font-semibold text-foreground">Format</th>
+                    <th className="p-4 text-left text-sm font-semibold text-foreground">Distance</th>
+                    <th className="p-4 text-left text-sm font-semibold text-foreground">Intensité</th>
+                    <th className="p-4 text-left text-sm font-semibold text-foreground">Obstacles</th>
+                    <th className="p-4 text-left text-sm font-semibold text-foreground">Niveau requis</th>
+                    <th className="p-4 text-left text-sm font-semibold text-foreground">Temps estimé</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {FORMAT_TEMPLATES.filter(format => format.id !== 'ultra-arena').map((format) => {
+                    const isCurrentFormat = format.id === getFormatConfig(params.id, race.name, race.format_template)?.id
+                    return (
+                      <tr
+                        key={format.id}
+                        className={`border-t border-border ${isCurrentFormat ? 'bg-primary/5 ring-2 ring-primary/30' : 'hover:bg-muted/30'} transition`}
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{format.name}</span>
+                            {isCurrentFormat && (
+                              <Badge variant="default" className="text-xs">Ce format</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {format.statsCards.find(s => s.label === 'Distance')?.value || '-'}
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {format.statsCards.find(s => s.label === 'Intensité')?.value || '-'}
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {format.statsCards.find(s => s.label === 'Obstacles')?.value || '-'}
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {format.prerequisites ? `${format.prerequisites.fitnessLevel}/10` : '-'}
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {format.estimatedTimeMin && format.estimatedTimeMax
+                            ? `${format.estimatedTimeMin}-${format.estimatedTimeMax} min`
+                            : 'Variable'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-            <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10" onClick={() => refetchEvents()}>
-              Rafraîchir les dates
-            </Button>
           </div>
+        </section>
 
-          {eventsLoading ? (
-            <div className="rounded-3xl border border-border bg-card p-8 text-sm text-muted-foreground">
-              Chargement des événements…
-            </div>
-          ) : eventsError ? (
-            <div className="rounded-3xl border border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-              {eventsError.message}
-            </div>
-          ) : upcomingEvents.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2">
-              {upcomingEvents.map((event) => {
-                const eventRemaining =
-                  typeof event.capacity === 'number'
-                    ? Math.max(event.capacity - (event.registrations_count ?? 0), 0)
-                    : null
+        {/* Progression Path Section */}
+        {(() => {
+          const formatConfig = getFormatConfig(params.id, race.name, race.format_template)
+          const progressionFrom = race.progression_from || formatConfig?.progressionFrom
+          const progressionTo = race.progression_to || formatConfig?.progressionTo
 
-                return (
-                  <div
-                    key={event.id}
-                    className="flex h-full flex-col justify-between rounded-3xl bg-card p-6 shadow-lg shadow-primary/5 ring-1 ring-border transition hover:ring-primary/70"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm uppercase tracking-wide text-muted-foreground">
-                          {formatDateShort(event.date)} • {formatTime(event.date)}
-                        </span>
-                        <Badge variant={getStatusColor(event.status)}>{getStatusLabel(event.status)}</Badge>
+          if ((!progressionFrom || progressionFrom.length === 0) && (!progressionTo || progressionTo.length === 0)) {
+            return null
+          }
+
+          if (isUltraArena) {
+            return;
+          }
+
+          return (
+            <section>
+              <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
+                <SubHeadings
+                  title='Progression recommandée'
+                  description='Voici comment ce format se positionne dans ton parcours Overbound'
+                  sx='text-black my-6'
+                />
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-6xl mx-auto">
+                  {/* From Formats */}
+                  <div className="space-y-4">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground text-center mb-4">
+                      Tu viens de
+                    </p>
+                    {progressionFrom && progressionFrom.length > 0 ? (
+                      <>
+                        {progressionFrom.map((formatId: string) => {
+                          const fromFormat = FORMAT_TEMPLATES.find(f => f.id === formatId)
+                          if (!fromFormat) return null
+                          const distance = fromFormat.statsCards.find(s => s.label === 'Distance')?.value
+                          return (
+                            <div
+                              key={formatId}
+                              className="rounded-2xl border-2 border-border bg-card p-6 shadow-lg text-center"
+                            >
+                              <h3 className="text-lg font-bold text-foreground mb-1">
+                                {fromFormat.name.split('(')[0].trim()}
+                              </h3>
+                              {distance && (
+                                <p className="text-sm text-muted-foreground">{distance}</p>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </>
+                    ) : (
+                      <div className="rounded-2xl border-2 border-dashed border-border bg-card/50 p-6 text-center">
+                        <p className="text-sm text-muted-foreground italic">
+                          Point de départ
+                        </p>
                       </div>
-                      <h3 className="text-xl font-semibold text-card-foreground">{event.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span>{event.location}</span>
-                      </div>
-                    </div>
-                    <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
-                      <span>Capacité {event.capacity}</span>
-                      <span>{eventRemaining !== null ? `${eventRemaining} places restantes` : 'Places limitées'}</span>
-                    </div>
-                    <Button className="mt-6 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90" asChild>
-                      <Link href={`/events/${event.id}`}>Voir l&apos;événement</Link>
-                    </Button>
+                    )}
                   </div>
-                )
-              })}
+
+                  {/* Current Format - Center */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center mb-4">
+                      <Badge className="bg-primary text-primary-foreground font-bold">
+                        Tu es ici
+                      </Badge>
+                    </div>
+                    <div className="rounded-2xl border-2 border-primary bg-card p-8 shadow-lg text-center">
+                      <h3 className="text-2xl font-black text-foreground mb-2">
+                        {race.name}
+                      </h3>
+                      {race.distance_km && (
+                        <p className="text-lg text-primary font-semibold">
+                          {race.distance_km} km
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* To Formats */}
+                  <div className="space-y-4">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground text-center mb-4">
+                      Prochaine étape
+                    </p>
+                    {progressionTo && progressionTo.length > 0 ? (
+                      <>
+                        {progressionTo.map((formatId: string) => {
+                          const toFormat = FORMAT_TEMPLATES.find(f => f.id === formatId)
+                          if (!toFormat) return null
+                          const distance = toFormat.statsCards.find(s => s.label === 'Distance')?.value
+                          return (
+                            <div
+                              key={formatId}
+                              className="rounded-2xl border-2 border-border bg-card p-6 shadow-lg text-center"
+                            >
+                              <h3 className="text-lg font-bold text-foreground mb-1">
+                                {toFormat.name.split('(')[0].trim()}
+                              </h3>
+                              {distance && (
+                                <p className="text-sm text-muted-foreground">{distance}</p>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </>
+                    ) : (
+                      <div className="rounded-2xl border-2 border-dashed border-border bg-card/50 p-6 text-center">
+                        <p className="text-sm text-muted-foreground italic">
+                          Objectif final
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )
+        })()}
+
+        {/* Gallery Link Section */}
+        <section>
+          <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
+            <div className="rounded-3xl border border-border bg-card p-8 text-center">
+              <h2 className="text-2xl font-bold text-foreground">Découvre les obstacles</h2>
+              <p className="mt-2 text-muted-foreground">
+                Explore notre galerie d'obstacles pour visualiser ce qui t'attend sur le parcours
+              </p>
+              <Button className="mt-6" variant="outline" asChild>
+                <Link href="/obstacles">Voir la galerie des obstacles</Link>
+              </Button>
             </div>
-          ) : (
-            <div className="rounded-3xl border border-dashed border-border bg-card/40 p-8 text-sm text-muted-foreground">
-              Aucune date n&apos;est programmée pour le moment. Rejoignez la newsletter pour être informé des prochaines ouvertures.
+          </div>
+        </section>
+
+        {/* What You'll Get Section - Auto-scrolling Carousel */}
+        <section className=" overflow-hidden">
+          <div className="w-full py-12">
+            <SubHeadings
+              title='Ce que tu obtiendras en participant'
+              description="Bien plus qu'une course, une expérience qui te transforme"
+              sx='text-black my-6 px-4 py-12 sm:px-6 xl:px-32'
+            />
+
+            <div className="relative">
+              <div className="flex gap-6 animate-scroll">
+                {[...Array(2)].map((_, duplicateIndex) => (
+                  <div key={duplicateIndex} className="flex gap-6">
+                    {[
+                      {
+                        icon: '🏆',
+                        title: 'Dépassement de soi',
+                        description: 'Repousse tes limites',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '🤝',
+                        title: 'Esprit de tribu',
+                        description: 'Une communauté soudée',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '💪',
+                        title: 'Progression mesurable',
+                        description: 'Vois ton évolution',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '🎯',
+                        title: 'Confiance en toi',
+                        description: 'Gagne en assurance',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '🔥',
+                        title: 'Souvenir inoubliable',
+                        description: 'Une expérience qui marque',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '⚡',
+                        title: 'Forme physique',
+                        description: 'Améliore ta condition',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '🎖️',
+                        title: 'Accomplissement',
+                        description: 'La fierté du défi relevé',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                      {
+                        icon: '👥',
+                        title: 'Nouvelles amitiés',
+                        description: 'Des liens forts',
+                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                      },
+                    ].map((item, index) => (
+                      <div
+                        key={`${duplicateIndex}-${index}`}
+                        className="relative flex flex-col flex-shrink-0 w-80 h-80 items-start justify-end rounded-2xl border border-border p-6 hover:scale-105 transition-transform"
+                      >
+                        <Image 
+                          src={item.photoUrl} 
+                          alt={`photo représentant ${item.title}`}
+                          width={100}
+                          height={100}
+                          className='absolute top-0 left-0 w-full h-full rounded-2xl object-center object-cover -z-1 opacity-25 hover:opacit-80'
+                        />
+                        <div className="text-4xl mb-3">{item.icon}</div>
+                        <h3 className="text-lg font-bold text-foreground mb-1">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+
+        <section id="events">
+          <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
+              <SubHeadings
+                title='Événements associés'
+                description='Retrouvez toutes les dates qui proposent ce format. Inscriptions limitées : choisissez votre arène.'
+                sx='text-black my-6 lex-row! justify-between!'
+                cta={
+                  <Button variant="outline" className="border-primary/50 text-primary bg-white/10 cursor-pointer" onClick={() => refetchEvents()}>
+                    Rafraîchir les dates
+                  </Button>
+                }
+              />
+
+            {eventsLoading ? (
+              <div className="rounded-3xl border border-border bg-card p-8 text-sm text-muted-foreground">
+                Chargement des événements…
+              </div>
+            ) : eventsError ? (
+              <div className="rounded-3xl border border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
+                {eventsError.message}
+              </div>
+            ) : upcomingEvents.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {upcomingEvents.map((event) => {
+                  const eventRemaining =
+                    typeof event.capacity === 'number'
+                      ? Math.max(event.capacity - (event.registrations_count ?? 0), 0)
+                      : null
+
+                  return (
+                    <div
+                      key={event.id}
+                      className="flex h-full flex-col justify-between rounded-3xl bg-card p-6 shadow-lg shadow-primary/5 ring-1 ring-border transition hover:ring-primary/70"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm uppercase tracking-wide text-muted-foreground">
+                            {formatDateShort(event.date)} • {formatTime(event.date)}
+                          </span>
+                          <Badge variant={getStatusColor(event.status)}>{getStatusLabel(event.status)}</Badge>
+                        </div>
+                        <h3 className="text-xl font-semibold text-card-foreground">{event.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <span>{event.location}</span>
+                        </div>
+                      </div>
+                      <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
+                        <span>Capacité {event.capacity}</span>
+                        <span>{eventRemaining !== null ? `${eventRemaining} places restantes` : 'Places limitées'}</span>
+                      </div>
+                      <Button className="mt-6 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90" asChild>
+                        <Link href={`/events/${event.id}`}>Voir l&apos;événement</Link>
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-border bg-card/40 p-8 text-sm text-muted-foreground">
+                Aucune date n&apos;est programmée pour le moment. Rejoignez la newsletter pour être informé des prochaines ouvertures.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <Image
+          src='/images/decorations/mountain-vector.svg'
+          alt='Décor montagne'
+          width={1600}
+          height={800}
+          className='relative w-screen -mb-1'
+          priority
+        />
+      </div>
+      {/* Format Comparison Table */}
     </main>
   )
 }

@@ -84,7 +84,7 @@ export default function ConceptPage() {
         </div>
 
         <Image
-          src="/images/mountain-vector.svg"
+          src="/images/decorations/mountain-vector.svg"
           alt="Background"
           className="object-cover object-center absolute w-full -bottom-3 sm:-bottom-4 md:-bottom-5 pointer-events-none opacity-30"
           height={600}
@@ -467,7 +467,7 @@ export default function ConceptPage() {
         </div>
 
         <Image
-          src="/images/mountain-vector.svg"
+          src="/images/decorations/mountain-vector.svg"
           alt="Background"
           className="object-cover object-center absolute w-full -bottom-3 pointer-events-none opacity-20"
           height={600}

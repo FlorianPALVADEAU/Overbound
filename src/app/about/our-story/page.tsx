@@ -43,7 +43,7 @@ export default function OurStoryPage() {
         </div>
         <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
           <Image
-            src='/images/mountain-vector.svg'
+            src='/images/decorations/mountain-vector.svg'
             alt='Décor montagne'
             width={1600}
             height={800}
@@ -243,14 +243,14 @@ export default function OurStoryPage() {
       {/* Valeurs Section */}
       <section className="relative bg-accent-foreground py-16 sm:py-50">
         <Image
-          src='/images/mountain-vector.svg'
+          src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}
           className='z-1 pointer-events-none absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-screen max-w-none -translate-x-1/2'
         />
         <Image
-          src="/images/wall-texture.png"
+          src="/images/decorations/wall-texture.png"
           alt="Wall texture decoration"
           width={600}
           height={400}
@@ -315,7 +315,7 @@ export default function OurStoryPage() {
           </div>
         </div>
         <Image
-          src='/images/mountain-vector.svg'
+          src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}
