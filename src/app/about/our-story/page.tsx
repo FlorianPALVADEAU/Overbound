@@ -7,8 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Target, Zap, Users, Globe, Sparkles, Mountain, Heart, Trophy } from 'lucide-react'
 
-const heroImageSrc = 'https://images.unsplash.com/photo-1552196563-55cd4e45efb3?q=80&w=1400&auto=format&fit=crop'
-
 export default function OurStoryPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
@@ -16,7 +14,7 @@ export default function OurStoryPage() {
       <section className='relative isolate overflow-hidden py-20 sm:py-24'>
         <div className='absolute inset-0'>
           <Image
-            src={heroImageSrc}
+            src={"/images/images/overbound-headband-on-chains-with-grass-in-background.avif"}
             alt='Notre histoire Overbound'
             fill
             sizes='100vw'
@@ -27,13 +25,13 @@ export default function OurStoryPage() {
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
           <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
         </div>
-        <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+        <div className='py-20 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
           <div className='max-w-3xl space-y-6 text-center lg:text-left'>
             <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
               Notre Histoire
             </span>
             <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
-              Réinventer l'obstacle course racing
+              Comment tout a commencé
             </h1>
             <p className='text-base leading-relaxed text-muted-foreground sm:text-lg'>
               L'histoire d'Overbound, c'est celle d'une volonté de créer quelque chose d'unique dans l'univers de l'OCR :
@@ -84,7 +82,7 @@ export default function OurStoryPage() {
             </div>
             <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-2xl">
               <Image
-                src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=1400&auto=format&fit=crop"
+                src="/images/images/a-man-smiling-in-a-field.avif"
                 alt="Vision Overbound"
                 fill
                 className="object-cover"
@@ -360,9 +358,9 @@ export default function OurStoryPage() {
                 </Button>
               </div>
             </div>
-            <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-2xl">
+            <div className="relative h-[450px] rounded-3xl overflow-hidden shadow-2xl">
               <Image
-                src="https://images.unsplash.com/photo-1530549387789-4c1017266635?q=80&w=1400&auto=format&fit=crop"
+                src="/images/images/young-man-carrying-a-swingy-chain-to-his-neck.avif"
                 alt="Vision future Overbound"
                 fill
                 className="object-cover"

@@ -42,8 +42,9 @@ const LINK_GROUPS = [
       { label: 'Mentions légales', href: '/mentions-legales' },
       { label: 'CGU', href: '/cgu' },
       { label: 'CGV', href: '/cgv' },
-      { label: 'Confidentialité', href: '/privacy-policies' },
+      { label: 'Politiques de Confidentialité', href: '/privacy-policies' },
       { label: 'Cookies', href: '/cookies' },
+      { label: 'Crédits', href: '/credits' },
     ],
   },
 ]

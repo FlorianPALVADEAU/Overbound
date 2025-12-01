@@ -12,6 +12,7 @@ import {
   MapPin,
   ShieldCheck,
   Twitter,
+  Youtube,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -68,10 +69,10 @@ const contactReasons = [
 ]
 
 const socialLinks = [
-  { name: 'Instagram', href: 'https://instagram.com/overbound', icon: Instagram },
-  { name: 'Facebook', href: 'https://facebook.com/overbound', icon: Facebook },
-  { name: 'LinkedIn', href: 'https://linkedin.com/company/overbound', icon: Linkedin },
-  { name: 'X (Twitter)', href: 'https://twitter.com/overbound', icon: Twitter },
+  { name: 'Instagram', href: 'https://instagram.com/overbound-race', icon: Instagram },
+  { name: 'Facebook', href: 'https://facebook.com/overbound-race', icon: Facebook },
+  { name: 'Youtube', href: 'https://youtube.com/overbound-race', icon: Youtube },
+  // { name: 'X (Twitter)', href: 'https://twitter.com/overbound', icon: Twitter },
 ]
 
 const contactFormSteps = [
@@ -304,37 +305,6 @@ const ContactPage = () => {
               >
                 <Link href="/about/faq">Consulter la FAQ</Link>
               </Button>
-            </div>
-          </div>
-          <div className="flex flex-1 flex-col gap-4 rounded-3xl bg-white/80 p-6 shadow-xl backdrop-blur-sm sm:p-8">
-            <div className="flex items-start gap-4">
-              <ShieldCheck className="h-6 w-6 text-[#26AA26]" />
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Support prioritaire tribu</h2>
-                <p className="text-sm text-gray-600">
-                  Tu es inscrit sur un prochain Overbound ? Connecte-toi pour accéder à ton support prioritaire revendiqué.
-                </p>
-              </div>
-            </div>
-            <div className="grid gap-3 rounded-2xl bg-[#26AA26]/5 p-4 text-sm text-[#1b5a1b]">
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                <span>E-mail : réponse garantie sous 24 h ouvrées</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                <span>Formulaire : suivi prioritaire avec pièces jointes</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock3 className="h-5 w-5" />
-                <span>Support renforcé les week-ends de course</span>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-600">
-              <p className="font-semibold text-gray-900">Important</p>
-              <p>
-                Les questions sur place sont traitées le jour J dès 6h par la tente accueil. Pense à venir avec ta pièce d’identité et une version imprimée de ton billet pour accélérer le contrôle.
-              </p>
             </div>
           </div>
         </div>
@@ -660,28 +630,6 @@ const ContactPage = () => {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6" id="support-documents">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-[#26AA26]/10 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:p-8">
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Adresse du siège</h2>
-            <div className="mt-4 flex flex-col gap-3 text-sm text-gray-600">
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-[#26AA26]" />
-                <p>
-                  Overbound HQ<br />23 avenue des Cimes, Bâtiment A<br />69009 Lyon · France
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Clock3 className="h-4 w-4 text-[#26AA26]" />
-                <p>Accueil physiques sur rendez-vous uniquement (du lundi au vendredi)</p>
-              </div>
-              <Link
-                href="https://maps.google.com/?q=23+avenue+des+Cimes+69009+Lyon"
-                className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-[#26AA26] px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#26AA26] transition hover:bg-[#26AA26]/10"
-              >
-                Voir sur Google Maps
-              </Link>
-            </div>
-          </div>
           <div className="rounded-3xl border border-[#26AA26]/10 bg-white/80 p-6 shadow-lg backdrop-blur-sm sm:p-8" id="support-presse">
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Relations médias & partenaires</h2>
             <p className="mt-3 text-sm text-gray-600 sm:text-base">
@@ -720,7 +668,6 @@ const ContactPage = () => {
               ))}
             </div>
           </div>
-        </div>
       </section>
 
       <section id="support-benevoles" className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">

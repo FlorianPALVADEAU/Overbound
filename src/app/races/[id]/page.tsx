@@ -973,49 +973,49 @@ export default function RaceDetailPage() {
                         icon: '🏆',
                         title: 'Dépassement de soi',
                         description: 'Repousse tes limites',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/man-looking-determined-staring-at-the-floor.avif'
                       },
                       {
                         icon: '🤝',
                         title: 'Esprit de tribu',
                         description: 'Une communauté soudée',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.avif'
                       },
                       {
                         icon: '💪',
                         title: 'Progression mesurable',
                         description: 'Vois ton évolution',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/a-big-tire-is falling-upside-down-thanks-to-a-middle-aged-man.avif'
                       },
                       {
                         icon: '🎯',
                         title: 'Confiance en toi',
                         description: 'Gagne en assurance',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/a-man-shouting-of-happiness-very-happy.avif'
                       },
                       {
                         icon: '🔥',
                         title: 'Souvenir inoubliable',
                         description: 'Une expérience qui marque',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/young-man-carrying-wooden-logs.avif'
                       },
                       {
                         icon: '⚡',
                         title: 'Forme physique',
                         description: 'Améliore ta condition',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/blond-lady-carrying-chains.avif'
                       },
                       {
                         icon: '🎖️',
                         title: 'Accomplissement',
                         description: 'La fierté du défi relevé',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/young-lady-smiling-below-barbed-wires.avif'
                       },
                       {
                         icon: '👥',
                         title: 'Nouvelles amitiés',
                         description: 'Des liens forts',
-                        photoUrl: 'https://images.unsplash.com/photo-1501554728187-ce583db33af7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        photoUrl: '/images/images/a-group-of-friends-celebrating-after-a-race.avif'
                       },
                     ].map((item, index) => (
                       <div
@@ -1027,11 +1027,12 @@ export default function RaceDetailPage() {
                           alt={`photo représentant ${item.title}`}
                           width={100}
                           height={100}
-                          className='absolute top-0 left-0 w-full h-full rounded-2xl object-center object-cover -z-1 opacity-25 hover:opacit-80'
+                          className='absolute top-0 left-0 w-full h-full rounded-2xl object-center object-cover -z-1 hover:opacit-80'
                         />
-                        <div className="text-4xl mb-3">{item.icon}</div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                        <div className="text-4xl mb-3 z-1">{item.icon}</div>
+                        <h3 className="text-lg font-bold text-foreground z-1">{item.title}</h3>
+                        <p className="text-sm text-white/70 z-1">{item.description}</p>
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-transparent to-background/50" />
                       </div>
                     ))}
                   </div>
@@ -1047,11 +1048,6 @@ export default function RaceDetailPage() {
                 title='Événements associés'
                 description='Retrouvez toutes les dates qui proposent ce format. Inscriptions limitées : choisissez votre arène.'
                 sx='text-black my-6 lex-row! justify-between!'
-                cta={
-                  <Button variant="outline" className="border-primary/50 text-primary bg-white/10 cursor-pointer" onClick={() => refetchEvents()}>
-                    Rafraîchir les dates
-                  </Button>
-                }
               />
 
             {eventsLoading ? (
@@ -1100,7 +1096,7 @@ export default function RaceDetailPage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-border bg-card/40 p-8 text-sm text-muted-foreground">
+              <div className="rounded-3xl border border-dashed border-border bg-background p-8 text-sm text-white">
                 Aucune date n&apos;est programmée pour le moment. Rejoignez la newsletter pour être informé des prochaines ouvertures.
               </div>
             )}
