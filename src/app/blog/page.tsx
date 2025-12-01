@@ -137,7 +137,8 @@ function BlogHero() {
           alt="OverBound Blog"
           fill
           sizes="100vw"
-          className="object-cover object-top"
+          className="object-cover"
+          style={{ objectPosition: '50% 30%' }}
           priority
         />
         <div className="pointer-events-none absolute inset-0 bg-background/40 backdrop-blur-[2px]" />

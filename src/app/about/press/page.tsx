@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Download, Mail, Image as ImageIcon, FileText, Award } from 'lucide-react'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
-const heroImageSrc = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1400&auto=format&fit=crop'
 
 const PRESS_CONTACTS = [
   {
@@ -43,25 +42,6 @@ const PRESS_RESOURCES = [
   },
 ]
 
-const ACHIEVEMENTS = [
-  {
-    stat: '10,000+',
-    label: 'Participants depuis le lancement',
-  },
-  {
-    stat: '25+',
-    label: 'Événements organisés',
-  },
-  {
-    stat: '100%',
-    label: 'Organisation européenne',
-  },
-  {
-    stat: '50+',
-    label: 'Obstacles uniques créés',
-  },
-]
-
 export default function PressPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
@@ -69,7 +49,7 @@ export default function PressPage() {
       <section className='relative isolate overflow-hidden py-20 sm:py-24'>
         <div className='absolute inset-0'>
           <Image
-            src={heroImageSrc}
+            src={"/images/images/a-photograph-in-action.avif"}
             alt='Espace presse Overbound'
             fill
             sizes='100vw'
@@ -80,7 +60,7 @@ export default function PressPage() {
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
           <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
         </div>
-        <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+        <div className='py-30 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
           <div className='max-w-3xl space-y-6 text-center lg:text-left'>
             <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
               Espace Presse
@@ -102,22 +82,6 @@ export default function PressPage() {
             height={800}
             className='w-[220%] max-w-none sm:w-[170%] md:w-[140%]'
           />
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className='relative z-10 -mt-16 pb-16'>
-        <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
-          <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
-            {ACHIEVEMENTS.map((achievement, index) => (
-              <Card key={index} className='border-border/50 bg-card/50 backdrop-blur-sm'>
-                <CardContent className='p-6 text-center'>
-                  <p className='text-3xl font-bold text-primary sm:text-4xl'>{achievement.stat}</p>
-                  <p className='mt-2 text-sm text-muted-foreground'>{achievement.label}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 

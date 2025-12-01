@@ -12,7 +12,7 @@ const NextEvents = () => {
 	const { data, isLoading, isError } = useGetEvents()
 
 	return (
-		<div className='w-full min-h-[60vh] xl:h-[80vh] py-12 sm:py-16 xl:py-20 px-4 sm:px-6 xl:px-32 relative overflow-hidden'>
+		<div className='w-full min-h-[60vh] py-12 sm:py-16 xl:py-20 px-4 sm:px-6 xl:px-32 relative overflow-hidden'>
 			<div className='flex flex-col gap-8 sm:gap-10 xl:gap-12 h-full'>
 				<Headings 
 					title="Parce qu'il n'y a qu'une seule première fois."
@@ -29,8 +29,8 @@ const NextEvents = () => {
 								<Image
 									src="/images/images/a-sunny-mood-with-runners-ready-to-go.avif"
 									alt="Une vague de coureurs prêts à se lancer dans une course Overbound, sous un ciel ensoleillé."
-									width={400}
-									height={400}
+									width={1000}
+									height={1000}
 									className="object-cover w-full h-48 sm:h-64 md:h-72 xl:h-[50vh] rounded-lg shadow-lg"
 								/>
 							) : (
@@ -42,8 +42,8 @@ const NextEvents = () => {
 											<Image
 												src="/images/images/a-sunny-mood-with-runners-ready-to-go.avif"
 												alt="Une vague de coureurs prêts à se lancer dans une course Overbound, sous un ciel ensoleillé."
-												width={400}
-												height={400}
+												width={1000}
+												height={1000}
 												className="object-cover w-full h-48 sm:h-64 md:h-72 xl:h-[50vh] rounded-lg shadow-lg"
 											/>
 										</Link>
