@@ -1,6 +1,6 @@
 import Image from "next/image"
 
-const AnimatedBanner = ({ title, images }: { title?: string, images?: string[] }) => {
+const AnimatedBanner = ({ title, images, imageAltPrefix = "Logo partenaire" }: { title?: string, images?: string[], imageAltPrefix?: string }) => {
     return (
         <div className='py-[15px] lg:py-[30px] max-h-32 relative overflow-hidden bg-neutral-200 flex flex-row text-black'>
             {/* fade-in effect */}
@@ -17,7 +17,7 @@ const AnimatedBanner = ({ title, images }: { title?: string, images?: string[] }
                                 <div key={imgIndex} className='mx-[25px] md:mx-[50px] w-16 h-16 md:w-20 md:h-20 lg:w-28 lg:h-28 relative'>
                                     <Image
                                         src={src}
-                                        alt={`Banner Image ${imgIndex + 1}`}
+                                        alt={`${imageAltPrefix} ${imgIndex + 1}`}
                                         fill
                                         className='object-contain'
                                     />
