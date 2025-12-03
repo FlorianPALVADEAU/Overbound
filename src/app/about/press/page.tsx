@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Download, Mail, Image as ImageIcon, FileText, Award } from 'lucide-react'
+import { Download, Mail, Image as ImageIcon, FileText, Award, ArrowDownToLine } from 'lucide-react'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
 
@@ -135,12 +135,12 @@ export default function PressPage() {
               return (
                 <Card key={index} className='border-border/50'>
                   <CardHeader>
-                    <div className='mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10'>
+                    <div className='mb-3 flex h-12 w-12 items-center justify-between rounded-lg bg-primary/10'>
                       <Icon className='h-6 w-6 text-primary' />
                     </div>
                     <CardTitle>{resource.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className='space-y-4'>
+                  <CardContent className='space-y-4 flex flex-col h-full justify-between'>
                     <p className='text-sm text-muted-foreground'>{resource.description}</p>
                     <ul className='space-y-2 text-sm'>
                       {resource.items.map((item, idx) => (
@@ -150,12 +150,21 @@ export default function PressPage() {
                         </li>
                       ))}
                     </ul>
-                    <Button variant='outline' className='w-full gap-2' asChild>
-                      <Link href={`mailto:presse@overbound-race.com?subject=Demande ${resource.title}`}>
-                        <Download className='h-4 w-4' />
-                        Demander
-                      </Link>
-                    </Button>
+                  <div className='space-y-3'>
+                      <div className='group relative'>
+                        <Button variant='outline' className='w-full border-primary/30 text-foreground opacity-50 cursor-not-allowed' asChild disabled>
+                          {/* <Link href={`mailto:presse@overbound-race.com?subject=Demande ${resource.title}`}> */}
+                          <Link href={`#`}>
+                            <Download className='h-4 w-4' />
+                            Demander
+                          </Link>
+                      </Button>
+                        <div className='absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10'>
+                          Ça arrive bientôt !
+                          <div className='absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-foreground' />
+                        </div>
+                      </div>
+                  </div>
                   </CardContent>
                 </Card>
               )
