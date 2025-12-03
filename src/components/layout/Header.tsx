@@ -122,6 +122,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
     // { name: 'Équipe', href: '/about/team', icon: CalendarIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
+    { name: 'Presse', href: '/about/press', icon: MapPinIcon },
+    { name: 'Crédits', href: '/about/credits', icon: MapPinIcon },
     { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]
 

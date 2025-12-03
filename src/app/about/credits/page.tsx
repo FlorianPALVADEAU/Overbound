@@ -51,14 +51,14 @@ const partners: ContactType[] = [
 const photographers: ContactType[] = [
   {
     name: 'Lucas LEBRUN',
-    description: 'Photographe sportif & d\'aventure',
+    description: 'Photographe sportif et d\'aventure',
     mail: 'lebrun.lucas.16@gmail.com',
     link: 'https://www.instagram.com/lucaddictif/',
     photo: '/images/credits/lucas-lebrun-photo.jpg',
   },
   {
     name: 'Amaëlle DEPLACE',
-    description: 'Photographe de paysage & d\'émotions',
+    description: 'Photographe de paysage et d\'émotions',
     link: 'https://www.instagram.com/amaelle_dplc/',
     photo: '/images/credits/amaelle-deplace-photo.jpg',
   },
@@ -68,6 +68,12 @@ const photographers: ContactType[] = [
     link: 'https://www.tanguycanton.fr/',
     mail: 'tanguy.canton13@gmail.com',
     photo: '/images/credits/tanguy-canton-photo.jpg',
+  },
+  {
+    name: 'Noa FOULON',
+    description: 'Cadreur et caméraman',
+    link: 'https://www.instagram.com/foulon.noa/',
+    photo: '/images/credits/noa-foulon-photo.jpg',
   },
 ]
 
@@ -268,7 +274,7 @@ export default function CreditsPage() {
                 Nos alliés
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Les marques et organisations qui nous accompagnent dans cette aventure.
+                Les marques, personnes et organisations qui nous accompagnent dans cette aventure.
               </p>
             </div>
 
