@@ -181,30 +181,21 @@ export default function ObstaclesPage() {
               </div>
             </div>
           </div>
-          <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
-            <Image
-              src='/images/decorations/mountain-vector.svg'
-              alt='Décor montagne'
-              width={1600}
-              height={800}
-              className='w-[220%] max-w-none sm:w-[170%] md:w-[140%]'
-              priority
-            />
-          </div>
         </section>
-
+      <section className="h-auto relative w-full bg-white">
+        <Image
+          src='/images/decorations/mountain-vector.svg'
+          alt='Illustration montagne'
+          width={1200}
+          height={600}
+          className='pointer-events-none z-1 relative -top-1 left-0 rotate-180 w-full'
+          priority
+        />
+      </section>
         <section
           id='catalogue'
-          className='relative z-10 mx-auto flex w-screen flex-col gap-10 px-4 pb-16 sm:px-6 lg:px-8 lg:pt-16 !py-40 bg-accent-foreground'
+          className='relative z-10 mx-auto flex w-max-screen flex-col gap-10 px-4 pb-16 sm:px-6 lg:px-8 lg:pt-16 !py-40 bg-accent-foreground'
         >
-          <Image
-            src='/images/decorations/mountain-vector.svg'
-            alt='Illustration montagne'
-            width={1200}
-            height={600}
-            className='pointer-events-none z-1 absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-screen max-w-none -translate-x-1/2'
-            priority
-          />
           <div className='flex-col space-y-6'>
             <Card className='border-none bg-background/80 shadow-xl shadow-primary/10 backdrop-blur'>
               <CardContent className='flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between'>
@@ -328,18 +319,18 @@ export default function ObstaclesPage() {
                 </p>
               </div>
             ) : null}
-
-            <Image
-              src='/images/decorations/mountain-vector.svg'
-              alt='Illustration montagne'
-              width={1200}
-              height={600}
-              className='pointer-events-none absolute bottom-[-1%] left-1/2 w-screen max-w-none -translate-x-1/2'
-              priority
-            />
           </div>
         </section>
-
+      <section className="h-auto relative w-full bg-white">
+        <Image
+          src='/images/decorations/mountain-vector.svg'
+          alt='Illustration montagne'
+          width={1200}
+          height={600}
+          className='pointer-events-none z-1 relative -bottom-1 left-0 w-full'
+          priority
+        />
+      </section>
         <section className='relative z-10 bg-gradient-to-b from-background to-background/40 py-16 sm:py-20'>
           <div className='mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8'>
             <div className='grid gap-8 lg:grid-cols-2 lg:items-center'>
