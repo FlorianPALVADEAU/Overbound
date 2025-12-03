@@ -39,16 +39,6 @@ export default function OurStoryPage() {
             </p>
           </div>
         </div>
-        <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
-          <Image
-            src='/images/decorations/mountain-vector.svg'
-            alt='Décor montagne'
-            width={1600}
-            height={800}
-            className='w-[220%] max-w-none sm:w-[170%] md:w-[140%]'
-            priority
-          />
-        </div>
       </section>
 
       {/* Histoire Section */}
@@ -245,7 +235,7 @@ export default function OurStoryPage() {
           alt='Illustration montagne'
           width={1200}
           height={600}
-          className='z-1 pointer-events-none absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-screen max-w-none -translate-x-1/2'
+          className='z-1 pointer-events-none absolute -top-10 rotate-180 left-0 w-screen'
         />
         <Image
           src="/images/decorations/wall-texture.png"
@@ -317,7 +307,7 @@ export default function OurStoryPage() {
           alt='Illustration montagne'
           width={1200}
           height={600}
-          className='z-1 pointer-events-none absolute bottom-[-1%] left-1/2 w-screen max-w-none -translate-x-1/2'
+          className='z-1 pointer-events-none absolute bottom-[-1%] left-0 w-screen'
         />
       </section>
 

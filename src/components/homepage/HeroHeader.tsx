@@ -33,8 +33,7 @@ export const HeroHeader = () => {
                             Relève le défi ultime.
                         </h1>
                         <p className="text-lg md:text-2xl max-w-2xl mb-6 text-left">
-                            La course à obstacles inspirée des rites tribaux et de l'esprit collectif. Prépare-toi à vivre une
-                            expérience unique.
+                            La première course d'obstacles au monde où tu peux choisir ton propre parcours.
                         </p>
                     </div>
                     <div className="flex flex-col items-start gap-2">
@@ -45,8 +44,9 @@ export const HeroHeader = () => {
                     </div>
                 </div>
             </section>
-            <AnimatedBanner 
+            <AnimatedBanner
                 images={PARTNERS_DATA.map(partner => partner.logo)}
+                imageAltPrefix="Logo partenaire Overbound"
             />
         </>
     );

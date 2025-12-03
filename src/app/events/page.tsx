@@ -297,8 +297,8 @@ export default function EventsPage() {
       <section className='relative isolate overflow-hidden py-20 sm:py-24'>
         <div className='absolute inset-0'>
           <Image
-            src={heroImageSrc}
-            alt='Événements Overbound'
+            src={"/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif"}
+            alt="Un groupe de coureurs en pleine course d'obstacles"
             fill
             sizes='100vw'
             className='object-cover object-center'
@@ -343,15 +343,18 @@ export default function EventsPage() {
         </div>
       </section>
 
-      <div className="relative w-full py-40 bg-white px-4 sm:px-6 xl:px-32">
+      <section className="h-auto relative w-full z-1000 bg-white">
         <Image
           src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}
-          className='pointer-events-none z-1 absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-screen max-w-none -translate-x-1/2'
+          className='pointer-events-none z-1 relative -top-1 left-0 rotate-180 w-full'
           priority
         />
+      </section>
+
+      <div className="relative w-full py-40 bg-white px-4 sm:px-6 xl:px-32">
         <div className='space-y-4 text-center sm:text-left pb-6'>
           <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
             Calendrier Overbound
@@ -606,15 +609,17 @@ export default function EventsPage() {
 
         <NeedHelpChoosingYourFormat />
         <EventlistDisplay />
+      </div>
+      <section className="h-auto relative w-full z-1000 bg-white">
         <Image
           src='/images/decorations/mountain-vector.svg'
           alt='Illustration montagne'
           width={1200}
           height={600}
-          className='pointer-events-none z-1 absolute -bottom-10 lg:bottom-[-1%]  left-1/2 w-screen max-w-none -translate-x-1/2'
+          className='pointer-events-none z-1 relative -bottom-1 left-0 w-full'
           priority
         />
-      </div>
+      </section>
       <ObstaclesOverview />
       <FAQ />
       <AnimatedBanner images={PARTNERS_DATA.map(partner => partner.logo)} />

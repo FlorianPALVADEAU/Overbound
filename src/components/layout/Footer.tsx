@@ -57,7 +57,7 @@ const SOCIAL_LINKS = [
 
 export function Footer() {
   return (
-    <footer className='relative overflow-hidden border-t bg-white text-foreground'>
+    <footer className='relative overflow-hidden border-t bg-brackground text-foreground'>
       <div className='relative flex w-full flex-col gap-12 pt-16 sm:gap-16 sm:pt-24 lg:pt-28'>
         <span className='pointer-events-none absolute right-[-5%] top-0 hidden text-[18vw] font-black uppercase leading-none text-foreground/2 lg:block'>
           Overbound
