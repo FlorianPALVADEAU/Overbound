@@ -19,6 +19,6 @@ export function getEmailAssetsBaseUrl(): string {
 }
 
 export function getLogoUrl(): string {
-  return `${getEmailAssetsBaseUrl()}/images/totem_logo.png`
+  return `${getEmailAssetsBaseUrl()}/images/brand/totem_logo.png`
 }
 

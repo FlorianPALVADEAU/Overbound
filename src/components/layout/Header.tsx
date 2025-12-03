@@ -177,7 +177,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="flex items-between z-10">
             <Link href="/" className="flex items-center space-x-2">
               <Image
-                src="/images/totem_logo_white.png"
+                src="/images/brand/totem_logo_white.png"
                 alt="OverBound Logo"
                 width={64}
                 height={64}

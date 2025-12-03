@@ -57,16 +57,23 @@ const SOCIAL_LINKS = [
 
 export function Footer() {
   return (
-    <footer className='relative overflow-hidden border-t bg-background text-foreground'>
+    <footer className='relative overflow-hidden border-t bg-white text-foreground'>
       <div className='relative flex w-full flex-col gap-12 pt-16 sm:gap-16 sm:pt-24 lg:pt-28'>
         <span className='pointer-events-none absolute right-[-5%] top-0 hidden text-[18vw] font-black uppercase leading-none text-foreground/2 lg:block'>
           Overbound
+          {/* <Image
+            src="/images/brand/LOGO_FULL.webp"
+            alt="OverBound Logo"
+            width={1000}
+            height={100}
+            className="w-screen"
+          /> */}
         </span>
 
         <div className='relative z-10 space-y-4 px-6 text-center sm:text-left sm:px-6 xl:px-32'>
           <Link href="/" className="flex items-center justify-center sm:justify-start">
             <Image
-              src="/images/totem_logo_white.png"
+              src="/images/brand/totem_logo_white.png"
               alt="OverBound Logo"
               width={64}
               height={64}

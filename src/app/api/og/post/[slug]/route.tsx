@@ -19,7 +19,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
     // Fallback to default title
   }
 
-  const logo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'}/images/totem_logo.png`
+  const logo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'}/images/brand/totem_logo.png`
 
   return new ImageResponse(
     <div

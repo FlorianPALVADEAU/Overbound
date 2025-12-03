@@ -22,7 +22,7 @@ export default function TicketEmail({
   return (
     <EmailLayout preview={`Ton billet OverBound — ${eventTitle}`}>
       <Section>
-        <Img src="https://cdn.overbound.app/public/images/LOGO_FULL.webp" alt="OverBound" width="120" />
+        <Img src="https://cdn.overbound.app/public/images/brand/LOGO_FULL.webp" alt="OverBound" width="120" />
         <Text>Salut {participantName},</Text>
         <Text>Merci pour ton inscription à <b>{eventTitle}</b>.</Text>
         <Text>
