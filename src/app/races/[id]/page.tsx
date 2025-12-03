@@ -1015,7 +1015,7 @@ export default function RaceDetailPage() {
                         icon: '👥',
                         title: 'Nouvelles amitiés',
                         description: 'Des liens forts',
-                        photoUrl: '/images/images/a-group-of-friends-celebrating-after-a-race.avif'
+                        photoUrl: '/images/images/a-group-of-friend-celebrating-after-a-race.avif'
                       },
                     ].map((item, index) => (
                       <div
@@ -1025,8 +1025,8 @@ export default function RaceDetailPage() {
                         <Image 
                           src={item.photoUrl} 
                           alt={`photo représentant ${item.title}`}
-                          width={100}
-                          height={100}
+                          width={1000}
+                          height={1000}
                           className='absolute top-0 left-0 w-full h-full rounded-2xl object-center object-cover -z-1 hover:opacit-80'
                         />
                         <div className="text-4xl mb-3 z-1">{item.icon}</div>
