@@ -1,4 +1,17 @@
+import type { Metadata } from 'next';
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: "Conditions Générales d'Utilisation (CGU) | Overbound Race",
+  description: "Conditions générales d'utilisation de la plateforme Overbound Race : création de compte, inscription aux événements, obligations des utilisateurs et responsabilité.",
+  alternates: {
+    canonical: 'https://overbound-race.com/cgu'
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
+};
 
 const lastUpdated = '26/10/2025'
 

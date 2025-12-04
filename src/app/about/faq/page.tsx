@@ -1,7 +1,29 @@
+import type { Metadata } from 'next';
 import { client } from '@/sanity/lib/client'
 import { FAQsQuery } from '@/sanity/lib/queries'
 import FAQPageContent, { FAQDocument } from './FAQPageContent'
 import { faqFallback } from '@/datas/faqFallback'
+
+export const metadata: Metadata = {
+  title: "FAQ - Questions fréquentes sur les courses à obstacles | Overbound Race",
+  description: "Toutes les réponses à vos questions sur les courses à obstacles Overbound : inscriptions, formats, tarifs, équipement requis, et préparation physique.",
+  alternates: {
+    canonical: 'https://overbound-race.com/about/faq'
+  },
+  openGraph: {
+    title: "FAQ - Questions fréquentes | Overbound Race",
+    description: "Tout savoir sur les courses d'obstacles Overbound : formats, inscriptions, préparation.",
+    url: 'https://overbound-race.com/about/faq',
+    siteName: 'Overbound Race',
+    locale: 'fr_FR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "FAQ Overbound Race",
+    description: "Questions fréquentes sur nos courses d'obstacles OCR.",
+  }
+};
 
 export default async function FAQPage() {
   let faqs: FAQDocument[] | null = null

@@ -11,8 +11,8 @@ export function OrganizationStructuredData() {
     "email": "contact@overbound-race.com",
     "sameAs": [
       // Ajoutez vos réseaux sociaux ici
-      // "https://www.facebook.com/overbound",
-      // "https://www.instagram.com/overbound",
+      "https://www.facebook.com/overbound.race/",
+      "https://www.instagram.com/overbound.race/",
       // "https://www.youtube.com/@overbound"
     ],
     "sport": "Obstacle Course Racing"
@@ -109,6 +109,28 @@ export function BreadcrumbStructuredData({ items }: { items: Array<{ name: strin
       "position": index + 1,
       "name": item.name,
       "item": item.url
+    }))
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  )
+}
+
+export function FAQPageStructuredData({ faqs }: { faqs: Array<{ title: string; shortAnswer?: string; answer?: any }> }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((faq) => ({
+      "@type": "Question",
+      "name": faq.title,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.shortAnswer || (faq.answer ? "Voir la réponse complète sur notre site." : "")
+      }
     }))
   }
 

@@ -1,5 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
+
+export const metadata: Metadata = {
+  title: "Conditions Générales de Vente (CGV) - Billetterie | Overbound Race",
+  description: "Conditions de vente Overbound Race : tarifs, paiement, annulation, transfert de dossard, droit de rétractation. Vente de billets pour courses d'obstacles OCR.",
+  alternates: {
+    canonical: 'https://overbound-race.com/cgv'
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
+};
 
 const lastUpdated = '27/11/2024'
 

@@ -1,5 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
+
+export const metadata: Metadata = {
+  title: "Mentions légales - Informations légales | Overbound Race",
+  description: "Mentions légales du site Overbound Race : éditeur, hébergeur, directeur de publication, propriété intellectuelle et crédits.",
+  alternates: {
+    canonical: 'https://overbound-race.com/mentions-legales'
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
+};
 
 const lastUpdated = '27/11/2024'
 
