@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image"
 
 const AnimatedBanner = ({ title, images, imageAltPrefix = "Logo partenaire" }: { title?: string, images?: string[], imageAltPrefix?: string }) => {
