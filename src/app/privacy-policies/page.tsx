@@ -1,4 +1,17 @@
+import type { Metadata } from 'next';
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: "Politique de confidentialité RGPD - Protection des données | Overbound Race",
+  description: "Politique de confidentialité et protection des données personnelles Overbound Race. Conforme RGPD. Droits d'accès, rectification, suppression et portabilité.",
+  alternates: {
+    canonical: 'https://overbound-race.com/privacy-policies'
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
+};
 
 const lastUpdated = '26/10/2025'
 

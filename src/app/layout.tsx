@@ -25,17 +25,19 @@ export const metadata: Metadata = {
     default: "Overbound Race - Course d'obstacles OCR uniques et personnalisables",
     template: "%s | Overbound Race"
   },
-  description: "Première course d'obstacles (OCR) à parcours personnalisables en France. Choisissez votre distance (6-12km ou Ultra Arena) et votre difficulté (Primal, Fury, Ultra Hardcore). Événements en Normandie.",
+  description: "lA Première course d'obstacles au monde à parcours personnalisables. Choisissez votre distance ET votre difficulté. Inédit : Format backyard à obstacles à Paris !",
   keywords: [
     "course obstacles",
     "OCR France",
+    "course a pieds paris",
     "obstacle course race",
-    "course à obstacles normandie",
+    "course à obstacles paris",
     "spartan race alternative",
     "trail running obstacles",
-    "événement sportif normandie",
+    "événement sportif paris",
     "ultra arena",
     "course endurance",
+    "backyard paris",
     "overbound"
   ],
   authors: [{ name: "Overbound Race" }],
@@ -46,11 +48,11 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com',
     siteName: "Overbound Race",
-    title: "Overbound Race - Course d'obstacles OCR personnalisables",
-    description: "Première course d'obstacles (OCR) à parcours personnalisables en France. Distances de 6km à ultra marathon avec obstacles techniques.",
+    title: "Overbound Race - Course d'obstacles OCR à parcours personnalisables",
+    description: "Première course d'obstacles au monde à parcours personnalisables. Événements OCR en Île-de-France. Grand choix de distances et de niveaux de difficulté.",
     images: [
       {
-        url: "/images/hero_header_poster.jpg",
+        url: "/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif",
         width: 1200,
         height: 630,
         alt: "Overbound Race - Course d'obstacles",
@@ -59,9 +61,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Overbound Race - Course d'obstacles OCR personnalisables",
-    description: "Première course d'obstacles à parcours personnalisables en France. Événements OCR en Normandie.",
-    images: ["/images/hero_header_poster.jpg"],
+    title: "Overbound Race - Course d'obstacles OCR à parcours personnalisables",
+    description: "Première course d'obstacles au monde à parcours personnalisables. Événements OCR en Île-de-France. Grand choix de distances et de niveaux de difficulté.",
+    images: ["/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"],
   },
   robots: {
     index: true,

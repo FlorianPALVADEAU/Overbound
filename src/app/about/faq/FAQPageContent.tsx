@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import RichText from '@/components/RichText'
 import type { PortableTextBlock } from '@portabletext/types'
+import { FAQPageStructuredData } from '@/components/seo/StructuredData'
 
 export type FAQDocument = {
   _id: string
@@ -167,6 +168,7 @@ const FAQPageContent = ({ faqs }: FAQPageContentProps) => {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7f9f6] to-white">
+      <FAQPageStructuredData faqs={faqs} />
       <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
       {searchTerm.trim() ? <SearchResults searchTerm={searchTerm} results={searchResults} /> : null}

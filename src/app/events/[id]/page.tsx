@@ -23,6 +23,7 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { getStartingPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import RecentBlogTeaser from '@/components/blog/RecentBlogTeaser'
+import { EventStructuredData } from '@/components/seo/StructuredData'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -160,8 +161,19 @@ export default function EventDetailPage() {
   })
   const formattedTime = new Date(event.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
+  // Prepare event data for structured data (adapt field names)
+  const eventForStructuredData = {
+    ...event,
+    name: event.title,
+    tickets: tickets.map(ticket => ({
+      ...ticket,
+      price: getStartingPrice(ticket, eventPriceTiers) / 100 // Convert cents to euros
+    }))
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground max-w-7xl mx-auto">
+      <EventStructuredData event={eventForStructuredData} />
       <section className="relative isolate overflow-hidden py-16">
         <div className="absolute inset-0">
           {event.image_url ? (
