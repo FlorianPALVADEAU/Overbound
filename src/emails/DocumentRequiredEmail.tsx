@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Preview, Section, Text, Link } from '@react-email/components'
+import { Preview, Section, Text, Link, Button } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 
 interface DocumentRequiredEmailProps {
@@ -38,12 +38,13 @@ export function DocumentRequiredEmail({
           </Text>
         ) : null}
 
-        <Text style={styles.paragraph}>
-          <Link href={uploadUrl} style={styles.link}>
-            Déposer mon document maintenant
-          </Link>
-        </Text>
-
+        {/* CTA Button */}
+        <Section style={styles.buttonContainer}>
+          <Button href={uploadUrl} style={styles.button}>
+            Je dépose mon document dès maintenant
+          </Button>
+        </Section>
+        
         <Text style={styles.paragraph}>
           Dès réception, notre équipe vérifiera ton document. Tu seras informé·e par email lorsqu’il sera validé.
         </Text>
@@ -64,6 +65,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'Arial, sans-serif',
     color: '#111827',
     padding: '24px 0',
+  },
+  buttonContainer: {
+    textAlign: 'center',
+    margin: '32px 0',
+  },
+  button: {
+    backgroundColor: 'red',
+    color: '#ffffff',
+    padding: '14px 28px',
+    borderRadius: '6px',
+    textDecoration: 'none',
+    fontWeight: 600,
+    fontSize: '16px',
+    display: 'inline-block',
   },
   container: {
     backgroundColor: '#ffffff',

@@ -218,6 +218,8 @@ async function sendPostEventThankYouBatch(admin: ReturnType<typeof supabaseAdmin
         to: row.email,
         participantName,
         eventTitle: row.event.title,
+        eventId: row.event.id,
+        userId: row.user_id,
         feedbackUrl,
         nextEventUrl: EVENTS_URL,
         photosUrl: null,

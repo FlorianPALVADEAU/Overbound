@@ -109,6 +109,8 @@ export async function sendPostEventThankYouEmail(params: {
   to: string
   participantName: string
   eventTitle: string
+  eventId: string
+  userId: string
   photosUrl?: string | null
   feedbackUrl: string
   nextEventUrl: string
