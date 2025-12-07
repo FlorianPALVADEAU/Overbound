@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Preview, Section, Text, Link } from '@react-email/components'
+import { Preview, Section, Text, Link, Img, Button, Hr } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface VolunteerAssignmentEmailProps {
   // older callers provide volunteerName & role
@@ -41,44 +42,128 @@ export default function VolunteerAssignmentEmail({
 
   return (
     <EmailLayout preview={preview}>
+      {/* Hero Image */}
+      <Img
+        src={`${getEmailAssetsBaseUrl()}/images/images/speaker-talking-in-microphone.avif`}
+        alt="Mission bénévole"
+        width="400"
+        style={styles.heroImage}
+      />
+
       <Section style={styles.section}>
-        <Text style={styles.heading}>Bonjour {displayName},</Text>
-        <Text style={styles.paragraph}>
-          {role ? <>Tu as été assigné·e à la mission <b>{role}</b> pour {eventTitle}.</> : <>Ta mission pour <b>{eventTitle}</b> est confirmée.</>}
+        {/* Success Icon */}
+        <Section style={styles.iconContainer}>
+          <div style={styles.successIcon}>
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 64 64"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="32" cy="32" r="32" fill="#fff7ed" />
+              <path
+                d="M20 32l8 8 16-16"
+                stroke="#f97316"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </Section>
+
+        {/* Main Heading */}
+        <Text style={styles.heading}>
+          Mission confirmée !
         </Text>
+
+        {/* Greeting */}
         <Text style={styles.paragraph}>
-          <b>Date</b> : {date}<br />
-          <b>Lieu</b> : {location}
+          {displayName ? `Salut ${displayName}, t` : 'T'}a mission pour <strong>{eventTitle}</strong> est confirmée.
+          {role && <> Tu as été assigné·e à la mission <strong>{role}</strong>.</>}
         </Text>
 
-        {shiftStart || shiftEnd ? (
-          <Text style={styles.paragraph}>
-            <strong>Horaires :</strong> {shiftStart} → {shiftEnd}
-          </Text>
-        ) : null}
+        {/* Separator */}
+        <Hr style={styles.separator} />
 
-        {/* details URL not provided in some callers; keep CTA to check-in tool if available */}
+        {/* Mission Details Card */}
+        <Section style={styles.card}>
+          <Text style={styles.cardTitle}>Détails de ta mission</Text>
+          <table style={styles.cardTable}>
+            <tbody>
+              <tr>
+                <td style={styles.cardLabel}>📅 Date</td>
+                <td style={styles.cardValue}>{date}</td>
+              </tr>
+              <tr>
+                <td style={styles.cardLabel}>📍 Lieu</td>
+                <td style={styles.cardValue}>{location}</td>
+              </tr>
+              {(shiftStart || shiftEnd) && (
+                <tr>
+                  <td style={styles.cardLabel}>⏰ Horaires</td>
+                  <td style={styles.cardValue}>{shiftStart} → {shiftEnd}</td>
+                </tr>
+              )}
+              {role && (
+                <tr>
+                  <td style={styles.cardLabel}>🎯 Rôle</td>
+                  <td style={styles.cardValue}>{role}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </Section>
 
-        {arrivalInstructions ? (
-          <Text style={styles.paragraph}>{arrivalInstructions}</Text>
-        ) : null}
+        {/* Arrival Instructions */}
+        {arrivalInstructions && (
+          <>
+            <Section style={styles.highlightCard}>
+              <Text style={styles.highlightTitle}>📋 Instructions d'arrivée</Text>
+              <Text style={styles.highlightText}>{arrivalInstructions}</Text>
+            </Section>
+          </>
+        )}
 
-        {(contactEmail || contactPhone) ? (
-          <Text style={styles.paragraph}>
-            <strong>Contact responsable :</strong><br />
-            {contactEmail ? <span>Email : <Link href={`mailto:${contactEmail}`} style={styles.link}>{contactEmail}</Link><br /></span> : null}
-            {contactPhone ? <span>Tél : {contactPhone}</span> : null}
-          </Text>
-        ) : null}
+        {/* Contact Information */}
+        {(contactEmail || contactPhone) && (
+          <>
+            <Hr style={styles.separator} />
+            <Section style={styles.contactCard}>
+              <Text style={styles.contactTitle}>📞 Contact responsable</Text>
+              {contactEmail && (
+                <Text style={styles.contactItem}>
+                  <strong>Email :</strong>{' '}
+                  <Link href={`mailto:${contactEmail}`} style={styles.link}>
+                    {contactEmail}
+                  </Link>
+                </Text>
+              )}
+              {contactPhone && (
+                <Text style={styles.contactItem}>
+                  <strong>Téléphone :</strong> {contactPhone}
+                </Text>
+              )}
+            </Section>
+          </>
+        )}
 
-        {checkinUrl ? (
-          <Text style={styles.paragraph}>
-            <Link href={checkinUrl} style={styles.button}>Accéder à l’outil de check-in</Link>
-          </Text>
-        ) : null}
+        {/* Separator */}
+        <Hr style={styles.separator} />
 
-        <Text style={styles.secondary}>
-          Pense à venir 15 minutes avant le début du shift pour le briefing. Merci pour ton engagement auprès de la communauté OverBound !
+        {/* CTA Button */}
+        {checkinUrl && (
+          <Section style={styles.buttonContainer}>
+            <Button href={checkinUrl} style={styles.button}>
+              Accéder à l'outil de check-in
+            </Button>
+          </Section>
+        )}
+
+        {/* Footer Message */}
+        <Text style={styles.footerText}>
+          💡 <strong>Rappel important :</strong> Pense à venir 15 minutes avant le début du shift pour le briefing. Merci pour ton engagement auprès de la communauté OverBound !
         </Text>
       </Section>
     </EmailLayout>
@@ -86,34 +171,144 @@ export default function VolunteerAssignmentEmail({
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  heroImage: {
+    width: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    maxHeight: '300px',
+    objectFit: 'cover',
+    // 20% from the top to focus on speaker
+    objectPosition: '0% 17%',
+    borderRadius: '8px',
+    marginBottom: '24px',
+  },
   section: {
-    lineHeight: 1.6,
+    lineHeight: '1.6',
+  },
+  iconContainer: {
+    textAlign: 'center',
+    marginBottom: '24px',
+  },
+  successIcon: {
+    display: 'inline-block',
   },
   heading: {
-    fontSize: '22px',
+    fontSize: '28px',
     fontWeight: 700,
-    marginBottom: '12px',
+    margin: '0 0 16px 0',
+    textAlign: 'center',
+    color: '#111827',
   },
   paragraph: {
+    fontSize: '15px',
+    lineHeight: '1.6',
+    margin: '0 0 24px 0',
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  separator: {
+    border: 'none',
+    borderTop: '1px solid #e5e7eb',
+    margin: '32px 0',
+    width: '100%',
+    height: '1px',
+    borderRadius: '1000px',
+  },
+  card: {
+    backgroundColor: '#f9fafb',
+    borderRadius: '8px',
+    padding: '24px',
+    marginBottom: '24px',
+  },
+  cardTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    margin: '0 0 16px 0',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  cardTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+  },
+  cardLabel: {
+    fontSize: '14px',
+    color: '#6b7280',
+    paddingBottom: '12px',
+    verticalAlign: 'top',
+    width: '40%',
+  },
+  cardValue: {
+    fontSize: '15px',
+    color: '#111827',
+    fontWeight: 600,
+    paddingBottom: '12px',
+    verticalAlign: 'top',
+  },
+  highlightCard: {
+    backgroundColor: '#fff7ed',
+    border: '2px solid #f97316',
+    borderRadius: '8px',
+    padding: '20px',
+    marginBottom: '24px',
+  },
+  highlightTitle: {
     fontSize: '16px',
-    marginBottom: '12px',
+    fontWeight: 600,
+    margin: '0 0 12px 0',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  highlightText: {
+    fontSize: '14px',
+    color: '#6b7280',
+    margin: '0',
+    lineHeight: '1.6',
+    textAlign: 'center',
+  },
+  contactCard: {
+    backgroundColor: '#f9fafb',
+    borderRadius: '8px',
+    padding: '20px',
+    marginBottom: '24px',
+  },
+  contactTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    margin: '0 0 12px 0',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  contactItem: {
+    fontSize: '14px',
+    color: '#6b7280',
+    margin: '0 0 8px 0',
+    textAlign: 'center',
+    lineHeight: '1.6',
+  },
+  buttonContainer: {
+    textAlign: 'center',
+    margin: '24px 0',
+  },
+  button: {
+    backgroundColor: '#f97316',
+    color: '#ffffff',
+    padding: '14px 28px',
+    borderRadius: '6px',
+    textDecoration: 'none',
+    fontWeight: 600,
+    fontSize: '16px',
+    display: 'inline-block',
   },
   link: {
     color: '#2563eb',
     textDecoration: 'underline',
   },
-  button: {
-    display: 'inline-block',
-    backgroundColor: '#f97316',
-    color: '#fff',
-    padding: '10px 16px',
-    borderRadius: '9999px',
-    textDecoration: 'none',
-    fontWeight: 600,
-  },
-  secondary: {
+  footerText: {
     fontSize: '14px',
     color: '#6b7280',
-    marginTop: '16px',
+    textAlign: 'center',
+    margin: '0',
+    lineHeight: '1.6',
   },
 }
