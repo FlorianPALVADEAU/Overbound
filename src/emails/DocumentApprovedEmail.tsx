@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Preview, Section, Text } from '@react-email/components'
+import { Preview, Section, Text, Img } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface DocumentApprovedEmailProps {
   participantName?: string | null
@@ -10,6 +11,14 @@ interface DocumentApprovedEmailProps {
 export function DocumentApprovedEmail({ participantName, eventTitle }: DocumentApprovedEmailProps) {
   return (
     <EmailLayout preview={`Document validé pour ${eventTitle}`}>
+      {/* Hero Image */}
+      <Img
+        src={`${getEmailAssetsBaseUrl()}/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif`}
+        alt="Document validé"
+        width="400"
+        style={styles.heroImage}
+      />
+
       <Section style={styles.section}>
         <Text style={styles.heading}>{participantName ? `Bonne nouvelle ${participantName} !` : 'Bonne nouvelle !'}</Text>
         <Text style={styles.paragraph}>
@@ -27,33 +36,43 @@ export function DocumentApprovedEmail({ participantName, eventTitle }: DocumentA
 export default DocumentApprovedEmail
 
 const styles: Record<string, React.CSSProperties> = {
-  body: {
-    backgroundColor: '#f3f4f6',
-    fontFamily: 'Arial, sans-serif',
-    color: '#111827',
-    padding: '24px 0',
-  },
-  container: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '32px',
-    maxWidth: '560px',
+  heroImage: {
+    width: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    maxHeight: '300px',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    borderRadius: '8px',
+    marginBottom: '24px',
   },
   section: {
     lineHeight: '1.6',
   },
+  iconContainer: {
+    textAlign: 'center',
+    marginBottom: '24px',
+  },
+  successIcon: {
+    display: 'inline-block',
+  },
   heading: {
-    fontSize: '24px',
+    fontSize: '28px',
     fontWeight: 700,
     marginBottom: '16px',
+    textAlign: 'center',
+    color: '#111827',
   },
   paragraph: {
-    fontSize: '16px',
+    fontSize: '15px',
     marginBottom: '12px',
+    textAlign: 'center',
+    color: '#6b7280',
   },
   secondary: {
     marginTop: '20px',
     fontSize: '14px',
     color: '#6b7280',
+    textAlign: 'center',
   },
 }

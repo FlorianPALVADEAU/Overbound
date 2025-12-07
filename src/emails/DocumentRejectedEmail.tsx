@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Preview, Section, Text, Link } from '@react-email/components'
+import { Preview, Section, Text, Link, Img, Button } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface DocumentRejectedEmailProps {
   participantName?: string | null
@@ -12,6 +13,14 @@ interface DocumentRejectedEmailProps {
 export function DocumentRejectedEmail({ participantName, eventTitle, uploadUrl, reason }: DocumentRejectedEmailProps) {
   return (
     <EmailLayout preview={`Document non validé pour ${eventTitle}`}>
+      {/* Hero Image */}
+      <Img
+        src={`${getEmailAssetsBaseUrl()}/images/images/young-man-ramping-under-barbed-wires-with-overbound-headband.avif`}
+        alt="Document à mettre à jour"
+        width="400"
+        style={styles.heroImage}
+      />
+
       <Section style={styles.section}>
         <Text style={styles.heading}>Bonjour {participantName || ''}</Text>
 
@@ -30,11 +39,12 @@ export function DocumentRejectedEmail({ participantName, eventTitle, uploadUrl, 
           Merci de déposer un nouveau document conforme en utilisant le lien suivant&nbsp;:
         </Text>
 
-        <Text style={styles.paragraph}>
-          <Link href={uploadUrl} style={styles.link}>
+        {/* CTA Button */}
+        <Section style={styles.buttonContainer}>
+          <Button href={uploadUrl} style={styles.button}>
             Mettre à jour mon document
-          </Link>
-        </Text>
+          </Button>
+        </Section>
 
         <Text style={styles.secondary}>
           Nous restons disponibles si tu as des questions. Ce document est indispensable pour participer à l’événement.
@@ -47,20 +57,55 @@ export function DocumentRejectedEmail({ participantName, eventTitle, uploadUrl, 
 export default DocumentRejectedEmail
 
 const styles: Record<string, React.CSSProperties> = {
+  heroImage: {
+    width: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    maxHeight: '300px',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    borderRadius: '8px',
+    marginBottom: '24px',
+  },
+  buttonContainer: {
+    textAlign: 'center',
+    margin: '32px 0',
+  },
+  button: {
+    backgroundColor: 'red',
+    color: '#ffffff',
+    padding: '14px 28px',
+    borderRadius: '6px',
+    textDecoration: 'none',
+    fontWeight: 600,
+    fontSize: '16px',
+    display: 'inline-block',
+  },
   section: {
     lineHeight: 1.6,
   },
+  iconContainer: {
+    textAlign: 'center',
+    marginBottom: '24px',
+  },
+  alertIcon: {
+    display: 'inline-block',
+  },
   heading: {
-    fontSize: '24px',
+    fontSize: '28px',
     fontWeight: 700,
     marginBottom: '16px',
+    textAlign: 'center',
+    color: '#111827',
   },
   paragraph: {
-    fontSize: '16px',
+    fontSize: '15px',
     marginBottom: '12px',
+    textAlign: 'center',
+    color: '#6b7280',
   },
   link: {
-    color: '#0f172a',
+    color: '#2563eb',
     textDecoration: 'underline',
     fontWeight: 600,
   },
@@ -76,5 +121,6 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '20px',
     fontSize: '14px',
     color: '#6b7280',
+    textAlign: 'center',
   },
 }
