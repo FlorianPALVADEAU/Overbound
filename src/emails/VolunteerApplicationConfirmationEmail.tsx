@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Preview, Section, Text, Link } from '@react-email/components'
+import { Preview, Section, Text, Link, Img, Button, Hr } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface VolunteerEventSnapshot {
   id: string | null
@@ -29,33 +30,110 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
 
   return (
     <EmailLayout preview="On a bien reçu ta candidature bénévole">
-      <Section style={styles.section}>
-        <Text style={styles.heading}>{applicantName ? `Merci ${applicantName} !` : 'Merci pour ta candidature !'}</Text>
-        <Text style={styles.paragraph}>On a bien reçu ta candidature pour rejoindre la tribu bénévole Overbound. Notre équipe revient vers toi sous 48&nbsp;heures avec les prochaines étapes.</Text>
-      </Section>
+      {/* Hero Image */}
+      <Img
+        src={`${getEmailAssetsBaseUrl()}/images/images/two-young-girls-climbing-a-wall-while-holding-each-others-hands.avif`}
+        alt="Candidature bénévole reçue"
+        width="400"
+        style={styles.heroImage}
+      />
 
-      {event ? (
-        <Section style={styles.sectionHighlight}>
-          <Text style={styles.highlightTitle}>{event.title ?? 'Événement Overbound'}</Text>
-          {formattedEventDate ? <Text style={styles.highlightMeta}><strong>Date :</strong> {formattedEventDate}</Text> : null}
-          {event.location ? <Text style={styles.highlightMeta}><strong>Lieu :</strong> {event.location}</Text> : null}
+      <Section style={styles.section}>
+        {/* Success Icon */}
+        <Section style={styles.iconContainer}>
+          <div style={styles.successIcon}>
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 64 64"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="32" cy="32" r="32" fill="#fff7ed" />
+              <path
+                d="M20 32l8 8 16-16"
+                stroke="#f97316"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
         </Section>
-      ) : null}
 
-      <Section style={styles.section}>
-        <Text style={styles.subheading}>Ta mission proposée</Text>
-        <Text style={styles.paragraph}><strong>{preferredMission}</strong></Text>
-        <Text style={styles.paragraph}>Nous allons vérifier les besoins exacts sur l’événement et te confirmer le créneau idéal au plus vite.</Text>
-      </Section>
+        {/* Main Heading */}
+        <Text style={styles.heading}>
+          {applicantName ? `Merci ${applicantName} !` : 'Merci pour ta candidature !'}
+        </Text>
 
-      <Section style={styles.section}>
-        <Text style={styles.paragraph}>Tu as un empêchement ou un complément d’information à partager ? Réponds directement à cet email, on t’accompagne jusqu’au jour J.</Text>
-        <Text style={styles.paragraphSmall}>Candidature reçue le {submittedAt}</Text>
-      </Section>
+        {/* Greeting */}
+        <Text style={styles.paragraph}>
+          On a bien reçu ta candidature pour rejoindre la <strong>tribu bénévole Overbound</strong>. Notre équipe revient vers toi sous 48 heures avec les prochaines étapes.
+        </Text>
 
-      <Section style={styles.section}>
-        <Text style={styles.secondary}>En attendant, découvre les coulisses de la tribu et les témoignages des bénévoles la saison dernière.</Text>
-        <Text style={styles.paragraph}><Link href="https://www.instagram.com/overbound_race" style={styles.link}>Voir la tribu sur Instagram</Link></Text>
+        {/* Separator */}
+        <Hr style={styles.separator} />
+
+        {/* Event Details */}
+        {event && (
+          <Section style={styles.highlightCard}>
+            <Text style={styles.highlightTitle}>
+              {event.title ?? 'Événement Overbound'}
+            </Text>
+            {formattedEventDate && (
+              <Text style={styles.highlightMeta}>
+                📅 <strong>Date :</strong> {formattedEventDate}
+              </Text>
+            )}
+            {event.location && (
+              <Text style={styles.highlightMeta}>
+                📍 <strong>Lieu :</strong> {event.location}
+              </Text>
+            )}
+          </Section>
+        )}
+
+        {/* Mission Card */}
+        <Section style={styles.card}>
+          <Text style={styles.cardTitle}>Ta mission proposée</Text>
+          <Text style={styles.missionText}>{preferredMission}</Text>
+          <Text style={styles.cardNote}>
+            Nous allons vérifier les besoins exacts sur l'événement et te confirmer le créneau idéal au plus vite.
+          </Text>
+        </Section>
+
+        {/* Info Section */}
+        <Section style={styles.infoCard}>
+          <Text style={styles.infoText}>
+            💬 Tu as un empêchement ou un complément d'information à partager ? Réponds directement à cet email, on t'accompagne jusqu'au jour J.
+          </Text>
+          <Text style={styles.submittedText}>
+            Candidature reçue le {submittedAt}
+          </Text>
+        </Section>
+
+        {/* Separator */}
+        <Hr style={styles.separator} />
+
+        {/* Social CTA */}
+        <Text style={styles.socialTitle}>
+          Rejoins la tribu dès maintenant
+        </Text>
+        <Text style={styles.socialText}>
+          En attendant, découvre les coulisses de la tribu et les témoignages des bénévoles de la saison dernière.
+        </Text>
+
+        {/* CTA Button */}
+        <Section style={styles.buttonContainer}>
+          <Button href="https://www.instagram.com/overbound_race" style={styles.button}>
+            Voir la tribu sur Instagram
+          </Button>
+        </Section>
+
+        {/* Footer Message */}
+        <Text style={styles.footerText}>
+          À très bientôt dans la communauté OverBound !
+        </Text>
       </Section>
     </EmailLayout>
   )
@@ -64,73 +142,147 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
 export default VolunteerApplicationConfirmationEmail
 
 const styles: Record<string, React.CSSProperties> = {
-  body: {
-    backgroundColor: '#0f172a',
-    padding: '24px',
-    fontFamily: 'Arial, sans-serif',
-  },
-  container: {
-    backgroundColor: '#111827',
-    borderRadius: '16px',
-    padding: '32px',
-    maxWidth: '600px',
-    color: '#e5e7eb',
-    border: '1px solid #1f2937',
+  heroImage: {
+    width: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    maxHeight: '300px',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    borderRadius: '8px',
+    marginBottom: '24px',
   },
   section: {
-    marginBottom: '20px',
+    lineHeight: '1.6',
   },
-  sectionHighlight: {
+  iconContainer: {
+    textAlign: 'center',
     marginBottom: '24px',
-    backgroundColor: '#f97316',
-    borderRadius: '12px',
-    padding: '16px',
-    color: '#111827',
+  },
+  successIcon: {
+    display: 'inline-block',
   },
   heading: {
-    fontSize: '26px',
+    fontSize: '28px',
     fontWeight: 700,
-    marginBottom: '12px',
-    color: '#f9fafb',
-  },
-  subheading: {
-    fontSize: '18px',
-    fontWeight: 600,
-    marginBottom: '8px',
-    color: '#f9fafb',
+    margin: '0 0 16px 0',
+    textAlign: 'center',
+    color: '#111827',
   },
   paragraph: {
     fontSize: '15px',
-    lineHeight: 1.6,
-    color: '#e5e7eb',
+    lineHeight: '1.6',
+    margin: '0 0 24px 0',
+    color: '#6b7280',
+    textAlign: 'center',
   },
-  paragraphSmall: {
-    fontSize: '13px',
-    color: '#9ca3af',
-    marginTop: '12px',
+  separator: {
+    border: 'none',
+    borderTop: '1px solid #e5e7eb',
+    margin: '32px 0',
+    width: '100%',
+    height: '1px',
+    borderRadius: '1000px',
+  },
+  highlightCard: {
+    backgroundColor: '#fff7ed',
+    border: '2px solid #f97316',
+    borderRadius: '8px',
+    padding: '24px',
+    marginBottom: '24px',
+    textAlign: 'center',
   },
   highlightTitle: {
-    fontSize: '18px',
+    fontSize: '20px',
     fontWeight: 700,
-    marginBottom: '6px',
+    margin: '0 0 12px 0',
+    color: '#111827',
   },
   highlightMeta: {
     fontSize: '14px',
+    color: '#6b7280',
+    margin: '0 0 6px 0',
+    lineHeight: '1.6',
+  },
+  card: {
+    backgroundColor: '#f9fafb',
+    borderRadius: '8px',
+    padding: '24px',
+    marginBottom: '24px',
+  },
+  cardTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    margin: '0 0 12px 0',
     color: '#111827',
+    textAlign: 'center',
   },
-  secondary: {
+  missionText: {
+    fontSize: '16px',
+    fontWeight: 700,
+    color: '#f97316',
+    margin: '0 0 16px 0',
+    textAlign: 'center',
+  },
+  cardNote: {
     fontSize: '14px',
-    color: '#9ca3af',
-    lineHeight: 1.5,
+    color: '#6b7280',
+    margin: '0',
+    textAlign: 'center',
+    lineHeight: '1.6',
   },
-  link: {
-    color: '#f8fafc',
-    backgroundColor: '#2563eb',
-    padding: '10px 18px',
-    borderRadius: '9999px',
+  infoCard: {
+    backgroundColor: '#f9fafb',
+    borderRadius: '8px',
+    padding: '20px',
+    marginBottom: '24px',
+  },
+  infoText: {
+    fontSize: '14px',
+    color: '#6b7280',
+    margin: '0 0 12px 0',
+    textAlign: 'center',
+    lineHeight: '1.6',
+  },
+  submittedText: {
+    fontSize: '13px',
+    color: '#9ca3af',
+    margin: '0',
+    textAlign: 'center',
+  },
+  socialTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    margin: '0 0 12px 0',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  socialText: {
+    fontSize: '14px',
+    color: '#6b7280',
+    margin: '0 0 24px 0',
+    textAlign: 'center',
+    lineHeight: '1.6',
+  },
+  buttonContainer: {
+    textAlign: 'center',
+    margin: '24px 0',
+  },
+  button: {
+    backgroundColor: '#f97316',
+    color: '#ffffff',
+    padding: '14px 28px',
+    borderRadius: '6px',
     textDecoration: 'none',
     fontWeight: 600,
+    fontSize: '16px',
     display: 'inline-block',
-    marginTop: '8px',
+  },
+  footerText: {
+    fontSize: '14px',
+    color: '#6b7280',
+    textAlign: 'center',
+    margin: '0',
+    lineHeight: '1.6',
   },
 }

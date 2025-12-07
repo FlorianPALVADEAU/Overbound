@@ -985,7 +985,7 @@ export default function RaceDetailPage() {
                         icon: '💪',
                         title: 'Progression mesurable',
                         description: 'Vois ton évolution',
-                        photoUrl: '/images/images/a-big-tire-is falling-upside-down-thanks-to-a-middle-aged-man.avif'
+                        photoUrl: '/images/images/a-big-tire-is-falling-upside-down-thanks-to-a-middle-aged-man.avif'
                       },
                       {
                         icon: '🎯',

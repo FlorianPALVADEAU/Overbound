@@ -275,7 +275,7 @@ const handlePost = async (request: NextRequest) => {
           fullName,
           headlineEvent: {
             id: 'evt_headline',
-            title: 'Check-in OverBound Lyon',
+            title: 'OverBound Lyon',
             date: baseDate.toISOString(),
             location: 'Lyon — Parc de Gerland',
             checkinWindow: '07:00 → 09:30',
@@ -311,7 +311,7 @@ const handlePost = async (request: NextRequest) => {
           shiftEnd: '11:30',
           arrivalInstructions: 'Rendez-vous à la tente bénévoles pour récupérer ton badge et ton t-shirt.',
           contactEmail: 'orga@overbound.com',
-          contactPhone: '+33 6 12 34 56 78',
+          contactPhone: '+33 6 XX XX XX XX',
           checkinUrl: `${SITE_URL}/admin/checkin?event=demo`,
         })
         return 'Brief bénévole envoyé.'

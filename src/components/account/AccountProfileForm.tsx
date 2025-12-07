@@ -240,7 +240,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             id="account-phone"
             name="phone"
             type="tel"
-            placeholder="+33 6 12 34 56 78"
+            placeholder="+33 6 XX XX XX XX"
             value={formValues.phone}
             onChange={handleChange('phone')}
             autoComplete="tel"
