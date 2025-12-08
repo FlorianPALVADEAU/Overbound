@@ -158,6 +158,7 @@ const handlePost = async (request: NextRequest) => {
         await sendNewEventAnnouncementEmail({
           to: user.email!,
           fullName,
+          userId: user.id,
           eventTitle: 'Night Run Paris',
           eventDate: 'Vendredi 12 septembre',
           eventLocation: 'Paris — Bois de Boulogne',
@@ -170,6 +171,7 @@ const handlePost = async (request: NextRequest) => {
         await sendPriceChangeReminderEmail({
           to: user.email!,
           fullName,
+          userId: user.id,
           eventTitle: 'OverBound Marseille',
           eventDate: 'Samedi 4 octobre',
           deadlineLabel: 'demain à 23h59',
@@ -183,12 +185,13 @@ const handlePost = async (request: NextRequest) => {
         await sendPromoCampaignEmail({
           to: user.email!,
           fullName,
+          userId: user.id,
           title: 'Offre spéciale OverBound',
           message: 'Bénéficie de -20% sur ta prochaine inscription avec le code ci-dessous.',
           ctaLabel: 'Voir les événements',
           ctaUrl: EVENTS_URL,
           promoCode: 'OB-WELCOME20',
-          promoDetails: 'Valable jusqu’au 30 juin sur tous les formats OverBound.',
+          promoDetails: "Valable jusqu'au 30 juin sur tous les formats OverBound.",
         })
         return 'Email promo envoyé.'
       },
@@ -196,6 +199,7 @@ const handlePost = async (request: NextRequest) => {
         await sendInactiveUserEmail({
           to: user.email!,
           fullName,
+          userId: user.id,
           lastEventTitle: 'OverBound Grenoble 2024',
           eventsUrl: EVENTS_URL,
           highlightEventTitle: 'Ultra Arena',

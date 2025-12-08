@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 export default function RatePage() {
   const searchParams = useSearchParams()
@@ -83,18 +84,18 @@ export default function RatePage() {
               Ton retour nous aide à améliorer continuellement l'expérience Overbound pour tous nos participants.
             </p>
             <div className="space-y-3">
-              <a
+              <Link
                 href="/events"
                 className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Découvrir les prochains événements
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/"
                 className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Retour à l'accueil
-              </a>
+              </Link>
             </div>
           </div>
         )}

@@ -124,20 +124,13 @@ export function EmailLayout({
             </Text>
             {unsubscribeUrl ? (
               <Text style={styles.small}>
-                Vous recevez cet email car vous êtes inscrit·e sur Overbound. Pour arrêter de recevoir nos emails marketing, {' '}
-                <a href={unsubscribeUrl} style={styles.link}>
-                  cliquez ici pour vous désinscrire
+                Vous recevez cet email car vous êtes inscrit·e sur Overbound. Pour arrêter de recevoir nos emails marketing, cliquez{' '}
+                <a href={unsubscribeUrl} style={styles.smallLink}>
+                  ici
                 </a>
                 .
               </Text>
             ) : null}
-            <Text style={styles.small}>
-              Pour toute question: {supportEmail ? (
-                <a href={`mailto:${supportEmail}`} style={styles.link}>{supportEmail}</a>
-              ) : (
-                <a href="mailto:contact@overbound-race.com" style={styles.link}>contact@overbound-race.com</a>
-              )}
-            </Text>
           </Section>
         </Container>
       </Body>
@@ -212,11 +205,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   small: {
     fontSize: '12px',
-    color: '#6b7280',
+    color: '#acacac',
     marginBottom: '8px',
   },
   link: {
     color: '#2563eb',
     textDecoration: 'none',
+  },
+  smallLink: {
+    color: '#9b9b9b',
   },
 }

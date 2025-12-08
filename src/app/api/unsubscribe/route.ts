@@ -46,20 +46,90 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update marketing_opt_in to false
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        marketing_opt_in: false,
-      })
-      .eq('id', payload.userId)
+    // If listId is provided, unsubscribe from that specific list
+    if (payload.listId) {
+      // Update list_subscriptions
+      const { error: listError } = await supabase
+        .from('list_subscriptions')
+        .update({
+          subscribed: false,
+          unsubscribed_at: new Date().toISOString(),
+        })
+        .eq('user_id', payload.userId)
+        .eq('list_id', payload.listId)
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to unsubscribe' },
-        { status: 500 }
-      )
+      if (listError) {
+        console.error('Error updating list subscription:', listError)
+        return NextResponse.json(
+          { error: 'Failed to unsubscribe from list' },
+          { status: 500 }
+        )
+      }
+
+      // Get list details to map to notification preference
+      const { data: list } = await supabase
+        .from('distribution_lists')
+        .select('slug')
+        .eq('id', payload.listId)
+        .single()
+
+      // Map list slug to notification preference field
+      const listMapping: Record<string, string> = {
+        'events-announcements': 'events_announcements',
+        'price-alerts': 'price_alerts',
+        'news-blog': 'news_blog',
+        'volunteers-opportunities': 'volunteers_opportunities',
+        'partner-offers': 'partner_offers',
+      }
+
+      if (list && listMapping[list.slug]) {
+        // Update corresponding notification preference
+        await supabase
+          .from('notification_preferences')
+          .update({ [listMapping[list.slug]]: false })
+          .eq('user_id', payload.userId)
+      }
+    } else {
+      // No specific list - unsubscribe from ALL marketing lists
+      const { error: allListsError } = await supabase
+        .from('list_subscriptions')
+        .update({
+          subscribed: false,
+          unsubscribed_at: new Date().toISOString(),
+        })
+        .eq('user_id', payload.userId)
+
+      if (allListsError) {
+        console.error('Error updating all list subscriptions:', allListsError)
+      }
+
+      // Update ALL notification preferences to false
+      await supabase
+        .from('notification_preferences')
+        .update({
+          events_announcements: false,
+          price_alerts: false,
+          news_blog: false,
+          volunteers_opportunities: false,
+          partner_offers: false,
+        })
+        .eq('user_id', payload.userId)
+
+      // Also update marketing_opt_in to false for backward compatibility
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          marketing_opt_in: false,
+        })
+        .eq('id', payload.userId)
+
+      if (updateError) {
+        console.error('Error updating profile:', updateError)
+        return NextResponse.json(
+          { error: 'Failed to unsubscribe' },
+          { status: 500 }
+        )
+      }
     }
 
     // Log the unsubscribe event
@@ -130,20 +200,90 @@ export async function GET(request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient()
 
-    // Update marketing_opt_in to false
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        marketing_opt_in: false,
-      })
-      .eq('id', payload.userId)
+    // If listId is provided, unsubscribe from that specific list
+    if (payload.listId) {
+      // Update list_subscriptions
+      const { error: listError } = await supabase
+        .from('list_subscriptions')
+        .update({
+          subscribed: false,
+          unsubscribed_at: new Date().toISOString(),
+        })
+        .eq('user_id', payload.userId)
+        .eq('list_id', payload.listId)
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to unsubscribe' },
-        { status: 500 }
-      )
+      if (listError) {
+        console.error('Error updating list subscription:', listError)
+        return NextResponse.json(
+          { error: 'Failed to unsubscribe from list' },
+          { status: 500 }
+        )
+      }
+
+      // Get list details to map to notification preference
+      const { data: list } = await supabase
+        .from('distribution_lists')
+        .select('slug')
+        .eq('id', payload.listId)
+        .single()
+
+      // Map list slug to notification preference field
+      const listMapping: Record<string, string> = {
+        'events-announcements': 'events_announcements',
+        'price-alerts': 'price_alerts',
+        'news-blog': 'news_blog',
+        'volunteers-opportunities': 'volunteers_opportunities',
+        'partner-offers': 'partner_offers',
+      }
+
+      if (list && listMapping[list.slug]) {
+        // Update corresponding notification preference
+        await supabase
+          .from('notification_preferences')
+          .update({ [listMapping[list.slug]]: false })
+          .eq('user_id', payload.userId)
+      }
+    } else {
+      // No specific list - unsubscribe from ALL marketing lists
+      const { error: allListsError } = await supabase
+        .from('list_subscriptions')
+        .update({
+          subscribed: false,
+          unsubscribed_at: new Date().toISOString(),
+        })
+        .eq('user_id', payload.userId)
+
+      if (allListsError) {
+        console.error('Error updating all list subscriptions:', allListsError)
+      }
+
+      // Update ALL notification preferences to false
+      await supabase
+        .from('notification_preferences')
+        .update({
+          events_announcements: false,
+          price_alerts: false,
+          news_blog: false,
+          volunteers_opportunities: false,
+          partner_offers: false,
+        })
+        .eq('user_id', payload.userId)
+
+      // Also update marketing_opt_in to false for backward compatibility
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          marketing_opt_in: false,
+        })
+        .eq('id', payload.userId)
+
+      if (updateError) {
+        console.error('Error updating profile:', updateError)
+        return NextResponse.json(
+          { error: 'Failed to unsubscribe' },
+          { status: 500 }
+        )
+      }
     }
 
     // Log the unsubscribe event
