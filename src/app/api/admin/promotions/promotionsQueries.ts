@@ -3,9 +3,10 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import axiosClient from '../../axiosClient'
-import type { Promotion } from '@/types/Promotion'
+import type { Promotion, PromotionType, PopupConfig } from '@/types/Promotion'
 
 export interface AdminPromotionPayload {
+  type: PromotionType
   title: string
   description: string
   link_url: string
@@ -13,6 +14,7 @@ export interface AdminPromotionPayload {
   starts_at: string
   ends_at: string
   is_active: boolean
+  popup_config: PopupConfig | null
 }
 
 interface PromotionsResponse {

@@ -14,7 +14,10 @@ export function PromotionsBanner() {
   const { data: promotions = [], isLoading, isError } = usePromotions()
   const [activeIndex, setActiveIndex] = useState(0)
 
-  const items = useMemo(() => promotions, [promotions])
+  // Filter only banner promotions
+  const items = useMemo(() => {
+    return promotions.filter((promo) => promo.type === 'banner')
+  }, [promotions])
   const hasMultiple = items.length > 1
 
   useEffect(() => {

@@ -32,31 +32,43 @@ export async function POST(request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient()
 
-    // Verify user exists and email matches
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, full_name')
-      .eq('id', payload.userId)
-      .single()
+    // Verify user exists if userId is provided
+    let profile = null
+    if (payload.userId) {
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('id', payload.userId)
+        .single()
 
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      if (profileError || !data) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        )
+      }
+      profile = data
     }
 
     // If listId is provided, unsubscribe from that specific list
     if (payload.listId) {
-      // Update list_subscriptions
-      const { error: listError } = await supabase
+      // Update list_subscriptions - search by user_id OR email
+      let query = supabase
         .from('list_subscriptions')
         .update({
           subscribed: false,
           unsubscribed_at: new Date().toISOString(),
         })
-        .eq('user_id', payload.userId)
         .eq('list_id', payload.listId)
+
+      // Filter by user_id if exists, otherwise by email
+      if (payload.userId) {
+        query = query.eq('user_id', payload.userId)
+      } else {
+        query = query.eq('email', payload.email)
+      }
+
+      const { error: listError } = await query
 
       if (listError) {
         console.error('Error updating list subscription:', listError)
@@ -91,73 +103,87 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // No specific list - unsubscribe from ALL marketing lists
-      const { error: allListsError } = await supabase
+      let allListsQuery = supabase
         .from('list_subscriptions')
         .update({
           subscribed: false,
           unsubscribed_at: new Date().toISOString(),
         })
-        .eq('user_id', payload.userId)
+
+      // Filter by user_id if exists, otherwise by email
+      if (payload.userId) {
+        allListsQuery = allListsQuery.eq('user_id', payload.userId)
+      } else {
+        allListsQuery = allListsQuery.eq('email', payload.email)
+      }
+
+      const { error: allListsError } = await allListsQuery
 
       if (allListsError) {
         console.error('Error updating all list subscriptions:', allListsError)
       }
 
-      // Update ALL notification preferences to false
-      await supabase
-        .from('notification_preferences')
-        .update({
-          events_announcements: false,
-          price_alerts: false,
-          news_blog: false,
-          volunteers_opportunities: false,
-          partner_offers: false,
-        })
-        .eq('user_id', payload.userId)
+      // Update notification preferences only for authenticated users
+      if (payload.userId) {
+        await supabase
+          .from('notification_preferences')
+          .update({
+            events_announcements: false,
+            price_alerts: false,
+            news_blog: false,
+            volunteers_opportunities: false,
+            partner_offers: false,
+          })
+          .eq('user_id', payload.userId)
 
-      // Also update marketing_opt_in to false for backward compatibility
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          marketing_opt_in: false,
-        })
-        .eq('id', payload.userId)
+        // Also update marketing_opt_in to false for backward compatibility
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            marketing_opt_in: false,
+          })
+          .eq('id', payload.userId)
 
-      if (updateError) {
-        console.error('Error updating profile:', updateError)
-        return NextResponse.json(
-          { error: 'Failed to unsubscribe' },
-          { status: 500 }
-        )
+        if (updateError) {
+          console.error('Error updating profile:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to unsubscribe' },
+            { status: 500 }
+          )
+        }
       }
     }
 
-    // Log the unsubscribe event
-    const { error: logError } = await supabase.from('email_logs').insert({
-      user_id: payload.userId,
-      email: payload.email,
-      email_type: 'unsubscribe',
-      context: {
-        action: 'unsubscribe',
-        listId: payload.listId,
-        timestamp: new Date().toISOString(),
-      },
-      sent_at: new Date().toISOString(),
-    })
+    // Log the unsubscribe event (only if we have a user_id)
+    if (payload.userId) {
+      const { error: logError } = await supabase.from('email_logs').insert({
+        user_id: payload.userId,
+        email: payload.email,
+        email_type: 'unsubscribe',
+        context: {
+          action: 'unsubscribe',
+          listId: payload.listId,
+          timestamp: new Date().toISOString(),
+        },
+        sent_at: new Date().toISOString(),
+      })
 
-    if (logError) {
-      console.error('Error logging unsubscribe:', logError)
-      // Don't fail the request if logging fails
+      if (logError) {
+        console.error('Error logging unsubscribe:', logError)
+        // Don't fail the request if logging fails
+      }
     }
 
     return NextResponse.json(
       {
         success: true,
         message: 'Successfully unsubscribed from marketing emails',
-        user: {
-          id: profile.id,
-          name: profile.full_name,
-        },
+        ...(profile && {
+          user: {
+            id: profile.id,
+            name: profile.full_name,
+          },
+        }),
       },
       { status: 200 }
     )
@@ -202,15 +228,23 @@ export async function GET(request: NextRequest) {
 
     // If listId is provided, unsubscribe from that specific list
     if (payload.listId) {
-      // Update list_subscriptions
-      const { error: listError } = await supabase
+      // Update list_subscriptions - search by user_id OR email
+      let query = supabase
         .from('list_subscriptions')
         .update({
           subscribed: false,
           unsubscribed_at: new Date().toISOString(),
         })
-        .eq('user_id', payload.userId)
         .eq('list_id', payload.listId)
+
+      // Filter by user_id if exists, otherwise by email
+      if (payload.userId) {
+        query = query.eq('user_id', payload.userId)
+      } else {
+        query = query.eq('email', payload.email)
+      }
+
+      const { error: listError } = await query
 
       if (listError) {
         console.error('Error updating list subscription:', listError)
@@ -245,59 +279,71 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // No specific list - unsubscribe from ALL marketing lists
-      const { error: allListsError } = await supabase
+      let allListsQuery = supabase
         .from('list_subscriptions')
         .update({
           subscribed: false,
           unsubscribed_at: new Date().toISOString(),
         })
-        .eq('user_id', payload.userId)
+
+      // Filter by user_id if exists, otherwise by email
+      if (payload.userId) {
+        allListsQuery = allListsQuery.eq('user_id', payload.userId)
+      } else {
+        allListsQuery = allListsQuery.eq('email', payload.email)
+      }
+
+      const { error: allListsError } = await allListsQuery
 
       if (allListsError) {
         console.error('Error updating all list subscriptions:', allListsError)
       }
 
-      // Update ALL notification preferences to false
-      await supabase
-        .from('notification_preferences')
-        .update({
-          events_announcements: false,
-          price_alerts: false,
-          news_blog: false,
-          volunteers_opportunities: false,
-          partner_offers: false,
-        })
-        .eq('user_id', payload.userId)
+      // Update notification preferences only for authenticated users
+      if (payload.userId) {
+        await supabase
+          .from('notification_preferences')
+          .update({
+            events_announcements: false,
+            price_alerts: false,
+            news_blog: false,
+            volunteers_opportunities: false,
+            partner_offers: false,
+          })
+          .eq('user_id', payload.userId)
 
-      // Also update marketing_opt_in to false for backward compatibility
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          marketing_opt_in: false,
-        })
-        .eq('id', payload.userId)
+        // Also update marketing_opt_in to false for backward compatibility
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            marketing_opt_in: false,
+          })
+          .eq('id', payload.userId)
 
-      if (updateError) {
-        console.error('Error updating profile:', updateError)
-        return NextResponse.json(
-          { error: 'Failed to unsubscribe' },
-          { status: 500 }
-        )
+        if (updateError) {
+          console.error('Error updating profile:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to unsubscribe' },
+            { status: 500 }
+          )
+        }
       }
     }
 
-    // Log the unsubscribe event
-    await supabase.from('email_logs').insert({
-      user_id: payload.userId,
-      email: payload.email,
-      email_type: 'unsubscribe',
-      context: {
-        action: 'unsubscribe_one_click',
-        listId: payload.listId,
-        timestamp: new Date().toISOString(),
-      },
-      sent_at: new Date().toISOString(),
-    })
+    // Log the unsubscribe event (only if we have a user_id)
+    if (payload.userId) {
+      await supabase.from('email_logs').insert({
+        user_id: payload.userId,
+        email: payload.email,
+        email_type: 'unsubscribe',
+        context: {
+          action: 'unsubscribe_one_click',
+          listId: payload.listId,
+          timestamp: new Date().toISOString(),
+        },
+        sent_at: new Date().toISOString(),
+      })
+    }
 
     // Redirect to success page
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'

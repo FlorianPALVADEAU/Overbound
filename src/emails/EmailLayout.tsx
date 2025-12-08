@@ -42,9 +42,9 @@ export function EmailLayout({
                 <tbody>
                   <tr>
                     <td style={styles.socialIcon}>
-                      <a href="https://facebook.com/overbound" style={styles.socialLink}>
+                      <a href="https://facebook.com/overbound.race" style={styles.socialLink}>
                         <img
-                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTggMmgtM2E1IDUgMCAwIDAtNSA1djNIN3Y0aDN2OGg0di04aDNsMS00aC00VjdhMSAxIDAgMCAxIDEtMWgzeiIvPjwvc3ZnPg=="
+                          src="/images/decorations/facebook-icon.png"
                           alt="Facebook"
                           width="20"
                           height="20"
@@ -52,19 +52,9 @@ export function EmailLayout({
                       </a>
                     </td>
                     <td style={styles.socialIcon}>
-                      <a href="https://twitter.com/overbound" style={styles.socialLink}>
-                        <img  
-                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIgNHMtLjcgMi4xLTIgMy40YzEuNiAxMC0xMC43IDIwLjQtMTggMTMuOCA3LjctMSAxMC00IDEyLTcuM2MtMS01LjUtMi41LTcuMy02LTguNXYtMmMzLjYgMS40IDYgNiA3IDcgNS00LjUgNi0xMS4yIDctMTIuMXoiLz48L3N2Zz4="
-                          alt="Twitter"
-                          width="20"
-                          height="20"
-                        />
-                      </a>
-                    </td>
-                    <td style={styles.socialIcon}>
-                      <a href="https://instagram.com/overbound" style={styles.socialLink}>
+                      <a href="https://instagram.com/overbound.race" style={styles.socialLink}>
                         <img
-                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHJ4PSI1IiByeT0iNSIvPjxwYXRoIGQ9Ik0xNiAxMS4zN0ExIDEgMCAxIDEgMTYgMTAuNiAxIDEgMCAwIDEgMTYgMTEuMzd6Ii8+PHBhdGggZD0iTTIxIDRoLTNhNSA1IDAgMCAwLTUgNXYzSDd2NGgzdjhoNHYtOGgzbDEtNGgtNFY3YTEgMSAwIDAgMSAxLTFoM3oiLz48L3N2Zz4="
+                          src="/images/decorations/instagram-icon.png"
                           alt="Instagram"
                           width="20"
                           height="20"
@@ -72,9 +62,19 @@ export function EmailLayout({
                       </a>
                     </td>
                     <td style={styles.socialIcon}>
-                      <a href="https://youtube.com/@overbound" style={styles.socialLink}>
+                      <a href="https://tiktok.com/overbound.race" style={styles.socialLink}>
                         <img
-                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjIuNTQgNi40MnMtLjIyLTEuNTctLjktMi4yNmMtLjg1LS45LTEuOC0uOS0yLjI0LS45NS0zLjEzLS4yMy03LjgyLS4yMy03LjgyLS4yM2gtLjA0cy00LjY5IDAtNy44Mi4yM2MtLjQ0LjA1LTEuMzkuMDUtMi4yNC45NS0uNjguNjktLjkgMi4yNi0uOSAyLjI2UzAgOC4yIDAgMTAuMDF2MS42OWMwIDEuODEuNTQgMy42LjU0IDMuNnMuMjIgMS41Ny45IDIuMjZjLjg1LjkgMS45Ni44NyAyLjQ2Ljk3IDEuNzguMTcgNy42LjIzIDcuNi4yM3M0LjctLjAxIDcuODMtLjI0Yy40NC0uMDUgMS4zOS0uMDUgMi4yNC0uOTUuNjgtLjY5LjktMi4yNi45LTIuMjZTMjQgMTMuNSAyNCAxMS43di0xLjY5YzAtMS44MS0uNTQtMy42LS41NC0zLjZ6TTkuNTQgMTUuNTNWNy42M2w3LjUgMy45NS03LjUgMy45NXoiLz48L3N2Zz4="
+                          src="/images/decorations/tiktok-icon.png"
+                          alt="TikTok"
+                          width="20"
+                          height="20"
+                        />
+                      </a>
+                    </td>
+                    <td style={styles.socialIcon}>
+                      <a href="https://youtube.com/@overbound.race" style={styles.socialLink}>
+                        <img
+                          src="/images/decorations/youtube-icon.png"
                           alt="YouTube"
                           width="20"
                           height="20"
