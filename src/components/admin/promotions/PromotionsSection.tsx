@@ -29,6 +29,7 @@ interface MessageState {
 type StatusFilter = 'all' | 'running' | 'upcoming' | 'expired' | 'inactive'
 
 const DEFAULT_FORM_VALUES: PromotionFormValues = {
+  type: 'banner',
   title: '',
   description: '',
   link_url: '',
@@ -36,6 +37,7 @@ const DEFAULT_FORM_VALUES: PromotionFormValues = {
   starts_at: '',
   ends_at: '',
   is_active: true,
+  popup_config: null,
 }
 
 const dateToInputValue = (value: string | null | undefined) => {
@@ -60,6 +62,7 @@ function buildFormValues(promotion?: Promotion): PromotionFormValues {
   }
 
   return {
+    type: promotion.type,
     title: promotion.title,
     description: promotion.description,
     link_url: promotion.link_url,
@@ -67,6 +70,7 @@ function buildFormValues(promotion?: Promotion): PromotionFormValues {
     starts_at: dateToInputValue(promotion.starts_at),
     ends_at: dateToInputValue(promotion.ends_at),
     is_active: promotion.is_active,
+    popup_config: promotion.popup_config,
   }
 }
 
@@ -216,9 +220,29 @@ export function PromotionsSection() {
 
   const handleDialogSubmit = async (values: PromotionFormValues) => {
     const trimmedLinkText = values.link_text.trim()
-    if (!values.title || !values.description || !values.link_url || !trimmedLinkText || !values.starts_at || !values.ends_at) {
+
+    // Basic validation
+    if (!values.title || !values.description || !values.link_url || !values.starts_at || !values.ends_at) {
       setMessage({ type: 'error', text: 'Complétez tous les champs obligatoires' })
       return
+    }
+
+    // Banner-specific validation
+    if (values.type === 'banner' && !trimmedLinkText) {
+      setMessage({ type: 'error', text: 'Le texte du lien est requis pour les bannières' })
+      return
+    }
+
+    // Popup-specific validation
+    if (values.type === 'popup') {
+      if (!values.popup_config) {
+        setMessage({ type: 'error', text: 'La configuration du popup est requise' })
+        return
+      }
+      if (!values.popup_config.form_title || !values.popup_config.form_description || !values.popup_config.submit_button_text) {
+        setMessage({ type: 'error', text: 'Complétez tous les champs obligatoires du popup' })
+        return
+      }
     }
 
     const startsAtIso = inputValueToIso(values.starts_at)
@@ -238,6 +262,7 @@ export function PromotionsSection() {
     }
 
     const payload: AdminPromotionPayload = {
+      type: values.type,
       title: values.title,
       description: values.description,
       link_url: values.link_url,
@@ -245,6 +270,7 @@ export function PromotionsSection() {
       starts_at: startsAtIso,
       ends_at: endsAtIso,
       is_active: values.is_active,
+      popup_config: values.popup_config,
     }
 
     setSubmitting(true)
@@ -288,6 +314,15 @@ export function PromotionsSection() {
           <p className="font-medium">{promotion.title}</p>
           <p className="text-sm text-muted-foreground">{promotion.description}</p>
         </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      cell: (promotion) => (
+        <Badge variant={promotion.type === 'popup' ? 'secondary' : 'outline'}>
+          {promotion.type === 'popup' ? 'Popup' : 'Bannière'}
+        </Badge>
       ),
     },
     {

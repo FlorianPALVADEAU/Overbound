@@ -32,6 +32,7 @@ function sanitizePayload(body: any) {
     ? body.link_text.trim()
     : "Découvrir l'offre";
   return {
+    type: body.type || 'banner',
     title: body.title,
     description: body.description,
     link_url: body.link_url,
@@ -39,6 +40,7 @@ function sanitizePayload(body: any) {
     starts_at: body.starts_at,
     ends_at: body.ends_at,
     is_active: body.is_active ?? true,
+    popup_config: body.popup_config || null,
     updated_at: new Date().toISOString(),
   }
 }

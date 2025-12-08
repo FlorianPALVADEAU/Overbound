@@ -4,8 +4,8 @@ import crypto from 'crypto'
  * Unsubscribe token payload
  */
 export interface UnsubscribeTokenPayload {
-  userId: string
-  email: string
+  userId?: string // Optional: for authenticated users only
+  email: string // Always present
   listId?: string // Optional: specific list to unsubscribe from
   timestamp: number
 }
@@ -81,7 +81,6 @@ export function validateUnsubscribeToken(
 
   // Validate payload structure
   if (
-    !payload.userId ||
     !payload.email ||
     !payload.timestamp ||
     typeof payload.timestamp !== 'number'
