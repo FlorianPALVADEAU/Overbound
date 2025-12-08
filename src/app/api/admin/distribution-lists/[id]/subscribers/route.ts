@@ -39,18 +39,10 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Build query for subscriptions with user details
+    // Build query for subscriptions
     let query = supabase
       .from('list_subscriptions')
-      .select(
-        `
-        *,
-        profiles:user_id (
-          id,
-          full_name
-        )
-      `
-      )
+      .select('*')
       .eq('list_id', id)
       .range(offset, offset + limit - 1)
       .order('subscribed_at', { ascending: false })
@@ -84,26 +76,48 @@ export async function GET(
     const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
 
-    // Fetch users in batches
-    const users = []
-    for (const userId of userIds) {
-      const { data: authUser } = await admin.auth.admin.getUserById(userId)
-      if (authUser.user) {
-        users.push(authUser.user)
+    // Fetch users efficiently using listUsers with pagination
+    const emailMap = new Map<string, string>()
+    const userIdsSet = new Set(userIds)
+    const perPage = 1000
+
+    for (let page = 1; ; page++) {
+      const { data } = await admin.auth.admin.listUsers({ page, perPage })
+      const users = data.users || []
+
+      for (const user of users) {
+        if (userIdsSet.has(user.id)) {
+          emailMap.set(user.id, user.email || '')
+        }
+      }
+
+      // Stop if we found all users or reached the end
+      if (users.length < perPage || emailMap.size >= userIds.length) {
+        break
       }
     }
 
-    // Map emails to subscriptions
-    const emailMap = new Map(users.map((u) => [u.id, u.email]))
+    // Fetch full names from profiles table
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', userIds)
 
-    const subscribersWithDetails = subscriptions?.map((sub) => ({
-      ...sub,
-      user: {
-        id: sub.user_id,
-        email: emailMap.get(sub.user_id) || '',
-        full_name: (sub.profiles as any)?.full_name || null,
-      },
-    }))
+    const profilesMap = new Map(profiles?.map((p) => [p.id, p.full_name]) || [])
+
+    const subscribersWithDetails = subscriptions?.map((sub) => {
+      const email = emailMap.get(sub.user_id) || ''
+      const fullName = profilesMap.get(sub.user_id) || null
+
+      return {
+        ...sub,
+        user: {
+          id: sub.user_id,
+          email,
+          full_name: fullName,
+        },
+      }
+    })
 
     // Get total count
     const { count } = await supabase

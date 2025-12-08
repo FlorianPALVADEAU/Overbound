@@ -104,6 +104,49 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 })
     }
 
+    // Sync with list_subscriptions
+    // Map notification preference fields to list slugs
+    const preferenceToListMapping: Record<string, string> = {
+      events_announcements: 'events-announcements',
+      price_alerts: 'price-alerts',
+      news_blog: 'news-blog',
+      volunteers_opportunities: 'volunteers-opportunities',
+      partner_offers: 'partner-offers',
+    }
+
+    // Update list_subscriptions for each changed preference
+    for (const [prefKey, listSlug] of Object.entries(preferenceToListMapping)) {
+      if (prefKey in validatedData) {
+        const isSubscribed = validatedData[prefKey as keyof UpdateNotificationPreferencesData]
+
+        // Get the list ID
+        const { data: list } = await supabase
+          .from('distribution_lists')
+          .select('id')
+          .eq('slug', listSlug)
+          .single()
+
+        if (list) {
+          // Upsert the subscription
+          await supabase
+            .from('list_subscriptions')
+            .upsert(
+              {
+                user_id: user.id,
+                list_id: list.id,
+                subscribed: isSubscribed,
+                subscribed_at: isSubscribed ? new Date().toISOString() : null,
+                unsubscribed_at: !isSubscribed ? new Date().toISOString() : null,
+                source: 'preferences',
+              },
+              {
+                onConflict: 'user_id,list_id',
+              }
+            )
+        }
+      }
+    }
+
     return NextResponse.json(data)
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -63,6 +63,7 @@ export async function sendInactiveUserWinback() {
         await sendInactiveUserEmail({
           to: recipient.email,
           fullName: recipient.fullName,
+          userId: recipient.userId,
           lastEventTitle: lastRegistration?.event?.title ?? null,
           eventsUrl: `${SITE_URL}/events`,
           highlightEventTitle: lastRegistration?.event?.title ?? null,

@@ -344,18 +344,30 @@ export async function sendPromoCampaignEmail(params: {
 export async function sendInactiveUserEmail(params: {
   to: string
   fullName?: string | null
+  userId?: string
   lastEventTitle?: string | null
   eventsUrl: string
   highlightEventTitle?: string | null
   highlightEventUrl?: string | null
 }) {
-  const html = await renderEmail(InactiveUserEmail(params))
+  const { generateUnsubscribeUrl } = await import('@/lib/email/unsubscribe')
+  const unsubscribeUrl = params.userId
+    ? generateUnsubscribeUrl(params.userId, params.to)
+    : undefined
+
+  const html = await renderEmail(InactiveUserEmail({ ...params, unsubscribeUrl }))
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
     to: params.to,
     subject: 'On repart ensemble ? 🏁',
     html,
+    headers: unsubscribeUrl
+      ? {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        }
+      : undefined,
   })
 }
 
