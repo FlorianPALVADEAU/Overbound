@@ -41,7 +41,7 @@ export type TargetPublic =
 export type Currency = 'eur' | 'usd' | 'gbp'
 export type DocumentType =
   | 'sports_license'
-  | 'medical_certificate'
+  | 'pps_certificate'
   | 'insurance'
   | 'identity'
   | 'id_document'

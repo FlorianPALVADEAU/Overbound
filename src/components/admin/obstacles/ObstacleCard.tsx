@@ -24,33 +24,30 @@ function difficultyColor(difficulty: number) {
 export function ObstacleCard({ obstacle, onEdit, onDelete, onPreview, isDeleting }: ObstacleCardProps) {
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0 space-y-3">
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-semibold truncate">{obstacle.name}</h3>
-              <Badge variant="secondary">{obstacle.type}</Badge>
-              <span className={`px-2 py-1 rounded text-xs ${difficultyColor(obstacle.difficulty)}`}>
-                Difficulté {obstacle.difficulty}/10
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-base font-semibold truncate">{obstacle.name}</h3>
+              <Badge variant="secondary" className="text-xs">{obstacle.type}</Badge>
+              <span className={`px-1.5 py-0.5 rounded text-xs ${difficultyColor(obstacle.difficulty)}`}>
+                {obstacle.difficulty}/10
               </span>
             </div>
 
-            {obstacle.description ? (
-              <p className="text-sm text-muted-foreground line-clamp-3">{obstacle.description}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Aucune description fournie
-              </p>
+            {obstacle.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-1">{obstacle.description}</p>
             )}
 
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              {obstacle.image_url && <span>Image disponible</span>}
-              {obstacle.video_url && <span>Vidéo disponible</span>}
-            </div>
+            {(obstacle.image_url || obstacle.video_url) && (
+              <div className="flex gap-2 text-xs text-muted-foreground">
+                {obstacle.image_url && <span>📷</span>}
+                {obstacle.video_url && <span>🎥</span>}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-1">
             {onPreview && (
               <Button variant="outline" size="sm" onClick={() => onPreview(obstacle)}>
                 <Eye className="h-4 w-4" />

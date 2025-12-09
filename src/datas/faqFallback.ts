@@ -70,7 +70,7 @@ export const faqFallback: FAQDocument[] = [
       ...bulletList([
         '1. Sélectionne la date et le format de course qui te correspond.',
         '2. Renseigne les informations participants et ajoute les options (assurance, pack photos).',
-        '3. Upload ton certificat médical ou ton attestation de non contre-indication.',
+        '3. Upload ton certificat PPS ou ton attestation de non contre-indication.',
       ]),
       block(
         'Dès que tout est validé, tu reçois un e-mail de confirmation avec ton QR code d’accès et les informations logistiques pour préparer ton défi.',
@@ -85,10 +85,10 @@ export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-documents-certificate',
     title: 'Quels documents sont obligatoires avant le jour J ?',
-    shortAnswer: 'Un certificat médical récent ou une attestation spécifique selon ton profil.',
+    shortAnswer: 'Un certificat PPS récent ou une attestation spécifique selon ton profil.',
     answer: [
       block(
-        'Pour garantir ta sécurité, nous te demandons un certificat médical daté de moins de 6 mois mentionnant « course à obstacles » ou « pratique du sport en compétition ».',
+        'Pour garantir ta sécurité, nous te demandons un certificat PPS (Parcours Prévention Santé) daté de moins de 6 mois mentionnant « course à obstacles » ou « pratique du sport en compétition ».',
       ),
       block(
         'Si tu es mineur, une autorisation parentale signée est également nécessaire. Les documents sont vérifiés automatiquement via notre application lors du check-in.',
@@ -99,7 +99,7 @@ export const faqFallback: FAQDocument[] = [
     ],
     category: 'documents',
     relatedLinks: [
-      { label: 'Gabarit certificat médical', href: '/documents/certificat.pdf' },
+      { label: 'Gabarit certificat PPS', href: '/documents/certificat.pdf' },
       { label: 'Voir la procédure de validation', href: '/about/faq#documents' },
     ],
   },

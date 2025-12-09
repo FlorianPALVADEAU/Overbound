@@ -224,7 +224,7 @@ const Header = ({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               type="search"
-              placeholder="Rechercher une question (ex. certificat médical, transfert de billet…)"
+              placeholder="Rechercher une question (ex. certificat PPS, transfert de billet…)"
               className="w-full rounded-full border border-gray-200 bg-white px-12 py-3 text-sm text-gray-700 shadow-sm outline-none transition focus:border-[#26AA26] focus:ring-2 focus:ring-[#26AA26]/40"
             />
           </div>

@@ -166,6 +166,80 @@ export async function GET(
 }
 
 /**
+ * DELETE /api/admin/distribution-lists/[id]/subscribers
+ * Remove a subscriber from a distribution list (admin only)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient()
+    const { id: listId } = await params
+
+    // Check if user is authenticated and admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check admin role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Parse request body to get subscription_id
+    const body = await request.json()
+    const { subscription_id }: { subscription_id: string } = body
+
+    if (!subscription_id) {
+      return NextResponse.json(
+        { error: 'subscription_id is required' },
+        { status: 400 }
+      )
+    }
+
+    // Use admin client to delete the subscription
+    const { supabaseAdmin } = await import('@/lib/supabase/server')
+    const admin = supabaseAdmin()
+
+    const { error: deleteError } = await admin
+      .from('list_subscriptions')
+      .delete()
+      .eq('id', subscription_id)
+      .eq('list_id', listId)
+
+    if (deleteError) {
+      console.error('Error deleting subscriber:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to remove subscriber' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      { message: 'Subscriber removed successfully' },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Subscribers DELETE error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * POST /api/admin/distribution-lists/[id]/subscribers
  * Add subscribers to a distribution list (admin only)
  */

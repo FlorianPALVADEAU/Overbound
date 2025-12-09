@@ -31,6 +31,8 @@ export function AdminStats({ stats }: AdminStatsProps) {
     )
   }
 
+  const isFallback = Boolean((stats as any)._fallback)
+
   // Debug: afficher les données reçues
   console.log('Stats reçues:', stats)
 
@@ -145,6 +147,9 @@ export function AdminStats({ stats }: AdminStatsProps) {
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
               Prochain événement
+              {isFallback && (
+                <span className="text-xs font-normal text-muted-foreground">(fallback)</span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>

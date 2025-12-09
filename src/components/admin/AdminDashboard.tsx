@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AdminStats } from '@/components/admin/AdminStats'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
 import { EventsSection } from '@/components/admin/events'
@@ -21,6 +22,40 @@ import { ADMIN_NAV_ITEMS } from '@/components/admin/adminNavItems'
 import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
 import { useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
+import { BarChart3, CreditCard, Database, Mail, NotebookPen, Sparkles } from 'lucide-react'
+
+const externalLinks = [
+  {
+    label: 'Google Analytics',
+    href: 'https://analytics.google.com/',
+    icon: BarChart3,
+    description: 'Trafic, conversions et événements GTM.',
+  },
+  {
+    label: 'Stripe',
+    href: 'https://dashboard.stripe.com/',
+    icon: CreditCard,
+    description: 'Paiements, remboursements et abonnements.',
+  },
+  {
+    label: 'Resend',
+    href: 'https://resend.com/dashboard',
+    icon: Mail,
+    description: 'Logs emailing et délivrabilité.',
+  },
+  {
+    label: 'Supabase',
+    href: 'https://supabase.com/dashboard',
+    icon: Database,
+    description: 'Base de données, stockages et logs API.',
+  },
+  {
+    label: 'Sanity Studio',
+    href: 'https://www.sanity.io/manage',
+    icon: NotebookPen,
+    description: 'CMS, contenus éditoriaux et médias.',
+  },
+]
 
 interface Profile {
   role: 'admin' | 'volunteer'
@@ -86,12 +121,20 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
         <AdminSidebar profileRole={profile.role} fullName={profile.full_name || user.email} />
         <div className="flex-1 overflow-hidden rounded-t-3xl bg-background shadow md:rounded-3xl">
           <div className="flex flex-col gap-4 border-b border-border bg-background/80 px-4 py-4 backdrop-blur md:px-6 lg:px-10">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Bienvenue</p>
-                <h1 className="text-2xl font-semibold lg:text-3xl">
-                  {profile.full_name || user.email}
-                </h1>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  Command Center
+                </div>
+                <div>
+                  <h1 className="text-2xl font-semibold lg:text-3xl">
+                    {profile.full_name || user.email}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Pilote tes opérations et saute vers tes outils clés en un clic.
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">Administrateur</Badge>
@@ -102,6 +145,8 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 </Link>
               </div>
             </div>
+
+            <QuickLinksStrip />
 
             <div className="md:hidden">
               <Select
@@ -133,7 +178,7 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
               className="space-y-6"
             >
               <TabsContent value="overview" className="space-y-6">
-                <AdminStats stats={stats} />
+                <OverviewPanels stats={stats} />
               </TabsContent>
 
               <TabsContent value="events" className="space-y-6">
@@ -187,6 +232,69 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function QuickLinksStrip() {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      {externalLinks.map(({ label, href, icon: Icon }) => (
+        <Button
+          key={label}
+          asChild
+          variant="outline"
+          className="justify-start gap-2 bg-card/60 hover:bg-primary hover:text-primary-foreground"
+        >
+          <Link href={href} target="_blank" rel="noreferrer">
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        </Button>
+      ))}
+    </div>
+  )
+}
+
+function OverviewPanels({ stats }: { stats?: Record<string, unknown> | null }) {
+  return (
+    <div className="space-y-6">
+      <AdminStats stats={stats} />
+      <Card>
+        <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Accès rapide aux outils</CardTitle>
+            <CardDescription>Analyse, paiement, emailing et back-office data en un clic.</CardDescription>
+          </div>
+          <Badge variant="outline" className="w-fit">Raccourcis</Badge>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {externalLinks.map(({ label, href, icon: Icon, description }) => (
+              <Link
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="group rounded-xl border border-border/60 bg-muted/40 p-4 transition hover:-translate-y-[2px] hover:border-primary/60 hover:bg-primary/5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold">{label}</p>
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground group-hover:text-primary">↗</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -21,9 +21,19 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, Search, Download } from 'lucide-react'
+import { Loader2, Search, Download, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface SubscribersDialogProps {
   open: boolean
@@ -40,12 +50,44 @@ export function SubscribersDialog({
     list?.id || ''
   )
   const [searchQuery, setSearchQuery] = useState('')
+  const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (open && list) {
       fetchSubscribers({ subscribedOnly: true, limit: 100 })
     }
   }, [open, list?.id])
+
+  const handleDeleteSubscriber = async () => {
+    if (!subscriberToDelete || !list) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/distribution-lists/${list.id}/subscribers`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscription_id: subscriberToDelete.id,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete subscriber')
+      }
+
+      // Refresh the list
+      await fetchSubscribers({ subscribedOnly: true, limit: 100 })
+      setSubscriberToDelete(null)
+    } catch (error) {
+      console.error('Error deleting subscriber:', error)
+      alert('Erreur lors de la suppression de l\'abonné')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const filteredSubscribers = subscribers.filter((sub) =>
     searchQuery
@@ -121,12 +163,13 @@ export function SubscribersDialog({
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Date d'abonnement</TableHead>
                   <TableHead>Source</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSubscribers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
                       {searchQuery
                         ? 'Aucun résultat trouvé'
                         : 'Aucun abonné pour cette liste'}
@@ -166,6 +209,16 @@ export function SubscribersDialog({
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSubscriberToDelete(sub)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -180,6 +233,34 @@ export function SubscribersDialog({
           </div>
         )}
       </DialogContent>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={!!subscriberToDelete}
+        onOpenChange={(open) => !open && setSubscriberToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet abonné ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir désinscrire{' '}
+              <strong>{subscriberToDelete?.user.email}</strong> de cette liste ?
+              <br />
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSubscriber}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Suppression...' : 'Supprimer'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }

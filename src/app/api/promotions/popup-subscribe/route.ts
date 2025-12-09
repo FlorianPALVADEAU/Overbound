@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
 
 const subscribeSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -104,6 +105,21 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
+    }
+
+    // Envoyer l'email de confirmation (même si déjà abonné, pour confirmer l'action)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+      await sendPopupSubscribeConfirmationEmail({
+        to: email,
+        fullName: fullName,
+        userId: userId,
+        eventsUrl: `${baseUrl}/events`,
+        blogUrl: `${baseUrl}/blog`,
+      })
+    } catch (emailError) {
+      // Log l'erreur mais ne pas faire échouer la requête
+      console.error('Error sending confirmation email:', emailError)
     }
 
     return NextResponse.json(

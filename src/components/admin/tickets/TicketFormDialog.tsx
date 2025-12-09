@@ -45,7 +45,7 @@ interface TicketFormDialogProps {
 }
 
 const DOCUMENT_TYPES = [
-  { value: 'medical_certificate', label: 'Certificat médical' },
+  { value: 'pps_certificate', label: 'Certificat PPS' },
   { value: 'sports_license', label: 'Licence sportive' },
   { value: 'insurance', label: "Attestation d'assurance" },
   { value: 'id_document', label: "Pièce d'identité" },
