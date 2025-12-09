@@ -47,7 +47,7 @@ const paragraphs = {
     'Données d’identification : nom, prénom, date de naissance, nationalité, sexe, photo, identifiant interne.',
     'Coordonnées : adresse postale, adresse email, numéro de téléphone.',
     'Données de compte : identifiant, mots de passe hashés, préférences linguistiques.',
-    'Données d’inscription événementielle : format choisi, numéro de dossard, historique des participations, documents requis (certificat médical, attestation parentale).',
+    'Données d’inscription événementielle : format choisi, numéro de dossard, historique des participations, documents requis (certificat PPS, attestation parentale).',
     'Données financières : informations de paiement traitées par Stripe (quatre derniers chiffres de la carte, token de paiement), factures et historiques de transaction.',
     'Données techniques : logs de connexion, adresse IP, device, navigateur, zones horodatées, cookies, identifiants publicitaires (avec consentement).',
     'Données de performance : chronométrage, classements, statistiques de course, notes et feedbacks.',
@@ -55,7 +55,7 @@ const paragraphs = {
   ],
   finalites: [
     'Gestion des comptes utilisateurs et authentification – Base légale : exécution du contrat (art. 6(1)(b) RGPD).',
-    'Inscription aux événements, gestion des dossards et suivi des obligations réglementaires (certificat médical) – Base légale : exécution du contrat / obligation légale (Code du sport).',
+    'Inscription aux événements, gestion des dossards et suivi des obligations réglementaires (certificat PPS) – Base légale : exécution du contrat / obligation légale (Code du sport).',
     'Gestion de la billetterie, paiement, facturation – Base légale : exécution du contrat et obligation légale (obligation comptable).',
     'Communication d’informations relatives aux événements, newsletters partenaires, offres commerciales – Base légale : consentement explicite ou intérêt légitime (relation clients).',
     'Analyse statistique et amélioration des services (fréquentation, performances, satisfaction) – Base légale : intérêt légitime.',
@@ -72,7 +72,7 @@ const paragraphs = {
   duree: [
     'Compte utilisateur : durée d’activité du compte + 3 ans à compter de la dernière interaction pour relances marketing (intérêt légitime).',
     'Données relatives aux événements (inscriptions, factures) : 10 ans conformément aux obligations comptables et contractuelles.',
-    'Documents médicaux ou autorisations parentales : durée de l’événement + 1 an, puis archivage sécurisé ou suppression.',
+    'Documents PPS ou autorisations parentales : durée de l’événement + 1 an, puis archivage sécurisé ou suppression.',
     'Logs techniques : 12 mois maximum.',
     'Cookies : durée maximale de 13 mois, préférences de consentement conservées 6 mois.',
     'Images et contenus médiatiques : 5 ans, ou suppression anticipée sur demande justifiée.',

@@ -193,11 +193,12 @@ export function ObstaclesSection() {
       {
         key: 'name',
         header: 'Obstacle',
+        className: 'max-w-[300px]',
         cell: (obstacle) => (
-          <div className="flex flex-col gap-1">
-            <span className="font-semibold">{obstacle.name}</span>
+          <div className="flex flex-col gap-1 max-w-[300px]">
+            <span className="font-semibold truncate" title={obstacle.name}>{obstacle.name}</span>
             {obstacle.description ? (
-              <span className="text-xs text-muted-foreground line-clamp-1">
+              <span className="text-xs text-muted-foreground line-clamp-1" title={obstacle.description}>
                 {obstacle.description}
               </span>
             ) : null}
@@ -207,6 +208,7 @@ export function ObstaclesSection() {
       {
         key: 'type',
         header: 'Type',
+        className: 'w-[120px]',
         cell: (obstacle) => (
           <Badge variant="secondary" className="capitalize">
             {obstacle.type}
@@ -216,11 +218,13 @@ export function ObstaclesSection() {
       {
         key: 'difficulty',
         header: 'Difficulté',
+        className: 'w-[100px]',
         cell: (obstacle) => <span>{obstacle.difficulty}/10</span>,
       },
       {
         key: 'media',
         header: 'Médias',
+        className: 'w-[180px]',
         cell: (obstacle) => (
           <div className="flex flex-wrap gap-1.5">
             <Badge variant={obstacle.image_url ? 'default' : 'secondary'}>
@@ -235,6 +239,7 @@ export function ObstaclesSection() {
       {
         key: 'updated',
         header: 'Mise à jour',
+        className: 'w-[140px]',
         cell: (obstacle) => (
           <span className="text-sm text-muted-foreground">{formatDateTime(obstacle.updated_at)}</span>
         ),

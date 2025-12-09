@@ -104,8 +104,8 @@ export function DocumentUpload({
 
   const formatRequiredType = (value: string) => {
     const lookup: Record<string, string> = {
-      medical_certificate: 'Certificat médical',
-      medical_certificate_2025: 'Certificat médical 2025',
+      pps_certificate: 'Certificat PPS',
+      pps_certificate_2025: 'Certificat PPS 2025',
       sports_license: 'Licence sportive',
       insurance_certificate: "Attestation d'assurance",
       parental_authorization: 'Autorisation parentale',
@@ -118,7 +118,7 @@ export function DocumentUpload({
   const allowedTypesText =
     sanitizedRequiredTypes.length > 0
       ? sanitizedRequiredTypes.map(formatRequiredType).join(', ')
-      : 'Certificat médical, licence sportive ou attestation d’assurance'
+      : 'Certificat PPS, licence sportive ou attestation d’assurance'
 
   const beginUpload = async (file: File) => {
     setUploading(true)

@@ -56,7 +56,7 @@ const NextEvents = () => {
 						<div className='w-full xl:w-2/6 flex flex-col gap-6 xl:gap-4 xl:h-full xl:justify-between'>
 							<div className='flex flex-col gap-3 xl:gap-2'>
 								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
-									Le 12 octobre 2025, la première édition d'Overbound prendra vie à Plaisir.
+									Le 12 septembre 2026, la première édition d'Overbound prendra vie à la base de loisirs de SQY.
 								</p>
 								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
 									Un parcours sauvage de 6 & 12 km, sculpté par la nature, où l'eau glacée, la boue et les obstacles inédits mettront à l'épreuve ta force et ton mental.

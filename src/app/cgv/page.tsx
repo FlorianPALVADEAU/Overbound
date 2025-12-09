@@ -153,7 +153,7 @@ export default function CGVPage() {
               </p>
               <p>
                 <strong>Documents requis :</strong> Selon l'événement, des documents peuvent être exigés (certificat
-                médical, attestation de santé, autorisation parentale, licence sportive). Ces documents doivent être
+                PPS, attestation de santé, autorisation parentale, licence sportive). Ces documents doivent être
                 présentés lors du retrait du dossard.
               </p>
             </section>
@@ -291,7 +291,7 @@ export default function CGVPage() {
                 maladie, grossesse) sont étudiées au cas par cas.
               </p>
               <ul>
-                <li>Un certificat médical peut être requis</li>
+                <li>Un certificat PPS peut être requis</li>
                 <li>
                   Les demandes doivent être envoyées avant l'événement à{' '}
                   <Link href={`mailto:${COMPANY_INFO.emails.medical}`} className="text-primary hover:underline">
@@ -306,11 +306,11 @@ export default function CGVPage() {
             <section id="conditions-participation" className="mb-12">
               <h2 className="text-2xl font-bold">11. Conditions de participation</h2>
               <p>
-                <strong>Certificat médical :</strong> Chaque participant doit présenter lors du retrait du dossard :
+                <strong>Certificat PPS :</strong> Chaque participant doit présenter lors du retrait du dossard :
               </p>
               <ul>
                 <li>
-                  Un certificat médical de non contre-indication à la pratique des courses d'endurance ou de fitness
+                  Un certificat PPS de non contre-indication à la pratique des courses d'endurance ou de fitness
                   intense, datant de moins d'un an
                 </li>
                 <li>OU une attestation de santé conforme aux exigences fédérales en vigueur</li>

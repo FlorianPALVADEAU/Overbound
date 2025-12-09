@@ -20,6 +20,7 @@ import VolunteerApplicationEmail from '@/emails/VolunteerApplicationEmail'
 import VolunteerApplicationConfirmationEmail from '@/emails/VolunteerApplicationConfirmationEmail'
 import SupportContactEmail from '@/emails/SupportContactEmail'
 import SupportContactConfirmationEmail from '@/emails/SupportContactConfirmationEmail'
+import PopupSubscribeConfirmationEmail from '@/emails/PopupSubscribeConfirmationEmail'
 import { renderEmail } from '@/lib/email/render'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
@@ -534,6 +535,23 @@ export async function sendVolunteerApplicationConfirmationEmail(params: {
     from: UNFORMAL_FROM,
     to: params.to,
     subject: 'On a bien reçu ta candidature bénévole',
+    html,
+  })
+}
+
+export async function sendPopupSubscribeConfirmationEmail(params: {
+  to: string
+  fullName?: string | null
+  userId?: string
+  eventsUrl: string
+  blogUrl: string
+}) {
+  const html = await renderEmail(PopupSubscribeConfirmationEmail(params))
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    subject: 'Bienvenue dans la communauté Overbound !',
     html,
   })
 }

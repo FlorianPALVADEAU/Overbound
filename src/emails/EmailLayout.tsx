@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Body, Container, Head, Html, Section, Text, Link } from '@react-email/components'
-import { getLogoUrl } from '@/lib/email/config'
+import { getEmailAssetsBaseUrl, getLogoUrl } from '@/lib/email/config'
 interface EmailLayoutProps {
   preview?: string
   children: React.ReactNode
@@ -44,7 +44,7 @@ export function EmailLayout({
                     <td style={styles.socialIcon}>
                       <a href="https://facebook.com/overbound.race" style={styles.socialLink}>
                         <img
-                          src="/images/decorations/facebook-icon.png"
+                          src={`${getEmailAssetsBaseUrl()}/images/decorations/facebook-icon.png`}
                           alt="Facebook"
                           width="20"
                           height="20"
@@ -54,7 +54,7 @@ export function EmailLayout({
                     <td style={styles.socialIcon}>
                       <a href="https://instagram.com/overbound.race" style={styles.socialLink}>
                         <img
-                          src="/images/decorations/instagram-icon.png"
+                          src={`${getEmailAssetsBaseUrl()}/images/decorations/instagram-icon.png`}
                           alt="Instagram"
                           width="20"
                           height="20"
@@ -64,7 +64,7 @@ export function EmailLayout({
                     <td style={styles.socialIcon}>
                       <a href="https://tiktok.com/overbound.race" style={styles.socialLink}>
                         <img
-                          src="/images/decorations/tiktok-icon.png"
+                          src={`${getEmailAssetsBaseUrl()}/images/decorations/tiktok-icon.png`}
                           alt="TikTok"
                           width="20"
                           height="20"
@@ -74,7 +74,7 @@ export function EmailLayout({
                     <td style={styles.socialIcon}>
                       <a href="https://youtube.com/@overbound.race" style={styles.socialLink}>
                         <img
-                          src="/images/decorations/youtube-icon.png"
+                          src={`${getEmailAssetsBaseUrl()}/images/decorations/youtube-icon.png`}
                           alt="YouTube"
                           width="20"
                           height="20"
