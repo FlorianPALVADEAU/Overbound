@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { useQueryClient } from '@tanstack/react-query'
+import { SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -24,6 +26,7 @@ function LoginInner() {
   const supabase = createSupabaseBrowser()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -74,6 +77,9 @@ function LoginInner() {
         setMessage({ type: 'error', text: 'Email ou mot de passe incorrect.' })
         return
       }
+
+      // Invalidate session cache to refresh user data immediately
+      await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY })
 
       setMessage({ type: 'success', text: 'Connexion réussie ! Redirection…' })
       const target = resolveNextPath()

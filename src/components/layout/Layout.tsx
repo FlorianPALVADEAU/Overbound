@@ -1,11 +1,13 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PromotionsBanner } from './PromotionsBanner'
 import { PopupPromotion } from '@/components/promotions/PopupPromotion'
-import { useSession } from '@/app/api/session/sessionQueries'
+import { useSession, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface LayoutProps {
   children: ReactNode
@@ -13,6 +15,21 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { data, isLoading } = useSession()
+  const queryClient = useQueryClient()
+  const supabase = createSupabaseBrowser()
+
+  // Listen to auth state changes and invalidate session cache
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY })
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase, queryClient])
 
   return (
     <div className="flex min-h-screen flex-col">
