@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
-import * as QRCode from 'qrcode'
+import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 
 export const runtime = 'nodejs'
 
@@ -192,8 +192,10 @@ export async function POST(request: NextRequest) {
 
         // Send confirmation email
         try {
-          const qrCodeBase64 = await QRCode.toDataURL(qrToken).then(url => url.split(',')[1])
           const eventDateLabel = new Date(event.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })
+
+          // Generate QR code and upload to Supabase Storage
+          const qrUrl = await generateAndUploadQRCode(qrToken)
 
           await sendTicketEmail({
             to: registration.email,
@@ -202,7 +204,7 @@ export async function POST(request: NextRequest) {
             eventDate: eventDateLabel,
             eventLocation: event.location,
             ticketName: ticket_name || ticket.name,
-            qrUrl: `data:image/png;base64,${qrCodeBase64}`,
+            qrUrl, // Public URL from Supabase Storage
             manageUrl: `${siteUrl}/account/ticket/${registration.id}`
           })
 

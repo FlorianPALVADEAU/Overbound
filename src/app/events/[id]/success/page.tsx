@@ -82,18 +82,32 @@ export default function EventSuccessPage() {
   const { registration } = data
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto max-w-4xl p-6">
-        <div className="mb-8 text-center">
+    <main className="min-h-screen bg-gradient-to-br from-green-50 via-background to-green-50/30 dark:from-green-950/20 dark:via-background dark:to-green-950/10">
+      {/* Confetti animation effect */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-10 left-1/4 h-32 w-32 animate-pulse rounded-full bg-green-200/30 blur-3xl" />
+        <div className="absolute right-1/4 top-20 h-40 w-40 animate-pulse rounded-full bg-yellow-200/20 blur-3xl" />
+        <div className="absolute bottom-20 left-1/3 h-36 w-36 animate-pulse rounded-full bg-orange-200/20 blur-3xl" />
+      </div>
+
+      <div className="container relative mx-auto max-w-4xl p-6">
+        <div className="mb-10 text-center">
           <div className="mb-6 flex justify-center">
-            <div className="rounded-full bg-green-100 p-4">
-              <CheckCircle className="h-16 w-16 text-green-600" />
+            <div className="animate-bounce rounded-full bg-gradient-to-br from-green-100 to-green-200 p-6 shadow-2xl shadow-green-500/20 dark:from-green-900 dark:to-green-800">
+              <CheckCircle className="h-20 w-20 text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <h1 className="mb-4 text-3xl font-bold lg:text-4xl">Inscription confirmée ! 🎉</h1>
-          <p className="text-xl text-muted-foreground">
-            Votre paiement a été traité avec succès. Vous êtes maintenant inscrit à l'événement.
+          <h1 className="mb-4 bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-4xl font-black text-transparent lg:text-6xl">
+            C'EST DANS LA POCHE ! 🎉
+          </h1>
+          <p className="text-xl font-medium text-muted-foreground lg:text-2xl">
+            Tu es officiellement inscrit·e ! <br />
+            <span className="text-primary">Prépare-toi à te dépasser.</span>
           </p>
+          <div className="mt-6 flex justify-center gap-2">
+            <Badge className="bg-green-500 px-4 py-1.5 text-sm font-semibold">Paiement validé</Badge>
+            <Badge variant="outline" className="px-4 py-1.5 text-sm font-semibold">Place confirmée</Badge>
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">

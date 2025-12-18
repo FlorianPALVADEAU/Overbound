@@ -14,6 +14,7 @@ export interface TicketRaceSummary {
   difficulty: number
   target_public: string
   distance_km: number | null
+  is_universal?: boolean
 }
 
 export interface Ticket {

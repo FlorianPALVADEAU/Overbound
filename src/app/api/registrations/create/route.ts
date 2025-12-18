@@ -27,7 +27,29 @@ export async function POST(request: NextRequest) {
       signatureImage = null,
       signatureMetadata = {},
       disclaimer = { read: false, accepted: false },
-    } = await request.json()
+    } = await request.json() as {
+      paymentIntentId: string
+      eventId: string
+      userId: string
+      ticketSelections: Array<{ ticketId: string; quantity: number }>
+      participants: Array<{
+        ticketId: string
+        firstName: string
+        lastName: string
+        email: string
+        birthDate?: string
+        emergencyContactName?: string
+        emergencyContactPhone?: string
+        medicalInfo?: string
+        licenseNumber?: string
+        difficultyLevel?: 'low' | 'mid' | 'hard' | null
+      }>
+      upsells: Array<{ upsellId: string; quantity: number; meta?: Record<string, any> }>
+      promoCode: string | null
+      signatureImage: string | null
+      signatureMetadata: Record<string, any>
+      disclaimer: { read: boolean; accepted: boolean }
+    }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
@@ -209,6 +231,7 @@ export async function POST(request: NextRequest) {
           approval_status: 'pending',
           race_id: ticket.race?.id || null,
           promotional_code_id: promotionalCodeId,
+          difficulty_level: participant.difficultyLevel || null,
         })
         .select()
         .single()
@@ -293,6 +316,18 @@ export async function POST(request: NextRequest) {
         if (upsellError) {
           console.error('Erreur création upsells:', upsellError)
         }
+      }
+    }
+
+    // Increment promotional code usage count
+    if (promotionalCodeId) {
+      const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
+        promo_code_id: promotionalCodeId,
+      })
+
+      if (promoIncrementError) {
+        console.error('Erreur incrémentation code promo:', promoIncrementError)
+        // Non-blocking error: registration is already created, just log it
       }
     }
 

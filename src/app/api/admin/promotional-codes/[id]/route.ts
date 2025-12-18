@@ -51,6 +51,8 @@ function sanitizePayload(body: any) {
     valid_until: body.valid_until,
     usage_limit: body.usage_limit ?? null,
     is_active: body.is_active ?? true,
+    tier_order: body.tier_order ?? null,
+    auto_activate: body.auto_activate ?? false,
     updated_at: new Date().toISOString(),
   }
 }

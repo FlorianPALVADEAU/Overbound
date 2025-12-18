@@ -66,7 +66,13 @@ export default function TicketEmail({
         {/* QR Code Section */}
         <Text style={styles.sectionTitle}>Ton QR code de check-in</Text>
         <Section style={styles.qrContainer}>
-          <Img src={qrUrl} alt="QR Code" width="200" height="200" style={styles.qrCode} />
+          <Img
+            src={qrUrl}
+            alt="QR Code"
+            width="200"
+            height="200"
+            style={styles.qrCode}
+          />
         </Section>
         <Text style={styles.qrText}>
           Garde précieusement ce QR code, il sera scanné lors du check-in le jour de l'événement.

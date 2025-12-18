@@ -55,12 +55,14 @@ import SignaturePad from '@/components/forms/SignaturePad'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
 import type { RegistrationSummary, RegistrationDraft } from '@/store/useRegistrationStore'
+import { FORMAT_LEVELS, type FormatLevelId } from '@/constants/formatLevels'
 
 interface EventTicket extends Ticket {
   race?: Ticket['race'] & {
     type?: string | null
     target_public?: string | null
     description?: string | null
+    is_universal?: boolean
     obstacles?: Array<{
       order_position: number
       is_mandatory: boolean
@@ -155,6 +157,7 @@ type Participant = {
   emergencyContactPhone: string
   medicalInfo: string
   licenseNumber: string
+  difficultyLevel?: 'low' | 'mid' | 'hard' | null
 }
 
 type SelectedUpsellState = Record<string, { quantity: number; meta?: Record<string, any> }>
@@ -266,6 +269,7 @@ export default function MultiStepEventRegistration({
     type: 'error' | 'success'
     text: string
   } | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const initializationKeyRef = useRef<string | null>(null)
 
   const registrationDraft = useRegistrationStore((state) => state.draft)
@@ -402,6 +406,7 @@ export default function MultiStepEventRegistration({
             emergencyContactPhone: '',
             medicalInfo: '',
             licenseNumber: '',
+            difficultyLevel: null,
           }))
         next = [...next, ...newParticipants]
       } else {
@@ -827,6 +832,7 @@ export default function MultiStepEventRegistration({
             email: participant.email,
             firstName: participant.firstName,
             lastName: participant.lastName,
+            difficultyLevel: participant.difficultyLevel || null,
           })),
           upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
             upsellId,
@@ -866,16 +872,23 @@ export default function MultiStepEventRegistration({
   const proceedToNextStep = async () => {
     if (stepIndex === steps.length - 1) return
 
-    if (steps[stepIndex + 1]?.id === 'confirmation') {
-      try {
-        await ensurePaymentIntent()
-      } catch {
-        return
-      }
-    }
+    setIsTransitioning(true)
 
-    setStepIndex((index) => index + 1)
-    setSubmissionMessage(null)
+    try {
+      if (steps[stepIndex + 1]?.id === 'confirmation') {
+        await ensurePaymentIntent()
+      }
+
+      // Simulate smooth transition
+      await new Promise(resolve => setTimeout(resolve, 400))
+
+      setStepIndex((index) => index + 1)
+      setSubmissionMessage(null)
+    } catch (error) {
+      // Error already handled by ensurePaymentIntent
+    } finally {
+      setIsTransitioning(false)
+    }
   }
 
   const goToPreviousStep = () => {
@@ -955,6 +968,7 @@ export default function MultiStepEventRegistration({
         emergencyContactPhone: participant.emergencyContactPhone,
         medicalInfo: participant.medicalInfo,
         licenseNumber: participant.licenseNumber,
+        difficultyLevel: participant.difficultyLevel || null,
       })),
       upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
         upsellId,
@@ -982,11 +996,18 @@ export default function MultiStepEventRegistration({
 
   const isParticipantsStepValid =
     participants.length === totalParticipants &&
-    participants.every((participant) =>
-      participant.firstName.trim() &&
-      participant.lastName.trim() &&
-      participant.email.trim(),
-    )
+    participants.every((participant) => {
+      const ticket = ticketMap[participant.ticketId]
+      const isUniversalRace = ticket?.race?.is_universal ?? true
+      const hasDifficultyIfNeeded = isUniversalRace || participant.difficultyLevel
+
+      return (
+        participant.firstName.trim() &&
+        participant.lastName.trim() &&
+        participant.email.trim() &&
+        hasDifficultyIfNeeded
+      )
+    })
 
   const isConfirmationStepValid = disclaimerRead && disclaimerAccepted && Boolean(signatureImage)
 
@@ -1117,6 +1138,8 @@ export default function MultiStepEventRegistration({
 
       {participants.map((participant, index) => {
         const ticket = ticketMap[participant.ticketId]
+        const isUniversalRace = ticket?.race?.is_universal ?? true
+
         return (
           <Card key={participant.id}>
             <CardHeader>
@@ -1131,6 +1154,47 @@ export default function MultiStepEventRegistration({
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
+              {!isUniversalRace && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor={`${participant.id}-difficulty`} className="flex items-center gap-2">
+                    Niveau de difficulté <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={participant.difficultyLevel || ''}
+                    onValueChange={(value) => handleParticipantChange(participant.id, 'difficultyLevel', value as FormatLevelId)}
+                  >
+                    <SelectTrigger id={`${participant.id}-difficulty`}>
+                      <SelectValue placeholder="Choisissez votre niveau de difficulté" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full bg-green-500" />
+                          <span className="font-medium">{FORMAT_LEVELS.low.name}</span>
+                          <span className="text-xs text-muted-foreground">- Obstacles classiques accessibles</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="mid">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                          <span className="font-medium">{FORMAT_LEVELS.mid.name}</span>
+                          <span className="text-xs text-muted-foreground">- Obstacles exigeants</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="hard">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full bg-red-500" />
+                          <span className="font-medium">{FORMAT_LEVELS.hard.name}</span>
+                          <span className="text-xs text-muted-foreground">- Obstacles extrêmes + lests</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Même parcours, 3 défis différents. Innovation mondiale Overbound.
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor={`${participant.id}-firstName`}>Prénom</Label>
                 <Input
@@ -1565,7 +1629,17 @@ export default function MultiStepEventRegistration({
         </Alert>
       )}
 
-      <Card>
+      <Card className="relative">
+        {/* Loading overlay during transitions */}
+        {isTransitioning && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm rounded-lg">
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="text-sm font-medium text-muted-foreground">Préparation de l'étape suivante...</p>
+            </div>
+          </div>
+        )}
+
         <CardContent className="space-y-6 pt-6">
           <div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1685,6 +1759,10 @@ export default function MultiStepEventRegistration({
                           ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
                           : ticket.final_price_cents
 
+                        const isUniversalRace = ticket?.race?.is_universal ?? true
+                        const difficultyLevel = participant?.difficultyLevel
+                        const difficultyConfig = difficultyLevel ? FORMAT_LEVELS[difficultyLevel] : null
+
                         return (
                           <div key={`${ticketId}-${index}`} className="flex items-center justify-between gap-3">
                             <div className="space-y-0.5">
@@ -1692,6 +1770,13 @@ export default function MultiStepEventRegistration({
                               {participant?.firstName || participant?.lastName ? (
                                 <p className="text-xs text-muted-foreground">{joinName(participant.firstName, participant.lastName)}</p>
                               ) : null}
+                              {!isUniversalRace && difficultyConfig && (
+                                <div className="flex items-center gap-1.5">
+                                  <Badge variant="outline" className={`text-xs ${difficultyConfig.badgeClass}`}>
+                                    {difficultyConfig.name}
+                                  </Badge>
+                                </div>
+                              )}
                               {hasActiveDiscount && activeTier && ticket.final_price_cents && (
                                 <p className="text-xs text-green-600 font-semibold">
                                   -{activeTier.discount_percentage}% ({activeTier.name})

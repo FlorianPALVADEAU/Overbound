@@ -38,7 +38,8 @@ export async function GET(
             difficulty,
             target_public,
             distance_km,
-            description
+            description,
+            is_universal
           )
         ),
         price_tiers:event_price_tiers(*)

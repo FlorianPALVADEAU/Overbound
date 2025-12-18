@@ -15,6 +15,8 @@ export interface AdminPromotionalCodePayload {
   usage_limit?: number | null
   is_active: boolean
   event_ids: string[]
+  tier_order?: number | null
+  auto_activate?: boolean
 }
 
 interface PromotionalCodesResponse {
