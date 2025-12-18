@@ -15,7 +15,7 @@ export const HeroHeader = () => {
                     loop
                     playsInline
                     preload="auto"
-                    poster="/images/hero_header_poster.jpg"
+                    poster="/images/hero_header_poster.avif"
                     className="absolute top-0 left-0 w-full h-full object-cover"
                 >
                     <source src="/videos/hero_header_video.webm" type="video/webm" />

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Pause, Play, Star } from 'lucide-react'
+import { Pause, Play, Star, Volume2, VolumeX } from 'lucide-react'
 import Headings from '../globals/Headings'
 import SubHeadings from '../globals/SubHeadings'
 import { Button } from '../ui/button'
@@ -48,8 +48,11 @@ const shuffleWithSeed = <T,>(array: T[], seed: number): T[] => {
 }
 
 const SocialProof = () => {
-  const [playingVideo, setPlayingVideo] = useState<string | null>(null)
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+  const [isMuted, setIsMuted] = useState(true)
+  const [hoveredVideo, setHoveredVideo] = useState<string | null>(null)
+  const [pausedVideoId, setPausedVideoId] = useState<string | null>(null)
 
   const uniqueTestimonials = useMemo(() => {
     const seen = new Set<string>()
@@ -107,15 +110,44 @@ const SocialProof = () => {
 
   useEffect(() => {
     if (!carouselApi) return
-    const handleSelect = () => setPlayingVideo(null)
+    const handleSelect = () => setHoveredVideo(null)
     carouselApi.on('select', handleSelect)
     return () => {
       carouselApi.off('select', handleSelect)
     }
   }, [carouselApi])
 
-  const toggleVideo = (id: string) => {
-    setPlayingVideo((current) => (current === id ? null : id))
+  const handlePlayClick = (videoId: string, videoElement: HTMLVideoElement | null) => {
+    if (!videoElement) return
+
+    // Restart video from beginning
+    videoElement.currentTime = 0
+
+    // Set this video as active and unmute it
+    setActiveVideoId(videoId)
+    setIsMuted(false)
+    setPausedVideoId(null)
+
+    // Make sure video plays
+    void videoElement.play()
+  }
+
+  const handlePauseClick = (videoId: string, videoElement: HTMLVideoElement | null) => {
+    if (!videoElement) return
+
+    // Pause the video
+    videoElement.pause()
+    setPausedVideoId(videoId)
+  }
+
+  const handleVideoEnded = () => {
+    // When video ends, mute it but let it continue looping
+    setIsMuted(true)
+  }
+
+  const toggleMute = () => {
+    // Only toggle mute for the active video
+    setIsMuted((current) => !current)
   }
 
   const renderStars = (rating: number) =>
@@ -128,69 +160,114 @@ const SocialProof = () => {
       />
     ))
 
-  const renderVideoSlide = (testimonial: TestimonialType) => (
-    <div className="relative flex h-full max-h-[640px] flex-col overflow-hidden rounded-2xl bg-gray-900 shadow-xl">
-      <div
-        className="relative w-full flex-1 min-h-[360px] cursor-pointer overflow-hidden sm:min-h-[400px]"
-        onClick={() => toggleVideo(testimonial.id.toString())}
-      >
-        <video
-          className="absolute inset-0 h-full w-full object-cover"
-          src={testimonial.mediaUrl}
-          loop
-          muted
-          playsInline
-          ref={(video) => {
-            if (!video) return
-            if (playingVideo === testimonial.id.toString()) {
-              void video.play()
-            } else {
-              video.pause()
-            }
-          }}
-        />
-        <div className="absolute inset-0 bg-black/40 transition-all duration-300 hover:bg-black/30" />
-        <Button
-          onClick={(event) => {
-            event.stopPropagation()
-            toggleVideo(testimonial.id.toString())
-          }}
-          className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
-        >
-          {playingVideo === testimonial.id.toString() ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Play className="ml-0.5 h-5 w-5" />
-          )}
-        </Button>
-      </div>
+  const renderVideoSlide = (testimonial: TestimonialType) => {
+    const videoId = testimonial.id.toString()
+    const isHovered = hoveredVideo === videoId
+    let videoRef: HTMLVideoElement | null = null
 
-      <div className="absolute bottom-8 left-1/2 w-[92%] max-w-[600px] -translate-x-1/2 rounded-xl bg-white/95 p-4.5 shadow-xl sm:p-5.5">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-            {renderStars(testimonial.rating)}
-          <span className="text-xs font-medium text-gray-700 sm:text-sm">
-            {testimonial.rating}/5
-          </span>
+    return (
+      <div className="relative flex h-full max-h-[640px] flex-col overflow-hidden rounded-2xl bg-gray-900 shadow-xl">
+        <div
+          className="relative w-full flex-1 min-h-[360px] overflow-hidden sm:min-h-[400px]"
+          onMouseEnter={() => setHoveredVideo(videoId)}
+          onMouseLeave={() => setHoveredVideo(null)}
+        >
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            src={testimonial.mediaUrl}
+            loop
+            muted={activeVideoId === videoId ? isMuted : true}
+            playsInline
+            autoPlay
+            onEnded={activeVideoId === videoId ? handleVideoEnded : undefined}
+            ref={(video) => {
+              videoRef = video
+              if (!video) return
+              // Videos autoplay by default, unless paused
+              if (pausedVideoId !== videoId) {
+                void video.play()
+              }
+            }}
+          />
+          {/* Remove backdrop when video is active */}
+          <div className={`absolute inset-0 transition-all duration-300 ${
+            activeVideoId === videoId
+              ? 'bg-transparent'
+              : 'bg-black/40 hover:bg-black/30'
+          }`} />
+
+          {/* Play/Pause button - only visible on hover */}
+          {isHovered && (
+            <>
+              {activeVideoId === videoId && pausedVideoId !== videoId ? (
+                <Button
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePauseClick(videoId, videoRef)
+                  }}
+                  className="cursor-pointer absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
+                >
+                  <Pause className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePlayClick(videoId, videoRef)
+                  }}
+                  className="cursor-pointer absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
+                >
+                  <Play className="ml-0.5 h-5 w-5" />
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Mute/Unmute button - only visible on hover when this video is active */}
+          {isHovered && activeVideoId === videoId && (
+            <Button
+              onClick={(event) => {
+                event.stopPropagation()
+                toggleMute()
+              }}
+              className="cursor-pointer absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30"
+            >
+              {isMuted ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume2 className="h-5 w-5" />
+              )}
+            </Button>
+          )}
         </div>
-        <p className="mb-3 line-clamp-6 text-sm leading-relaxed text-gray-900 sm:text-base">
-          “{testimonial.comment}”
-        </p>
-        <div className="flex items-center justify-between">
-          <div className="min-w-0">
-            <h4 className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
-              {testimonial.name}
-            </h4>
-            <p className="text-[11px] text-gray-500 sm:text-xs">
-              {testimonial.age} ans • {testimonial.location}
-            </p>
+
+        <div className="absolute bottom-8 left-1/2 w-[92%] max-w-[600px] -translate-x-1/2 rounded-xl bg-white/95 p-4.5 shadow-xl sm:p-5.5">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+              {renderStars(testimonial.rating)}
+            <span className="text-xs font-medium text-gray-700 sm:text-sm">
+              {testimonial.rating}/5
+            </span>
           </div>
-          <div className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
-            ✓ Vérifié
+          <p className="mb-3 line-clamp-6 text-sm leading-relaxed text-gray-900 sm:text-base">
+            "{testimonial.comment}"
+          </p>
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <h4 className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
+                {testimonial.name}
+              </h4>
+              <p className="text-[11px] text-gray-500 sm:text-xs">
+                {testimonial.age} ans • {testimonial.location}
+              </p>
+            </div>
+            <div className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
+              ✓ Vérifié
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderCommentBlock = (testimonial: TestimonialType) => (
     <div

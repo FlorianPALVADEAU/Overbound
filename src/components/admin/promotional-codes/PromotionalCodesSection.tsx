@@ -41,6 +41,8 @@ function buildFormValues(code?: PromotionalCode): PromotionalCodeFormValues {
       usage_limit: '',
       is_active: true,
       event_ids: [],
+      tier_order: '',
+      auto_activate: false,
     }
   }
 
@@ -63,6 +65,8 @@ function buildFormValues(code?: PromotionalCode): PromotionalCodeFormValues {
     usage_limit: code.usage_limit?.toString() || '',
     is_active: code.is_active,
     event_ids: (code.events || []).map((event) => event.event_id),
+    tier_order: code.tier_order?.toString() || '',
+    auto_activate: code.auto_activate || false,
   }
 }
 
@@ -203,6 +207,15 @@ export function PromotionalCodesSection() {
     setSubmitting(true)
     setMessage(null)
 
+    const trimmedTierOrder = values.tier_order.trim()
+    const parsedTierOrder = trimmedTierOrder ? parseInt(trimmedTierOrder, 10) : null
+
+    if (trimmedTierOrder && Number.isNaN(parsedTierOrder)) {
+      setMessage({ type: 'error', text: 'L\'ordre du palier doit être un nombre positif.' })
+      setSubmitting(false)
+      return
+    }
+
     const payload: AdminPromotionalCodePayload = {
       code: values.code.toUpperCase(),
       name: values.name,
@@ -215,6 +228,8 @@ export function PromotionalCodesSection() {
       usage_limit: parsedUsageLimit,
       is_active: values.is_active,
       event_ids: values.event_ids,
+      tier_order: parsedTierOrder,
+      auto_activate: values.auto_activate,
     }
 
     try {

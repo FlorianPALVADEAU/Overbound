@@ -32,6 +32,8 @@ export interface PromotionalCodeFormValues {
   usage_limit: string
   is_active: boolean
   event_ids: string[]
+  tier_order: string
+  auto_activate: boolean
 }
 
 interface PromotionalCodeFormDialogProps {
@@ -56,6 +58,8 @@ const DEFAULT_VALUES: PromotionalCodeFormValues = {
   usage_limit: '',
   is_active: true,
   event_ids: [],
+  tier_order: '',
+  auto_activate: false,
 }
 
 export function PromotionalCodeFormDialog({
@@ -216,6 +220,46 @@ export function PromotionalCodeFormDialog({
                 checked={values.is_active}
                 onCheckedChange={(checked) => handleChange('is_active', Boolean(checked))}
               />
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
+            <div>
+              <h3 className="text-sm font-semibold mb-1">Progression automatique de paliers</h3>
+              <p className="text-xs text-muted-foreground">
+                Configurez ce code pour qu'il fasse partie d'une séquence de paliers qui s'activent automatiquement
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Ordre du palier</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={values.tier_order}
+                  onChange={(event) => handleChange('tier_order', event.target.value)}
+                  placeholder="Ex: 1 pour premier palier"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Laissez vide si ce code n'est pas un palier automatique
+                </p>
+              </div>
+              <div className="flex items-center justify-between border rounded-lg p-4 bg-background">
+                <div>
+                  <Label htmlFor="promo-auto-activate" className="font-medium">
+                    Activation automatique
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    S'active quand le palier précédent expire
+                  </p>
+                </div>
+                <Switch
+                  id="promo-auto-activate"
+                  checked={values.auto_activate}
+                  onCheckedChange={(checked) => handleChange('auto_activate', Boolean(checked))}
+                />
+              </div>
             </div>
           </div>
 

@@ -70,9 +70,9 @@ const ObstaclesOverview = () => {
                                     >
                                         <div className="relative h-64 sm:h-72 md:h-80 lg:h-84 xl:h-80 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
                                             <img
-                                                src={obst.image_url || ''}
+                                                src={obst.image_url || 'https://images.unsplash.com/photo-1598702631024-b282c0fd96b2?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'}
                                                 alt={obst.name}
-                                                className="w-full h-full object-cover"
+                                                className={`w-full h-full object-cover ${obst.image_url ? '' : 'blur-sm grayscale '}`}
                                                 loading="lazy"
                                             />
                                             
