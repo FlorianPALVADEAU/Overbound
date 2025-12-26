@@ -1005,6 +1005,9 @@ export default function MultiStepEventRegistration({
         participant.firstName.trim() &&
         participant.lastName.trim() &&
         participant.email.trim() &&
+        participant.birthDate.trim() &&
+        participant.emergencyContactName.trim() &&
+        participant.emergencyContactPhone.trim() &&
         hasDifficultyIfNeeded
       )
     })
@@ -1196,58 +1199,76 @@ export default function MultiStepEventRegistration({
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-firstName`}>Prénom</Label>
+                <Label htmlFor={`${participant.id}-firstName`} className="flex items-center gap-2">
+                  Prénom <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id={`${participant.id}-firstName`}
                   value={participant.firstName}
                   onChange={(event) => handleParticipantChange(participant.id, 'firstName', event.target.value)}
                   placeholder="Camille"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-lastName`}>Nom</Label>
+                <Label htmlFor={`${participant.id}-lastName`} className="flex items-center gap-2">
+                  Nom <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id={`${participant.id}-lastName`}
                   value={participant.lastName}
                   onChange={(event) => handleParticipantChange(participant.id, 'lastName', event.target.value)}
                   placeholder="Martin"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-email`}>Email</Label>
+                <Label htmlFor={`${participant.id}-email`} className="flex items-center gap-2">
+                  Email <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id={`${participant.id}-email`}
                   type="email"
                   value={participant.email}
                   onChange={(event) => handleParticipantChange(participant.id, 'email', event.target.value)}
                   placeholder="camille.martin@email.com"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-birthDate`}>Date de naissance</Label>
+                <Label htmlFor={`${participant.id}-birthDate`} className="flex items-center gap-2">
+                  Date de naissance <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id={`${participant.id}-birthDate`}
                   type="date"
                   value={participant.birthDate}
                   onChange={(event) => handleParticipantChange(participant.id, 'birthDate', event.target.value)}
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-emergency`}>Contact d'urgence</Label>
+                <Label htmlFor={`${participant.id}-emergency`} className="flex items-center gap-2">
+                  Contact d'urgence <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id={`${participant.id}-emergency`}
                   value={participant.emergencyContactName}
                   onChange={(event) => handleParticipantChange(participant.id, 'emergencyContactName', event.target.value)}
                   placeholder="Nom et prénom"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`${participant.id}-emergencyPhone`}>Téléphone d'urgence</Label>
+                <Label htmlFor={`${participant.id}-emergencyPhone`} className="flex items-center gap-2">
+                  Téléphone d'urgence <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id={`${participant.id}-emergencyPhone`}
                   value={participant.emergencyContactPhone}
                   onChange={(event) => handleParticipantChange(participant.id, 'emergencyContactPhone', event.target.value)}
                   placeholder="06 xx xx xx xx"
+                  required
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
