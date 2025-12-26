@@ -287,7 +287,7 @@ export const RACE_FORMATS: Record<FormatTemplate, FormatConfig> = {
     },
 
     heroDescription: [
-      '<span class="text-foreground font-semibold">L\'initiation explosive à l\'OCR :</span> Le Origin est le format parfait pour découvrir l\'univers Overbound ou viser un chrono explosif.',
+      '<span class="text-foreground font-semibold">L\'initiation explosive à l\'OCR :</span> Origin est le format parfait pour découvrir l\'univers Overbound ou viser un chrono explosif.',
       '<span class="text-emerald-600 font-semibold">6 km, 20 obstacles.</span> Distance courte mais intense qui te permet de donner ton maximum du début à la fin. Accessible aux débutants motivés tout en offrant un vrai défi pour les athlètes confirmés qui cherchent la performance pure.',
     ],
 
@@ -315,7 +315,7 @@ export const RACE_FORMATS: Record<FormatTemplate, FormatConfig> = {
     conceptTitle: "L'esprit Sprint",
 
     conceptParagraphs: [
-      '<span class="text-foreground font-semibold">Le Origin, c\'est l\'essence même de l\'OCR concentrée sur 6 km</span> : vitesse, explosivité et intensité pure du premier au dernier obstacle.',
+      '<span class="text-foreground font-semibold">Origin, c\'est l\'essence même de l\'OCR concentrée sur 6 km</span> : vitesse, explosivité et intensité pure du premier au dernier obstacle.',
       '<span class="text-emerald-600 font-semibold">Format sprint :</span> La distance courte te permet de donner ton maximum sans retenue. Pas besoin de gérer ton effort sur la durée, juste de tout donner pendant 30 à 60 minutes d\'effort intense.',
       'C\'est <span class="text-foreground font-semibold">le format idéal pour débuter</span> dans l\'univers Overbound ou pour les athlètes confirmés qui recherchent la performance pure et le chrono. Accessible mais exigeant.',
     ],

@@ -26,6 +26,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
 export interface AccountRegistrationItem {
   registration_id: string
@@ -38,6 +39,7 @@ export interface AccountRegistrationItem {
   created_at: string
   ticket_id: string | null
   ticket_name: string | null
+  difficulty_level: 'low' | 'mid' | 'hard' | null
   event_id: string | null
   event_title: string | null
   event_date: string | null
@@ -167,7 +169,17 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                     <h3 className="mb-1 text-xl font-semibold">
                       {registration.event_title || 'Événement'}
                     </h3>
-                    <p className="text-sm text-muted-foreground">{registration.ticket_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">{registration.ticket_name}</p>
+                      {registration.difficulty_level && (
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${FORMAT_LEVELS[registration.difficulty_level].badgeClass}`}
+                        >
+                          {FORMAT_LEVELS[registration.difficulty_level].name}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     {registration.checked_in ? (
@@ -318,7 +330,17 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                           )}
                           <div className="space-y-1">
                             <p className="text-base font-semibold">{registration.event_title}</p>
-                            <p className="text-sm text-muted-foreground">{registration.ticket_name}</p>
+                            <div className="flex items-center justify-center gap-2">
+                              <p className="text-sm text-muted-foreground">{registration.ticket_name}</p>
+                              {registration.difficulty_level && (
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${FORMAT_LEVELS[registration.difficulty_level].badgeClass}`}
+                                >
+                                  {FORMAT_LEVELS[registration.difficulty_level].name}
+                                </Badge>
+                              )}
+                            </div>
                             {formattedEventDate ? (
                               <p className="text-xs text-muted-foreground">{formattedEventDate}</p>
                             ) : null}

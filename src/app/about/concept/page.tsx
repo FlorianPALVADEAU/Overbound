@@ -338,7 +338,7 @@ export default function ConceptPage() {
                   <Sparkles className="h-4 w-4 mr-1" />
                   Sprint
                 </Badge>
-                <CardTitle className="text-2xl">Le Origin</CardTitle>
+                <CardTitle className="text-2xl">Origin</CardTitle>
                 <p className="text-sm font-medium text-muted-foreground">6 km · 20 obstacles</p>
               </CardHeader>
               <CardContent>

@@ -53,7 +53,6 @@ const difficulties = [
     difficultyClass: FORMAT_LEVELS.low.badgeClass,
     gradient: FORMAT_LEVELS.low.accentClass,
     border: 'border-green-500/20',
-    href: FORMAT_LEVELS.low.path,
   },
   {
     name: FORMAT_LEVELS.mid.name,
@@ -68,7 +67,6 @@ const difficulties = [
     difficultyClass: FORMAT_LEVELS.mid.badgeClass,
     gradient: FORMAT_LEVELS.mid.accentClass,
     border: 'border-amber-500/20',
-    href: FORMAT_LEVELS.mid.path,
   },
   {
     name: FORMAT_LEVELS.hard.name,
@@ -83,7 +81,6 @@ const difficulties = [
     difficultyClass: FORMAT_LEVELS.hard.badgeClass,
     gradient: FORMAT_LEVELS.hard.accentClass,
     border: 'border-red-500/25',
-    href: FORMAT_LEVELS.hard.path,
   },
 ]
 
@@ -165,7 +162,7 @@ export default function FormatsPage() {
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {distanceFormats.map((format, index) => (
-              <Link key={format.name + index} href={format.href} className="group block h-full">
+              <Link key={format.name + index} href={"#"} className="group block h-full">
                 <Card className="relative h-full overflow-hidden border-border/60 bg-background/90 shadow-lg shadow-primary/5 backdrop-blur transition hover:-translate-y-1">
                   <CardContent className="relative flex h-full flex-col gap-4 p-6">
                     <Badge className={`${format.badge.className} w-fit`}>

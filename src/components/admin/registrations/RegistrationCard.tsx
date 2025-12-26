@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { AdminRegistration } from '@/types/Registration'
 import { Calendar, CheckCircle, Clock, DollarSign, Eye, Filter, Ticket, XCircle } from 'lucide-react'
+import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
 interface RegistrationCardProps {
   registration: AdminRegistration
@@ -75,6 +76,14 @@ export function RegistrationCard({ registration, loadingId, onViewDocument, onOp
                 <div className="flex items-center gap-2">
                   <Ticket className="h-4 w-4 text-muted-foreground" />
                   <span>{registration.ticket.name}</span>
+                  {registration.difficulty_level && (
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${FORMAT_LEVELS[registration.difficulty_level].badgeClass}`}
+                    >
+                      {FORMAT_LEVELS[registration.difficulty_level].name}
+                    </Badge>
+                  )}
                 </div>
               )}
 

@@ -63,20 +63,16 @@ export default function TicketEmail({
           Salut {participantName}, merci pour ton inscription à <strong>{eventTitle}</strong>.
         </Text>
 
-        {/* QR Code Section */}
-        <Text style={styles.sectionTitle}>Ton QR code de check-in</Text>
-        <Section style={styles.qrContainer}>
-          <Img
-            src={qrUrl}
-            alt="QR Code"
-            width="200"
-            height="200"
-            style={styles.qrCode}
-          />
-        </Section>
-        <Text style={styles.qrText}>
-          Garde précieusement ce QR code, il sera scanné lors du check-in le jour de l'événement.
+        <Text style={styles.paragraph}>
+          Ton billet est maintenant disponible ! Clique sur le bouton ci-dessous pour y accéder et visualiser ton QR code de check-in.
         </Text>
+
+        {/* CTA Button - Moved up */}
+        <Section style={styles.buttonContainerTop}>
+          <Button href={manageUrl} style={styles.button}>
+            Voir mon billet
+          </Button>
+        </Section>
 
         {/* Separator */}
         <Hr style={styles.separator} />
@@ -100,13 +96,6 @@ export default function TicketEmail({
               </tr>
             </tbody>
           </table>
-        </Section>
-
-        {/* CTA Button */}
-        <Section style={styles.buttonContainer}>
-          <Button href={manageUrl} style={styles.button}>
-            Gérer mon inscription
-          </Button>
         </Section>
       </Section>
     </EmailLayout>
@@ -187,40 +176,13 @@ const styles: Record<string, React.CSSProperties> = {
     paddingBottom: '12px',
     verticalAlign: 'top',
   },
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    margin: '0 0 16px 0',
-    textAlign: 'center',
-    color: '#111827',
-  },
-  qrContainer: {
-    width: '100%',
-    display: 'table',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    textAlign: 'center',
-    marginBottom: '16px',
-  },
-  qrCode: {
-    display: 'block',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '16px',
-    backgroundColor: '#ffffff',
-  },
-  qrText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    textAlign: 'center',
-    margin: '0 0 24px 0',
-    lineHeight: '1.6',
-  },
   buttonContainer: {
     textAlign: 'center',
     margin: '24px 0',
+  },
+  buttonContainerTop: {
+    textAlign: 'center',
+    margin: '32px 0',
   },
   button: {
     backgroundColor: '#16a34a',
