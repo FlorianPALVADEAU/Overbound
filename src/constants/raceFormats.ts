@@ -163,7 +163,7 @@ export const RACE_FORMATS: Record<FormatTemplate, FormatConfig> = {
 
     prerequisites: {
       fitnessLevel: 10,
-      trainingWeeks: 24,
+      trainingWeeks: 10,
       skills: [
         'Ultra-endurance',
         'Gestion mentale avancée',

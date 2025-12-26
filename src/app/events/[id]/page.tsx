@@ -20,7 +20,7 @@ import EventTicketListWithRegistration from '@/components/events/EventTicketList
 import { PricingTimeline } from '@/components/events/PricingTimeline'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
-import { getStartingPrice } from '@/lib/pricing'
+import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import RecentBlogTeaser from '@/components/blog/RecentBlogTeaser'
 import { EventStructuredData } from '@/components/seo/StructuredData'
@@ -101,14 +101,14 @@ export default function EventDetailPage() {
   const hasDiscount = activeTier && activeTier.discount_percentage > 0
 
   const ticketPrices = tickets
-    .map((ticket) => getStartingPrice(ticket, eventPriceTiers))
+    .map((ticket) => getCurrentTicketPrice(ticket, eventPriceTiers))
     .filter((price): price is number => typeof price === 'number')
   const priceCurrency = tickets.find((ticket) => ticket.currency)?.currency ?? 'EUR'
   const lowestPrice = ticketPrices.length > 0 ? Math.min(...ticketPrices) : null
 
   // Get base price (without discount) for display
   const baseTicketPrices = tickets
-    .map((ticket) => getStartingPrice(ticket, [])) // No tiers = base price
+    .map((ticket) => ticket.final_price_cents)
     .filter((price): price is number => typeof price === 'number')
   const baseLowestPrice = baseTicketPrices.length > 0 ? Math.min(...baseTicketPrices) : null
   const formatCurrency = (value: number) =>
@@ -167,7 +167,7 @@ export default function EventDetailPage() {
     name: event.title,
     tickets: tickets.map(ticket => ({
       ...ticket,
-      price: getStartingPrice(ticket, eventPriceTiers) / 100 // Convert cents to euros
+      price: getCurrentTicketPrice(ticket, eventPriceTiers) / 100 // Convert cents to euros
     }))
   }
 
