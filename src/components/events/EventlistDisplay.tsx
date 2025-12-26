@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { EventWithTickets } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
-import { getStartingPrice } from '@/lib/pricing'
+import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import Headings from '../globals/Headings'
 
@@ -71,18 +71,18 @@ const formatCurrency = (value: number, currency?: string | null) => {
   }).format(value / 100)
 }
 
-const findStartingPrice = (tickets: Ticket[] | null | undefined, eventPriceTiers?: any[]) => {
+const findCurrentPrice = (tickets: Ticket[] | null | undefined, eventPriceTiers?: any[]) => {
   if (!tickets || tickets.length === 0) return null
 
-  // Get starting prices from all tickets (considering price tiers)
+  // Get current prices from all tickets (considering active price tier)
   const prices = tickets
     .map((ticket) => {
-      const startingPrice = getStartingPrice(ticket, eventPriceTiers)
-      return startingPrice != null && ticket.final_price_cents != null
+      const currentPrice = getCurrentTicketPrice(ticket, eventPriceTiers)
+      return currentPrice != null && ticket.final_price_cents != null
         ? {
-            amount: startingPrice,
+            amount: currentPrice,
             baseAmount: ticket.final_price_cents,
-            currency: ticket.currency ?? 'EUR'
+            currency: ticket.currency ?? 'EUR',
           }
         : null
     })
@@ -193,7 +193,7 @@ const EventlistDisplay = () => {
               const eventPriceTiers = (event as any).price_tiers || []
               const activeTier = getCurrentPriceTier(eventPriceTiers)
               const hasDiscount = activeTier && activeTier.discount_percentage > 0
-              const startingPrice = findStartingPrice(event.tickets, eventPriceTiers)
+              const currentPrice = findCurrentPrice(event.tickets, eventPriceTiers)
               const ticketCount = event.tickets?.length ?? 0
               return (
                 <Card
@@ -230,19 +230,19 @@ const EventlistDisplay = () => {
                             : 'Formules à venir'}
                         </span>
                       </div>
-                      {startingPrice ? (
+                      {currentPrice ? (
                         <div className='flex items-center gap-2 text-base font-semibold text-foreground'>
                           <Users className='h-4 w-4 text-primary' />
                           <div className='flex flex-col gap-1'>
                             <div className='flex items-center gap-2'>
-                              {hasDiscount && startingPrice.amount < startingPrice.baseAmount && (
+                              {hasDiscount && currentPrice.amount < currentPrice.baseAmount && (
                                 <span className='text-sm text-muted-foreground line-through font-normal'>
-                                  {formatCurrency(startingPrice.baseAmount, startingPrice.currency)}
+                                  {formatCurrency(currentPrice.baseAmount, currentPrice.currency)}
                                 </span>
                               )}
-                              <span>À partir de {formatCurrency(startingPrice.amount, startingPrice.currency)}</span>
+                              <span>À partir de {formatCurrency(currentPrice.amount, currentPrice.currency)}</span>
                             </div>
-                            {hasDiscount && activeTier && startingPrice.amount < startingPrice.baseAmount && (
+                            {hasDiscount && activeTier && currentPrice.amount < currentPrice.baseAmount && (
                               <span className='text-xs font-semibold text-green-600'>
                                 -{activeTier.discount_percentage}% ({activeTier.name})
                               </span>

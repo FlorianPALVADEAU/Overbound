@@ -60,8 +60,8 @@ const difficulties = [
     description:
       'Obstacles plus techniques, portés plus lourds, zones chrono conseillées. Pour hausser le ton sur ta distance.',
     stats: [
-      { label: 'Obstacles', value: '25+ exigeants' },
-      { label: 'Pénalités', value: 'À passer ou à payer' },
+      { label: 'Obstacles', value: 'Exigeants' },
+      { label: 'Pénalités', value: 'Exigeantes' },
     ],
     highlights: ['Variantes techniques', 'Grip + explosivité', 'Esprit compétitif sans perdre la tribu'],
     difficultyClass: FORMAT_LEVELS.mid.badgeClass,
@@ -74,10 +74,10 @@ const difficulties = [
     description:
       'Obstacles obligatoires, pénalités physiques, contrôle matériel. Pensé pour viser le haut du tableau sur n’importe quelle distance.',
     stats: [
-      { label: 'Obstacles', value: '30+ premiums' },
+      { label: 'Obstacles', value: 'Premiums' },
       { label: 'Pénalités', value: 'Full physiques' },
     ],
-    highlights: ['Briefing spécifique', 'Supervision rapprochée', 'Qualification possible'],
+    highlights: ['Briefing spécifique', 'Supervision rapprochée', 'Idéal sportif aguérri'],
     difficultyClass: FORMAT_LEVELS.hard.badgeClass,
     gradient: FORMAT_LEVELS.hard.accentClass,
     border: 'border-red-500/25',
@@ -213,12 +213,12 @@ export default function FormatsPage() {
                 <CardContent className="relative flex flex-col gap-4 p-6">
                   <div className="flex items-start justify-between gap-3">
                     <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                      {format.name}
+                      {format.tagline}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-semibold tracking-tight">{format.tagline}</h3>
+                    <h3 className="text-2xl font-semibold tracking-tight">{format.name}</h3>
                     <p className="text-sm text-muted-foreground">{format.description}</p>
                   </div>
 
@@ -249,9 +249,9 @@ export default function FormatsPage() {
         <section className="relative z-10 mx-auto w-screen max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Tableau comparatif</p>
-            <h2 className="mt-2 text-3xl font-semibold text-black">Comparaison détaillée des formats</h2>
+            <h2 className="mt-2 text-3xl font-semibold text-black">Comparaison détaillée des distances</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Vue d'ensemble complète pour t'aider à choisir le format qui correspond le mieux à tes capacités et objectifs
+              Vue d'ensemble complète pour t'aider à choisir la distance qui correspond le mieux à tes capacités et objectifs
             </p>
           </div>
 
@@ -318,34 +318,6 @@ export default function FormatsPage() {
                   })}
                 </tr>
 
-                {/* Intensité */}
-                <tr className="border-t border-border">
-                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Intensité</td>
-                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
-                    const format = RACE_FORMATS[formatId]
-                    const intensity = format.statsCards.find(s => s.label === 'Intensité')?.value || '-'
-                    return (
-                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
-                        {intensity}
-                      </td>
-                    )
-                  })}
-                </tr>
-
-                {/* Niveau requis */}
-                <tr className="border-t border-border bg-muted/20">
-                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Niveau requis</td>
-                  {(['origin', 'horizon', 'ultra-arena', 'tribal-kids'] as FormatTemplate[]).map((formatId) => {
-                    const format = RACE_FORMATS[formatId]
-                    const fitnessLevel = format.prerequisites?.fitnessLevel || '-'
-                    return (
-                      <td key={formatId} className="p-4 text-center text-sm text-muted-foreground">
-                        {fitnessLevel}/10
-                      </td>
-                    )
-                  })}
-                </tr>
-
                 {/* Temps estimé */}
                 <tr className="border-t border-border">
                   <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Temps estimé</td>
@@ -394,7 +366,7 @@ export default function FormatsPage() {
                   <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Force requise</td>
                   <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
                   <td className="p-4 text-center text-sm text-muted-foreground">7/10</td>
-                  <td className="p-4 text-center text-sm text-muted-foreground">9/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">5/10</td>
                   <td className="p-4 text-center text-sm text-muted-foreground">3/10</td>
                 </tr>
 
@@ -403,7 +375,7 @@ export default function FormatsPage() {
                   <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Agilité/Technique</td>
                   <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
                   <td className="p-4 text-center text-sm text-muted-foreground">7/10</td>
-                  <td className="p-4 text-center text-sm text-muted-foreground">8/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
                   <td className="p-4 text-center text-sm text-muted-foreground">4/10</td>
                 </tr>
 
@@ -445,6 +417,168 @@ export default function FormatsPage() {
                       </td>
                     )
                   })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Difficulty Levels Comparison Table Section */}
+        <section className="relative z-10 mx-auto w-screen max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Tableau comparatif</p>
+            <h2 className="mt-2 text-3xl font-semibold text-black">Comparaison détaillée des niveaux de difficulté</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Compare les trois niveaux de difficulté pour choisir celui qui correspond à ton expérience et tes objectifs
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-border/60 shadow-xl">
+            <table className="w-full border-collapse bg-card">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="sticky left-0 z-10 bg-muted/50 p-4 text-left text-sm font-semibold text-foreground">
+                    Critère
+                  </th>
+                  <th className="p-4 text-center text-sm font-semibold text-foreground">
+                    <div className="flex flex-col gap-1">
+                      <span>{FORMAT_LEVELS.low.name}</span>
+                      <Badge className={`mx-auto w-fit ${FORMAT_LEVELS.low.badgeClass}`}>Découverte</Badge>
+                    </div>
+                  </th>
+                  <th className="p-4 text-center text-sm font-semibold text-foreground">
+                    <div className="flex flex-col gap-1">
+                      <span>{FORMAT_LEVELS.mid.name}</span>
+                      <Badge className={`mx-auto w-fit ${FORMAT_LEVELS.mid.badgeClass}`}>Intermédiaire</Badge>
+                    </div>
+                  </th>
+                  <th className="p-4 text-center text-sm font-semibold text-foreground">
+                    <div className="flex flex-col gap-1">
+                      <span>{FORMAT_LEVELS.hard.name}</span>
+                      <Badge className={`mx-auto w-fit ${FORMAT_LEVELS.hard.badgeClass}`}>Élite</Badge>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Obstacles */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Type d'obstacles</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Adaptables</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Exigeants</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Premiums</td>
+                </tr>
+
+                {/* Pénalités */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Pénalités</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Souples</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Exigeantes</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Full physiques</td>
+                </tr>
+
+                {/* Contournements */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Contournements</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Possibles</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Limités</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Interdits</td>
+                </tr>
+
+                {/* Coaching */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Coaching</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Rapproché</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Standard</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Supervision spécifique</td>
+                </tr>
+
+                {/* Briefing */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Briefing</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Rassurant et détaillé</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Standard</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Technique et spécifique</td>
+                </tr>
+
+                {/* Niveau technique requis */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Niveau technique requis</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">3/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">6/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">9/10</td>
+                </tr>
+
+                {/* Effort physique */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Effort physique</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Modéré</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Important</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Maximal</td>
+                </tr>
+
+                {/* Mental requis */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Mental requis</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">4/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">7/10</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">10/10</td>
+                </tr>
+
+                {/* Grip/Préhension */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Grip/Préhension</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Basique</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Important</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Extrême</td>
+                </tr>
+
+                {/* Portés */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Portés</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Légers ou optionnels</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Moyens à lourds</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Très lourds</td>
+                </tr>
+
+                {/* Esprit de course */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Esprit de course</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Ambiance tribu</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Compétitif mais tribu</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Compétition intense</td>
+                </tr>
+
+                {/* Type de compétiteur visé */}
+                <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Profil visé</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Débutants, teams, découverte</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Confirmés, progression</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Athlètes, podium</td>
+                </tr>
+
+                {/* Qualification */}
+                {/* <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Qualification possible</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Non</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Non</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Oui</td>
+                </tr> */}
+
+                {/* Zones chrono */}
+                {/* <tr className="border-t border-border bg-muted/20">
+                  <td className="sticky left-0 z-10 bg-muted/20 p-4 font-medium text-foreground">Zones chrono</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Non</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Conseillées</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Obligatoires</td>
+                </tr> */}
+
+                {/* Contrôle matériel */}
+                <tr className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card p-4 font-medium text-foreground">Contrôle matériel</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Non</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Recommandé</td>
+                  <td className="p-4 text-center text-sm text-muted-foreground">Obligatoire</td>
                 </tr>
               </tbody>
             </table>

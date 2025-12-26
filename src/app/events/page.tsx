@@ -13,7 +13,7 @@ import type { EventWithTickets } from '@/types/Event'
 import type { Ticket as TicketType } from '@/types/Ticket'
 import type { EventStatus } from '@/types/base.type'
 import type { EventPriceTier } from '@/types/EventPriceTier'
-import { getCurrentTicketPrice, getStartingPrice } from '@/lib/pricing'
+import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import Link from 'next/link'
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
@@ -503,11 +503,11 @@ export default function EventsPage() {
                         const hasDiscount = activeTier && activeTier.discount_percentage > 0
 
                         const minPrice = event.tickets && event.tickets.length > 0
-                          ? Math.min(...event.tickets.map(t => getStartingPrice(t, eventPriceTiers)))
+                          ? Math.min(...event.tickets.map((t) => getCurrentTicketPrice(t, eventPriceTiers)))
                           : null
 
                         const baseMinPrice = event.tickets && event.tickets.length > 0
-                          ? Math.min(...event.tickets.map(t => getStartingPrice(t, [])))
+                          ? Math.min(...event.tickets.map((t) => t.final_price_cents))
                           : null
 
                         return (

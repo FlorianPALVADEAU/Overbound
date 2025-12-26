@@ -96,17 +96,20 @@ export function formatPrice(priceCents: number, currency: string = 'EUR'): strin
 
 /**
  * Get the starting (lowest) price from event price tiers
- * Uses the currently active tier to calculate the price
  * @param ticket - The ticket with final_price_cents
  * @param eventPriceTiers - Array of event price tiers
- * @param now - Current date (defaults to new Date())
- * @returns The current price in cents based on active tier
+ * @returns The lowest price in cents
  */
-export function getStartingPrice(ticket: Ticket, eventPriceTiers: EventPriceTier[] = [], now: Date = new Date()): number {
+export function getStartingPrice(
+  ticket: Ticket,
+  eventPriceTiers: EventPriceTier[] = []
+): number {
   if (eventPriceTiers && eventPriceTiers.length > 0) {
-    // Use the currently active tier, not the one with highest discount
-    const activeTier = getCurrentPriceTier(eventPriceTiers, now)
-    return calculateCurrentPrice(ticket.final_price_cents, activeTier)
+    // Find the tier with the highest discount (lowest price)
+    const maxDiscountTier = eventPriceTiers.reduce((max, tier) =>
+      tier.discount_percentage > max.discount_percentage ? tier : max
+    )
+    return calculateCurrentPrice(ticket.final_price_cents, maxDiscountTier)
   }
 
   return ticket.final_price_cents
