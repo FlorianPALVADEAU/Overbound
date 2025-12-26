@@ -77,6 +77,11 @@ import { PricingExplainer } from '@/components/pricing/PricingExplainer'
                 <div className="text-lg font-bold text-primary">
                   {formatTicketPrice(ticket, eventPriceTiers)}
                 </div>
+                {hasDiscount && activeTier && (
+                  <div className="text-xs font-semibold text-green-600">
+                    -{activeTier.discount_percentage}% ({activeTier.name})
+                  </div>
+                )}
               </div>
               <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
                 <Button size="sm" className="w-full">

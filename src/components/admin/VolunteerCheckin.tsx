@@ -52,6 +52,7 @@ export function VolunteerCheckin() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [cameraReady, setCameraReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const cameraControlsRef = useRef<{ stop: () => void } | null>(null)
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null)
@@ -60,6 +61,7 @@ export function VolunteerCheckin() {
     cameraControlsRef.current = null
     ;(codeReaderRef.current as any)?.reset?.()
     codeReaderRef.current = null
+    setCameraReady(false)
   }, [])
   const [stats, setStats] = useState<Stats>({
     total: 0,
@@ -226,12 +228,42 @@ export function VolunteerCheckin() {
       ))
 
       setMessage({ type: 'success', text: data.message })
-      
     } catch (error) {
       console.error('Erreur check-in manuel:', error)
       setMessage({ type: 'error', text: 'Erreur lors de l\'enregistrement manuel' })
     }
   }
+
+  const requestCameraAccess = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setCameraError("La caméra n'est pas disponible sur ce navigateur ou cet appareil.")
+      return false
+    }
+
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setCameraError('La caméra nécessite une connexion sécurisée (https).')
+      return false
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      })
+      stream.getTracks().forEach((track) => track.stop())
+      setCameraError(null)
+      return true
+    } catch (error) {
+      const domError = error as unknown as DOMException
+      if (domError?.name === 'NotAllowedError') {
+        setCameraError("Accès à la caméra refusé. Autorisez l'appareil photo dans votre navigateur.")
+      } else if (domError?.name === 'NotFoundError') {
+        setCameraError('Aucune caméra détectée sur cet appareil.')
+      } else {
+        setCameraError("Impossible d'accéder à la caméra. Vérifiez les permissions.")
+      }
+      return false
+    }
+  }, [])
 
   const startCamera = useCallback(async () => {
     if (!videoRef.current) {
@@ -255,6 +287,14 @@ export function VolunteerCheckin() {
             ;(codeReaderRef.current as any)?.reset?.()
             setScannerOpen(false)
             void submitScan(text)
+          } else if (error) {
+            const domError = error as unknown as DOMException
+            if (domError?.name === 'NotAllowedError') {
+              setCameraError("Accès à la caméra refusé. Autorisez l'appareil photo dans votre navigateur.")
+              ctrl?.stop?.()
+              cameraControlsRef.current = null
+              stopCamera()
+            }
           }
         }
       )
@@ -266,23 +306,43 @@ export function VolunteerCheckin() {
       }
     } catch (error) {
       console.error('Erreur caméra:', error)
-      setCameraError("Impossible d'accéder à la caméra. Vérifiez les permissions.")
+      const domError = error as unknown as DOMException
+      if (domError?.name === 'NotAllowedError') {
+        setCameraError("Accès à la caméra refusé. Autorisez l'appareil photo dans votre navigateur.")
+      } else if (domError?.name === 'NotFoundError') {
+        setCameraError('Aucune caméra détectée sur cet appareil.')
+      } else {
+        setCameraError("Impossible d'accéder à la caméra. Vérifiez les permissions.")
+      }
+      setCameraReady(false)
       stopCamera()
     }
   }, [stopCamera, submitScan])
 
+  const openScanner = useCallback(async () => {
+    setCameraError(null)
+    setCameraReady(false)
+    setScannerOpen(true)
+
+    const allowed = await requestCameraAccess()
+    setCameraReady(allowed)
+  }, [requestCameraAccess])
+
   useEffect(() => {
-    if (scannerOpen) {
+    if (scannerOpen && cameraReady && !cameraError) {
       void startCamera()
     } else {
       stopCamera()
-      setCameraError(null)
+      if (!scannerOpen) {
+        setCameraError(null)
+        setCameraReady(false)
+      }
     }
 
     return () => {
       stopCamera()
     }
-  }, [scannerOpen, startCamera, stopCamera])
+  }, [cameraError, cameraReady, scannerOpen, startCamera, stopCamera])
 
   if (loading) {
     return (
@@ -359,8 +419,7 @@ export function VolunteerCheckin() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setCameraError(null)
-                    setScannerOpen(true)
+                    void openScanner()
                   }}
                   disabled={scanLoading}
                   className="flex items-center gap-2"
@@ -438,7 +497,7 @@ export function VolunteerCheckin() {
                 variant="secondary"
                 onClick={() => {
                   stopCamera()
-                  void startCamera()
+                  void openScanner()
                 }}
               >
                 Relancer

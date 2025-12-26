@@ -104,11 +104,11 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
   ]
 
-  const eventFormatLinks = [
-    { name: FORMAT_LEVELS.low.name, href: FORMAT_LEVELS.low.path },
-    { name: FORMAT_LEVELS.mid.name, href: FORMAT_LEVELS.mid.path },
-    { name: FORMAT_LEVELS.hard.name, href: FORMAT_LEVELS.hard.path },
-  ]
+  // const eventFormatLinks = [
+  //   { name: FORMAT_LEVELS.low.name, href: FORMAT_LEVELS.low.path },
+  //   { name: FORMAT_LEVELS.mid.name, href: FORMAT_LEVELS.mid.path },
+  //   { name: FORMAT_LEVELS.hard.name, href: FORMAT_LEVELS.hard.path },
+  // ]
 
   const trainingsDropdownItems: DropdownItemType[] = [
     { name: 'Plans d\'entraînement', href: '/trainings/plans', icon: MedalIcon },
@@ -258,7 +258,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                                     <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
                                   </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator className="my-1" />
+                                {/* <DropdownMenuSeparator className="my-1" />
                                 {eventFormatLinks.map((format) => (
                                   <DropdownMenuItem key={format.name} asChild>
                                     <Link
@@ -268,7 +268,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                                       <span className="font-medium">{format.name}</span>
                                     </Link>
                                   </DropdownMenuItem>
-                                ))}
+                                ))} */}
                               </div>
                             </div>
                           </div>
@@ -477,7 +477,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                                 <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
                               </Link>
                               <div className="h-px w-full bg-border/40" />
-                              {eventFormatLinks.map((format) => (
+                              {/* {eventFormatLinks.map((format) => (
                                 <Link
                                   key={format.name}
                                   href={format.href}
@@ -489,7 +489,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                                 >
                                   {format.name}
                                 </Link>
-                              ))}
+                              ))} */}
                             </div>
                           </div>
                         ) : null}
