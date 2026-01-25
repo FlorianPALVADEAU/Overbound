@@ -83,7 +83,7 @@ import { PricingExplainer } from '@/components/pricing/PricingExplainer'
                   </div>
                 )}
               </div>
-              <Link href={`/events/${selectedEvent.id}/register?ticket=${ticket.id}`}>
+              <Link href={`/events/${selectedEvent.slug}/register?ticket=${ticket.id}`}>
                 <Button size="sm" className="w-full">
                   S'inscrire
                 </Button>

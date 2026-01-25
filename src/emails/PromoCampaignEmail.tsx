@@ -126,19 +126,19 @@ export function PromoCampaignEmail({
               <tr>
                 <td style={styles.eventItem}>
                   <Text style={styles.eventName}>🏔️ Ultra Arena</Text>
-                  <Text style={styles.eventMeta}>15 février 2025 • Lyon</Text>
+                  <Text style={styles.eventMeta}>15 février 2026 • Lyon</Text>
                 </td>
               </tr>
               <tr>
                 <td style={styles.eventItem}>
                   <Text style={styles.eventName}>🌙 Night Run Paris</Text>
-                  <Text style={styles.eventMeta}>8 mars 2025 • Paris</Text>
+                  <Text style={styles.eventMeta}>8 mars 2026 • Paris</Text>
                 </td>
               </tr>
               <tr>
                 <td style={styles.eventItem}>
                   <Text style={styles.eventName}>🎯 Horizon Challenge</Text>
-                  <Text style={styles.eventMeta}>12 avril 2025 • Annecy</Text>
+                  <Text style={styles.eventMeta}>12 avril 2026 • Annecy</Text>
                 </td>
               </tr>
             </tbody>

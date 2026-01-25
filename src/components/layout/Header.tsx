@@ -17,22 +17,16 @@ import {
   UserIcon,
   LogOutIcon,
   SettingsIcon,
-  CalendarIcon,
   InfoIcon,
   CreditCardIcon,
   MedalIcon,
-  BrickWallIcon,
-  DumbbellIcon,
-  BookOpenTextIcon,
   ChevronDownIcon,
-  MapPinIcon,
-  TrophyIcon
+  MapPinIcon
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
-import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -87,50 +81,15 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     router.refresh()
   }
 
-  const navigation: NavigationItemType[] = [
-    { name: 'Obstacles', href: '/obstacles', icon: BrickWallIcon },
-    // { name: 'Entrainements', href: '/trainings', icon: DumbbellIcon },
-    // { name: 'Shop', href: '/shop', icon: ShoppingBagIcon },
-    { name: 'Blog', href: '/blog', icon: BookOpenTextIcon },
-    // { name: 'À propos', href: '/about', icon: InfoIcon },
-  ]
-
-  const eventsDropdownItems: DropdownItemType[] = [
-    // { name: 'Voir toutes les courses', href: '/events', icon: MedalIcon },
-    { name: 'Origin', href: '/races/origin', icon: CalendarIcon },
-    { name: 'Horizon', href: '/races/horizon', icon: MapPinIcon },
-    { name: 'Ultra Arena', href: '/races/ultra-arena', icon: MapPinIcon },
-    { name: 'Tribal Kids', href: '/races/tribal-kids', icon: MapPinIcon },
-    { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
-  ]
-
-  // const eventFormatLinks = [
-  //   { name: FORMAT_LEVELS.low.name, href: FORMAT_LEVELS.low.path },
-  //   { name: FORMAT_LEVELS.mid.name, href: FORMAT_LEVELS.mid.path },
-  //   { name: FORMAT_LEVELS.hard.name, href: FORMAT_LEVELS.hard.path },
-  // ]
-
-  const trainingsDropdownItems: DropdownItemType[] = [
-    { name: 'Plans d\'entraînement', href: '/trainings/plans', icon: MedalIcon },
-    { name: 'Test de fitness', href: '/trainings/fitness-test', icon: CalendarIcon },
-    // { name: 'Nutrition', href: '/trainings/nutrition', icon: MapPinIcon },
-    { name: 'Quelle course est faite pour moi ?', href: '/trainings/what-race-for-me', icon: MapPinIcon },
-  ]
-
   const aboutDropdownItems: DropdownItemType[] = [
     { name: 'Le concept', href: '/about/concept', icon: MedalIcon },
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
-    // { name: 'Équipe', href: '/about/team', icon: CalendarIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
     { name: 'Presse', href: '/about/press', icon: MapPinIcon },
-    { name: 'Crédits', href: '/about/credits', icon: MapPinIcon },
-    { name: 'Devenir bénévole', href: '/volunteers', icon: TrophyIcon, highlight: true },
+    { name: 'Contact', href: '/contact', icon: MapPinIcon },
   ]
 
   const navItems: NavItem[] = [
-    { type: 'dropdown', name: 'Courses', href: '/events', icon: MedalIcon, items: eventsDropdownItems },
-    { type: 'dropdown', name: 'Entrainements', icon: DumbbellIcon, items: trainingsDropdownItems },
-    ...navigation.map((item) => ({ ...item, type: 'link' as const })),
     { type: 'dropdown', name: 'À propos', icon: InfoIcon, items: aboutDropdownItems },
   ]
 
@@ -190,7 +149,18 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
-            <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex ">
+            <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
+              <Link href="/events/ultra-arena-2026/register" className="cursor-pointer text-foreground border-2 border-primary px-3 flex h-[80%] animate-pulse rounded-md bg-primary/20 items-center text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base">
+                INSCRIPTIONS
+              </Link>
+
+              <Link
+                href="/volunteers"
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+              >
+                Devenir bénévole
+              </Link>
+
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
                   <div
@@ -212,101 +182,19 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                           <ChevronDownIcon className="ml-1 h-3 w-3 transition-transform group-hover:rotate-180" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="p-0 min-w-[300px] -mt-1 -ml-1 border-t-0 rounded-t-none bg-background" forceMount>
-                        {item.name === 'Courses' ? (
-                          <div className="grid gap-0 lg:grid-cols-[minmax(220px,1fr)_220px]">
-                            <div className="py-2">
-                              <p className="px-4 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Distances</p>
-                              {item.href ? (
-                                <>
-                                  <DropdownMenuItem asChild>
-                                    <Link
-                                      href={item.href}
-                                      className="outline-none flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white cursor-pointer"
-                                    >
-                                      Voir toutes les {item.name.toLowerCase()}
-                                      <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
-                                    </Link>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator className="my-1" />
-                                </>
-                              ) : null}
-                              {item.items.map((subItem) => (
-                                <DropdownMenuItem key={subItem.name} asChild>
-                                  <Link
-                                    href={subItem.href}
-                                    className={`flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer ${
-                                      subItem.highlight
-                                        ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                  >
-                                    <span className="font-medium">{subItem.name}</span>
-                                  </Link>
-                                </DropdownMenuItem>
-                              ))}
-                            </div>
-                            <div className="hidden border-l border-border/70 bg-background/90 py-2 lg:flex lg:flex-col">
-                              <p className="px-4 text-xs uppercase tracking-wide text-muted-foreground">Formats</p>
-                              <div className="mt-2">
-                                <DropdownMenuItem asChild>
-                                  <Link
-                                    href="/events/formats"
-                                    className="outline-none flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white cursor-pointer"
-                                  >
-                                    Voir tous les formats
-                                    <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
-                                  </Link>
-                                </DropdownMenuItem>
-                                {/* <DropdownMenuSeparator className="my-1" />
-                                {eventFormatLinks.map((format) => (
-                                  <DropdownMenuItem key={format.name} asChild>
-                                    <Link
-                                      href={format.href}
-                                      className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground"
-                                    >
-                                      <span className="font-medium">{format.name}</span>
-                                    </Link>
-                                  </DropdownMenuItem>
-                                ))} */}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="py-2">
-                            {item.href ? (
-                              <>
-                                <DropdownMenuItem asChild>
-                                  <Link
-                                    href={item.href}
-                                    className="outline-none flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-white cursor-pointer"
-                                  >
-                                    Voir toutes les {item.name.toLowerCase()}
-                                    <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="my-1" />
-                              </>
-                            ) : null}
-                            {item.name === 'Courses' ? (
-                              <p className="px-6 pb-1 text-xs uppercase tracking-wide text-muted-foreground">Distances</p>
-                            ) : null}
-                            {item.items.map((subItem) => (
-                              <DropdownMenuItem key={subItem.name} asChild>
-                                <Link
-                                  href={subItem.href}
-                                  className={`flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer ${
-                                    subItem.highlight
-                                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                                      : 'text-muted-foreground hover:text-foreground'
-                                  }`}
-                                >
-                                  <span className="font-medium">{subItem.name}</span>
-                                </Link>
-                              </DropdownMenuItem>
-                            ))}
-                          </div>
-                        )}
+                      <DropdownMenuContent align="start" className="p-0 min-w-[220px] -mt-1 -ml-1 border-t-0 rounded-t-none bg-background" forceMount>
+                        <div className="py-2">
+                          {item.items.map((subItem) => (
+                            <DropdownMenuItem key={subItem.name} asChild>
+                              <Link
+                                href={subItem.href}
+                                className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground"
+                              >
+                                <span className="font-medium">{subItem.name}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -397,8 +285,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>
-                <Button size="sm" className="text-xs sm:text-sm" asChild>
-                  <Link href="/auth/register">S'inscrire</Link>
+                <Button size="sm" className="text-xs sm:text-sm bg-red-600 hover:bg-red-700" asChild>
+                  <Link href="/events/ultra-arena-2026/register">S'inscrire</Link>
                 </Button>
               </div>
             )}
@@ -447,11 +335,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            className={`block w-full px-4 py-2 text-sm font-medium transition-colors ${
-                              subItem.highlight
-                                ? 'text-[#26AA26] hover:text-[#1e8a1e]'
-                                : 'text-muted-foreground hover:text-foreground'
-                            }`}
+                            className="block w-full px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
                             onClick={() => {
                               setMobileMenuOpen(false)
                               setMobileDropdownOpen(null)
@@ -460,39 +344,6 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                             {subItem.name}
                           </Link>
                         ))}
-
-                        {item.name === 'Courses' ? (
-                          <div className="mt-3 rounded-2xl border border-border/70 bg-muted/30 px-4 py-4">
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Formats</p>
-                            <div className="mt-2 space-y-1">
-                              <Link
-                                href="/events/formats"
-                                className="flex w-full items-center justify-between px-2 py-2 text-sm font-semibold text-white"
-                                onClick={() => {
-                                  setMobileMenuOpen(false)
-                                  setMobileDropdownOpen(null)
-                                }}
-                              >
-                                Voir tous les formats
-                                <ChevronDownIcon className="h-4 w-4 rotate-[-90deg]" />
-                              </Link>
-                              <div className="h-px w-full bg-border/40" />
-                              {/* {eventFormatLinks.map((format) => (
-                                <Link
-                                  key={format.name}
-                                  href={format.href}
-                                  className="block w-full px-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-                                  onClick={() => {
-                                    setMobileMenuOpen(false)
-                                    setMobileDropdownOpen(null)
-                                  }}
-                                >
-                                  {format.name}
-                                </Link>
-                              ))} */}
-                            </div>
-                          </div>
-                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -507,12 +358,21 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   </Link>
                 ),
               )}
+
+              {/* Lien Devenir bénévole mobile */}
+              <Link
+                href="/volunteers"
+                className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Devenir bénévole
+              </Link>
             </div>
 
-            {/* Boutons auth sur mobile si pas connecté */}
-            {!user && (
-              <div className="mt-5 border-t border-border/60 pt-4">
-                <div className="flex flex-col space-y-3 px-6">
+            {/* Boutons CTA sur mobile */}
+            <div className="mt-5 border-t border-border/60 pt-4">
+              <div className="flex flex-col space-y-3 px-6">
+                {!user && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -521,16 +381,16 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   >
                     <Link href="/auth/login">Se connecter</Link>
                   </Button>
-                  <Button
-                    size="sm"
-                    asChild
-                    className="h-11 rounded-full bg-[#26AA26] text-white hover:bg-[#1e8a1e]"
-                  >
-                    <Link href="/auth/register">S'inscrire</Link>
-                  </Button>
-                </div>
+                )}
+                <Button
+                  size="sm"
+                  asChild
+                  className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
+                >
+                  <Link href="/events/ultra-arena-2026/register">S'inscrire</Link>
+                </Button>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

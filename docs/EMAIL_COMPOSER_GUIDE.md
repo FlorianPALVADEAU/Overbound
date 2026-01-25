@@ -38,7 +38,7 @@ Le titre de l'email qui apparaît dans la boîte de réception.
 
 **Exemple** :
 ```
-Nouveau : Trail des Montagnes 2025 🏔️
+Nouveau : Trail des Montagnes 2026 🏔️
 ```
 
 #### Pré-header (optionnel mais recommandé)
@@ -69,7 +69,7 @@ Le corps principal de votre email en HTML.
 
 <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
   Nous sommes ravis de vous annoncer notre prochain événement :
-  <strong>Trail des Montagnes de l'Ubaye</strong>, le 15 juin 2025.
+  <strong>Trail des Montagnes de l'Ubaye</strong>, le 15 juin 2026.
 </p>
 
 <div style="background-color: #f3f4f6; border-left: 4px solid #3b82f6; padding: 16px; margin: 24px 0;">
@@ -90,7 +90,7 @@ Le corps principal de votre email en HTML.
 </ul>
 
 <div style="text-align: center; margin: 32px 0;">
-  <a href="https://overbound-race.com/events/trail-ubaye-2025"
+  <a href="https://overbound-race.com/events/trail-ubaye-2026"
      style="display: inline-block; background-color: #3b82f6; color: #ffffff;
             padding: 14px 32px; text-decoration: none; border-radius: 8px;
             font-weight: bold; font-size: 16px;">
@@ -117,7 +117,7 @@ Nouveau Trail : Les Montagnes de l'Ubaye
 Salut les Warriors !
 
 Nous sommes ravis de vous annoncer notre prochain événement :
-Trail des Montagnes de l'Ubaye, le 15 juin 2025.
+Trail des Montagnes de l'Ubaye, le 15 juin 2026.
 
 OFFRE EARLY BIRD : -20% jusqu'au 31 mars !
 
@@ -127,7 +127,7 @@ Au programme :
 - Ravitaillements tous les 5km
 - Douche chaude et repas à l'arrivée
 
-👉 Inscris-toi maintenant : https://overbound-race.com/events/trail-ubaye-2025
+👉 Inscris-toi maintenant : https://overbound-race.com/events/trail-ubaye-2026
 
 À très vite sur les sentiers !
 L'équipe Overbound
@@ -288,7 +288,7 @@ Voici ce que reçoit le destinataire :
 
 ### Annonce d'événement
 **Listes** : Annonces d'événements
-**Sujet** : Nouveau : Trail des Montagnes 2025
+**Sujet** : Nouveau : Trail des Montagnes 2026
 **Pré-header** : 3 parcours, inscriptions ouvertes !
 
 ### Alerte tarifaire

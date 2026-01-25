@@ -14,10 +14,10 @@ export async function GET(
       data: { user },
     } = await supabase.auth.getUser()
 
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select(
-        `*,
+    // Détecte si c'est un UUID ou un slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
+    const selectQuery = `*,
         tickets (
           id,
           name,
@@ -42,9 +42,13 @@ export async function GET(
           )
         ),
         price_tiers:event_price_tiers (*)
-      `,
-      )
-      .eq('id', id)
+      `
+
+    // Cherche par UUID ou par slug selon le format
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select(selectQuery)
+      .eq(isUUID ? 'id' : 'slug', id)
       .single()
 
     if (eventError || !event) {

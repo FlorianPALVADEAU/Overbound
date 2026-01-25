@@ -117,7 +117,7 @@ const handlePost = async (request: NextRequest) => {
         await sendDocumentRequiredEmail({
           to: user.email!,
           participantName: fullName ?? 'Athlète',
-          eventTitle: 'OverBound Lyon 2025',
+          eventTitle: 'OverBound Lyon 2026',
           uploadUrl: `${ACCOUNT_URL}/registration/sample/document`,
           requiredDocuments: ['Certificat médical de moins de 1 an'],
         })
@@ -127,7 +127,7 @@ const handlePost = async (request: NextRequest) => {
         await sendDocumentApprovedEmail({
           to: user.email!,
           participantName: fullName ?? null,
-          eventTitle: 'OverBound Lyon 2025',
+          eventTitle: 'OverBound Lyon 2026',
         })
         return 'Confirmation document validé envoyée.'
       },
@@ -135,7 +135,7 @@ const handlePost = async (request: NextRequest) => {
         await sendDocumentRejectedEmail({
           to: user.email!,
           participantName: fullName ?? null,
-          eventTitle: 'OverBound Lyon 2025',
+          eventTitle: 'OverBound Lyon 2026',
           reason: 'Le document fourni est illisible. Merci de renvoyer une version scannée.',
           uploadUrl: `${ACCOUNT_URL}/registration/sample/document`,
         })
@@ -223,8 +223,8 @@ const handlePost = async (request: NextRequest) => {
           to: user.email!,
           participantName: fullName ?? 'Athlète',
           eventTitle: 'OverBound Alpes',
-          previousDate: 'Samedi 18 octobre 2025, 09:00',
-          newDate: 'Dimanche 19 octobre 2025, 09:00',
+          previousDate: 'Samedi 18 octobre 2026, 09:00',
+          newDate: 'Dimanche 19 octobre 2026, 09:00',
           previousLocation: 'Grenoble',
           newLocation: 'Autrans — Vercors',
           statusMessage: 'Le lieu a été ajusté pour offrir un parcours encore plus spectaculaire.',

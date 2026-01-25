@@ -4,36 +4,15 @@ import { Instagram, Youtube, Music2 } from 'lucide-react'
 
 const LINK_GROUPS = [
   {
-    title: 'Explorer',
-    links: [
-      { label: 'Accueil', href: '/' },
-      { label: 'Les courses', href: '/events' },
-      { label: 'Les obstacles', href: '/obstacles' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Catégories', href: '/blog/categories' },
-      { label: 'Auteurs', href: '/blog/auteurs' },
-    ],
-  },
-  {
-    title: 'S’entraîner',
-    links: [
-      { label: 'Entraînements', href: '/trainings' },
-      { label: 'Plans d’entraînement', href: '/trainings/plans' },
-      { label: 'Test de fitness', href: '/trainings/fitness-test' },
-      // { label: 'Nutrition', href: '/trainings/nutrition' },
-      { label: 'Quel format pour moi ?', href: '/trainings/what-race-for-me' },
-    ],
-  },
-  {
     title: 'La tribu',
     links: [
-      { label: 'Volontaires', href: '/volunteers' },
-      { label: 'Concept', href: '/about/concept' },
+      { label: 'Accueil', href: '/' },
+      { label: 'Le concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
-      { label: 'Presse', href: '/about/press' },
-      // { label: 'Équipe', href: '/about/team' },
+      { label: 'Devenir bénévole', href: '/volunteers' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
+      { label: 'Presse', href: '/about/press' },
     ],
   },
   {

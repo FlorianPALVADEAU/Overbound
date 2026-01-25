@@ -53,7 +53,7 @@ export function EventStructuredData({ event }: { event: any }) {
       "price": ticket.price,
       "priceCurrency": "EUR",
       "availability": "https://schema.org/InStock",
-      "url": `${process.env.NEXT_PUBLIC_SITE_URL || "https://overbound-race.com"}/events/${event.id}/register`
+      "url": `${process.env.NEXT_PUBLIC_SITE_URL || "https://overbound-race.com"}/events/${event.slug}/register`
     }))
   }
 

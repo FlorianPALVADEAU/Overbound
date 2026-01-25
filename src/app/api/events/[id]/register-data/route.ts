@@ -18,6 +18,9 @@ export async function GET(
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
+    // Détecte si c'est un UUID ou un slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
     const { data: event, error: eventError } = await supabase
       .from('events')
       .select(
@@ -45,7 +48,7 @@ export async function GET(
         price_tiers:event_price_tiers(*)
       `,
       )
-      .eq('id', id)
+      .eq(isUUID ? 'id' : 'slug', id)
       .single()
 
     if (eventError || !event) {
@@ -58,6 +61,28 @@ export async function GET(
       .eq('event_id', event.id)
 
     const availableSpots = Math.max((event.capacity || 0) - (totalRegistrations || 0), 0)
+
+    // Get registration counts per ticket
+    const ticketIds = (event.tickets || []).map((t: { id: string }) => t.id)
+    const { data: ticketRegistrations } = await supabase
+      .from('registrations')
+      .select('ticket_id')
+      .eq('event_id', event.id)
+      .in('ticket_id', ticketIds)
+
+    // Count registrations per ticket
+    const registrationCountsByTicket: Record<string, number> = {}
+    for (const reg of ticketRegistrations || []) {
+      if (reg.ticket_id) {
+        registrationCountsByTicket[reg.ticket_id] = (registrationCountsByTicket[reg.ticket_id] || 0) + 1
+      }
+    }
+
+    // Enrich tickets with registration counts
+    const ticketsWithCounts = (event.tickets || []).map((ticket: { id: string; max_participants: number }) => ({
+      ...ticket,
+      current_registrations: registrationCountsByTicket[ticket.id] || 0,
+    }))
 
     const { data: upsellsData, error: upsellError } = await supabase
       .from('upsells')
@@ -72,7 +97,7 @@ export async function GET(
 
     return NextResponse.json({
       event,
-      tickets: event.tickets || [],
+      tickets: ticketsWithCounts,
       upsells: upsellsData || [],
       availableSpots,
       user: {

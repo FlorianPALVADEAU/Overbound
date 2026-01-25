@@ -105,7 +105,7 @@ export function DocumentUpload({
   const formatRequiredType = (value: string) => {
     const lookup: Record<string, string> = {
       pps_certificate: 'Certificat PPS',
-      pps_certificate_2025: 'Certificat PPS 2025',
+      pps_certificate_2025: 'Certificat PPS 2026',
       sports_license: 'Licence sportive',
       insurance_certificate: "Attestation d'assurance",
       parental_authorization: 'Autorisation parentale',

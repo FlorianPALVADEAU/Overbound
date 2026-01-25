@@ -237,8 +237,8 @@ export default function EventTicketListWithRegistration({
                                 <Button asChild className="w-full shadow-md hover:shadow-lg transition-shadow" size="lg">
                                   <Link
                                     href={user
-                                      ? `/events/${event.id}/register?ticket=${ticket.id}`
-                                      : `/auth/login?next=${encodeURIComponent(`/events/${event.id}/register?ticket=${ticket.id}`)}`}
+                                      ? `/events/${event.slug}/register?ticket=${ticket.id}`
+                                      : `/auth/login?next=${encodeURIComponent(`/events/${event.slug}/register?ticket=${ticket.id}`)}`}
                                   >
                                     Réserver maintenant
                                   </Link>
