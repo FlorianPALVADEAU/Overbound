@@ -59,10 +59,10 @@ const NextEvents = () => {
 									Le 12 septembre 2026, la première édition d'Overbound prendra vie à la base de loisirs de SQY.
 								</p>
 								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
-									Un parcours sauvage de 6 & 12 km, sculpté par la nature, où l'eau glacée, la boue et les obstacles inédits mettront à l'épreuve ta force et ton mental.
+									Une boucle de 2km à faire autant de fois que tu peux, où la boue et les obstacles inédits mettront à l'épreuve ta force et ton mental.
 								</p>
 								<p className='text-base sm:text-lg xl:text-lg text-justify text-gray-300 leading-relaxed'>
-									Pas de décors artificiels, pas de compromis : juste toi, les éléments, et la tribu .
+									Pas de décors artificiels, pas de compromis : juste toi, la tribu et une ambiance de folie propice au dépassement de soi.
 								</p>
 								<p className='text-base sm:text-lg xl:text-lg text-justify text-white font-medium leading-relaxed'>
 									Es-tu prêt à écrire l'histoire avec nous ?

@@ -80,7 +80,7 @@ await sendNewEventAnnouncementEmail({
   userId: 'user-uuid', // IMPORTANT : obligatoire pour le unsubscribe
   fullName: 'John Doe',
   eventTitle: 'Trail des Sommets',
-  eventDate: '15 juin 2025',
+  eventDate: '15 juin 2026',
   eventLocation: 'Chamonix',
   eventUrl: 'https://overbound-race.com/events/123',
   highlight: 'Nouveau parcours 50km !',
@@ -235,7 +235,7 @@ const recipients = await getRecipientsFromList('events-announcements')
 await dispatchNewEventAnnouncement({
   recipients,
   eventTitle: 'Trail des Sommets',
-  eventDate: '15 juin 2025',
+  eventDate: '15 juin 2026',
   eventLocation: 'Chamonix',
   eventUrl: 'https://overbound-race.com/events/123',
 })
@@ -671,7 +671,7 @@ const recipients = await getEventAnnouncementRecipients()
 await dispatchNewEventAnnouncement({
   recipients,
   eventTitle: 'Trail Test',
-  eventDate: '2025-06-15',
+  eventDate: '2026-06-15',
   eventLocation: 'Chamonix',
   eventUrl: 'https://overbound-race.com/events/test',
 })
@@ -679,5 +679,5 @@ await dispatchNewEventAnnouncement({
 
 ---
 
-**Dernière mise à jour** : 9 novembre 2025
+**Dernière mise à jour** : 9 novembre 2026
 **Auteur** : Claude (Anthropic)

@@ -58,6 +58,7 @@ import type { RegistrationSummary, RegistrationDraft } from '@/store/useRegistra
 import { FORMAT_LEVELS, type FormatLevelId } from '@/constants/formatLevels'
 
 interface EventTicket extends Ticket {
+  current_registrations?: number
   race?: Ticket['race'] & {
     type?: string | null
     target_public?: string | null
@@ -989,7 +990,7 @@ export default function MultiStepEventRegistration({
     }
 
     setRegistrationDraft(payload)
-    router.push(`/events/${event.id}/register/payment`)
+    router.push(`/events/${event.slug}/register/payment`)
   }
 
   const isTicketsStepValid = totalParticipants > 0
@@ -1044,16 +1045,37 @@ export default function MultiStepEventRegistration({
           ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
           : ticket.final_price_cents
 
+        // Calculate registration progress
+        const currentRegistrations = ticket.current_registrations ?? 0
+        const maxParticipants = ticket.max_participants ?? 0
+        const isSoldOut = maxParticipants > 0 && currentRegistrations >= maxParticipants
+        const rawPercentage = maxParticipants > 0
+          ? Math.min((currentRegistrations / maxParticipants) * 100, 100)
+          : 0
+        // Minimum 4% fill to show some progress even with 0 registrations
+        const progressPercentage = maxParticipants > 0 ? Math.max(rawPercentage, 4) : 0
+
         return (
           <Card
             key={ticket.id}
-            className={`transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}
+            className={`transition-colors ${
+              isSoldOut
+                ? 'opacity-60 bg-muted/50'
+                : isSelected
+                  ? 'border-primary bg-primary/5'
+                  : ''
+            }`}
           >
-            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-2">
+            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-2">
+              <div className="space-y-2 flex-1">
                 <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <TicketIcon className="h-4 w-4 text-primary" />
+                  <TicketIcon className={`h-4 w-4 ${isSoldOut ? 'text-muted-foreground' : 'text-primary'}`} />
                   {ticket.name}
+                  {isSoldOut && (
+                    <Badge variant="destructive" className="ml-2">
+                      Complet
+                    </Badge>
+                  )}
                 </CardTitle>
                 {ticket.description && (
                   <CardDescription>{ticket.description}</CardDescription>
@@ -1080,7 +1102,7 @@ export default function MultiStepEventRegistration({
                       {formatPrice(ticket.final_price_cents, currency)}
                     </div>
                   )}
-                  <div className="text-lg font-semibold text-primary">
+                  <div className={`text-lg font-semibold ${isSoldOut ? 'text-muted-foreground' : 'text-primary'}`}>
                     {currentPrice !== null && currentPrice !== undefined
                       ? formatPrice(currentPrice, currency)
                       : 'Tarif à venir'}
@@ -1096,7 +1118,7 @@ export default function MultiStepEventRegistration({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    disabled={quantity === 0}
+                    disabled={quantity === 0 || isSoldOut}
                     onClick={() => handleTicketQuantityChange(ticket.id, quantity - 1)}
                   >
                     <Minus className="h-3 w-3" />
@@ -1106,6 +1128,7 @@ export default function MultiStepEventRegistration({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
+                    disabled={isSoldOut}
                     onClick={() => handleTicketQuantityChange(ticket.id, quantity + 1)}
                   >
                     <Plus className="h-3 w-3" />
@@ -1113,6 +1136,23 @@ export default function MultiStepEventRegistration({
                 </div>
               </div>
             </CardHeader>
+            {/* Progress bar for registrations - full width */}
+            {maxParticipants > 0 && (
+              <CardContent className="pt-0 pb-4">
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground">
+                    {isSoldOut
+                      ? 'Plus de places disponibles'
+                      : `${maxParticipants - currentRegistrations} places restantes`}
+                  </div>
+                  <Progress
+                    value={progressPercentage}
+                    className={`h-3 ${isSoldOut && 'bg-destructive/20'}`}
+                    indicatorClassName={isSoldOut ? 'bg-destructive' : ''}
+                  />
+                </div>
+              </CardContent>
+            )}
           </Card>
         )
       })}

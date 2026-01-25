@@ -16,37 +16,33 @@ import Image from "next/image";
 import {
 	Mountain,
 	Sparkles,
-	Star,
-	Waves,
 	ArrowRight,
 	Crown,
 	Globe,
 } from "lucide-react";
-import NeedHelpChoosingYourFormat from "./NeedHelpChoosingYourFormat";
-import { FORMAT_LEVELS } from "@/constants/formatLevels";
 
 const steps = [
 	{
-		title: "Étape 1",
-		text: "Choisis un format qui te plaît et qui semble adapté à ton niveau physique. Si tu ne sais pas par où commencer, nous recommandons le format 6km ou 12km.",
+		title: "Un format unique au monde",
+		text: "La Ultra Arena est le tout premier Backyard OCR de l'histoire. Inspiré du légendaire Barkley Marathons, ce format inédit combine endurance extrême et obstacles techniques dans une course à élimination progressive.",
 		image:
 			"/images/images/young-lady-smiling-below-barbed-wires.avif",
 	},
 	{
-		title: "Étape 2",
-		text: `INNOVATION MONDIALE : Choisis ton niveau de difficulté !\n\n🟢 ${FORMAT_LEVELS.low.name.toUpperCase()} : Obstacles classiques accessibles\n🟡 ${FORMAT_LEVELS.mid.name.toUpperCase()} : Obstacles exigeants, technique requise\n🔴 ${FORMAT_LEVELS.hard.name.toUpperCase()} : Obstacles extrêmes + lests obligatoires\n\nMême parcours, 3 défis différents. Personne d'autre ne fait ça.`,
+		title: "Ouvert à tous",
+		text: "Homme, femme, débutant ou confirmé : la Ultra Arena t'accueille. Pas besoin d'être un athlète d'élite pour participer. Le seul adversaire, c'est toi-même. Chaque tour complété est une victoire personnelle.",
 		image:
 			"/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif",
 	},
 	{
-		title: "Étape 3",
-		text: "Remplis un formulaire simple et 100% sécurisé, ajoute les extras de ton choix, effectue le paiement et ta place sera réservée.",
+		title: "Le défi ultime",
+		text: "2km par tour, 15+ obstacles, 20min max pour boucler. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
 		image:
 			"/images/images/a-sporty-man-laughing-facing-forward-and-looking-to-the-left.avif",
 	},
 	{
-		title: "Étape 4",
-		text: "Reçois un mail de confirmation, ton guide d'entraînement et ton kit athlète pour le jour J.",
+		title: "Fais partie de l'histoire",
+		text: "En 2026, sois parmi les pionniers de ce nouveau format révolutionnaire. La première Ultra Arena au monde se prépare. Ton nom restera gravé comme l'un des premiers à avoir relevé ce défi.",
 		image:
 			"/images/images/overbound-headband-on-chains-with-grass-in-background.avif",
 	},
@@ -201,8 +197,8 @@ useEffect(() => {
 			<div className="w-full flex flex-col gap-8 sm:gap-10 xl:gap-50 h-full ">
 				<div className="relative w-full bg-[#101010] flex flex-col items-center text-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 px-4 sm:px-6 xl:px-32 py-20">
 					<Headings
-						title="Choisis ta distance ET ton niveau de difficulté"
-						description="Innovation mondiale : 3 couleurs, 3 niveaux de difficulté sur le même parcours."
+						title="Ultra Arena : le premier Backyard OCR au monde"
+						description="Une première mondiale signée Overbound. Un format inédit qui teste tes limites comme jamais."
 					/>
 
 					<div className="relative z-10 mx-auto flex w-full flex-col gap-10">
@@ -210,131 +206,80 @@ useEffect(() => {
 							<div className="text-center">
 								<Badge className="bg-amber-500/20 text-amber-600 border-amber-500/40 font-bold px-3 py-1.5 text-xs sm:text-sm w-full sm:w-auto inline-flex items-center justify-center gap-2 whitespace-normal text-center">
 									<Globe className="h-4 w-4" />
-									<span className="leading-snug">Première mondiale — système de difficulté modulaire</span>
+									<span className="leading-snug">Première mondiale — Backyard OCR</span>
 								</Badge>
 							</div>
 
-						<div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-							<Card className="group hover:-translate-y-1 transition-all border-border/60">
+						<div className="grid gap-6 md:grid-cols-3">
+							<Card className="group hover:-translate-y-1 transition-all border-green-500/40 bg-gradient-to-br from-background to-amber-500/5">
 								<CardHeader className="space-y-3">
-									<Badge className="bg-green-500/20 text-green-600 w-fit">
-										<Mountain className="h-4 w-4 mr-1" />
-										Sprint
+									<Badge className="bg-green-500 text-white w-fit">
+										<Crown className="h-4 w-4 mr-1" />
+										Format inédit
 									</Badge>
-									<CardTitle className="text-2xl">Origin</CardTitle>
-									<p className="text-sm font-medium text-muted-foreground">
-										6 km · 20 obstacles
-									</p>
+									<CardTitle className="text-2xl">Tours de 20min</CardTitle>
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										Idéal pour découvrir les courses à obstacles. Un cocktail d'endurance et de fun.
+										En format RANKED, chaque tour de 2km avec 15+ obstacles doit être complété en moins de 20 minutes pour continuer. Le défi ultime pour tester ton endurance et ta stratégie.
+										<br/>Le format OPEN te permet de courir sans limite de temps, pour le plaisir et le dépassement de soi.
 									</p>
-									<Button
-										asChild
-										variant="outline"
-										className="w-full rounded-full"
-										size="sm"
-									>
-										<Link href="/races/origin">
-											Découvrir
-											<ArrowRight className="ml-2 h-3 w-3 transition group-hover:translate-x-1" />
-										</Link>
-									</Button>
-								</CardContent>
-							</Card>
-
-							<Card className="group hover:-translate-y-1 transition-all border-border/60">
-								<CardHeader className="space-y-3">
-									<Badge className="bg-blue-500/20 text-blue-600 w-fit">
-										<Sparkles className="h-4 w-4 mr-1" />
-										Intermédiaire
-									</Badge>
-									<CardTitle className="text-2xl">Horizon</CardTitle>
-									<p className="text-sm font-medium text-muted-foreground">
-										12 km · 35 obstacles
-									</p>
-								</CardHeader>
-								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
-									<p className="text-sm text-muted-foreground leading-relaxed">
-										Un véritable défi d'endurance et de technique qui saura te mettre à l'épreuve. La mission parfaite pour les coureurs réguliers.
-									</p>
-									<Button
-										asChild
-										variant="outline"
-										className="w-full rounded-full"
-										size="sm"
-									>
-										<Link href="/races/horizon">
-											Découvrir
-											<ArrowRight className="ml-2 h-3 w-3 transition group-hover:translate-x-1" />
-										</Link>
-									</Button>
 								</CardContent>
 							</Card>
 
 							<Card className="group hover:-translate-y-1 transition-all border-amber-500/40 bg-gradient-to-br from-background to-amber-500/5">
 								<CardHeader className="space-y-3">
 									<Badge className="bg-amber-500 text-white w-fit">
-										<Crown className="h-4 w-4 mr-1" />
-										Mental
+										<Sparkles className="h-4 w-4 mr-1" />
+										Élimination progressive
 									</Badge>
-									<CardTitle className="text-2xl">Ultra Arena</CardTitle>
-									<p className="text-sm font-medium text-muted-foreground">
-										∞ km · ∞ obstacles
-									</p>
+									<CardTitle className="text-2xl">Dépassement de soi</CardTitle>
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										<span className="text-amber-600 font-semibold">
-											Format backyard inédit.
-										</span>{" "}
-										Élimination progressive. Le dernier debout gagne (qui aura le meilleur mental ?).
+										Pas de temps limite. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent ou que tu aies atteint tes objectifs. Mental et endurance seront tes meilleurs alliés.
 									</p>
-									<Button
-										asChild
-										className="w-full rounded-full bg-amber-600 hover:bg-amber-700"
-										size="sm"
-									>
-										<Link href="/races/ultra-arena">
-											En savoir plus
-											<ArrowRight className="ml-2 h-3 w-3" />
-										</Link>
-									</Button>
 								</CardContent>
 							</Card>
 
-							<Card className="group hover:-translate-y-1 transition-all border-border/60">
+							<Card className="group hover:-translate-y-1 transition-all border-green-500/40 bg-gradient-to-br from-background to-amber-500/5">
 								<CardHeader className="space-y-3">
-									<Badge className="bg-purple-500/20 text-purple-600 w-fit">
-										<Waves className="h-4 w-4 mr-1" />
-										Famille
+									<Badge className="bg-green-500 text-white w-fit">
+										<Mountain className="h-4 w-4 mr-1" />
+										Parcours technique
 									</Badge>
-									<CardTitle className="text-2xl">Tribal Kids</CardTitle>
-									<p className="text-sm font-medium text-muted-foreground">
-										1 / 2 / 3 km
-									</p>
+									<CardTitle className="text-2xl">2km · 15+ obstacles</CardTitle>
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										Pour les 6-14 ans, esprit collectif. Possibilité pour les parents d'accompagner leurs enfants. Obstacles ludiques et sécurisés.
+										Un parcours exigeant avec des obstacles techniques : grip, portés lourds, coordination. Chaque tour devient plus difficile. Mais nos bénévoles ainsi que l'ambiance du village seront là pour te soutenir !
 									</p>
-									<Button
-										asChild
-										variant="outline"
-										className="w-full rounded-full"
-										size="sm"
-									>
-										<Link href="/races/tribal-kids">
-											Découvrir
-											<ArrowRight className="ml-2 h-3 w-3 transition group-hover:translate-x-1" />
-										</Link>
-									</Button>
 								</CardContent>
 							</Card>
 						</div>
 
-						<NeedHelpChoosingYourFormat />
+						<div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
+							<Button
+								asChild
+								size="lg"
+								className="bg-red-600 hover:bg-red-700 text-white px-8 rounded-full"
+							>
+								<Link href="/events/ultra-arena-2026/register">
+									S'inscrire à la Ultra Arena
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+							<Button
+								asChild
+								variant="outline"
+								size="lg"
+								className="rounded-full"
+							>
+								<Link href="/about/concept">
+									Découvrir le concept
+								</Link>
+							</Button>
+						</div>
 					</div>
 					<Image
 						src="/images/decorations/wall-texture.png"
@@ -347,7 +292,8 @@ useEffect(() => {
 
 				<div className="w-full flex flex-col items-center gap-6 px-4 sm:px-6 xl:px-32">
 					<Headings
-						title="Peu importe ton niveau, il y a un format rien que pour toi"
+						title="Accessible à tous, exigeant pour chacun"
+						description="Tu n'as pas besoin d'être un athlète d'élite. Juste le courage de te dépasser."
 					/>
 					{/* === TIMELINE === */}
 					<div className="relative flex flex-col lg:flex-row w-full gap-12">
@@ -514,13 +460,13 @@ useEffect(() => {
 													>
 														{step.text}
 													</motion.p>
-													{index === 1 ? (
-														<div className="mt-4 gap-2 flex">
+													{index === 3 ? (
+														<div className="mt-4 gap-2 flex flex-wrap">
 															<Link
-																href="/trainings/what-race-for-me"
-																className="inline-flex items-center gap-1 rounded-full border border-[#26AA26]/40 px-3 py-1 text-[#26AA26] text-sm underline-offset-4 hover:bg-[#26AA26]/10 hover:underline"
+																href="/events/ultra-arena-2026/register"
+																className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-amber-600 text-sm underline-offset-4 hover:bg-amber-500/20 hover:underline"
 															>
-																↗ Besoin d'aide pour choisir ?
+																↗ S'inscrire maintenant
 															</Link>
 															<Link
 																href="/about/concept"

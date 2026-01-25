@@ -22,7 +22,7 @@ import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
-import RecentBlogTeaser from '@/components/blog/RecentBlogTeaser'
+import FAQ from '@/components/homepage/FAQ'
 import { EventStructuredData } from '@/components/seo/StructuredData'
 
 const getStatusColor = (status: string) => {
@@ -502,7 +502,7 @@ export default function EventDetailPage() {
           />
         </div>
       </section>
-      <RecentBlogTeaser />
+      <FAQ />
     </main>
   )
 }

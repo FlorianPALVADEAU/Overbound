@@ -99,21 +99,46 @@ const handleDelete = async (
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
+    // Vérifier le paramètre force dans l'URL
+    const url = new URL(request.url)
+    const forceDelete = url.searchParams.get('force') === 'true'
+
     // Vérifier s'il y a des inscriptions utilisant ce ticket
     const { count } = await supabase
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('ticket_id', id)
 
-    if (count && count > 0) {
+    if (count && count > 0 && !forceDelete) {
       return NextResponse.json(
-        { error: 'Impossible de supprimer un ticket avec des inscriptions existantes' },
+        {
+          error: 'Ce ticket a des inscriptions existantes',
+          registrationCount: count,
+          requiresConfirmation: true
+        },
         { status: 409 }
       )
     }
 
-    // Utiliser supabaseAdmin pour supprimer
     const admin = supabaseAdmin()
+
+    // Si force delete et il y a des inscriptions, les supprimer d'abord
+    if (count && count > 0 && forceDelete) {
+      const { error: regError } = await admin
+        .from('registrations')
+        .delete()
+        .eq('ticket_id', id)
+
+      if (regError) {
+        console.error('Erreur suppression inscriptions:', regError)
+        return NextResponse.json(
+          { error: 'Erreur lors de la suppression des inscriptions associées' },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Supprimer le ticket
     const { error } = await admin
       .from('tickets')
       .delete()
@@ -123,7 +148,7 @@ const handleDelete = async (
       throw error
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, deletedRegistrations: forceDelete ? count : 0 })
 
   } catch (error) {
     console.error('Erreur DELETE ticket:', error)

@@ -80,7 +80,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
 
       setTimeout(() => {
         clearRegistrationDraft()
-        router.replace(`/events/${event.id}/success?payment_intent=${paymentIntent.id}`)
+        router.replace(`/events/${event.slug}/success?payment_intent=${paymentIntent.id}`)
       }, 1200)
     } catch (err) {
       console.error('Erreur finalisation inscription:', err)
@@ -129,7 +129,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           </Alert>
         )}
         <Button asChild variant="outline">
-          <Link href={`/events/${event.id}/register`}>Revenir à l'inscription</Link>
+          <Link href={`/events/${event.slug}/register`}>Revenir à l'inscription</Link>
         </Button>
       </div>
     )
@@ -145,7 +145,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           </AlertDescription>
         </Alert>
         <Button asChild variant="outline">
-          <Link href={`/events/${event.id}/register`}>
+          <Link href={`/events/${event.slug}/register`}>
             <ChevronLeft className="mr-1 h-4 w-4" />
             Retour à l'inscription
           </Link>
@@ -158,7 +158,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <Button asChild variant="outline" size="sm">
-          <Link href={`/events/${event.id}/register`}>
+          <Link href={`/events/${event.slug}/register`}>
             <ChevronLeft className="mr-1 h-4 w-4" />
             Modifier mes informations
           </Link>

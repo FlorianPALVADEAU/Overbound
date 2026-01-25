@@ -4,11 +4,21 @@ import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, AlertTriangle } from 'lucide-react'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import type { Ticket } from '@/types/Ticket'
 import { TicketFormDialog, type TicketFormValues } from './TicketFormDialog'
@@ -94,6 +104,11 @@ export function TicketsSection() {
   const [eventFilter, setEventFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Delete confirmation dialog state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
+  const [registrationCount, setRegistrationCount] = useState<number>(0)
+
   const combinedLoading = ticketsLoading || eventsLoading || racesLoading
   const combinedError = ticketsError || eventsError || racesError
 
@@ -131,24 +146,44 @@ export function TicketsSection() {
     setDialogOpen(true)
   }
 
-  const handleDelete = async (ticket: Ticket) => {
-    if (!confirm(`Supprimer le ticket "${ticket.name}" ?`)) {
-      return
-    }
+  const handleDeleteClick = (ticket: Ticket) => {
+    setTicketToDelete(ticket)
+    setRegistrationCount(0)
+    setDeleteConfirmOpen(true)
+  }
 
-    setDeleteLoadingId(ticket.id)
+  const handleDelete = async (force = false) => {
+    if (!ticketToDelete) return
+
+    setDeleteLoadingId(ticketToDelete.id)
     try {
-      await deleteAdminTicket(ticket.id)
+      await deleteAdminTicket(ticketToDelete.id, force)
       queryClient.setQueryData<Ticket[]>(adminTicketsQueryKey, (previous) => {
         if (!previous) return []
-        return previous.filter((item) => item.id !== ticket.id)
+        return previous.filter((item) => item.id !== ticketToDelete.id)
       })
-      setMessage({ type: 'success', text: 'Ticket supprimé avec succès' })
+      setMessage({
+        type: 'success',
+        text: force
+          ? `Ticket et ${registrationCount} inscription(s) supprimés avec succès`
+          : 'Ticket supprimé avec succès'
+      })
+      setDeleteConfirmOpen(false)
+      setTicketToDelete(null)
+      setRegistrationCount(0)
     } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.error || error.message
-        : (error as Error).message || 'Erreur lors de la suppression'
-      setMessage({ type: 'error', text })
+      const err = error as Error & { registrationCount?: number; requiresConfirmation?: boolean }
+      if (err.requiresConfirmation && err.registrationCount) {
+        // Show the count and keep the dialog open for force confirmation
+        setRegistrationCount(err.registrationCount)
+      } else {
+        const text = axios.isAxiosError(error)
+          ? error.response?.data?.error || error.message
+          : err.message || 'Erreur lors de la suppression'
+        setMessage({ type: 'error', text })
+        setDeleteConfirmOpen(false)
+        setTicketToDelete(null)
+      }
     } finally {
       setDeleteLoadingId(null)
     }
@@ -304,7 +339,7 @@ export function TicketsSection() {
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => handleDelete(ticket)}
+              onClick={() => handleDeleteClick(ticket)}
               disabled={deleteLoadingId === ticket.id}
             >
               {deleteLoadingId === ticket.id ? 'Suppression…' : 'Supprimer'}
@@ -313,7 +348,7 @@ export function TicketsSection() {
         ),
       },
     ]
-  }, [deleteLoadingId])
+  }, [deleteLoadingId, handleDeleteClick])
 
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
 
@@ -401,6 +436,67 @@ export function TicketsSection() {
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
       />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {registrationCount > 0 && <AlertTriangle className="h-5 w-5 text-destructive" />}
+              Supprimer le ticket
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              {registrationCount > 0 ? (
+                <>
+                  <p className="text-destructive font-medium">
+                    Attention : ce ticket a {registrationCount} inscription{registrationCount > 1 ? 's' : ''} active{registrationCount > 1 ? 's' : ''}.
+                  </p>
+                  <p>
+                    En confirmant la suppression, vous allez supprimer définitivement le ticket
+                    <strong> &quot;{ticketToDelete?.name}&quot;</strong> ainsi que toutes les inscriptions associées.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Cette action est irréversible. Les participants concernés perdront leur inscription.
+                  </p>
+                </>
+              ) : (
+                <p>
+                  Êtes-vous sûr de vouloir supprimer le ticket <strong>&quot;{ticketToDelete?.name}&quot;</strong> ?
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setTicketToDelete(null)
+                setRegistrationCount(0)
+              }}
+            >
+              Annuler
+            </AlertDialogCancel>
+            {registrationCount > 0 ? (
+              <AlertDialogAction
+                onClick={() => handleDelete(true)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteLoadingId === ticketToDelete?.id}
+              >
+                {deleteLoadingId === ticketToDelete?.id
+                  ? 'Suppression…'
+                  : `Supprimer le ticket et ${registrationCount} inscription${registrationCount > 1 ? 's' : ''}`}
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction
+                onClick={() => handleDelete(false)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteLoadingId === ticketToDelete?.id}
+              >
+                {deleteLoadingId === ticketToDelete?.id ? 'Suppression…' : 'Supprimer'}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

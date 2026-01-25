@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Target, Zap, Users, Globe, Sparkles, Mountain, Heart, Trophy } from 'lucide-react'
+import { Zap, Users, Globe, Sparkles, Mountain, Heart, Trophy, Crown, Flame } from 'lucide-react'
 
 export default function OurStoryPage() {
   return (
@@ -35,7 +35,7 @@ export default function OurStoryPage() {
             </h1>
             <p className='text-base leading-relaxed text-muted-foreground sm:text-lg'>
               L'histoire d'Overbound, c'est celle d'une volonté de créer quelque chose d'unique dans l'univers de l'OCR :
-              une organisation 100% européenne qui place l'athlète au cœur de l'expérience.
+              une organisation 100% européenne qui repousse les limites de ce qui existe.
             </p>
           </div>
         </div>
@@ -55,18 +55,17 @@ export default function OurStoryPage() {
               </h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  <span className="text-foreground font-semibold">En 2024, l'OCR en Europe est dominé par des organisations américaines</span> qui
-                  exportent leur format sans adaptation au public européen. Les courses sont souvent standardisées, sans personnalisation,
-                  et le niveau de difficulté est figé.
+                  <span className="text-foreground font-semibold">En 2024, l'OCR manque d'innovation.</span> Les formats
+                  se ressemblent, les courses suivent les mêmes schémas. Nous voulions créer quelque chose de radicalement différent.
                 </p>
                 <p>
-                  <span className="text-primary font-semibold">Overbound naît de cette frustration.</span> Nous voulions créer une organisation
-                  qui respecte les codes de l'OCR tout en apportant quelque chose de radicalement nouveau : la liberté de choisir son niveau
-                  de difficulté sur un même parcours.
+                  <span className="text-primary font-semibold">Overbound naît de cette ambition.</span> Pourquoi ne pas
+                  imaginer un format jamais vu ? Un défi d'endurance qui combine l'intensité de l'OCR avec le concept
+                  du backyard ultra ?
                 </p>
                 <p>
-                  Notre ambition ? Devenir <span className="text-foreground font-semibold">la référence OCR en Europe</span>, avec une identité
-                  forte, des innovations mondiales et une communauté soudée autour de valeurs communes.
+                  C'est ainsi qu'est née la <span className="text-amber-600 font-semibold">Ultra Arena</span> : le premier
+                  backyard OCR au monde. Une première mondiale qui marque le début d'une nouvelle ère.
                 </p>
               </div>
             </div>
@@ -92,7 +91,7 @@ export default function OurStoryPage() {
               </h2>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5 hover:-translate-y-1 transition-all">
                 <CardHeader>
                   <Badge className="w-fit bg-primary/10 text-primary border-primary/40 mb-4">
@@ -102,8 +101,8 @@ export default function OurStoryPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Création d'Overbound avec une ambition claire : révolutionner l'OCR en Europe avec le premier système
-                    de difficulté modulaire au monde.
+                    Création d'Overbound avec une ambition claire : innover dans l'OCR et créer
+                    un format unique au monde.
                   </p>
                 </CardContent>
               </Card>
@@ -113,12 +112,12 @@ export default function OurStoryPage() {
                   <Badge className="w-fit bg-amber-500/10 text-amber-600 border-amber-500/40 mb-4">
                     2025
                   </Badge>
-                  <CardTitle className="text-xl">Les premières courses</CardTitle>
+                  <CardTitle className="text-xl">Ultra Arena</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Lancement des premiers événements Overbound avec les formats Origin et Horizon.
-                    La communauté commence à se former.
+                    Première mondiale : lancement du format Ultra Arena, le tout premier backyard OCR
+                    de l'histoire. L'innovation qui change tout.
                   </p>
                 </CardContent>
               </Card>
@@ -126,104 +125,109 @@ export default function OurStoryPage() {
               <Card className="border-2 border-emerald-500/20 bg-gradient-to-br from-background to-emerald-500/5 hover:-translate-y-1 transition-all">
                 <CardHeader>
                   <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-emerald-500/40 mb-4">
-                    2025
+                    2025+
                   </Badge>
-                  <CardTitle className="text-xl">Ultra Arena</CardTitle>
+                  <CardTitle className="text-xl">L'expansion</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Première mondiale : lancement du format Ultra Arena, premier backyard OCR au monde.
-                    L'innovation qui marque les esprits.
+                    Développement de la communauté Overbound et préparation des prochaines éditions.
+                    L'aventure ne fait que commencer.
                   </p>
                 </CardContent>
               </Card>
             </div>
           </div>
 
-          {/* Les innovations */}
+          {/* L'innovation Ultra Arena */}
           <div className="space-y-8">
             <div className="text-center space-y-4">
-              <Badge className="bg-purple-500/20 text-purple-600 border-purple-500/40">
+              <Badge className="bg-amber-500 text-white">
                 <Globe className="h-4 w-4 mr-2" />
-                Innovations mondiales
+                Première mondiale
               </Badge>
               <h2 className="text-3xl font-bold sm:text-4xl">
-                Ce qui nous rend unique
+                Ultra Arena : notre création signature
               </h2>
               <p className="text-muted-foreground max-w-3xl mx-auto">
-                Overbound ne se contente pas de suivre les tendances : nous créons de nouvelles façons de pratiquer l'OCR.
+                Overbound ne se contente pas de suivre les tendances : nous avons créé un format
+                qui n'existait nulle part ailleurs dans le monde.
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="relative overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5 shadow-xl">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-                <CardHeader className="relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="rounded-2xl bg-primary/10 p-4">
-                      <Target className="h-8 w-8 text-primary" />
+            <Card className="relative overflow-hidden border-2 border-amber-500/30 bg-gradient-to-br from-background to-amber-500/5 shadow-2xl">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
+              <CardContent className="relative z-10 p-8 md:p-12">
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-amber-500/10 p-4">
+                        <Crown className="h-8 w-8 text-amber-600" />
+                      </div>
+                      <Badge className="bg-rose-500 text-white font-bold">
+                        DU JAMAIS VU
+                      </Badge>
                     </div>
-                    <Badge className="bg-amber-500 text-white font-bold">
-                      PREMIÈRE MONDIALE
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-2xl">
-                    Système de difficulté modulaire
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground leading-relaxed">
-                    Pour la première fois au monde, les participants peuvent choisir leur niveau de difficulté
-                    (Primal, Fury, Ultra Hardcore) sur un même parcours. Chacun vit sa propre expérience.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/40">
-                      Primal
-                    </Badge>
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                      Fury
-                    </Badge>
-                    <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/40">
-                      Ultra Hardcore
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-2 border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5 shadow-xl">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
-                <CardHeader className="relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="rounded-2xl bg-amber-500/10 p-4">
-                      <Zap className="h-8 w-8 text-amber-600" />
+                    <h3 className="text-3xl font-bold">
+                      Le premier Backyard OCR au monde
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>,
+                      la Ultra Arena est le tout premier format backyard appliqué à l'obstacle course racing.
+                      Un concept d'élimination progressive inédit qui repousse les limites du mental et du physique.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
+                        2km par tour
+                      </Badge>
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
+                        15+ obstacles
+                      </Badge>
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
+                        20min max par boucle
+                      </Badge>
                     </div>
-                    <Badge className="bg-amber-500 text-white font-bold">
-                      PREMIÈRE MONDIALE
-                    </Badge>
                   </div>
-                  <CardTitle className="text-2xl">
-                    Ultra Arena - Backyard OCR
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground leading-relaxed">
-                    Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, le Ultra Arena est le premier format backyard appliqué à l'OCR.
-                    Un concept d'élimination progressive inédit qui repousse les limites du mental et du physique.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                      ∞ km
-                    </Badge>
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                      Élimination progressive
-                    </Badge>
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                      Format élite
-                    </Badge>
+                  <div className="space-y-4">
+                    <div className="bg-amber-500/10 rounded-2xl p-6 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full bg-amber-500/20 p-2 mt-1">
+                          <Flame className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Élimination progressive</p>
+                          <p className="text-sm text-muted-foreground">
+                            Chaque tour dure 1h. Pas de retour à temps = élimination.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full bg-amber-500/20 p-2 mt-1">
+                          <Trophy className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Le dernier debout gagne</p>
+                          <p className="text-sm text-muted-foreground">
+                            La course continue jusqu'à ce qu'il ne reste qu'un concurrent.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full bg-amber-500/20 p-2 mt-1">
+                          <Zap className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Test ultime</p>
+                          <p className="text-sm text-muted-foreground">
+                            Mental et physique poussés à leurs limites absolues.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -261,12 +265,12 @@ export default function OurStoryPage() {
                 <div className="rounded-2xl bg-primary/10 p-4 w-fit mb-4">
                   <Users className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Communauté</CardTitle>
+                <CardTitle className="text-xl">Inclusivité</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Overbound, c'est avant tout une tribu. Chaque participant, chaque bénévole, chaque partenaire fait partie
-                  d'une communauté soudée par la passion du dépassement de soi.
+                  La Ultra Arena est ouverte à tous ceux qui ont le courage de se lancer. Homme, femme,
+                  débutant ou confirmé : chacun peut repousser ses propres limites.
                 </p>
               </CardContent>
             </Card>
@@ -280,8 +284,8 @@ export default function OurStoryPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Nous ne suivons pas les tendances, nous les créons. Chaque format, chaque concept est pensé
-                  pour repousser les limites de ce qui existe déjà.
+                  Nous ne suivons pas les tendances, nous les créons. La Ultra Arena est la preuve
+                  que l'OCR peut encore surprendre et se réinventer.
                 </p>
               </CardContent>
             </Card>
@@ -291,12 +295,12 @@ export default function OurStoryPage() {
                 <div className="rounded-2xl bg-emerald-500/10 p-4 w-fit mb-4">
                   <Trophy className="h-8 w-8 text-emerald-600" />
                 </div>
-                <CardTitle className="text-xl">Excellence</CardTitle>
+                <CardTitle className="text-xl">Dépassement de soi</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Chaque événement Overbound est conçu pour offrir la meilleure expérience possible :
-                  parcours exigeants, organisation irréprochable, ambiance unique.
+                  Chaque tour complété est une victoire. L'objectif n'est pas de gagner contre les autres,
+                  mais de découvrir de quoi tu es vraiment capable.
                 </p>
               </CardContent>
             </Card>
@@ -321,27 +325,27 @@ export default function OurStoryPage() {
                 Notre vision
               </Badge>
               <h2 className="text-3xl font-bold sm:text-4xl">
-                L'avenir de l'OCR en Europe
+                Sois parmi les pionniers
               </h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  <span className="text-foreground font-semibold">Notre ambition est claire :</span> faire d'Overbound
-                  la référence OCR en Europe d'ici 5 ans. Pas en copiant ce qui existe, mais en créant quelque chose
-                  de radicalement différent.
+                  <span className="text-foreground font-semibold">La première Ultra Arena au monde se prépare.</span> Tu as
+                  l'opportunité unique d'être parmi les tout premiers participants de ce format révolutionnaire.
                 </p>
                 <p>
-                  Nous voulons <span className="text-primary font-semibold">multiplier les événements à travers l'Europe</span>,
-                  développer de nouveaux formats innovants, et construire une communauté de plusieurs dizaines de milliers
-                  d'athlètes passionnés.
+                  <span className="text-amber-600 font-semibold">En 2026, l'histoire s'écrit.</span> Ceux qui participeront
+                  à cette première édition feront partie de la légende. Leur nom restera gravé comme les pionniers
+                  d'un nouveau chapitre de l'OCR.
                 </p>
                 <p>
                   <span className="text-foreground font-semibold">Overbound ne sera jamais juste une course.</span>&nbsp;
-                  C'est une expérience complète exprimée par une tribu qui partage la même passion du dépassement de soi, et de l'esprit collectif.
+                  C'est une expérience de transformation personnelle, portée par une tribu qui partage la même passion
+                  du dépassement de soi.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link href="/events">Rejoindre l'aventure</Link>
+                <Button asChild size="lg" className="bg-red-600 hover:bg-red-700">
+                  <Link href="/events/ultra-arena-2026/register">S'inscrire maintenant</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
                   <Link href="/about/concept">Découvrir le concept</Link>

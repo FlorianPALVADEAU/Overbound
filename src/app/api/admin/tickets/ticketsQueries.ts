@@ -60,12 +60,26 @@ export const updateAdminTicket = async (
   return response.data.ticket
 }
 
-export const deleteAdminTicket = async (id: string): Promise<void> => {
+export interface DeleteTicketError {
+  error: string
+  registrationCount?: number
+  requiresConfirmation?: boolean
+}
+
+export const deleteAdminTicket = async (id: string, force = false): Promise<void> => {
   try {
-    await axiosClient.delete(`/admin/tickets/${id}`)
+    const url = force ? `/admin/tickets/${id}?force=true` : `/admin/tickets/${id}`
+    await axiosClient.delete(url)
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.error || 'Erreur lors de la suppression')
+      const data = error.response?.data as DeleteTicketError | undefined
+      if (data?.requiresConfirmation) {
+        const customError = new Error(data.error) as Error & { registrationCount?: number; requiresConfirmation?: boolean }
+        customError.registrationCount = data.registrationCount
+        customError.requiresConfirmation = data.requiresConfirmation
+        throw customError
+      }
+      throw new Error(data?.error || 'Erreur lors de la suppression')
     }
     throw error
   }

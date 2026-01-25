@@ -114,7 +114,7 @@ export const RACE_FORMATS: Record<FormatTemplate, FormatConfig> = {
 
     conceptParagraphs: [
       '<span class="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target="_blank" class="underline">Barkley Marathons</a></span>, la Ultra Arena introduit pour la première fois au monde le concept de backyard ultra à l\'obstacle course racing.',
-      '<span class="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 4 km avec 15+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé. Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu\'à ce qu\'il ne reste qu\'un seul concurrent.',
+      '<span class="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 2km avec 15+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé. Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu\'à ce qu\'il ne reste qu\'un seul concurrent.',
       'Ce n\'est pas une course de distance, <span class="text-foreground font-semibold">c\'est un test de limites absolues</span>. Mental, physique, stratégie de récupération : tout est mis à l\'épreuve. Le dernier debout gagne.',
     ],
 

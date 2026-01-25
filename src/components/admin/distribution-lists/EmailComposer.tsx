@@ -175,7 +175,7 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
               <Label htmlFor="subject">Sujet de l'email *</Label>
               <Input
                 id="subject"
-                placeholder="Nouvel événement : Trail des Montagnes 2025"
+                placeholder="Nouvel événement : Trail des Montagnes 2026"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               />
