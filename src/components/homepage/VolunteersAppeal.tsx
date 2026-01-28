@@ -59,7 +59,7 @@ const VolunteersAppeal = () => {
                         </CardHeader>
                         <CardContent>
                             <p className='text-neutral-300 leading-relaxed'>
-                                <span className='text-primary font-semibold'>75% de réduction</span> sur ta prochaine course Overbound. Passe de volontaire à participant !
+                                <span className='text-primary font-semibold'>100% de réduction</span> sur ta prochaine course Overbound. Passe de volontaire à participant !
                             </p>
                         </CardContent>
                     </Card>

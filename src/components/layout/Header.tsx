@@ -150,8 +150,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
             <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
-              <Link href="/events/ultra-arena-2026/register" className="cursor-pointer text-foreground border-2 border-primary px-3 flex h-[80%] animate-pulse rounded-md bg-primary/20 items-center text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base">
-                INSCRIPTIONS
+              <Link href="/events/ultra-arena-2026/register" className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base">
+                s'inscrire
               </Link>
 
               <Link
