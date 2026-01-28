@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     default: "Overbound Race - Course d'obstacles OCR uniques et personnalisables",
     template: "%s | Overbound Race"
   },
-  description: "lA Première course d'obstacles au monde à parcours personnalisables. Choisissez votre distance ET votre difficulté. Inédit : Format backyard à obstacles à Paris !",
+  description: "La première course d'obstacles au monde à parcours personnalisables. Choisissez votre distance ET votre difficulté. Inédit : Format backyard à obstacles à Paris !",
   keywords: [
     "course obstacles",
     "OCR France",
@@ -76,10 +76,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    // À ajouter après inscription à Google Search Console
-    // google: 'votre-code-verification',
-  },
+  // verification: {
+  //   google: 'AJOUTE_TON_CODE_GSC_ICI', // Code de Google Search Console
+  // },
 };
 
 
