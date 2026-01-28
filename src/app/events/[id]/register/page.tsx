@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
-import MultiStepEventRegistration from '@/components/MultiStepEventRegistration'
+import MultiStepEventRegistration from '@/components/registration'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventRegisterData } from '@/app/api/events/[id]/register-data/registerDataQueries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
