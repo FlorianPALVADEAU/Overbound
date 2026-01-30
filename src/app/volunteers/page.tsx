@@ -223,6 +223,11 @@ export default function VolunteersPage() {
           .filter(Boolean) as EventOption[]
 
         const filtered = normalized.filter((event) => {
+          const validStatuses = ['on_sale', 'sold_out']
+          if (!validStatuses.includes(event.status ?? '')) {
+            return false
+          }
+
           if (!event.date) return true
           const time = Date.parse(event.date)
           if (Number.isNaN(time)) {
@@ -261,6 +266,16 @@ export default function VolunteersPage() {
       active = false
     }
   }, [sessionLoading, isAuthenticated])
+
+  // Auto-select event if only one is available
+  useEffect(() => {
+    if (events.length === 1 && !formValues.eventSelection) {
+      setFormValues((previous) => ({
+        ...previous,
+        eventSelection: events[0].id,
+      }))
+    }
+  }, [events, formValues.eventSelection])
 
   const clearFieldError = (field: string) => {
     setFieldErrors((previous) => {

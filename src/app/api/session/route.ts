@@ -37,7 +37,7 @@ export async function GET() {
           document_url,
           ticket:tickets(
             requires_document,
-            events (
+            event:events (
               date
             )
           )
@@ -51,7 +51,7 @@ export async function GET() {
         ticket:
           | {
               requires_document: boolean | null
-              events?: Array<{ date: string | null }> | null
+              event?: { date: string | null } | null
             }
           | null
       }
@@ -64,7 +64,7 @@ export async function GET() {
             return false
           }
 
-          const eventDateRaw = ticket?.events?.[0]?.date ?? null
+          const eventDateRaw = ticket?.event?.date ?? null
           const eventDate = eventDateRaw ? new Date(eventDateRaw) : null
           const isUpcoming = eventDate ? eventDate >= now : false
           if (!isUpcoming) {

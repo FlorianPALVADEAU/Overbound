@@ -21,8 +21,10 @@ import {
   useAdminEvents,
   type AdminEventPayload,
   type AdminEventSummary,
+  type DeleteEventConflict,
 } from '@/app/api/admin/events/eventsQueries'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import axiosClient from '@/app/api/axiosClient'
 
 interface MessageState {
@@ -126,6 +128,11 @@ export function EventsSection() {
   const [priceTiers, setPriceTiers] = useState<EventPriceTier[]>([])
   const [loadingPriceTiers, setLoadingPriceTiers] = useState(false)
 
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [eventToDelete, setEventToDelete] = useState<AdminEventSummary | null>(null)
+  const [deleteConflict, setDeleteConflict] = useState<DeleteEventConflict | null>(null)
+
   const filteredEvents = useMemo(() => {
     let result = [...events]
 
@@ -178,24 +185,46 @@ export function EventsSection() {
     }
   }
 
-  const handleDelete = async (event: AdminEventSummary) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer "${event.title}" ?`)) {
-      return
-    }
+  const handleDeleteClick = (event: AdminEventSummary) => {
+    setEventToDelete(event)
+    setDeleteConflict(null)
+    setDeleteDialogOpen(true)
+  }
 
-    setDeleteLoadingId(event.id)
+  const handleDelete = async () => {
+    if (!eventToDelete) return
+
+    setDeleteLoadingId(eventToDelete.id)
     try {
-      await deleteAdminEvent(event.id)
+      // First attempt without force to check for conflicts
+      await deleteAdminEvent(eventToDelete.id, deleteConflict !== null)
       queryClient.setQueryData<AdminEventSummary[]>(adminEventsQueryKey, (previous) => {
         if (!previous) return []
-        return previous.filter((item) => item.id !== event.id)
+        return previous.filter((item) => item.id !== eventToDelete.id)
       })
       setMessage({ type: 'success', text: 'Événement supprimé avec succès' })
+      setDeleteDialogOpen(false)
+      setEventToDelete(null)
+      setDeleteConflict(null)
     } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.error || error.message
-        : (error as Error).message || 'Erreur lors de la suppression'
-      setMessage({ type: 'error', text })
+      const err = error as Error & DeleteEventConflict
+      if (err.requiresConfirmation && !deleteConflict) {
+        // Show conflict info but keep dialog open
+        setDeleteConflict({
+          registrationsCount: err.registrationsCount,
+          volunteersCount: err.volunteersCount,
+          ticketsCount: err.ticketsCount,
+          requiresConfirmation: true,
+        })
+      } else {
+        const text = axios.isAxiosError(error)
+          ? error.response?.data?.error || error.message
+          : (error as Error).message || 'Erreur lors de la suppression'
+        setMessage({ type: 'error', text })
+        setDeleteDialogOpen(false)
+        setEventToDelete(null)
+        setDeleteConflict(null)
+      }
     } finally {
       setDeleteLoadingId(null)
     }
@@ -314,7 +343,7 @@ export function EventsSection() {
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => handleDelete(event)}
+              onClick={() => handleDeleteClick(event)}
               disabled={deleteLoadingId === event.id}
             >
               {deleteLoadingId === event.id ? 'Suppression…' : 'Supprimer'}
@@ -323,7 +352,7 @@ export function EventsSection() {
         ),
       },
     ]
-  }, [deleteLoadingId, handleDelete, handleEdit])
+  }, [deleteLoadingId])
 
   return (
     <div className="space-y-6">
@@ -413,6 +442,42 @@ export function EventsSection() {
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
         onPriceTiersChange={setPriceTiers}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setEventToDelete(null)
+            setDeleteConflict(null)
+          }
+        }}
+        title="Supprimer l'événement"
+        entityName={eventToDelete?.title ?? ''}
+        entityType="l'événement"
+        warningMessage={
+          deleteConflict
+            ? `Attention : cet événement contient des données associées.`
+            : undefined
+        }
+        consequences={
+          deleteConflict
+            ? [
+                deleteConflict.registrationsCount > 0
+                  ? `${deleteConflict.registrationsCount} inscription(s)`
+                  : null,
+                deleteConflict.volunteersCount > 0
+                  ? `${deleteConflict.volunteersCount} candidature(s) bénévole(s)`
+                  : null,
+                deleteConflict.ticketsCount > 0
+                  ? `${deleteConflict.ticketsCount} ticket(s)`
+                  : null,
+              ].filter(Boolean) as string[]
+            : undefined
+        }
+        onConfirm={handleDelete}
+        loading={deleteLoadingId === eventToDelete?.id}
       />
     </div>
   )

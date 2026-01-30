@@ -24,13 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Clock, Filter, RotateCcw } from 'lucide-react'
+import { Clock, Filter, RotateCcw, Trash2 } from 'lucide-react'
 import { RegistrationStats } from './RegistrationStats'
 import { RegistrationDocumentDialog } from './RegistrationDocumentDialog'
 import { RegistrationApprovalDialog } from './RegistrationApprovalDialog'
+import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { AdminRegistration, RegistrationApprovalStatus } from '@/types/Registration'
 import {
   adminRegistrationsBuildKey,
+  deleteAdminRegistration,
   updateAdminRegistrationApproval,
   useAdminRegistrations,
 } from '@/app/api/admin/registrations/registrationsQueries'
@@ -111,6 +113,11 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
 
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [registrationToDelete, setRegistrationToDelete] = useState<AdminRegistration | null>(null)
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
+
   useEffect(() => {
     if (eventId) {
       setEventFilter(eventId)
@@ -178,6 +185,40 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     setSelectedRegistration(registration)
     setRejectionReason('')
     setApprovalDialogOpen(true)
+  }
+
+  const handleDeleteClick = (registration: AdminRegistration) => {
+    setRegistrationToDelete(registration)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDelete = async () => {
+    if (!registrationToDelete) return
+
+    setDeleteLoadingId(registrationToDelete.id)
+    try {
+      await deleteAdminRegistration(registrationToDelete.id)
+      queryClient.setQueryData<typeof data>(queryKey, (previous) => {
+        if (!previous) return previous
+        return {
+          ...previous,
+          registrations: previous.registrations.filter(
+            (item) => item.id !== registrationToDelete.id
+          ),
+          totalCount: previous.totalCount - 1,
+        }
+      })
+      setMessage({ type: 'success', text: 'Inscription supprimée avec succès' })
+      setDeleteDialogOpen(false)
+      setRegistrationToDelete(null)
+    } catch (error) {
+      const text = axios.isAxiosError(error)
+        ? error.response?.data?.error || error.message
+        : (error as Error).message || 'Erreur lors de la suppression'
+      setMessage({ type: 'error', text })
+    } finally {
+      setDeleteLoadingId(null)
+    }
   }
 
   const handleApproval = async (
@@ -366,7 +407,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                 <TableHead>Billet &amp; montant</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Créé le</TableHead>
-                <TableHead className="w-[160px] text-right">Actions</TableHead>
+                <TableHead className="w-[220px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -498,6 +539,18 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                             'Statut'
                           )}
                         </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClick(registration)}
+                          disabled={deleteLoadingId === registration.id}
+                        >
+                          {deleteLoadingId === registration.id ? (
+                            <Clock className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -537,6 +590,26 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
           selectedRegistration &&
           handleApproval(selectedRegistration, 'rejected', rejectionReason)
         }
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setRegistrationToDelete(null)
+          }
+        }}
+        title="Supprimer l'inscription"
+        entityName={registrationToDelete?.email ?? ''}
+        entityType="l'inscription de"
+        warningMessage="Cette inscription sera définitivement supprimée."
+        consequences={[
+          'Le participant perdra son accès à l\'événement',
+          'Les données de paiement associées ne seront pas affectées',
+        ]}
+        onConfirm={handleDelete}
+        loading={deleteLoadingId === registrationToDelete?.id}
       />
     </div>
   )

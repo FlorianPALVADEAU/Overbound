@@ -1,15 +1,43 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
-import React from 'react'
+import React, { useMemo } from 'react'
 import Headings from '@/components/globals/Headings'
 import { Button } from '@/components/ui/button'
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel'
-import { useGetObstacles } from '@/app/api/obstacles/obstaclesQueries'
+import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import Link from 'next/link'
 
 const ObstaclesOverview = () => {
 
-    const {data: obstacles, isLoading, isFetching} = useGetObstacles();
+    const { data, isLoading, isFetching } = useEventDetail('ultra-arena-2026')
+
+    const obstacles = useMemo(() => {
+        const tickets = (data?.event?.tickets as any[] | undefined) ?? []
+        const collected = tickets.flatMap((ticket) =>
+            (ticket?.race?.obstacles ?? []).map((entry: any) => entry?.obstacle).filter(Boolean) ?? []
+        )
+
+        const uniqueObstacles = new Map<string, (typeof collected)[number]>()
+        collected.forEach((obstacle) => {
+            if (obstacle?.id && !uniqueObstacles.has(obstacle.id)) {
+                uniqueObstacles.set(obstacle.id, obstacle)
+            }
+        })
+
+        const deduped = Array.from(uniqueObstacles.values())
+        const withIndex = deduped.map((obstacle, index) => ({ obstacle, index }))
+
+        withIndex.sort((a, b) => {
+            const aHasPhoto = Boolean(a.obstacle.image_url)
+            const bHasPhoto = Boolean(b.obstacle.image_url)
+            if (aHasPhoto !== bHasPhoto) {
+                return aHasPhoto ? -1 : 1
+            }
+            return a.index - b.index
+        })
+
+        return withIndex.map(({ obstacle }) => obstacle)
+    }, [data])
 
     return (
         <section 

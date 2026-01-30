@@ -205,7 +205,7 @@ export default function AccountPage() {
 
         {/* Tabs pour organiser le contenu */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="w-full justify-start bg-muted/50 p-1 h-auto flex-wrap">
+          <TabsList className="w-full justify-start bg-black/50 p-1 h-auto flex-wrap">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 data-[state=active]:bg-background">
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Vue d'ensemble</span>
