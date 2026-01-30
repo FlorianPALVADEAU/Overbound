@@ -239,6 +239,8 @@ const handleDelete = async (
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
     const { id } = await params
+    const url = new URL(request.url)
+    const forceDelete = url.searchParams.get('force') === 'true'
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -255,21 +257,92 @@ const handleDelete = async (
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
+    const admin = supabaseAdmin()
+
     // Vérifier s'il y a des inscriptions
-    const { count } = await supabase
+    const { count: registrationsCount } = await supabase
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', id)
 
-    if (count && count > 0) {
+    // Vérifier s'il y a des candidatures bénévoles
+    const { count: volunteersCount } = await supabase
+      .from('volunteer_applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', id)
+
+    // Vérifier s'il y a des tickets
+    const { count: ticketsCount } = await supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', id)
+
+    const hasRelatedData = (registrationsCount && registrationsCount > 0) ||
+      (volunteersCount && volunteersCount > 0) ||
+      (ticketsCount && ticketsCount > 0)
+
+    if (hasRelatedData && !forceDelete) {
       return NextResponse.json(
-        { error: 'Impossible de supprimer un événement avec des inscriptions' },
+        {
+          error: 'Cet événement a des données associées',
+          registrationsCount: registrationsCount ?? 0,
+          volunteersCount: volunteersCount ?? 0,
+          ticketsCount: ticketsCount ?? 0,
+          requiresConfirmation: true,
+        },
         { status: 409 }
       )
     }
 
-    // Utiliser supabaseAdmin pour supprimer
-    const admin = supabaseAdmin()
+    // Si force delete, supprimer les données associées
+    if (forceDelete && hasRelatedData) {
+      // Supprimer les inscriptions
+      if (registrationsCount && registrationsCount > 0) {
+        const { error: regError } = await admin
+          .from('registrations')
+          .delete()
+          .eq('event_id', id)
+        if (regError) {
+          console.error('Erreur suppression registrations:', regError)
+          throw regError
+        }
+      }
+
+      // Supprimer les candidatures bénévoles
+      if (volunteersCount && volunteersCount > 0) {
+        const { error: volError } = await admin
+          .from('volunteer_applications')
+          .delete()
+          .eq('event_id', id)
+        if (volError) {
+          console.error('Erreur suppression volunteer_applications:', volError)
+          throw volError
+        }
+      }
+
+      // Supprimer les tickets (et leurs inscriptions en cascade si nécessaire)
+      if (ticketsCount && ticketsCount > 0) {
+        const { error: ticketError } = await admin
+          .from('tickets')
+          .delete()
+          .eq('event_id', id)
+        if (ticketError) {
+          console.error('Erreur suppression tickets:', ticketError)
+          throw ticketError
+        }
+      }
+
+      // Supprimer les price tiers
+      const { error: priceTierError } = await admin
+        .from('event_price_tiers')
+        .delete()
+        .eq('event_id', id)
+      if (priceTierError) {
+        console.error('Erreur suppression event_price_tiers:', priceTierError)
+      }
+    }
+
+    // Supprimer l'événement
     const { error } = await admin
       .from('events')
       .delete()

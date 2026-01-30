@@ -170,10 +170,25 @@ export const updateAdminEvent = async (
   }
 }
 
-export const deleteAdminEvent = async (id: string): Promise<void> => {
+export interface DeleteEventConflict {
+  registrationsCount: number
+  volunteersCount: number
+  ticketsCount: number
+  requiresConfirmation: boolean
+}
+
+export const deleteAdminEvent = async (id: string, force = false): Promise<void> => {
   try {
-    await axiosClient.delete(`/admin/events/${id}`)
+    await axiosClient.delete(`/admin/events/${id}${force ? '?force=true' : ''}`)
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data?.requiresConfirmation) {
+      const conflictError = new Error(error.response.data.error) as Error & DeleteEventConflict
+      conflictError.registrationsCount = error.response.data.registrationsCount ?? 0
+      conflictError.volunteersCount = error.response.data.volunteersCount ?? 0
+      conflictError.ticketsCount = error.response.data.ticketsCount ?? 0
+      conflictError.requiresConfirmation = true
+      throw conflictError
+    }
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.error || 'Erreur lors de la suppression')
     }

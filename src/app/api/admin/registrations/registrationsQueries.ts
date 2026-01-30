@@ -83,5 +83,16 @@ export const updateAdminRegistrationApproval = async (
   }
 }
 
+export const deleteAdminRegistration = async (id: string): Promise<void> => {
+  try {
+    await axiosClient.delete(`/admin/registrations/${id}`)
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Erreur lors de la suppression')
+    }
+    throw error
+  }
+}
+
 export const adminRegistrationsQueryKeyBase = ADMIN_REGISTRATIONS_QUERY_BASE_KEY
 export const adminRegistrationsBuildKey = buildQueryKey
