@@ -1,14 +1,24 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Blog OCR - Conseils, entraînements et actualités | Overbound Race",
-  description: "Découvrez nos articles sur la course d'obstacles : techniques, plans d'entraînement, nutrition sportive, interviews d'athlètes et actualités OCR en France.",
+  title: "Blog Course à Obstacles | Conseils, Entraînement OCR | Overbound Race",
+  description: "Blog Overbound Race : conseils course à obstacles, plans d'entraînement OCR, nutrition sportive, préparation backyard à obstacles. Course obstacles Paris 2026.",
+  keywords: [
+    "blog course obstacles",
+    "conseils OCR",
+    "entraînement course obstacles",
+    "préparation OCR",
+    "nutrition course obstacles",
+    "backyard obstacles entraînement",
+    "blog overbound",
+    "actualités OCR france",
+  ],
   alternates: {
     canonical: 'https://overbound-race.com/blog'
   },
   openGraph: {
-    title: "Blog Overbound Race - Conseils OCR",
-    description: "Articles, guides et actualités sur la course d'obstacles.",
+    title: "Blog Course à Obstacles | Conseils OCR | Overbound Race",
+    description: "Conseils, entraînement et actualités course à obstacles. Préparation backyard OCR.",
     url: 'https://overbound-race.com/blog',
     siteName: 'Overbound Race',
     locale: 'fr_FR',
@@ -16,8 +26,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Blog Overbound Race - Conseils OCR",
-    description: "Articles, guides et actualités sur la course d'obstacles.",
+    title: "Blog Course à Obstacles | Overbound Race",
+    description: "Conseils, entraînement et actualités OCR.",
   },
 };
 

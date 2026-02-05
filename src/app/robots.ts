@@ -1,7 +1,9 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+  // Normaliser l'URL en enlevant le trailing slash
+  const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+  const siteUrl = rawSiteUrl.replace(/\/$/, '')
 
   return {
     rules: [

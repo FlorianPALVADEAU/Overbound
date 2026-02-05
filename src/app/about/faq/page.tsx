@@ -5,14 +5,23 @@ import FAQPageContent, { FAQDocument } from './FAQPageContent'
 import { faqFallback } from '@/datas/faqFallback'
 
 export const metadata: Metadata = {
-  title: "FAQ - Questions fréquentes sur les courses à obstacles | Overbound Race",
-  description: "Toutes les réponses à vos questions sur les courses à obstacles Overbound : inscriptions, formats, tarifs, équipement requis, et préparation physique.",
+  title: "FAQ Course à Obstacles Paris 2026 | Questions Fréquentes Overbound",
+  description: "Toutes les réponses sur les courses à obstacles Overbound Race Paris 2026 : inscriptions, formats (Origin, Horizon, Ultra Arena backyard), tarifs, équipement, préparation.",
+  keywords: [
+    "FAQ course obstacles",
+    "questions course obstacles paris",
+    "inscription overbound",
+    "équipement OCR",
+    "préparation course obstacles",
+    "backyard obstacles FAQ",
+    "ultra arena questions",
+  ],
   alternates: {
     canonical: 'https://overbound-race.com/about/faq'
   },
   openGraph: {
-    title: "FAQ - Questions fréquentes | Overbound Race",
-    description: "Tout savoir sur les courses d'obstacles Overbound : formats, inscriptions, préparation.",
+    title: "FAQ Course à Obstacles Paris 2026 | Overbound Race",
+    description: "Tout savoir sur les courses à obstacles Overbound : formats, inscriptions, backyard OCR, préparation.",
     url: 'https://overbound-race.com/about/faq',
     siteName: 'Overbound Race',
     locale: 'fr_FR',
@@ -20,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "FAQ Overbound Race",
-    description: "Questions fréquentes sur nos courses d'obstacles OCR.",
+    title: "FAQ | Overbound Race Paris 2026",
+    description: "Questions fréquentes sur nos courses à obstacles et backyard OCR.",
   }
 };
 
