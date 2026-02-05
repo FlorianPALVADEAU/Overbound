@@ -2,7 +2,7 @@ import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
-import { sendTicketEmail } from '@/lib/email'
+import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION } from '@/constants/registration'
@@ -126,13 +126,15 @@ export async function POST(request: NextRequest) {
 
     // Calculate ticket subtotal with event price tiers
     const eventPriceTiers = (eventRow as any).price_tiers || []
-    const ticketSubtotal = ticketSelections.reduce((accumulator: number, item: { ticketId: string; quantity: number }) => {
-      const ticket = ticketMap.get(item.ticketId)
-      if (!ticket || ticket.final_price_cents == null) return accumulator
+    const ticketPriceMap = new Map<string, number>()
 
-      // Calculate current price based on event price tiers
-      const finalPrice = ticket.final_price_cents
-      let currentPrice = finalPrice
+    for (const ticket of tickets) {
+      const basePrice = ticket.final_price_cents ?? ticket.base_price_cents
+      if (basePrice == null || basePrice === 0) {
+        continue
+      }
+
+      let currentPrice = basePrice
 
       if (eventPriceTiers.length > 0) {
         const now = new Date()
@@ -146,9 +148,16 @@ export async function POST(request: NextRequest) {
 
         if (activeTier) {
           const discountMultiplier = 1 - activeTier.discount_percentage / 100
-          currentPrice = Math.round(finalPrice * discountMultiplier)
+          currentPrice = Math.round(basePrice * discountMultiplier)
         }
       }
+
+      ticketPriceMap.set(ticket.id, currentPrice)
+    }
+
+    const ticketSubtotal = ticketSelections.reduce((accumulator: number, item: { ticketId: string; quantity: number }) => {
+      const currentPrice = ticketPriceMap.get(item.ticketId)
+      if (currentPrice == null) return accumulator
 
       return accumulator + currentPrice * (item.quantity || 0)
     }, 0)
@@ -357,6 +366,81 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    try {
+      if (user.email) {
+        const ticketItems = ticketSelections
+          .map((item: { ticketId: string; quantity: number }) => {
+            const ticket = ticketMap.get(item.ticketId)
+            const unitPriceCents = ticketPriceMap.get(item.ticketId)
+            if (!ticket || unitPriceCents == null) return null
+            const quantity = item.quantity || 0
+
+            return {
+              description: `${eventRow.title} — ${ticket.name}`,
+              quantity,
+              unitPrice: toMajor(unitPriceCents),
+              total: toMajor(unitPriceCents * quantity),
+            }
+          })
+          .filter(Boolean) as Array<{
+            description: string
+            quantity: number
+            unitPrice: number
+            total: number
+          }>
+
+        const upsellItems = upsells
+          .map((item: { upsellId: string; quantity: number }) => {
+            const upsell = upsellMap.get(item.upsellId)
+            if (!upsell) return null
+            const quantity = item.quantity || 0
+            const unitPriceCents = upsell.price_cents
+
+            return {
+              description: upsell.name,
+              quantity,
+              unitPrice: toMajor(unitPriceCents),
+              total: toMajor(unitPriceCents * quantity),
+            }
+          })
+          .filter(Boolean) as Array<{
+            description: string
+            quantity: number
+            unitPrice: number
+            total: number
+          }>
+
+        const receiptItems = [...ticketItems, ...upsellItems]
+        const subtotalCents = ticketSubtotal + upsellSubtotal
+        const discountCents = discountApplied > 0 ? discountApplied : 0
+        const totalCents = paymentIntent.amount ?? Math.max(subtotalCents - discountCents, 0)
+
+        await sendReceiptEmail({
+          to: user.email,
+          fullName:
+            typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null,
+          invoiceNumber: order.id,
+          invoiceDate: new Date(order.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
+          eventName: eventRow.title,
+          items: receiptItems,
+          subtotal: toMajor(subtotalCents),
+          discount: discountCents > 0 ? toMajor(discountCents) : undefined,
+          discountLabel: discountCents > 0 ? (promoCode ? `Code promo ${promoCode}` : 'Réduction') : undefined,
+          total: toMajor(totalCents),
+          currency: (paymentIntent.currency || 'eur').toUpperCase(),
+          paymentMethod: formatPaymentMethod(paymentIntent.payment_method_types?.[0]),
+          invoiceUrl: order.invoice_url ?? undefined,
+        })
+      }
+    } catch (emailError) {
+      console.error('Erreur envoi reçu:', emailError)
+      captureException(emailError as Error, {
+        context: 'receipt_email_send',
+        orderId: order.id,
+        email: user.email,
+      })
+    }
+
     console.log('Inscriptions créées avec succès:', {
       order_id: order.id,
       registrations: createdRegistrations.map(({ registration }) => registration.id),
@@ -388,5 +472,20 @@ export async function POST(request: NextRequest) {
       error: 'Erreur lors de la création de l\'inscription',
       details: error.message
     }, { status: 500 })
+  }
+}
+
+const toMajor = (amountCents: number) => amountCents / 100
+
+const formatPaymentMethod = (method?: string | null) => {
+  switch (method) {
+    case 'card':
+      return 'Carte bancaire'
+    case 'paypal':
+      return 'PayPal'
+    case 'link':
+      return 'Link'
+    default:
+      return method ? method.toUpperCase() : 'Paiement'
   }
 }

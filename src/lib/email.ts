@@ -12,6 +12,7 @@ import PriceChangeReminderEmail from '@/emails/PriceChangeReminderEmail'
 import PromoCampaignEmail from '@/emails/PromoCampaignEmail'
 import InactiveUserEmail from '@/emails/InactiveUserEmail'
 import AbandonedCheckoutEmail from '@/emails/AbandonedCheckoutEmail'
+import ReceiptEmail from '@/emails/ReceiptEmail'
 import { EventUpdateEmail } from '@/emails/EventUpdateEmail'
 import AdminDigestEmail from '@/emails/AdminDigestEmail'
 import VolunteerRecruitmentEmail from '@/emails/VolunteerRecruitmentEmail'
@@ -44,6 +45,38 @@ export async function sendTicketEmail(params: {
     from: UNFORMAL_FROM,
     to: params.to,
     subject: `Ton billet — ${params.eventTitle}`,
+    html,
+  })
+}
+
+export async function sendReceiptEmail(params: {
+  to: string
+  fullName?: string | null
+  invoiceNumber: string
+  invoiceDate: string
+  eventName: string
+  items: Array<{
+    description: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }>
+  subtotal: number
+  discount?: number
+  discountLabel?: string
+  tax?: number
+  total: number
+  currency?: string
+  paymentMethod: string
+  billingAddress?: string
+  invoiceUrl?: string
+}) {
+  const html = await renderEmail(ReceiptEmail(params))
+
+  return resend.emails.send({
+    from: FORMAL_FROM,
+    to: params.to,
+    subject: `Reçu de paiement — ${params.eventName}`,
     html,
   })
 }

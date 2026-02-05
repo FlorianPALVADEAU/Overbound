@@ -185,8 +185,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
             <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
-              <Link href="/events/ultra-arena-2026/register" className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base">
-                inscriptions 2026
+              <Link href="/events/ultra-arena-2026" className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base">
+                inscriptions paris 2026
               </Link>
 
               <Link
@@ -327,7 +327,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
                   asChild
                 >
-                  <Link href="/events/ultra-arena-2026/register">S'inscrire</Link>
+                  <Link href="/events/ultra-arena-2026">S'inscrire</Link>
                 </Button>
               </div>
             )}
@@ -356,7 +356,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
             <div className="space-y-1">
               {/* Lien Inscriptions 2026 mobile */}
               <Link
-                href="/events/ultra-arena-2026/register"
+                href="/events/ultra-arena-2026"
                 className="block w-full px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
                 onClick={() => {
                   setMobileMenuOpen(false)
@@ -440,7 +440,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   asChild
                   className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
                 >
-                  <Link href="/events/ultra-arena-2026/register">Inscriptions 2026</Link>
+                  <Link href="/events/ultra-arena-2026">Inscriptions 2026</Link>
                 </Button>
               </div>
             </div>

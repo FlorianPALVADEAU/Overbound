@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 
 interface EmailItem {
   type: string
@@ -65,6 +66,10 @@ type TriggerStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export function AdminEmailPlayground() {
   const [statusMap, setStatusMap] = useState<Record<string, { state: TriggerStatus; message?: string }>>({})
+  const [receiptPaymentIntentId, setReceiptPaymentIntentId] = useState('')
+  const [receiptStatus, setReceiptStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
 
   const triggerEmail = async (type: string) => {
     setStatusMap((prev) => ({ ...prev, [type]: { state: 'loading' } }))
@@ -92,6 +97,34 @@ export function AdminEmailPlayground() {
     }
   }
 
+  const triggerReceipt = async () => {
+    if (!receiptPaymentIntentId) {
+      setReceiptStatus({ state: 'error', message: 'PaymentIntent manquant (ex: pi_...)' })
+      return
+    }
+
+    setReceiptStatus({ state: 'loading' })
+
+    try {
+      const response = await fetch('/api/admin/emails/receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: receiptPaymentIntentId }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string }
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Envoi impossible')
+      }
+
+      setReceiptStatus({ state: 'success', message: 'Reçu renvoyé.' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setReceiptStatus({ state: 'error', message })
+    }
+  }
+
   const getBadgeVariant = (tone: EmailItem['tone']) => {
     switch (tone) {
       case 'marketing':
@@ -107,6 +140,34 @@ export function AdminEmailPlayground() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Reçu de paiement</CardTitle>
+          <CardDescription>Renvoyer un reçu à partir d’un PaymentIntent Stripe.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <Input
+              value={receiptPaymentIntentId}
+              onChange={(event) => setReceiptPaymentIntentId(event.target.value)}
+              placeholder="PaymentIntent (ex: pi_...)"
+            />
+            <Button onClick={triggerReceipt} disabled={receiptStatus.state === 'loading'}>
+              {receiptStatus.state === 'loading' ? 'Envoi…' : 'Renvoyer'}
+            </Button>
+          </div>
+          {receiptStatus.state === 'error' && receiptStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{receiptStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {receiptStatus.state === 'success' && receiptStatus.message ? (
+            <Alert>
+              <AlertDescription>{receiptStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
       {EMAIL_GROUPS.map((group) => (
         <Card key={group.title}>
           <CardHeader>

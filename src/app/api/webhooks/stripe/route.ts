@@ -2,7 +2,7 @@ import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
-import { sendTicketEmail } from '@/lib/email'
+import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 
@@ -31,7 +31,29 @@ export async function POST(request: NextRequest) {
   switch (event.type) {
     case 'payment_intent.succeeded': {
       const paymentIntent = event.data.object as Stripe.PaymentIntent
-      const metadata = paymentIntent.metadata || {}
+      let metadata = paymentIntent.metadata || {}
+      let sessionCustomerEmail: string | null = null
+
+      if (
+        (!metadata.user_id || !metadata.event_id || !metadata.ticket_id) &&
+        !metadata.ticket_selections
+      ) {
+        try {
+          const sessions = await stripe.checkout.sessions.list({
+            payment_intent: paymentIntent.id,
+            limit: 1,
+          })
+
+          const session = sessions.data[0]
+          if (session) {
+            sessionCustomerEmail =
+              session.customer_email || session.customer_details?.email || null
+            metadata = { ...session.metadata, ...metadata }
+          }
+        } catch (sessionError) {
+          console.warn('Unable to fetch Checkout Session for PaymentIntent:', paymentIntent.id, sessionError)
+        }
+      }
 
       const {
         user_id,
@@ -103,12 +125,24 @@ export async function POST(request: NextRequest) {
           return new Response('Ticket not found', { status: 404 })
         }
 
+        const resolvedParticipantEmail =
+          participant_email ||
+          sessionCustomerEmail ||
+          paymentIntent.receipt_email ||
+          paymentIntent.charges?.data?.[0]?.billing_details?.email ||
+          ''
+
+        if (!resolvedParticipantEmail) {
+          console.error('Email participant introuvable pour PaymentIntent:', paymentIntent.id)
+          return new Response('Email participant manquant', { status: 400 })
+        }
+
         // Create order
         const { data: order, error: orderError } = await admin
           .from('orders')
           .insert({
             user_id,
-            email: participant_email,
+            email: resolvedParticipantEmail,
             status: 'paid',
             amount_total: paymentIntent.amount,
             currency: paymentIntent.currency,
@@ -123,7 +157,8 @@ export async function POST(request: NextRequest) {
           throw orderError
         }
 
-        const participantName = (metadata.participant_name as string | undefined) || participant_email
+        const participantName =
+          (metadata.participant_name as string | undefined) || resolvedParticipantEmail
 
         // Create registration
         const { data: registration, error: registrationError } = await admin
@@ -133,7 +168,7 @@ export async function POST(request: NextRequest) {
             event_id,
             ticket_id,
             order_id: order.id,
-            email: participant_email,
+            email: resolvedParticipantEmail,
             qr_code_token: qrToken,
             transfer_token: transferToken,
             stripe_payment_intent_id: paymentIntent.id,
@@ -213,6 +248,75 @@ export async function POST(request: NextRequest) {
           console.error('Error sending confirmation email:', emailError)
         }
 
+        // Send receipt email
+        try {
+          const receiptEmail =
+            registration.email ||
+            participant_email ||
+            paymentIntent.receipt_email ||
+            paymentIntent.charges?.data?.[0]?.billing_details?.email
+
+          if (receiptEmail) {
+            const upsellItems = (upsells || [])
+              .map((upsell: any) => {
+                const quantity = upsell.quantity || 1
+                const unitPriceCents = upsell.price || 0
+                if (!upsell.name || unitPriceCents <= 0) return null
+
+                return {
+                  description: upsell.name,
+                  quantity,
+                  unitPrice: toMajor(unitPriceCents),
+                  total: toMajor(unitPriceCents * quantity),
+                }
+              })
+              .filter(Boolean) as Array<{
+                description: string
+                quantity: number
+                unitPrice: number
+                total: number
+              }>
+
+            const upsellTotalCents = (upsells || []).reduce((sum: number, upsell: any) => {
+              const quantity = upsell.quantity || 1
+              const unitPriceCents = upsell.price || 0
+              return sum + unitPriceCents * quantity
+            }, 0)
+
+            const amountTotalCents = paymentIntent.amount ?? 0
+            const ticketPriceCents =
+              ticket.base_price_cents ??
+              Math.max(amountTotalCents - upsellTotalCents, 0)
+
+            const ticketItem = {
+              description: `${event_title || event.title} — ${ticket_name || ticket.name}`,
+              quantity: 1,
+              unitPrice: toMajor(ticketPriceCents),
+              total: toMajor(ticketPriceCents),
+            }
+
+            const subtotalCents = ticketPriceCents + upsellTotalCents
+            const discountCents = Math.max(subtotalCents - amountTotalCents, 0)
+
+            await sendReceiptEmail({
+              to: receiptEmail,
+              fullName: participantName || null,
+              invoiceNumber: order.id,
+              invoiceDate: new Date(order.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
+              eventName: event_title || event.title,
+              items: [ticketItem, ...upsellItems],
+              subtotal: toMajor(subtotalCents),
+              discount: discountCents > 0 ? toMajor(discountCents) : undefined,
+              total: toMajor(amountTotalCents || subtotalCents),
+              currency: (paymentIntent.currency || ticket.currency || 'eur').toUpperCase(),
+              paymentMethod: formatPaymentMethod(paymentIntent.payment_method_types?.[0]),
+              invoiceUrl: order.invoice_url ?? undefined,
+            })
+          }
+        } catch (receiptError) {
+          console.error('Error sending receipt email:', receiptError)
+        }
+
       } catch (error) {
         console.error('Error processing payment_intent.succeeded:', error)
         return new Response('Error processing registration', { status: 500 })
@@ -241,4 +345,19 @@ export async function POST(request: NextRequest) {
   }
 
   return new Response('ok', { status: 200 })
+}
+
+const toMajor = (amountCents: number) => amountCents / 100
+
+const formatPaymentMethod = (method?: string | null) => {
+  switch (method) {
+    case 'card':
+      return 'Carte bancaire'
+    case 'paypal':
+      return 'PayPal'
+    case 'link':
+      return 'Link'
+    default:
+      return method ? method.toUpperCase() : 'Paiement'
+  }
 }
