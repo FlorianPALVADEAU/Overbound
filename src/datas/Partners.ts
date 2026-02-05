@@ -28,4 +28,8 @@ export const PARTNERS_DATA: PartnerType[] = [
         name: 'Département des Yvelines',
         logo: '/images/partners_logo/yvelines_logo.webp',
     },
+    {
+        name: 'Ïle de Loisirs de SQY',
+        logo: '/images/partners_logo/ile_de_loisirs_logo.webp',
+    },
 ];

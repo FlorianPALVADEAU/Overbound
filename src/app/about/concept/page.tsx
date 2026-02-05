@@ -65,7 +65,7 @@ export default function ConceptPage() {
               size="lg"
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-6 text-lg font-semibold rounded-full shadow-xl shadow-red-600/30"
             >
-              <Link href="/events/ultra-arena-2026/register">
+              <Link href="/events/ultra-arena-2026">
                 S'inscrire maintenant
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -177,7 +177,7 @@ export default function ConceptPage() {
                     Une expérience que tu n'oublieras jamais.
                   </p>
                   <Button asChild size="lg" className="bg-red-600 hover:bg-red-700 rounded-full">
-                    <Link href="/events/ultra-arena-2026/register">
+                    <Link href="/events/ultra-arena-2026">
                       Réserver ma place
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
@@ -389,7 +389,7 @@ export default function ConceptPage() {
               size="lg"
               className="bg-white text-amber-600 hover:bg-white/90 px-8 py-6 text-lg font-semibold rounded-full shadow-2xl"
             >
-              <Link href="/events/ultra-arena-2026/register">
+              <Link href="/events/ultra-arena-2026">
                 S'inscrire à la Ultra Arena
               </Link>
             </Button>

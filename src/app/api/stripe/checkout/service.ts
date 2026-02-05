@@ -69,6 +69,18 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
   const session = await stripeClient.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
+    payment_intent_data: {
+      metadata: {
+        user_id: userId,
+        event_id: eventId,
+        ticket_id: ticketId,
+        participant_name: participantName || userEmail,
+        participant_email: userEmail,
+        event_title: ticket.event.title,
+        ticket_name: ticket.name,
+        race_id: ticket.race?.id || '',
+      },
+    },
     line_items: [
       {
         price_data: {
@@ -93,6 +105,9 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
       event_id: eventId,
       ticket_id: ticketId,
       participant_name: participantName || userEmail,
+      participant_email: userEmail,
+      event_title: ticket.event.title,
+      ticket_name: ticket.name,
       race_id: ticket.race?.id || '',
     },
   })

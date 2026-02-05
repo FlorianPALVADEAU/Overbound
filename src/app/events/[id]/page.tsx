@@ -316,7 +316,7 @@ export default function EventDetailPage() {
                   size="lg"
                   asChild
                 >
-                  <a href="#tickets">{lowestPrice !== null ? 'Choisir mon format' : 'Être notifié'}</a>
+                  <a href={lowestPrice !== null ? "/events/ultra-arena-2026/register" : "#tickets"}>{lowestPrice !== null ? "Je m'inscris maintenant" : 'Être notifié'}</a>
                 </Button>
                 <div className="rounded-2xl bg-primary-foreground/80 p-4 text-sm text-primary">
                   <p className="font-semibold">Infos clés</p>
