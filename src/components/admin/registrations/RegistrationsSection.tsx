@@ -221,6 +221,10 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     }
   }
 
+  const handleDocumentStatusChange = () => {
+    queryClient.invalidateQueries({ queryKey })
+  }
+
   const handleApproval = async (
     registration: AdminRegistration,
     status: Exclude<RegistrationApprovalStatus, 'pending'>,
@@ -482,11 +486,19 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                         ) : null}
                         {registration.requires_document ? (
                           (() => {
-                            const hasDocument = Boolean(registration.document_url?.trim())
-                            if (!hasDocument) {
+                            const requiredCount =
+                              registration.required_documents_count ??
+                              (registration.requires_document ? 1 : 0)
+                            const uploadedCount =
+                              registration.documents_count ??
+                              (registration.document_url?.trim() ? 1 : 0)
+                            const documentsComplete =
+                              requiredCount === 0 ? true : uploadedCount >= requiredCount
+
+                            if (!documentsComplete) {
                               return (
                                 <Badge variant="outline" className="border-amber-200 text-amber-600">
-                                  Document manquant
+                                  Documents manquants
                                 </Badge>
                               )
                             }
@@ -523,7 +535,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewDocument(registration)}
-                          disabled={!registration.document_url?.trim()}
+                          disabled={(registration.documents_count ?? (registration.document_url?.trim() ? 1 : 0)) === 0}
                         >
                           Voir doc
                         </Button>
@@ -570,6 +582,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
             setSelectedRegistration(null)
           }
         }}
+        onStatusChange={handleDocumentStatusChange}
       />
 
       <RegistrationApprovalDialog

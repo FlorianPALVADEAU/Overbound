@@ -37,6 +37,7 @@ export async function GET() {
           document_url,
           ticket:tickets(
             requires_document,
+            document_types,
             event:events (
               date
             )
@@ -46,19 +47,45 @@ export async function GET() {
         .eq('user_id', user.id)
 
       type RegistrationAlertRow = {
+        id: string
         approval_status: 'pending' | 'approved' | 'rejected' | null
         document_url: string | null
         ticket:
           | {
               requires_document: boolean | null
+              document_types?: string[] | null
               event?: { date: string | null } | null
             }
           | null
       }
 
       const now = new Date()
-      needsDocumentAction = ((registrationMeta as RegistrationAlertRow[] | null) ?? []).some(
-        ({ ticket, approval_status, document_url }) => {
+      const registrationRows = (registrationMeta as RegistrationAlertRow[] | null) ?? []
+      const registrationIds = registrationRows.map((row) => row.id)
+
+      const documentTypeMap = new Map<string, Set<string>>()
+      if (registrationIds.length > 0) {
+        const { data: documentRows, error: documentError } = await admin
+          .from('registration_documents')
+          .select('registration_id, document_type')
+          .in('registration_id', registrationIds)
+
+        if (documentError) {
+          console.warn('[session] registration documents error', documentError)
+        } else if (documentRows) {
+          for (const row of documentRows as any[]) {
+            if (!documentTypeMap.has(row.registration_id)) {
+              documentTypeMap.set(row.registration_id, new Set())
+            }
+            if (row.document_type) {
+              documentTypeMap.get(row.registration_id)!.add(row.document_type)
+            }
+          }
+        }
+      }
+
+      needsDocumentAction = registrationRows.some(
+        ({ id, ticket, approval_status, document_url }) => {
           const requiresDocument = Boolean(ticket?.requires_document)
           if (!requiresDocument) {
             return false
@@ -71,7 +98,13 @@ export async function GET() {
             return false
           }
 
-          if (!document_url) {
+          const uploadedCount = documentTypeMap.get(id)?.size ?? (document_url ? 1 : 0)
+          const requiredCount =
+            ticket?.document_types && ticket.document_types.length > 0
+              ? ticket.document_types.length
+              : 1
+
+          if (uploadedCount < requiredCount) {
             return true
           }
 

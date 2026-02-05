@@ -125,11 +125,22 @@ export async function POST(request: NextRequest) {
           return new Response('Ticket not found', { status: 404 })
         }
 
+        let latestCharge: Stripe.Charge | null = null
+        try {
+          if (typeof paymentIntent.latest_charge === 'string') {
+            latestCharge = await stripe.charges.retrieve(paymentIntent.latest_charge)
+          } else if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge === 'object') {
+            latestCharge = paymentIntent.latest_charge
+          }
+        } catch (chargeError) {
+          console.warn('Unable to retrieve latest charge for PaymentIntent:', paymentIntent.id, chargeError)
+        }
+
         const resolvedParticipantEmail =
           participant_email ||
           sessionCustomerEmail ||
           paymentIntent.receipt_email ||
-          paymentIntent.charges?.data?.[0]?.billing_details?.email ||
+          latestCharge?.billing_details?.email ||
           ''
 
         if (!resolvedParticipantEmail) {

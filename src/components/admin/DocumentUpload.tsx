@@ -23,14 +23,18 @@ const ACCEPT_ATTRIBUTE = '.pdf,.jpg,.jpeg,.png'
 type DocumentStatus = 'pending' | 'approved' | 'rejected'
 
 export interface ExistingDocument {
+  id: string
   url: string
   filename: string
   size: number
+  documentType: string
+  status?: DocumentStatus
+  rejectionReason?: string | null
 }
 
 interface DocumentUploadProps {
   registrationId: string
-  existingDocument?: ExistingDocument
+  existingDocuments?: ExistingDocument[]
   status?: DocumentStatus
   rejectionReason?: string | null
   requiredTypes?: string[]
@@ -76,25 +80,23 @@ const statusBadge = (status: DocumentStatus, rejectionReason?: string | null) =>
 
 export function DocumentUpload({
   registrationId,
-  existingDocument,
+  existingDocuments = [],
   status = 'pending',
   rejectionReason,
   requiredTypes = [],
   onUploaded,
 }: DocumentUploadProps) {
-  const [currentDocument, setCurrentDocument] = useState<ExistingDocument | undefined>(
-    existingDocument,
-  )
+  const [documents, setDocuments] = useState<ExistingDocument[]>(existingDocuments)
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus>(status)
-  const [dragOver, setDragOver] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [messageMap, setMessageMap] = useState<Record<string, { type: 'success' | 'error'; text: string } | null>>({})
+  const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({})
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({})
+  const [dragOverType, setDragOverType] = useState<string | null>(null)
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   useEffect(() => {
-    setCurrentDocument(existingDocument)
-  }, [existingDocument?.url, existingDocument?.filename, existingDocument?.size])
+    setDocuments(existingDocuments)
+  }, [existingDocuments])
 
   useEffect(() => {
     setDocumentStatus(status)
@@ -120,21 +122,61 @@ export function DocumentUpload({
       ? sanitizedRequiredTypes.map(formatRequiredType).join(', ')
       : 'Certificat PPS, licence sportive ou attestation d’assurance'
 
-  const beginUpload = async (file: File) => {
-    setUploading(true)
-    setProgress(0)
-    setMessage(null)
+  const requiredDocumentTypes = Array.from(
+    new Set(sanitizedRequiredTypes.length > 0 ? sanitizedRequiredTypes : ['document']),
+  )
+
+  const documentsByType = new Map<string, ExistingDocument>()
+  for (const doc of documents) {
+    documentsByType.set(doc.documentType, doc)
+  }
+
+  const setMessageFor = (docType: string, message: { type: 'success' | 'error'; text: string } | null) => {
+    setMessageMap((prev) => ({ ...prev, [docType]: message }))
+  }
+
+  const setUploadingFor = (docType: string, uploading: boolean) => {
+    setUploadingMap((prev) => ({ ...prev, [docType]: uploading }))
+  }
+
+  const setProgressFor = (docType: string, value: number) => {
+    setProgressMap((prev) => ({ ...prev, [docType]: value }))
+  }
+
+  const openDocument = async (docType: string, documentId: string) => {
+    try {
+      const response = await fetch(
+        `/api/account/registrations/${registrationId}/document-url?document_id=${documentId}`,
+      )
+      if (!response.ok) throw new Error('Impossible de récupérer le document')
+      const { url } = await response.json()
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      setMessageFor(docType, {
+        type: 'error',
+        text: "Impossible d'ouvrir le document",
+      })
+    }
+  }
+
+  const beginUpload = async (file: File, docType: string) => {
+    setUploadingFor(docType, true)
+    setProgressFor(docType, 0)
+    setMessageFor(docType, null)
 
     try {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('registration_id', registrationId)
+      formData.append('document_type', docType)
 
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 60_000)
 
+      let localProgress = 0
       const tick = setInterval(() => {
-        setProgress((value) => (value >= 90 ? value : value + 8))
+        localProgress = Math.min(90, localProgress + 8)
+        setProgressFor(docType, localProgress)
       }, 120)
 
       const response = await fetch('/api/upload/document', {
@@ -145,7 +187,7 @@ export function DocumentUpload({
 
       clearTimeout(timeout)
       clearInterval(tick)
-      setProgress(100)
+      setProgressFor(docType, 100)
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}))
@@ -153,38 +195,47 @@ export function DocumentUpload({
       }
 
       const payload = await response.json()
-      setCurrentDocument({
-        url: payload.document_url,
-        filename: payload.filename,
-        size: payload.size,
+      setDocuments((prev) => {
+        const next = prev.filter((doc) => doc.documentType !== docType)
+        return [
+          {
+            id: payload.document_id ?? `${docType}-${Date.now()}`,
+            url: payload.document_url,
+            filename: payload.filename,
+            size: payload.size,
+            documentType: payload.document_type ?? docType,
+            status: 'pending',
+          },
+          ...next,
+        ]
       })
       setDocumentStatus('pending')
-      setMessage({
+      setMessageFor(docType, {
         type: 'success',
         text: 'Document envoyé. Nous te prévenons dès qu’il est validé.',
       })
       onUploaded?.()
     } catch (error) {
       console.error('[DocumentUpload] upload error', error)
-      setMessage({
+      setMessageFor(docType, {
         type: 'error',
         text:
           error instanceof Error && error.name !== 'AbortError'
             ? error.message
             : "L'envoi a échoué. Merci de réessayer.",
       })
-      setProgress(0)
+      setProgressFor(docType, 0)
     } finally {
-      setUploading(false)
-      setTimeout(() => setProgress(0), 1500)
+      setUploadingFor(docType, false)
+      setTimeout(() => setProgressFor(docType, 0), 1500)
     }
   }
 
-  const validateFile = (file: File) => {
+  const validateFile = (file: File, docType: string) => {
     if (!file) return
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setMessage({
+      setMessageFor(docType, {
         type: 'error',
         text: 'Le fichier est trop volumineux (2 Mo maximum).',
       })
@@ -196,29 +247,30 @@ export function DocumentUpload({
     const extensionAllowed = extension ? ALLOWED_EXTENSIONS.includes(extension) : false
 
     if (!mimeAllowed && !extensionAllowed) {
-      setMessage({
+      setMessageFor(docType, {
         type: 'error',
         text: 'Format non supporté. Utilise un PDF, JPG, JPEG ou PNG.',
       })
       return
     }
 
-    beginUpload(file)
+    beginUpload(file, docType)
   }
 
-  const onFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileInputChange = (event: React.ChangeEvent<HTMLInputElement>, docType: string) => {
     const file = event.target.files?.[0]
     if (file) {
-      validateFile(file)
+      validateFile(file, docType)
     }
+    event.target.value = ''
   }
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>, docType: string) => {
     event.preventDefault()
-    setDragOver(false)
+    setDragOverType(null)
     const file = event.dataTransfer.files?.[0]
     if (file) {
-      validateFile(file)
+      validateFile(file, docType)
     }
   }
 
@@ -227,120 +279,139 @@ export function DocumentUpload({
 
   return (
     <div className="space-y-5">
-      {currentDocument ? (
-        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary shrink-0">
-                <FileText className="h-5 w-5" />
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <Badge variant={statusMeta.variant} className="inline-flex items-center gap-1">
+              {statusMeta.icon}
+              {statusMeta.label}
+            </Badge>
+            <p className="mt-2 text-xs text-muted-foreground">{statusMeta.description}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {requiredDocumentTypes.map((docType) => {
+          const doc = documentsByType.get(docType)
+          const uploading = uploadingMap[docType] ?? false
+          const progress = progressMap[docType] ?? 0
+          const message = messageMap[docType]
+          const isDragOver = dragOverType === docType
+          const docStatus = doc?.status ?? documentStatus
+          const docStatusMeta = statusBadge(docStatus, doc?.rejectionReason ?? rejectionReason)
+
+          return (
+            <div key={docType} className="rounded-2xl border border-border bg-card/80 p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {formatRequiredType(docType)}
+                  </p>
+                  {doc ? (
+                    <p className="text-xs text-muted-foreground">
+                      {doc.filename} • {formatFileSize(doc.size)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Aucun document déposé.</p>
+                  )}
+                  <Badge variant={docStatusMeta.variant} className="mt-2 inline-flex items-center gap-1">
+                    {docStatusMeta.icon}
+                    {docStatusMeta.label}
+                  </Badge>
+                </div>
+                {doc ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => openDocument(docType, doc.id)}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Ouvrir
+                  </Button>
+                ) : null}
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{currentDocument.filename}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(currentDocument.size)}
-                </p>
-                <Badge variant={statusMeta.variant} className="mt-2 inline-flex items-center gap-1">
-                  {statusMeta.icon}
-                  {statusMeta.label}
-                </Badge>
-              </div>
+
+              {canUpload ? (
+                <div className="space-y-3">
+                  <div
+                    className={`group relative flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/30 px-6 py-8 text-center transition-colors ${
+                      isDragOver
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/40 hover:bg-muted/40'
+                    } ${uploading ? 'pointer-events-none opacity-60' : 'cursor-pointer'}`}
+                    onDrop={(event) => handleDrop(event, docType)}
+                    onDragOver={(event) => {
+                      event.preventDefault()
+                      setDragOverType(docType)
+                    }}
+                    onDragLeave={(event) => {
+                      event.preventDefault()
+                      setDragOverType(null)
+                    }}
+                    onClick={() => !uploading && fileInputRefs.current[docType]?.click()}
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="rounded-full border border-dashed border-muted-foreground/40 bg-background p-3 text-muted-foreground transition-colors group-hover:border-primary/50 group-hover:text-primary">
+                        <Upload className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">
+                          {doc ? 'Remplacer le document' : 'Déposer un document'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Glisse ton fichier ici ou clique pour parcourir ton ordinateur.
+                        </p>
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Formats acceptés : PDF, JPG, JPEG, PNG — 2 Mo max.
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm" className="mt-1">
+                        Choisir un fichier
+                      </Button>
+                    </div>
+                  </div>
+
+                  <input
+                    ref={(node) => {
+                      fileInputRefs.current[docType] = node
+                    }}
+                    type="file"
+                    accept={ACCEPT_ATTRIBUTE}
+                    onChange={(event) => onFileInputChange(event, docType)}
+                    className="hidden"
+                  />
+                </div>
+              ) : null}
+
+              {uploading ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Envoi du document…</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </div>
+              ) : null}
+
+              {message ? (
+                <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
+                  {message.type === 'error' ? (
+                    <AlertTriangle className="h-4 w-4" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  <AlertDescription>{message.text}</AlertDescription>
+                </Alert>
+              ) : null}
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0"
-              onClick={async () => {
-                try {
-                  const response = await fetch(`/api/account/registrations/${registrationId}/document-url`)
-                  if (!response.ok) throw new Error('Impossible de récupérer le document')
-                  const { url } = await response.json()
-                  window.open(url, '_blank', 'noopener,noreferrer')
-                } catch (error) {
-                  setMessage({
-                    type: 'error',
-                    text: 'Impossible d\'ouvrir le document',
-                  })
-                }
-              }}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Ouvrir
-            </Button>
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">{statusMeta.description}</p>
-        </div>
-      ) : null}
-
-      {canUpload ? (
-        <div className="space-y-5">
-          <div
-            className={`group relative flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/30 px-6 py-10 text-center transition-colors ${
-              dragOver
-                ? 'border-primary bg-primary/10'
-                : 'border-border hover:border-primary/40 hover:bg-muted/40'
-            } ${uploading ? 'pointer-events-none opacity-60' : 'cursor-pointer'}`}
-            onDrop={handleDrop}
-            onDragOver={(event) => {
-              event.preventDefault()
-              setDragOver(true)
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault()
-              setDragOver(false)
-            }}
-            onClick={() => !uploading && fileInputRef.current?.click()}
-          >
-            <div className="flex flex-col items-center gap-4">
-              <div className="rounded-full border border-dashed border-muted-foreground/40 bg-background p-3 text-muted-foreground transition-colors group-hover:border-primary/50 group-hover:text-primary">
-                <Upload className="h-6 w-6" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-base font-semibold">
-                  {currentDocument ? 'Remplacer le document' : 'Déposer un document'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Glisse ton fichier ici ou clique pour parcourir ton ordinateur.
-                </p>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Formats acceptés : PDF, JPG, JPEG, PNG — 2 Mo maximum
-                </p>
-              </div>
-              <Button variant="outline" size="sm" className="mt-2">
-                Choisir un fichier
-              </Button>
-            </div>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT_ATTRIBUTE}
-            onChange={onFileInputChange}
-            className="hidden"
-          />
-        </div>
-      ) : null}
-
-      {uploading ? (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Envoi du document…</span>
-            <span>{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      ) : null}
-
-      {message ? (
-        <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-          {message.type === 'error' ? (
-            <AlertTriangle className="h-4 w-4" />
-          ) : (
-            <CheckCircle2 className="h-4 w-4" />
-          )}
-          <AlertDescription>{message.text}</AlertDescription>
-        </Alert>
-      ) : null}
+          )
+        })}
+      </div>
 
       <div className="rounded-xl border border-border/70 bg-muted/20 p-4 text-xs text-muted-foreground">
         <p className="font-medium text-foreground">Pièces attendues</p>

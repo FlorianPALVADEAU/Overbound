@@ -110,7 +110,7 @@ export function RegistrationCard({ registration, loadingId, onViewDocument, onOp
           </div>
 
           <div className="flex flex-col gap-2">
-            {registration.document_url && (
+            {(registration.documents_count ?? (registration.document_url ? 1 : 0)) > 0 && (
               <Button variant="outline" size="sm" onClick={() => onViewDocument(registration)}>
                 <Eye className="h-4 w-4" />
               </Button>

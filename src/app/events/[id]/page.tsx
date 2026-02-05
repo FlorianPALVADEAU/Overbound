@@ -59,6 +59,7 @@ export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const { data: session } = useSession()
   const { data, isLoading, error, refetch } = useEventDetail(params.id)
+  const isUltraArena = params.id === 'ultra-arena-2026'
 
   if (isLoading) {
     return (
@@ -331,8 +332,174 @@ export default function EventDetailPage() {
           </div>
         </div>
       </section>
+                <div className="h-80 w-full rounded-2xl border border-border/60 bg-card/80 shadow-sm shadow-primary/10 ring-1 ring-border/60">
+                  <iframe
+                    title={`Carte de ${event.location}`}
+                    src={locationMapUrl}
+                    className="h-full w-full rounded-2xl object-cover ring-1 ring-border/60"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+      {isUltraArena ? (
+        <section className="bg-background py-16">
+          <div className="container mx-auto max-w-7xl px-6">
+            <div className="rounded-3xl border border-border/60 bg-card/80 p-8 shadow-lg shadow-primary/10">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Informations générales — Overbound
+                  </p>
+                  <h2 className="text-3xl font-bold text-foreground">Ultra Arena 2026</h2>
+                </div>
+                <Badge variant="secondary" className="border border-primary/30 bg-primary/10 text-primary">
+                  Backyard OCR nouvelle génération
+                </Badge>
+              </div>
 
-      <section className="bg-background py-16">
+              <div className="mt-8 grid gap-6 lg:grid-cols-2">
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Rejoindre l’événement</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Overbound est une course à obstacles nouvelle génération organisée sous forme de backyard, sur une
+                    boucle unique en pleine nature. Deux formats sont proposés : OPEN et RANKED, pour permettre à
+                    chacun de choisir son niveau d’engagement.
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    L’événement est ouvert aux sportifs de tous niveaux, dès lors qu’ils sont majeurs.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Le village Overbound</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Le village Overbound est le cœur de l’événement : zone de départ et d’arrivée, partenaires,
+                    animations, musique et public.
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    C’est un lieu vivant, pensé pour créer une ambiance forte et permettre aux spectateurs de suivre
+                    l’épreuve jusqu’au dernier survivant.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">La course</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <li>• Boucle d’environ 2 km</li>
+                    <li>• 10 obstacles et plus, sollicitant force, endurance, agilité et mental</li>
+                    <li>• Parcours en milieu naturel</li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Après ta course</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Après l’effort, place à la récupération et au partage : repos au village, échanges avec les autres
+                    participants, partenaires, public et ambiance conviviale.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 rounded-3xl border border-border/60 bg-background/70 p-6">
+                <h3 className="text-lg font-semibold text-foreground">Formats disponibles</h3>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl bg-card p-5 ring-1 ring-border/60">
+                    <p className="text-base font-semibold text-foreground">OPEN</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Format accessible, sans élimination. Les participants disposent d’un temps de course global et
+                      gèrent librement leurs tours, leurs pauses, leur nutrition et leur récupération. L’objectif :
+                      se dépasser à son rythme, dans un cadre encadré et sécurisé.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-card p-5 ring-1 ring-border/60">
+                    <p className="text-base font-semibold text-foreground">RANKED</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Format compétitif à élimination progressive. Un départ est donné toutes les 20 minutes. Les
+                      participants doivent terminer chaque boucle dans le temps imparti sous peine d’élimination. La
+                      course s’arrête lorsqu’il ne reste plus qu’un seul participant en compétition.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 grid gap-6 lg:grid-cols-2">
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Ton billet</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <li>• Accès à la course choisie (OPEN ou RANKED)</li>
+                    <li>• Accès au village Overbound</li>
+                    <li>• Services mis à disposition sur site</li>
+                  </ul>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Les informations pratiques (guide du coureur) seront envoyées par email avant l’événement.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Lieu de l’événement</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Base de loisirs de Saint-Quentin-en-Yvelines (Yvelines – Île-de-France).
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    L’accès précis et les informations de stationnement seront communiqués dans le Guide du Coureur.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Conditions de participation & sécurité</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <li>• PPS (Parcours Prévention Santé) valide — <a className="text-primary hover:underline" href="https://pps.athle.fr" target="_blank" rel="noreferrer">pps.athle.fr</a></li>
+                    <li>• ou certificat médical en cours de validité attestant l’absence de contre-indication</li>
+                    <li>• ou licence sportive valide pour l’année de l’événement</li>
+                  </ul>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    En l’absence de l’un de ces documents, l’accès à la course sera refusé. Aucun remboursement ne
+                    pourra être effectué.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                  <h3 className="text-lg font-semibold text-foreground">Enregistrement</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Merci de prévoir une pièce d’identité (carte d’identité, permis de conduire, carte étudiante,
+                    etc.). Une photo du document sur téléphone est acceptée.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
+                  <p className="text-sm font-semibold text-foreground">Spectateurs</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Les spectateurs sont les bienvenus sur le village Overbound et les zones dédiées. Pour des raisons
+                    de sécurité, l’accès au parcours leur est strictement interdit.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
+                  <p className="text-sm font-semibold text-foreground">Dépôt de sac</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Un espace de dépôt de sacs sera disponible sur site. Les modalités exactes seront précisées dans
+                    le Guide du Coureur.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
+                  <p className="text-sm font-semibold text-foreground">Âge minimum</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Événement réservé aux majeurs (18 ans minimum).</p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
+                  <p className="text-sm font-semibold text-foreground">Photos & contenus</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Des photographes officiels seront présents sur l’événement. Les photos seront mises en ligne dans
+                    les jours suivant la course. Les liens seront communiqués par email et sur les réseaux sociaux.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
+                  <p className="text-sm font-semibold text-foreground">Transfert de billet</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Les modalités de modification ou de transfert de billet seront précisées dans le Guide du Coureur.
+                    Certaines modifications pourront être effectuées directement en ligne.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+      {/* <section className="bg-background py-16">
         <div className="container mx-auto max-w-7xl px-6">
           <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr]">
             <div className="space-y-10">
@@ -470,10 +637,13 @@ export default function EventDetailPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      <section id="tickets" className="bg-background py-16">
-        <div className="container mx-auto max-w-7xl px-6">
+      <section id="tickets" className="relative overflow-hidden bg-background py-16">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5" />
+        <div className="pointer-events-none absolute -top-24 right-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-10 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+        <div className="container relative mx-auto max-w-7xl px-6">
           <div className="mb-8 space-y-2">
             <h2 className="text-3xl font-bold text-foreground">Réserver mon inscription</h2>
             <p className="text-sm text-muted-foreground">
@@ -483,7 +653,7 @@ export default function EventDetailPage() {
 
           {/* Pricing Timeline - Show if event has price tiers */}
           {eventPriceTiers.length > 0 && tickets.length > 0 && (
-            <div className="mb-12 rounded-2xl border-2 border-border/60 p-8 backdrop-blur bg-accent-foreground text-black shadow-lg">
+            <div className="mb-12 rounded-2xl border border-primary/20 bg-background/80 p-8 backdrop-blur shadow-lg shadow-primary/10">
               <PricingTimeline
                 ticket={tickets[0]}
                 eventPriceTiers={eventPriceTiers}

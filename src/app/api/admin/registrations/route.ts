@@ -126,6 +126,23 @@ export async function GET(request: Request) {
       })
     }
 
+    const documentCountMap = new Map<string, number>()
+    if (registrationIds.length > 0) {
+      const { data: documentRows, error: documentRowsError } = await adminClient
+        .from('registration_documents')
+        .select('registration_id, document_type')
+        .in('registration_id', registrationIds)
+
+      if (documentRowsError) {
+        console.error('[admin registrations] registration documents error', documentRowsError)
+      } else if (documentRows) {
+        for (const row of documentRows as any[]) {
+          const current = documentCountMap.get(row.registration_id) ?? 0
+          documentCountMap.set(row.registration_id, current + 1)
+        }
+      }
+    }
+
     const documentMetaMap = new Map<string, any>()
     if (registrationIds.length > 0) {
       const { data: documentRows, error: documentError } = await adminClient
@@ -137,7 +154,7 @@ export async function GET(request: Request) {
           document_filename,
           document_size,
           approval_status,
-          ticket:tickets(id, name, distance_km, requires_document),
+          ticket:tickets(id, name, distance_km, requires_document, document_types),
           event:events(id, title, date, location),
           order:orders(id, amount_total, currency, status)
         `,
@@ -155,6 +172,12 @@ export async function GET(request: Request) {
           const requiresDocument = Boolean(ticketRecord?.requires_document)
           const approvalStatus = (row as any)?.approval_status ?? 'pending'
           const documentUrl = (row as any)?.document_url ?? null
+          const requiredCount =
+            Array.isArray(ticketRecord?.document_types) && ticketRecord.document_types.length > 0
+              ? ticketRecord.document_types.length
+              : (requiresDocument ? 1 : 0)
+          const uploadedCount = documentCountMap.get(row.id) ?? (documentUrl ? 1 : 0)
+          const documentsComplete = requiredCount === 0 ? true : uploadedCount >= requiredCount
 
           documentMetaMap.set(row.id, {
             document_url: documentUrl,
@@ -162,8 +185,10 @@ export async function GET(request: Request) {
             document_size: row.document_size ?? null,
             requires_document: requiresDocument,
             approval_status: approvalStatus,
+            documents_count: uploadedCount,
+            required_documents_count: requiredCount,
             document_requires_attention:
-              requiresDocument && (approvalStatus !== 'approved' || !documentUrl),
+              requiresDocument && (approvalStatus !== 'approved' || !documentsComplete),
             event: eventRecord
               ? {
                   id: eventRecord.id ?? null,
@@ -178,6 +203,9 @@ export async function GET(request: Request) {
                   name: ticketRecord.name ?? null,
                   distance_km: ticketRecord.distance_km ?? null,
                   requires_document: requiresDocument,
+                  document_types: Array.isArray(ticketRecord.document_types)
+                    ? ticketRecord.document_types
+                    : [],
                 }
               : null,
             order: orderRecord
@@ -217,6 +245,8 @@ export async function GET(request: Request) {
         document_filename: meta.document_filename ?? row.document_filename ?? null,
         document_size: meta.document_size ?? row.document_size ?? null,
         requires_document: meta.requires_document ?? row.requires_document ?? false,
+        documents_count: meta.documents_count ?? null,
+        required_documents_count: meta.required_documents_count ?? null,
         document_requires_attention:
           meta.document_requires_attention ??
           (meta.requires_document && (!meta.document_url || meta.approval_status !== 'approved')),

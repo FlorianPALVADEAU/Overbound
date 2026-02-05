@@ -86,6 +86,29 @@ const handlePost = async (request: NextRequest) => {
       )
     }
 
+    try {
+      await adminClient
+        .from('registration_documents')
+        .update(
+          status === 'approved'
+            ? {
+                status: 'approved',
+                rejection_reason: null,
+                approved_at: now,
+                approved_by: user.id,
+              }
+            : {
+                status: 'rejected',
+                rejection_reason: reason || null,
+                approved_at: null,
+                approved_by: user.id,
+              },
+        )
+        .eq('registration_id', registration_id)
+    } catch (documentStatusError) {
+      console.error('[approval] unable to update document statuses', documentStatusError)
+    }
+
     const normalizedEvent = Array.isArray(updatedRegistration.event)
       ? updatedRegistration.event[0] ?? null
       : updatedRegistration.event ?? null

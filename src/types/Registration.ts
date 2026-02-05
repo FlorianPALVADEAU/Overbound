@@ -29,6 +29,7 @@ export interface Registration {
   document_url: string | null
   document_filename: string | null
   document_size: number | null
+  documents?: RegistrationDocument[]
   approval_status: ApprovalStatus
   approved_by: UUID | null
   approved_at: Timestamp | null
@@ -38,6 +39,20 @@ export interface Registration {
   affiliation_deadline?: Timestamp | null
   is_affiliated: boolean
   difficulty_level?: FormatLevelId | null
+}
+
+export interface RegistrationDocument {
+  id: UUID
+  registration_id: UUID
+  document_type: string
+  document_url: string
+  document_filename: string
+  document_size: number
+  status?: ApprovalStatus
+  rejection_reason?: string | null
+  approved_at?: Timestamp | null
+  approved_by?: UUID | null
+  uploaded_at: Timestamp
 }
 
 export interface MyRegistration {
@@ -93,5 +108,7 @@ export interface AdminRegistration extends Registration {
   upsells?: Upsell[] | null
   signatures?: RegistrationSignature[] | null
   requires_document: boolean,
+  documents_count?: number | null
+  required_documents_count?: number | null
   claim_status: ClaimStatus
 }

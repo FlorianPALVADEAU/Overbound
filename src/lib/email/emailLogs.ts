@@ -6,6 +6,7 @@ export type EngagementEmailType =
   | 'event_prep'
   | 'post_event_thankyou'
   | 'document_required'
+  | 'document_upload_reminder'
   | 'document_approved'
   | 'document_rejected'
   | 'marketing_new_event'

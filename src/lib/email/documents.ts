@@ -1,4 +1,4 @@
-import { sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendDocumentRequiredEmail } from '@/lib/email'
+import { sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendDocumentRequiredEmail, sendDocumentUploadReminderEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
@@ -37,6 +37,43 @@ export async function notifyDocumentRequired(params: BaseDocumentContext & { req
     email: params.email,
     emailType: 'document_required',
     context: { registration_id: params.registrationId },
+  })
+}
+
+export async function notifyDocumentUploadReminder(
+  params: BaseDocumentContext & { requiredDocuments: string[]; daysBefore: number },
+) {
+  const alreadySent = await getLastEmailLog({
+    userId: params.userId,
+    emailType: 'document_upload_reminder',
+    contextFilters: {
+      registration_id: params.registrationId,
+      days_before: params.daysBefore,
+    },
+  })
+
+  if (alreadySent) {
+    return
+  }
+
+  const uploadUrl = `${BASE_URL}/account/registration/${params.registrationId}/document`
+
+  await sendDocumentUploadReminderEmail({
+    to: params.email,
+    participantName: params.participantName,
+    eventTitle: params.eventTitle,
+    uploadUrl,
+    requiredDocuments: params.requiredDocuments,
+  })
+
+  await recordEmailLog({
+    userId: params.userId,
+    email: params.email,
+    emailType: 'document_upload_reminder',
+    context: {
+      registration_id: params.registrationId,
+      days_before: params.daysBefore,
+    },
   })
 }
 
