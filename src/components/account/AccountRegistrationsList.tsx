@@ -56,6 +56,8 @@ export interface AccountRegistrationItem {
   documents_count?: number
   required_documents_count?: number
   documents_complete?: boolean
+  required_document_types?: string[]
+  uploaded_document_types?: string[]
 }
 
 interface AccountRegistrationsListProps {
@@ -133,6 +135,36 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
         const isShareDialogOpen =
           activeDialog?.type === 'share' && activeDialog.id === registration.registration_id
 
+        const isPpsType = (value: string) => value.toLowerCase().includes('pps')
+        const ppsAvailableDate = eventDate ? (() => {
+          const available = new Date(eventDate)
+          available.setMonth(available.getMonth() - 3)
+          return available
+        })() : null
+        const ppsUploadAllowed = !ppsAvailableDate || Date.now() >= ppsAvailableDate.getTime()
+
+        const requiredTypes = Array.isArray(registration.required_document_types)
+          ? registration.required_document_types
+          : []
+        const uploadedTypes = Array.isArray(registration.uploaded_document_types)
+          ? registration.uploaded_document_types
+          : []
+        const uploadedCount = registration.documents_count ?? (registration.document_url ? 1 : 0)
+        const requiredCount = registration.required_documents_count ?? (registration.requires_document ? 1 : 0)
+        const documentsComplete =
+          registration.documents_complete ?? (requiredCount === 0 ? true : uploadedCount >= requiredCount)
+
+        const missingTypes =
+          requiredTypes.length > 0
+            ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
+            : []
+
+        const missingOnlyPps =
+          !documentsComplete &&
+          missingTypes.length > 0 &&
+          missingTypes.every((type) => isPpsType(type)) &&
+          !ppsUploadAllowed
+
         const documentStatusBadge = (() => {
           if (isPast) {
             return null
@@ -142,10 +174,9 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
             return null
           }
 
-          const requiredCount = registration.required_documents_count ?? 1
-          const uploadedCount = registration.documents_count ?? (registration.document_url ? 1 : 0)
-          const documentsComplete =
-            registration.documents_complete ?? (requiredCount === 0 ? true : uploadedCount >= requiredCount)
+          if (missingOnlyPps) {
+            return null
+          }
 
           if (!documentsComplete) {
             return { label: 'Documents manquants', variant: 'destructive' as const }
@@ -162,7 +193,8 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
           return null
         })()
 
-        const showDocumentIndicator = registration.document_requires_attention
+        const showDocumentIndicator =
+          registration.document_requires_attention && !missingOnlyPps
 
         return (
           <div key={registration.registration_id}>

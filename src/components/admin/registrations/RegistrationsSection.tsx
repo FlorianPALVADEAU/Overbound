@@ -99,6 +99,19 @@ const approvalBadgeLabel = (status: RegistrationApprovalStatus) => {
   }
 }
 
+const formatRequiredType = (value: string) => {
+  const lookup: Record<string, string> = {
+    pps_certificate: 'PPS',
+    pps_certificate_2025: 'PPS',
+    sports_license: 'Licence sportive',
+    insurance_certificate: "Attestation d'assurance",
+    parental_authorization: 'Autorisation parentale',
+    id_document: 'Pièce d’identité',
+  }
+
+  return lookup[value] || value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
 export function RegistrationsSection({ eventId, lockEventFilter = false }: RegistrationsSectionProps) {
   const queryClient = useQueryClient()
   const { data: events = [] } = useAdminEvents()
@@ -494,6 +507,16 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                               (registration.document_url?.trim() ? 1 : 0)
                             const documentsComplete =
                               requiredCount === 0 ? true : uploadedCount >= requiredCount
+                            const requiredTypes = Array.isArray(registration.ticket?.document_types)
+                              ? registration.ticket.document_types
+                              : []
+                            const uploadedTypes = Array.isArray(registration.uploaded_document_types)
+                              ? registration.uploaded_document_types
+                              : []
+                            const missingTypes =
+                              requiredTypes.length > 0
+                                ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
+                                : []
 
                             if (!documentsComplete) {
                               return (
@@ -527,6 +550,25 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                           })()
                         ) : null}
                       </div>
+                      {registration.requires_document &&
+                      (() => {
+                        const requiredTypes = Array.isArray(registration.ticket?.document_types)
+                          ? registration.ticket.document_types
+                          : []
+                        const uploadedTypes = Array.isArray(registration.uploaded_document_types)
+                          ? registration.uploaded_document_types
+                          : []
+                        const missingTypes =
+                          requiredTypes.length > 0
+                            ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
+                            : []
+                        if (missingTypes.length === 0) return null
+                        return (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Manquants : {missingTypes.map(formatRequiredType).join(', ')}
+                          </div>
+                        )
+                      })()}
                     </TableCell>
                     <TableCell>{formatDateTime(registration.created_at)}</TableCell>
                     <TableCell className="text-right">

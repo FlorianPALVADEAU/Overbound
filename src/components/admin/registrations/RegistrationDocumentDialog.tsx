@@ -158,6 +158,10 @@ export function RegistrationDocumentDialog({
   const selectedStatus = (selectedDocument?.status ?? 'pending') as DocumentStatus
   const selectedStatusMeta = statusMeta(selectedStatus)
   const selectedIsLegacy = selectedDocument?.id === 'legacy'
+  const selectedFilename = selectedDocument?.document_filename?.toLowerCase() ?? ''
+  const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif'].some((ext) =>
+    selectedFilename.endsWith(ext),
+  )
 
   useEffect(() => {
     if (!selectedDocument) {
@@ -234,7 +238,7 @@ export function RegistrationDocumentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="!w-[90vw] !max-w-none sm:!max-w-none !h-[86vh] !max-h-[86vh]">
         <DialogHeader>
           <DialogTitle>Document de {registration.email}</DialogTitle>
           <DialogDescription>
@@ -268,6 +272,15 @@ export function RegistrationDocumentDialog({
               ))}
             </div>
           ) : null}
+          {selectedDocument ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{selectedDocument.document_filename}</span>
+              <Badge variant={selectedStatusMeta.variant}>{selectedStatusMeta.label}</Badge>
+              <span className="text-[11px] text-muted-foreground">
+                {selectedDocument.document_type}
+              </span>
+            </div>
+          ) : null}
           {loading ? (
             <div className="flex h-[400px] items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -278,11 +291,21 @@ export function RegistrationDocumentDialog({
               {errorMessage}
             </div>
           ) : signedUrl ? (
-            <iframe
-              src={signedUrl}
-              className="h-[600px] w-full rounded border"
-              title="Document de l'inscription"
-            />
+            <div className="h-[70vh] w-full rounded border bg-black/5">
+              {isImage ? (
+                <img
+                  src={signedUrl}
+                  alt={selectedDocument?.document_filename ?? 'Document'}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={signedUrl}
+                  className="h-full w-full"
+                  title="Document de l'inscription"
+                />
+              )}
+            </div>
           ) : (
             <div className="flex h-[200px] items-center justify-center rounded border border-dashed border-muted-foreground/40 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
               Aucun document disponible pour cette inscription.

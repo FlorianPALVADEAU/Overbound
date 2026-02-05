@@ -101,7 +101,7 @@ export interface AdminRegistration extends Registration {
     date: Timestamp
     location: string
   } | null
-  ticket: Pick<Ticket, 'id' | 'name' | 'distance_km'> | null
+  ticket: Pick<Ticket, 'id' | 'name' | 'distance_km' | 'requires_document' | 'document_types'> | null
   order: Pick<Order, 'id' | 'amount_total' | 'currency' | 'status'> | null
   approved_by_profile?: RegistrationProfileSummary | null
   notification_preferences?: NotificationPreference | null
@@ -110,5 +110,6 @@ export interface AdminRegistration extends Registration {
   requires_document: boolean,
   documents_count?: number | null
   required_documents_count?: number | null
+  uploaded_document_types?: string[] | null
   claim_status: ClaimStatus
 }

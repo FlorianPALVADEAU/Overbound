@@ -3,7 +3,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   try {
-    const { token } = await req.json()
+    const { token, action } = await req.json()
     
     if (!token) {
       return NextResponse.json(
@@ -67,7 +67,9 @@ export async function POST(req: Request) {
       )
     }
 
-    if (registration.checked_in) {
+    const requestedAction = action === 'undo' ? 'undo' : 'checkin'
+
+    if (registration.checked_in && requestedAction === 'checkin') {
       return NextResponse.json(
         { 
           error: 'Cette personne est déjà enregistrée comme présente',
@@ -81,10 +83,19 @@ export async function POST(req: Request) {
       )
     }
 
-    // Effectuer le check-in
+    if (!registration.checked_in && requestedAction === 'undo') {
+      return NextResponse.json(
+        {
+          error: 'Cette personne n’est pas encore enregistrée comme présente',
+        },
+        { status: 409 }
+      )
+    }
+
+    // Effectuer le check-in / undo
     const { data: updatedRegistration, error } = await admin
       .from('registrations')
-      .update({ checked_in: true })
+      .update({ checked_in: requestedAction === 'checkin' })
       .eq('qr_code_token', token)
       .select(`
         id,
@@ -111,7 +122,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `${updatedRegistration.email} enregistré avec succès !`,
+      message:
+        requestedAction === 'checkin'
+          ? `${updatedRegistration.email} enregistré avec succès !`
+          : `${updatedRegistration.email} retiré du check-in.`,
       registration: {
         id: updatedRegistration.id,
         email: updatedRegistration.email,

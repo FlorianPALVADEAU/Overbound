@@ -149,6 +149,7 @@ export async function GET() {
           document_url: meta.document_url,
           requires_document: meta.requires_document,
           required_document_types: meta.document_types,
+          uploaded_document_types: Array.from(uploadedTypes ?? []),
           documents_count: uploadedCount,
           required_documents_count: requiredCount,
           documents_complete: documentsComplete,
