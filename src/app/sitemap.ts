@@ -3,7 +3,9 @@ import { client } from '@/sanity/lib/client'
 import { postsQuery } from '@/sanity/lib/queries'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+  // Normaliser l'URL en enlevant le trailing slash pour éviter les doubles slashes
+  const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+  const siteUrl = rawSiteUrl.replace(/\/$/, '')
 
   // Pages statiques principales
   const staticPages = [
