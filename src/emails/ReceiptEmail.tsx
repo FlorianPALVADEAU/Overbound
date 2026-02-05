@@ -180,11 +180,7 @@ export function ReceiptEmail({
         </Text>
 
         <Text style={styles.smallText}>
-          {COMPANY_INFO.legalName} — {COMPANY_INFO.legalForm} au capital de {COMPANY_INFO.capital}
-          <br />
-          {COMPANY_INFO.address.full}
-          <br />
-          {COMPANY_INFO.rcs.full} — TVA : {COMPANY_INFO.vat}
+          {COMPANY_INFO.legalName} — {COMPANY_INFO.rcs.full} — SIREN : {COMPANY_INFO.rcs.number} — TVA : {COMPANY_INFO.vat}
         </Text>
       </Section>
     </EmailLayout>

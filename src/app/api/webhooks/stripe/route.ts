@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
             registration.email ||
             participant_email ||
             paymentIntent.receipt_email ||
-            paymentIntent.charges?.data?.[0]?.billing_details?.email
+            latestCharge?.billing_details?.email
 
           if (receiptEmail) {
             const upsellItems = (upsells || [])

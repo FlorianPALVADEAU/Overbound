@@ -17,10 +17,6 @@ export const PARTNERS_DATA: PartnerType[] = [
         logo: '/images/partners_logo/fiskars_logo.webp',
     },
     {
-        name: 'Nike',
-        logo: '/images/partners_logo/nike_logo.webp',
-    },
-    {
         name: 'Saint Quentin en Yvelines',
         logo: '/images/partners_logo/sqy_logo.webp',
     },

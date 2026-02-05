@@ -127,6 +127,7 @@ export async function GET(request: Request) {
     }
 
     const documentCountMap = new Map<string, number>()
+    const documentTypeMap = new Map<string, Set<string>>()
     if (registrationIds.length > 0) {
       const { data: documentRows, error: documentRowsError } = await adminClient
         .from('registration_documents')
@@ -139,6 +140,12 @@ export async function GET(request: Request) {
         for (const row of documentRows as any[]) {
           const current = documentCountMap.get(row.registration_id) ?? 0
           documentCountMap.set(row.registration_id, current + 1)
+          if (!documentTypeMap.has(row.registration_id)) {
+            documentTypeMap.set(row.registration_id, new Set())
+          }
+          if (row.document_type) {
+            documentTypeMap.get(row.registration_id)!.add(row.document_type)
+          }
         }
       }
     }
@@ -178,6 +185,7 @@ export async function GET(request: Request) {
               : (requiresDocument ? 1 : 0)
           const uploadedCount = documentCountMap.get(row.id) ?? (documentUrl ? 1 : 0)
           const documentsComplete = requiredCount === 0 ? true : uploadedCount >= requiredCount
+          const uploadedTypes = Array.from(documentTypeMap.get(row.id) ?? [])
 
           documentMetaMap.set(row.id, {
             document_url: documentUrl,
@@ -187,6 +195,7 @@ export async function GET(request: Request) {
             approval_status: approvalStatus,
             documents_count: uploadedCount,
             required_documents_count: requiredCount,
+            uploaded_document_types: uploadedTypes,
             document_requires_attention:
               requiresDocument && (approvalStatus !== 'approved' || !documentsComplete),
             event: eventRecord
@@ -247,6 +256,7 @@ export async function GET(request: Request) {
         requires_document: meta.requires_document ?? row.requires_document ?? false,
         documents_count: meta.documents_count ?? null,
         required_documents_count: meta.required_documents_count ?? null,
+        uploaded_document_types: meta.uploaded_document_types ?? null,
         document_requires_attention:
           meta.document_requires_attention ??
           (meta.requires_document && (!meta.document_url || meta.approval_status !== 'approved')),

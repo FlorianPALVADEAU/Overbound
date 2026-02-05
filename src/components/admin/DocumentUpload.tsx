@@ -38,6 +38,7 @@ interface DocumentUploadProps {
   status?: DocumentStatus
   rejectionReason?: string | null
   requiredTypes?: string[]
+  eventDate?: string | null
   onUploaded?: () => void
 }
 
@@ -84,6 +85,7 @@ export function DocumentUpload({
   status = 'pending',
   rejectionReason,
   requiredTypes = [],
+  eventDate = null,
   onUploaded,
 }: DocumentUploadProps) {
   const [documents, setDocuments] = useState<ExistingDocument[]>(existingDocuments)
@@ -125,6 +127,33 @@ export function DocumentUpload({
   const requiredDocumentTypes = Array.from(
     new Set(sanitizedRequiredTypes.length > 0 ? sanitizedRequiredTypes : ['document']),
   )
+
+  const isPpsType = (value: string) => value.toLowerCase().includes('pps')
+
+  const getPpsAvailableDate = () => {
+    if (!eventDate) return null
+    const parsed = new Date(eventDate)
+    if (Number.isNaN(parsed.getTime())) return null
+    const available = new Date(parsed)
+    available.setMonth(available.getMonth() - 3)
+    return available
+  }
+
+  const ppsAvailableDate = getPpsAvailableDate()
+
+  const isPpsUploadAllowed = () => {
+    if (!ppsAvailableDate) return true
+    return Date.now() >= ppsAvailableDate.getTime()
+  }
+
+  const formatPpsAvailableDate = () => {
+    if (!ppsAvailableDate) return 'la période autorisée'
+    return ppsAvailableDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }
 
   const documentsByType = new Map<string, ExistingDocument>()
   for (const doc of documents) {
@@ -234,6 +263,14 @@ export function DocumentUpload({
   const validateFile = (file: File, docType: string) => {
     if (!file) return
 
+    if (isPpsType(docType) && !isPpsUploadAllowed()) {
+      setMessageFor(docType, {
+        type: 'error',
+        text: `Le PPS peut être déposé à partir du ${formatPpsAvailableDate()}.`,
+      })
+      return
+    }
+
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setMessageFor(docType, {
         type: 'error',
@@ -303,6 +340,7 @@ export function DocumentUpload({
           const isDragOver = dragOverType === docType
           const docStatus = doc?.status ?? documentStatus
           const docStatusMeta = statusBadge(docStatus, doc?.rejectionReason ?? rejectionReason)
+          const ppsBlocked = isPpsType(docType) && !isPpsUploadAllowed()
 
           return (
             <div key={docType} className="rounded-2xl border border-border bg-card/80 p-5 space-y-4">
@@ -343,17 +381,22 @@ export function DocumentUpload({
                       isDragOver
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/40 hover:bg-muted/40'
-                    } ${uploading ? 'pointer-events-none opacity-60' : 'cursor-pointer'}`}
-                    onDrop={(event) => handleDrop(event, docType)}
+                    } ${uploading || ppsBlocked ? 'pointer-events-none opacity-60' : 'cursor-pointer'}`}
+                    onDrop={(event) => {
+                      if (ppsBlocked) return
+                      handleDrop(event, docType)
+                    }}
                     onDragOver={(event) => {
+                      if (ppsBlocked) return
                       event.preventDefault()
                       setDragOverType(docType)
                     }}
                     onDragLeave={(event) => {
+                      if (ppsBlocked) return
                       event.preventDefault()
                       setDragOverType(null)
                     }}
-                    onClick={() => !uploading && fileInputRefs.current[docType]?.click()}
+                    onClick={() => (!uploading && !ppsBlocked) && fileInputRefs.current[docType]?.click()}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-full border border-dashed border-muted-foreground/40 bg-background p-3 text-muted-foreground transition-colors group-hover:border-primary/50 group-hover:text-primary">
@@ -363,14 +406,22 @@ export function DocumentUpload({
                         <p className="text-sm font-semibold">
                           {doc ? 'Remplacer le document' : 'Déposer un document'}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Glisse ton fichier ici ou clique pour parcourir ton ordinateur.
-                        </p>
-                        <p className="text-[11px] font-medium text-muted-foreground">
-                          Formats acceptés : PDF, JPG, JPEG, PNG — 2 Mo max.
-                        </p>
+                        {ppsBlocked ? (
+                          <p className="text-xs text-muted-foreground">
+                            Le PPS sera accepté à partir du {formatPpsAvailableDate()}.
+                          </p>
+                        ) : (
+                          <>
+                            <p className="text-xs text-muted-foreground">
+                              Glisse ton fichier ici ou clique pour parcourir ton ordinateur.
+                            </p>
+                            <p className="text-[11px] font-medium text-muted-foreground">
+                              Formats acceptés : PDF, JPG, JPEG, PNG — 2 Mo max.
+                            </p>
+                          </>
+                        )}
                       </div>
-                      <Button variant="outline" size="sm" className="mt-1">
+                      <Button variant="outline" size="sm" className="mt-1" disabled={ppsBlocked}>
                         Choisir un fichier
                       </Button>
                     </div>

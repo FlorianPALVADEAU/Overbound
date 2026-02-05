@@ -201,6 +201,7 @@ export default function RegistrationDocumentPage() {
                 status={registration.approval_status as 'pending' | 'approved' | 'rejected'}
                 rejectionReason={registration.rejection_reason}
                 requiredTypes={requiredDocumentTypes}
+                eventDate={registration.event?.date ?? null}
                 onUploaded={() => refetch()}
               />
             </CardContent>
