@@ -176,6 +176,23 @@ export async function sendDocumentRequiredEmail(params: {
   })
 }
 
+export async function sendDocumentUploadReminderEmail(params: {
+  to: string
+  participantName?: string | null
+  eventTitle: string
+  uploadUrl: string
+  requiredDocuments: string[]
+}) {
+  const html = await renderEmail(DocumentRequiredEmail(params))
+
+  return resend.emails.send({
+    from: FORMAL_FROM,
+    to: params.to,
+    subject: `C’est le moment d’envoyer tes documents — ${params.eventTitle}`,
+    html,
+  })
+}
+
 export async function sendDocumentApprovedEmail(params: {
   to: string
   participantName?: string | null

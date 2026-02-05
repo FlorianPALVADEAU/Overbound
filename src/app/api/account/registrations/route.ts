@@ -46,7 +46,7 @@ export async function GET() {
       transfer_token: string | null
       approval_status: 'pending' | 'approved' | 'rejected' | null
       document_url: string | null
-      ticket: { requires_document: boolean | null } | null
+      ticket: { requires_document: boolean | null; document_types?: string[] | null } | null
     }
 
     const registrationMetaMap = new Map<
@@ -56,6 +56,7 @@ export async function GET() {
         approval_status: 'pending' | 'approved' | 'rejected'
         document_url: string | null
         requires_document: boolean
+        document_types: string[]
       }
     >()
 
@@ -68,7 +69,7 @@ export async function GET() {
           transfer_token,
           approval_status,
           document_url,
-          ticket:tickets(requires_document)
+          ticket:tickets(requires_document, document_types)
         `,
         )
         .in('id', registrationIds)
@@ -83,7 +84,29 @@ export async function GET() {
             approval_status: (row.approval_status ?? 'pending') as 'pending' | 'approved' | 'rejected',
             document_url: row.document_url ?? null,
             requires_document: requiresDocument,
+            document_types: Array.isArray(row.ticket?.document_types) ? row.ticket.document_types : [],
           })
+        }
+      }
+    }
+
+    const documentTypeMap = new Map<string, Set<string>>()
+    if (registrationIds.length > 0) {
+      const { data: documentRows, error: documentError } = await admin
+        .from('registration_documents')
+        .select('registration_id, document_type')
+        .in('registration_id', registrationIds)
+
+      if (documentError) {
+        console.error('[account api] registration documents error', documentError)
+      } else if (documentRows) {
+        for (const row of documentRows as any[]) {
+          if (!documentTypeMap.has(row.registration_id)) {
+            documentTypeMap.set(row.registration_id, new Set())
+          }
+          if (row.document_type) {
+            documentTypeMap.get(row.registration_id)!.add(row.document_type)
+          }
         }
       }
     }
@@ -97,6 +120,7 @@ export async function GET() {
           approval_status: 'pending' as const,
           document_url: null,
           requires_document: false,
+          document_types: [],
         }
 
         const qrCodeDataUrl =
@@ -106,10 +130,17 @@ export async function GET() {
 
         const eventDate = registration.event_date ? new Date(registration.event_date) : null
         const isEventUpcoming = eventDate ? eventDate >= now : false
+        const uploadedTypes = documentTypeMap.get(registration.registration_id)
+        const uploadedCount = uploadedTypes?.size ?? (meta.document_url ? 1 : 0)
+        const requiredCount = meta.requires_document
+          ? (meta.document_types.length > 0 ? meta.document_types.length : 1)
+          : 0
+        const documentsComplete = requiredCount === 0 ? true : uploadedCount >= requiredCount
+
         const documentRequiresAttention =
           meta.requires_document &&
-          (meta.approval_status !== 'approved' || !meta.document_url) &&
-          isEventUpcoming
+          isEventUpcoming &&
+          (!documentsComplete || meta.approval_status !== 'approved')
 
         return {
           ...registration,
@@ -117,6 +148,10 @@ export async function GET() {
           approval_status: meta.approval_status,
           document_url: meta.document_url,
           requires_document: meta.requires_document,
+          required_document_types: meta.document_types,
+          documents_count: uploadedCount,
+          required_documents_count: requiredCount,
+          documents_complete: documentsComplete,
           document_requires_attention: documentRequiresAttention,
           qr_code_data_url: qrCodeDataUrl,
         }

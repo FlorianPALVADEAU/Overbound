@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import storageClient from '@/app/api/upload/document/storage'
 
 const BUCKET_NAME = 'registration-documents'
@@ -10,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const searchParams = new URL(request.url).searchParams
+    const documentId = searchParams.get('document_id') || searchParams.get('documentId')
+    const documentType = searchParams.get('document_type')
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -40,7 +43,22 @@ export async function GET(
       )
     }
 
-    if (!registration.document_url) {
+    const admin = supabaseAdmin()
+
+    let documentUrl = registration.document_url
+
+    if (documentId || documentType) {
+      const { data: documentRow } = await admin
+        .from('registration_documents')
+        .select('document_url')
+        .eq('registration_id', id)
+        .eq(documentId ? 'id' : 'document_type', documentId ? documentId : documentType)
+        .maybeSingle()
+
+      documentUrl = documentRow?.document_url ?? documentUrl
+    }
+
+    if (!documentUrl) {
       return NextResponse.json(
         { error: 'Aucun document disponible' },
         { status: 404 }
@@ -66,7 +84,7 @@ export async function GET(
       return value
     }
 
-    const objectPath = extractPath(registration.document_url)
+    const objectPath = extractPath(documentUrl)
     if (!objectPath) {
       return NextResponse.json(
         { error: 'Document introuvable' },

@@ -66,13 +66,21 @@ export default function RegistrationDocumentPage() {
     return null
   }
 
-  const currentDocument = registration.document_url
-    ? {
-        url: registration.document_url,
-        filename: registration.document_filename || 'Document',
-        size: registration.document_size || 0,
-      }
-    : undefined
+  const existingDocuments = Array.isArray((registration as any).documents)
+    ? (registration as any).documents.map((doc: any) => ({
+        id: doc.id,
+        url: doc.document_url,
+        filename: doc.document_filename,
+        size: doc.document_size,
+        documentType: doc.document_type,
+        status: doc.status,
+        rejectionReason: doc.rejection_reason ?? null,
+      }))
+    : []
+
+  const requiredDocumentTypes = registration.ticket.document_types || []
+  const requiredCount = requiredDocumentTypes.length > 0 ? requiredDocumentTypes.length : 1
+  const uploadedCount = existingDocuments.length
 
   return (
     <main className="min-h-screen bg-muted/30">
@@ -102,6 +110,9 @@ export default function RegistrationDocumentPage() {
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground md:text-base">
             Nous avons besoin d’un document valide pour confirmer ta participation. Téléverse-le en
             quelques secondes, puis laisse notre équipe le valider.
+          </p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Documents reçus : {Math.min(uploadedCount, requiredCount)}/{requiredCount}
           </p>
         </div>
 
@@ -186,10 +197,10 @@ export default function RegistrationDocumentPage() {
             <CardContent className="p-6">
               <DocumentUpload
                 registrationId={registration.id}
-                existingDocument={currentDocument}
+                existingDocuments={existingDocuments}
                 status={registration.approval_status as 'pending' | 'approved' | 'rejected'}
                 rejectionReason={registration.rejection_reason}
-                requiredTypes={registration.ticket.document_types || []}
+                requiredTypes={requiredDocumentTypes}
                 onUploaded={() => refetch()}
               />
             </CardContent>

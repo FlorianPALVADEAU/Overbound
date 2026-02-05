@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'paymentIntentId manquant.' }, { status: 400 })
     }
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ['latest_charge'],
+    })
     const metadata = paymentIntent.metadata || {}
 
     let session: Stripe.Checkout.Session | null = null
@@ -63,12 +65,15 @@ export async function POST(request: NextRequest) {
       .eq('provider_order_id', paymentIntentId)
       .maybeSingle()
 
+    const latestCharge =
+      typeof paymentIntent.latest_charge === 'object' ? paymentIntent.latest_charge : null
+
     const resolvedEmail =
       metadata.participant_email ||
       session?.customer_email ||
       session?.customer_details?.email ||
       paymentIntent.receipt_email ||
-      paymentIntent.charges?.data?.[0]?.billing_details?.email ||
+      latestCharge?.billing_details?.email ||
       user.email
 
     if (!resolvedEmail) {

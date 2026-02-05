@@ -8,6 +8,9 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const searchParams = new URL(request.url).searchParams
+    const documentId = searchParams.get('document_id') || searchParams.get('documentId')
+    const documentType = searchParams.get('document_type')
     const params = await context.params
     const supabase = await createSupabaseServer()
     const {
@@ -31,17 +34,54 @@ export async function GET(
     const registrationId = params.id
 
     const adminClient = supabaseAdmin()
-    const { data: registration, error: registrationError } = await adminClient
-      .from('registrations')
-      .select('id, document_url, document_filename, document_size')
-      .eq('id', registrationId)
-      .maybeSingle()
+    let documentUrl: string | null = null
+    let documentFilename: string | null = null
+    let documentSize: number | null = null
 
-    if (registrationError) {
-      throw registrationError
+    if (documentId || documentType) {
+      const { data: documentRow, error: documentError } = await adminClient
+        .from('registration_documents')
+        .select('document_url, document_filename, document_size')
+        .eq('registration_id', registrationId)
+        .eq(documentId ? 'id' : 'document_type', documentId ? documentId : documentType)
+        .maybeSingle()
+
+      if (documentError) {
+        throw documentError
+      }
+
+      documentUrl = documentRow?.document_url ?? null
+      documentFilename = documentRow?.document_filename ?? null
+      documentSize = documentRow?.document_size ?? null
+
+      if (!documentUrl) {
+        const { data: registrationFallback } = await adminClient
+          .from('registrations')
+          .select('document_url, document_filename, document_size')
+          .eq('id', registrationId)
+          .maybeSingle()
+
+        documentUrl = registrationFallback?.document_url ?? null
+        documentFilename = registrationFallback?.document_filename ?? null
+        documentSize = registrationFallback?.document_size ?? null
+      }
+    } else {
+      const { data: registration, error: registrationError } = await adminClient
+        .from('registrations')
+        .select('id, document_url, document_filename, document_size')
+        .eq('id', registrationId)
+        .maybeSingle()
+
+      if (registrationError) {
+        throw registrationError
+      }
+
+      documentUrl = registration?.document_url ?? null
+      documentFilename = registration?.document_filename ?? null
+      documentSize = registration?.document_size ?? null
     }
 
-    if (!registration || !registration.document_url) {
+    if (!documentUrl) {
       return NextResponse.json({ error: 'Aucun document pour cette inscription' }, { status: 404 })
     }
 
@@ -63,7 +103,7 @@ export async function GET(
       return value
     }
 
-    const objectPath = extractPath(registration.document_url)
+    const objectPath = extractPath(documentUrl)
     if (!objectPath) {
       return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
     }
@@ -78,8 +118,8 @@ export async function GET(
 
     return NextResponse.json({
       url: signedData.signedUrl,
-      filename: registration.document_filename,
-      size: registration.document_size,
+      filename: documentFilename,
+      size: documentSize,
     })
   } catch (error) {
     console.error('[admin document] error:', error)

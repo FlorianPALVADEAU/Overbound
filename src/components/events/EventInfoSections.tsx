@@ -342,20 +342,23 @@ export default function EventInfoSections() {
           </div>
 
           {/* La Course - Full width featured section */}
-          {sections[2] && (
-            <div
-              id={`info-${sections[2].id}`}
-              className="rounded-3xl border-2 border-primary/20 bg-card/80 p-8 shadow-lg shadow-primary/10"
-            >
-              <div className="mb-6 flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <sections[2].icon className="h-6 w-6" />
-                </span>
-                <h3 className="text-2xl font-bold text-foreground">{sections[2].title}</h3>
+          {sections[2] && (() => {
+            const FeaturedIcon = sections[2].icon
+            return (
+              <div
+                id={`info-${sections[2].id}`}
+                className="rounded-3xl border-2 border-primary/20 bg-card/80 p-8 shadow-lg shadow-primary/10"
+              >
+                <div className="mb-6 flex items-center gap-3">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <FeaturedIcon className="h-6 w-6" />
+                  </span>
+                  <h3 className="text-2xl font-bold text-foreground">{sections[2].title}</h3>
+                </div>
+                <div className="text-sm leading-relaxed text-muted-foreground">{sections[2].content}</div>
               </div>
-              <div className="text-sm leading-relaxed text-muted-foreground">{sections[2].content}</div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Grid for remaining sections */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

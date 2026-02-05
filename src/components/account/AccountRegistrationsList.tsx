@@ -53,6 +53,9 @@ export interface AccountRegistrationItem {
   document_url: string | null
   requires_document: boolean
   document_requires_attention: boolean
+  documents_count?: number
+  required_documents_count?: number
+  documents_complete?: boolean
 }
 
 interface AccountRegistrationsListProps {
@@ -139,8 +142,13 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
             return null
           }
 
-          if (!registration.document_url) {
-            return { label: 'Document manquant', variant: 'destructive' as const }
+          const requiredCount = registration.required_documents_count ?? 1
+          const uploadedCount = registration.documents_count ?? (registration.document_url ? 1 : 0)
+          const documentsComplete =
+            registration.documents_complete ?? (requiredCount === 0 ? true : uploadedCount >= requiredCount)
+
+          if (!documentsComplete) {
+            return { label: 'Documents manquants', variant: 'destructive' as const }
           }
 
           if (registration.approval_status === 'rejected') {
