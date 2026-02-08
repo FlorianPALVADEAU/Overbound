@@ -3,8 +3,67 @@ import { postsByCategorySlugQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
 import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import type { Metadata } from 'next'
 
 export const revalidate = 60
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+const heroImage = `${siteUrl}/images/hero_header_poster.jpg`
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams?: Promise<{ page?: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const page = (await searchParams)?.page
+  const current = Math.max(1, parseInt(page || '1', 10) || 1)
+  const isPaged = current > 1
+
+  const { category } = await client.fetch(postsByCategorySlugQuery, { slug, offset: 0, end: 1 })
+
+  if (!category) {
+    return {
+      title: 'Catégorie introuvable | Overbound Race',
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const title = `Catégorie ${category.title} | Blog OCR - Overbound Race`
+  const description = `Articles et conseils OCR sur ${category.title}. Course à obstacles Paris 2026, backyard à obstacles et préparation Overbound Race.`
+  const canonical = `${siteUrl}/blog/categorie/${slug}`
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      siteName: 'Overbound Race',
+      locale: 'fr_FR',
+      type: 'website',
+      images: [
+        {
+          url: heroImage,
+          width: 1200,
+          height: 630,
+          alt: `Catégorie ${category.title} - Overbound Race`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [heroImage],
+    },
+    robots: isPaged ? { index: false, follow: true } : undefined,
+  }
+}
 
 export default async function BlogCategoryPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams?: Promise<{ page?: string }> }) {
   const { slug } = await params

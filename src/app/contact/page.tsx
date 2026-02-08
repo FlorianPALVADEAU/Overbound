@@ -10,6 +10,7 @@ import {
   Linkedin,
   Mail,
   MapPin,
+  Music2,
   ShieldCheck,
   Twitter,
   Youtube,
@@ -69,9 +70,10 @@ const contactReasons = [
 ]
 
 const socialLinks = [
-  { name: 'Instagram', href: 'https://instagram.com/overbound-race', icon: Instagram },
-  { name: 'Facebook', href: 'https://facebook.com/overbound-race', icon: Facebook },
-  { name: 'Youtube', href: 'https://youtube.com/overbound-race', icon: Youtube },
+  { name: 'Instagram', href: 'https://instagram.com/overbound.race', icon: Instagram },
+  { name: 'Facebook', href: 'https://facebook.com/overbound.race', icon: Facebook },
+  { name: 'Youtube', href: '#', icon: Youtube },
+  { label: 'TikTok', href: '  ', icon: Music2 },
   // { name: 'X (Twitter)', href: 'https://twitter.com/overbound', icon: Twitter },
 ]
 

@@ -4,8 +4,67 @@ import Link from 'next/link'
 import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
 import { urlFor } from '@/sanity/lib/image'
+import type { Metadata } from 'next'
 
 export const revalidate = 60
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+const heroImage = `${siteUrl}/images/hero_header_poster.jpg`
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams?: Promise<{ page?: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const page = (await searchParams)?.page
+  const current = Math.max(1, parseInt(page || '1', 10) || 1)
+  const isPaged = current > 1
+
+  const { author } = await client.fetch(postsByAuthorSlugQuery, { slug, offset: 0, end: 1 })
+
+  if (!author) {
+    return {
+      title: 'Auteur introuvable | Overbound Race',
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const title = `Articles de ${author.name} | Blog OCR - Overbound Race`
+  const description = `Découvre les articles OCR de ${author.name} : préparation, conseils et course à obstacles Paris 2026 avec Overbound Race.`
+  const canonical = `${siteUrl}/blog/auteur/${slug}`
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      siteName: 'Overbound Race',
+      locale: 'fr_FR',
+      type: 'profile',
+      images: [
+        {
+          url: heroImage,
+          width: 1200,
+          height: 630,
+          alt: `Auteur ${author.name} - Overbound Race`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [heroImage],
+    },
+    robots: isPaged ? { index: false, follow: true } : undefined,
+  }
+}
 
 export default async function BlogAuthorPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams?: Promise<{ page?: string }> }) {
   const { slug } = await params

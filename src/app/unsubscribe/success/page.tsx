@@ -89,7 +89,7 @@ export default function UnsubscribeSuccessPage() {
           <p className="text-xs text-muted-foreground">
             Une question ?{' '}
             <a
-              href="mailto:support@overbound-race.com"
+              href="mailto:contact@overbound-race.com"
               className="text-primary hover:underline"
             >
               Contactez notre support

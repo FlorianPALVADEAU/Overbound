@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Espace Presse - Overbound Race | Course à Obstacles Paris 2026",
-  description: "Espace presse Overbound Race : kit média, dossier de presse, contacts relations presse et partenariats. Course à obstacles Paris 2026, backyard OCR. presse@overbound-race.com",
+  title: "Espace Presse Overbound Race | Course à Obstacles Paris 2026",
+  description: "Espace presse Overbound Race : kit média, dossier de presse, contacts relations presse et partenariats. Course à obstacles Paris 2026, backyard OCR.",
   keywords: [
     "overbound presse",
     "overbound race médias",
@@ -15,10 +15,18 @@ export const metadata: Metadata = {
     canonical: 'https://overbound-race.com/about/press'
   },
   openGraph: {
-    title: "Espace Presse | Overbound Race - Course à Obstacles Paris 2026",
+    title: "Espace Presse Overbound Race | Course à Obstacles Paris 2026",
     description: "Ressources médias, contacts presse et partenariats pour Overbound Race.",
     url: 'https://overbound-race.com/about/press',
     siteName: 'Overbound Race',
+    images: [
+      {
+        url: '/images/hero_header_poster.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Espace presse Overbound Race',
+      },
+    ],
     locale: 'fr_FR',
     type: 'website',
   },
@@ -26,6 +34,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Espace Presse | Overbound Race",
     description: "Kit média, contacts presse et partenariats Overbound Race.",
+    images: ['/images/hero_header_poster.jpg'],
   }
 };
 

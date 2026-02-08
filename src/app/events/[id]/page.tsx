@@ -8,13 +8,23 @@ import {
   Users,
   Trophy,
   ArrowLeft,
-  AlertTriangle,
-  CheckCircle,
-  Info,
+  Tent,
+  Route,
+  PartyPopper,
+  Ticket,
+  Shield,
+  IdCard,
+  Eye,
+  Backpack,
+  Baby,
+  Camera,
+  ArrowLeftRight,
+  Swords,
+  Heart,
+  Car,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
 import { PricingTimeline } from '@/components/events/PricingTimeline'
@@ -23,7 +33,6 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import FAQ from '@/components/homepage/FAQ'
-import { EventStructuredData } from '@/components/seo/StructuredData'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -162,31 +171,21 @@ export default function EventDetailPage() {
   })
   const formattedTime = new Date(event.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
-  // Prepare event data for structured data (adapt field names)
-  const eventForStructuredData = {
-    ...event,
-    name: event.title,
-    tickets: tickets.map(ticket => ({
-      ...ticket,
-      price: getCurrentTicketPrice(ticket, eventPriceTiers) / 100 // Convert cents to euros
-    }))
-  }
-
   return (
-    <main className="min-h-screen bg-background text-foreground max-w-7xl mx-auto">
-      <EventStructuredData event={eventForStructuredData} />
-      <section className="relative isolate overflow-hidden py-16">
+    <main className="min-h-screen bg-background text-foreground">
+      <section className="relative isolate overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0">
           {event.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={event.image_url} alt={event.title} className="h-full w-full object-cover opacity-30" />
+            <img src={event.image_url} alt={event.title} className="h-full w-full object-cover opacity-25 scale-105" />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-background via-muted/40 to-background" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/80 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/90 to-transparent" />
         </div>
 
-        <div className="container relative z-10">
+        <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 pb-8 lg:flex-row lg:items-center lg:justify-between">
             <Link href="/events">
               <Button
@@ -208,32 +207,40 @@ export default function EventDetailPage() {
             </span>
           </div>
 
-          <div className="w-full flex flex-col gap-12">
-            <Badge variant={getStatusColor(event.status)} className="border border-primary/30 bg-primary/10 text-primary backdrop-blur">
+          <div className="w-full flex flex-col gap-8">
+            <Badge variant={getStatusColor(event.status)} className="w-fit border border-primary/30 bg-primary/10 text-primary backdrop-blur">
+              <span className='relative mr-2 flex h-2 w-2'>
+                <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75' />
+                <span className='relative inline-flex h-2 w-2 rounded-full bg-primary' />
+              </span>
               {getStatusLabel(event.status)}
             </Badge>
             <div className="flex w-full flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
-              <div className="flex-1 space-y-4 rounded-3xl border border-border/60 bg-background/70 p-8 backdrop-blur shadow-xl shadow-primary/10">
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-black tracking-tight lg:text-5xl">{event.title}</h1>
+              <div className="flex-1 space-y-6 animate-fade-in-up animate-duration-700">
+                <div className="space-y-3">
+                  <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">{event.title}</h1>
                   {event.subtitle ? (
-                    <p className="text-lg text-muted-foreground">{event.subtitle}</p>
+                    <p className="text-lg text-muted-foreground sm:text-xl">{event.subtitle}</p>
                   ) : (
-                    <p className="text-lg text-muted-foreground">Un rendez-vous sportif taillé pour repousser vos limites.</p>
+                    <p className="text-lg text-muted-foreground sm:text-xl">Un rendez-vous sportif taillé pour repousser vos limites.</p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-sm shadow-primary/10 ring-1 ring-border/60">
-                    <Calendar className="mt-1 h-5 w-5 text-primary" />
+                  <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
+                    <div className="rounded-xl bg-primary/10 p-2.5">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Date</p>
                       <p className="font-semibold">{formattedDate}</p>
                       <p className="text-sm text-muted-foreground">{formattedTime}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-sm shadow-primary/10 ring-1 ring-border/60">
-                    <MapPin className="mt-1 h-5 w-5 text-primary" />
+                  <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
+                    <div className="rounded-xl bg-primary/10 p-2.5">
+                      <MapPin className="h-5 w-5 text-primary" />
+                    </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Lieu</p>
                       <p className="font-semibold">{event.location}</p>
@@ -244,13 +251,15 @@ export default function EventDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-sm shadow-primary/10 ring-1 ring-border/60">
-                    <Users className="mt-1 h-5 w-5 text-primary" />
+                  <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
+                    <div className="rounded-xl bg-primary/10 p-2.5">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Capacité</p>
                       <p className="font-semibold">{event.capacity} participants</p>
                       {isUpcoming ? (
-                        <p className={`text-sm ${isToday ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                        <p className={`text-sm ${isToday ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
                           {isToday
                             ? "C'est le grand jour !"
                             : `Plus que ${daysUntil} jour${daysUntil > 1 ? 's' : ''} avant le départ.`}
@@ -260,8 +269,10 @@ export default function EventDetailPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-sm shadow-primary/10 ring-1 ring-border/60">
-                    <Trophy className="mt-1 h-5 w-5 text-primary" />
+                  <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
+                    <div className="rounded-xl bg-primary/10 p-2.5">
+                      <Trophy className="h-5 w-5 text-primary" />
+                    </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Formats au programme</p>
                       <p className="font-semibold">
@@ -284,16 +295,16 @@ export default function EventDetailPage() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl bg-card p-6 shadow-sm shadow-primary/10 ring-1 ring-border/60">
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                <div className="rounded-2xl bg-card/80 p-6 ring-1 ring-border/60 backdrop-blur">
+                  <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
                     {event.description ||
                       "Préparez-vous à vivre une expérience sportive intense : échauffement collectif, zones techniques, runs rythmés et obstacles exigeants. L'événement rassemble des athlètes passionnés prêts à se dépasser dans une ambiance électrisante."}
                   </p>
                 </div>
               </div>
-              <div className="h-full w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] lg:w-auto">
+              <div className="h-full w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] lg:sticky lg:top-24 lg:w-auto animate-fade-in-up animate-duration-700 animate-delay-200">
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground/80">À partir de</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-foreground/80">À partir de</p>
                   {lowestPrice !== null ? (
                     <div className="space-y-1">
                       {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice && (
@@ -301,7 +312,7 @@ export default function EventDetailPage() {
                           {formatCurrency(baseLowestPrice)}
                         </p>
                       )}
-                      <p className="text-4xl font-extrabold">
+                      <p className="text-5xl font-extrabold">
                         {formatCurrency(lowestPrice)}
                       </p>
                     </div>
@@ -313,7 +324,7 @@ export default function EventDetailPage() {
                   </p>
                 </div>
                 <Button
-                  className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground hover:bg-background/80"
+                  className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
                   size="lg"
                   asChild
                 >
@@ -321,10 +332,10 @@ export default function EventDetailPage() {
                 </Button>
                 <div className="rounded-2xl bg-primary-foreground/80 p-4 text-sm text-primary">
                   <p className="font-semibold">Infos clés</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>Ouverture des portes 1h avant le premier départ</li>
-                    <li>Vestiaires et consignes disponibles sur place</li>
-                    <li>Restauration & corners partenaires pendant toute la journée</li>
+                  <ul className="mt-2 space-y-1.5">
+                    <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Ouverture des portes 1h avant le premier départ</li>
+                    <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Vestiaires et consignes disponibles sur place</li>
+                    <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Restauration & corners partenaires pendant toute la journée</li>
                   </ul>
                 </div>
               </div>
@@ -332,172 +343,264 @@ export default function EventDetailPage() {
           </div>
         </div>
       </section>
-                <div className="h-80 w-full rounded-2xl border border-border/60 bg-card/80 shadow-sm shadow-primary/10 ring-1 ring-border/60">
-                  <iframe
-                    title={`Carte de ${event.location}`}
-                    src={locationMapUrl}
-                    className="h-full w-full rounded-2xl object-cover ring-1 ring-border/60"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                </div>
+
+      {/* Map Section */}
+      <section className="bg-background py-8">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="h-80 w-full overflow-hidden rounded-2xl border border-border/60 shadow-lg">
+            <iframe
+              title={`Carte de ${event.location}`}
+              src={locationMapUrl}
+              className="h-full w-full"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
+      </section>
       {isUltraArena ? (
-        <section className="bg-background py-16">
-          <div className="container mx-auto max-w-7xl px-6">
-            <div className="rounded-3xl border border-border/60 bg-card/80 p-8 shadow-lg shadow-primary/10">
-              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Informations générales — Overbound
-                  </p>
-                  <h2 className="text-3xl font-bold text-foreground">Ultra Arena 2026</h2>
-                </div>
-                <Badge variant="secondary" className="border border-primary/30 bg-primary/10 text-primary">
-                  Backyard OCR nouvelle génération
-                </Badge>
+        <>
+        {/* L'événement */}
+        <section className="relative overflow-hidden bg-background py-16 sm:py-20">
+          <div className="pointer-events-none absolute -left-40 top-20 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
+          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                  L'événement
+                </p>
+                <h2 className="text-3xl font-bold text-foreground sm:text-4xl">Ultra Arena 2026</h2>
+                <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                  Backyard OCR nouvelle génération — une boucle unique en pleine nature, deux formats pour tous les niveaux d'engagement.
+                </p>
               </div>
+              <Badge variant="secondary" className="w-fit border border-primary/30 bg-primary/10 text-primary">
+                Backyard OCR nouvelle génération
+              </Badge>
+            </div>
 
-              <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
-                  <h3 className="text-lg font-semibold text-foreground">Rejoindre l’événement</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Overbound est une course à obstacles nouvelle génération organisée sous forme de backyard, sur une
-                    boucle unique en pleine nature. Deux formats sont proposés : OPEN et RANKED, pour permettre à
-                    chacun de choisir son niveau d’engagement.
-                  </p>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    L’événement est ouvert aux sportifs de tous niveaux, dès lors qu’ils sont majeurs.
-                  </p>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <Heart className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Rejoindre l'événement</h3>
                 </div>
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Overbound est une course à obstacles nouvelle génération organisée sous forme de backyard, sur une
+                  boucle unique en pleine nature. Deux formats sont proposés : OPEN et RANKED, pour permettre à
+                  chacun de choisir son niveau d'engagement.
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  L'événement est ouvert aux sportifs de tous niveaux, dès lors qu'ils sont majeurs.
+                </p>
+              </div>
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <Tent className="h-5 w-5 text-primary" />
+                  </div>
                   <h3 className="text-lg font-semibold text-foreground">Le village Overbound</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Le village Overbound est le cœur de l’événement : zone de départ et d’arrivée, partenaires,
-                    animations, musique et public.
-                  </p>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    C’est un lieu vivant, pensé pour créer une ambiance forte et permettre aux spectateurs de suivre
-                    l’épreuve jusqu’au dernier survivant.
-                  </p>
                 </div>
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Le village Overbound est le cœur de l'événement : zone de départ et d'arrivée, partenaires,
+                  animations, musique et public.
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  C'est un lieu vivant, pensé pour créer une ambiance forte et permettre aux spectateurs de suivre
+                  l'épreuve jusqu'au dernier survivant.
+                </p>
+              </div>
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <Route className="h-5 w-5 text-primary" />
+                  </div>
                   <h3 className="text-lg font-semibold text-foreground">La course</h3>
-                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                    <li>• Boucle d’environ 2 km</li>
-                    <li>• 10 obstacles et plus, sollicitant force, endurance, agilité et mental</li>
-                    <li>• Parcours en milieu naturel</li>
-                  </ul>
                 </div>
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
+                <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Boucle d'environ 2 km</li>
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />10 obstacles et plus, sollicitant force, endurance, agilité et mental</li>
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Parcours en milieu naturel</li>
+                </ul>
+              </div>
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <PartyPopper className="h-5 w-5 text-primary" />
+                  </div>
                   <h3 className="text-lg font-semibold text-foreground">Après ta course</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Après l’effort, place à la récupération et au partage : repos au village, échanges avec les autres
-                    participants, partenaires, public et ambiance conviviale.
-                  </p>
                 </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Après l'effort, place à la récupération et au partage : repos au village, échanges avec les autres
+                  participants, partenaires, public et ambiance conviviale.
+                </p>
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="mt-8 rounded-3xl border border-border/60 bg-background/70 p-6">
-                <h3 className="text-lg font-semibold text-foreground">Formats disponibles</h3>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl bg-card p-5 ring-1 ring-border/60">
-                    <p className="text-base font-semibold text-foreground">OPEN</p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Format accessible, sans élimination. Les participants disposent d’un temps de course global et
-                      gèrent librement leurs tours, leurs pauses, leur nutrition et leur récupération. L’objectif :
-                      se dépasser à son rythme, dans un cadre encadré et sécurisé.
-                    </p>
+        {/* Formats OPEN & RANKED */}
+        <section className="relative overflow-hidden py-16 sm:py-20">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+          <div className="pointer-events-none absolute -right-32 top-10 h-72 w-72 rounded-full bg-primary/8 blur-3xl" />
+          <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                Choisis ton format
+              </p>
+              <h2 className="text-3xl font-bold text-foreground sm:text-4xl">Deux formats, un même terrain</h2>
+              <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                Que tu viennes pour le dépassement personnel ou la compétition pure, il y a un format pour toi.
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="relative overflow-hidden rounded-2xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-card to-card p-8 shadow-lg transition hover:border-blue-500/50 hover:shadow-xl">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
+                <div className="relative">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-xl bg-blue-500/15 p-2.5">
+                      <Heart className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <Badge className="bg-blue-500/15 text-blue-600 border-0">Accessible</Badge>
                   </div>
-                  <div className="rounded-2xl bg-card p-5 ring-1 ring-border/60">
-                    <p className="text-base font-semibold text-foreground">RANKED</p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Format compétitif à élimination progressive. Un départ est donné toutes les 20 minutes. Les
-                      participants doivent terminer chaque boucle dans le temps imparti sous peine d’élimination. La
-                      course s’arrête lorsqu’il ne reste plus qu’un seul participant en compétition.
-                    </p>
+                  <p className="text-2xl font-bold text-foreground">OPEN</p>
+                  <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                    Format accessible, sans élimination. Les participants disposent d'un temps de course global et
+                    gèrent librement leurs tours, leurs pauses, leur nutrition et leur récupération. L'objectif :
+                    se dépasser à son rythme, dans un cadre encadré et sécurisé.
+                  </p>
+                  <Button asChild size="lg" className="mt-6 w-full rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700">
+                    <Link href="/events/ultra-arena-2026/register">S'inscrire en OPEN</Link>
+                  </Button>
+                </div>
+              </div>
+              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-card p-8 shadow-lg transition hover:border-amber-500/50 hover:shadow-xl">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-500/10 blur-2xl" />
+                <div className="relative">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-xl bg-amber-500/15 p-2.5">
+                      <Swords className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <Badge className="bg-amber-500/15 text-amber-600 border-0">Compétitif</Badge>
                   </div>
-                </div>
-              </div>
-
-              <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
-                  <h3 className="text-lg font-semibold text-foreground">Ton billet</h3>
-                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                    <li>• Accès à la course choisie (OPEN ou RANKED)</li>
-                    <li>• Accès au village Overbound</li>
-                    <li>• Services mis à disposition sur site</li>
-                  </ul>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Les informations pratiques (guide du coureur) seront envoyées par email avant l’événement.
+                  <p className="text-2xl font-bold text-foreground">RANKED</p>
+                  <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                    Format compétitif à élimination progressive. Un départ est donné toutes les 20 minutes. Les
+                    participants doivent terminer chaque boucle dans le temps imparti sous peine d'élimination. La
+                    course s'arrête lorsqu'il ne reste plus qu'un seul participant en compétition.
                   </p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
-                  <h3 className="text-lg font-semibold text-foreground">Lieu de l’événement</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Base de loisirs de Saint-Quentin-en-Yvelines (Yvelines – Île-de-France).
-                  </p>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    L’accès précis et les informations de stationnement seront communiqués dans le Guide du Coureur.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
-                  <h3 className="text-lg font-semibold text-foreground">Conditions de participation & sécurité</h3>
-                  <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                    <li>• PPS (Parcours Prévention Santé) valide — <a className="text-primary hover:underline" href="https://pps.athle.fr" target="_blank" rel="noreferrer">pps.athle.fr</a></li>
-                    <li>• ou certificat médical en cours de validité attestant l’absence de contre-indication</li>
-                    <li>• ou licence sportive valide pour l’année de l’événement</li>
-                  </ul>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    En l’absence de l’un de ces documents, l’accès à la course sera refusé. Aucun remboursement ne
-                    pourra être effectué.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-6 ring-1 ring-border/60">
-                  <h3 className="text-lg font-semibold text-foreground">Enregistrement</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Merci de prévoir une pièce d’identité (carte d’identité, permis de conduire, carte étudiante,
-                    etc.). Une photo du document sur téléphone est acceptée.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
-                  <p className="text-sm font-semibold text-foreground">Spectateurs</p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Les spectateurs sont les bienvenus sur le village Overbound et les zones dédiées. Pour des raisons
-                    de sécurité, l’accès au parcours leur est strictement interdit.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
-                  <p className="text-sm font-semibold text-foreground">Dépôt de sac</p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Un espace de dépôt de sacs sera disponible sur site. Les modalités exactes seront précisées dans
-                    le Guide du Coureur.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
-                  <p className="text-sm font-semibold text-foreground">Âge minimum</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Événement réservé aux majeurs (18 ans minimum).</p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
-                  <p className="text-sm font-semibold text-foreground">Photos & contenus</p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Des photographes officiels seront présents sur l’événement. Les photos seront mises en ligne dans
-                    les jours suivant la course. Les liens seront communiqués par email et sur les réseaux sociaux.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-background/70 p-5 ring-1 ring-border/60">
-                  <p className="text-sm font-semibold text-foreground">Transfert de billet</p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Les modalités de modification ou de transfert de billet seront précisées dans le Guide du Coureur.
-                    Certaines modifications pourront être effectuées directement en ligne.
-                  </p>
+                  <Button asChild size="lg" className="mt-6 w-full rounded-xl bg-amber-600 text-white shadow-lg shadow-amber-500/25 hover:bg-amber-700">
+                    <Link href="/events/ultra-arena-2026/register">S'inscrire en RANKED</Link>
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
         </section>
+
+        {/* Infos pratiques */}
+        <section className="bg-background py-16 sm:py-20">
+          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                Infos pratiques
+              </p>
+              <h2 className="text-3xl font-bold text-foreground sm:text-4xl">Tout ce qu'il faut savoir</h2>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <Ticket className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Ton billet</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Accès à la course choisie (OPEN ou RANKED)</li>
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Accès au village Overbound</li>
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Services mis à disposition sur site</li>
+                </ul>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Les informations pratiques (guide du coureur) seront envoyées par email avant l'événement.
+                </p>
+              </div>
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <MapPin className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Lieu de l'événement</h3>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Base de loisirs de Saint-Quentin-en-Yvelines (Yvelines – Île-de-France).
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  L'accès précis et les informations de stationnement seront communiqués dans le Guide du Coureur.
+                </p>
+                <div className="mt-4 flex items-start gap-3 rounded-xl bg-amber-500/5 p-3 ring-1 ring-amber-500/15">
+                  <Car className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    <span className="font-semibold">Parking payant : 6 €/voiture.</span> Pensez au covoiturage — c'est plus économique, plus écologique, et ça fait déjà partie de l'esprit tribu !
+                  </p>
+                </div>
+              </div>
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <Shield className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Conditions de participation & sécurité</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />PPS (Parcours Prévention Santé) valide — <a className="text-primary hover:underline" href="https://pps.athle.fr" target="_blank" rel="noreferrer">pps.athle.fr</a></li>
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />ou certificat médical en cours de validité attestant l'absence de contre-indication</li>
+                  <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />ou licence sportive valide pour l'année de l'événement</li>
+                </ul>
+                <p className="mt-3 rounded-xl bg-destructive/5 p-3 text-xs text-destructive/80 ring-1 ring-destructive/10">
+                  En l'absence de l'un de ces documents, l'accès à la course sera refusé. Aucun remboursement ne
+                  pourra être effectué.
+                </p>
+              </div>
+              <div className="group rounded-2xl border border-border/60 bg-card/80 p-6 transition hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <IdCard className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Enregistrement</h3>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Merci de prévoir une pièce d'identité (carte d'identité, permis de conduire, carte étudiante,
+                  etc.). Une photo du document sur téléphone est acceptée.
+                </p>
+              </div>
+            </div>
+
+            {/* Grille infos complémentaires */}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { icon: Eye, title: 'Spectateurs', text: "Les spectateurs sont les bienvenus sur le village Overbound et les zones dédiées. Pour des raisons de sécurité, l'accès au parcours leur est strictement interdit." },
+                { icon: Backpack, title: 'Dépôt de sac', text: "Un espace de dépôt de sacs sera disponible sur site. Les modalités exactes seront précisées dans le Guide du Coureur." },
+                { icon: Baby, title: 'Âge minimum', text: "Événement réservé aux majeurs (18 ans minimum)." },
+                { icon: Camera, title: 'Photos & contenus', text: "Des photographes officiels seront présents sur l'événement. Les photos seront mises en ligne dans les jours suivant la course." },
+                { icon: ArrowLeftRight, title: 'Transfert de billet', text: "Les modalités de modification ou de transfert de billet seront précisées dans le Guide du Coureur. Certaines modifications pourront être effectuées directement en ligne." },
+              ].map((item) => (
+                <div key={item.title} className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card/80 p-5 transition hover:border-primary/20 hover:shadow-md">
+                  <div className="rounded-lg bg-muted/80 p-2 shrink-0">
+                    <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                    <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{item.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        </>
       ) : null}
       {/* <section className="bg-background py-16">
         <div className="container mx-auto max-w-7xl px-6">
@@ -639,7 +742,75 @@ export default function EventDetailPage() {
         </div>
       </section> */}
 
-      <section id="tickets" className="relative overflow-hidden bg-background py-16">
+      {/* CTA Inscription */}
+      <section id="tickets" className="relative isolate overflow-hidden py-20 sm:py-28">
+        <div className="absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/images/a-sunny-mood-with-runners-ready-to-go.avif"
+            alt="Des coureurs prêts à s'élancer sous le soleil"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+        <div className="pointer-events-none absolute -left-20 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 top-1/3 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+
+        <div className="container relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.4em] text-primary-foreground/70">
+            Places limitées
+          </p>
+          <h2 className="text-4xl font-black tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl">
+            Prêt à entrer dans l'arène ?
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-primary-foreground/80 sm:text-lg">
+            Les tarifs augmentent à chaque palier. Plus tu réserves tôt, plus tu économises. Choisis ton format et assure ta place.
+          </p>
+
+          {lowestPrice !== null && (
+            <div className="mt-8 inline-flex flex-col items-center gap-1">
+              {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice && (
+                <span className="text-lg font-semibold line-through text-primary-foreground/50">
+                  dès {formatCurrency(baseLowestPrice)}
+                </span>
+              )}
+              <span className="text-5xl font-extrabold text-primary-foreground sm:text-6xl">
+                dès {formatCurrency(lowestPrice)}
+              </span>
+              {hasDiscount && activeTier && (
+                <Badge className="mt-1 border-0 bg-white/20 text-primary-foreground text-sm">
+                  -{activeTier.discount_percentage}% — {activeTier.name}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="h-14 rounded-2xl bg-red-600 px-10 text-lg font-bold text-white shadow-xl shadow-red-500/25 hover:bg-red-700"
+            >
+              <Link href="/events/ultra-arena-2026/register">Je m'inscris maintenant</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="h-14 rounded-2xl border-2 border-primary-foreground/30 bg-transparent px-10 text-lg font-semibold text-primary-foreground hover:bg-white/10"
+            >
+              <Link href="#carte">Voir les détails</Link>
+            </Button>
+          </div>
+
+          <p className="mt-6 text-xs text-primary-foreground/60">
+            Paiement sécurisé par Stripe — Inscription en 2 minutes
+          </p>
+        </div>
+      </section>
+
+      {/* Ancien bloc réservation (commenté pour refacto)
+      <section id="tickets-old" className="relative overflow-hidden bg-background py-16">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5" />
         <div className="pointer-events-none absolute -top-24 right-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-10 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
@@ -650,8 +821,6 @@ export default function EventDetailPage() {
               Choisissez le format qui correspond à votre niveau : chaque billet est limité, ne tardez pas.
             </p>
           </div>
-
-          {/* Pricing Timeline - Show if event has price tiers */}
           {eventPriceTiers.length > 0 && tickets.length > 0 && (
             <div className="mb-12 rounded-2xl border border-primary/20 bg-background/80 p-8 backdrop-blur shadow-lg shadow-primary/10">
               <PricingTimeline
@@ -662,7 +831,6 @@ export default function EventDetailPage() {
               />
             </div>
           )}
-
           <EventTicketListWithRegistration
             event={event}
             tickets={tickets}
@@ -672,6 +840,7 @@ export default function EventDetailPage() {
           />
         </div>
       </section>
+      */}
       <FAQ />
     </main>
   )

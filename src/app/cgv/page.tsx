@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '27/11/2024'
+const lastUpdated = '08/02/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et acceptation' },
@@ -170,7 +170,7 @@ export default function CGVPage() {
               </p>
               <p>
                 <strong>Frais de paiement :</strong> Des frais supplémentaires peuvent s'appliquer selon le mode de
-                paiement choisi (carte bancaire, Apple Pay, virement SEPA).
+                paiement choisi (carte bancaire, virement SEPA).
               </p>
               <p>
                 <strong>Tarification progressive :</strong> Les prix peuvent évoluer selon des paliers tarifaires
@@ -190,7 +190,6 @@ export default function CGVPage() {
               </p>
               <ul>
                 <li>Carte bancaire (Visa, Mastercard, American Express)</li>
-                <li>Apple Pay</li>
                 <li>Virement SEPA (selon disponibilité)</li>
               </ul>
               <p>

@@ -294,38 +294,40 @@ export default function EventsPage() {
     setSelectedEventId(eventId)
   }
 
-  const heroImageSrc = 'https://images.unsplash.com/photo-1532444458054-01a7dd3e9fca?q=80&w=1400&auto=format&fit=crop'
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
       {/* Hero Section */}
-      <section className='relative isolate overflow-hidden py-20 sm:py-24'>
+      <section className='relative isolate overflow-hidden py-24 sm:py-32 lg:py-40'>
         <div className='absolute inset-0'>
           <Image
             src={"/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif"}
             alt="Un groupe de coureurs en pleine course d'obstacles"
             fill
             sizes='100vw'
-            className='object-cover object-center'
+            className='object-cover object-center scale-105'
             priority
           />
-          <div className='pointer-events-none absolute inset-0 bg-background/35 backdrop-blur-[3px]' />
-          <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
-          <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
+          <div className='pointer-events-none absolute inset-0 bg-background/30 backdrop-blur-[2px]' />
+          <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/10 via-background/60 to-background' />
+          <div className='pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-background via-background/90 to-transparent' />
         </div>
         <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
-          <div className='max-w-3xl space-y-6 text-center lg:text-left'>
-            <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
+          <div className='max-w-3xl space-y-6 text-center lg:text-left animate-fade-in-up animate-duration-700'>
+            <span className='inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary shadow-sm shadow-primary/10 sm:text-sm'>
+              <span className='relative flex h-2 w-2'>
+                <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75' />
+                <span className='relative inline-flex h-2 w-2 rounded-full bg-primary' />
+              </span>
               Événements
             </span>
-            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
+            <h1 className='text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl'>
               Partez à la conquête de nos prochains défis
             </h1>
-            <p className='text-base leading-relaxed text-muted-foreground sm:text-lg'>
+            <p className='text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl'>
               Visualisez nos événements sur la carte, trouvez les courses proches de chez vous et plongez dans les détails de chaque ticket disponible.
             </p>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
-              <Button asChild size='lg' className='h-12 w-full sm:w-auto'>
+              <Button asChild size='lg' className='h-12 w-full shadow-lg shadow-primary/25 sm:w-auto'>
                 <Link href='#carte'>Voir la carte</Link>
               </Button>
               <Button
@@ -342,8 +344,11 @@ export default function EventsPage() {
       </section>
 
       {/* Pricing Explainer Section */}
-      <section className="w-full py-16 sm:py-20 bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative w-full overflow-hidden py-20 sm:py-24">
+        <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-muted/40 to-primary/5' />
+        <div className='pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl' />
+        <div className='pointer-events-none absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl' />
+        <div className="relative container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <PricingExplainer />
         </div>
       </section>
@@ -359,19 +364,20 @@ export default function EventsPage() {
         />
       </section>
 
-      <div className="relative w-full py-40 bg-white px-4 sm:px-6 xl:px-32">
-        <div className='space-y-4 text-center sm:text-left pb-6'>
-          <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+      <div className="relative w-full py-24 sm:py-32 lg:py-40 bg-white px-4 sm:px-6 xl:px-32">
+        <div className='space-y-4 text-center sm:text-left pb-10'>
+          <span className='inline-flex items-center justify-center gap-2 rounded-full bg-primary/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+            <Calendar className='h-3.5 w-3.5' />
             Calendrier Overbound
           </span>
           <div className='space-y-3'>
-            <Headings 
+            <Headings
               title="Les prochains défis à ne pas manquer"
-              sx='text-black' 
+              sx='text-black'
             />
             <p className='mx-auto max-w-2xl text-sm text-muted-foreground sm:mx-0 sm:text-base'>
               Sélectionne ta prochaine course, repère les lieux et assure-toi une place avant la clôture des inscriptions.
-              Chaque carte te donne l’essentiel : date, lieu, prix de départ et nombre de formats disponibles.
+              Chaque carte te donne l'essentiel : date, lieu, prix de départ et nombre de formats disponibles.
             </p>
           </div>
         </div>
@@ -515,7 +521,7 @@ export default function EventsPage() {
                             key={event.id}
                             type="button"
                             onClick={() => handleEventSelect(event.id)}
-                            className="group w-full rounded-lg border border-border bg-background p-4 text-left transition-all hover:border-primary/20 hover:bg-primary/5 hover:shadow-md"
+                            className="group w-full rounded-xl border border-border bg-background p-4 text-left transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
                           >
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="flex-1">
@@ -587,7 +593,7 @@ export default function EventsPage() {
 
             {/* Carte à droite */}
             <section className="order-1 lg:order-2 lg:col-span-3">
-              <div className="relative h-[420px] overflow-hidden rounded-3xl border border-border bg-muted lg:h-[640px]">
+              <div className="relative h-[420px] overflow-hidden rounded-3xl border border-border bg-muted shadow-xl shadow-black/5 lg:h-[640px]">
                 {isLoading && !eventsWithCoordinates.length ? (
                   <Skeleton className="h-full w-full" />
                 ) : eventsWithCoordinates.length ? (
@@ -613,7 +619,20 @@ export default function EventsPage() {
         </section>
 
         <NeedHelpChoosingYourFormat />
-        <EventlistDisplay />
+
+        <div className='mt-16'>
+          <div className='space-y-4 text-center sm:text-left pb-8'>
+            <span className='inline-flex items-center justify-center gap-2 rounded-full bg-primary/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+              <MapPin className='h-3.5 w-3.5' />
+              Toutes les courses
+            </span>
+            <Headings
+              title="Trouve la course faite pour toi"
+              sx='text-black'
+            />
+          </div>
+          <EventlistDisplay />
+        </div>
       </div>
       <section className="h-auto relative w-full z-1000 bg-white">
         <Image

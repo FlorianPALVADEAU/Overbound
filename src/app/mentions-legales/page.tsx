@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '27/11/2024'
+const lastUpdated = '08/02/2026'
 
 export default function MentionsLegalesPage() {
   return (

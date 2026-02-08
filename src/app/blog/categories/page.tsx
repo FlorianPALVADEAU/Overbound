@@ -2,8 +2,45 @@ import { client } from '@/sanity/lib/client'
 import { categoriesWithCountsQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
 import Image from 'next/image'
+import type { Metadata } from 'next'
 
 export const revalidate = 300
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+const heroImage = `${siteUrl}/images/hero_header_poster.jpg`
+
+export const metadata: Metadata = {
+  title: 'Catégories Blog OCR | Course à Obstacles Paris 2026 - Overbound Race',
+  description:
+    'Toutes les catégories du blog Overbound Race : conseils OCR, préparation backyard à obstacles et course à obstacles Paris 2026.',
+  alternates: {
+    canonical: `${siteUrl}/blog/categories`,
+  },
+  openGraph: {
+    title: 'Catégories Blog OCR | Overbound Race',
+    description:
+      'Explore les thématiques du blog OCR Overbound Race : entraînement, préparation et course à obstacles Paris 2026.',
+    url: `${siteUrl}/blog/categories`,
+    siteName: 'Overbound Race',
+    locale: 'fr_FR',
+    type: 'website',
+    images: [
+      {
+        url: heroImage,
+        width: 1200,
+        height: 630,
+        alt: 'Catégories du blog Overbound Race',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Catégories Blog OCR | Overbound Race',
+    description:
+      'Toutes les catégories du blog OCR Overbound Race : entraînement, préparation et course à obstacles Paris 2026.',
+    images: [heroImage],
+  },
+}
 
 export default async function BlogCategoriesIndex() {
   const categories = await client.fetch(categoriesWithCountsQuery)

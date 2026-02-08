@@ -84,11 +84,6 @@ const difficulties = [
   },
 ]
 
-export const metadata = {
-  title: 'Formats OverBound — Distances & Difficultés',
-  description: 'Choisis ta distance, puis module la difficulté pour vivre l’expérience OverBound à ton intensité.',
-}
-
 export default function FormatsPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
