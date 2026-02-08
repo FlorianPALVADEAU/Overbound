@@ -4,7 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Layout } from "@/components/layout/Layout";
 import ClientProviders from '@/components/ClientProviders'
-import { OrganizationStructuredData } from '@/components/seo/StructuredData'
+import { OrganizationStructuredDataServer } from '@/components/seo/OrganizationStructuredDataServer'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'),
   title: {
     default: "Overbound Race - Course à Obstacles Paris 2026 | Backyard à Obstacles",
-    template: "%s | Overbound Race - Course Obstacles Paris"
+    template: "%s | Overbound Race - Course à Obstacles Paris 2026"
   },
   description: "Overbound Race : première course à obstacles format backyard en France ! Course obstacles Paris 2026, OCR personnalisable. Choisis ta distance et ta difficulté.",
   keywords: [
@@ -101,7 +101,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* Structured Data - valid in body */}
-        <OrganizationStructuredData />
+        <OrganizationStructuredDataServer />
 
         {/* Google Analytics */}
         {GA_MEASUREMENT_ID && (

@@ -33,13 +33,13 @@ export const COMPANY_INFO = {
 
   emails: {
     general: 'contact@overbound-race.com',
-    support: 'support@overbound-race.com',
+    support: 'contact@overbound-race.com',
     press: 'presse@overbound-race.com',
     partnerships: 'partenariats@overbound-race.com',
-    privacy: 'privacy@overbound-race.com',
+    privacy: 'contact@overbound-race.com',
     dpo: 'dpo@overbound-race.com',
-    medical: 'medical@overbound-race.com',
-    billing: 'billing@overbound-race.com',
+    medical: 'contact@overbound-race.com',
+    billing: 'contact@overbound-race.com',
     brand: 'brand@overbound-race.com',
   },
 

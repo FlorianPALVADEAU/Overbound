@@ -120,6 +120,30 @@ export async function POST(req: Request) {
       )
     }
 
+    try {
+      await admin.from('admin_request_logs').insert({
+        method: 'POST',
+        path: '/api/checkin',
+        query_params: null,
+        body: null,
+        user_id: user.id,
+        user_email: user.email ?? null,
+        status_code: 200,
+        duration_ms: null,
+        ip_address: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+        action_type: requestedAction === 'checkin' ? 'Check-in' : 'Annulation check-in',
+        summary: `${user.email ?? 'Utilisateur'} a ${requestedAction === 'checkin' ? 'check-in' : 'annulé le check-in'} ${updatedRegistration.email}`,
+        metadata: {
+          registration_id: updatedRegistration.id,
+          actor_role: profile.role ?? null,
+          action: requestedAction,
+        },
+        error_message: null,
+      })
+    } catch (auditError) {
+      console.error('[checkin] admin_request_logs error', auditError)
+    }
+
     return NextResponse.json({
       success: true,
       message:

@@ -53,6 +53,15 @@ export async function generateMetadata(
       title,
       description,
       url: canonical,
+      siteName: 'Overbound Race',
+      locale: 'fr_FR',
+      type: 'article',
+      images: ogImageUrl ? [ogImageUrl] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
       images: ogImageUrl ? [ogImageUrl] : undefined,
     },
   }

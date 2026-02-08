@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield, CheckCircle2, Settings } from 'lucide-react'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 
-const lastUpdated = '27/11/2024'
+const lastUpdated = '08/02/2026'
 
 const COOKIE_CATEGORIES = [
   {
