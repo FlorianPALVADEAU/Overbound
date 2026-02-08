@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { client } from '@/sanity/lib/client'
 import { postsQuery, categoriesWithCountsQuery, authorsWithCountsQuery } from '@/sanity/lib/queries'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 
 const getBuildDate = () => {
   const raw =
@@ -55,7 +55,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Événements dynamiques
   let eventEntries: MetadataRoute.Sitemap = []
   try {
-    const supabase = await createSupabaseServer()
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !serviceKey) {
+      throw new Error('Missing Supabase env for sitemap events')
+    }
+
+    const supabase = supabaseAdmin()
     const { data: events, error } = await supabase
       .from('events')
       .select('slug, updated_at, date, status')
