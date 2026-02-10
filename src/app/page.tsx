@@ -9,8 +9,20 @@ import SocialProof from '@/components/homepage/SocialProof';
 import VolunteersAppeal from '@/components/homepage/VolunteersAppeal';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 import { PricingExplainer } from '@/components/pricing/PricingExplainer';
-// use the metadata defined in src/app/metadata.ts
-export { metadata } from './metadata';
+import { metadata as baseMetadata } from './metadata';
+
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com').replace(/\/$/, '')
+
+export const metadata: Metadata = {
+  ...baseMetadata,
+  alternates: {
+    canonical: siteUrl,
+  },
+  openGraph: {
+    ...baseMetadata.openGraph,
+    url: siteUrl,
+  },
+};
 
 export const dynamic = 'force-dynamic';
 

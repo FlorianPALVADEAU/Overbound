@@ -20,9 +20,6 @@ export const metadata: Metadata = {
     "obstacle race france",
     "course endurance obstacles",
   ],
-  alternates: {
-    canonical: 'https://overbound-race.com'
-  },
   openGraph: {
     title: "Course à Obstacles Paris 2026 | Backyard à Obstacles | Overbound Race",
     description: "Overbound Race : première course à obstacles format backyard en France ! OCR personnalisable à Paris. Choisis ta distance et difficulté. Inscriptions 2026 ouvertes !",
