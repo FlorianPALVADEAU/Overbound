@@ -11,6 +11,7 @@ import {
   sendDocumentRejectedEmail,
   sendTicketEmail,
   sendNewEventAnnouncementEmail,
+  sendEventOpeningEmail,
   sendPriceChangeReminderEmail,
   sendPromoCampaignEmail,
   sendInactiveUserEmail,
@@ -166,6 +167,17 @@ const handlePost = async (request: NextRequest) => {
           highlight: 'Format nocturne inédit + obstacles lumineux.',
         })
         return 'Annonce nouvel événement envoyée.'
+      },
+      event_opening: async () => {
+        await sendEventOpeningEmail({
+          to: user.email!,
+          fullName,
+          eventTitle: 'Ultra Arena 2026',
+          eventDate: 'Samedi 14 novembre 2026',
+          eventLocation: 'Parc de Miribel-Jonage',
+          eventUrl: `${EVENTS_URL}/ultra-arena-2026`,
+        })
+        return 'Email ouverture inscriptions envoyé.'
       },
       marketing_price_change: async () => {
         await sendPriceChangeReminderEmail({

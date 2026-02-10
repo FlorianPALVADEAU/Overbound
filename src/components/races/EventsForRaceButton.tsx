@@ -63,6 +63,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'on_sale': return 'default'
+      case 'announced': return 'secondary'
       case 'sold_out': return 'destructive'
       case 'closed': return 'secondary'
       default: return 'outline'
@@ -72,6 +73,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'on_sale': return 'Ouvert'
+      case 'announced': return 'Inscriptions à venir'
       case 'sold_out': return 'Complet'
       case 'closed': return 'Fermé'
       case 'draft': return 'Bientôt'

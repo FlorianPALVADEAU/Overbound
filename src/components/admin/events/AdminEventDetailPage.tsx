@@ -29,6 +29,8 @@ const statusLabel = (status: string) => {
       return 'En vente'
     case 'draft':
       return 'Brouillon'
+    case 'announced':
+      return 'Ouvert (inscriptions à venir)'
     case 'sold_out':
       return 'Complet'
     case 'closed':
@@ -46,6 +48,8 @@ const statusVariant = (status: string) => {
   switch (status) {
     case 'on_sale':
       return 'default' as const
+    case 'announced':
+      return 'secondary' as const
     case 'sold_out':
     case 'closed':
       return 'outline' as const

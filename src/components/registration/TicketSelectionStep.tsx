@@ -37,7 +37,7 @@ export default function TicketSelectionStep({
         />
       ))}
 
-      <Alert>
+      <Alert variant="destructive" className="mt-4">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           {availableSpots > 0

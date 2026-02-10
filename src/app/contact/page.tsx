@@ -73,7 +73,7 @@ const socialLinks = [
   { name: 'Instagram', href: 'https://instagram.com/overbound.race', icon: Instagram },
   { name: 'Facebook', href: 'https://facebook.com/overbound.race', icon: Facebook },
   { name: 'Youtube', href: '#', icon: Youtube },
-  { label: 'TikTok', href: '  ', icon: Music2 },
+  { name: 'TikTok', href: '  ', icon: Music2 },
   // { name: 'X (Twitter)', href: 'https://twitter.com/overbound', icon: Twitter },
 ]
 

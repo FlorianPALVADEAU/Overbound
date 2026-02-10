@@ -11,6 +11,7 @@ export type Timestamp = string
 
 export type EventStatus =
   | 'draft'
+  | 'announced'
   | 'on_sale'
   | 'sold_out'
   | 'closed'

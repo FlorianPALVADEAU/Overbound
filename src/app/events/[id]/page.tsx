@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -26,6 +27,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
 import { PricingTimeline } from '@/components/events/PricingTimeline'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
@@ -44,6 +46,8 @@ const getStatusColor = (status: string) => {
       return 'secondary'
     case 'draft':
       return 'outline'
+    case 'announced':
+      return 'secondary'
     default:
       return 'outline'
   }
@@ -59,16 +63,62 @@ const getStatusLabel = (status: string) => {
       return 'Inscriptions fermées'
     case 'draft':
       return 'Bientôt disponible'
+    case 'announced':
+      return 'Inscriptions à venir'
     default:
       return status
   }
 }
+
+const getCountdownParts = (target: Date, now: Date) => {
+  const diff = Math.max(target.getTime() - now.getTime(), 0)
+  const totalSeconds = Math.floor(diff / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return { days, hours, minutes, seconds }
+}
+
+const padCountdown = (value: number) => value.toString().padStart(2, '0')
 
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const { data: session } = useSession()
   const { data, isLoading, error, refetch } = useEventDetail(params.id)
   const isUltraArena = params.id === 'ultra-arena-2026'
+
+  const salesStart = data?.event?.sales_start ?? null
+  const eventStatus = data?.event?.status ?? null
+  const isAnnounced = eventStatus === 'announced'
+
+  const salesStartDate = useMemo(
+    () => (salesStart ? new Date(salesStart) : null),
+    [salesStart],
+  )
+
+  const [now, setNow] = useState(() => new Date())
+  const [notifyEmail, setNotifyEmail] = useState('')
+  const [notifyStatus, setNotifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [notifyMessage, setNotifyMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!salesStartDate || !isAnnounced) return
+    const interval = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(interval)
+  }, [salesStartDate, isAnnounced])
+
+  useEffect(() => {
+    if (session?.user?.email && !notifyEmail) {
+      setNotifyEmail(session.user.email)
+    }
+  }, [session?.user?.email, notifyEmail])
+
+  const countdown = useMemo(() => {
+    if (!salesStartDate || !isAnnounced) return null
+    return getCountdownParts(salesStartDate, now)
+  }, [salesStartDate, now, isAnnounced])
 
   if (isLoading) {
     return (
@@ -115,6 +165,8 @@ export default function EventDetailPage() {
     .filter((price): price is number => typeof price === 'number')
   const priceCurrency = tickets.find((ticket) => ticket.currency)?.currency ?? 'EUR'
   const lowestPrice = ticketPrices.length > 0 ? Math.min(...ticketPrices) : null
+  const defaultCtaLabel = lowestPrice !== null ? "Je m'inscris maintenant" : 'Être notifié'
+  const defaultCtaHref = lowestPrice !== null ? '/events/ultra-arena-2026/register' : '#tickets'
 
   // Get base price (without discount) for display
   const baseTicketPrices = tickets
@@ -170,14 +222,53 @@ export default function EventDetailPage() {
     year: 'numeric',
   })
   const formattedTime = new Date(event.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const formattedSalesStart = event.sales_start
+    ? new Date(event.sales_start).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+    : null
+  const isOnSale = event.status === 'on_sale'
+
+  const handleNotifySubmit = async (eventSubmit: FormEvent<HTMLFormElement>) => {
+    eventSubmit.preventDefault()
+
+    if (!notifyEmail) {
+      setNotifyStatus('error')
+      setNotifyMessage('Merci de renseigner ton email.')
+      return
+    }
+
+    setNotifyStatus('loading')
+    setNotifyMessage(null)
+
+    try {
+      const response = await fetch(`/api/events/${event.slug ?? event.id}/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: notifyEmail,
+          full_name: session?.profile?.full_name ?? null,
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Erreur lors de la demande')
+      }
+
+      setNotifyStatus('success')
+      setNotifyMessage('Parfait, on te prévient dès l’ouverture.')
+    } catch (error) {
+      setNotifyStatus('error')
+      setNotifyMessage(error instanceof Error ? error.message : 'Erreur lors de la demande')
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="relative isolate overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0">
-          {event.image_url ? (
+          {(isUltraArena || event.image_url) ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={event.image_url} alt={event.title} className="h-full w-full object-cover opacity-25 scale-105" />
+            <img src={isUltraArena ? '/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif' : event.image_url!} alt={event.title} className="h-full w-full object-cover opacity-25 scale-105" />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-background via-muted/40 to-background" />
           )}
@@ -228,15 +319,20 @@ export default function EventDetailPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
-                    <div className="rounded-xl bg-primary/10 p-2.5">
-                      <Calendar className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Date</p>
-                      <p className="font-semibold">{formattedDate}</p>
-                      <p className="text-sm text-muted-foreground">{formattedTime}</p>
-                    </div>
+                  <div className="rounded-xl bg-primary/10 p-2.5">
+                    <Calendar className="h-5 w-5 text-primary" />
                   </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Date</p>
+                    <p className="font-semibold">{formattedDate}</p>
+                    <p className="text-sm text-muted-foreground">{formattedTime}</p>
+                    {event.status === 'announced' && formattedSalesStart ? (
+                      <p className="text-sm text-muted-foreground">
+                        Ouverture des inscriptions : {formattedSalesStart}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
                   <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
                     <div className="rounded-xl bg-primary/10 p-2.5">
                       <MapPin className="h-5 w-5 text-primary" />
@@ -301,6 +397,17 @@ export default function EventDetailPage() {
                       "Préparez-vous à vivre une expérience sportive intense : échauffement collectif, zones techniques, runs rythmés et obstacles exigeants. L'événement rassemble des athlètes passionnés prêts à se dépasser dans une ambiance électrisante."}
                   </p>
                 </div>
+
+                {isUltraArena && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="w-fit rounded-2xl border-border/60 bg-card/80 backdrop-blur hover:bg-card"
+                  >
+                    <a href="#infos-pratiques">Découvrez toutes les infos pratiques ici</a>
+                  </Button>
+                )}
               </div>
               <div className="h-full w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] lg:sticky lg:top-24 lg:w-auto animate-fade-in-up animate-duration-700 animate-delay-200">
                 <div className="space-y-2">
@@ -323,13 +430,72 @@ export default function EventDetailPage() {
                     Tarifs évolutifs selon le format choisi et la période d'inscription.
                   </p>
                 </div>
-                <Button
-                  className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
-                  size="lg"
-                  asChild
-                >
-                  <a href={lowestPrice !== null ? "/events/ultra-arena-2026/register" : "#tickets"}>{lowestPrice !== null ? "Je m'inscris maintenant" : 'Être notifié'}</a>
-                </Button>
+                {isAnnounced ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl bg-primary-foreground/10 p-4 text-primary-foreground">
+                      <p className="text-sm font-semibold">Inscriptions pas encore ouvertes</p>
+                      {formattedSalesStart ? (
+                        <p className="mt-1 text-xs text-primary-foreground/70">
+                          Ouverture prévue le {formattedSalesStart}.
+                        </p>
+                      ) : null}
+                      {countdown ? (
+                        <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+                          <div className="rounded-xl bg-white/15 px-2 py-3">
+                            <p className="text-lg font-bold">{countdown.days}</p>
+                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Jours</p>
+                          </div>
+                          <div className="rounded-xl bg-white/15 px-2 py-3">
+                            <p className="text-lg font-bold">{padCountdown(countdown.hours)}</p>
+                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Heures</p>
+                          </div>
+                          <div className="rounded-xl bg-white/15 px-2 py-3">
+                            <p className="text-lg font-bold">{padCountdown(countdown.minutes)}</p>
+                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Minutes</p>
+                          </div>
+                          <div className="rounded-xl bg-white/15 px-2 py-3">
+                            <p className="text-lg font-bold">{padCountdown(countdown.seconds)}</p>
+                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Secondes</p>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                    <form className="space-y-3" onSubmit={handleNotifySubmit}>
+                      <Input
+                        type="email"
+                        value={notifyEmail}
+                        onChange={(eventInput) => setNotifyEmail(eventInput.target.value)}
+                        placeholder="Ton email"
+                        className="h-12 rounded-2xl border-white/40 bg-white/90 text-foreground placeholder:text-muted-foreground"
+                        required
+                      />
+                      <Button
+                        className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
+                        size="lg"
+                        type="submit"
+                        disabled={notifyStatus === 'loading' || notifyStatus === 'success'}
+                      >
+                        {notifyStatus === 'loading' ? 'Envoi...' : notifyStatus === 'success' ? 'On te prévient !' : 'Me prévenir'}
+                      </Button>
+                    </form>
+                    {notifyMessage ? (
+                      <p className={`text-xs ${notifyStatus === 'error' ? 'text-red-200' : 'text-primary-foreground/80'}`}>
+                        {notifyMessage}
+                      </p>
+                    ) : null}
+                    <p className="text-xs text-primary-foreground/70">
+                      Un seul email à l'ouverture des inscriptions. Pas de spam.
+                    </p>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
+                    size="lg"
+                    asChild
+                  >
+                    <a href={defaultCtaHref}>{defaultCtaLabel}</a>
+                  </Button>
+                )}
                 <div className="rounded-2xl bg-primary-foreground/80 p-4 text-sm text-primary">
                   <p className="font-semibold">Infos clés</p>
                   <ul className="mt-2 space-y-1.5">
@@ -443,7 +609,15 @@ export default function EventDetailPage() {
 
         {/* Formats OPEN & RANKED */}
         <section className="relative overflow-hidden py-16 sm:py-20">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+          <div className="absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
+              alt="Participants courant avec des chaînes autour du cou"
+              className="h-full w-full object-cover opacity-50"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background" />
+          </div>
           <div className="pointer-events-none absolute -right-32 top-10 h-72 w-72 rounded-full bg-primary/8 blur-3xl" />
           <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 space-y-2">
@@ -471,9 +645,15 @@ export default function EventDetailPage() {
                     gèrent librement leurs tours, leurs pauses, leur nutrition et leur récupération. L'objectif :
                     se dépasser à son rythme, dans un cadre encadré et sécurisé.
                   </p>
-                  <Button asChild size="lg" className="mt-6 w-full rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700">
-                    <Link href="/events/ultra-arena-2026/register">S'inscrire en OPEN</Link>
-                  </Button>
+                  {isOnSale ? (
+                    <Button asChild size="lg" className="mt-6 w-full rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700">
+                      <Link href="/events/ultra-arena-2026/register">S'inscrire en OPEN</Link>
+                    </Button>
+                  ) : (
+                    <Button size="lg" className="mt-6 w-full rounded-xl bg-blue-600/60 text-white shadow-lg shadow-blue-500/25" disabled>
+                      Inscriptions à venir
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-card p-8 shadow-lg transition hover:border-amber-500/50 hover:shadow-xl">
@@ -491,9 +671,15 @@ export default function EventDetailPage() {
                     participants doivent terminer chaque boucle dans le temps imparti sous peine d'élimination. La
                     course s'arrête lorsqu'il ne reste plus qu'un seul participant en compétition.
                   </p>
-                  <Button asChild size="lg" className="mt-6 w-full rounded-xl bg-amber-600 text-white shadow-lg shadow-amber-500/25 hover:bg-amber-700">
-                    <Link href="/events/ultra-arena-2026/register">S'inscrire en RANKED</Link>
-                  </Button>
+                  {isOnSale ? (
+                    <Button asChild size="lg" className="mt-6 w-full rounded-xl bg-amber-600 text-white shadow-lg shadow-amber-500/25 hover:bg-amber-700">
+                      <Link href="/events/ultra-arena-2026/register">S'inscrire en RANKED</Link>
+                    </Button>
+                  ) : (
+                    <Button size="lg" className="mt-6 w-full rounded-xl bg-amber-600/60 text-white shadow-lg shadow-amber-500/25" disabled>
+                      Inscriptions à venir
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -501,7 +687,7 @@ export default function EventDetailPage() {
         </section>
 
         {/* Infos pratiques */}
-        <section className="bg-background py-16 sm:py-20">
+        <section id="infos-pratiques" className="bg-background py-16 sm:py-20">
           <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
@@ -786,26 +972,46 @@ export default function EventDetailPage() {
           )}
 
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Button
-              asChild
-              size="lg"
-              className="h-14 rounded-2xl bg-red-600 px-10 text-lg font-bold text-white shadow-xl shadow-red-500/25 hover:bg-red-700"
-            >
-              <Link href="/events/ultra-arena-2026/register">Je m'inscris maintenant</Link>
-            </Button>
+            {isOnSale ? (
+              <Button
+                asChild
+                size="lg"
+                className="h-14 rounded-2xl bg-red-600 px-10 text-lg font-bold text-white shadow-xl shadow-red-500/25 hover:bg-red-700"
+              >
+                <Link href={`/events/${params.id}/register`}>Je m&apos;inscris maintenant</Link>
+              </Button>
+            ) : isAnnounced ? (
+              <Button
+                asChild
+                size="lg"
+                className="h-14 rounded-2xl bg-primary px-10 text-lg font-bold text-primary-foreground shadow-xl shadow-primary/25 hover:bg-primary/90"
+              >
+                <a href="#tickets">Être notifié de l&apos;ouverture</a>
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="h-14 rounded-2xl bg-muted px-10 text-lg font-bold text-muted-foreground"
+                disabled
+              >
+                Inscriptions fermées
+              </Button>
+            )}
             <Button
               asChild
               variant="outline"
               size="lg"
               className="h-14 rounded-2xl border-2 border-primary-foreground/30 bg-transparent px-10 text-lg font-semibold text-primary-foreground hover:bg-white/10"
             >
-              <Link href="#carte">Voir les détails</Link>
+              <a href="#infos-pratiques">Infos pratiques</a>
             </Button>
           </div>
 
-          <p className="mt-6 text-xs text-primary-foreground/60">
-            Paiement sécurisé par Stripe — Inscription en 2 minutes
-          </p>
+          {isOnSale && (
+            <p className="mt-6 text-xs text-primary-foreground/60">
+              Paiement sécurisé par Stripe — Inscription en 2 minutes
+            </p>
+          )}
         </div>
       </section>
 

@@ -29,7 +29,7 @@ export async function GET(
         )
       `)
       .eq('tickets.race_id', id)
-      .in('status', ['on_sale', 'sold_out'])
+      .in('status', ['announced', 'on_sale', 'sold_out'])
       .gte('date', new Date().toISOString())
       .order('date', { ascending: true })
 

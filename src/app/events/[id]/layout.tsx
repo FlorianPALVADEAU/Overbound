@@ -1,19 +1,16 @@
 import type { Metadata } from 'next'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { EventStructuredDataServer } from '@/components/seo/EventStructuredDataServer'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
 const fallbackImage = `${siteUrl}/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif`
 
-type EventMeta = {
+type EventMeta = Record<string, any> & {
   title: string
-  description: string | null
-  image_url: string | null
   date: string
   location: string
   status: string
   slug: string | null
-  updated_at: string | null
   tickets?: Array<{
     name: string | null
     final_price_cents: number | null
@@ -37,19 +34,12 @@ const toAbsoluteUrl = (value?: string | null) => {
 }
 
 const fetchEventMeta = async (id: string): Promise<EventMeta | null> => {
-  const supabase = await createSupabaseServer()
+  const supabase = supabaseAdmin()
   const { data, error } = await supabase
     .from('events')
     .select(
       `
-        title,
-        description,
-        image_url,
-        date,
-        location,
-        status,
-        slug,
-        updated_at,
+        *,
         tickets (
           name,
           final_price_cents,
@@ -61,6 +51,7 @@ const fetchEventMeta = async (id: string): Promise<EventMeta | null> => {
     .maybeSingle()
 
   if (error || !data) {
+    if (error) console.error('[event meta]', id, error.message)
     return null
   }
 
@@ -83,7 +74,7 @@ export async function generateMetadata(
   const canonical = `${siteUrl}/events/${event.slug || id}`
   const title = `${event.title} | Course à Obstacles Paris 2026 - Overbound Race`
   const description = truncate(
-    normalizeText(event.description) ||
+    normalizeText(event.subtitle) ||
       'Overbound Race : course à obstacles Paris 2026, backyard à obstacles et formats personnalisables. Choisis ta distance et ta difficulté.'
   )
   const imageUrl = toAbsoluteUrl(event.image_url)
