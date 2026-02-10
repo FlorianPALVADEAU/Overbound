@@ -8,6 +8,7 @@ import { PopupPromotion } from '@/components/promotions/PopupPromotion'
 import { useSession, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
+import { CookieConsentBanner } from '@/components/consent/CookieConsentBanner'
 
 interface LayoutProps {
   children: ReactNode
@@ -42,6 +43,7 @@ export function Layout({ children }: LayoutProps) {
       <PromotionsBanner />
       <main className="flex-1">{children}</main>
       <Footer />
+      <CookieConsentBanner />
       {/* Popup promotion for non-authenticated users */}
       <PopupPromotion isAuthenticated={!!data?.user} />
     </div>

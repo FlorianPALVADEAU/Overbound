@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '26/10/2025'
+const lastUpdated = '10/02/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et champ d’application' },
@@ -137,8 +137,8 @@ const paragraphs = {
     "Délégué à la protection des données (DPO) : Cabinet LexData, 12 rue d’Uzès, 75002 Paris – dpo@overbound-race.com.",
   ],
   cookies: [
-    "Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, session) ainsi que des cookies de performance (Matomo, Google Analytics) et marketing (Facebook Pixel) soumis à consentement.",
-    "La bannière cookies permet d’accepter, refuser ou personnaliser les traceurs. Les choix sont conservés pendant 6 mois et peuvent être modifiés via le centre de préférences accessible en pied de page.",
+    "Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, session) ainsi que des cookies de performance (Google Analytics) soumis à consentement.",
+    "La bannière cookies permet d’accepter ou refuser les traceurs. Les choix sont conservés pendant 6 mois et peuvent être modifiés via la page Politique Cookies accessible en pied de page.",
     "Les navigateurs permettent également de paramétrer l’acceptation ou le refus des cookies. Le refus peut dégrader certaines fonctionnalités.",
   ],
   securite: [
