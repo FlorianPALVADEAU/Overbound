@@ -24,6 +24,8 @@ const getStatusColor = (status: string) => {
       return 'secondary'
     case 'draft':
       return 'outline'
+    case 'announced':
+      return 'secondary'
     default:
       return 'outline'
   }
@@ -39,6 +41,8 @@ const getStatusLabel = (status: string) => {
       return 'Inscriptions fermées'
     case 'draft':
       return 'Bientôt disponible'
+    case 'announced':
+      return 'Inscriptions à venir'
     default:
       return status
   }

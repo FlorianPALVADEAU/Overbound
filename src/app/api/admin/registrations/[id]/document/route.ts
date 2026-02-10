@@ -37,11 +37,12 @@ export async function GET(
     let documentUrl: string | null = null
     let documentFilename: string | null = null
     let documentSize: number | null = null
+    let documentRowId: string | null = null
 
     if (documentId || documentType) {
       const { data: documentRow, error: documentError } = await adminClient
         .from('registration_documents')
-        .select('document_url, document_filename, document_size')
+        .select('id, document_url, document_filename, document_size')
         .eq('registration_id', registrationId)
         .eq(documentId ? 'id' : 'document_type', documentId ? documentId : documentType)
         .maybeSingle()
@@ -53,6 +54,7 @@ export async function GET(
       documentUrl = documentRow?.document_url ?? null
       documentFilename = documentRow?.document_filename ?? null
       documentSize = documentRow?.document_size ?? null
+      documentRowId = documentRow?.id ?? null
 
       if (!documentUrl) {
         const { data: registrationFallback } = await adminClient
@@ -106,6 +108,21 @@ export async function GET(
     const objectPath = extractPath(documentUrl)
     if (!objectPath) {
       return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
+    }
+
+    const normalizedUrl = `${BUCKET_NAME}/${objectPath}`
+    if (documentUrl !== normalizedUrl) {
+      if (documentRowId) {
+        await adminClient
+          .from('registration_documents')
+          .update({ document_url: normalizedUrl })
+          .eq('id', documentRowId)
+      } else {
+        await adminClient
+          .from('registrations')
+          .update({ document_url: normalizedUrl })
+          .eq('id', registrationId)
+      }
     }
 
     const { data: signedData, error: signedError } = await adminClient.storage

@@ -47,15 +47,18 @@ export async function GET(
 
     let documentUrl = registration.document_url
 
+    let documentRowId: string | null = null
+
     if (documentId || documentType) {
       const { data: documentRow } = await admin
         .from('registration_documents')
-        .select('document_url')
+        .select('id, document_url')
         .eq('registration_id', id)
         .eq(documentId ? 'id' : 'document_type', documentId ? documentId : documentType)
         .maybeSingle()
 
       documentUrl = documentRow?.document_url ?? documentUrl
+      documentRowId = documentRow?.id ?? null
     }
 
     if (!documentUrl) {
@@ -90,6 +93,21 @@ export async function GET(
         { error: 'Document introuvable' },
         { status: 404 }
       )
+    }
+
+    const normalizedUrl = `${BUCKET_NAME}/${objectPath}`
+    if (documentUrl !== normalizedUrl) {
+      if (documentRowId) {
+        await admin
+          .from('registration_documents')
+          .update({ document_url: normalizedUrl })
+          .eq('id', documentRowId)
+      } else {
+        await admin
+          .from('registrations')
+          .update({ document_url: normalizedUrl })
+          .eq('id', id)
+      }
     }
 
     // Générer une URL signée valide 1 heure

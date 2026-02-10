@@ -32,6 +32,8 @@ const toAvailability = (status?: string | null) => {
   switch (status) {
     case 'sold_out':
       return 'https://schema.org/SoldOut'
+    case 'announced':
+      return 'https://schema.org/PreOrder'
     case 'closed':
     case 'completed':
       return 'https://schema.org/OutOfStock'
@@ -48,6 +50,8 @@ const toEventStatus = (status?: string | null) => {
       return 'https://schema.org/EventCancelled'
     case 'completed':
       return 'https://schema.org/EventCompleted'
+    case 'announced':
+      return 'https://schema.org/EventScheduled'
     default:
       return 'https://schema.org/EventScheduled'
   }

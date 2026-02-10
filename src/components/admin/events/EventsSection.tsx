@@ -40,6 +40,7 @@ function buildFormValues(event?: Event): EventFormValues {
       subtitle: '',
       description: '',
       date: '',
+      sales_start: '',
       location: '',
       latitude: '',
       longitude: '',
@@ -57,6 +58,7 @@ function buildFormValues(event?: Event): EventFormValues {
     subtitle: event.subtitle || '',
     description: event.description || '',
     date: new Date(event.date).toISOString().slice(0, 16),
+    sales_start: event.sales_start ? new Date(event.sales_start).toISOString().slice(0, 16) : '',
     location: event.location,
     latitude: event.latitude?.toString() || '',
     longitude: event.longitude?.toString() || '',
@@ -74,6 +76,7 @@ function toPayload(values: EventFormValues): AdminEventPayload {
     title: values.title,
     subtitle: values.subtitle || null,
     date: new Date(values.date).toISOString(),
+    sales_start: values.sales_start ? new Date(values.sales_start).toISOString() : null,
     location: values.location,
     latitude: values.latitude ? parseFloat(values.latitude) : null,
     longitude: values.longitude ? parseFloat(values.longitude) : null,
@@ -90,6 +93,7 @@ const statusVariant = (status: Event['status']) => {
     case 'on_sale':
       return 'default' as const
     case 'draft':
+    case 'announced':
       return 'secondary' as const
     case 'sold_out':
     case 'closed':
@@ -100,6 +104,27 @@ const statusVariant = (status: Event['status']) => {
       return 'secondary' as const
     default:
       return 'secondary' as const
+  }
+}
+
+const statusLabel = (status: Event['status']) => {
+  switch (status) {
+    case 'draft':
+      return 'Brouillon'
+    case 'announced':
+      return 'Ouvert (inscriptions à venir)'
+    case 'on_sale':
+      return 'En vente'
+    case 'sold_out':
+      return 'Complet'
+    case 'closed':
+      return 'Clôturé'
+    case 'cancelled':
+      return 'Annulé'
+    case 'completed':
+      return 'Terminé'
+    default:
+      return status
   }
 }
 
@@ -235,6 +260,13 @@ export function EventsSection() {
       setMessage({ type: 'error', text: 'Veuillez remplir tous les champs obligatoires' })
       return
     }
+    if (values.status === 'announced' && !values.sales_start) {
+      setMessage({
+        type: 'error',
+        text: 'Veuillez indiquer une date d’ouverture des inscriptions.',
+      })
+      return
+    }
 
     setSubmitting(true)
     setMessage(null)
@@ -301,7 +333,7 @@ export function EventsSection() {
         header: 'Statut',
         cell: (event) => (
           <Badge variant={statusVariant(event.status)} className="capitalize">
-            {event.status.replace('_', ' ')}
+            {statusLabel(event.status)}
           </Badge>
         ),
       },
@@ -415,6 +447,7 @@ export function EventsSection() {
               <SelectContent>
                 <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="draft">Brouillon</SelectItem>
+                <SelectItem value="announced">Ouvert (inscriptions à venir)</SelectItem>
                 <SelectItem value="on_sale">En vente</SelectItem>
                 <SelectItem value="sold_out">Complet</SelectItem>
                 <SelectItem value="closed">Clôturé</SelectItem>

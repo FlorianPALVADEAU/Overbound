@@ -39,6 +39,7 @@ const EMAIL_GROUPS: Array<{
     description: 'Emails envoyés pour animer la communauté et booster les conversions.',
     items: [
       { type: 'marketing_new_event', label: 'Annonce nouvel événement', description: 'Annonce d’un événement ouvrant ses inscriptions.', tone: 'marketing' },
+      { type: 'event_opening', label: 'Ouverture inscriptions', description: 'Prévenir qu’un événement vient d’ouvrir.', tone: 'marketing' },
       { type: 'marketing_price_change', label: 'Rappel changement de prix', description: 'Dernier rappel avant hausse tarifaire.', tone: 'marketing' },
       { type: 'marketing_promo', label: 'Campagne promo', description: 'Mise en avant d’une offre spéciale.', tone: 'marketing' },
       { type: 'reactivation_inactive', label: 'Réactivation inactifs', description: 'Relance d’un utilisateur inactif.', tone: 'marketing' },

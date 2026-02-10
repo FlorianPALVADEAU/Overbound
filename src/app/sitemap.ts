@@ -65,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { data: events, error } = await supabase
       .from('events')
       .select('slug, updated_at, date, status')
-      .in('status', ['on_sale', 'sold_out', 'closed', 'completed'])
+      .in('status', ['announced', 'on_sale', 'sold_out', 'closed', 'completed'])
 
     if (error) {
       throw error

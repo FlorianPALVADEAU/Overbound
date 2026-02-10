@@ -68,6 +68,33 @@ export default function EventTicketListWithRegistration({
   user,
   eventPriceTiers = [],
 }: Props) {
+  const formattedSalesStart = event.sales_start
+    ? new Date(event.sales_start).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+    : null
+  const canRegister = event.status === 'on_sale' && availableSpots > 0
+
+  const getCtaLabel = () => {
+    if (availableSpots <= 0) return 'Complet'
+    switch (event.status) {
+      case 'on_sale':
+        return 'Réserver maintenant'
+      case 'announced':
+        return 'Inscriptions à venir'
+      case 'closed':
+        return 'Inscriptions fermées'
+      case 'sold_out':
+        return 'Complet'
+      case 'cancelled':
+        return 'Événement annulé'
+      case 'completed':
+        return 'Événement terminé'
+      case 'draft':
+        return 'Bientôt disponible'
+      default:
+        return 'Indisponible'
+    }
+  }
+
   // Group tickets by race name (or ticket name if no race)
   const groupedTickets = tickets.reduce((groups, ticket) => {
     const groupKey = ticket.race?.name || ticket.name
@@ -96,6 +123,11 @@ export default function EventTicketListWithRegistration({
           <CardTitle className="text-2xl">Formats disponibles</CardTitle>
         </CardHeader>
         <CardContent>
+          {event.status === 'announced' && formattedSalesStart ? (
+            <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+              Inscriptions à venir. Ouverture prévue le {formattedSalesStart}.
+            </div>
+          ) : null}
           {tickets.length === 0 ? (
             <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted p-4 text-sm text-muted-foreground">
               <AlertTriangle className="h-4 w-4" />
@@ -229,19 +261,19 @@ export default function EventTicketListWithRegistration({
                               </div>
 
                               {/* CTA */}
-                              {availableSpots <= 0 ? (
-                                <Button className="w-full" size="lg" disabled>
-                                  Complet
-                                </Button>
-                              ) : (
+                              {canRegister ? (
                                 <Button asChild className="w-full shadow-md hover:shadow-lg transition-shadow" size="lg">
                                   <Link
                                     href={user
                                       ? `/events/${event.slug}/register?ticket=${ticket.id}`
                                       : `/auth/login?next=${encodeURIComponent(`/events/${event.slug}/register?ticket=${ticket.id}`)}`}
                                   >
-                                    Réserver maintenant
+                                    {getCtaLabel()}
                                   </Link>
+                                </Button>
+                              ) : (
+                                <Button className="w-full" size="lg" disabled>
+                                  {getCtaLabel()}
                                 </Button>
                               )}
                             </div>

@@ -98,15 +98,15 @@ export async function POST(request: Request) {
       } else if (bucketData) {
         const currentLimitRaw = (bucketData as Record<string, any>).file_size_limit as string | null
         const currentLimit = currentLimitRaw ? parseInt(currentLimitRaw, 10) : null
-        const needsPublic = !(bucketData as Record<string, any>).public
+        const isPublic = Boolean((bucketData as Record<string, any>).public)
         const needsLimitUpdate =
           !currentLimit ||
           Number.isNaN(currentLimit) ||
           currentLimit < desiredFileSizeLimitBytes
 
-        if (needsPublic || needsLimitUpdate) {
+        if (isPublic || needsLimitUpdate) {
           const { error: updateError } = await storageClient.storage.updateBucket(bucketName, {
-            public: true,
+            public: false,
             fileSizeLimit: desiredFileSizeLimit,
           })
           if (updateError) {
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       String(uploadError.message ?? '').toLowerCase().includes('exceeded the maximum allowed size')
     ) {
       const { error: updateError } = await storageClient.storage.updateBucket(bucketName, {
-        public: true,
+        public: false,
         fileSizeLimit: desiredFileSizeLimit,
       })
 

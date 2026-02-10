@@ -8,6 +8,7 @@ import DocumentRequiredEmail from '@/emails/DocumentRequiredEmail'
 import DocumentApprovedEmail from '@/emails/DocumentApprovedEmail'
 import DocumentRejectedEmail from '@/emails/DocumentRejectedEmail'
 import NewEventAnnouncementEmail from '@/emails/NewEventAnnouncementEmail'
+import EventOpeningEmail from '@/emails/EventOpeningEmail'
 import PriceChangeReminderEmail from '@/emails/PriceChangeReminderEmail'
 import PromoCampaignEmail from '@/emails/PromoCampaignEmail'
 import InactiveUserEmail from '@/emails/InactiveUserEmail'
@@ -321,6 +322,24 @@ export async function sendNewEventAnnouncementEmail(params: {
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         }
       : undefined,
+  })
+}
+
+export async function sendEventOpeningEmail(params: {
+  to: string
+  fullName?: string | null
+  eventTitle: string
+  eventDate: string
+  eventLocation: string
+  eventUrl: string
+}) {
+  const html = await renderEmail(EventOpeningEmail(params))
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    subject: `Inscriptions ouvertes — ${params.eventTitle}`,
+    html,
   })
 }
 

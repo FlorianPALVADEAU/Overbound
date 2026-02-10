@@ -3,6 +3,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { notifyEventUpdate } from '@/lib/email/eventUpdates'
+import { notifyEventOpening } from '@/lib/email/eventOpenings'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -166,6 +167,7 @@ const handlePut = async (
       title,
       subtitle,
       date,
+      sales_start,
       location,
       capacity,
       status,
@@ -183,6 +185,7 @@ const handlePut = async (
         title,
         subtitle: subtitle || null,
         date: new Date(date).toISOString(),
+        sales_start: sales_start ? new Date(sales_start).toISOString() : null,
         location,
         capacity: parseInt(capacity) || 0,
         status: status || 'draft',
@@ -222,6 +225,10 @@ const handlePut = async (
           ? 'L’événement est annulé. Nous reviendrons vers toi prochainement concernant les modalités.'
           : undefined,
     })
+
+    if (existingEvent?.status !== 'on_sale' && event.status === 'on_sale') {
+      await notifyEventOpening(event.id)
+    }
 
     return NextResponse.json({ event })
 

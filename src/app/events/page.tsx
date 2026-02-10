@@ -143,6 +143,7 @@ const EventsMap = dynamic(() => import('@/components/events/EventsMap'), {
 
 const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
   draft: 'Bientôt disponible',
+  announced: 'Ouvert (inscriptions à venir)',
   on_sale: 'Inscriptions ouvertes',
   sold_out: 'Complet',
   cancelled: 'Événement annulé',
@@ -152,6 +153,7 @@ const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
 
 const EVENT_STATUS_STYLES: Record<EventStatus, string> = {
   draft: 'border-slate-200 bg-slate-50 text-slate-600',
+  announced: 'border-indigo-200 bg-indigo-50 text-indigo-700',
   on_sale: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   sold_out: 'border-amber-200 bg-amber-50 text-amber-700',
   cancelled: 'border-red-200 bg-red-50 text-red-700',

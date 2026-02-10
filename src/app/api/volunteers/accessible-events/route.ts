@@ -33,7 +33,7 @@ export async function GET() {
     let query = supabase
       .from('events')
       .select('id, title, date, location, status')
-      .in('status', ['on_sale', 'sold_out'])
+      .in('status', ['announced', 'on_sale', 'sold_out'])
       .order('date', { ascending: true })
 
     if (profile.role === 'volunteer') {

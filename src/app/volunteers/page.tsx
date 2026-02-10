@@ -223,7 +223,7 @@ export default function VolunteersPage() {
           .filter(Boolean) as EventOption[]
 
         const filtered = normalized.filter((event) => {
-          const validStatuses = ['on_sale', 'sold_out']
+          const validStatuses = ['announced', 'on_sale', 'sold_out']
           if (!validStatuses.includes(event.status ?? '')) {
             return false
           }

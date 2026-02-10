@@ -55,6 +55,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
   const statusData = stats.events_by_status && typeof stats.events_by_status === 'object'
     ? Object.entries(stats.events_by_status).map(([status, count]) => ({
         status: status === 'draft' ? 'Brouillon' : 
+                status === 'announced' ? 'Ouvert (inscriptions à venir)' :
                 status === 'on_sale' ? 'En vente' :
                 status === 'sold_out' ? 'Complet' : 
                 status === 'closed' ? 'Fermé' : status,

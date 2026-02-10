@@ -54,6 +54,7 @@ export interface AdminEventPayload {
   subtitle?: string | null
   description?: string | null
   date: string
+  sales_start?: string | null
   location: string
   latitude?: number | null
   longitude?: number | null
