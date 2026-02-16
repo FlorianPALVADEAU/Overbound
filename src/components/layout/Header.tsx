@@ -115,7 +115,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
       .filter(Boolean)
   })
 
-  const hasDashboardAccess = normalizedRoles.some((role) => role.includes('admin') || role === 'volunteer' || role === 'staff')
+  const isAdmin = normalizedRoles.some((role) => role.includes('admin'))
+  const isVolunteer = normalizedRoles.some((role) => role === 'volunteer')
+  const hasDashboardAccess = isAdmin || isVolunteer || normalizedRoles.some((role) => role === 'staff')
   const needsDocumentAttention = Boolean(alerts?.needs_document_action)
   const needsProfileCompletion = Boolean(
     user && (!profile?.full_name || !profile?.phone || !profile?.date_of_birth),
@@ -126,7 +128,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Mon compte', href: '/account', icon: UserIcon },
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
     ...(hasDashboardAccess ? [
-      { name: 'Administration', href: '/dashboard', icon: SettingsIcon },
+      { name: isVolunteer && !isAdmin ? 'Espace bénévole' : 'Administration', href: '/dashboard', icon: SettingsIcon },
     ] : []),
   ] : []
 

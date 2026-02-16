@@ -34,13 +34,13 @@ export const COMPANY_INFO = {
   emails: {
     general: 'contact@overbound-race.com',
     support: 'contact@overbound-race.com',
-    press: 'presse@overbound-race.com',
-    partnerships: 'partenariats@overbound-race.com',
+    press: 'press@overbound-race.com',
+    partnerships: 'partners@overbound-race.com',
     privacy: 'contact@overbound-race.com',
     dpo: 'dpo@overbound-race.com',
     medical: 'contact@overbound-race.com',
     billing: 'contact@overbound-race.com',
-    brand: 'brand@overbound-race.com',
+    brand: 'contact@overbound-race.com',
   },
 
   supportHours: 'Du lundi au vendredi, 9h00 – 18h00 (CET)',

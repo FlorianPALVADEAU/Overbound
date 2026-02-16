@@ -12,6 +12,7 @@ export interface EventPriceTier {
   available_from: Timestamp | null
   available_until: Timestamp | null
   display_order: number
+  max_registrations: number | null
   created_at: Timestamp
   updated_at: Timestamp
 }

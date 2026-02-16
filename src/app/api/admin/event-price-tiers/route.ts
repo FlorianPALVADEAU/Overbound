@@ -9,6 +9,7 @@ const createEventPriceTierSchema = z.object({
   available_from: z.string().nullable(),
   available_until: z.string().nullable(),
   display_order: z.number().int().min(0),
+  max_registrations: z.number().int().min(0).nullable().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
         available_from: validated.available_from,
         available_until: validated.available_until,
         display_order: validated.display_order,
+        max_registrations: validated.max_registrations ?? null,
       })
       .select()
       .single()

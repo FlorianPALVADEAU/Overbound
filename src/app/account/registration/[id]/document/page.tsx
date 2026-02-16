@@ -94,8 +94,8 @@ export default function RegistrationDocumentPage() {
           </Link>
           <div className="text-right text-xs text-muted-foreground md:text-sm">
             Besoin d’aide ? Écris-nous à{' '}
-            <a href="mailto:support@overbound-race.fr" className="font-medium text-foreground underline">
-              support@overbound-race.fr
+            <a href="mailto:contact@overbound-race.com" className="font-medium text-foreground underline">
+              contact@overbound-race.com
             </a>
           </div>
         </div>

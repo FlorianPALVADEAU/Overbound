@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { randomUUID } from 'crypto'
 import type { NotificationPreferences, UpdateNotificationPreferencesData } from '@/types/NotificationPreferences'
 
 const updatePreferencesSchema = z.object({
@@ -11,6 +12,59 @@ const updatePreferencesSchema = z.object({
   partner_offers: z.boolean().optional(),
   digest_frequency: z.enum(['immediate', 'daily', 'weekly', 'never']).optional(),
 })
+
+const DEFAULT_NOTIFICATION_PREFERENCES: Omit<
+  NotificationPreferences,
+  'id' | 'user_id' | 'created_at' | 'updated_at'
+> = {
+  events_announcements: true,
+  price_alerts: true,
+  news_blog: false,
+  volunteers_opportunities: false,
+  partner_offers: false,
+  digest_frequency: 'immediate',
+  registration_confirmations: true,
+  ticket_updates: true,
+  account_security: true,
+}
+
+async function ensureNotificationPreferences(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<NotificationPreferences> {
+  const { data: existing, error: fetchError } = await supabase
+    .from('notification_preferences')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (fetchError) {
+    throw fetchError
+  }
+
+  if (existing) {
+    return existing as NotificationPreferences
+  }
+
+  const now = new Date().toISOString()
+  const { data: created, error: createError } = await supabase
+    .from('notification_preferences')
+    .insert({
+      id: randomUUID(),
+      user_id: userId,
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      created_at: now,
+      updated_at: now,
+    })
+    .select()
+    .single()
+
+  if (createError || !created) {
+    throw createError ?? new Error('Failed to create notification preferences')
+  }
+
+  return created as NotificationPreferences
+}
 
 /**
  * GET /api/notification-preferences
@@ -29,35 +83,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get or create preferences using the database function
-    const { data, error } = await supabase.rpc('get_or_create_notification_preferences', {
-      p_user_id: user.id,
-    })
-
-    if (error) {
-      console.error('Error fetching notification preferences:', error)
-      return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 })
-    }
-
-    // The RPC returns an array, get the first element
-    const rawPrefs = Array.isArray(data) ? data[0] : data
-
-    // Map the renamed columns back to expected names
-    const preferences = {
-      id: rawPrefs.pref_id,
-      user_id: rawPrefs.pref_user_id,
-      events_announcements: rawPrefs.events_announcements,
-      price_alerts: rawPrefs.price_alerts,
-      news_blog: rawPrefs.news_blog,
-      volunteers_opportunities: rawPrefs.volunteers_opportunities,
-      partner_offers: rawPrefs.partner_offers,
-      digest_frequency: rawPrefs.digest_frequency,
-      registration_confirmations: rawPrefs.registration_confirmations,
-      ticket_updates: rawPrefs.ticket_updates,
-      account_security: rawPrefs.account_security,
-      created_at: rawPrefs.created_at,
-      updated_at: rawPrefs.updated_at,
-    }
+    const preferences = await ensureNotificationPreferences(supabase, user.id)
 
     return NextResponse.json(preferences)
   } catch (error) {
@@ -87,9 +113,7 @@ export async function PATCH(request: Request) {
     const validatedData = updatePreferencesSchema.parse(body)
 
     // First, ensure preferences exist for this user
-    await supabase.rpc('get_or_create_notification_preferences', {
-      p_user_id: user.id,
-    })
+    await ensureNotificationPreferences(supabase, user.id)
 
     // Update the preferences
     const { data, error } = await supabase
@@ -127,22 +151,30 @@ export async function PATCH(request: Request) {
           .single()
 
         if (list) {
-          // Upsert the subscription
-          await supabase
+          const payload = {
+            user_id: user.id,
+            list_id: list.id,
+            subscribed: isSubscribed,
+            subscribed_at: isSubscribed ? new Date().toISOString() : null,
+            unsubscribed_at: !isSubscribed ? new Date().toISOString() : null,
+            source: 'preferences',
+          }
+
+          const { data: existing } = await supabase
             .from('list_subscriptions')
-            .upsert(
-              {
-                user_id: user.id,
-                list_id: list.id,
-                subscribed: isSubscribed,
-                subscribed_at: isSubscribed ? new Date().toISOString() : null,
-                unsubscribed_at: !isSubscribed ? new Date().toISOString() : null,
-                source: 'preferences',
-              },
-              {
-                onConflict: 'user_id,list_id',
-              }
-            )
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('list_id', list.id)
+
+          if (existing && existing.length > 0) {
+            await supabase
+              .from('list_subscriptions')
+              .update(payload)
+              .eq('user_id', user.id)
+              .eq('list_id', list.id)
+          } else {
+            await supabase.from('list_subscriptions').insert(payload)
+          }
         }
       }
     }

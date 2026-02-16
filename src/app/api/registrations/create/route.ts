@@ -124,43 +124,64 @@ export async function POST(request: NextRequest) {
     // Generate unique tokens
     const generateTokens = () => ({ qr: uuidv4(), transfer: uuidv4() })
 
-    // Calculate ticket subtotal with event price tiers
+    // Calculate ticket subtotal with event price tiers (including tier capacity splits)
     const eventPriceTiers = (eventRow as any).price_tiers || []
-    const ticketPriceMap = new Map<string, number>()
+    const tiersById = new Map<string, any>(eventPriceTiers.map((tier: any) => [tier.id, tier]))
 
-    for (const ticket of tickets) {
-      const basePrice = ticket.final_price_cents ?? ticket.base_price_cents
-      if (basePrice == null || basePrice === 0) {
-        continue
-      }
-
-      let currentPrice = basePrice
-
-      if (eventPriceTiers.length > 0) {
-        const now = new Date()
-        const currentTime = now.getTime()
-
-        const activeTier = eventPriceTiers.find((tier: any) => {
-          const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
-          const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
-          return currentTime >= startTime && currentTime < endTime
-        })
-
-        if (activeTier) {
-          const discountMultiplier = 1 - activeTier.discount_percentage / 100
-          currentPrice = Math.round(basePrice * discountMultiplier)
+    let tierAllocations: Array<{ tier_id: string; quantity: number }> = []
+    try {
+      const rawAllocations = paymentIntent.metadata?.tier_allocations
+      if (rawAllocations) {
+        const parsed = JSON.parse(rawAllocations)
+        if (Array.isArray(parsed)) {
+          tierAllocations = parsed
+            .filter((item) => item && typeof item.tier_id === 'string' && typeof item.quantity === 'number')
+            .map((item) => ({ tier_id: item.tier_id, quantity: item.quantity }))
         }
       }
-
-      ticketPriceMap.set(ticket.id, currentPrice)
+    } catch {
+      tierAllocations = []
     }
 
-    const ticketSubtotal = ticketSelections.reduce((accumulator: number, item: { ticketId: string; quantity: number }) => {
-      const currentPrice = ticketPriceMap.get(item.ticketId)
-      if (currentPrice == null) return accumulator
+    const participantTierIds: Array<string | null> = []
+    for (const allocation of tierAllocations) {
+      for (let i = 0; i < allocation.quantity; i += 1) {
+        participantTierIds.push(allocation.tier_id)
+      }
+    }
 
-      return accumulator + currentPrice * (item.quantity || 0)
-    }, 0)
+    if (participantTierIds.length < participants.length) {
+      participantTierIds.push(...Array.from({ length: participants.length - participantTierIds.length }, () => null))
+    } else if (participantTierIds.length > participants.length) {
+      participantTierIds.length = participants.length
+    }
+
+    const ticketLineItems = new Map<
+      string,
+      { ticketId: string; tierId: string | null; unitPrice: number; quantity: number }
+    >()
+    let ticketSubtotal = 0
+
+    participants.forEach((participant, index) => {
+      const ticket = ticketMap.get(participant.ticketId)
+      if (!ticket) return
+      const basePrice = ticket.final_price_cents ?? ticket.base_price_cents
+      if (basePrice == null || basePrice === 0) return
+
+      const tierId = participantTierIds[index] ?? null
+      const tier = tierId ? tiersById.get(tierId) : null
+      const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
+      const unitPrice = Math.round(basePrice * discountMultiplier)
+
+      const key = `${ticket.id}:${tierId ?? 'base'}`
+      const existing = ticketLineItems.get(key)
+      if (existing) {
+        existing.quantity += 1
+      } else {
+        ticketLineItems.set(key, { ticketId: ticket.id, tierId, unitPrice, quantity: 1 })
+      }
+      ticketSubtotal += unitPrice
+    })
 
     const { data: upsellRows } = await admin
       .from('upsells')
@@ -214,13 +235,14 @@ export async function POST(request: NextRequest) {
 
     const createdRegistrations: any[] = []
 
-    for (const participant of participants) {
+    for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
       if (!ticket) {
         continue
       }
 
       const { qr, transfer } = generateTokens()
+      const eventPriceTierId = participantTierIds[index] ?? null
 
       const { data: registration, error: registrationError } = await admin
         .from('registrations')
@@ -228,6 +250,7 @@ export async function POST(request: NextRequest) {
           user_id: userId,
           event_id: eventId,
           ticket_id: participant.ticketId,
+          event_price_tier_id: eventPriceTierId,
           order_id: order.id,
           email: participant.email || user.email,
           provider: 'internal',
@@ -368,18 +391,16 @@ export async function POST(request: NextRequest) {
 
     try {
       if (user.email) {
-        const ticketItems = ticketSelections
-          .map((item: { ticketId: string; quantity: number }) => {
+        const ticketItems = Array.from(ticketLineItems.values())
+          .map((item) => {
             const ticket = ticketMap.get(item.ticketId)
-            const unitPriceCents = ticketPriceMap.get(item.ticketId)
-            if (!ticket || unitPriceCents == null) return null
-            const quantity = item.quantity || 0
-
+            if (!ticket) return null
+            const tierLabel = item.tierId ? ` — ${tiersById.get(item.tierId)?.name ?? 'Palier'}` : ''
             return {
-              description: `${eventRow.title} — ${ticket.name}`,
-              quantity,
-              unitPrice: toMajor(unitPriceCents),
-              total: toMajor(unitPriceCents * quantity),
+              description: `${eventRow.title} — ${ticket.name}${tierLabel}`,
+              quantity: item.quantity,
+              unitPrice: toMajor(item.unitPrice),
+              total: toMajor(item.unitPrice * item.quantity),
             }
           })
           .filter(Boolean) as Array<{

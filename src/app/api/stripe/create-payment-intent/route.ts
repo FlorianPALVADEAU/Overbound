@@ -5,12 +5,13 @@ import {
   fetchTicketsForSelections,
   fetchUpsellsForEvent,
   fetchPromo,
-  getTicketSubtotal,
   getUpsellSubtotal,
   calcPromo,
   ensureAvailability,
   respondJson,
-  getCurrentTicketPriceFromRow,
+  allocateParticipantsToTiers,
+  expandTierAllocations,
+  fetchTierRegistrationCounts,
 } from './utils'
 import { captureException } from '@/lib/sentry'
 
@@ -74,22 +75,63 @@ export async function POST(request: NextRequest) {
       return respondJson({ error: "Plus assez de places disponibles pour l'ensemble des participants." }, 409)
     }
 
-    const ticketPriceMap = new Map<string, number>()
+    const ticketById = new Map<string, (typeof tickets)[number]>()
     const ticketCurrencyMap = new Map<string, string>()
-
     for (const ticket of tickets) {
-      // Get current price from tiers or fallback to base_price_cents
-      const currentPrice = getCurrentTicketPriceFromRow(ticket)
-
-      if (currentPrice == null || currentPrice === 0) {
-        return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
-      }
-
-      ticketPriceMap.set(ticket.id, currentPrice)
+      ticketById.set(ticket.id, ticket)
       ticketCurrencyMap.set(ticket.id, (ticket.currency || 'eur').toLowerCase())
     }
 
-    const ticketSubtotal = getTicketSubtotal(ticketSelections, ticketPriceMap)
+    if (participants.length > 0 && participants.length !== totalRequestedParticipants) {
+      return respondJson({ error: 'Le nombre de participants ne correspond pas aux billets sélectionnés.' }, 422)
+    }
+
+    const participantEntries =
+      participants.length > 0
+        ? participants.map((participant) => ({ ticketId: participant.ticketId }))
+        : ticketSelections.flatMap((item) =>
+            Array.from({ length: item.quantity || 0 }, () => ({ ticketId: item.ticketId })),
+          )
+
+    const tierCounts = await fetchTierRegistrationCounts(supabase, eventId)
+    const { allocations, remaining, activeTierIndex } = allocateParticipantsToTiers(
+      eventRef.price_tiers,
+      tierCounts,
+      participantEntries.length,
+    )
+
+    if (activeTierIndex !== null && remaining > 0) {
+      return respondJson({ error: 'Tous les paliers de prix sont complets pour cet événement.' }, 409)
+    }
+
+    const tierIdsByParticipant =
+      activeTierIndex !== null ? expandTierAllocations(allocations) : []
+
+    let ticketSubtotal = 0
+
+    for (const [index, entry] of participantEntries.entries()) {
+      const ticket = ticketById.get(entry.ticketId)
+      if (!ticket) {
+        continue
+      }
+
+      const tierId = tierIdsByParticipant[index] ?? null
+      const tier =
+        tierId && eventRef.price_tiers
+          ? eventRef.price_tiers.find(
+              (tierItem: { id: string; discount_percentage: number }) => tierItem.id === tierId,
+            )
+          : null
+
+      const finalPrice = ticket.final_price_cents
+      if (finalPrice == null || finalPrice === 0) {
+        return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
+      }
+
+      const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
+      const unitPrice = Math.round(finalPrice * discountMultiplier)
+      ticketSubtotal += unitPrice
+    }
 
     const { data: upsellRows } = await fetchUpsellsForEvent(supabase, eventId)
     const upsellMap = new Map<string, any>()
@@ -119,6 +161,11 @@ export async function POST(request: NextRequest) {
 
     const currency = ticketCurrencyMap.values().next().value || 'eur'
 
+    const tierAllocationsPayload =
+      activeTierIndex !== null
+        ? allocations.map(({ tier, quantity }) => ({ tier_id: tier.id, quantity }))
+        : []
+
     const paymentIntent = await stripeClient.paymentIntents.create({
       amount: totalAmount,
       currency,
@@ -133,6 +180,7 @@ export async function POST(request: NextRequest) {
         upsells: JSON.stringify(upsells),
         promo_code: appliedPromo?.code || '',
         discount_applied: discountAmount.toString(),
+        tier_allocations: JSON.stringify(tierAllocationsPayload),
         event_title: eventRef.title,
       },
       receipt_email: userEmail,
