@@ -77,8 +77,8 @@ export function Footer() {
           <p className='text-xs uppercase tracking-[0.6em] text-muted-foreground'>Tribu Overbound</p>
           <h2 className='text-3xl font-semibold sm:text-4xl md:text-5xl'>Plus qu’une course, une famille.</h2>
           <p className='text-base text-muted-foreground sm:max-w-2xl'>
-            Explore toutes nos pages pour vivre l’expérience Overbound, t’entraîner, rejoindre les volontaires ou
-            simplement nous poser tes questions. Tout est là, prêt pour toi.
+            Accède à ton compte, ouvre tes inscriptions Paris 2026, découvre le concept, la FAQ, notre histoire ou
+            deviens bénévole. L’essentiel pour vivre l’expérience Overbound.
           </p>
         </div>
 
