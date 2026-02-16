@@ -466,7 +466,7 @@ export default function EventDetailPage() {
                         value={notifyEmail}
                         onChange={(eventInput) => setNotifyEmail(eventInput.target.value)}
                         placeholder="Ton email"
-                        className="h-12 rounded-2xl border-white/40 bg-white/90 text-foreground placeholder:text-muted-foreground"
+                        className="h-12 rounded-2xl border-white/40 bg-white/90 text-foreground placeholder:text-black/60"
                         required
                       />
                       <Button
