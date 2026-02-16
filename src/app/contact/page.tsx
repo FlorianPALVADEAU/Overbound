@@ -640,8 +640,8 @@ const ContactPage = () => {
             <div className="mt-4 grid gap-3 text-sm text-gray-600">
               <p>
                 <span className="font-semibold text-gray-900">Relations presse :</span>{' '}
-                <Link href="mailto:presse@overbound-race.com" className="text-[#26AA26] underline">
-                  presse@overbound-race.com
+                <Link href="mailto:press@overbound-race.com" className="text-[#26AA26] underline">
+                  press@overbound-race.com
                 </Link>
               </p>
               <p>
@@ -652,8 +652,8 @@ const ContactPage = () => {
               </p>
               <p>
                 <span className="font-semibold text-gray-900">Partenariats marques :</span>{' '}
-                <Link href="mailto:partenariats@overbound-race.com" className="text-[#26AA26] underline">
-                  partenariats@overbound-race.com
+                <Link href="mailto:partners@overbound-race.com" className="text-[#26AA26] underline">
+                  partners@overbound-race.com
                 </Link>
               </p>
             </div>

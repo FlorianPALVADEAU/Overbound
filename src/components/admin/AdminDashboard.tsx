@@ -21,6 +21,7 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { ADMIN_NAV_ITEMS } from '@/components/admin/adminNavItems'
 import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
+import { UsersSection } from '@/components/admin/users/UsersSection'
 import { useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 import { BarChart3, CreditCard, Database, Mail, NotebookPen, Sparkles } from 'lucide-react'
 
@@ -110,6 +111,25 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
             </div>
           </header>
           <VolunteerAccessControl />
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact responsable</CardTitle>
+              <CardDescription>Besoin d&apos;aide ? Voici les coordonnées du responsable.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">Florian PALVADEAU</p>
+              <p>
+                <a className="hover:underline" href="tel:0652266054">
+                  06 52 26 60 54
+                </a>
+              </p>
+              <p>
+                <a className="hover:underline" href="mailto:florian.plvd@gmail.com">
+                  florian.plvd@gmail.com
+                </a>
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     )
@@ -207,6 +227,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="upsells" className="space-y-6">
                 <UpsellsSection />
+              </TabsContent>
+
+              <TabsContent value="users" className="space-y-6">
+                <UsersSection />
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6">

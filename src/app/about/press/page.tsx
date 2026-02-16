@@ -54,13 +54,13 @@ const PRESS_RESOURCES = [
 const PRESS_CONTACTS = [
   {
     name: 'Relations Presse',
-    email: 'presse@overbound-race.com',
+    email: 'press@overbound-race.com',
     description: 'Demandes médias, interviews et couverture événementielle',
     icon: Mail,
   },
   {
     name: 'Partenariats & Sponsoring',
-    email: 'partenariats@overbound-race.com',
+    email: 'partners@overbound-race.com',
     description: 'Collaborations, sponsoring et opportunités commerciales',
     icon: Handshake,
     hasSponsoringPdf: true,
@@ -108,7 +108,7 @@ export default function PressPage() {
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="h-12 border-primary text-primary hover:bg-primary/10">
-                <Link href="mailto:presse@overbound-race.com">
+                <Link href="mailto:press@overbound-race.com">
                   <Mail className="mr-2 h-4 w-4" />
                   Contacter la presse
                 </Link>
@@ -396,7 +396,7 @@ export default function PressPage() {
               size="lg"
               className="h-14 rounded-2xl border-2 border-primary-foreground/30 bg-transparent px-10 text-lg font-semibold text-primary-foreground hover:bg-white/10"
             >
-              <Link href="mailto:presse@overbound-race.com">
+              <Link href="mailto:press@overbound-race.com">
                 <Mail className="mr-2 h-5 w-5" />
                 Écrire à l&apos;équipe presse
               </Link>

@@ -18,9 +18,10 @@ const fetchAdminOverview = async (): Promise<AdminOverviewResponse> => {
   return (await response.json()) as AdminOverviewResponse
 }
 
-export const useAdminOverview = () =>
+export const useAdminOverview = (options?: { enabled?: boolean }) =>
   useQuery<AdminOverviewResponse, Error>({
     queryKey: ADMIN_OVERVIEW_QUERY_KEY,
     queryFn: fetchAdminOverview,
     staleTime: 60 * 1000,
+    enabled: options?.enabled ?? true,
   })

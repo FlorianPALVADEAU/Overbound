@@ -57,8 +57,9 @@ const applicationSchema = z.object({
     .refine((value) => value === true, { message: 'Tu dois accepter l’utilisation de tes données.' }),
 })
 
+const VOLUNTEER_NOTIFICATION_EMAIL = 'contact@overbound-race.com'
 const VOLUNTEER_INBOX =
-  process.env.VOLUNTEER_INBOX ?? process.env.SUPPORT_INBOX ?? 'benevoles@overbound-race.com'
+  process.env.VOLUNTEER_INBOX ?? process.env.SUPPORT_INBOX ?? VOLUNTEER_NOTIFICATION_EMAIL
 
 export async function POST(request: Request) {
   try {
@@ -153,18 +154,26 @@ export async function POST(request: Request) {
       timeZone: 'Europe/Paris',
     })
 
-    await sendVolunteerApplicationEmail({
-      to: VOLUNTEER_INBOX,
-      applicantName: data.fullName,
-      applicantEmail: data.email,
-      phone: data.phone ?? null,
-      availability: data.availability,
-      preferredMission: data.mission,
-      experience: data.experience ?? null,
-      motivations: data.motivations ?? null,
-      event: eventSnapshot,
-      submittedAt: submittedLabel,
-    })
+    const notificationRecipients = Array.from(
+      new Set([VOLUNTEER_NOTIFICATION_EMAIL, VOLUNTEER_INBOX].filter(Boolean)),
+    )
+
+    await Promise.all(
+      notificationRecipients.map((recipient) =>
+        sendVolunteerApplicationEmail({
+          to: recipient,
+          applicantName: data.fullName,
+          applicantEmail: data.email,
+          phone: data.phone ?? null,
+          availability: data.availability,
+          preferredMission: data.mission,
+          experience: data.experience ?? null,
+          motivations: data.motivations ?? null,
+          event: eventSnapshot,
+          submittedAt: submittedLabel,
+        }),
+      ),
+    )
 
     try {
       await sendVolunteerApplicationConfirmationEmail({

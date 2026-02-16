@@ -26,6 +26,7 @@ describe('Pricing Utils', () => {
     available_from: availableFrom?.toISOString() || null,
     available_until: availableUntil?.toISOString() || null,
     display_order: 0,
+    max_registrations: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   })

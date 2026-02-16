@@ -8,6 +8,7 @@ const updateEventPriceTierSchema = z.object({
   available_from: z.string().nullable().optional(),
   available_until: z.string().nullable().optional(),
   display_order: z.number().int().min(0).optional(),
+  max_registrations: z.number().int().min(0).nullable().optional(),
 })
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

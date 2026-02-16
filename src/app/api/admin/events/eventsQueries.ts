@@ -144,6 +144,13 @@ export const useAdminEventVolunteers = (eventId?: string | null) =>
     enabled: Boolean(eventId),
   })
 
+export const deleteAdminEventVolunteer = async (id: string): Promise<void> => {
+  const response = await axiosClient.delete(`/admin/volunteer-applications/${id}`)
+  if (response.status !== 200) {
+    throw new Error('Erreur lors de la suppression du bénévole')
+  }
+}
+
 export const createAdminEvent = async (payload: AdminEventPayload): Promise<AdminEventSummary> => {
   const response = await axiosClient.post<EventResponse>('/admin/events', payload)
   if (response.status !== 200) {

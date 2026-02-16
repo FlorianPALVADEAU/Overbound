@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
             })
 
             await resend.emails.send({
-              from: process.env.SEND_FROM_EMAIL || 'noreply@overbound-race.com',
+              from: process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com',
               to: recipient.email,
               subject: `[TEST] ${validatedData.subject}`,
               html: emailHtml,
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
           })
 
           await resend.emails.send({
-            from: process.env.SEND_FROM_EMAIL || 'noreply@overbound-race.com',
+            from: process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com',
             to: recipient.email,
             subject: validatedData.subject,
             html: emailHtml,

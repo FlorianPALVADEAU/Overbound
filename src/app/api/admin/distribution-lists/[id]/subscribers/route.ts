@@ -291,20 +291,43 @@ export async function POST(
       subscribed_at: new Date().toISOString(),
     }))
 
-    const { data, error } = await supabase
-      .from('list_subscriptions')
-      .upsert(subscriptions, {
-        onConflict: 'user_id,list_id',
-        ignoreDuplicates: false,
-      })
-      .select()
+    const data: any[] = []
+    for (const subscription of subscriptions) {
+      const { data: existing } = await supabase
+        .from('list_subscriptions')
+        .select('id')
+        .eq('user_id', subscription.user_id)
+        .eq('list_id', subscription.list_id)
 
-    if (error) {
-      console.error('Error adding subscribers:', error)
-      return NextResponse.json(
-        { error: 'Failed to add subscribers' },
-        { status: 500 }
-      )
+      if (existing && existing.length > 0) {
+        const { data: updatedRows, error: updateError } = await supabase
+          .from('list_subscriptions')
+          .update(subscription)
+          .eq('user_id', subscription.user_id)
+          .eq('list_id', subscription.list_id)
+          .select()
+        if (updateError) {
+          console.error('Error adding subscribers:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to add subscribers' },
+            { status: 500 }
+          )
+        }
+        if (updatedRows) data.push(...updatedRows)
+      } else {
+        const { data: insertedRows, error: insertError } = await supabase
+          .from('list_subscriptions')
+          .insert(subscription)
+          .select()
+        if (insertError) {
+          console.error('Error adding subscribers:', insertError)
+          return NextResponse.json(
+            { error: 'Failed to add subscribers' },
+            { status: 500 }
+          )
+        }
+        if (insertedRows) data.push(...insertedRows)
+      }
     }
 
     return NextResponse.json(

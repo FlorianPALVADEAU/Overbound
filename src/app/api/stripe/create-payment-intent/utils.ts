@@ -25,6 +25,8 @@ type EventPriceTier = {
   discount_percentage: number
   available_from: string | null
   available_until: string | null
+  display_order?: number | null
+  max_registrations?: number | null
 }
 
 type TicketRow = {
@@ -69,7 +71,7 @@ export const fetchTicketsForSelections = async (supabase: SupabaseSessionClient,
         location,
         status,
         capacity,
-        price_tiers:event_price_tiers(id, discount_percentage, available_from, available_until)
+        price_tiers:event_price_tiers(id, discount_percentage, available_from, available_until, display_order, max_registrations)
       )
     `,
     )
@@ -131,6 +133,84 @@ export const getCurrentTicketPriceFromRow = (ticket: TicketRow): number => {
 
   // No active tier, return final price
   return finalPrice
+}
+
+const isTierActiveByDate = (tier: EventPriceTier, now: Date) => {
+  const currentTime = now.getTime()
+  const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+  const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+  return currentTime >= startTime && currentTime < endTime
+}
+
+const sortTiersByOrder = (tiers: EventPriceTier[]) =>
+  [...tiers].sort((a, b) => {
+    const orderA = a.display_order ?? 0
+    const orderB = b.display_order ?? 0
+    if (orderA !== orderB) return orderA - orderB
+    const timeA = a.available_from ? new Date(a.available_from).getTime() : 0
+    const timeB = b.available_from ? new Date(b.available_from).getTime() : 0
+    return timeA - timeB
+  })
+
+export const fetchTierRegistrationCounts = async (supabase: SupabaseSessionClient, eventId: string) => {
+  const { data: registrations } = await supabase
+    .from('registrations')
+    .select('event_price_tier_id')
+    .eq('event_id', eventId)
+
+  const counts: Record<string, number> = {}
+  for (const row of registrations || []) {
+    const tierId = (row as { event_price_tier_id?: string | null }).event_price_tier_id
+    if (!tierId) continue
+    counts[tierId] = (counts[tierId] || 0) + 1
+  }
+  return counts
+}
+
+export const allocateParticipantsToTiers = (
+  tiers: EventPriceTier[] | null | undefined,
+  countsByTierId: Record<string, number>,
+  totalParticipants: number,
+  now: Date = new Date(),
+) => {
+  if (!tiers || tiers.length === 0 || totalParticipants <= 0) {
+    return { allocations: [], remaining: totalParticipants, activeTierIndex: null }
+  }
+
+  const sorted = sortTiersByOrder(tiers)
+  const activeTierIndex = sorted.findIndex((tier) => isTierActiveByDate(tier, now))
+
+  if (activeTierIndex === -1) {
+    return { allocations: [], remaining: totalParticipants, activeTierIndex: null }
+  }
+
+  const allocations: Array<{ tier: EventPriceTier; quantity: number }> = []
+  let remaining = totalParticipants
+
+  for (let index = activeTierIndex; index < sorted.length && remaining > 0; index += 1) {
+    const tier = sorted[index]
+    const max = tier.max_registrations
+    const used = countsByTierId[tier.id] ?? 0
+    const available = max == null ? remaining : Math.max(max - used, 0)
+    if (available <= 0) continue
+    const quantity = Math.min(available, remaining)
+    allocations.push({ tier, quantity })
+    remaining -= quantity
+  }
+
+  return { allocations, remaining, activeTierIndex }
+}
+
+export const expandTierAllocations = (
+  allocations: Array<{ tier: EventPriceTier; quantity: number }>,
+): Array<string> => {
+  const result: string[] = []
+  for (const allocation of allocations) {
+    for (let i = 0; i < allocation.quantity; i += 1) {
+      result.push(allocation.tier.id)
+    }
+  }
+  return result
 }
 
 export const getTicketSubtotal = (

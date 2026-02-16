@@ -26,6 +26,7 @@ export interface Registration {
   checked_in: boolean
   claim_status: ClaimStatus
   created_at: Timestamp
+  event_price_tier_id?: UUID | null
   document_url: string | null
   document_filename: string | null
   document_size: number | null

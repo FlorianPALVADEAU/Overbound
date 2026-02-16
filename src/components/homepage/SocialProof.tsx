@@ -174,7 +174,6 @@ const SocialProof = () => {
         >
           <video
             className="absolute inset-0 h-full w-full object-cover"
-            src={testimonial.mediaUrl}
             loop
             muted={activeVideoId === videoId ? isMuted : true}
             playsInline
@@ -188,7 +187,10 @@ const SocialProof = () => {
                 void video.play()
               }
             }}
-          />
+          >
+            <source src={testimonial.mediaUrl} type="video/webm" />
+            <source src={testimonial.mediaUrl.replace('.webm', '.mp4')} type="video/mp4" />
+          </video>
           {/* Remove backdrop when video is active */}
           <div className={`absolute inset-0 transition-all duration-300 ${
             activeVideoId === videoId

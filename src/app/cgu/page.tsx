@@ -125,7 +125,7 @@ const paragraphs = {
   proprieteIntellectuelle: [
     "Tous éléments composant la Plateforme (textes, graphismes, logos, vidéos, code source, base de données) sont la propriété exclusive d’Overbound ou de ses partenaires et sont protégés par le droit d’auteur et le Code de la propriété intellectuelle.",
     "Toute reproduction, représentation, modification ou exploitation non autorisée est strictement interdite. Une licence non exclusive, personnelle et non transférable est accordée à l’utilisateur pour l’usage de la Plateforme.",
-    "Les marques verbales et figuratives Overbound® sont déposées. Toute utilisation nécessite une autorisation écrite préalable (brand@overbound-race.com).",
+    "Les marques verbales et figuratives Overbound® sont déposées. Toute utilisation nécessite une autorisation écrite préalable (contact@overbound-race.com).",
   ],
   donneesPersonnelles: [
     "Overbound agit en qualité de responsable de traitement pour la collecte des données des utilisateurs (identité, coordonnées, informations sportives, statistiques).",
@@ -162,7 +162,7 @@ const paragraphs = {
   ],
   contact: [
     "Support général : contact@overbound-race.com",
-    "Service inscriptions & billetterie : billetterie@overbound-race.com",
+    "Service inscriptions & billetterie : support@overbound-race.com",
     "Partenariats & sponsoring : partners@overbound-race.com",
     "Presse : press@overbound-race.com",
     "Adresse postale : Overbound SAS – Service clients – 24 rue du Faubourg Saint-Martin, 75010 Paris",

@@ -22,6 +22,7 @@ interface TierFormData {
   available_from: string
   available_until: string
   display_order: number
+  max_registrations: string
 }
 
 export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPriceTierManagerProps) {
@@ -38,6 +39,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
             ? new Date(tier.available_until).toISOString().slice(0, 16)
             : '',
           display_order: tier.display_order,
+          max_registrations: tier.max_registrations != null ? tier.max_registrations.toString() : '',
         }))
       : [
           {
@@ -46,6 +48,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
             available_from: '',
             available_until: '',
             display_order: 0,
+            max_registrations: '',
           },
         ]
   )
@@ -67,6 +70,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
             ? new Date(tier.available_until).toISOString().slice(0, 16)
             : '',
           display_order: tier.display_order,
+          max_registrations: tier.max_registrations != null ? tier.max_registrations.toString() : '',
         }))
       )
     }
@@ -81,6 +85,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
         available_from: '',
         available_until: '',
         display_order: localTiers.length,
+        max_registrations: '',
       },
     ])
   }
@@ -137,6 +142,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
           available_from: tier.available_from || null,
           available_until: tier.available_until || null,
           display_order: index,
+          max_registrations: tier.max_registrations === '' ? null : parseInt(tier.max_registrations, 10),
         }
 
         if (tier.id) {
@@ -264,21 +270,36 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor={`tier-until-${index}`}>
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Fin
-                </Label>
-                <Input
-                  id={`tier-until-${index}`}
-                  type="datetime-local"
-                  value={tier.available_until}
-                  onChange={(e) => handleTierChange(index, 'available_until', e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor={`tier-until-${index}`}>
+                <Calendar className="h-4 w-4 inline mr-1" />
+                Fin
+              </Label>
+              <Input
+                id={`tier-until-${index}`}
+                type="datetime-local"
+                value={tier.available_until}
+                onChange={(e) => handleTierChange(index, 'available_until', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`tier-max-${index}`}>Max inscriptions</Label>
+              <Input
+                id={`tier-max-${index}`}
+                type="number"
+                min="0"
+                value={tier.max_registrations}
+                onChange={(e) => handleTierChange(index, 'max_registrations', e.target.value)}
+                placeholder="Laisser vide pour illimité"
+              />
+              <p className="text-xs text-muted-foreground">
+                Nombre maximum d&apos;inscriptions sur ce palier. Vide = illimité.
+              </p>
             </div>
           </div>
-        ))}
+        </div>
+      ))}
 
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleAddTier} className="w-full">

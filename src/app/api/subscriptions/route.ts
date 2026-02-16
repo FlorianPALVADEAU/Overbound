@@ -115,21 +115,43 @@ export async function PATCH(request: NextRequest) {
       })
     )
 
-    // Upsert subscriptions
-    const { data, error } = await supabase
-      .from('list_subscriptions')
-      .upsert(updates, {
-        onConflict: 'user_id,list_id',
-        ignoreDuplicates: false,
-      })
-      .select()
+    const data: any[] = []
+    for (const update of updates) {
+      const { data: existing } = await supabase
+        .from('list_subscriptions')
+        .select('id')
+        .eq('user_id', update.user_id)
+        .eq('list_id', update.list_id)
 
-    if (error) {
-      console.error('Error updating subscriptions:', error)
-      return NextResponse.json(
-        { error: 'Failed to update subscriptions' },
-        { status: 500 }
-      )
+      if (existing && existing.length > 0) {
+        const { data: updatedRows, error: updateError } = await supabase
+          .from('list_subscriptions')
+          .update(update)
+          .eq('user_id', update.user_id)
+          .eq('list_id', update.list_id)
+          .select()
+        if (updateError) {
+          console.error('Error updating subscriptions:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to update subscriptions' },
+            { status: 500 }
+          )
+        }
+        if (updatedRows) data.push(...updatedRows)
+      } else {
+        const { data: insertedRows, error: insertError } = await supabase
+          .from('list_subscriptions')
+          .insert(update)
+          .select()
+        if (insertError) {
+          console.error('Error inserting subscriptions:', insertError)
+          return NextResponse.json(
+            { error: 'Failed to update subscriptions' },
+            { status: 500 }
+          )
+        }
+        if (insertedRows) data.push(...insertedRows)
+      }
     }
 
     // Also update profiles.marketing_opt_in based on marketing lists
