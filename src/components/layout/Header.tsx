@@ -329,7 +329,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
                   asChild
                 >
-                  <Link href="/events/ultra-arena-2026">S'inscrire</Link>
+                  <Link href="/auth/register">S'inscrire</Link>
                 </Button>
               </div>
             )}
@@ -442,7 +442,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   asChild
                   className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
                 >
-                  <Link href="/events/ultra-arena-2026">Inscriptions 2026</Link>
+                  <Link href="/auth/register">S'inscrire</Link>
                 </Button>
               </div>
             </div>
