@@ -40,13 +40,15 @@ export async function GET(request: Request) {
     const search = params.get('search')
     const startDate = params.get('startDate')
     const endDate = params.get('endDate')
-    const limit = Math.min(parseInt(params.get('limit') || '150', 10) || 150, 500)
+    const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
+    const limit = 100
+    const offset = (page - 1) * limit
 
     let query = admin
       .from('admin_request_logs')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     if (method) {
       query = query.eq('method', method.toUpperCase())

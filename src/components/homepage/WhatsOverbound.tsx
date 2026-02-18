@@ -10,7 +10,7 @@ const WhatsOverbound = () => {
       className="w-full relative overflow-hidden bg-neutral-200"
     >
       {/* Version unifiée responsive - même design pour tous les écrans */}
-      <div className="min-h-[60vh] lg:h-[80vh] w-full flex items-center justify-center py-12 sm:py-16 md:py-20 lg:pt-20 lg:pb-20 relative z-10 px-4 sm:px-6 lg:px-0">
+      <div className="min-h-[60vh] lg:min-h-[80vh] w-full flex items-center justify-center py-12 sm:py-16 md:py-20 lg:pt-20 lg:pb-20 relative z-10 px-4 sm:px-6 lg:px-0">
         <div className='h-full w-full max-w-[90%] sm:max-w-[85%] md:max-w-[75%] lg:max-w-[40%] flex flex-col items-center justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 lg:-mt-8'>
           <div className='relative'>
             <h2 className='text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-bold text-black relative z-10 text-center'>

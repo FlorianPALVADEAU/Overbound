@@ -40,6 +40,7 @@ import {
   PowerOff,
 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
+import { EVENT_OPENING_FIRST_LIST_ID } from '@/lib/subscriptions/constants'
 
 interface DistributionListsTableProps {
   lists: DistributionListWithStats[]
@@ -151,6 +152,7 @@ export function DistributionListsTable({
                     <Switch
                       checked={list.active}
                       onCheckedChange={() => handleToggleActive(list)}
+                      disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -167,22 +169,32 @@ export function DistributionListsTable({
                           Voir les abonnés ({list.subscriber_count})
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onEdit(list)}>
+                        <DropdownMenuItem
+                          onClick={() => onEdit(list)}
+                          disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
+                        >
                           <Edit className="w-4 h-4 mr-2" />
-                          Modifier
+                          {list.id === EVENT_OPENING_FIRST_LIST_ID
+                            ? 'Modifier (indisponible)'
+                            : 'Modifier'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleToggleActive(list)}
+                          disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
                         >
                           {list.active ? (
                             <>
                               <PowerOff className="w-4 h-4 mr-2" />
-                              Désactiver
+                              {list.id === EVENT_OPENING_FIRST_LIST_ID
+                                ? 'Désactiver (indisponible)'
+                                : 'Désactiver'}
                             </>
                           ) : (
                             <>
                               <Power className="w-4 h-4 mr-2" />
-                              Activer
+                              {list.id === EVENT_OPENING_FIRST_LIST_ID
+                                ? 'Activer (indisponible)'
+                                : 'Activer'}
                             </>
                           )}
                         </DropdownMenuItem>
@@ -190,9 +202,12 @@ export function DistributionListsTable({
                         <DropdownMenuItem
                           onClick={() => setListToDelete(list)}
                           className="text-destructive"
+                          disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Supprimer
+                          {list.id === EVENT_OPENING_FIRST_LIST_ID
+                            ? 'Supprimer (indisponible)'
+                            : 'Supprimer'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
