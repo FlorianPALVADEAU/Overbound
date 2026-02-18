@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type {
   CreateDistributionListData,
   DistributionListType,
 } from '@/types/DistributionList'
+import {
+  EVENT_OPENING_FIRST_LIST_ID,
+  EVENT_OPENING_FIRST_LIST_SLUG,
+} from '@/lib/subscriptions/constants'
 
 // Validation schema
 const distributionListSchema = z.object({
@@ -37,6 +41,7 @@ const distributionListSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const admin = supabaseAdmin()
 
     // Check if user is authenticated and admin
     const {
@@ -89,7 +94,12 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      return NextResponse.json({ data }, { status: 200 })
+      const enhancedData = await addEventOpeningVirtualList({
+        lists: data ?? [],
+        admin,
+      })
+
+      return NextResponse.json({ data: enhancedData }, { status: 200 })
     } else {
       // Regular query
       let query = supabase.from('distribution_lists').select('*')
@@ -123,6 +133,62 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+async function addEventOpeningVirtualList({
+  lists,
+  admin,
+}: {
+  lists: any[]
+  admin: ReturnType<typeof supabaseAdmin>
+}) {
+  const { data: firstEvent, error: firstEventError } = await admin
+    .from('events')
+    .select('id, title, date, created_at')
+    .order('date', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (firstEventError) {
+    console.error('Error fetching first event:', firstEventError)
+    return lists
+  }
+
+  if (!firstEvent) {
+    return lists
+  }
+
+  const { count: notificationsCount, error: notificationsError } = await admin
+    .from('event_opening_notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', firstEvent.id)
+
+  if (notificationsError) {
+    console.error('Error fetching event opening notifications:', notificationsError)
+  }
+
+  const virtualList = {
+    id: EVENT_OPENING_FIRST_LIST_ID,
+    name: `Ouverture inscriptions — ${firstEvent.title ?? 'Premier événement'}`,
+    description:
+      firstEvent.title
+        ? `Demandes pour être prévenu de l'ouverture de ${firstEvent.title}.`
+        : `Demandes pour être prévenu de l'ouverture du premier événement.`,
+    slug: EVENT_OPENING_FIRST_LIST_SLUG,
+    type: 'events',
+    default_subscribed: false,
+    active: true,
+    created_at: firstEvent.created_at ?? new Date().toISOString(),
+    updated_at: firstEvent.created_at ?? new Date().toISOString(),
+    subscriber_count: notificationsCount ?? 0,
+    unsubscriber_count: 0,
+    total_interactions: 0,
+  }
+
+  const merged = [...lists, virtualList]
+  merged.sort((a, b) => (b.subscriber_count || 0) - (a.subscriber_count || 0))
+
+  return merged
 }
 
 /**

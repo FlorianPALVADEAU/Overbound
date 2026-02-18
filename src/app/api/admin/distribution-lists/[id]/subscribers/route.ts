@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { EVENT_OPENING_FIRST_LIST_ID } from '@/lib/subscriptions/constants'
 
 /**
  * GET /api/admin/distribution-lists/[id]/subscribers
@@ -42,6 +43,74 @@ export async function GET(
     // Use admin client to bypass RLS and see all subscriptions (including email-only)
     const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
+
+    if (id === EVENT_OPENING_FIRST_LIST_ID) {
+      const { data: firstEvent, error: firstEventError } = await admin
+        .from('events')
+        .select('id')
+        .order('date', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+      if (firstEventError) {
+        console.error('Error fetching first event:', firstEventError)
+        return NextResponse.json(
+          { error: 'Failed to fetch first event' },
+          { status: 500 }
+        )
+      }
+
+      if (!firstEvent) {
+        return NextResponse.json(
+          { data: [], total: 0, limit, offset },
+          { status: 200 }
+        )
+      }
+
+      const { data: notifications, error: notificationsError } = await admin
+        .from('event_opening_notifications')
+        .select('id, email, full_name, user_id, source, created_at')
+        .eq('event_id', firstEvent.id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (notificationsError) {
+        console.error('Error fetching event opening notifications:', notificationsError)
+        return NextResponse.json(
+          { error: 'Failed to fetch subscribers' },
+          { status: 500 }
+        )
+      }
+
+      const subscribersWithDetails = (notifications || []).map((row) => ({
+        id: row.id,
+        user_id: row.user_id,
+        list_id: EVENT_OPENING_FIRST_LIST_ID,
+        subscribed: true,
+        source: row.source ?? 'event-page',
+        subscribed_at: row.created_at ?? null,
+        user: {
+          id: row.user_id ?? null,
+          email: row.email || '',
+          full_name: row.full_name ?? null,
+        },
+      }))
+
+      const { count } = await admin
+        .from('event_opening_notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', firstEvent.id)
+
+      return NextResponse.json(
+        {
+          data: subscribersWithDetails,
+          total: count || 0,
+          limit,
+          offset,
+        },
+        { status: 200 }
+      )
+    }
 
     // Build query for subscriptions
     let query = admin
@@ -208,10 +277,30 @@ export async function DELETE(
       )
     }
 
-    // Use admin client to delete the subscription
     const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
 
+    if (listId === EVENT_OPENING_FIRST_LIST_ID) {
+      const { error: deleteError } = await admin
+        .from('event_opening_notifications')
+        .delete()
+        .eq('id', subscription_id)
+
+      if (deleteError) {
+        console.error('Error deleting event opening notification:', deleteError)
+        return NextResponse.json(
+          { error: 'Failed to remove subscriber' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json(
+        { message: 'Subscriber removed successfully' },
+        { status: 200 }
+      )
+    }
+
+    // Use admin client to delete the subscription
     const { error: deleteError } = await admin
       .from('list_subscriptions')
       .delete()

@@ -18,7 +18,7 @@ export function PopupSubscribeConfirmationEmail({
 }: PopupSubscribeConfirmationEmailProps) {
   return (
     <EmailLayout
-      preview="Bienvenue dans la communauté Overbound"
+      preview="Bienvenue dans la communauté Overbound — code cumulable WELCOME05"
       showSocialLinks={true}
       showNavigationLinks={true}
     >
@@ -47,6 +47,14 @@ export function PopupSubscribeConfirmationEmail({
           Nous sommes ravis de t'accueillir dans notre communauté de passionnés de courses
           d'obstacles et de dépassement de soi !
         </Text>
+
+        <Text style={styles.paragraph}>
+          En cadeau de bienvenue, voici ton code de réduction <b>cumulable</b> :
+        </Text>
+
+        <Section style={styles.couponBox}>
+          <Text style={styles.couponCode}>WELCOME05</Text>
+        </Section>
 
         {/* CTA Button */}
         <Section style={styles.buttonContainer}>
@@ -168,6 +176,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     margin: '32px 0 16px 0',
     textAlign: 'center',
+    color: '#111827',
+  },
+  couponBox: {
+    backgroundColor: '#f3f4f6',
+    border: '1px dashed #9ca3af',
+    borderRadius: '10px',
+    padding: '12px 16px',
+    textAlign: 'center',
+    margin: '8px 0 24px 0',
+  },
+  couponCode: {
+    fontSize: '20px',
+    fontWeight: 700,
+    letterSpacing: '1px',
+    margin: 0,
     color: '#111827',
   },
   list: {

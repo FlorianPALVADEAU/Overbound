@@ -71,6 +71,11 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const supabase = createSupabaseBrowser()
   const queryClient = useQueryClient()
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false)
+    setMobileDropdownOpen(null)
+  }
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     queryClient.setQueryData(SESSION_QUERY_KEY, {
@@ -360,10 +365,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               <Link
                 href="/events/ultra-arena-2026"
                 className="block w-full px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
-                onClick={() => {
-                  setMobileMenuOpen(false)
-                  setMobileDropdownOpen(null)
-                }}
+                onClick={closeMobileMenu}
               >
                 Inscriptions 2026
               </Link>
@@ -391,10 +393,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                             key={subItem.name}
                             href={subItem.href}
                             className="block w-full px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              setMobileMenuOpen(false)
-                              setMobileDropdownOpen(null)
-                            }}
+                            onClick={closeMobileMenu}
                           >
                             {subItem.name}
                           </Link>
@@ -407,7 +406,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     key={item.name}
                     href={item.href}
                     className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={closeMobileMenu}
                   >
                     {item.name}
                   </Link>
@@ -418,7 +417,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               <Link
                 href="/volunteers"
                 className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
               >
                 Devenir bénévole
               </Link>
@@ -434,7 +433,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     asChild
                     className="h-11 rounded-full border-[#26AA26] text-[#26AA26] hover:bg-[#26AA26]/10"
                   >
-                    <Link href="/auth/login">Se connecter</Link>
+                    <Link href="/auth/login" onClick={closeMobileMenu}>Se connecter</Link>
                   </Button>
                 )}
                 <Button
@@ -442,7 +441,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   asChild
                   className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
                 >
-                  <Link href="/auth/register">S'inscrire</Link>
+                  <Link href="/auth/register" onClick={closeMobileMenu}>S'inscrire</Link>
                 </Button>
               </div>
             </div>

@@ -262,13 +262,137 @@ export default function EventDetailPage() {
     }
   }
 
+  const pricingCard = (
+    <div className="h-full w-full max-w-none space-y-5 rounded-2xl border border-primary/40 bg-primary p-5 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] sm:p-6 lg:max-w-sm lg:rounded-3xl lg:p-8 lg:sticky lg:top-24 lg:w-auto lg:space-y-6 animate-fade-in-up animate-duration-700 animate-delay-200">
+      <div className="space-y-3 sm:flex sm:items-end sm:justify-between sm:gap-6 sm:space-y-0 lg:block lg:space-y-2">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-foreground/80">À partir de</p>
+          {lowestPrice !== null ? (
+            <div className="space-y-1">
+              {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice && (
+                <p className="text-2xl font-bold line-through text-primary-foreground/60">
+                  {formatCurrency(baseLowestPrice)}
+                </p>
+              )}
+              <p className="text-4xl font-extrabold sm:text-5xl">
+                {formatCurrency(lowestPrice)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-3xl font-extrabold sm:text-4xl">Bientôt en vente</p>
+          )}
+        </div>
+        <p className="text-sm text-primary-foreground/80 sm:max-w-[220px] sm:text-right lg:text-left">
+          Tarifs évolutifs selon le format choisi et la période d'inscription.
+        </p>
+      </div>
+      {isAnnounced ? (
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-primary-foreground/10 p-4 text-primary-foreground">
+            <p className="text-sm font-semibold">Inscriptions pas encore ouvertes</p>
+            {formattedSalesStart ? (
+              <p className="mt-1 text-xs text-primary-foreground/70">
+                Ouverture prévue le {formattedSalesStart}.
+              </p>
+            ) : null}
+            {countdown ? (
+              <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+                <div className="rounded-xl bg-white/15 px-2 py-3">
+                  <p className="text-lg font-bold">{countdown.days}</p>
+                  <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Jours</p>
+                </div>
+                <div className="rounded-xl bg-white/15 px-2 py-3">
+                  <p className="text-lg font-bold">{padCountdown(countdown.hours)}</p>
+                  <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Heures</p>
+                </div>
+                <div className="rounded-xl bg-white/15 px-2 py-3">
+                  <p className="text-lg font-bold">{padCountdown(countdown.minutes)}</p>
+                  <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Minutes</p>
+                </div>
+                <div className="rounded-xl bg-white/15 px-2 py-3">
+                  <p className="text-lg font-bold">{padCountdown(countdown.seconds)}</p>
+                  <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Secondes</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <form className="space-y-3" onSubmit={handleNotifySubmit}>
+            <Input
+              type="email"
+              value={notifyEmail}
+              onChange={(eventInput) => setNotifyEmail(eventInput.target.value)}
+              placeholder="Ton email"
+              className="h-12 rounded-2xl border-white/40 bg-white/90 text-foreground placeholder:text-black/60"
+              required
+            />
+            <Button
+              className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
+              size="lg"
+              type="submit"
+              disabled={notifyStatus === 'loading' || notifyStatus === 'success'}
+            >
+              {notifyStatus === 'loading' ? 'Envoi...' : notifyStatus === 'success' ? 'On te prévient !' : 'Me prévenir'}
+            </Button>
+          </form>
+          {notifyMessage ? (
+            <p className={`text-xs ${notifyStatus === 'error' ? 'text-red-200' : 'text-primary-foreground/80'}`}>
+              {notifyMessage}
+            </p>
+          ) : null}
+          <p className="text-xs text-primary-foreground/70">
+            Un seul email à l'ouverture des inscriptions. Pas de spam.
+          </p>
+        </div>
+      ) : (
+        <Button
+          className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
+          size="lg"
+          asChild
+        >
+          <a href={defaultCtaHref}>{defaultCtaLabel}</a>
+        </Button>
+      )}
+      <div className="rounded-2xl bg-primary-foreground/80 p-4 text-sm text-primary">
+        <p className="font-semibold">Infos clés</p>
+        <ul className="mt-2 space-y-1.5">
+          <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Ouverture des portes 1h avant le premier départ</li>
+          <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Vestiaires et consignes disponibles sur place</li>
+          <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Restauration & corners partenaires pendant toute la journée</li>
+        </ul>
+      </div>
+    </div>
+  )
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="relative isolate overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0">
           {(isUltraArena || event.image_url) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={isUltraArena ? '/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif' : event.image_url!} alt={event.title} className="h-full w-full object-cover opacity-25 scale-105" />
+            isUltraArena ? (
+              <>
+                {/* Mobile / tablet background */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/images/a-smiling-running-man-black-weared-sport.avif"
+                  alt={event.title}
+                  className="h-full w-full object-cover object-[50%_0%] opacity-25 lg:hidden"
+                />
+                {/* Desktop background */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
+                  alt={event.title}
+                  className="hidden h-full w-full object-cover opacity-25 lg:block lg:scale-105"
+                />
+              </>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={event.image_url!}
+                alt={event.title}
+                className="h-full w-full object-contain opacity-25 lg:object-cover lg:scale-105"
+              />
+            )
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-background via-muted/40 to-background" />
           )}
@@ -315,6 +439,10 @@ export default function EventDetailPage() {
                   ) : (
                     <p className="text-lg text-muted-foreground sm:text-xl">Un rendez-vous sportif taillé pour repousser vos limites.</p>
                   )}
+                </div>
+
+                <div className="lg:hidden">
+                  {pricingCard}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -399,111 +527,20 @@ export default function EventDetailPage() {
                 </div>
 
                 {isUltraArena && (
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="w-fit rounded-2xl border-border/60 bg-card/80 backdrop-blur hover:bg-card"
-                  >
-                    <a href="#infos-pratiques">Découvrez toutes les infos pratiques ici</a>
-                  </Button>
+                  <div className="flex justify-center lg:block">
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="lg"
+                      className="w-full max-w-md sm:w-auto lg:w-fit lg:max-w-none rounded-2xl border-primary/40 bg-primary/10 px-8 py-6 text-base font-semibold text-primary shadow-sm backdrop-blur hover:bg-primary/15"
+                    >
+                      <a href="#infos-pratiques">Découvrez toutes les infos pratiques ici</a>
+                    </Button>
+                  </div>
                 )}
               </div>
-              <div className="h-full w-full max-w-sm space-y-6 rounded-3xl border border-primary/40 bg-primary p-8 text-primary-foreground shadow-[0_25px_70px_-20px_rgba(34,197,94,0.45)] lg:sticky lg:top-24 lg:w-auto animate-fade-in-up animate-duration-700 animate-delay-200">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary-foreground/80">À partir de</p>
-                  {lowestPrice !== null ? (
-                    <div className="space-y-1">
-                      {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice && (
-                        <p className="text-2xl font-bold line-through text-primary-foreground/60">
-                          {formatCurrency(baseLowestPrice)}
-                        </p>
-                      )}
-                      <p className="text-5xl font-extrabold">
-                        {formatCurrency(lowestPrice)}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-4xl font-extrabold">Bientôt en vente</p>
-                  )}
-                  <p className="text-sm text-primary-foreground/80">
-                    Tarifs évolutifs selon le format choisi et la période d'inscription.
-                  </p>
-                </div>
-                {isAnnounced ? (
-                  <div className="space-y-4">
-                    <div className="rounded-2xl bg-primary-foreground/10 p-4 text-primary-foreground">
-                      <p className="text-sm font-semibold">Inscriptions pas encore ouvertes</p>
-                      {formattedSalesStart ? (
-                        <p className="mt-1 text-xs text-primary-foreground/70">
-                          Ouverture prévue le {formattedSalesStart}.
-                        </p>
-                      ) : null}
-                      {countdown ? (
-                        <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-                          <div className="rounded-xl bg-white/15 px-2 py-3">
-                            <p className="text-lg font-bold">{countdown.days}</p>
-                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Jours</p>
-                          </div>
-                          <div className="rounded-xl bg-white/15 px-2 py-3">
-                            <p className="text-lg font-bold">{padCountdown(countdown.hours)}</p>
-                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Heures</p>
-                          </div>
-                          <div className="rounded-xl bg-white/15 px-2 py-3">
-                            <p className="text-lg font-bold">{padCountdown(countdown.minutes)}</p>
-                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Minutes</p>
-                          </div>
-                          <div className="rounded-xl bg-white/15 px-2 py-3">
-                            <p className="text-lg font-bold">{padCountdown(countdown.seconds)}</p>
-                            <p className="text-[8px] uppercase tracking-wide text-primary-foreground/70">Secondes</p>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                    <form className="space-y-3" onSubmit={handleNotifySubmit}>
-                      <Input
-                        type="email"
-                        value={notifyEmail}
-                        onChange={(eventInput) => setNotifyEmail(eventInput.target.value)}
-                        placeholder="Ton email"
-                        className="h-12 rounded-2xl border-white/40 bg-white/90 text-foreground placeholder:text-black/60"
-                        required
-                      />
-                      <Button
-                        className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
-                        size="lg"
-                        type="submit"
-                        disabled={notifyStatus === 'loading' || notifyStatus === 'success'}
-                      >
-                        {notifyStatus === 'loading' ? 'Envoi...' : notifyStatus === 'success' ? 'On te prévient !' : 'Me prévenir'}
-                      </Button>
-                    </form>
-                    {notifyMessage ? (
-                      <p className={`text-xs ${notifyStatus === 'error' ? 'text-red-200' : 'text-primary-foreground/80'}`}>
-                        {notifyMessage}
-                      </p>
-                    ) : null}
-                    <p className="text-xs text-primary-foreground/70">
-                      Un seul email à l'ouverture des inscriptions. Pas de spam.
-                    </p>
-                  </div>
-                ) : (
-                  <Button
-                    className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
-                    size="lg"
-                    asChild
-                  >
-                    <a href={defaultCtaHref}>{defaultCtaLabel}</a>
-                  </Button>
-                )}
-                <div className="rounded-2xl bg-primary-foreground/80 p-4 text-sm text-primary">
-                  <p className="font-semibold">Infos clés</p>
-                  <ul className="mt-2 space-y-1.5">
-                    <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Ouverture des portes 1h avant le premier départ</li>
-                    <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Vestiaires et consignes disponibles sur place</li>
-                    <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Restauration & corners partenaires pendant toute la journée</li>
-                  </ul>
-                </div>
+              <div className="hidden lg:block">
+                {pricingCard}
               </div>
             </div>
           </div>
@@ -614,7 +651,7 @@ export default function EventDetailPage() {
             <img
               src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
               alt="Participants courant avec des chaînes autour du cou"
-              className="h-full w-full object-cover opacity-50"
+              className="h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background" />
           </div>
