@@ -18,6 +18,7 @@ type PromoRecord = {
   usage_limit: number | null
   used_count: number
   events: Array<{ event_id: string }>
+  ambassadors?: Array<{ id: string }>
 }
 
 type EventPriceTier = {
@@ -99,7 +100,8 @@ export const fetchPromo = async (supabase: SupabaseSessionClient, promoCode: str
         valid_until,
         usage_limit,
         used_count,
-        events:promotional_code_events(event_id)
+        events:promotional_code_events(event_id),
+        ambassadors:ambassadors(id)
       `,
     )
     .ilike('code', promoCode.trim().toUpperCase())
@@ -266,6 +268,7 @@ export const calcPromo = (
       discount_percent: promo.discount_percent,
       discount_amount: promo.discount_amount,
       currency: promo.currency,
+      is_ambassador: Array.isArray(promo.ambassadors) && promo.ambassadors.length > 0,
     },
   }
 }

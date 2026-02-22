@@ -416,7 +416,7 @@ export default function RaceDetailPage() {
                       </p>
                       <p>
                         <span className="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 2km
-                        avec 15+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé.
+                        avec 10+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé.
                         Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu'à ce qu'il ne reste
                         qu'un seul concurrent.
                       </p>

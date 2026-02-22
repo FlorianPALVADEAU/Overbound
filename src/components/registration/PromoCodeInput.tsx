@@ -29,6 +29,11 @@ export default function PromoCodeInput({
             {appliedPromo.description ? (
               <p className="text-xs text-muted-foreground">{appliedPromo.description}</p>
             ) : null}
+            {appliedPromo.is_ambassador ? (
+              <p className="text-xs text-muted-foreground">
+                Code ambassadeur applique. Un seul code promo est autorise par commande.
+              </p>
+            ) : null}
           </div>
           <Button variant="ghost" size="sm" onClick={onRemove}>
             Retirer

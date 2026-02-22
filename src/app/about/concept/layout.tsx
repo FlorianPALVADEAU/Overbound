@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: "Ultra Arena - Premier Backyard à Obstacles au Monde | Course Paris 2026",
-  description: "Découvre la Ultra Arena, le premier backyard OCR au monde créé par Overbound Race. Format inédit : élimination progressive, 2km par tour, 15+ obstacles. Course à obstacles Paris 2026 - Inscriptions ouvertes !",
+  description: "Découvre la Ultra Arena, le premier backyard OCR au monde créé par Overbound Race. Format inédit : élimination progressive, 2km par tour, 10+ obstacles. Course à obstacles Paris 2026 - Inscriptions ouvertes !",
   keywords: [
     "ultra arena",
     "backyard à obstacles",

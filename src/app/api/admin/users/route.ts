@@ -74,6 +74,14 @@ export async function GET() {
         marketing_opt_in: boolean | null
       }
     >()
+    const ambassadorsMap = new Map<
+      string,
+      {
+        promotional_code_id: string | null
+        code: string | null
+        code_is_active: boolean | null
+      }
+    >()
 
     if (userIds.length > 0) {
       const chunks = chunkArray(userIds, 1000)
@@ -93,10 +101,25 @@ export async function GET() {
           })
         })
       }
+
+      const { data: ambassadors } = await admin
+        .from('ambassadors')
+        .select('profile_id, promotional_code_id, promo:promotional_codes(code, is_active)')
+        .in('profile_id', userIds)
+
+      ambassadors?.forEach((row: any) => {
+        const promo = Array.isArray(row.promo) ? row.promo?.[0] : row.promo
+        ambassadorsMap.set(row.profile_id, {
+          promotional_code_id: row.promotional_code_id ?? null,
+          code: promo?.code ?? null,
+          code_is_active: promo?.is_active ?? null,
+        })
+      })
     }
 
     const usersWithProfiles = allUsers.map((authUser) => {
       const profileData = profilesMap.get(authUser.id)
+      const ambassadorData = ambassadorsMap.get(authUser.id)
       return {
         id: authUser.id,
         email: authUser.email,
@@ -108,6 +131,9 @@ export async function GET() {
         profile_created_at: profileData?.created_at ?? null,
         date_of_birth: profileData?.date_of_birth ?? null,
         marketing_opt_in: profileData?.marketing_opt_in ?? null,
+        ambassador_promotional_code_id: ambassadorData?.promotional_code_id ?? null,
+        ambassador_code: ambassadorData?.code ?? null,
+        ambassador_code_is_active: ambassadorData?.code_is_active ?? null,
       }
     })
 

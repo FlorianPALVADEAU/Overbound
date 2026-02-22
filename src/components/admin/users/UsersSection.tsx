@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Mail, Search, UserCog, RefreshCw, Clock, Pencil, Trash2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,17 +35,20 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   useAdminUsers,
+  useAmbassadorPromoCodes,
   updateAdminUserRole,
   updateAdminUser,
   deleteAdminUser,
   adminUsersQueryKey,
   type AdminUser,
+  type AmbassadorPromoCode,
 } from '@/app/api/admin/users/usersQueries'
 
 const roleLabels: Record<AdminUser['role'], string> = {
   user: 'Utilisateur',
   volunteer: 'Bénévole',
   admin: 'Administrateur',
+  ambassador: 'Ambassadeur',
 }
 
 const formatDate = (value: string | null) =>
@@ -56,7 +60,9 @@ const formatDate = (value: string | null) =>
     : '—'
 
 export function UsersSection() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const searchParams = useSearchParams()
+  const initialSearch = searchParams.get('search')?.trim() ?? ''
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [editUser, setEditUser] = useState<AdminUser | null>(null)
   const [editValues, setEditValues] = useState({
@@ -65,10 +71,17 @@ export function UsersSection() {
     date_of_birth: '',
     marketing_opt_in: false,
     role: 'user' as AdminUser['role'],
+    ambassador_promotional_code_id: null as string | null,
   })
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const { data, isLoading, isFetching, error, refetch } = useAdminUsers()
+  const { data: promoCodesData, isLoading: promoCodesLoading } = useAmbassadorPromoCodes()
+
+  useEffect(() => {
+    if (!initialSearch) return
+    setSearchTerm((prev) => (prev ? prev : initialSearch))
+  }, [initialSearch])
 
   const users = data?.users ?? []
 
@@ -86,6 +99,31 @@ export function UsersSection() {
         .some((value) => value?.toLowerCase().includes(term)),
     )
   }, [searchTerm, users])
+
+  const availablePromoCodes = useMemo(() => {
+    const codes = promoCodesData?.codes ?? []
+    if (!editUser) return codes
+    const selectedId = editValues.ambassador_promotional_code_id
+    const selectedCode = selectedId ? codes.find((code) => code.id === selectedId) : null
+    const filtered = codes.filter((code) => !code.assigned_profile_id || code.assigned_profile_id === editUser.id)
+    if (selectedId && !selectedCode && editUser.ambassador_promotional_code_id === selectedId) {
+      const fallback: AmbassadorPromoCode = {
+        id: selectedId,
+        code: editUser.ambassador_code ?? 'CODE_INCONNU',
+        name: null,
+        is_active: Boolean(editUser.ambassador_code_is_active),
+        assigned_profile_id: editUser.id,
+      }
+      return [fallback, ...filtered]
+    }
+    return filtered
+  }, [promoCodesData, editUser, editValues.ambassador_promotional_code_id])
+
+  useEffect(() => {
+    if (editValues.role !== 'ambassador' && editValues.ambassador_promotional_code_id) {
+      setEditValues((prev) => ({ ...prev, ambassador_promotional_code_id: null }))
+    }
+  }, [editValues.role, editValues.ambassador_promotional_code_id])
 
   const handleRoleChange = async (userId: string, role: AdminUser['role']) => {
     setUpdatingId(userId)
@@ -116,6 +154,7 @@ export function UsersSection() {
       date_of_birth: user.date_of_birth ?? '',
       marketing_opt_in: Boolean(user.marketing_opt_in),
       role: user.role,
+      ambassador_promotional_code_id: user.ambassador_promotional_code_id ?? null,
     })
   }
 
@@ -129,6 +168,7 @@ export function UsersSection() {
         date_of_birth: editValues.date_of_birth || null,
         marketing_opt_in: editValues.marketing_opt_in,
         role: editValues.role,
+        ambassador_promotional_code_id: editValues.ambassador_promotional_code_id,
       }
       const updated = await updateAdminUser(editUser.id, payload)
       queryClient.setQueryData(adminUsersQueryKey, (previous: typeof data | undefined) => {
@@ -272,6 +312,7 @@ export function UsersSection() {
                             <SelectItem value="user">{roleLabels.user}</SelectItem>
                             <SelectItem value="volunteer">{roleLabels.volunteer}</SelectItem>
                             <SelectItem value="admin">{roleLabels.admin}</SelectItem>
+                            <SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -369,9 +410,44 @@ export function UsersSection() {
                   <SelectItem value="user">{roleLabels.user}</SelectItem>
                   <SelectItem value="volunteer">{roleLabels.volunteer}</SelectItem>
                   <SelectItem value="admin">{roleLabels.admin}</SelectItem>
+                  <SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {editValues.role === 'ambassador' ? (
+              <div className="space-y-2">
+                <Label>Code promo ambassadeur</Label>
+                <Select
+                  value={editValues.ambassador_promotional_code_id ?? ''}
+                  onValueChange={(value) =>
+                    setEditValues((prev) => ({
+                      ...prev,
+                      ambassador_promotional_code_id: value || null,
+                    }))
+                  }
+                  disabled={promoCodesLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={promoCodesLoading ? 'Chargement…' : 'Choisir un code actif'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePromoCodes.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        Aucun code promo disponible
+                      </SelectItem>
+                    ) : null}
+                    {availablePromoCodes.map((code) => (
+                      <SelectItem key={code.id} value={code.id}>
+                        {code.code}{code.name ? ` — ${code.name}` : ''}{code.is_active ? '' : ' (inactif)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Seuls les codes actifs et non déjà associés à un autre ambassadeur sont listés.
+                </p>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
                 <Label>Marketing opt-in</Label>

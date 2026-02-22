@@ -36,7 +36,7 @@ const steps = [
 	},
 	{
 		title: "Le défi ultime",
-		text: "2km par tour, 15+ obstacles, 20min max pour boucler. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
+		text: "2km par tour, 10+ obstacles, 20min max pour boucler. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
 		image:
 			"/images/images/a-sporty-man-laughing-facing-forward-and-looking-to-the-left.avif",
 	},
@@ -221,7 +221,7 @@ useEffect(() => {
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										En format RANKED, chaque tour de 2km avec 15+ obstacles doit être complété en moins de 20 minutes pour continuer. Le défi ultime pour tester ton endurance et ta stratégie.
+										En format RANKED, chaque tour de 2km avec 10+ obstacles doit être complété en moins de 20 minutes pour continuer. Le défi ultime pour tester ton endurance et ta stratégie.
 										<br/>Le format OPEN te permet de courir sans limite de temps, pour le plaisir et le dépassement de soi.
 									</p>
 								</CardContent>
@@ -248,7 +248,7 @@ useEffect(() => {
 										<Mountain className="h-4 w-4 mr-1" />
 										Parcours technique
 									</Badge>
-									<CardTitle className="text-2xl">2km · 15+ obstacles</CardTitle>
+									<CardTitle className="text-2xl">2km · 10+ obstacles</CardTitle>
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
