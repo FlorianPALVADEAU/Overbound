@@ -1,4 +1,4 @@
-import webpush from 'web-push'
+import * as webpush from 'web-push'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY

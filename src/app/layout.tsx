@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import ClientProviders from '@/components/ClientProviders'
 import { OrganizationStructuredDataServer } from '@/components/seo/OrganizationStructuredDataServer'
 import { AnalyticsScripts } from '@/components/consent/AnalyticsScripts'
+import { SanityLive } from '@/sanity/lib/live'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,6 +106,7 @@ export default function RootLayout({
         <ClientProviders>
           <Layout>{children}</Layout>
         </ClientProviders>
+        <SanityLive />
       </body>
     </html>
   );

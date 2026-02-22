@@ -11,7 +11,7 @@ import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 export const runtime = 'nodejs'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
+  apiVersion: '2025-08-27.basil',
 })
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
 
         if (ticket.requires_document) {
           try {
-            const eventDate = event?.date ?? event_date ?? null
+            const eventDate = event?.date ?? null
             const tooEarlyForPpsOnly = isPpsOnlyAndTooEarly(eventDate, ticket.document_types ?? [])
             if (!tooEarlyForPpsOnly) {
               await notifyDocumentRequired({
