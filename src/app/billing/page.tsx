@@ -20,7 +20,7 @@ export default async function BillingPage({ searchParams }: Props) {
   if (success && sessionId) {
     try {
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: "2025-07-30.basil",
+        apiVersion: "2025-08-27.basil",
       });
       // Récupère la session pour afficher des infos (facultatif)
       session = await stripe.checkout.sessions.retrieve(sessionId, {
