@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
+import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 
 export const runtime = 'nodejs'
@@ -13,6 +14,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-07-30.basil',
 })
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
+
+const isPpsOnlyAndTooEarly = (eventDate: string | null | undefined, documentTypes: string[] | null | undefined) => {
+  if (!eventDate || !documentTypes || documentTypes.length === 0) return false
+  const isPpsOnly = documentTypes.every((type) => String(type || '').toLowerCase().includes('pps'))
+  if (!isPpsOnly) return false
+  const earliestAllowed = new Date(eventDate)
+  earliestAllowed.setMonth(earliestAllowed.getMonth() - 3)
+  return Date.now() < earliestAllowed.getTime()
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -264,17 +274,53 @@ export async function POST(request: NextRequest) {
 
         if (ticket.requires_document) {
           try {
-            await notifyDocumentRequired({
-              registrationId: registration.id,
-              userId: registration.user_id,
-              participantName,
-              eventTitle: event_title || event.title,
-              email: registration.email,
-              requiredDocuments: ticket.document_types ?? [],
-            })
+            const eventDate = event?.date ?? event_date ?? null
+            const tooEarlyForPpsOnly = isPpsOnlyAndTooEarly(eventDate, ticket.document_types ?? [])
+            if (!tooEarlyForPpsOnly) {
+              await notifyDocumentRequired({
+                registrationId: registration.id,
+                userId: registration.user_id,
+                participantName,
+                eventTitle: event_title || event.title,
+                email: registration.email,
+                requiredDocuments: ticket.document_types ?? [],
+              })
+            }
           } catch (documentEmailError) {
             console.error('Error sending document required email:', documentEmailError)
           }
+        }
+
+        try {
+          let eventTitle: string | null = null
+          if (event_id) {
+            const { data: eventRow } = await admin
+              .from('events')
+              .select('title')
+              .eq('id', event_id)
+              .maybeSingle()
+            eventTitle = eventRow?.title ?? null
+          }
+
+          const currency = (paymentIntent.currency || 'eur').toUpperCase()
+          const amountValue = typeof paymentIntent.amount === 'number' ? paymentIntent.amount / 100 : null
+          const amountLabel = amountValue !== null
+            ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amountValue)
+            : null
+
+          const details = [
+            participantName || resolvedParticipantEmail,
+            eventTitle,
+            amountLabel,
+          ].filter(Boolean).join(' • ')
+
+          await sendAdminPushNotification({
+            title: 'Nouvelle inscription payée',
+            body: details,
+            url: `${siteUrl}/dashboard?tab=members${event_id ? `&event=${event_id}` : ''}`,
+          })
+        } catch (pushError) {
+          console.error('[push] notification error', pushError)
         }
 
         // Send confirmation email

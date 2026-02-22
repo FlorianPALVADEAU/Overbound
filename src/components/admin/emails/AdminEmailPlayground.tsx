@@ -7,6 +7,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
+
 interface EmailItem {
   type: string
   label: string
@@ -79,6 +81,64 @@ export function AdminEmailPlayground() {
   const [receiptStatus, setReceiptStatus] = useState<{ state: TriggerStatus; message?: string }>({
     state: 'idle',
   })
+  const [pushStatus, setPushStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+
+  const registerPush = async () => {
+    setPushStatus({ state: 'loading' })
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        throw new Error('Web Push n’est pas supporté sur ce navigateur.')
+      }
+      if (!VAPID_PUBLIC_KEY) {
+        throw new Error('Clé VAPID publique manquante.')
+      }
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        throw new Error('Permission refusée.')
+      }
+
+      await navigator.serviceWorker.register('/sw.js')
+      const registration = await navigator.serviceWorker.ready
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+
+      const response = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Impossible de sauvegarder l’abonnement.')
+      }
+
+      setPushStatus({ state: 'success', message: 'Notifications activées.' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue'
+      setPushStatus({ state: 'error', message })
+    }
+  }
+
+  const testPush = async () => {
+    setPushStatus({ state: 'loading' })
+    try {
+      const response = await fetch('/api/push/test', { method: 'POST' })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Envoi impossible')
+      }
+      setPushStatus({ state: 'success', message: 'Notification envoyée.' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue'
+      setPushStatus({ state: 'error', message })
+    }
+  }
 
   const triggerEmail = async (type: string) => {
     setStatusMap((prev) => ({ ...prev, [type]: { state: 'loading' } }))
@@ -149,6 +209,32 @@ export function AdminEmailPlayground() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications téléphone (Web Push)</CardTitle>
+          <CardDescription>Active les notifications pour recevoir une alerte à chaque paiement validé.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button onClick={registerPush} disabled={pushStatus.state === 'loading'}>
+              {pushStatus.state === 'loading' ? 'Activation…' : 'Activer'}
+            </Button>
+            <Button variant="outline" onClick={testPush} disabled={pushStatus.state === 'loading'}>
+              Tester
+            </Button>
+          </div>
+          {pushStatus.state === 'error' && pushStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{pushStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {pushStatus.state === 'success' && pushStatus.message ? (
+            <Alert>
+              <AlertDescription>{pushStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Reçu de paiement</CardTitle>
@@ -224,6 +310,17 @@ export function AdminEmailPlayground() {
       ))}
     </div>
   )
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
 }
 
 export default AdminEmailPlayground
