@@ -33,6 +33,16 @@ export async function POST(request: NextRequest) {
     participants = requestBody.participants || []
     const upsells = requestBody.upsells || []
     promoCode = requestBody.promoCode || null
+    if (typeof promoCode === 'string') {
+      promoCode = promoCode.trim().toUpperCase()
+      if (promoCode.length === 0) {
+        promoCode = null
+      }
+    }
+
+    if (promoCode && /[,;|]/.test(promoCode)) {
+      return respondJson({ error: 'Un seul code promotionnel est autorise par commande.' }, 400)
+    }
 
     if (!eventId || !userId || !userEmail || ticketSelections.length === 0) {
       return respondJson({ error: 'Paramètres insuffisants.' }, 400)

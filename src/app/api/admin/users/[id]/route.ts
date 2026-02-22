@@ -1,14 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { sendAmbassadorCodeAssignedEmail, sendAmbassadorWelcomeEmail } from '@/lib/ambassadors/email'
 import { z } from 'zod'
 
 const updateUserSchema = z
   .object({
-    role: z.enum(['user', 'volunteer', 'admin']).optional(),
+    role: z.enum(['user', 'volunteer', 'admin', 'ambassador']).optional(),
     full_name: z.string().trim().min(2).max(120).nullable().optional(),
     phone: z.string().trim().min(6).max(32).nullable().optional(),
     date_of_birth: z.string().nullable().optional(),
     marketing_opt_in: z.boolean().nullable().optional(),
+    ambassador_promotional_code_id: z.string().uuid().nullable().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'Aucune donnée à mettre à jour.',
@@ -43,6 +45,62 @@ export async function PATCH(
     const validated = updateUserSchema.parse(payload)
 
     const admin = supabaseAdmin()
+    const { data: currentProfile } = await admin
+      .from('profiles')
+      .select('role')
+      .eq('id', id)
+      .maybeSingle()
+
+    const targetRole = validated.role ?? currentProfile?.role ?? 'user'
+
+    const { data: currentAmbassador } = await admin
+      .from('ambassadors')
+      .select('promotional_code_id')
+      .eq('profile_id', id)
+      .maybeSingle()
+
+    const previousRole = currentProfile?.role ?? 'user'
+    const previousPromoId = currentAmbassador?.promotional_code_id ?? null
+
+    if (targetRole !== 'ambassador' && validated.ambassador_promotional_code_id) {
+      return NextResponse.json({ error: 'Le code promo ambassadeur nécessite le rôle ambassadeur.' }, { status: 400 })
+    }
+
+    if (targetRole === 'admin' && validated.ambassador_promotional_code_id) {
+      return NextResponse.json({ error: 'Un administrateur ne peut pas être ambassadeur.' }, { status: 400 })
+    }
+
+    if (targetRole === 'ambassador') {
+      if (validated.ambassador_promotional_code_id === null) {
+        return NextResponse.json({ error: 'Un ambassadeur doit avoir un code promo actif.' }, { status: 400 })
+      }
+      if (validated.ambassador_promotional_code_id === undefined && !currentAmbassador?.promotional_code_id) {
+        return NextResponse.json({ error: 'Un ambassadeur doit avoir un code promo actif.' }, { status: 400 })
+      }
+    }
+
+    if (validated.ambassador_promotional_code_id) {
+      const { data: promoCode } = await admin
+        .from('promotional_codes')
+        .select('id, is_active')
+        .eq('id', validated.ambassador_promotional_code_id)
+        .maybeSingle()
+
+      if (!promoCode || !promoCode.is_active) {
+        return NextResponse.json({ error: 'Le code promo doit être actif.' }, { status: 400 })
+      }
+
+      const { data: assignedAmbassador } = await admin
+        .from('ambassadors')
+        .select('profile_id')
+        .eq('promotional_code_id', validated.ambassador_promotional_code_id)
+        .maybeSingle()
+
+      if (assignedAmbassador && assignedAmbassador.profile_id !== id) {
+        return NextResponse.json({ error: 'Ce code promo est déjà associé à un autre ambassadeur.' }, { status: 409 })
+      }
+    }
+
     const { data: updatedProfile, error } = await admin
       .from('profiles')
       .update({
@@ -60,7 +118,78 @@ export async function PATCH(
       throw error
     }
 
-    return NextResponse.json({ profile: updatedProfile })
+    if (targetRole === 'ambassador' && validated.ambassador_promotional_code_id) {
+      const { error: ambassadorError } = await admin
+        .from('ambassadors')
+        .upsert({
+          profile_id: id,
+          promotional_code_id: validated.ambassador_promotional_code_id,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'profile_id' })
+
+      if (ambassadorError) {
+        console.error('[admin users] ambassador upsert error', ambassadorError)
+        return NextResponse.json({ error: 'Impossible d\'associer le code promo ambassadeur.' }, { status: 500 })
+      }
+    }
+
+    if (targetRole !== 'ambassador') {
+      await admin
+        .from('ambassadors')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('profile_id', id)
+    }
+
+    const { data: ambassadorRow } = await admin
+      .from('ambassadors')
+      .select('promotional_code_id, promo:promotional_codes(code, is_active)')
+      .eq('profile_id', id)
+      .maybeSingle()
+
+    try {
+      const { data: authUser } = await admin.auth.admin.getUserById(id)
+      const recipientEmail = authUser?.user?.email
+      if (recipientEmail) {
+        const fullName = updatedProfile.full_name ?? null
+        const promoValue = Array.isArray((ambassadorRow as any)?.promo)
+          ? (ambassadorRow as any)?.promo?.[0]
+          : (ambassadorRow as any)?.promo
+        const newPromoId = ambassadorRow?.promotional_code_id ?? null
+
+        if (previousRole !== 'ambassador' && targetRole === 'ambassador') {
+          await sendAmbassadorWelcomeEmail({ to: recipientEmail, fullName })
+        }
+
+        if (
+          targetRole === 'ambassador' &&
+          newPromoId &&
+          newPromoId !== previousPromoId &&
+          promoValue?.code
+        ) {
+          await sendAmbassadorCodeAssignedEmail({
+            to: recipientEmail,
+            fullName,
+            ambassadorCode: promoValue.code,
+          })
+        }
+      }
+    } catch (emailError) {
+      console.error('[admin users] ambassador email error', emailError)
+    }
+
+    return NextResponse.json({
+      profile: {
+        ...updatedProfile,
+        ambassador_promotional_code_id: ambassadorRow?.promotional_code_id ?? null,
+        ambassador_code: Array.isArray((ambassadorRow as any)?.promo)
+          ? (ambassadorRow as any)?.promo?.[0]?.code ?? null
+          : (ambassadorRow as any)?.promo?.code ?? null,
+        ambassador_code_is_active: Array.isArray((ambassadorRow as any)?.promo)
+          ? (ambassadorRow as any)?.promo?.[0]?.is_active ?? null
+          : (ambassadorRow as any)?.promo?.is_active ?? null,
+      },
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 })

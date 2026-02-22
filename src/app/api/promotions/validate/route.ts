@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
         is_active,
         usage_limit,
         used_count,
-        events:promotional_code_events(event_id)
+        events:promotional_code_events(event_id),
+        ambassadors:ambassadors(id)
       `,
       )
       .ilike('code', normalizedCode)
@@ -75,6 +76,9 @@ export async function POST(request: NextRequest) {
         discount_percent: promotionalCode.discount_percent,
         discount_amount: promotionalCode.discount_amount,
         currency: promotionalCode.currency,
+        is_ambassador:
+          Array.isArray((promotionalCode as { ambassadors?: Array<{ id: string }> }).ambassadors) &&
+          ((promotionalCode as { ambassadors?: Array<{ id: string }> }).ambassadors?.length ?? 0) > 0,
       },
     })
   } catch (error) {

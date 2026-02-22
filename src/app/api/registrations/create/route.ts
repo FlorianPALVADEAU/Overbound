@@ -4,6 +4,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
+import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { captureException } from '@/lib/sentry'
@@ -204,10 +205,11 @@ export async function POST(request: NextRequest) {
 
     let promotionalCodeId: string | null = null
     if (promoCode) {
+      const normalizedPromoCode = promoCode.trim().toUpperCase()
       const { data: promoRecord } = await admin
         .from('promotional_codes')
         .select('id')
-        .ilike('code', promoCode)
+        .ilike('code', normalizedPromoCode)
         .maybeSingle()
 
       promotionalCodeId = promoRecord?.id ?? null
@@ -360,6 +362,20 @@ export async function POST(request: NextRequest) {
       if (promoIncrementError) {
         console.error('Erreur incrémentation code promo:', promoIncrementError)
         // Non-blocking error: registration is already created, just log it
+      }
+    }
+
+    // Best effort: if the SQL migration is in place, this keeps points in sync immediately.
+    const { error: ambassadorPointsError } = await admin.rpc('award_ambassador_points_for_order', {
+      p_order_id: order.id,
+    })
+    if (ambassadorPointsError) {
+      console.error('Erreur attribution points ambassadeur:', ambassadorPointsError)
+    } else {
+      try {
+        await notifyAmbassadorRewardsForOrder(admin, order.id)
+      } catch (notificationError) {
+        console.error('Erreur notification récompense ambassadeur:', notificationError)
       }
     }
 

@@ -61,6 +61,14 @@ const EMAIL_GROUPS: Array<{
       { type: 'admin_digest', label: 'Digest admin', description: 'Résumé des actions/récentes erreurs.', tone: 'admin' },
     ],
   },
+  {
+    title: 'Ambassadeurs (mock)',
+    description: 'Simulations des emails ambassadeur (récompense débloquée / statut).',
+    items: [
+      { type: 'ambassador_reward_earned', label: 'Palier débloqué', description: 'Simulation email palier atteint.', tone: 'transactional' },
+      { type: 'ambassador_reward_status', label: 'Statut récompense', description: 'Simulation email mise à jour statut.', tone: 'transactional' },
+    ],
+  },
 ]
 
 type TriggerStatus = 'idle' | 'loading' | 'success' | 'error'

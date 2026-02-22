@@ -131,7 +131,7 @@ export default function ConceptPage() {
                 <CardTitle className="text-lg">2km par tour</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Un parcours technique de 2km avec 15+ obstacles à franchir à chaque boucle.
+                Un parcours technique de 2km avec 10+ obstacles à franchir à chaque boucle.
               </CardContent>
             </Card>
 
@@ -347,7 +347,7 @@ export default function ConceptPage() {
                       <p className="text-xs text-muted-foreground">par tour</p>
                     </div>
                     <div>
-                      <p className="text-3xl font-bold">15+</p>
+                      <p className="text-3xl font-bold">10+</p>
                       <p className="text-xs text-muted-foreground">obstacles</p>
                     </div>
                   </div>

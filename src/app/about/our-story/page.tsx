@@ -181,7 +181,7 @@ export default function OurStoryPage() {
                         2km par tour
                       </Badge>
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                        15+ obstacles
+                        10+ obstacles
                       </Badge>
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
                         20min max par boucle

@@ -27,6 +27,7 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
+import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -122,7 +123,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const isAdmin = normalizedRoles.some((role) => role.includes('admin'))
   const isVolunteer = normalizedRoles.some((role) => role === 'volunteer')
+  const isAmbassadorRole = normalizedRoles.some((role) => role === 'ambassador')
   const hasDashboardAccess = isAdmin || isVolunteer || normalizedRoles.some((role) => role === 'staff')
+  const canAccessAmbassadorDashboard = hasAmbassadorAccess({
+    role: isAmbassadorRole ? 'ambassador' : null,
+    email: user?.email ?? null,
+  })
   const needsDocumentAttention = Boolean(alerts?.needs_document_action)
   const needsProfileCompletion = Boolean(
     user && (!profile?.full_name || !profile?.phone || !profile?.date_of_birth),
@@ -134,6 +140,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
     ...(hasDashboardAccess ? [
       { name: isVolunteer && !isAdmin ? 'Espace bénévole' : 'Administration', href: '/dashboard', icon: SettingsIcon },
+    ] : canAccessAmbassadorDashboard ? [
+      { name: 'Espace ambassadeur', href: '/ambassadors/dashboard', icon: MedalIcon },
     ] : []),
   ] : []
 

@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -24,7 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Clock, Filter, RotateCcw, Trash2 } from 'lucide-react'
+import { Clock, Filter, Package, RotateCcw, Trash2 } from 'lucide-react'
+import type { UpsellSummaryRow } from '@/app/api/admin/registrations/upsells-summary/route'
 import { RegistrationStats } from './RegistrationStats'
 import { RegistrationDocumentDialog } from './RegistrationDocumentDialog'
 import { RegistrationApprovalDialog } from './RegistrationApprovalDialog'
@@ -319,6 +320,8 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
       </div>
 
       <RegistrationStats stats={stats} />
+
+      <UpsellSummaryPanel eventId={effectiveEventFilter !== ALL_EVENTS_VALUE ? effectiveEventFilter : undefined} />
 
       <Card>
         <CardContent className="space-y-4 p-4 md:p-6">
@@ -667,5 +670,81 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
         loading={deleteLoadingId === registrationToDelete?.id}
       />
     </div>
+  )
+}
+
+// ─── Upsell Summary Panel ─────────────────────────────────────────────────────
+
+function UpsellSummaryPanel({ eventId }: { eventId?: string }) {
+  const { data, isLoading } = useQuery<{ summary: UpsellSummaryRow[] }>({
+    queryKey: ['admin-upsells-summary', eventId ?? 'all'],
+    queryFn: async () => {
+      const url = eventId
+        ? `/api/admin/registrations/upsells-summary?event_id=${eventId}`
+        : '/api/admin/registrations/upsells-summary'
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('Erreur chargement upsells')
+      return res.json()
+    },
+    staleTime: 60_000,
+  })
+
+  const summary = data?.summary ?? []
+
+  if (!isLoading && summary.length === 0) return null
+
+  const formatAmount = (cents: number, currency: string) =>
+    (cents / 100).toLocaleString('fr-FR', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+    })
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Package className="h-4 w-4 text-primary" />
+          Options vendues (upsells)
+          {eventId ? null : (
+            <span className="text-xs font-normal text-muted-foreground ml-1">— tous événements</span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {isLoading ? (
+          <div className="flex items-center gap-2 px-6 py-4 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4 animate-spin" />
+            Chargement…
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Option</TableHead>
+                <TableHead className="text-center w-24">Qté vendue</TableHead>
+                <TableHead className="text-right w-36">CA total</TableHead>
+                <TableHead className="text-right w-36">Prix unitaire moy.</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summary.map((row) => (
+                <TableRow key={`${row.name}-${row.currency}`}>
+                  <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    <Badge variant="secondary">{row.quantity}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium text-green-600">
+                    {formatAmount(row.total_cents, row.currency)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
+                    {formatAmount(Math.round(row.total_cents / row.quantity), row.currency)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   )
 }

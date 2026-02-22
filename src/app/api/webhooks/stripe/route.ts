@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
+import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 
 export const runtime = 'nodejs'
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
         event_id,
         ticket_id,
         participant_email,
+        promo_code,
         event_title,
         ticket_name,
         race_id,
@@ -148,6 +150,21 @@ export async function POST(request: NextRequest) {
           return new Response('Email participant manquant', { status: 400 })
         }
 
+        let promotionalCodeId: string | null = null
+        if (typeof promo_code === 'string' && promo_code.trim().length > 0) {
+          const { data: promoRow, error: promoError } = await admin
+            .from('promotional_codes')
+            .select('id')
+            .ilike('code', promo_code.trim().toUpperCase())
+            .maybeSingle()
+
+          if (promoError) {
+            console.error('Error finding promotional code:', promoError)
+          } else {
+            promotionalCodeId = promoRow?.id ?? null
+          }
+        }
+
         // Create order
         const { data: order, error: orderError } = await admin
           .from('orders')
@@ -185,6 +202,7 @@ export async function POST(request: NextRequest) {
             stripe_payment_intent_id: paymentIntent.id,
             approval_status: 'pending',
             race_id: race_id || null,
+            promotional_code_id: promotionalCodeId,
           })
           .select()
           .single()
@@ -192,6 +210,29 @@ export async function POST(request: NextRequest) {
         if (registrationError) {
           console.error('Error creating registration:', registrationError)
           throw registrationError
+        }
+
+        if (promotionalCodeId) {
+          const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
+            promo_code_id: promotionalCodeId,
+          })
+
+          if (promoIncrementError) {
+            console.error('Error incrementing promotional code usage:', promoIncrementError)
+          }
+        }
+
+        const { error: ambassadorPointsError } = await admin.rpc('award_ambassador_points_for_order', {
+          p_order_id: order.id,
+        })
+        if (ambassadorPointsError) {
+          console.error('Error awarding ambassador points:', ambassadorPointsError)
+        } else {
+          try {
+            await notifyAmbassadorRewardsForOrder(admin, order.id)
+          } catch (notificationError) {
+            console.error('Error sending ambassador reward notification:', notificationError)
+          }
         }
 
         // Create upsell records

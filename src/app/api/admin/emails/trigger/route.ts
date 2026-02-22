@@ -21,6 +21,7 @@ import {
   sendVolunteerRecruitmentEmail,
   sendVolunteerAssignmentEmail,
 } from '@/lib/email'
+import { sendAmbassadorRewardEarnedEmail, sendAmbassadorRewardStatusEmail } from '@/lib/ambassadors/email'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 export const runtime = 'nodejs'
@@ -331,6 +332,27 @@ const handlePost = async (request: NextRequest) => {
           checkinUrl: `${SITE_URL}/admin/checkin?event=demo`,
         })
         return 'Brief bénévole envoyé.'
+      },
+      ambassador_reward_earned: async () => {
+        await sendAmbassadorRewardEarnedEmail({
+          to: user.email!,
+          fullName,
+          ambassadorCode: 'OB-AMBASSADOR',
+          rewards: [
+            { reward_level: 1, reward_name: 'T-shirt ambassadeur' },
+          ],
+        })
+        return 'Mock palier ambassadeur envoyé.'
+      },
+      ambassador_reward_status: async () => {
+        await sendAmbassadorRewardStatusEmail({
+          to: user.email!,
+          fullName,
+          ambassadorCode: 'OB-AMBASSADOR',
+          reward: { reward_level: 2, reward_name: 'Dossard Open offert' },
+          statusLabel: 'Réclamée',
+        })
+        return 'Mock statut récompense envoyé.'
       },
     }
 
