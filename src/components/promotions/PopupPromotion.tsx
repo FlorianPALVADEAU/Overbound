@@ -28,7 +28,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<{ resetCaptcha: () => void } | null>(null)
+  const captchaRef = useRef<HCaptcha | null>(null)
   const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
   const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 

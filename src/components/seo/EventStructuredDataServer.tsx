@@ -1,3 +1,5 @@
+import { safeJsonStringify } from '@/lib/safeJson'
+
 type TicketOffer = {
   name?: string | null
   final_price_cents?: number | null
@@ -99,7 +101,7 @@ export function EventStructuredDataServer({ event }: { event: EventStructuredDat
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }

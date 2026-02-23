@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useSession } from '@/app/api/session/sessionQueries'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 
 const supportChannels = [
   {
@@ -122,6 +123,10 @@ const ContactPage = () => {
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<HCaptcha | null>(null)
+  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
+  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -218,6 +223,11 @@ const ContactPage = () => {
       return
     }
 
+    if (shouldUseCaptcha && !captchaToken) {
+      setSubmissionError('Merci de valider le captcha avant de continuer.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const formData = new FormData()
@@ -225,6 +235,9 @@ const ContactPage = () => {
       formData.append('email', formValues.email)
       formData.append('reason', formValues.reason)
       formData.append('message', formValues.message)
+      if (shouldUseCaptcha && captchaToken) {
+        formData.append('captchaToken', captchaToken)
+      }
       if (attachmentFile) {
         formData.append('dossier', attachmentFile)
       }
@@ -263,9 +276,13 @@ const ContactPage = () => {
       setLastSubmissionDate(todayKey)
       setAttachmentFile(null)
       setAttachmentError(null)
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } catch (error) {
       console.error('[contact] failed to submit form', error)
       setSubmissionError('Impossible d’envoyer ta demande pour le moment. Réessaie dans quelques minutes.')
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } finally {
       setIsSubmitting(false)
     }
@@ -591,6 +608,17 @@ const ContactPage = () => {
                         placeholder="Donne-nous un maximum d’informations pour que l’on puisse t’aider rapidement."
                       />
                     </div>
+                    {shouldUseCaptcha ? (
+                      <div className="flex justify-center">
+                        <HCaptcha
+                          ref={captchaRef}
+                          sitekey={hcaptchaSiteKey}
+                          onVerify={(token) => setCaptchaToken(token)}
+                          onExpire={() => setCaptchaToken(null)}
+                          onError={() => setCaptchaToken(null)}
+                        />
+                      </div>
+                    ) : null}
                     <Button
                       type="submit"
                       disabled={!isFormValid || hasSubmittedToday || isSubmitting}

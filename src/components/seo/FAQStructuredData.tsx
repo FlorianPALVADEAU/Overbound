@@ -1,4 +1,5 @@
 import type { PortableTextBlock } from '@portabletext/types'
+import { safeJsonStringify } from '@/lib/safeJson'
 
 type FAQItem = {
   title: string
@@ -45,7 +46,7 @@ export function FAQPageStructuredDataServer({ faqs }: { faqs: FAQItem[] }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }

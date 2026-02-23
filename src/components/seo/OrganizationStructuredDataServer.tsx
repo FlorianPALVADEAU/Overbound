@@ -1,3 +1,5 @@
+import { safeJsonStringify } from '@/lib/safeJson'
+
 export function OrganizationStructuredDataServer() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const structuredData = {
@@ -22,7 +24,7 @@ export function OrganizationStructuredDataServer() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
