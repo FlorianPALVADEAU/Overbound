@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { getClientIp, rateLimit } from '@/lib/rateLimit'
+import { verifyHCaptcha } from '@/lib/hcaptcha'
 
 export const runtime = 'nodejs'
 
 const notifySchema = z.object({
   email: z.string().email('Email invalide').optional(),
   full_name: z.string().optional(),
+  captchaToken: z.string().optional(),
 })
 
 export async function POST(
@@ -22,6 +24,10 @@ export async function POST(
     const limiter = rateLimit(`event-notify:${ip}`, 5, 60_000)
     if (!limiter.allowed) {
       return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
+    }
+    const captchaOk = await verifyHCaptcha(parsed.captchaToken, ip)
+    if (!captchaOk) {
+      return NextResponse.json({ error: 'Captcha invalide.' }, { status: 400 })
     }
 
     const supabase = await createSupabaseServer()

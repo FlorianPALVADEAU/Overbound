@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { useQueryClient } from '@tanstack/react-query'
 import { SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -33,6 +34,10 @@ function LoginInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<MessageState | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<{ resetCaptcha: () => void } | null>(null)
+  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
+  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   useEffect(() => {
     const error = searchParams.get('error')
@@ -67,14 +72,25 @@ function LoginInner() {
       return
     }
 
+    if (shouldUseCaptcha && !captchaToken) {
+      setMessage({ type: 'error', text: 'Merci de valider le captcha avant de continuer.' })
+      return
+    }
+
     setLoading(true)
     setMessage(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: shouldUseCaptcha ? { captchaToken: captchaToken ?? undefined } : undefined,
+      })
 
       if (error) {
         setMessage({ type: 'error', text: 'Email ou mot de passe incorrect.' })
+        captchaRef.current?.resetCaptcha()
+        setCaptchaToken(null)
         return
       }
 
@@ -88,6 +104,8 @@ function LoginInner() {
     } catch (err) {
       console.error('[login] signInWithPassword failed', err)
       setMessage({ type: 'error', text: 'Impossible de vous connecter pour le moment.' })
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } finally {
       setLoading(false)
     }
@@ -234,6 +252,18 @@ function LoginInner() {
                   Mot de passe oublié ?
                 </Link>
               </div>
+
+              {shouldUseCaptcha ? (
+                <div className="flex justify-center">
+                  <HCaptcha
+                    ref={captchaRef}
+                    sitekey={hcaptchaSiteKey}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                  />
+                </div>
+              ) : null}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
