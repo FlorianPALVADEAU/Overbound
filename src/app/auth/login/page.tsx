@@ -35,7 +35,7 @@ function LoginInner() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<MessageState | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<{ resetCaptcha: () => void } | null>(null)
+  const captchaRef = useRef<HCaptcha | null>(null)
   const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
   const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
@@ -150,7 +150,7 @@ function LoginInner() {
 
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
+    <main className="flex min-h-screen items-center justify-center bg-linear-to-b from-background to-muted/20 p-6">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
@@ -314,7 +314,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
+        <main className="flex min-h-screen items-center justify-center bg-linear-to-b from-background to-muted/20 p-6">
           <div className="text-sm text-muted-foreground">Chargement de la page de connexion…</div>
         </main>
       }

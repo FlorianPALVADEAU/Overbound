@@ -33,7 +33,7 @@ function RegisterInner() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<MessageState | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<{ resetCaptcha: () => void } | null>(null)
+  const captchaRef = useRef<HCaptcha | null>(null)
   const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
   const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 

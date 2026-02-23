@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -25,6 +25,7 @@ import SubHeadings from '@/components/globals/SubHeadings'
 import { VolunteerFAQSection } from '@/components/volunteers/VolunteerFAQSection'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/app/api/session/sessionQueries'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 
 const testimonials = [
 	{
@@ -165,6 +166,10 @@ export default function VolunteersPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<HCaptcha | null>(null)
+  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
+  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   const availabilityLabels = useMemo(() => {
     const map = new Map<string, string>()
@@ -407,6 +412,11 @@ export default function VolunteersPage() {
       return
     }
 
+    if (shouldUseCaptcha && !captchaToken) {
+      setSubmitError('Merci de valider le captcha avant de continuer.')
+      return
+    }
+
     setSubmitting(true)
     setSubmitError(null)
 
@@ -427,6 +437,7 @@ export default function VolunteersPage() {
           experience: trimmedExperience || undefined,
           motivations: trimmedMotivations || undefined,
           gdprConsent: formValues.gdprConsent,
+          captchaToken: shouldUseCaptcha ? captchaToken : undefined,
         }),
       })
 
@@ -444,9 +455,13 @@ export default function VolunteersPage() {
       setFormValues({
         ...initialFormState,
       })
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } catch (error) {
       console.error('[volunteers page] application submit failed', error)
       setSubmitError("Impossible d’enregistrer ta candidature. Réessaie dans quelques minutes ou contacte-nous.")
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } finally {
       setSubmitting(false)
     }
@@ -913,6 +928,18 @@ export default function VolunteersPage() {
 											<p className='text-xs text-destructive'>{fieldErrors.gdprConsent}</p>
 										) : null}
 									</div>
+
+									{shouldUseCaptcha ? (
+										<div className='flex justify-center'>
+											<HCaptcha
+												ref={captchaRef}
+												sitekey={hcaptchaSiteKey}
+												onVerify={(token) => setCaptchaToken(token)}
+												onExpire={() => setCaptchaToken(null)}
+												onError={() => setCaptchaToken(null)}
+											/>
+										</div>
+									) : null}
 
 									<Button type='submit' className='h-12 w-full text-base font-semibold' disabled={submitting}>
 										{submitting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}

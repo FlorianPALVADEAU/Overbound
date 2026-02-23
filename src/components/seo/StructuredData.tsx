@@ -1,5 +1,7 @@
 'use client'
 
+import { safeJsonStringify } from '@/lib/safeJson'
+
 export function OrganizationStructuredData() {
   const structuredData = {
     "@context": "https://schema.org",
@@ -25,7 +27,7 @@ export function OrganizationStructuredData() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -64,7 +66,7 @@ export function EventStructuredData({ event }: { event: any }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -99,7 +101,7 @@ export function BlogPostStructuredData({ post }: { post: any }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -119,7 +121,7 @@ export function BreadcrumbStructuredData({ items }: { items: Array<{ name: strin
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -165,7 +167,7 @@ export function FAQPageStructuredData({ faqs }: { faqs: Array<{ title: string; s
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
