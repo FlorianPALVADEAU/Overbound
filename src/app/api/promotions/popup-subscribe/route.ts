@@ -3,11 +3,13 @@ import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
+import { verifyHCaptcha } from '@/lib/hcaptcha'
 
 const subscribeSchema = z.object({
   email: z.string().email('Email invalide'),
   full_name: z.string().min(1, 'Le prénom est requis'),
   promotion_id: z.string().uuid('ID de promotion invalide'),
+  captchaToken: z.string().optional(),
 })
 
 /**
@@ -23,6 +25,10 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json()
     const validatedData = subscribeSchema.parse(body)
+    const captchaOk = await verifyHCaptcha(validatedData.captchaToken, ip)
+    if (!captchaOk) {
+      return NextResponse.json({ error: 'Captcha invalide.' }, { status: 400 })
+    }
 
     const supabase = await createClient()
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePromotions } from '@/app/api/promotions/promotionsQueries'
 import { isPopupPromotion } from '@/types/Promotion'
 import type { Promotion, PopupConfig } from '@/types/Promotion'
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, CheckCircle2, X } from 'lucide-react'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 
 interface PopupPromotionProps {
   isAuthenticated: boolean
@@ -26,6 +27,10 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<{ resetCaptcha: () => void } | null>(null)
+  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
+  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   // Form state
   const [email, setEmail] = useState('')
@@ -77,6 +82,10 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
     e.preventDefault()
 
     if (!activePopup) return
+    if (shouldUseCaptcha && !captchaToken) {
+      setError('Merci de valider le captcha avant de continuer.')
+      return
+    }
 
     setIsSubmitting(true)
     setError(null)
@@ -91,6 +100,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
           email: email.trim(),
           full_name: fullName.trim(),
           promotion_id: activePopup.id,
+          captchaToken: shouldUseCaptcha ? captchaToken : undefined,
         }),
       })
 
@@ -101,6 +111,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
 
       // Success!
       setIsSuccess(true)
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
 
       // Mark as seen
       sessionStorage.setItem(`popup-seen-${activePopup.id}`, 'true')
@@ -111,6 +123,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
       }, 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue')
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } finally {
       setIsSubmitting(false)
     }
@@ -212,6 +226,18 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
                   autoComplete="email"
                 />
               </div>
+
+              {shouldUseCaptcha ? (
+                <div className="flex justify-center">
+                  <HCaptcha
+                    ref={captchaRef}
+                    sitekey={hcaptchaSiteKey}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                  />
+                </div>
+              ) : null}
 
               {error && (
                 <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">

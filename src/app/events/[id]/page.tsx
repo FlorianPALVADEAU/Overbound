@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -35,6 +35,7 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import FAQ from '@/components/homepage/FAQ'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -102,6 +103,10 @@ export default function EventDetailPage() {
   const [notifyEmail, setNotifyEmail] = useState('')
   const [notifyStatus, setNotifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<{ resetCaptcha: () => void } | null>(null)
+  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
+  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   useEffect(() => {
     if (!salesStartDate || !isAnnounced) return
@@ -236,6 +241,12 @@ export default function EventDetailPage() {
       return
     }
 
+    if (shouldUseCaptcha && !captchaToken) {
+      setNotifyStatus('error')
+      setNotifyMessage('Merci de valider le captcha avant de continuer.')
+      return
+    }
+
     setNotifyStatus('loading')
     setNotifyMessage(null)
 
@@ -246,6 +257,7 @@ export default function EventDetailPage() {
         body: JSON.stringify({
           email: notifyEmail,
           full_name: session?.profile?.full_name ?? null,
+          captchaToken: shouldUseCaptcha ? captchaToken : undefined,
         }),
       })
 
@@ -256,9 +268,13 @@ export default function EventDetailPage() {
 
       setNotifyStatus('success')
       setNotifyMessage('Parfait, on te prévient dès l’ouverture.')
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     } catch (error) {
       setNotifyStatus('error')
       setNotifyMessage(error instanceof Error ? error.message : 'Erreur lors de la demande')
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     }
   }
 
@@ -325,6 +341,17 @@ export default function EventDetailPage() {
               className="h-12 rounded-2xl border-white/40 bg-white/90 text-foreground placeholder:text-black/60"
               required
             />
+            {shouldUseCaptcha ? (
+              <div className="flex justify-center">
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={hcaptchaSiteKey}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken(null)}
+                  onError={() => setCaptchaToken(null)}
+                />
+              </div>
+            ) : null}
             <Button
               className="w-full rounded-2xl bg-background py-6 text-lg font-semibold text-foreground shadow-lg hover:bg-background/80"
               size="lg"
