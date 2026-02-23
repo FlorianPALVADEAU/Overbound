@@ -337,13 +337,15 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>
-                <Button
-                  size="sm"
-                  className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
-                  asChild
-                >
-                  <Link href="/auth/register">S'inscrire</Link>
-                </Button>
+                  {!user && (
+                    <Button
+                      size="sm"
+                      className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
+                      asChild
+                    >
+                      <Link href="/auth/register">S'inscrire</Link>
+                    </Button>
+                  )}
               </div>
             )}
 

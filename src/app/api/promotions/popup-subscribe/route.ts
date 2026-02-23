@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
@@ -15,6 +16,11 @@ const subscribeSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const limiter = rateLimit(`popup-subscribe:${ip}`, 5, 60_000)
+    if (!limiter.allowed) {
+      return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
+    }
     const body = await request.json()
     const validatedData = subscribeSchema.parse(body)
 

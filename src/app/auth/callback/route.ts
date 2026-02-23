@@ -1,50 +1,68 @@
-// Fichier : src/app/auth/callback/route.ts
+import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
 
-import { createSupabaseServer } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+const getSafeNextPath = (next: string | null): string => {
+  if (!next) {
+    return '/account'
+  }
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/account'
-  const error = searchParams.get('error')
-  const error_description = searchParams.get('error_description')
+  try {
+    const decoded = decodeURIComponent(next)
+    return decoded.startsWith('/') ? decoded : '/account'
+  } catch {
+    return next.startsWith('/') ? next : '/account'
+  }
+}
 
-  console.log('Auth callback called with:', { code: !!code, next, error })
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url)
+  const origin = requestUrl.origin
+  const code = requestUrl.searchParams.get('code')
+  const error = requestUrl.searchParams.get('error')
+  const errorDescription = requestUrl.searchParams.get('error_description')
+  const nextPath = getSafeNextPath(requestUrl.searchParams.get('next'))
+
+  const loginUrl = new URL('/auth/login', origin)
 
   if (error) {
-    console.error('Auth error:', error, error_description)
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error_description || error)}`)
+    loginUrl.searchParams.set('error', errorDescription || error)
+    return NextResponse.redirect(loginUrl)
   }
 
-  if (code) {
-    const supabase = await createSupabaseServer()
-    
-    try {
-      console.log('Exchanging code for session...')
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-      
-      if (exchangeError) {
-        console.error('Code exchange error:', exchangeError)
-        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(exchangeError.message)}`)
-      }
-
-      console.log('Code exchange successful, user:', data.user?.email)
-      
-      // Rediriger vers la page demandée ou vers le compte
-      const redirectUrl = `${origin}${next}`
-      console.log('Redirecting to:', redirectUrl)
-      return NextResponse.redirect(redirectUrl)
-      
-    } catch (error) {
-      console.error('Unexpected error during auth callback:', error)
-      return NextResponse.redirect(`${origin}/login?error=Une erreur inattendue s'est produite`)
-    }
+  if (!code) {
+    loginUrl.searchParams.set('error', "Code d'authentification manquant")
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Si pas de code, rediriger vers login
-  console.log('No code found, redirecting to login')
-  return NextResponse.redirect(`${origin}/login?error=Code d'authentification manquant`)
+  const redirectUrl = new URL(nextPath, origin)
+  const response = NextResponse.redirect(redirectUrl)
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    },
+  )
+
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (exchangeError) {
+    loginUrl.searchParams.set('error', exchangeError.message)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return response
 }
 
 export const dynamic = 'force-dynamic'

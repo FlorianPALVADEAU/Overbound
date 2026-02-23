@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { notifyEventOpening } from '@/lib/email/eventOpenings'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '')
+  if (!secret || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  }
   const admin = supabaseAdmin()
   const now = new Date()
 

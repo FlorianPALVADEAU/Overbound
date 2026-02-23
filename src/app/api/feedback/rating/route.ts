@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { captureException } from '@/lib/sentry'
+import { getClientIp, rateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -12,6 +13,11 @@ interface RatingPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const limiter = rateLimit(`feedback:${ip}`, 10, 60_000)
+    if (!limiter.allowed) {
+      return NextResponse.json({ error: 'Trop de requêtes.' }, { status: 429 })
+    }
     const supabase = await createSupabaseServer()
 
     // Parse the request body
