@@ -45,4 +45,6 @@ export const useSession = () =>
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    refetchInterval: (query) => (query.state.data?.user ? false : 2000),
+    refetchIntervalInBackground: true,
   })
