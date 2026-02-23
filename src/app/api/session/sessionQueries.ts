@@ -42,5 +42,7 @@ export const useSession = () =>
   useQuery<SessionResponse, Error>({
     queryKey: SESSION_QUERY_KEY,
     queryFn: fetchSession,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
