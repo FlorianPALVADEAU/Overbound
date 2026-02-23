@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import PricingExplainer from './PricingExplainer';
+import { PricingExplainer } from './PricingExplainer';
 
 describe('PricingExplainer', () => {
   it('should render without crashing', () => {
