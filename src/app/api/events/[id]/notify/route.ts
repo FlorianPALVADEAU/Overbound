@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { getClientIp, rateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -17,6 +18,11 @@ export async function POST(
     const { id } = await params
     const body = await request.json().catch(() => ({}))
     const parsed = notifySchema.parse(body)
+    const ip = getClientIp(request)
+    const limiter = rateLimit(`event-notify:${ip}`, 5, 60_000)
+    if (!limiter.allowed) {
+      return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
+    }
 
     const supabase = await createSupabaseServer()
     const {

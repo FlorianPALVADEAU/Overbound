@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { notifyDocumentUploadReminder } from '@/lib/email/documents'
 
@@ -7,7 +7,11 @@ export const runtime = 'nodejs'
 const REMINDER_DAYS = [90, 60, 30, 7]
 const DAY_MS = 24 * 60 * 60 * 1000
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '')
+  if (!secret || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  }
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ ok: false, reason: 'resend_disabled' })
   }

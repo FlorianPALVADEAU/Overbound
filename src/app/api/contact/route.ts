@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { NextRequest, NextResponse } from 'next/server'
+import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendSupportContactEmail, sendSupportContactConfirmationEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
@@ -17,6 +18,11 @@ const parseString = (value: unknown) => (typeof value === 'string' ? value.trim(
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const limiter = rateLimit(`contact:${ip}`, 5, 60_000)
+    if (!limiter.allowed) {
+      return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
+    }
     const supabase = await createSupabaseServer()
     const {
       data: { user },

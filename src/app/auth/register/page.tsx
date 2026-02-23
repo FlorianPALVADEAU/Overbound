@@ -103,11 +103,21 @@ function RegisterInner() {
     setMessage(null)
 
     try {
+      const base = typeof window !== 'undefined'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL
+
+      if (!base) {
+        setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+        setLoading(false)
+        return
+      }
+
       const target = resolveNextPath()
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`,
+          redirectTo: `${base.replace(/\/$/, '')}/auth/callback?next=${encodeURIComponent(target)}`,
         },
       })
 

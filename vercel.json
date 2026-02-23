@@ -2,11 +2,24 @@
   "crons": [
     {
       "path": "/api/cron/document-reminders",
-      "schedule": "0 9 * * *"
+      "schedule": "0 9 * * *",
+      "headers": {
+        "Authorization": "Bearer $CRON_SECRET"
+      }
     },
     {
       "path": "/api/cron/event-status",
-      "schedule": "0 6 * * *"
+      "schedule": "0 6 * * *",
+      "headers": {
+        "Authorization": "Bearer $CRON_SECRET"
+      }
+    },
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 * * * *",
+      "headers": {
+        "Authorization": "Bearer $CRON_SECRET"
+      }
     }
   ]
 }

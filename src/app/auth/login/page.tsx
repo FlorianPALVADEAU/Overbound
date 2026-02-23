@@ -98,10 +98,9 @@ function LoginInner() {
     setMessage(null)
   
     try {
+      const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : undefined
       const siteUrlFromEnv = process.env.NEXT_PUBLIC_SITE_URL
-      const originFallback = typeof window !== 'undefined' ? window.location.origin : undefined
-  
-      const base = siteUrlFromEnv ?? originFallback
+      const base = runtimeOrigin ?? siteUrlFromEnv
       if (!base) {
         console.error('[auth] No base URL available for redirect. NEXT_PUBLIC_SITE_URL is not set and window is undefined.')
         setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
