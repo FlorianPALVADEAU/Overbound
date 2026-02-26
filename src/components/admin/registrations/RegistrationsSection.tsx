@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Clock, Filter, Package, RotateCcw, Trash2 } from 'lucide-react'
+import { Clock, Download, Filter, Package, RotateCcw, Trash2 } from 'lucide-react'
 import type { UpsellSummaryRow } from '@/app/api/admin/registrations/upsells-summary/route'
 import { RegistrationStats } from './RegistrationStats'
 import { RegistrationDocumentDialog } from './RegistrationDocumentDialog'
@@ -151,6 +151,18 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     }),
     [effectiveEventFilter, statusFilter, searchTerm]
   )
+
+  const exportUrl = useMemo(() => {
+    const search = new URLSearchParams()
+    if (params.eventId) search.set('event_id', params.eventId)
+    if (params.approvalFilter && params.approvalFilter !== 'all') {
+      search.set('approval_filter', params.approvalFilter)
+    }
+    if (params.searchTerm) search.set('search_term', params.searchTerm)
+    search.set('format', 'csv')
+    search.set('limit', '10000')
+    return `/api/admin/registrations?${search.toString()}`
+  }, [params])
 
   const {
     data,
@@ -391,10 +403,18 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                   : 'Aucun filtre actif'}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Réinitialiser
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <a href={exportUrl} target="_blank" rel="noopener noreferrer">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={resetFilters}>
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Réinitialiser
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

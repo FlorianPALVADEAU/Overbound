@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   CalendarIcon,
+  Clock as ClockIcon,
   DownloadIcon,
   MapPinIcon,
   QrCodeIcon,
@@ -37,6 +38,14 @@ export interface AccountRegistrationItem {
   qr_code_data_url: string | null
   transfer_token: string | null
   created_at: string
+  start_time?: string | null
+  wave_index?: number | null
+  wave_capacity?: number | null
+  wave_position?: number | null
+  auto_assigned?: boolean | null
+  distance_ideal_km?: number | null
+  distance_min_km?: number | null
+  assignment_constraint_breached?: boolean | null
   ticket_id: string | null
   ticket_name: string | null
   difficulty_level: 'low' | 'mid' | 'hard' | null
@@ -118,6 +127,12 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
           : null
         const formattedOrderDate = registration.order_created_at
           ? new Date(registration.order_created_at).toLocaleDateString('fr-FR')
+          : null
+        const formattedStartTime = registration.start_time
+          ? new Date(registration.start_time).toLocaleTimeString('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
           : null
 
         const amountLabel =
@@ -241,12 +256,24 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                 </div>
 
                 <div className="mb-4 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                  {formattedEventDate ? (
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{formattedEventDate}</span>
-                    </div>
-                  ) : null}
+                {formattedEventDate ? (
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>{formattedEventDate}</span>
+                  </div>
+                ) : null}
+                {formattedStartTime ? (
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>Départ prévu : {formattedStartTime}</span>
+                  </div>
+                ) : null}
+                {registration.assignment_constraint_breached ? (
+                  <div className="flex items-center gap-2 text-amber-700">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Créneau attribué hors préférence.</span>
+                  </div>
+                ) : null}
                   {registration.event_location ? (
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4 text-muted-foreground" />
@@ -383,6 +410,9 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                             </div>
                             {formattedEventDate ? (
                               <p className="text-xs text-muted-foreground">{formattedEventDate}</p>
+                            ) : null}
+                            {formattedStartTime ? (
+                              <p className="text-xs text-muted-foreground">Départ prévu : {formattedStartTime}</p>
                             ) : null}
                           </div>
                           <Button variant="outline" className="w-full" onClick={() => setActiveDialog(null)}>

@@ -65,6 +65,18 @@ export interface AdminEventPayload {
   external_url?: string | null
 }
 
+export interface AdminEventWave {
+  wave_index: number
+  start_time: string
+  capacity: number
+  assigned_count: number
+  is_closed: boolean
+}
+
+interface AdminEventWavesResponse {
+  waves: AdminEventWave[]
+}
+
 interface EventsResponse {
   events: AdminEventSummary[]
 }
@@ -76,6 +88,7 @@ interface EventResponse {
 const ADMIN_EVENTS_QUERY_KEY = ['admin', 'events'] as const
 const ADMIN_EVENT_DETAIL_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId] as const
 const ADMIN_EVENT_VOLUNTEERS_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'volunteers'] as const
+const ADMIN_EVENT_WAVES_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'waves'] as const
 
 const fetchAdminEvents = async (): Promise<AdminEventSummary[]> => {
   const response = await axiosClient.get<EventsResponse>('/admin/events')
@@ -143,6 +156,28 @@ export const useAdminEventVolunteers = (eventId?: string | null) =>
     queryFn: () => fetchAdminEventVolunteers(eventId as string),
     enabled: Boolean(eventId),
   })
+
+const fetchAdminEventWaves = async (eventId: string): Promise<AdminEventWave[]> => {
+  const response = await axiosClient.get<AdminEventWavesResponse>(`/admin/events/${eventId}/waves`)
+  if (response.status !== 200) {
+    throw new Error('Erreur lors du chargement des SAS')
+  }
+  return response.data.waves ?? []
+}
+
+export const useAdminEventWaves = (eventId?: string | null) =>
+  useQuery<AdminEventWave[], Error>({
+    queryKey: eventId ? ADMIN_EVENT_WAVES_QUERY_KEY(eventId) : ['admin', 'events', 'waves'],
+    queryFn: () => fetchAdminEventWaves(eventId as string),
+    enabled: Boolean(eventId),
+  })
+
+export const updateAdminEventWave = async (
+  eventId: string,
+  payload: { wave_index?: number; capacity?: number; is_closed?: boolean; capacity_all?: number }
+): Promise<void> => {
+  await axiosClient.patch(`/admin/events/${eventId}/waves`, payload)
+}
 
 export const deleteAdminEventVolunteer = async (id: string): Promise<void> => {
   const response = await axiosClient.delete(`/admin/volunteer-applications/${id}`)

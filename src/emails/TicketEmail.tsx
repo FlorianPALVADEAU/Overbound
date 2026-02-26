@@ -9,6 +9,7 @@ export default function TicketEmail({
   eventDate,
   eventLocation,
   ticketName,
+  startTime,
   qrUrl,
   manageUrl,
 }: {
@@ -17,6 +18,7 @@ export default function TicketEmail({
   eventDate: string
   eventLocation: string
   ticketName: string
+  startTime?: string | null
   qrUrl: string
   manageUrl: string
 }) {
@@ -94,9 +96,20 @@ export default function TicketEmail({
                 <td style={styles.cardLabel}>🎯 Format</td>
                 <td style={styles.cardValue}>{ticketName}</td>
               </tr>
+              {startTime ? (
+                <tr>
+                  <td style={styles.cardLabel}>⏱ Départ</td>
+                  <td style={styles.cardValue}>{startTime}</td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </Section>
+        {startTime ? (
+          <Text style={styles.paragraph}>
+            Merci de te présenter au minimum 1h avant ton départ.
+          </Text>
+        ) : null}
       </Section>
     </EmailLayout>
   )

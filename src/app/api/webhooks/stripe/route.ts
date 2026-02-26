@@ -7,6 +7,7 @@ import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
+import { assignOpenWaveToRegistration, formatWaveStartTime } from '@/lib/openSas'
 
 export const runtime = 'nodejs'
 
@@ -75,7 +76,10 @@ export async function POST(request: NextRequest) {
         event_title,
         ticket_name,
         race_id,
-        upsells: upsellsJson
+        upsells: upsellsJson,
+        distance_ideal_km,
+        distance_min_km,
+        participants: participantsJson,
       } = metadata
 
       if ((!ticket_id || ticket_id.trim() === '') && metadata.ticket_selections) {
@@ -107,6 +111,29 @@ export async function POST(request: NextRequest) {
           upsells = upsellsJson ? JSON.parse(upsellsJson) : []
         } catch (e) {
           console.warn('Could not parse upsells JSON:', upsellsJson)
+        }
+
+        let participantDistances: { distanceIdealKm?: number; distanceMinKm?: number } = {}
+        if ((!distance_ideal_km || !distance_min_km) && participantsJson) {
+          try {
+            const parsed = JSON.parse(participantsJson)
+            if (Array.isArray(parsed) && parsed[0]) {
+              const first = parsed[0]
+              const ideal = Number(first.distanceIdealKm)
+              const min = Number(first.distanceMinKm)
+              participantDistances = {
+                distanceIdealKm: Number.isFinite(ideal) ? ideal : undefined,
+                distanceMinKm: Number.isFinite(min) ? min : undefined,
+              }
+            }
+          } catch (e) {
+            console.warn('Could not parse participants JSON:', participantsJson)
+          }
+        }
+
+        const parseDistance = (value: unknown) => {
+          const parsed = Number(value)
+          return Number.isFinite(parsed) ? parsed : null
         }
 
         // Generate unique tokens
@@ -213,6 +240,8 @@ export async function POST(request: NextRequest) {
             approval_status: 'pending',
             race_id: race_id || null,
             promotional_code_id: promotionalCodeId,
+            distance_ideal_km: parseDistance(distance_ideal_km) ?? participantDistances.distanceIdealKm ?? null,
+            distance_min_km: parseDistance(distance_min_km) ?? participantDistances.distanceMinKm ?? null,
           })
           .select()
           .single()
@@ -220,6 +249,36 @@ export async function POST(request: NextRequest) {
         if (registrationError) {
           console.error('Error creating registration:', registrationError)
           throw registrationError
+        }
+
+        if (event?.date) {
+          try {
+          const assignment = await assignOpenWaveToRegistration({
+            admin,
+            eventId: event_id,
+            registrationId: registration.id,
+            eventDateIso: event.date,
+            ticketName: ticket.name,
+            raceName: ticket.race?.name ?? null,
+            distanceIdealKm: distance_ideal_km ?? participantDistances.distanceIdealKm ?? null,
+            distanceMinKm: distance_min_km ?? participantDistances.distanceMinKm ?? null,
+          })
+
+          if (assignment) {
+            registration.start_time = assignment.startTime
+            registration.wave_index = assignment.waveIndex
+            registration.wave_capacity = assignment.waveCapacity
+            registration.wave_position = assignment.wavePosition
+            registration.auto_assigned = true
+            registration.preferred_window_start = assignment.preferredWindowStart
+            registration.preferred_window_end = assignment.preferredWindowEnd
+            registration.latest_allowed_time = assignment.latestAllowedTime
+            registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+          }
+          } catch (assignmentError) {
+            console.error('Erreur attribution SAS OPEN:', assignmentError)
+            throw assignmentError
+          }
         }
 
         if (promotionalCodeId) {
@@ -337,6 +396,7 @@ export async function POST(request: NextRequest) {
             eventDate: eventDateLabel,
             eventLocation: event.location,
             ticketName: ticket_name || ticket.name,
+            startTime: formatWaveStartTime(registration.start_time),
             qrUrl, // Public URL from Supabase Storage
             manageUrl: `${siteUrl}/account/ticket/${registration.id}`
           })

@@ -100,6 +100,21 @@ export function RegistrationCard({ registration, loadingId, onViewDocument, onOp
                   {new Date(registration.created_at).toLocaleDateString('fr-FR')}
                 </span>
               </div>
+              {registration.start_time ? (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span>Départ {new Date(registration.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  {registration.assignment_constraint_breached ? (
+                    <Badge variant="destructive" className="text-xs">Hors préférence</Badge>
+                  ) : null}
+                </div>
+              ) : null}
+              {typeof registration.distance_min_km === 'number' && typeof registration.distance_ideal_km === 'number' ? (
+                <div className="flex items-center gap-2">
+                  <Ticket className="h-4 w-4 text-muted-foreground" />
+                  <span>DM {registration.distance_min_km} km / DI {registration.distance_ideal_km} km</span>
+                </div>
+              ) : null}
             </div>
 
             {registration.rejection_reason && (
