@@ -72,6 +72,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
         const errorBody = await response.json().catch(() => ({}))
         throw new Error(errorBody.error || 'Erreur lors de la finalisation de l\'inscription')
       }
+      const payload = await response.json().catch(() => ({}))
 
       setMessage({
         type: 'success',
@@ -80,7 +81,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
 
       setTimeout(() => {
         clearRegistrationDraft()
-        router.replace(`/events/${event.slug}/success?payment_intent=${paymentIntent.id}`)
+        router.replace('/account/tickets')
       }, 1200)
     } catch (err) {
       console.error('Erreur finalisation inscription:', err)

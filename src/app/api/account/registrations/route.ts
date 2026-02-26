@@ -46,6 +46,14 @@ export async function GET() {
       transfer_token: string | null
       approval_status: 'pending' | 'approved' | 'rejected' | null
       document_url: string | null
+      start_time: string | null
+      wave_index: number | null
+      wave_capacity: number | null
+      wave_position: number | null
+      auto_assigned: boolean | null
+      distance_ideal_km: number | null
+      distance_min_km: number | null
+      assignment_constraint_breached: boolean | null
       ticket: { requires_document: boolean | null; document_types?: string[] | null } | null
     }
 
@@ -55,6 +63,14 @@ export async function GET() {
         transfer_token: string | null
         approval_status: 'pending' | 'approved' | 'rejected'
         document_url: string | null
+        start_time: string | null
+        wave_index: number | null
+        wave_capacity: number | null
+        wave_position: number | null
+        auto_assigned: boolean | null
+        distance_ideal_km: number | null
+        distance_min_km: number | null
+        assignment_constraint_breached: boolean | null
         requires_document: boolean
         document_types: string[]
       }
@@ -69,6 +85,14 @@ export async function GET() {
           transfer_token,
           approval_status,
           document_url,
+          start_time,
+          wave_index,
+          wave_capacity,
+          wave_position,
+          auto_assigned,
+          distance_ideal_km,
+          distance_min_km,
+          assignment_constraint_breached,
           ticket:tickets(requires_document, document_types)
         `,
         )
@@ -83,6 +107,16 @@ export async function GET() {
             transfer_token: row.transfer_token ?? null,
             approval_status: (row.approval_status ?? 'pending') as 'pending' | 'approved' | 'rejected',
             document_url: row.document_url ?? null,
+            start_time: row.start_time ?? null,
+            wave_index: typeof row.wave_index === 'number' ? row.wave_index : null,
+            wave_capacity: typeof row.wave_capacity === 'number' ? row.wave_capacity : null,
+            wave_position: typeof row.wave_position === 'number' ? row.wave_position : null,
+            auto_assigned: typeof row.auto_assigned === 'boolean' ? row.auto_assigned : null,
+            distance_ideal_km: typeof row.distance_ideal_km === 'number' ? row.distance_ideal_km : null,
+            distance_min_km: typeof row.distance_min_km === 'number' ? row.distance_min_km : null,
+            assignment_constraint_breached: typeof row.assignment_constraint_breached === 'boolean'
+              ? row.assignment_constraint_breached
+              : null,
             requires_document: requiresDocument,
             document_types: Array.isArray(row.ticket?.document_types) ? row.ticket.document_types : [],
           })
@@ -119,6 +153,14 @@ export async function GET() {
           transfer_token: null,
           approval_status: 'pending' as const,
           document_url: null,
+          start_time: null,
+          wave_index: null,
+          wave_capacity: null,
+          wave_position: null,
+          auto_assigned: null,
+          distance_ideal_km: null,
+          distance_min_km: null,
+          assignment_constraint_breached: null,
           requires_document: false,
           document_types: [],
         }
@@ -147,6 +189,14 @@ export async function GET() {
           transfer_token: meta.transfer_token,
           approval_status: meta.approval_status,
           document_url: meta.document_url,
+          start_time: meta.start_time,
+          wave_index: meta.wave_index,
+          wave_capacity: meta.wave_capacity,
+          wave_position: meta.wave_position,
+          auto_assigned: meta.auto_assigned,
+          distance_ideal_km: meta.distance_ideal_km,
+          distance_min_km: meta.distance_min_km,
+          assignment_constraint_breached: meta.assignment_constraint_breached,
           requires_document: meta.requires_document,
           required_document_types: meta.document_types,
           uploaded_document_types: Array.from(uploadedTypes ?? []),

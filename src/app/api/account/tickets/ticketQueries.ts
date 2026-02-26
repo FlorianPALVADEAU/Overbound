@@ -4,6 +4,13 @@ export interface TicketDetailResponse {
   registration: {
     id: string
     qr_code_token: string | null
+    start_time?: string | null
+    wave_index?: number | null
+    wave_position?: number | null
+    wave_capacity?: number | null
+    distance_ideal_km?: number | null
+    distance_min_km?: number | null
+    assignment_constraint_breached?: boolean | null
     tickets: Array<{
       name: string | null
       events: Array<{

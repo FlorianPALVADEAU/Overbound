@@ -52,6 +52,19 @@ export default function ConfirmationStep({
             <p>
               Je comprends que ma sécurité dépend de ma vigilance et m&apos;engage à signaler tout problème de santé susceptible d&apos;altérer ma participation.
             </p>
+            <p className="text-muted-foreground">
+              Règlements sportifs :
+              {' '}
+              <a className="underline" href="/documents/OVERBOUND_rulebook_OPEN-2026.pdf" target="_blank" rel="noreferrer">
+                OPEN 2026
+              </a>
+              {' '}
+              •
+              {' '}
+              <a className="underline" href="/documents/OVERBOUND_rulebook_RANKED-2026.pdf" target="_blank" rel="noreferrer">
+                RANKED 2026
+              </a>
+            </p>
           </div>
 
           <div className="space-y-3">

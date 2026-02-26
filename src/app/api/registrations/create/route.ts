@@ -6,8 +6,10 @@ import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import * as QRCode from 'qrcode'
-import { REGULATION_VERSION } from '@/constants/registration'
+import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { captureException } from '@/lib/sentry'
+import { assignOpenWaveToRegistration, formatWaveStartTime } from '@/lib/openSas'
+import { sendAdminPushNotification } from '@/lib/push'
 
 export const runtime = 'nodejs'
 
@@ -52,6 +54,8 @@ export async function POST(request: NextRequest) {
         emergencyContactPhone?: string
         medicalInfo?: string
         licenseNumber?: string
+        distanceIdealKm?: string | number
+        distanceMinKm?: string | number
         difficultyLevel?: 'low' | 'mid' | 'hard' | null
       }>
       upsells: Array<{ upsellId: string; quantity: number; meta?: Record<string, any> }>
@@ -247,6 +251,28 @@ export async function POST(request: NextRequest) {
     const createdRegistrations: any[] = []
 
     for (const [index, participant] of participants.entries()) {
+      const distanceIdealRaw = String(participant.distanceIdealKm ?? '').trim()
+      const distanceMinRaw = String(participant.distanceMinKm ?? '').trim()
+      const distanceIdeal = Number(distanceIdealRaw)
+      const distanceMin = Number(distanceMinRaw)
+
+      if (!distanceIdealRaw || !distanceMinRaw || !Number.isFinite(distanceIdeal) || !Number.isFinite(distanceMin)) {
+        return NextResponse.json({ error: 'Distances participant invalides.' }, { status: 422 })
+      }
+
+      if (distanceIdeal < distanceMin) {
+        return NextResponse.json({ error: 'Distance idéale inférieure à la distance minimale.' }, { status: 422 })
+      }
+
+      if (
+        distanceIdeal < DISTANCE_MIN_KM ||
+        distanceIdeal > DISTANCE_MAX_KM ||
+        distanceMin < DISTANCE_MIN_KM ||
+        distanceMin > DISTANCE_MAX_KM
+      ) {
+        return NextResponse.json({ error: 'Distances participant hors limite.' }, { status: 422 })
+      }
+
       const ticket = ticketMap.get(participant.ticketId)
       if (!ticket) {
         continue
@@ -275,6 +301,8 @@ export async function POST(request: NextRequest) {
           race_id: ticket.race?.id || null,
           promotional_code_id: promotionalCodeId,
           difficulty_level: participant.difficultyLevel || null,
+          distance_ideal_km: distanceIdeal,
+          distance_min_km: distanceMin,
         })
         .select()
         .single()
@@ -286,6 +314,34 @@ export async function POST(request: NextRequest) {
 
       const derivedName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim()
       const participantName = derivedName || participant.email || registration.email || null
+
+      try {
+        const assignment = await assignOpenWaveToRegistration({
+          admin,
+          eventId,
+          registrationId: registration.id,
+          eventDateIso: eventRow.date,
+          ticketName: ticket.name,
+          raceName: ticket.race?.name ?? null,
+          distanceIdealKm: distanceIdeal,
+          distanceMinKm: distanceMin,
+        })
+
+        if (assignment) {
+          registration.start_time = assignment.startTime
+          registration.wave_index = assignment.waveIndex
+          registration.wave_capacity = assignment.waveCapacity
+          registration.wave_position = assignment.wavePosition
+          registration.auto_assigned = true
+          registration.preferred_window_start = assignment.preferredWindowStart
+          registration.preferred_window_end = assignment.preferredWindowEnd
+          registration.latest_allowed_time = assignment.latestAllowedTime
+          registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+        }
+      } catch (assignmentError) {
+        console.error('Erreur attribution SAS OPEN:', assignmentError)
+        throw assignmentError
+      }
 
       createdRegistrations.push({ registration, ticket, participant, participantName })
 
@@ -316,15 +372,17 @@ export async function POST(request: NextRequest) {
           signature_data: JSON.stringify({
             imageDataUrl: signatureImage,
             participant: {
-              firstName: participant.firstName,
-              lastName: participant.lastName,
-              email: participant.email,
-              birthDate: participant.birthDate,
-              emergencyContactName: participant.emergencyContactName,
-              emergencyContactPhone: participant.emergencyContactPhone,
-              medicalInfo: participant.medicalInfo,
-              licenseNumber: participant.licenseNumber,
-            },
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        email: participant.email,
+        birthDate: participant.birthDate,
+        emergencyContactName: participant.emergencyContactName,
+        emergencyContactPhone: participant.emergencyContactPhone,
+        medicalInfo: participant.medicalInfo,
+        licenseNumber: participant.licenseNumber,
+        distanceIdealKm: participant.distanceIdealKm,
+        distanceMinKm: participant.distanceMinKm,
+      },
             disclaimer,
           }),
         }
@@ -391,6 +449,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    try {
+      const firstRegistration = createdRegistrations[0]
+      const participantLabel = firstRegistration?.participantName
+        || firstRegistration?.registration?.email
+        || user.email
+        || null
+      const currency = (paymentIntent.currency || 'eur').toUpperCase()
+      const amountValue = typeof paymentIntent.amount === 'number' ? paymentIntent.amount / 100 : null
+      const amountLabel = amountValue !== null
+        ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amountValue)
+        : null
+      const details = [
+        participantLabel,
+        eventRow.title,
+        amountLabel,
+      ].filter(Boolean).join(' • ')
+
+      await sendAdminPushNotification({
+        title: 'Nouvelle inscription payée',
+        body: details,
+        url: `${siteUrl}/dashboard?tab=members&event=${eventRow.id}`,
+      })
+    } catch (pushError) {
+      console.error('[push] notification error', pushError)
+    }
+
     for (const { registration, ticket, participantName } of createdRegistrations) {
       try {
         const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
@@ -403,6 +487,7 @@ export async function POST(request: NextRequest) {
           eventDate: eventDateLabel,
           eventLocation: eventRow.location,
           ticketName: ticket.name,
+          startTime: formatWaveStartTime(registration.start_time),
           qrUrl: `data:image/png;base64,${qrCodeBase64}`,
           manageUrl: `${siteUrl}/account/ticket/${registration.id}`,
         })
@@ -506,6 +591,7 @@ export async function POST(request: NextRequest) {
         currency: order.currency,
         payment_status: order.payment_status,
       },
+      registrations: createdRegistrations.map(({ registration }) => registration.id),
     })
 
   } catch (error: any) {

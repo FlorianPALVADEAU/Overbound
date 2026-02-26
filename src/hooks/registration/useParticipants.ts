@@ -28,6 +28,8 @@ export function useParticipants(
             emergencyContactPhone: '',
             medicalInfo: '',
             licenseNumber: '',
+            distanceIdealKm: '',
+            distanceMinKm: '',
             difficultyLevel: null as Participant['difficultyLevel'],
           }))
         next = [...next, ...newParticipants]

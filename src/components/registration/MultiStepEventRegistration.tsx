@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
-import { REGULATION_VERSION } from '@/constants/registration'
+import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
 
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
@@ -128,6 +128,18 @@ export default function MultiStepEventRegistration({
       const ticket = ticketMap[participant.ticketId]
       const isUniversalRace = ticket?.race?.is_universal ?? true
       const hasDifficultyIfNeeded = isUniversalRace || participant.difficultyLevel
+      const distanceMin = Number(participant.distanceMinKm)
+      const distanceIdeal = Number(participant.distanceIdealKm)
+      const hasDistances =
+        participant.distanceMinKm.trim() &&
+        participant.distanceIdealKm.trim() &&
+        Number.isFinite(distanceMin) &&
+        Number.isFinite(distanceIdeal) &&
+        distanceMin >= DISTANCE_MIN_KM &&
+        distanceMin <= DISTANCE_MAX_KM &&
+        distanceIdeal >= DISTANCE_MIN_KM &&
+        distanceIdeal <= DISTANCE_MAX_KM &&
+        distanceIdeal >= distanceMin
 
       return (
         participant.firstName.trim() &&
@@ -136,7 +148,8 @@ export default function MultiStepEventRegistration({
         participant.birthDate.trim() &&
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
-        hasDifficultyIfNeeded
+        hasDifficultyIfNeeded &&
+        hasDistances
       )
     })
 
@@ -279,6 +292,8 @@ export default function MultiStepEventRegistration({
         emergencyContactPhone: p.emergencyContactPhone,
         medicalInfo: p.medicalInfo,
         licenseNumber: p.licenseNumber,
+        distanceIdealKm: p.distanceIdealKm,
+        distanceMinKm: p.distanceMinKm,
         difficultyLevel: p.difficultyLevel || null,
       })),
       upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({

@@ -21,7 +21,7 @@ export async function GET(
 
     const { data: registration, error } = await supabase
       .from('registrations')
-      .select('id, qr_code_token, tickets(name, events(title, date, location))')
+      .select('id, qr_code_token, start_time, wave_index, wave_position, wave_capacity, distance_ideal_km, distance_min_km, assignment_constraint_breached, tickets(name, events(title, date, location))')
       .eq('id', id)
       .eq('user_id', user.id)
       .single()

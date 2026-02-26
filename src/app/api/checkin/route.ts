@@ -48,6 +48,8 @@ export async function POST(req: Request) {
         id,
         email,
         checked_in,
+        start_time,
+        wave_index,
         tickets (
           name,
           events (
@@ -101,6 +103,8 @@ export async function POST(req: Request) {
         id,
         email,
         checked_in,
+        start_time,
+        wave_index,
         tickets (
           name,
           events (
@@ -155,7 +159,9 @@ export async function POST(req: Request) {
         email: updatedRegistration.email,
         ticket_name: updatedRegistration.tickets?.[0]?.name,
         event_title: updatedRegistration.tickets?.[0]?.events?.[0]?.title,
-        checked_in: updatedRegistration.checked_in
+        checked_in: updatedRegistration.checked_in,
+        start_time: updatedRegistration.start_time ?? null,
+        wave_index: updatedRegistration.wave_index ?? null,
       }
     })
 
@@ -208,6 +214,8 @@ export async function GET(req: Request) {
         checked_in,
         qr_code_token,
         created_at,
+        start_time,
+        wave_index,
         tickets (
           name,
           events (

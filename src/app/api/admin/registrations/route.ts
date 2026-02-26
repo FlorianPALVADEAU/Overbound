@@ -7,7 +7,9 @@ export async function GET(request: Request) {
     const eventId = searchParams.get('event_id')
     const approvalFilter = searchParams.get('approval_filter')
     const searchTerm = searchParams.get('search_term')
-    const limitCount = parseInt(searchParams.get('limit') || '50')
+    const limitParam = searchParams.get('limit')
+    const format = searchParams.get('format')
+    const limitCount = parseInt(limitParam || (format === 'csv' ? '10000' : '50'))
     const offsetCount = parseInt(searchParams.get('offset') || '0')
 
     const supabase = await createSupabaseServer()
@@ -152,20 +154,31 @@ export async function GET(request: Request) {
 
     const documentMetaMap = new Map<string, any>()
     if (registrationIds.length > 0) {
-      const { data: documentRows, error: documentError } = await adminClient
-        .from('registrations')
-        .select(
-          `
+    const { data: documentRows, error: documentError } = await adminClient
+      .from('registrations')
+      .select(
+        `
           id,
           document_url,
           document_filename,
           document_size,
           approval_status,
+          start_time,
+          wave_index,
+          wave_capacity,
+          wave_position,
+          auto_assigned,
+          distance_ideal_km,
+          distance_min_km,
+          preferred_window_start,
+          preferred_window_end,
+          latest_allowed_time,
+          assignment_constraint_breached,
           ticket:tickets(id, name, distance_km, requires_document, document_types),
           event:events(id, title, date, location),
           order:orders(id, amount_total, currency, status)
         `,
-        )
+      )
         .in('id', registrationIds)
 
       if (documentError) {
@@ -188,16 +201,27 @@ export async function GET(request: Request) {
           const uploadedTypes = Array.from(documentTypeMap.get(row.id) ?? [])
 
           documentMetaMap.set(row.id, {
-            document_url: documentUrl,
-            document_filename: row.document_filename ?? null,
-            document_size: row.document_size ?? null,
-            requires_document: requiresDocument,
-            approval_status: approvalStatus,
-            documents_count: uploadedCount,
-            required_documents_count: requiredCount,
-            uploaded_document_types: uploadedTypes,
-            document_requires_attention:
-              requiresDocument && (approvalStatus !== 'approved' || !documentsComplete),
+          document_url: documentUrl,
+          document_filename: row.document_filename ?? null,
+          document_size: row.document_size ?? null,
+          requires_document: requiresDocument,
+          approval_status: approvalStatus,
+          start_time: row.start_time ?? null,
+          wave_index: row.wave_index ?? null,
+          wave_capacity: row.wave_capacity ?? null,
+          wave_position: row.wave_position ?? null,
+          auto_assigned: row.auto_assigned ?? null,
+          distance_ideal_km: row.distance_ideal_km ?? null,
+          distance_min_km: row.distance_min_km ?? null,
+          preferred_window_start: row.preferred_window_start ?? null,
+          preferred_window_end: row.preferred_window_end ?? null,
+          latest_allowed_time: row.latest_allowed_time ?? null,
+          assignment_constraint_breached: row.assignment_constraint_breached ?? null,
+          documents_count: uploadedCount,
+          required_documents_count: requiredCount,
+          uploaded_document_types: uploadedTypes,
+          document_requires_attention:
+            requiresDocument && (approvalStatus !== 'approved' || !documentsComplete),
             event: eventRecord
               ? {
                   id: eventRecord.id ?? null,
@@ -254,6 +278,17 @@ export async function GET(request: Request) {
         document_filename: meta.document_filename ?? row.document_filename ?? null,
         document_size: meta.document_size ?? row.document_size ?? null,
         requires_document: meta.requires_document ?? row.requires_document ?? false,
+        start_time: meta.start_time ?? row.start_time ?? null,
+        wave_index: meta.wave_index ?? row.wave_index ?? null,
+        wave_capacity: meta.wave_capacity ?? row.wave_capacity ?? null,
+        wave_position: meta.wave_position ?? row.wave_position ?? null,
+        auto_assigned: meta.auto_assigned ?? row.auto_assigned ?? null,
+        distance_ideal_km: meta.distance_ideal_km ?? row.distance_ideal_km ?? null,
+        distance_min_km: meta.distance_min_km ?? row.distance_min_km ?? null,
+        preferred_window_start: meta.preferred_window_start ?? row.preferred_window_start ?? null,
+        preferred_window_end: meta.preferred_window_end ?? row.preferred_window_end ?? null,
+        latest_allowed_time: meta.latest_allowed_time ?? row.latest_allowed_time ?? null,
+        assignment_constraint_breached: meta.assignment_constraint_breached ?? row.assignment_constraint_breached ?? null,
         documents_count: meta.documents_count ?? null,
         required_documents_count: meta.required_documents_count ?? null,
         uploaded_document_types: meta.uploaded_document_types ?? null,
@@ -262,6 +297,44 @@ export async function GET(request: Request) {
           (meta.requires_document && (!meta.document_url || meta.approval_status !== 'approved')),
       }
     })
+
+    if (format === 'csv') {
+      const header = [
+        'registration_id',
+        'email',
+        'event_title',
+        'ticket_name',
+        'start_time',
+        'wave_index',
+        'wave_position',
+        'distance_min_km',
+        'distance_ideal_km',
+        'assignment_constraint_breached',
+      ]
+      const lines = [header.join(',')]
+      for (const row of enrichedRows) {
+        const values = [
+          row.id,
+          row.email,
+          row.event?.title ?? '',
+          row.ticket?.name ?? '',
+          row.start_time ?? '',
+          row.wave_index ?? '',
+          row.wave_position ?? '',
+          row.distance_min_km ?? '',
+          row.distance_ideal_km ?? '',
+          row.assignment_constraint_breached ?? '',
+        ]
+        lines.push(values.map((value: any) => JSON.stringify(value ?? '')).join(','))
+      }
+      return new NextResponse(lines.join('\n'), {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename=\"registrations-${eventId ?? 'all'}.csv\"`,
+        },
+      })
+    }
 
     return NextResponse.json({
       registrations: enrichedRows,

@@ -40,6 +40,17 @@ export interface Registration {
   affiliation_deadline?: Timestamp | null
   is_affiliated: boolean
   difficulty_level?: FormatLevelId | null
+  distance_ideal_km?: number | null
+  distance_min_km?: number | null
+  start_time?: Timestamp | null
+  wave_index?: number | null
+  wave_capacity?: number | null
+  wave_position?: number | null
+  auto_assigned?: boolean | null
+  preferred_window_start?: Timestamp | null
+  preferred_window_end?: Timestamp | null
+  latest_allowed_time?: Timestamp | null
+  assignment_constraint_breached?: boolean | null
 }
 
 export interface RegistrationDocument {

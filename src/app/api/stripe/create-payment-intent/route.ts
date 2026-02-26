@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
       return respondJson({ error: "Les billets ne correspondent pas à l'événement demandé." }, 400)
     }
 
-    if (eventRef.status !== 'on_sale') {
-      return respondJson({ error: 'Inscriptions fermées pour cet événement.' }, 409)
-    }
+    // if (eventRef.status !== 'on_sale') {
+    //   return respondJson({ error: 'Inscriptions fermées pour cet événement.' }, 409)
+    // }
 
     const totalRequestedParticipants = ticketSelections.reduce(
       (accumulator: number, item: { quantity: number }) => accumulator + (item.quantity || 0),
