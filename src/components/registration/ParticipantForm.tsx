@@ -38,6 +38,8 @@ export default function ParticipantForm({
     Number.isFinite(distanceIdealValue) &&
     distanceIdealValue < distanceMinValue
 
+  const requiredMessage = 'Ce champ est obligatoire.'
+
   return (
     <Card>
       <CardHeader>
@@ -100,6 +102,9 @@ export default function ParticipantForm({
             <p className="text-xs text-muted-foreground">
               Même parcours, 3 défis différents. Innovation mondiale Overbound.
             </p>
+            {showErrors && !participant.difficultyLevel ? (
+              <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+            ) : null}
           </div>
         )}
         <div className="space-y-2">
@@ -114,6 +119,9 @@ export default function ParticipantForm({
             required
             className={hasError(participant.firstName) ? errorClass : ''}
           />
+          {hasError(participant.firstName) ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-lastName`} className="flex items-center gap-2">
@@ -127,6 +135,9 @@ export default function ParticipantForm({
             required
             className={hasError(participant.lastName) ? errorClass : ''}
           />
+          {hasError(participant.lastName) ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-email`} className="flex items-center gap-2">
@@ -141,6 +152,9 @@ export default function ParticipantForm({
             required
             className={hasError(participant.email) ? errorClass : ''}
           />
+          {hasError(participant.email) ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-birthDate`} className="flex items-center gap-2">
@@ -154,6 +168,9 @@ export default function ParticipantForm({
             required
             className={hasError(participant.birthDate) ? errorClass : ''}
           />
+          {hasError(participant.birthDate) ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-emergency`} className="flex items-center gap-2">
@@ -167,6 +184,9 @@ export default function ParticipantForm({
             required
             className={hasError(participant.emergencyContactName) ? errorClass : ''}
           />
+          {hasError(participant.emergencyContactName) ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-emergencyPhone`} className="flex items-center gap-2">
@@ -182,6 +202,9 @@ export default function ParticipantForm({
             required
             className={hasError(participant.emergencyContactPhone) ? errorClass : ''}
           />
+          {hasError(participant.emergencyContactPhone) ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-distance-min`} className="flex items-center gap-2">
@@ -206,6 +229,9 @@ export default function ParticipantForm({
                 : ''
             }
           />
+          {distanceMinMissing ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-distance-ideal`} className="flex items-center gap-2">
@@ -230,6 +256,9 @@ export default function ParticipantForm({
                 : ''
             }
           />
+          {distanceIdealMissing ? (
+            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+          ) : null}
         </div>
         <div className="space-y-2 md:col-span-2">
           <p className="text-xs text-muted-foreground">

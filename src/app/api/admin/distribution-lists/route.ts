@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     // Build query
     if (includeStats) {
       // Use the stats view
-      let query = supabase.from('distribution_lists_stats').select('*')
+      let query = admin.from('distribution_lists_stats').select('*')
 
       if (type) {
         query = query.eq('type', type)

@@ -18,6 +18,12 @@ export default function ParticipantsStep({
 }: ParticipantsStepProps) {
   return (
     <div className="space-y-4">
+      <Alert className='border-orange-500 bg-orange-500/10'>
+        <AlertDescription className='text-white-500 font-medium'>
+          Pour être dans le même SAS, inscrivez-vous ensemble dans une seule commande.
+          L’inscription en groupe est possible en ajoutant tous les participants au même paiement.
+        </AlertDescription>
+      </Alert>
       {participants.length === 0 ? (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
