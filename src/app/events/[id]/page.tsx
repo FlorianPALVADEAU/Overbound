@@ -551,6 +551,9 @@ export default function EventDetailPage() {
                     {event.description ||
                       "Préparez-vous à vivre une expérience sportive intense : échauffement collectif, zones techniques, runs rythmés et obstacles exigeants. L'événement rassemble des athlètes passionnés prêts à se dépasser dans une ambiance électrisante."}
                   </p>
+                  <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
+                    Pour être dans le même SAS, inscrivez-vous en une seule commande avec tous les participants.
+                  </div>
                 </div>
 
                 {isUltraArena && (
@@ -680,7 +683,7 @@ export default function EventDetailPage() {
               alt="Participants courant avec des chaînes autour du cou"
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background" />
+            <div className="absolute inset-0 bg-linear-to-br from-background via-background/50 to-background" />
           </div>
           <div className="pointer-events-none absolute -right-32 top-10 h-72 w-72 rounded-full bg-primary/8 blur-3xl" />
           <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -1076,6 +1079,9 @@ export default function EventDetailPage() {
               Paiement sécurisé par Stripe — Inscription en 2 minutes
             </p>
           )}
+            <p className="mt-2 text-xs text-primary-foreground/70">
+              Pour être dans le même SAS, inscrivez-vous en une seule commande avec tous les participants.
+            </p>
         </div>
       </section>
 

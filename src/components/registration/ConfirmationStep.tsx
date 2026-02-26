@@ -137,6 +137,10 @@ export default function ConfirmationStep({
             </p>
           )}
           <p className="text-xs text-muted-foreground">
+            Pour courir ensemble dans le même SAS, tous les participants doivent être inscrits dans
+            une seule commande.
+          </p>
+          <p className="text-xs text-muted-foreground">
             Une fois cette étape validée, vous serez redirigé vers la page de paiement sécurisé Stripe.
           </p>
         </CardContent>

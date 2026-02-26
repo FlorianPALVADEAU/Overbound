@@ -37,6 +37,7 @@ export async function GET() {
         .from('orders')
         .select('amount_total, status')
         .eq('status', 'paid')
+        .eq('provider', 'stripe')
 
       const totalRevenueCents =
         paidOrders?.reduce((sum, order) => sum + (order.amount_total ?? 0), 0) ?? 0
