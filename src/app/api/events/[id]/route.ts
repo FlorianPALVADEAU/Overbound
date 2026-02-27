@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { getEffectiveEventStatus } from '@/lib/events/registrationStatus'
 
 export const runtime = 'nodejs'
 
@@ -75,8 +76,13 @@ export async function GET(
       existingRegistration = registration ?? null
     }
 
+    const effectiveEvent = {
+      ...event,
+      status: getEffectiveEventStatus(event),
+    }
+
     return NextResponse.json({
-      event,
+      event: effectiveEvent,
       availableSpots,
       existingRegistration,
       user: user

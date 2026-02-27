@@ -39,6 +39,7 @@ type TicketRow = {
     id: string
     title: string
     date: string
+    sales_start?: string | null
     location: string
     status: string
     capacity: number | null
@@ -69,6 +70,7 @@ export const fetchTicketsForSelections = async (supabase: SupabaseSessionClient,
         id,
         title,
         date,
+        sales_start,
         location,
         status,
         capacity,

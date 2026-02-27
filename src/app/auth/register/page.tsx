@@ -1,15 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import HCaptcha from '@hcaptcha/react-hcaptcha'
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -24,6 +23,7 @@ type MessageState = { type: 'success' | 'error'; text: string }
 function RegisterInner() {
   const supabase = createSupabaseBrowser()
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -32,10 +32,6 @@ function RegisterInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<HCaptcha | null>(null)
-  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
-  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
@@ -67,16 +63,11 @@ function RegisterInner() {
       return
     }
 
-    if (shouldUseCaptcha && !captchaToken) {
-      setMessage({ type: 'error', text: 'Merci de valider le captcha avant de continuer.' })
-      return
-    }
-
     setLoading(true)
     setMessage(null)
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -84,14 +75,38 @@ function RegisterInner() {
             full_name: fullName || null,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback?next=/account`,
-          ...(shouldUseCaptcha ? { captchaToken: captchaToken ?? undefined } : {}),
         },
       })
 
       if (error) {
-        setMessage({ type: 'error', text: error.message })
-        captchaRef.current?.resetCaptcha()
-        setCaptchaToken(null)
+        const normalizedError = error.message.toLowerCase()
+        const accountAlreadyExists =
+          normalizedError.includes('already registered') ||
+          normalizedError.includes('already exists') ||
+          normalizedError.includes('user already')
+
+        setMessage({
+          type: 'error',
+          text: accountAlreadyExists
+            ? 'Cette adresse est déjà utilisée. Connecte-toi avec Google ou utilise "Mot de passe oublié".'
+            : error.message,
+        })
+        return
+      }
+
+      if (data.session) {
+        void fetch('/api/auth/post-auth-sync', { method: 'POST' }).catch((syncError) => {
+          console.warn('[register] post-auth sync failed', syncError)
+        })
+
+        setMessage({
+          type: 'success',
+          text: 'Compte créé ! Redirection vers votre espace…',
+        })
+
+        const target = resolveNextPath()
+        router.push(target)
+        router.refresh()
         return
       }
 
@@ -103,13 +118,9 @@ function RegisterInner() {
       setEmail('')
       setPassword('')
       setConfirmPassword('')
-      captchaRef.current?.resetCaptcha()
-      setCaptchaToken(null)
     } catch (err) {
       console.error('[register] signUp failed', err)
       setMessage({ type: 'error', text: 'Inscription impossible pour le moment.' })
-      captchaRef.current?.resetCaptcha()
-      setCaptchaToken(null)
     } finally {
       setLoading(false)
     }
@@ -273,18 +284,6 @@ function RegisterInner() {
                   autoComplete="new-password"
                 />
               </div>
-
-              {shouldUseCaptcha ? (
-                <div className="flex justify-center">
-                  <HCaptcha
-                    ref={captchaRef}
-                    sitekey={hcaptchaSiteKey}
-                    onVerify={(token) => setCaptchaToken(token)}
-                    onExpire={() => setCaptchaToken(null)}
-                    onError={() => setCaptchaToken(null)}
-                  />
-                </div>
-              ) : null}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (

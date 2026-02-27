@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { getEffectiveEventStatus, isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 
 export const runtime = 'nodejs'
 
@@ -55,6 +56,16 @@ export async function GET(
       return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
     }
 
+    const effectiveStatus = getEffectiveEventStatus(event)
+    const eventWithEffectiveStatus = {
+      ...event,
+      status: effectiveStatus,
+    }
+
+    if (!isEventOpenForRegistration(eventWithEffectiveStatus)) {
+      return NextResponse.json({ error: "Les inscriptions ne sont pas encore ouvertes pour cet événement." }, { status: 409 })
+    }
+
     const { count: totalRegistrations } = await supabase
       .from('registrations')
       .select('*', { count: 'exact', head: true })
@@ -96,7 +107,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      event,
+      event: eventWithEffectiveStatus,
       tickets: ticketsWithCounts,
       upsells: upsellsData || [],
       availableSpots,

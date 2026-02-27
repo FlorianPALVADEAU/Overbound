@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assignSlots } from './slotAssignment'
+import { assignSlots, type SlotInput } from './slotAssignment'
 
-const makeSlots = (count: number, capacity = 10) => {
+const makeSlots = (count: number, capacity = 10): SlotInput[] => {
   const base = new Date('2026-01-01T08:00:00.000Z')
   return Array.from({ length: count }, (_, i) => ({
     slotId: `slot-${i + 1}`,

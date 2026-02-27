@@ -3,14 +3,42 @@ import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
-import { verifyHCaptcha } from '@/lib/hcaptcha'
 
 const subscribeSchema = z.object({
   email: z.string().email('Email invalide'),
   full_name: z.string().min(1, 'Le prénom est requis'),
   promotion_id: z.string().uuid('ID de promotion invalide'),
-  captchaToken: z.string().optional(),
+  website: z.string().optional(),
+  elapsed_ms: z.number().int().nonnegative().nullable().optional(),
 })
+
+const findAuthUserByEmail = async (
+  admin: ReturnType<typeof supabaseAdmin>,
+  email: string,
+) => {
+  const normalizedEmail = email.toLowerCase().trim()
+  let page = 1
+  const perPage = 200
+
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
+    if (error) {
+      throw error
+    }
+
+    const users = data.users ?? []
+    const match = users.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail)
+    if (match) {
+      return match
+    }
+
+    if (users.length < perPage) {
+      return null
+    }
+
+    page += 1
+  }
+}
 
 /**
  * POST /api/promotions/popup-subscribe
@@ -25,9 +53,12 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json()
     const validatedData = subscribeSchema.parse(body)
-    const captchaOk = await verifyHCaptcha(validatedData.captchaToken, ip)
-    if (!captchaOk) {
-      return NextResponse.json({ error: 'Captcha invalide.' }, { status: 400 })
+    const honeypotValue = validatedData.website?.trim()
+    if (honeypotValue) {
+      return NextResponse.json({ success: true, message: 'Inscription prise en compte.' }, { status: 201 })
+    }
+    if ((validatedData.elapsed_ms ?? 0) > 0 && (validatedData.elapsed_ms ?? 0) < 1500) {
+      return NextResponse.json({ error: 'Requête rejetée.' }, { status: 400 })
     }
 
     const supabase = await createClient()
@@ -67,8 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Vérifier si cet email existe déjà dans auth.users
     const admin = supabaseAdmin()
-    const { data: authUser } = await admin.auth.admin.listUsers()
-    const existingUser = authUser.users.find((u) => u.email?.toLowerCase() === email)
+    const existingUser = await findAuthUserByEmail(admin, email)
     const userId = existingUser?.id
 
     // Vérifier quelles subscriptions existent déjà (utiliser admin pour contourner RLS)

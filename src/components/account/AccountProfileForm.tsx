@@ -7,12 +7,13 @@ import {
   ACCOUNT_REGISTRATIONS_QUERY_KEY,
   type AccountRegistrationsResponse,
 } from '@/app/api/account/registrations/accountRegistrationsQueries'
-import { SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
+import { SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -47,6 +48,7 @@ const normalize = (value: string) => value.trim()
 
 export function AccountProfileForm({ profile, email, onSuccess }: AccountProfileFormProps) {
   const queryClient = useQueryClient()
+  const supabase = createSupabaseBrowser()
 
   const initialValues = useMemo<FormValues>(
     () => ({
@@ -63,11 +65,47 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null,
   )
+  const [isCheckingGoogleIdentity, setIsCheckingGoogleIdentity] = useState(true)
+  const [isGoogleLinked, setIsGoogleLinked] = useState(false)
+  const [isLinkingGoogle, setIsLinkingGoogle] = useState(false)
 
   useEffect(() => {
     setSavedValues(initialValues)
     setFormValues(initialValues)
   }, [initialValues])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadIdentities = async () => {
+      setIsCheckingGoogleIdentity(true)
+      const { data, error } = await supabase.auth.getUserIdentities()
+
+      if (cancelled) {
+        return
+      }
+
+      if (error) {
+        console.warn('[account profile] getUserIdentities failed', error)
+        setIsGoogleLinked(false)
+        setIsCheckingGoogleIdentity(false)
+        return
+      }
+
+      const identities = data?.identities ?? []
+      const hasGoogle = identities.some(
+        (identity) => identity.provider?.toLowerCase() === 'google',
+      )
+      setIsGoogleLinked(hasGoogle)
+      setIsCheckingGoogleIdentity(false)
+    }
+
+    void loadIdentities()
+
+    return () => {
+      cancelled = true
+    }
+  }, [supabase])
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
@@ -93,7 +131,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
           full_name: updatedProfile.full_name ?? '',
           phone: updatedProfile.phone ?? '',
           date_of_birth: updatedProfile.date_of_birth ?? '',
-          marketing_opt_in: Boolean((updatedProfile as any).marketing_opt_in),
+          marketing_opt_in: Boolean(updatedProfile.marketing_opt_in),
         }
         setSavedValues(nextValues)
         setFormValues(nextValues)
@@ -143,10 +181,29 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             : prev,
       )
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ACCOUNT_REGISTRATIONS_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY }),
-      ])
+      queryClient.setQueryData<SessionResponse | undefined>(SESSION_QUERY_KEY, (prev) =>
+        prev
+          ? {
+              ...prev,
+              profile:
+                data.profile ??
+                {
+                  ...(prev.profile ?? {}),
+                  ...Object.fromEntries(
+                    Object.entries(sentPayload).map(([key, value]) => [key, value ?? null]),
+                  ),
+                  ...BOOLEAN_FIELDS.reduce<Record<string, boolean>>((accumulator, field) => {
+                    if (field in sentPayload) {
+                      accumulator[field] = Boolean(sentPayload[field as BooleanFieldKey])
+                    }
+                    return accumulator
+                  }, {}),
+                },
+            }
+          : prev,
+      )
+
+      await queryClient.invalidateQueries({ queryKey: ACCOUNT_REGISTRATIONS_QUERY_KEY })
 
       onSuccess?.()
     },
@@ -209,6 +266,42 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const isSubmitting = mutation.isPending
 
+  const handleLinkGoogle = async () => {
+    setIsLinkingGoogle(true)
+    setFeedback(null)
+
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent('/account')}`
+      const { error } = await supabase.auth.linkIdentity({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      })
+
+      if (error) {
+        const message = error.message.toLowerCase()
+        const manualLinkingDisabled =
+          message.includes('manual linking') || message.includes('linking is disabled')
+
+        setFeedback({
+          type: 'error',
+          message: manualLinkingDisabled
+            ? "Le linking manuel n'est pas activé côté Supabase (Authentication > Sign In / Providers)."
+            : error.message,
+        })
+      }
+    } catch (error) {
+      console.error('[account profile] linkIdentity failed', error)
+      setFeedback({
+        type: 'error',
+        message: 'Impossible de lier Google pour le moment.',
+      })
+    } finally {
+      setIsLinkingGoogle(false)
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
@@ -233,6 +326,29 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             disabled
             readOnly
           />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              Google:{' '}
+              {isCheckingGoogleIdentity
+                ? 'vérification…'
+                : isGoogleLinked
+                  ? 'lié'
+                  : 'non lié'}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleLinkGoogle}
+              disabled={isCheckingGoogleIdentity || isGoogleLinked || isLinkingGoogle}
+            >
+              {isGoogleLinked
+                ? 'Google déjà lié'
+                : isLinkingGoogle
+                  ? 'Redirection…'
+                  : 'Lier Google'}
+            </Button>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-phone">Téléphone</Label>
