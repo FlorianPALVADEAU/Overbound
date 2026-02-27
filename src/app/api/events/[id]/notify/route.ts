@@ -3,6 +3,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { verifyHCaptcha } from '@/lib/hcaptcha'
+import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 
 export const runtime = 'nodejs'
 
@@ -55,11 +56,7 @@ export async function POST(
       return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
     }
 
-    const now = new Date()
-    const salesStart = event.sales_start ? new Date(event.sales_start) : null
-    const isOpeningInFuture = salesStart ? salesStart > now : false
-
-    if (event.status !== 'announced' && !isOpeningInFuture) {
+    if (isEventOpenForRegistration(event)) {
       return NextResponse.json({ error: 'Inscriptions déjà ouvertes' }, { status: 400 })
     }
 

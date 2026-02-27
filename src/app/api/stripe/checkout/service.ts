@@ -1,5 +1,6 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { stripeClient, respondJson } from '@/app/api/stripe/create-payment-intent/utils'
+import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 
 interface CheckoutPayload {
   ticketId: string
@@ -35,6 +36,7 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
         id,
         title,
         date,
+        sales_start,
         location,
         status,
         capacity
@@ -60,7 +62,7 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
     throw respondJson({ error: 'Événement complet' }, 409)
   }
 
-  if (ticket.event.status !== 'on_sale') {
+  if (!isEventOpenForRegistration(ticket.event)) {
     throw respondJson({ error: 'Inscriptions fermées' }, 409)
   }
 
