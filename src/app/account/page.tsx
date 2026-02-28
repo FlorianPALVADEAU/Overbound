@@ -15,7 +15,6 @@ import PreferencesForm from '@/components/preferences/PreferencesForm'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useSession } from '../api/session/sessionQueries'
 
 function LoadingView() {
   return (
@@ -75,10 +74,9 @@ function UnauthorizedView() {
 
 export default function AccountPage() {
   const { data, isLoading, error, refetch } = useAccountRegistrations()
-  const { data: authUser, isLoading: isAuthLoading } = useSession()
   const [isEditingProfile, setIsEditingProfile] = useState(false)
 
-  if (isLoading || isAuthLoading) {
+  if (isLoading) {
     return <LoadingView />
   }
 
@@ -96,7 +94,7 @@ export default function AccountPage() {
     )
   }
 
-  if (!data?.user || !authUser) {
+  if (!data?.user) {
     return <UnauthorizedView />
   }
 
@@ -124,7 +122,7 @@ export default function AccountPage() {
                     <AvatarImage
                       src={
                         profile?.avatar_url ||
-                        authUser?.user?.user_metadata?.avatar_url ||
+                        user?.user_metadata?.avatar_url ||
                         undefined
                       }
                       alt={profile?.full_name || user.email || undefined}
