@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   // Protéger les routes admin
   if (url.pathname.startsWith('/admin')) {
     if (!user) {
-      url.pathname = '/login'
+      url.pathname = '/auth/login'
       url.searchParams.set('next', request.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
@@ -68,14 +68,14 @@ export async function middleware(request: NextRequest) {
   // Protéger les routes account
   if (url.pathname.startsWith('/account')) {
     if (!user) {
-      url.pathname = '/login'
+      url.pathname = '/auth/login'
       url.searchParams.set('next', request.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
   }
 
   // Rediriger les utilisateurs connectés depuis /login vers /account
-  if (url.pathname === '/login' && user) {
+  if ((url.pathname === '/login' || url.pathname === '/auth/login') && user) {
     url.pathname = '/account'
     return NextResponse.redirect(url)
   }

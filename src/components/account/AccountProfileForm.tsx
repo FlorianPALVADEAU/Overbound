@@ -65,9 +65,12 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null,
   )
-  const [isCheckingGoogleIdentity, setIsCheckingGoogleIdentity] = useState(true)
-  const [isGoogleLinked, setIsGoogleLinked] = useState(false)
-  const [isLinkingGoogle, setIsLinkingGoogle] = useState(false)
+  const [isCheckingSocialIdentities, setIsCheckingSocialIdentities] = useState(true)
+  const [linkedProviders, setLinkedProviders] = useState<{ google: boolean; facebook: boolean }>({
+    google: false,
+    facebook: false,
+  })
+  const [linkingProvider, setLinkingProvider] = useState<'google' | 'facebook' | null>(null)
 
   useEffect(() => {
     setSavedValues(initialValues)
@@ -78,7 +81,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
     let cancelled = false
 
     const loadIdentities = async () => {
-      setIsCheckingGoogleIdentity(true)
+      setIsCheckingSocialIdentities(true)
       const { data, error } = await supabase.auth.getUserIdentities()
 
       if (cancelled) {
@@ -87,8 +90,8 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
       if (error) {
         console.warn('[account profile] getUserIdentities failed', error)
-        setIsGoogleLinked(false)
-        setIsCheckingGoogleIdentity(false)
+        setLinkedProviders({ google: false, facebook: false })
+        setIsCheckingSocialIdentities(false)
         return
       }
 
@@ -96,8 +99,15 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       const hasGoogle = identities.some(
         (identity) => identity.provider?.toLowerCase() === 'google',
       )
-      setIsGoogleLinked(hasGoogle)
-      setIsCheckingGoogleIdentity(false)
+      const hasFacebook = identities.some(
+        (identity) => identity.provider?.toLowerCase() === 'facebook',
+      )
+
+      setLinkedProviders({
+        google: hasGoogle,
+        facebook: hasFacebook,
+      })
+      setIsCheckingSocialIdentities(false)
     }
 
     void loadIdentities()
@@ -266,14 +276,14 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const isSubmitting = mutation.isPending
 
-  const handleLinkGoogle = async () => {
-    setIsLinkingGoogle(true)
+  const handleLinkProvider = async (provider: 'google' | 'facebook') => {
+    setLinkingProvider(provider)
     setFeedback(null)
 
     try {
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent('/account')}`
       const { error } = await supabase.auth.linkIdentity({
-        provider: 'google',
+        provider,
         options: {
           redirectTo,
         },
@@ -295,10 +305,10 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       console.error('[account profile] linkIdentity failed', error)
       setFeedback({
         type: 'error',
-        message: 'Impossible de lier Google pour le moment.',
+        message: `Impossible de lier ${provider === 'google' ? 'Google' : 'Facebook'} pour le moment.`,
       })
     } finally {
-      setIsLinkingGoogle(false)
+      setLinkingProvider(null)
     }
   }
 
@@ -326,28 +336,34 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             disabled
             readOnly
           />
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>
-              Google:{' '}
-              {isCheckingGoogleIdentity
-                ? 'vérification…'
-                : isGoogleLinked
-                  ? 'lié'
-                  : 'non lié'}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleLinkGoogle}
-              disabled={isCheckingGoogleIdentity || isGoogleLinked || isLinkingGoogle}
-            >
-              {isGoogleLinked
-                ? 'Google déjà lié'
-                : isLinkingGoogle
-                  ? 'Redirection…'
-                  : 'Lier Google'}
-            </Button>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {(['google', 'facebook'] as const).map((provider) => {
+              const isLinked = linkedProviders[provider]
+              const isLinking = linkingProvider === provider
+              const providerLabel = provider === 'google' ? 'Google' : 'Facebook'
+
+              return (
+                <div key={provider} className="flex items-center gap-2">
+                  <span>
+                    {providerLabel}:{' '}
+                    {isCheckingSocialIdentities
+                      ? 'vérification…'
+                      : isLinked
+                        ? 'lié'
+                        : 'non lié'}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleLinkProvider(provider)}
+                    disabled={isCheckingSocialIdentities || isLinked || linkingProvider !== null}
+                  >
+                    {isLinked ? `${providerLabel} déjà lié` : isLinking ? 'Redirection…' : `Lier ${providerLabel}`}
+                  </Button>
+                </div>
+              )
+            })}
           </div>
         </div>
         <div className="flex flex-col gap-2">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
@@ -116,7 +116,9 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const { data: updatedProfile, error: updateError } = await supabase
+    const admin = supabaseAdmin()
+
+    const { data: updatedProfile, error: updateError } = await admin
       .from('profiles')
       .update(updatePayload)
       .eq('id', user.id)
