@@ -38,7 +38,7 @@ export default function RegistrationHeader({
             <Separator orientation="vertical" className="hidden h-4 md:block" />
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {availableSpots > 0 ? `${availableSpots} places restantes` : 'Complet'}
+              {availableSpots > 0 ? 'Places limitées' : 'Complet'}
             </span>
           </div>
         </div>

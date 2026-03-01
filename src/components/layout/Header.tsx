@@ -446,13 +446,32 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     <Link href="/auth/login" onClick={closeMobileMenu}>Se connecter</Link>
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  asChild
-                  className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
-                >
-                  <Link href="/auth/register" onClick={closeMobileMenu}>S'inscrire</Link>
-                </Button>
+                {!user ? (
+                  <Button
+                    size="sm"
+                    asChild
+                    className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
+                  >
+                    <Link href="/auth/register" onClick={closeMobileMenu}>S&apos;inscrire</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" asChild className="h-11 rounded-full">
+                      <Link href="/account" onClick={closeMobileMenu}>Mon compte</Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-11 rounded-full"
+                      onClick={() => {
+                        closeMobileMenu()
+                        void handleSignOut()
+                      }}
+                    >
+                      Déconnexion
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -496,9 +496,7 @@ export default function EventDetailPage() {
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Lieu</p>
                       <p className="font-semibold">{event.location}</p>
                       <p className="text-sm text-muted-foreground">
-                        {availableSpots > 0
-                          ? `${availableSpots} place${availableSpots > 1 ? 's' : ''} encore disponibles`
-                          : 'Complètement réservé'}
+                        {availableSpots > 0 ? 'Places limitées' : 'Complètement réservé'}
                       </p>
                     </div>
                   </div>
@@ -508,7 +506,7 @@ export default function EventDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Capacité</p>
-                      <p className="font-semibold">{event.capacity} participants</p>
+                      <p className="font-semibold">Capacité limitée</p>
                       {isUpcoming ? (
                         <p className={`text-sm ${isToday ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
                           {isToday
