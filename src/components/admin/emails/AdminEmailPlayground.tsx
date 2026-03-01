@@ -75,6 +75,12 @@ const EMAIL_GROUPS: Array<{
 
 type TriggerStatus = 'idle' | 'loading' | 'success' | 'error'
 
+interface OpeningAudienceRecipient {
+  email: string
+  fullName?: string | null
+  sources: string[]
+}
+
 export function AdminEmailPlayground() {
   const [statusMap, setStatusMap] = useState<Record<string, { state: TriggerStatus; message?: string }>>({})
   const [receiptPaymentIntentId, setReceiptPaymentIntentId] = useState('')
@@ -84,6 +90,70 @@ export function AdminEmailPlayground() {
   const [pushStatus, setPushStatus] = useState<{ state: TriggerStatus; message?: string }>({
     state: 'idle',
   })
+  const [audienceStatus, setAudienceStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [campaignStatus, setCampaignStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [openingAudience, setOpeningAudience] = useState<{
+    total: number
+    recipients: OpeningAudienceRecipient[]
+  } | null>(null)
+
+  const fetchOpeningAudience = async () => {
+    setAudienceStatus({ state: 'loading' })
+    try {
+      const response = await fetch('/api/admin/emails/registration-opening', { cache: 'no-store' })
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        total?: number
+        recipients?: OpeningAudienceRecipient[]
+      }
+      if (!response.ok) {
+        throw new Error(payload.error || 'Impossible de charger les destinataires.')
+      }
+      setOpeningAudience({
+        total: payload.total ?? 0,
+        recipients: payload.recipients ?? [],
+      })
+      setAudienceStatus({ state: 'success', message: `${payload.total ?? 0} adresse(s) unique(s).` })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setAudienceStatus({ state: 'error', message })
+    }
+  }
+
+  const sendOpeningCampaign = async (mode: 'self' | 'all') => {
+    if (mode === 'all') {
+      const confirmed = window.confirm(
+        "Confirmer l'envoi à toute l'audience unique (comptes + listes de diffusion) ?",
+      )
+      if (!confirmed) {
+        return
+      }
+    }
+
+    setCampaignStatus({ state: 'loading' })
+    try {
+      const response = await fetch('/api/admin/emails/registration-opening', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      })
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; message?: string }
+      if (!response.ok) {
+        throw new Error(payload.error || 'Envoi impossible.')
+      }
+      setCampaignStatus({ state: 'success', message: payload.message || 'Envoi terminé.' })
+      if (!openingAudience) {
+        void fetchOpeningAudience()
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setCampaignStatus({ state: 'error', message })
+    }
+  }
 
   const registerPush = async () => {
     setPushStatus({ state: 'loading' })
@@ -209,6 +279,69 @@ export function AdminEmailPlayground() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Campagne “Ouverture des inscriptions”</CardTitle>
+          <CardDescription>
+            Audience unique fusionnée (comptes + listes de diffusion, sans doublon). Tu peux d’abord t’envoyer un test, puis lancer l’envoi global.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <Button variant="outline" onClick={fetchOpeningAudience} disabled={audienceStatus.state === 'loading' || campaignStatus.state === 'loading'}>
+              {audienceStatus.state === 'loading' ? 'Chargement…' : 'Visualiser l’audience'}
+            </Button>
+            <Button onClick={() => sendOpeningCampaign('self')} disabled={campaignStatus.state === 'loading'}>
+              {campaignStatus.state === 'loading' ? 'Envoi…' : 'Envoyer à moi'}
+            </Button>
+            <Button variant="destructive" onClick={() => sendOpeningCampaign('all')} disabled={campaignStatus.state === 'loading'}>
+              {campaignStatus.state === 'loading' ? 'Envoi…' : 'Envoyer à tout le monde'}
+            </Button>
+          </div>
+
+          {audienceStatus.state === 'error' && audienceStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{audienceStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {audienceStatus.state === 'success' && audienceStatus.message ? (
+            <Alert>
+              <AlertDescription>{audienceStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {campaignStatus.state === 'error' && campaignStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{campaignStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {campaignStatus.state === 'success' && campaignStatus.message ? (
+            <Alert>
+              <AlertDescription>{campaignStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {openingAudience ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                Destinataires uniques: {openingAudience.total}
+              </p>
+              <div className="max-h-72 overflow-auto rounded-lg border border-border p-3">
+                <div className="space-y-1">
+                  {openingAudience.recipients.map((recipient) => (
+                    <div key={recipient.email} className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
+                      <span className="font-mono">{recipient.email}</span>
+                      <span className="text-muted-foreground">
+                        {recipient.sources.join(' + ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Notifications téléphone (Web Push)</CardTitle>
