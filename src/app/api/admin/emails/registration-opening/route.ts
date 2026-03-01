@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { sendEventOpeningEmail } from '@/lib/email'
+import { Resend } from 'resend'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import EventOpeningEmail from '@/emails/EventOpeningEmail'
+import { renderEmail } from '@/lib/email/render'
+import {
+  buildUnifiedCampaignAudience,
+  dispatchCampaign,
+  type CampaignAudienceRecipient,
+} from '@/lib/email/adminCampaigns'
 
 export const runtime = 'nodejs'
 
 const CAMPAIGN_EVENT_TITLE = 'Ultra Arena 2026'
-const CAMPAIGN_EVENT_DATE = 'Samedi 14 novembre 2026'
-const CAMPAIGN_EVENT_LOCATION = 'Parc de Miribel-Jonage'
+const CAMPAIGN_EVENT_DATE = 'Samedi 12 septembre 2026'
+const CAMPAIGN_EVENT_LOCATION = 'Base de loisirs de Saint-Quentin-en-Yvelines'
 const SITE_URL = getEmailAssetsBaseUrl()
 const CAMPAIGN_EVENT_URL = `${SITE_URL}/events/ultra-arena-2026`
-const CAMPAIGN_HERO_IMAGE_PATH = '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.jpg'
-const CAMPAIGN_HERO_IMAGE_URL = `${SITE_URL}${CAMPAIGN_HERO_IMAGE_PATH}`
+const CAMPAIGN_HERO_IMAGE_URL =
+  `${SITE_URL}/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.jpg`
 const CAMPAIGN_OFFER_TITLE = '-25% sur les 35 premiers inscrits'
-const CAMPAIGN_OFFER_DESCRIPTION = 'Aucun code requis : la réduction s’applique automatiquement au checkout.'
+const CAMPAIGN_OFFER_DESCRIPTION =
+  'Aucun code requis : la réduction s’applique automatiquement au checkout.'
+const CAMPAIGN_FROM = "Florian d'Overbound <no-reply@overbound-race.com>"
 
-type AudienceRecipient = {
-  email: string
-  userId?: string
-  fullName?: string | null
-  sources: Set<string>
-}
-
-const normalizeEmail = (email: string) => email.trim().toLowerCase()
+const sendSchema = z.object({
+  mode: z.enum(['self', 'all']),
+})
 
 const ensureAdmin = async () => {
   const supabase = await createSupabaseServer()
@@ -54,100 +58,19 @@ const ensureAdmin = async () => {
   }
 }
 
-const buildAudience = async () => {
-  const admin = supabaseAdmin()
-  const recipients = new Map<string, AudienceRecipient>()
-  const authEmailByUserId = new Map<string, { email: string; fullName?: string | null }>()
-
-  let page = 1
-  const perPage = 200
-
-  while (true) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
-    if (error) {
-      throw error
-    }
-
-    const users = data.users ?? []
-    for (const authUser of users) {
-      const email = authUser.email ? normalizeEmail(authUser.email) : ''
-      if (!email) continue
-
-      const fullName =
-        (authUser.user_metadata as Record<string, unknown> | undefined)?.full_name as
-          | string
-          | undefined
-      authEmailByUserId.set(authUser.id, { email, fullName: fullName ?? null })
-
-      const existing = recipients.get(email)
-      if (existing) {
-        existing.sources.add('auth')
-        if (!existing.userId) existing.userId = authUser.id
-        if (!existing.fullName && fullName) existing.fullName = fullName
-      } else {
-        recipients.set(email, {
-          email,
-          userId: authUser.id,
-          fullName: fullName ?? null,
-          sources: new Set(['auth']),
-        })
-      }
-    }
-
-    if (users.length < perPage) {
-      break
-    }
-    page += 1
-  }
-
-  const { data: subscriptions, error: subscriptionError } = await admin
-    .from('list_subscriptions')
-    .select('user_id, email, full_name, subscribed')
-    .eq('subscribed', true)
-
-  if (subscriptionError) {
-    throw subscriptionError
-  }
-
-  for (const subscription of subscriptions ?? []) {
-    const resolvedEmail =
-      (subscription.email ? normalizeEmail(subscription.email) : '') ||
-      (subscription.user_id ? authEmailByUserId.get(subscription.user_id)?.email ?? '' : '')
-
-    if (!resolvedEmail) continue
-
-    const resolvedUserId =
-      subscription.user_id ?? recipients.get(resolvedEmail)?.userId ?? undefined
-
-    const fullName =
-      subscription.full_name ??
-      authEmailByUserId.get(subscription.user_id ?? '')?.fullName ??
-      null
-
-    const existing = recipients.get(resolvedEmail)
-    if (existing) {
-      existing.sources.add('list_subscriptions')
-      if (!existing.userId && resolvedUserId) existing.userId = resolvedUserId
-      if (!existing.fullName && fullName) existing.fullName = fullName
-    } else {
-      recipients.set(resolvedEmail, {
-        email: resolvedEmail,
-        userId: resolvedUserId,
-        fullName,
-        sources: new Set(['list_subscriptions']),
-      })
-    }
-  }
-
-  return Array.from(recipients.values())
-    .sort((a, b) => a.email.localeCompare(b.email))
-    .map((recipient) => ({
-      email: recipient.email,
-      userId: recipient.userId,
-      fullName: recipient.fullName ?? null,
-      sources: Array.from(recipient.sources).sort(),
-    }))
-}
+const buildOpeningEmailHtml = async (recipient: CampaignAudienceRecipient) =>
+  renderEmail(
+    EventOpeningEmail({
+      fullName: recipient.fullName,
+      eventTitle: CAMPAIGN_EVENT_TITLE,
+      eventDate: CAMPAIGN_EVENT_DATE,
+      eventLocation: CAMPAIGN_EVENT_LOCATION,
+      eventUrl: CAMPAIGN_EVENT_URL,
+      heroImageUrl: CAMPAIGN_HERO_IMAGE_URL,
+      offerTitle: CAMPAIGN_OFFER_TITLE,
+      offerDescription: CAMPAIGN_OFFER_DESCRIPTION,
+    }),
+  )
 
 export async function GET() {
   try {
@@ -156,12 +79,13 @@ export async function GET() {
       return adminCheck.error
     }
 
-    const recipients = await buildAudience()
+    const { recipients, stats } = await buildUnifiedCampaignAudience()
 
     return NextResponse.json({
       success: true,
       total: recipients.length,
       recipients,
+      audienceStats: stats,
       campaign: {
         title: CAMPAIGN_EVENT_TITLE,
         date: CAMPAIGN_EVENT_DATE,
@@ -174,10 +98,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
-
-const sendSchema = z.object({
-  mode: z.enum(['self', 'all']),
-})
 
 export async function POST(request: NextRequest) {
   try {
@@ -192,79 +112,95 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Mode invalide.' }, { status: 400 })
     }
 
-    const { mode } = parsed.data
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({ error: 'RESEND_API_KEY manquante.' }, { status: 500 })
+    }
 
-    if (mode === 'self') {
-      await sendEventOpeningEmail({
-        to: adminCheck.user.email,
-        fullName: adminCheck.user.fullName,
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const subject = `Inscriptions ouvertes — ${CAMPAIGN_EVENT_TITLE}`
+
+    if (parsed.data.mode === 'self') {
+      const selfRecipient: CampaignAudienceRecipient = {
+        email: adminCheck.user.email,
         userId: adminCheck.user.id,
-        eventTitle: CAMPAIGN_EVENT_TITLE,
-        eventDate: CAMPAIGN_EVENT_DATE,
-        eventLocation: CAMPAIGN_EVENT_LOCATION,
-        eventUrl: CAMPAIGN_EVENT_URL,
-        heroImageUrl: CAMPAIGN_HERO_IMAGE_URL,
-        offerTitle: CAMPAIGN_OFFER_TITLE,
-        offerDescription: CAMPAIGN_OFFER_DESCRIPTION,
+        fullName: adminCheck.user.fullName,
+        sources: ['auth'],
+      }
+
+      const report = await dispatchCampaign({
+        resend,
+        recipients: [selfRecipient],
+        buildMessage: async (recipient) => ({
+          from: CAMPAIGN_FROM,
+          to: recipient.email,
+          subject,
+          html: await buildOpeningEmailHtml(recipient),
+        }),
+        batchSize: 1,
+        retries: 1,
       })
+
+      if (report.sent !== 1) {
+        return NextResponse.json(
+          {
+            error: `Échec envoi test: ${report.failures[0]?.error || 'Erreur inconnue.'}`,
+            report,
+          },
+          { status: 502 },
+        )
+      }
 
       return NextResponse.json({
         success: true,
-        mode,
-        sent: 1,
-        failed: 0,
+        mode: 'self',
+        sent: report.sent,
+        failed: report.failed,
         message: `Email de test envoyé à ${adminCheck.user.email}.`,
       })
     }
 
-    const recipients = await buildAudience()
+    const { recipients, stats } = await buildUnifiedCampaignAudience()
     if (recipients.length === 0) {
       return NextResponse.json({ error: 'Aucun destinataire trouvé.' }, { status: 400 })
     }
 
-    const failures: Array<{ email: string; error: string }> = []
-    let sent = 0
-    const BATCH_SIZE = 25
+    const report = await dispatchCampaign({
+      resend,
+      recipients,
+      buildMessage: async (recipient) => ({
+        from: CAMPAIGN_FROM,
+        to: recipient.email,
+        subject,
+        html: await buildOpeningEmailHtml(recipient),
+      }),
+      batchSize: 20,
+      retries: 2,
+    })
 
-    for (let index = 0; index < recipients.length; index += BATCH_SIZE) {
-      const batch = recipients.slice(index, index + BATCH_SIZE)
-      await Promise.all(
-        batch.map(async (recipient) => {
-          try {
-            await sendEventOpeningEmail({
-              to: recipient.email,
-              fullName: recipient.fullName,
-              userId: recipient.userId,
-              eventTitle: CAMPAIGN_EVENT_TITLE,
-              eventDate: CAMPAIGN_EVENT_DATE,
-              eventLocation: CAMPAIGN_EVENT_LOCATION,
-              eventUrl: CAMPAIGN_EVENT_URL,
-              heroImageUrl: CAMPAIGN_HERO_IMAGE_URL,
-              offerTitle: CAMPAIGN_OFFER_TITLE,
-              offerDescription: CAMPAIGN_OFFER_DESCRIPTION,
-            })
-            sent += 1
-          } catch (error) {
-            failures.push({
-              email: recipient.email,
-              error: error instanceof Error ? error.message : 'Erreur inconnue',
-            })
-          }
-        }),
+    if (report.sent === 0) {
+      return NextResponse.json(
+        {
+          error: "Aucun email n'a pu être envoyé.",
+          mode: 'all',
+          audienceStats: stats,
+          report,
+        },
+        { status: 502 },
       )
     }
 
     return NextResponse.json({
-      success: true,
-      mode,
-      total: recipients.length,
-      sent,
-      failed: failures.length,
-      failures: failures.slice(0, 20),
+      success: report.failed === 0,
+      mode: 'all',
+      audienceStats: stats,
+      total: report.total,
+      sent: report.sent,
+      failed: report.failed,
+      failures: report.failures.slice(0, 20),
       message:
-        failures.length > 0
-          ? `Envoi terminé avec ${failures.length} échec(s).`
-          : `Envoi terminé. ${sent} email(s) envoyés.`,
+        report.failed > 0
+          ? `Envoi partiel: ${report.sent} envoyés, ${report.failed} échec(s).`
+          : `Envoi terminé. ${report.sent} email(s) envoyés.`,
     })
   } catch (error) {
     console.error('[admin registration opening] send error', error)

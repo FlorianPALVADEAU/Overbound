@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import type { User } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
@@ -26,13 +27,13 @@ const updateProfileSchema = z.object({
   full_name: preprocessOptionalString(
     z
       .string()
-      .min(2, { message: 'Le nom complet doit contenir au moins 2 caractères.' })
+      .min(1, { message: 'Le nom complet doit contenir au moins 1 caractère.' })
       .max(150, { message: 'Le nom complet est trop long.' }),
   ),
   phone: preprocessOptionalString(
     z
       .string()
-      .min(6, { message: 'Le numéro de téléphone doit contenir au moins 6 chiffres.' })
+      .min(1, { message: 'Le numéro de téléphone est invalide.' })
       .max(32, { message: 'Le numéro de téléphone est trop long.' }),
   ),
   date_of_birth: preprocessOptionalString(
@@ -73,12 +74,43 @@ const validateBirthdate = (date: string) => {
   return parsed >= earliest
 }
 
+const resolveAuthenticatedUser = async (
+  request: NextRequest,
+): Promise<User | null> => {
+  const supabase = await createSupabaseServer()
+  const admin = supabaseAdmin()
+
+  const {
+    data: { user: directUser },
+  } = await supabase.auth.getUser()
+
+  if (directUser) {
+    return directUser
+  }
+
+  const authorizationHeader = request.headers.get('authorization')
+  if (authorizationHeader?.toLowerCase().startsWith('bearer ')) {
+    const token = authorizationHeader.slice(7).trim()
+    if (token) {
+      const {
+        data: { user: tokenUser },
+      } = await admin.auth.getUser(token)
+      if (tokenUser) {
+        return tokenUser
+      }
+    }
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  return session?.user ?? null
+}
+
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await resolveAuthenticatedUser(request)
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
@@ -120,8 +152,13 @@ export async function PATCH(request: NextRequest) {
 
     const { data: updatedProfile, error: updateError } = await admin
       .from('profiles')
-      .update(updatePayload)
-      .eq('id', user.id)
+      .upsert(
+        {
+          id: user.id,
+          ...updatePayload,
+        },
+        { onConflict: 'id' },
+      )
       .select('full_name, phone, date_of_birth, marketing_opt_in, role')
       .single()
 

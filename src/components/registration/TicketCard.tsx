@@ -111,7 +111,7 @@ export default function TicketCard({
             <div className="text-xs text-muted-foreground">
               {isSoldOut
                 ? 'Plus de places disponibles'
-                : `${maxParticipants - currentRegistrations} places restantes`}
+                : 'Places limitées'}
             </div>
             <Progress
               value={progressPercentage}

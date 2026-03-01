@@ -119,9 +119,20 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`
+      }
+
       const response = await fetch('/api/account/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       })
 

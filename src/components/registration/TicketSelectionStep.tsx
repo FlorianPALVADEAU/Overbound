@@ -41,7 +41,7 @@ export default function TicketSelectionStep({
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           {availableSpots > 0
-            ? `${availableSpots} places restantes sur l'événement. Dépêchez-vous !`
+            ? "Places limitées sur l'événement. Dépêchez-vous !"
             : "L'événement affiche complet. Vous pouvez rejoindre la liste d'attente."}
         </AlertDescription>
       </Alert>

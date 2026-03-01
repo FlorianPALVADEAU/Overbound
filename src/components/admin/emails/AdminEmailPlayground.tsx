@@ -81,6 +81,17 @@ interface OpeningAudienceRecipient {
   sources: string[]
 }
 
+interface OpeningAudienceStats {
+  totalUnique: number
+  totalEntries: number
+  duplicatesCollapsed: number
+  invalidEmailSkipped: number
+  sourceCounts: {
+    auth: number
+    list_subscriptions: number
+  }
+}
+
 export function AdminEmailPlayground() {
   const [statusMap, setStatusMap] = useState<Record<string, { state: TriggerStatus; message?: string }>>({})
   const [receiptPaymentIntentId, setReceiptPaymentIntentId] = useState('')
@@ -99,6 +110,7 @@ export function AdminEmailPlayground() {
   const [openingAudience, setOpeningAudience] = useState<{
     total: number
     recipients: OpeningAudienceRecipient[]
+    stats?: OpeningAudienceStats
   } | null>(null)
 
   const fetchOpeningAudience = async () => {
@@ -109,6 +121,7 @@ export function AdminEmailPlayground() {
         error?: string
         total?: number
         recipients?: OpeningAudienceRecipient[]
+        audienceStats?: OpeningAudienceStats
       }
       if (!response.ok) {
         throw new Error(payload.error || 'Impossible de charger les destinataires.')
@@ -116,6 +129,7 @@ export function AdminEmailPlayground() {
       setOpeningAudience({
         total: payload.total ?? 0,
         recipients: payload.recipients ?? [],
+        stats: payload.audienceStats,
       })
       setAudienceStatus({ state: 'success', message: `${payload.total ?? 0} adresse(s) unique(s).` })
     } catch (error) {
@@ -326,6 +340,13 @@ export function AdminEmailPlayground() {
               <p className="text-sm font-medium">
                 Destinataires uniques: {openingAudience.total}
               </p>
+              {openingAudience.stats ? (
+                <p className="text-xs text-muted-foreground">
+                  Entrées sources: {openingAudience.stats.totalEntries} • Doublons fusionnés:{' '}
+                  {openingAudience.stats.duplicatesCollapsed} • Emails invalides ignorés:{' '}
+                  {openingAudience.stats.invalidEmailSkipped}
+                </p>
+              ) : null}
               <div className="max-h-72 overflow-auto rounded-lg border border-border p-3">
                 <div className="space-y-1">
                   {openingAudience.recipients.map((recipient) => (

@@ -58,7 +58,7 @@ import { PricingExplainer } from '@/components/pricing/PricingExplainer'
                 )}
                 {ticket.max_participants && (
                   <Badge variant="outline" className="text-xs">
-                    Places : {ticket.max_participants}
+                    Places limitées
                   </Badge>
                 )}
               </div>
@@ -446,7 +446,7 @@ export default function EventsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          <span>{selectedEvent.capacity} places disponibles</span>
+                          <span>Places limitées</span>
                         </div>
                       </div>
 
