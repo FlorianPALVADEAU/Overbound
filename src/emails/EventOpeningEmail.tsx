@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Button, Hr, Section, Text } from '@react-email/components'
+import { Button, Hr, Img, Section, Text } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 
 interface EventOpeningEmailProps {
@@ -8,6 +8,9 @@ interface EventOpeningEmailProps {
   eventDate: string
   eventLocation: string
   eventUrl: string
+  heroImageUrl?: string
+  offerTitle?: string
+  offerDescription?: string
 }
 
 export function EventOpeningEmail({
@@ -16,15 +19,24 @@ export function EventOpeningEmail({
   eventDate,
   eventLocation,
   eventUrl,
+  heroImageUrl,
+  offerTitle,
+  offerDescription,
 }: EventOpeningEmailProps) {
   return (
     <EmailLayout preview={`Inscriptions ouvertes — ${eventTitle}`}>
       <Section style={styles.section}>
+        {heroImageUrl ? (
+          <Section style={styles.heroWrap}>
+            <Img src={heroImageUrl} alt={eventTitle} width="400" style={styles.heroImage} />
+          </Section>
+        ) : null}
+
         <Text style={styles.heading}>
           {fullName ? `${fullName}, ` : ''}les inscriptions sont ouvertes !
         </Text>
         <Text style={styles.paragraph}>
-          Tu nous avais demandé de te prévenir : c'est le moment de réserver ta place pour <strong>{eventTitle}</strong>.
+          Tu nous as demandé de te prévenir : c&apos;est le moment de réserver ta place pour <strong>{eventTitle}</strong>.
         </Text>
 
         <Hr style={styles.separator} />
@@ -45,6 +57,13 @@ export function EventOpeningEmail({
           </table>
         </Section>
 
+        {offerTitle ? (
+          <Section style={styles.offerCard}>
+            <Text style={styles.offerTitle}>{offerTitle}</Text>
+            {offerDescription ? <Text style={styles.offerText}>{offerDescription}</Text> : null}
+          </Section>
+        ) : null}
+
         <Section style={styles.buttonContainer}>
           <Button href={eventUrl} style={styles.button}>
             Je m'inscris maintenant
@@ -64,6 +83,16 @@ export default EventOpeningEmail
 const styles: Record<string, React.CSSProperties> = {
   section: {
     lineHeight: '1.6',
+  },
+  heroWrap: {
+    marginBottom: '20px',
+  },
+  heroImage: {
+    width: '100%',
+    maxWidth: '400px',
+    height: 'auto',
+    borderRadius: '12px',
+    margin: '0 auto',
   },
   heading: {
     fontSize: '26px',
@@ -89,6 +118,26 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#f9fafb',
     borderRadius: '12px',
     padding: '20px',
+  },
+  offerCard: {
+    marginTop: '16px',
+    backgroundColor: '#ecfdf5',
+    border: '1px solid #86efac',
+    borderRadius: '12px',
+    padding: '16px',
+  },
+  offerTitle: {
+    fontSize: '16px',
+    fontWeight: 700,
+    color: '#166534',
+    margin: '0 0 6px 0',
+    textAlign: 'center',
+  },
+  offerText: {
+    fontSize: '14px',
+    color: '#14532d',
+    margin: 0,
+    textAlign: 'center',
   },
   eventTitle: {
     fontSize: '18px',

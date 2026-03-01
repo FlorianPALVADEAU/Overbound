@@ -329,11 +329,20 @@ export async function sendNewEventAnnouncementEmail(params: {
 export async function sendEventOpeningEmail(params: {
   to: string
   fullName?: string | null
+  userId?: string
   eventTitle: string
   eventDate: string
   eventLocation: string
   eventUrl: string
+  heroImageUrl?: string
+  offerTitle?: string
+  offerDescription?: string
 }) {
+  const { generateUnsubscribeUrl } = await import('@/lib/email/unsubscribe')
+  const unsubscribeUrl = params.userId
+    ? generateUnsubscribeUrl(params.userId, params.to)
+    : undefined
+
   const html = await renderEmail(EventOpeningEmail(params))
 
   return resend.emails.send({
@@ -341,6 +350,12 @@ export async function sendEventOpeningEmail(params: {
     to: params.to,
     subject: `Inscriptions ouvertes — ${params.eventTitle}`,
     html,
+    headers: unsubscribeUrl
+      ? {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        }
+      : undefined,
   })
 }
 
