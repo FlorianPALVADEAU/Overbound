@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { Resend } from 'resend'
+import { createHash } from 'node:crypto'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 import EventOpeningEmail from '@/emails/EventOpeningEmail'
@@ -24,9 +25,11 @@ const CAMPAIGN_OFFER_TITLE = '-25% sur les 35 premiers inscrits'
 const CAMPAIGN_OFFER_DESCRIPTION =
   'Aucun code requis : la réduction s’applique automatiquement au checkout.'
 const CAMPAIGN_FROM = "Florian d'Overbound <no-reply@overbound-race.com>"
+const BULK_BATCH_SIZE = 20
 
 const sendSchema = z.object({
-  mode: z.enum(['self', 'all']),
+  mode: z.enum(['dry_run', 'self', 'all']),
+  dryRunToken: z.string().optional(),
 })
 
 const ensureAdmin = async () => {
@@ -71,6 +74,15 @@ const buildOpeningEmailHtml = async (recipient: CampaignAudienceRecipient) =>
       offerDescription: CAMPAIGN_OFFER_DESCRIPTION,
     }),
   )
+
+const buildAudienceToken = (recipients: CampaignAudienceRecipient[]) => {
+  const hash = createHash('sha256')
+  for (const recipient of recipients) {
+    hash.update(recipient.email)
+    hash.update('|')
+  }
+  return hash.digest('hex')
+}
 
 export async function GET() {
   try {
@@ -119,7 +131,28 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const subject = `Inscriptions ouvertes — ${CAMPAIGN_EVENT_TITLE}`
 
-    if (parsed.data.mode === 'self') {
+    const mode = parsed.data.mode
+
+    if (mode === 'dry_run') {
+      const { recipients, stats } = await buildUnifiedCampaignAudience()
+      const estimatedBatches = Math.ceil(recipients.length / BULK_BATCH_SIZE)
+      return NextResponse.json({
+        success: true,
+        mode,
+        total: recipients.length,
+        batchSize: BULK_BATCH_SIZE,
+        estimatedBatches,
+        audienceStats: stats,
+        dryRunToken: buildAudienceToken(recipients),
+        sample: recipients.slice(0, 10).map((recipient) => ({
+          email: recipient.email,
+          sources: recipient.sources,
+        })),
+        message: `Validation OK: ${recipients.length} destinataire(s), ${estimatedBatches} batch(es).`,
+      })
+    }
+
+    if (mode === 'self') {
       const selfRecipient: CampaignAudienceRecipient = {
         email: adminCheck.user.email,
         userId: adminCheck.user.id,
@@ -152,7 +185,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        mode: 'self',
+        mode,
         sent: report.sent,
         failed: report.failed,
         message: `Email de test envoyé à ${adminCheck.user.email}.`,
@@ -162,6 +195,17 @@ export async function POST(request: NextRequest) {
     const { recipients, stats } = await buildUnifiedCampaignAudience()
     if (recipients.length === 0) {
       return NextResponse.json({ error: 'Aucun destinataire trouvé.' }, { status: 400 })
+    }
+    const currentAudienceToken = buildAudienceToken(recipients)
+    if (!parsed.data.dryRunToken || parsed.data.dryRunToken !== currentAudienceToken) {
+      return NextResponse.json(
+        {
+          error:
+            "Validation dry-run requise ou expirée. Lance d'abord 'Valider la campagne (sans envoi)'.",
+          total: recipients.length,
+        },
+        { status: 409 },
+      )
     }
 
     const report = await dispatchCampaign({
@@ -173,7 +217,7 @@ export async function POST(request: NextRequest) {
         subject,
         html: await buildOpeningEmailHtml(recipient),
       }),
-      batchSize: 20,
+      batchSize: BULK_BATCH_SIZE,
       retries: 2,
     })
 

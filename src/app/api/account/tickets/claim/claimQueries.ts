@@ -26,7 +26,10 @@ export const CLAIM_DETAILS_QUERY_KEY = (token: string) => ['account', 'claim-det
 
 const fetchClaimDetails = async (token: string): Promise<ClaimDetailsResponse> => {
   const params = new URLSearchParams({ token })
-  const response = await fetch(`/api/account/tickets/claim?${params.toString()}`, { cache: 'no-store' })
+  const response = await fetch(`/api/account/tickets/claim?${params.toString()}`, { 
+    cache: 'no-store',
+    credentials: 'include', // Ensure cookies are sent with the request
+  })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Impossible de récupérer ce billet')

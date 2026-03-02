@@ -92,6 +92,14 @@ interface OpeningAudienceStats {
   }
 }
 
+interface DryRunPayload {
+  message?: string
+  total?: number
+  estimatedBatches?: number
+  batchSize?: number
+  dryRunToken?: string
+}
+
 export function AdminEmailPlayground() {
   const [statusMap, setStatusMap] = useState<Record<string, { state: TriggerStatus; message?: string }>>({})
   const [receiptPaymentIntentId, setReceiptPaymentIntentId] = useState('')
@@ -107,6 +115,16 @@ export function AdminEmailPlayground() {
   const [campaignStatus, setCampaignStatus] = useState<{ state: TriggerStatus; message?: string }>({
     state: 'idle',
   })
+  const [dryRunStatus, setDryRunStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [dryRunToken, setDryRunToken] = useState<string | null>(null)
+  const [campaignReport, setCampaignReport] = useState<{
+    total?: number
+    sent?: number
+    failed?: number
+    failures?: Array<{ email: string; error: string }>
+  } | null>(null)
   const [openingAudience, setOpeningAudience] = useState<{
     total: number
     recipients: OpeningAudienceRecipient[]
@@ -131,6 +149,8 @@ export function AdminEmailPlayground() {
         recipients: payload.recipients ?? [],
         stats: payload.audienceStats,
       })
+      setDryRunToken(null)
+      setDryRunStatus({ state: 'idle' })
       setAudienceStatus({ state: 'success', message: `${payload.total ?? 0} adresse(s) unique(s).` })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erreur inconnue'
@@ -140,6 +160,13 @@ export function AdminEmailPlayground() {
 
   const sendOpeningCampaign = async (mode: 'self' | 'all') => {
     if (mode === 'all') {
+      if (!dryRunToken) {
+        setCampaignStatus({
+          state: 'error',
+          message: "Validation requise: clique d'abord sur 'Valider la campagne (sans envoi)'.",
+        })
+        return
+      }
       const confirmed = window.confirm(
         "Confirmer l'envoi à toute l'audience unique (comptes + listes de diffusion) ?",
       )
@@ -149,23 +176,76 @@ export function AdminEmailPlayground() {
     }
 
     setCampaignStatus({ state: 'loading' })
+    setCampaignReport(null)
     try {
       const response = await fetch('/api/admin/emails/registration-opening', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify({ mode, ...(mode === 'all' ? { dryRunToken } : {}) }),
       })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; message?: string }
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        message?: string
+        total?: number
+        sent?: number
+        failed?: number
+        failures?: Array<{ email: string; error: string }>
+      }
       if (!response.ok) {
+        setCampaignReport({
+          total: payload.total,
+          sent: payload.sent,
+          failed: payload.failed,
+          failures: payload.failures,
+        })
         throw new Error(payload.error || 'Envoi impossible.')
       }
+      setCampaignReport({
+        total: payload.total,
+        sent: payload.sent,
+        failed: payload.failed,
+        failures: payload.failures,
+      })
       setCampaignStatus({ state: 'success', message: payload.message || 'Envoi terminé.' })
+      if (mode === 'all') {
+        setDryRunToken(null)
+        setDryRunStatus({ state: 'idle' })
+      }
       if (!openingAudience) {
         void fetchOpeningAudience()
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erreur inconnue'
       setCampaignStatus({ state: 'error', message })
+    }
+  }
+
+  const runOpeningDryRun = async () => {
+    setDryRunStatus({ state: 'loading' })
+    setCampaignStatus({ state: 'idle' })
+    setCampaignReport(null)
+    try {
+      const response = await fetch('/api/admin/emails/registration-opening', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'dry_run' }),
+      })
+      const payload = (await response.json().catch(() => ({}))) as DryRunPayload & { error?: string }
+      if (!response.ok) {
+        throw new Error(payload.error || 'Validation dry-run impossible.')
+      }
+      const token = payload.dryRunToken ?? null
+      setDryRunToken(token)
+      setDryRunStatus({
+        state: 'success',
+        message:
+          payload.message ||
+          `Dry-run OK: ${payload.total ?? 0} destinataire(s), ${payload.estimatedBatches ?? 0} batch(es).`,
+      })
+    } catch (error) {
+      setDryRunToken(null)
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setDryRunStatus({ state: 'error', message })
     }
   }
 
@@ -305,10 +385,19 @@ export function AdminEmailPlayground() {
             <Button variant="outline" onClick={fetchOpeningAudience} disabled={audienceStatus.state === 'loading' || campaignStatus.state === 'loading'}>
               {audienceStatus.state === 'loading' ? 'Chargement…' : 'Visualiser l’audience'}
             </Button>
+            <Button variant="outline" onClick={runOpeningDryRun} disabled={dryRunStatus.state === 'loading' || campaignStatus.state === 'loading'}>
+              {dryRunStatus.state === 'loading'
+                ? 'Validation…'
+                : 'Valider la campagne (sans envoi)'}
+            </Button>
             <Button onClick={() => sendOpeningCampaign('self')} disabled={campaignStatus.state === 'loading'}>
               {campaignStatus.state === 'loading' ? 'Envoi…' : 'Envoyer à moi'}
             </Button>
-            <Button variant="destructive" onClick={() => sendOpeningCampaign('all')} disabled={campaignStatus.state === 'loading'}>
+            <Button
+              variant="destructive"
+              onClick={() => sendOpeningCampaign('all')}
+              disabled={campaignStatus.state === 'loading' || !dryRunToken}
+            >
               {campaignStatus.state === 'loading' ? 'Envoi…' : 'Envoyer à tout le monde'}
             </Button>
           </div>
@@ -323,6 +412,16 @@ export function AdminEmailPlayground() {
               <AlertDescription>{audienceStatus.message}</AlertDescription>
             </Alert>
           ) : null}
+          {dryRunStatus.state === 'error' && dryRunStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{dryRunStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {dryRunStatus.state === 'success' && dryRunStatus.message ? (
+            <Alert>
+              <AlertDescription>{dryRunStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
 
           {campaignStatus.state === 'error' && campaignStatus.message ? (
             <Alert variant="destructive">
@@ -333,6 +432,23 @@ export function AdminEmailPlayground() {
             <Alert>
               <AlertDescription>{campaignStatus.message}</AlertDescription>
             </Alert>
+          ) : null}
+          {campaignReport ? (
+            <div className="rounded-lg border border-border p-3 text-xs text-muted-foreground space-y-2">
+              <p>
+                Total: {campaignReport.total ?? '-'} • Envoyés: {campaignReport.sent ?? '-'} • Échecs:{' '}
+                {campaignReport.failed ?? '-'}
+              </p>
+              {campaignReport.failures && campaignReport.failures.length > 0 ? (
+                <div className="max-h-32 overflow-auto space-y-1">
+                  {campaignReport.failures.map((failure) => (
+                    <p key={`${failure.email}-${failure.error}`}>
+                      {failure.email} — {failure.error}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {openingAudience ? (

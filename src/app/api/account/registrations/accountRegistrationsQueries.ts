@@ -16,7 +16,10 @@ export interface AccountRegistrationsResponse {
 export const ACCOUNT_REGISTRATIONS_QUERY_KEY = ['account', 'registrations'] as const
 
 const fetchAccountRegistrations = async (): Promise<AccountRegistrationsResponse> => {
-  const response = await fetch('/api/account/registrations', { cache: 'no-store' })
+  const response = await fetch('/api/account/registrations', { 
+    cache: 'no-store',
+    credentials: 'include', // Ensure cookies are sent with the request
+  })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Impossible de récupérer les inscriptions')

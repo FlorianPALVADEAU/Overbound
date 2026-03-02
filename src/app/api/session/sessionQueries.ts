@@ -30,7 +30,10 @@ export interface SessionResponse {
 export const SESSION_QUERY_KEY = ['session'] as const
 
 const fetchSession = async (): Promise<SessionResponse> => {
-  const response = await fetch('/api/session', { cache: 'no-store' })
+  const response = await fetch('/api/session', { 
+    cache: 'no-store',
+    credentials: 'include', // Ensure cookies are sent with the request
+  })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Impossible de récupérer la session utilisateur')

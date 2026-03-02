@@ -5,8 +5,6 @@ import {
   sendVolunteerApplicationConfirmationEmail,
   sendVolunteerApplicationEmail,
 } from '@/lib/email'
-import { getClientIp } from '@/lib/rateLimit'
-import { verifyHCaptcha } from '@/lib/hcaptcha'
 
 export const runtime = 'nodejs'
 
@@ -57,7 +55,6 @@ const applicationSchema = z.object({
   gdprConsent: z
     .boolean()
     .refine((value) => value === true, { message: 'Tu dois accepter l’utilisation de tes données.' }),
-  captchaToken: toOptionalTrimmed(z.string()),
 })
 
 const VOLUNTEER_NOTIFICATION_EMAIL = 'contact@overbound-race.com'
@@ -82,11 +79,6 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data
-    const ip = getClientIp(request)
-    const captchaOk = await verifyHCaptcha(data.captchaToken, ip)
-    if (!captchaOk) {
-      return NextResponse.json({ error: 'Captcha invalide.' }, { status: 400 })
-    }
     const submittedAt = new Date()
 
     const supabase = await createSupabaseServer()
