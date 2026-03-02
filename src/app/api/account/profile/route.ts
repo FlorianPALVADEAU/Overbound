@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import type { User } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
@@ -77,9 +78,8 @@ const validateBirthdate = (date: string) => {
 const resolveAuthenticatedUser = async (
   request: NextRequest,
 ): Promise<User | null> => {
+  // First, try to get user from cookies (standard server-side auth)
   const supabase = await createSupabaseServer()
-  const admin = supabaseAdmin()
-
   const {
     data: { user: directUser },
   } = await supabase.auth.getUser()
@@ -92,11 +92,39 @@ const resolveAuthenticatedUser = async (
   if (authorizationHeader?.toLowerCase().startsWith('bearer ')) {
     const token = authorizationHeader.slice(7).trim()
     if (token) {
-      const {
-        data: { user: tokenUser },
-      } = await admin.auth.getUser(token)
-      if (tokenUser) {
-        return tokenUser
+      try {
+        // Create a Supabase client with the access token
+        const tokenClient = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              getAll() {
+                return []
+              },
+              setAll() {
+                // No-op for token-based auth
+              },
+            },
+            global: {
+              headers: {
+                authorization: `Bearer ${token}`,
+              },
+            },
+          }
+        )
+
+        // Get the user with the authenticated client
+        const {
+          data: { user: tokenUser },
+        } = await tokenClient.auth.getUser()
+
+        if (tokenUser) {
+          return tokenUser
+        }
+      } catch (error) {
+        console.error('[account profile] token auth error', error)
+        // Fall through to session-based auth
       }
     }
   }

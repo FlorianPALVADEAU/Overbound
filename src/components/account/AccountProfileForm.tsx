@@ -134,6 +134,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
         method: 'PATCH',
         headers,
         body: JSON.stringify(payload),
+        credentials: 'include', // Ensure cookies are sent with the request
       })
 
       const data = (await response.json().catch(() => ({}))) as UpdateProfileResponse
