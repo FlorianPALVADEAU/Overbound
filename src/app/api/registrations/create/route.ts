@@ -8,7 +8,13 @@ import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifi
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { captureException } from '@/lib/sentry'
-import { assignOpenWaveToRegistration, formatWaveStartTime } from '@/lib/openSas'
+import {
+  assignOpenWaveToRegistration,
+  formatWaveStartTime,
+  getRankedStartTime,
+  isOpenFormatTicket,
+  isRankedFormatTicket,
+} from '@/lib/openSas'
 import { sendAdminPushNotification } from '@/lib/push'
 
 export const runtime = 'nodejs'
@@ -251,31 +257,35 @@ export async function POST(request: NextRequest) {
     const createdRegistrations: any[] = []
 
     for (const [index, participant] of participants.entries()) {
+      const ticket = ticketMap.get(participant.ticketId)
+      if (!ticket) {
+        continue
+      }
+
+      const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name ?? null)
+      const isRankedFormat = isRankedFormatTicket(ticket.name, ticket.race?.name ?? null)
       const distanceIdealRaw = String(participant.distanceIdealKm ?? '').trim()
       const distanceMinRaw = String(participant.distanceMinKm ?? '').trim()
       const distanceIdeal = Number(distanceIdealRaw)
       const distanceMin = Number(distanceMinRaw)
 
-      if (!distanceIdealRaw || !distanceMinRaw || !Number.isFinite(distanceIdeal) || !Number.isFinite(distanceMin)) {
-        return NextResponse.json({ error: 'Distances participant invalides.' }, { status: 422 })
-      }
+      if (isOpenFormat) {
+        if (!distanceIdealRaw || !distanceMinRaw || !Number.isFinite(distanceIdeal) || !Number.isFinite(distanceMin)) {
+          return NextResponse.json({ error: 'Distances participant invalides.' }, { status: 422 })
+        }
 
-      if (distanceIdeal < distanceMin) {
-        return NextResponse.json({ error: 'Distance idéale inférieure à la distance minimale.' }, { status: 422 })
-      }
+        if (distanceIdeal < distanceMin) {
+          return NextResponse.json({ error: 'Distance idéale inférieure à la distance minimale.' }, { status: 422 })
+        }
 
-      if (
-        distanceIdeal < DISTANCE_MIN_KM ||
-        distanceIdeal > DISTANCE_MAX_KM ||
-        distanceMin < DISTANCE_MIN_KM ||
-        distanceMin > DISTANCE_MAX_KM
-      ) {
-        return NextResponse.json({ error: 'Distances participant hors limite.' }, { status: 422 })
-      }
-
-      const ticket = ticketMap.get(participant.ticketId)
-      if (!ticket) {
-        continue
+        if (
+          distanceIdeal < DISTANCE_MIN_KM ||
+          distanceIdeal > DISTANCE_MAX_KM ||
+          distanceMin < DISTANCE_MIN_KM ||
+          distanceMin > DISTANCE_MAX_KM
+        ) {
+          return NextResponse.json({ error: 'Distances participant hors limite.' }, { status: 422 })
+        }
       }
 
       const { qr, transfer } = generateTokens()
@@ -301,8 +311,10 @@ export async function POST(request: NextRequest) {
           race_id: ticket.race?.id || null,
           promotional_code_id: promotionalCodeId,
           difficulty_level: participant.difficultyLevel || null,
-          distance_ideal_km: distanceIdeal,
-          distance_min_km: distanceMin,
+          // DB constraints require non-null positive distances; for non-OPEN formats
+          // we store a neutral placeholder and skip OPEN SAS logic.
+          distance_ideal_km: isOpenFormat ? distanceIdeal : 1,
+          distance_min_km: isOpenFormat ? distanceMin : 1,
         })
         .select()
         .single()
@@ -316,27 +328,52 @@ export async function POST(request: NextRequest) {
       const participantName = derivedName || participant.email || registration.email || null
 
       try {
-        const assignment = await assignOpenWaveToRegistration({
-          admin,
-          eventId,
-          registrationId: registration.id,
-          eventDateIso: eventRow.date,
-          ticketName: ticket.name,
-          raceName: ticket.race?.name ?? null,
-          distanceIdealKm: distanceIdeal,
-          distanceMinKm: distanceMin,
-        })
+        if (isOpenFormat) {
+          const assignment = await assignOpenWaveToRegistration({
+            admin,
+            eventId,
+            registrationId: registration.id,
+            eventDateIso: eventRow.date,
+            ticketName: ticket.name,
+            raceName: ticket.race?.name ?? null,
+            distanceIdealKm: distanceIdeal,
+            distanceMinKm: distanceMin,
+          })
 
-        if (assignment) {
-          registration.start_time = assignment.startTime
-          registration.wave_index = assignment.waveIndex
-          registration.wave_capacity = assignment.waveCapacity
-          registration.wave_position = assignment.wavePosition
+          if (assignment) {
+            registration.start_time = assignment.startTime
+            registration.wave_index = assignment.waveIndex
+            registration.wave_capacity = assignment.waveCapacity
+            registration.wave_position = assignment.wavePosition
+            registration.auto_assigned = true
+            registration.preferred_window_start = assignment.preferredWindowStart
+            registration.preferred_window_end = assignment.preferredWindowEnd
+            registration.latest_allowed_time = assignment.latestAllowedTime
+            registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+          }
+        } else if (isRankedFormat) {
+          const rankedStart = getRankedStartTime(eventRow.date).toISOString()
+          const { error: rankedUpdateError } = await admin
+            .from('registrations')
+            .update({
+              start_time: rankedStart,
+              auto_assigned: true,
+              wave_index: null,
+              wave_capacity: null,
+              wave_position: null,
+              preferred_window_start: null,
+              preferred_window_end: null,
+              latest_allowed_time: null,
+              assignment_constraint_breached: false,
+            })
+            .eq('id', registration.id)
+
+          if (rankedUpdateError) {
+            throw rankedUpdateError
+          }
+
+          registration.start_time = rankedStart
           registration.auto_assigned = true
-          registration.preferred_window_start = assignment.preferredWindowStart
-          registration.preferred_window_end = assignment.preferredWindowEnd
-          registration.latest_allowed_time = assignment.latestAllowedTime
-          registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
         }
       } catch (assignmentError) {
         console.error('Erreur attribution SAS OPEN:', assignmentError)
@@ -402,12 +439,16 @@ export async function POST(request: NextRequest) {
       const upsellRecords = upsells
         .map((item: { upsellId: string; quantity: number; meta?: Record<string, any> }) => {
           const upsell = upsellMap.get(item.upsellId)
+          const quantity = Number(item.quantity || 0)
           if (!upsell) return null
+          if (!Number.isFinite(quantity) || quantity <= 0) return null
           return {
             registration_id: referenceRegistration.id,
             name: upsell.name,
             price_cents: upsell.price_cents,
+            quantity,
             currency: upsell.currency || paymentIntent.currency,
+            meta: item.meta ?? null,
           }
         })
         .filter(Boolean)
@@ -418,7 +459,11 @@ export async function POST(request: NextRequest) {
           .insert(upsellRecords)
 
         if (upsellError) {
-          console.error('Erreur création upsells:', upsellError)
+          if ((upsellError as any)?.code === 'PGRST205') {
+            console.warn('Table registration_upsells absente, upsells ignorés.')
+          } else {
+            console.error('Erreur création upsells:', upsellError)
+          }
         }
       }
     }

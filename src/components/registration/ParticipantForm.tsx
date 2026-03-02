@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Ticket as TicketIcon } from 'lucide-react'
 import { FORMAT_LEVELS, type FormatLevelId } from '@/constants/formatLevels'
 import { DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
+import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 import type { EventTicket, Participant } from './types'
 
 interface ParticipantFormProps {
@@ -25,6 +26,8 @@ export default function ParticipantForm({
   showErrors,
 }: ParticipantFormProps) {
   const isUniversalRace = ticket?.race?.is_universal ?? true
+  const isOpenFormat = isOpenFormatTicket(ticket?.name, ticket?.race?.name)
+  const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
   const errorClass = 'border-destructive focus-visible:ring-destructive'
   const hasError = (value: string) => showErrors && !value.trim()
   const distanceMinValue = Number(participant.distanceMinKm)
@@ -206,75 +209,86 @@ export default function ParticipantForm({
             <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
           ) : null}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${participant.id}-distance-min`} className="flex items-center gap-2">
-            Distance minimale (km) <span className="text-destructive">*</span>
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            La distance que vous êtes sûr de faire.
-          </p>
-          <Input
-            id={`${participant.id}-distance-min`}
-            type="number"
-            min={DISTANCE_MIN_KM}
-            max={DISTANCE_MAX_KM}
-            step={1}
-            value={participant.distanceMinKm}
-            onChange={(e) => onFieldChange(participant.id, 'distanceMinKm', e.target.value)}
-            placeholder="10"
-            required
-            className={
-              distanceMinMissing || distanceRangeError(distanceMinValue) || distanceOrderError
-                ? errorClass
-                : ''
-            }
-          />
-          {distanceMinMissing ? (
-            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${participant.id}-distance-ideal`} className="flex items-center gap-2">
-            Distance idéale (km) <span className="text-destructive">*</span>
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            La distance que vous aimeriez atteindre.
-          </p>
-          <Input
-            id={`${participant.id}-distance-ideal`}
-            type="number"
-            min={DISTANCE_MIN_KM}
-            max={DISTANCE_MAX_KM}
-            step={1}
-            value={participant.distanceIdealKm}
-            onChange={(e) => onFieldChange(participant.id, 'distanceIdealKm', e.target.value)}
-            placeholder="20"
-            required
-            className={
-              distanceIdealMissing || distanceRangeError(distanceIdealValue) || distanceOrderError
-                ? errorClass
-                : ''
-            }
-          />
-          {distanceIdealMissing ? (
-            <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <p className="text-xs text-muted-foreground">
-            Ces infos servent à attribuer automatiquement votre heure de départ.
-          </p>
-          {distanceOrderError ? (
-            <p className="text-xs text-destructive font-medium">
-              La distance idéale doit être supérieure ou égale à la distance minimale.
+        {isOpenFormat ? (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor={`${participant.id}-distance-min`} className="flex items-center gap-2">
+                Distance minimale (km) <span className="text-destructive">*</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                La distance que vous êtes sûr de faire.
+              </p>
+              <Input
+                id={`${participant.id}-distance-min`}
+                type="number"
+                min={DISTANCE_MIN_KM}
+                max={DISTANCE_MAX_KM}
+                step={1}
+                value={participant.distanceMinKm}
+                onChange={(e) => onFieldChange(participant.id, 'distanceMinKm', e.target.value)}
+                placeholder="10"
+                required
+                className={
+                  distanceMinMissing || distanceRangeError(distanceMinValue) || distanceOrderError
+                    ? errorClass
+                    : ''
+                }
+              />
+              {distanceMinMissing ? (
+                <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${participant.id}-distance-ideal`} className="flex items-center gap-2">
+                Distance idéale (km) <span className="text-destructive">*</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                La distance que vous aimeriez atteindre.
+              </p>
+              <Input
+                id={`${participant.id}-distance-ideal`}
+                type="number"
+                min={DISTANCE_MIN_KM}
+                max={DISTANCE_MAX_KM}
+                step={1}
+                value={participant.distanceIdealKm}
+                onChange={(e) => onFieldChange(participant.id, 'distanceIdealKm', e.target.value)}
+                placeholder="20"
+                required
+                className={
+                  distanceIdealMissing || distanceRangeError(distanceIdealValue) || distanceOrderError
+                    ? errorClass
+                    : ''
+                }
+              />
+              {distanceIdealMissing ? (
+                <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+              ) : null}
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <p className="text-xs text-muted-foreground">
+                Ces infos servent à attribuer automatiquement votre heure de départ.
+              </p>
+              {distanceOrderError ? (
+                <p className="text-xs text-destructive font-medium">
+                  La distance idéale doit être supérieure ou égale à la distance minimale.
+                </p>
+              ) : null}
+              {(distanceRangeError(distanceMinValue) || distanceRangeError(distanceIdealValue)) ? (
+                <p className="text-xs text-destructive font-medium">
+                  La distance doit être comprise entre {DISTANCE_MIN_KM} et {DISTANCE_MAX_KM} km.
+                </p>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+        {isRankedFormat ? (
+          <div className="space-y-2 md:col-span-2">
+            <p className="text-xs text-muted-foreground">
+              Format RANKED : départ unique automatique à 15:00.
             </p>
-          ) : null}
-          {(distanceRangeError(distanceMinValue) || distanceRangeError(distanceIdealValue)) ? (
-            <p className="text-xs text-destructive font-medium">
-              La distance doit être comprise entre {DISTANCE_MIN_KM} et {DISTANCE_MAX_KM} km.
-            </p>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor={`${participant.id}-medical`}>Informations médicales (optionnel)</Label>
           <Textarea

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import {
+  getResendAudienceIdForSlug,
+  isResendContactSubscribed,
+  mapSlugsToAudienceIds,
+  subscribeResendContactToAudiences,
+  unsubscribeResendContactFromAudiences,
+} from '@/lib/email/resendAudiences'
 
 /**
  * GET /api/subscriptions
@@ -49,10 +56,33 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Create a map of list_id => subscription status
+    // Create a map of list_id => subscription status (legacy fallback)
     const subscriptionMap = new Map(
-      subscriptions?.map((sub) => [sub.list_id, sub.subscribed]) || []
+      subscriptions?.map((sub) => [sub.list_id, Boolean(sub.subscribed)]) || []
     )
+
+    // Prefer Resend status when audience mapping exists
+    if (user.email && lists && lists.length > 0) {
+      await Promise.all(
+        lists.map(async (list) => {
+          const audienceId = getResendAudienceIdForSlug(list.slug)
+          if (!audienceId) return
+
+          try {
+            const subscribed = await isResendContactSubscribed({
+              email: user.email!,
+              audienceId,
+            })
+            subscriptionMap.set(list.id, subscribed)
+          } catch (error) {
+            console.warn('[subscriptions] failed to read Resend status', {
+              listSlug: list.slug,
+              error: error instanceof Error ? error.message : String(error),
+            })
+          }
+        }),
+      )
+    }
 
     // Map lists with subscription status
     const listsWithStatus = lists?.map((list) => ({
@@ -96,6 +126,23 @@ export async function PATCH(request: NextRequest) {
     })
 
     const validatedData = schema.parse(body)
+    const listIds = Object.keys(validatedData.subscriptions)
+
+    // Resolve list IDs to slugs for Resend audience mapping
+    const { data: listsForUpdate, error: listsForUpdateError } = await supabase
+      .from('distribution_lists')
+      .select('id, slug')
+      .in('id', listIds)
+
+    if (listsForUpdateError) {
+      console.error('Error fetching distribution lists for Resend sync:', listsForUpdateError)
+      return NextResponse.json(
+        { error: 'Failed to resolve distribution lists' },
+        { status: 500 }
+      )
+    }
+
+    const listSlugById = new Map((listsForUpdate || []).map((list) => [list.id, list.slug]))
 
     // Get client IP for logging (use headers only; NextRequest has no `ip` property)
     const forwardedFor = request.headers.get('x-forwarded-for')
@@ -151,6 +198,58 @@ export async function PATCH(request: NextRequest) {
           )
         }
         if (insertedRows) data.push(...insertedRows)
+      }
+    }
+
+    // Sync Resend audiences
+    if (user.email) {
+      const subscribedSlugs = listIds
+        .filter((listId) => validatedData.subscriptions[listId] === true)
+        .map((listId) => listSlugById.get(listId))
+        .filter((slug): slug is string => Boolean(slug))
+
+      const unsubscribedSlugs = listIds
+        .filter((listId) => validatedData.subscriptions[listId] === false)
+        .map((listId) => listSlugById.get(listId))
+        .filter((slug): slug is string => Boolean(slug))
+
+      const subscribedAudienceMapping = mapSlugsToAudienceIds(subscribedSlugs)
+      const unsubscribedAudienceMapping = mapSlugsToAudienceIds(unsubscribedSlugs)
+
+      if (subscribedAudienceMapping.missingSlugs.length > 0 || unsubscribedAudienceMapping.missingSlugs.length > 0) {
+        console.warn('[subscriptions] missing Resend audience mapping', {
+          subscribed: subscribedAudienceMapping.missingSlugs,
+          unsubscribed: unsubscribedAudienceMapping.missingSlugs,
+        })
+      }
+
+      const subscribeAudienceSet = new Set(subscribedAudienceMapping.audienceIds)
+      const unsubscribeAudienceSet = new Set(unsubscribedAudienceMapping.audienceIds)
+
+      // In single-segment mode, a contact can appear in both sets.
+      // "subscribe" wins to avoid false opt-out when at least one list stays enabled.
+      for (const audienceId of subscribeAudienceSet) {
+        if (unsubscribeAudienceSet.has(audienceId)) {
+          unsubscribeAudienceSet.delete(audienceId)
+        }
+      }
+
+      if (subscribeAudienceSet.size > 0) {
+        await subscribeResendContactToAudiences({
+          email: user.email,
+          audienceIds: Array.from(subscribeAudienceSet),
+          properties: {
+            user_id: user.id,
+            source: 'preferences_page',
+          },
+        })
+      }
+
+      if (unsubscribeAudienceSet.size > 0) {
+        await unsubscribeResendContactFromAudiences({
+          email: user.email,
+          audienceIds: Array.from(unsubscribeAudienceSet),
+        })
       }
     }
 

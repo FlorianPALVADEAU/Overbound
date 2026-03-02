@@ -741,6 +741,7 @@ function UpsellSummaryPanel({ eventId }: { eventId?: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Option</TableHead>
+                <TableHead>Détails</TableHead>
                 <TableHead className="text-center w-24">Qté vendue</TableHead>
                 <TableHead className="text-right w-36">CA total</TableHead>
                 <TableHead className="text-right w-36">Prix unitaire moy.</TableHead>
@@ -750,6 +751,19 @@ function UpsellSummaryPanel({ eventId }: { eventId?: string }) {
               {summary.map((row) => (
                 <TableRow key={`${row.name}-${row.currency}`}>
                   <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {Array.isArray((row as any).specs_breakdown) && (row as any).specs_breakdown.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {(row as any).specs_breakdown.map((item: any) => (
+                          <Badge key={`${row.name}-${item.label}`} variant="outline" className="text-xs">
+                            {item.label} x{item.quantity}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span>-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-center tabular-nums">
                     <Badge variant="secondary">{row.quantity}</Badge>
                   </TableCell>

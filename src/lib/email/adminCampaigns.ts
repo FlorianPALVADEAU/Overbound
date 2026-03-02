@@ -1,7 +1,8 @@
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { listResendAudienceContacts, mapSlugsToAudienceIds } from '@/lib/email/resendAudiences'
 
-export type AudienceSource = 'auth' | 'list_subscriptions'
+export type AudienceSource = 'auth' | 'list_subscriptions' | 'resend_audience'
 
 export interface AudienceEntry {
   email?: string | null
@@ -50,6 +51,7 @@ export function mergeAudienceEntries(entries: AudienceEntry[]): {
   const sourceCounts: Record<AudienceSource, number> = {
     auth: 0,
     list_subscriptions: 0,
+    resend_audience: 0,
   }
 
   for (const entry of entries) {
@@ -108,7 +110,7 @@ export async function buildUnifiedCampaignAudience() {
   const admin = supabaseAdmin()
 
   const entries: AudienceEntry[] = []
-  const authEmailByUserId = new Map<string, { email: string; fullName?: string | null }>()
+  const authByEmail = new Map<string, { userId: string; fullName?: string | null }>()
 
   let page = 1
   const perPage = 200
@@ -126,36 +128,76 @@ export async function buildUnifiedCampaignAudience() {
           | undefined
 
       if (email) {
-        authEmailByUserId.set(user.id, { email, fullName: fullName ?? null })
+        authByEmail.set(email, { userId: user.id, fullName: fullName ?? null })
       }
-
-      entries.push({
-        email,
-        userId: user.id,
-        fullName: fullName ?? null,
-        source: 'auth',
-      })
     }
 
     if (users.length < perPage) break
     page += 1
   }
 
-  const { data: subscriptions, error: subscriptionsError } = await admin
-    .from('list_subscriptions')
-    .select('user_id, email, full_name, subscribed')
-    .eq('subscribed', true)
+  const { data: lists, error: listsError } = await admin
+    .from('distribution_lists')
+    .select('slug')
+    .eq('active', true)
 
-  if (subscriptionsError) throw subscriptionsError
+  if (listsError) throw listsError
 
-  for (const subscription of subscriptions ?? []) {
-    const fallback = subscription.user_id ? authEmailByUserId.get(subscription.user_id) : null
-    entries.push({
-      email: subscription.email ?? fallback?.email ?? null,
-      userId: subscription.user_id ?? undefined,
-      fullName: subscription.full_name ?? fallback?.fullName ?? null,
-      source: 'list_subscriptions',
-    })
+  const { audienceIds, missingSlugs } = mapSlugsToAudienceIds((lists || []).map((list) => list.slug))
+  if (missingSlugs.length > 0) {
+    console.warn('[adminCampaigns] missing Resend audience mapping', missingSlugs)
+  }
+
+  for (const audienceId of audienceIds) {
+    const contacts = await listResendAudienceContacts(audienceId)
+    for (const contact of contacts) {
+      if (contact.unsubscribed) {
+        continue
+      }
+      const email = normalizeEmail(contact.email)
+      const authMatch = authByEmail.get(email)
+      const fullNameFromContact = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || null
+
+      entries.push({
+        email,
+        userId: authMatch?.userId,
+        fullName: fullNameFromContact || authMatch?.fullName || null,
+        source: 'resend_audience',
+      })
+    }
+  }
+
+  if (audienceIds.length === 0) {
+    for (const [email, auth] of authByEmail.entries()) {
+      entries.push({
+        email,
+        userId: auth.userId,
+        fullName: auth.fullName ?? null,
+        source: 'auth',
+      })
+    }
+  }
+
+  // Backward compatibility: include list_subscriptions rows only if no Resend audience is configured.
+  if (audienceIds.length === 0) {
+    const { data: subscriptions, error: subscriptionsError } = await admin
+      .from('list_subscriptions')
+      .select('user_id, email, full_name, subscribed')
+      .eq('subscribed', true)
+
+    if (subscriptionsError) throw subscriptionsError
+
+    for (const subscription of subscriptions ?? []) {
+      const fallback = subscription.user_id
+        ? Array.from(authByEmail.entries()).find(([, value]) => value.userId === subscription.user_id)
+        : null
+      entries.push({
+        email: subscription.email ?? fallback?.[0] ?? null,
+        userId: subscription.user_id ?? undefined,
+        fullName: subscription.full_name ?? fallback?.[1].fullName ?? null,
+        source: 'list_subscriptions',
+      })
+    }
   }
 
   return mergeAudienceEntries(entries)

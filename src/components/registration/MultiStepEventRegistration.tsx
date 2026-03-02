@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
+import { isOpenFormatTicket } from '@/lib/openSas'
 
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useParticipants } from '@/hooks/registration/useParticipants'
@@ -128,6 +129,7 @@ export default function MultiStepEventRegistration({
       const ticket = ticketMap[participant.ticketId]
       const isUniversalRace = ticket?.race?.is_universal ?? true
       const hasDifficultyIfNeeded = isUniversalRace || participant.difficultyLevel
+      const isOpenFormat = isOpenFormatTicket(ticket?.name, ticket?.race?.name)
       const distanceMin = Number(participant.distanceMinKm)
       const distanceIdeal = Number(participant.distanceIdealKm)
       const hasDistances =
@@ -149,7 +151,7 @@ export default function MultiStepEventRegistration({
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
         hasDifficultyIfNeeded &&
-        hasDistances
+        (isOpenFormat ? hasDistances : true)
       )
     })
 

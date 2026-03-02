@@ -31,6 +31,8 @@ function RegisterInner() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resendingConfirmation, setResendingConfirmation] = useState(false)
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
@@ -38,6 +40,14 @@ function RegisterInner() {
   const resolveNextPath = () => {
     const next = searchParams.get('next')
     return next && next.startsWith('/') ? next : '/account'
+  }
+
+  const resolveAuthRedirectUrl = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL
+    if (!origin) {
+      return null
+    }
+    return `${origin.replace(/\/$/, '')}/auth/callback?next=/account`
   }
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -65,8 +75,16 @@ function RegisterInner() {
 
     setLoading(true)
     setMessage(null)
+    setPendingVerificationEmail(null)
 
     try {
+      const emailRedirectTo = resolveAuthRedirectUrl()
+
+      if (!emailRedirectTo) {
+        setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+        return
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -74,7 +92,7 @@ function RegisterInner() {
           data: {
             full_name: fullName || null,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/account`,
+          emailRedirectTo,
         },
       })
 
@@ -103,6 +121,7 @@ function RegisterInner() {
           type: 'success',
           text: 'Compte créé ! Redirection vers votre espace…',
         })
+        setPendingVerificationEmail(null)
 
         const target = resolveNextPath()
         router.push(target)
@@ -112,8 +131,9 @@ function RegisterInner() {
 
       setMessage({
         type: 'success',
-        text: 'Compte créé ! Vérifie ta boîte mail pour confirmer ton inscription.',
+        text: "Compte créé ! Vérifie ta boîte mail pour confirmer ton inscription. Si tu ne reçois rien, utilise 'Renvoyer l’email'.",
       })
+      setPendingVerificationEmail(email)
       setFullName('')
       setEmail('')
       setPassword('')
@@ -123,6 +143,58 @@ function RegisterInner() {
       setMessage({ type: 'error', text: 'Inscription impossible pour le moment.' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const resendConfirmationEmail = async () => {
+    if (!pendingVerificationEmail) {
+      return
+    }
+
+    const emailRedirectTo = resolveAuthRedirectUrl()
+    if (!emailRedirectTo) {
+      setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+      return
+    }
+
+    setResendingConfirmation(true)
+    setMessage(null)
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: pendingVerificationEmail,
+        options: { emailRedirectTo },
+      })
+
+      if (error) {
+        const normalized = error.message.toLowerCase()
+        const isRateLimited =
+          normalized.includes('security purposes') ||
+          normalized.includes('wait') ||
+          normalized.includes('too many')
+
+        setMessage({
+          type: 'error',
+          text: isRateLimited
+            ? "Trop de demandes rapprochées. Attends une minute puis réessaie de renvoyer l'email."
+            : error.message,
+        })
+        return
+      }
+
+      setMessage({
+        type: 'success',
+        text: `Email de confirmation renvoyé à ${pendingVerificationEmail}. Vérifie aussi les spams/indésirables.`,
+      })
+    } catch (err) {
+      console.error('[register] resend confirmation failed', err)
+      setMessage({
+        type: 'error',
+        text: "Impossible de renvoyer l'email de confirmation pour le moment.",
+      })
+    } finally {
+      setResendingConfirmation(false)
     }
   }
 
@@ -301,14 +373,34 @@ function RegisterInner() {
             </form>
 
             {message ? (
-              <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-                {message.type === 'error' ? (
-                  <AlertCircleIcon className="h-4 w-4" />
-                ) : (
-                  <CheckCircleIcon className="h-4 w-4" />
-                )}
-                <AlertDescription>{message.text}</AlertDescription>
-              </Alert>
+              <div className="space-y-2">
+                <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
+                  {message.type === 'error' ? (
+                    <AlertCircleIcon className="h-4 w-4" />
+                  ) : (
+                    <CheckCircleIcon className="h-4 w-4" />
+                  )}
+                  <AlertDescription>{message.text}</AlertDescription>
+                </Alert>
+                {pendingVerificationEmail ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={resendConfirmationEmail}
+                    disabled={loading || resendingConfirmation}
+                  >
+                    {resendingConfirmation ? (
+                      <>
+                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                        Envoi…
+                      </>
+                    ) : (
+                      "Renvoyer l'email de confirmation"
+                    )}
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="text-center text-sm text-muted-foreground">

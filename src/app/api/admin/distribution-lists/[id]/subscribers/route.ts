@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { EVENT_OPENING_FIRST_LIST_ID } from '@/lib/subscriptions/constants'
+import {
+  getResendAudienceIdForSlug,
+  listResendAudienceContacts,
+  subscribeResendContactToAudiences,
+  unsubscribeResendContactFromAudiences,
+} from '@/lib/email/resendAudiences'
 
 /**
  * GET /api/admin/distribution-lists/[id]/subscribers
@@ -112,114 +118,48 @@ export async function GET(
       )
     }
 
-    // Build query for subscriptions
-    let query = admin
-      .from('list_subscriptions')
-      .select('*')
-      .eq('list_id', id)
-      .range(offset, offset + limit - 1)
-      .order('subscribed_at', { ascending: false })
+    const { data: list, error: listError } = await supabase
+      .from('distribution_lists')
+      .select('id, slug')
+      .eq('id', id)
+      .maybeSingle()
 
-    if (subscribedOnly) {
-      query = query.eq('subscribed', true)
+    if (listError || !list) {
+      return NextResponse.json({ error: 'Distribution list not found' }, { status: 404 })
     }
 
-    const { data: subscriptions, error: subscriptionsError } = await query
-
-    if (subscriptionsError) {
-      console.error('Error fetching subscriptions:', subscriptionsError)
+    const audienceId = getResendAudienceIdForSlug(list.slug)
+    if (!audienceId) {
       return NextResponse.json(
-        { error: 'Failed to fetch subscribers' },
-        { status: 500 }
+        { error: `No Resend audience configured for list slug "${list.slug}"` },
+        { status: 400 }
       )
     }
 
-    if (!subscriptions || subscriptions.length === 0) {
-      return NextResponse.json(
-        { data: [], total: 0, limit, offset },
-        { status: 200 }
-      )
-    }
+    const contacts = await listResendAudienceContacts(audienceId)
+    const filteredContacts = subscribedOnly
+      ? contacts.filter((contact) => !contact.unsubscribed)
+      : contacts
 
-    // Separate subscriptions with user_id from those with email only
-    const userSubscriptions = subscriptions.filter((sub) => sub.user_id)
-    const emailSubscriptions = subscriptions.filter((sub) => !sub.user_id && sub.email)
-
-    // For subscriptions with user_id, fetch emails from auth.users
-    const emailMap = new Map<string, string>()
-    const profilesMap = new Map<string, string | null>()
-
-    if (userSubscriptions.length > 0) {
-      const userIds = userSubscriptions.map((sub) => sub.user_id!)
-      const userIdsSet = new Set(userIds)
-      const perPage = 1000
-
-      // Fetch auth users
-      for (let page = 1; ; page++) {
-        const { data } = await admin.auth.admin.listUsers({ page, perPage })
-        const users = data.users || []
-
-        for (const user of users) {
-          if (userIdsSet.has(user.id)) {
-            emailMap.set(user.id, user.email || '')
-          }
-        }
-
-        if (users.length < perPage || emailMap.size >= userIds.length) {
-          break
-        }
-      }
-
-      // Fetch profiles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-
-      profiles?.forEach((p) => profilesMap.set(p.id, p.full_name))
-    }
-
-    // Map all subscriptions to detailed format
-    const subscribersWithDetails = subscriptions.map((sub) => {
-      if (sub.user_id) {
-        // Authenticated user
-        return {
-          ...sub,
-          user: {
-            id: sub.user_id,
-            email: emailMap.get(sub.user_id) || '',
-            full_name: profilesMap.get(sub.user_id) || null,
-          },
-        }
-      } else {
-        // Email-only subscriber
-        return {
-          ...sub,
-          user: {
-            id: null,
-            email: sub.email || '',
-            full_name: sub.full_name || null,
-          },
-        }
-      }
-    })
-
-    // Get total count (using admin client to see all subscriptions)
-    let countQuery = admin
-      .from('list_subscriptions')
-      .select('*', { count: 'exact', head: true })
-      .eq('list_id', id)
-
-    if (subscribedOnly) {
-      countQuery = countQuery.eq('subscribed', true)
-    }
-
-    const { count } = await countQuery
+    const paginated = filteredContacts.slice(offset, offset + limit)
+    const subscribersWithDetails = paginated.map((contact) => ({
+      id: contact.email,
+      user_id: null,
+      list_id: id,
+      subscribed: !contact.unsubscribed,
+      source: 'resend',
+      subscribed_at: contact.created_at,
+      user: {
+        id: null,
+        email: contact.email,
+        full_name: [contact.first_name, contact.last_name].filter(Boolean).join(' ') || null,
+      },
+    }))
 
     return NextResponse.json(
       {
         data: subscribersWithDetails,
-        total: count || 0,
+        total: filteredContacts.length,
         limit,
         offset,
       },
@@ -300,20 +240,28 @@ export async function DELETE(
       )
     }
 
-    // Use admin client to delete the subscription
-    const { error: deleteError } = await admin
-      .from('list_subscriptions')
-      .delete()
-      .eq('id', subscription_id)
-      .eq('list_id', listId)
+    const { data: list, error: listError } = await supabase
+      .from('distribution_lists')
+      .select('slug')
+      .eq('id', listId)
+      .maybeSingle()
 
-    if (deleteError) {
-      console.error('Error deleting subscriber:', deleteError)
+    if (listError || !list) {
+      return NextResponse.json({ error: 'Distribution list not found' }, { status: 404 })
+    }
+
+    const audienceId = getResendAudienceIdForSlug(list.slug)
+    if (!audienceId) {
       return NextResponse.json(
-        { error: 'Failed to remove subscriber' },
-        { status: 500 }
+        { error: `No Resend audience configured for list slug "${list.slug}"` },
+        { status: 400 }
       )
     }
+
+    await unsubscribeResendContactFromAudiences({
+      email: subscription_id,
+      audienceIds: [audienceId],
+    })
 
     return NextResponse.json(
       { message: 'Subscriber removed successfully' },
@@ -371,58 +319,76 @@ export async function POST(
       )
     }
 
-    // Create subscriptions for each user
-    const subscriptions = user_ids.map((userId) => ({
-      user_id: userId,
-      list_id: id,
-      subscribed: true,
-      source: 'admin' as const,
-      subscribed_at: new Date().toISOString(),
-    }))
+    const { data: list, error: listError } = await supabase
+      .from('distribution_lists')
+      .select('slug')
+      .eq('id', id)
+      .maybeSingle()
 
-    const data: any[] = []
-    for (const subscription of subscriptions) {
-      const { data: existing } = await supabase
-        .from('list_subscriptions')
-        .select('id')
-        .eq('user_id', subscription.user_id)
-        .eq('list_id', subscription.list_id)
+    if (listError || !list) {
+      return NextResponse.json({ error: 'Distribution list not found' }, { status: 404 })
+    }
 
-      if (existing && existing.length > 0) {
-        const { data: updatedRows, error: updateError } = await supabase
-          .from('list_subscriptions')
-          .update(subscription)
-          .eq('user_id', subscription.user_id)
-          .eq('list_id', subscription.list_id)
-          .select()
-        if (updateError) {
-          console.error('Error adding subscribers:', updateError)
-          return NextResponse.json(
-            { error: 'Failed to add subscribers' },
-            { status: 500 }
-          )
+    const audienceId = getResendAudienceIdForSlug(list.slug)
+    if (!audienceId) {
+      return NextResponse.json(
+        { error: `No Resend audience configured for list slug "${list.slug}"` },
+        { status: 400 }
+      )
+    }
+
+    const { supabaseAdmin } = await import('@/lib/supabase/server')
+    const admin = supabaseAdmin()
+    const userIdsSet = new Set(user_ids)
+    const userEmails = new Map<string, string>()
+    const perPage = 1000
+
+    for (let page = 1; ; page++) {
+      const { data } = await admin.auth.admin.listUsers({ page, perPage })
+      const users = data.users || []
+
+      for (const authUser of users) {
+        if (userIdsSet.has(authUser.id) && authUser.email) {
+          userEmails.set(authUser.id, authUser.email)
         }
-        if (updatedRows) data.push(...updatedRows)
-      } else {
-        const { data: insertedRows, error: insertError } = await supabase
-          .from('list_subscriptions')
-          .insert(subscription)
-          .select()
-        if (insertError) {
-          console.error('Error adding subscribers:', insertError)
-          return NextResponse.json(
-            { error: 'Failed to add subscribers' },
-            { status: 500 }
-          )
-        }
-        if (insertedRows) data.push(...insertedRows)
       }
+
+      if (users.length < perPage || userEmails.size >= user_ids.length) {
+        break
+      }
+    }
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', user_ids)
+
+    const profileNameMap = new Map((profiles || []).map((profile) => [profile.id, profile.full_name]))
+
+    const subscribed: string[] = []
+    for (const userId of user_ids) {
+      const email = userEmails.get(userId)
+      if (!email) {
+        continue
+      }
+
+      await subscribeResendContactToAudiences({
+        email,
+        fullName: profileNameMap.get(userId) ?? null,
+        audienceIds: [audienceId],
+        properties: {
+          user_id: userId,
+          source: 'admin',
+        },
+      })
+
+      subscribed.push(userId)
     }
 
     return NextResponse.json(
       {
-        data,
-        message: `${user_ids.length} utilisateur(s) abonné(s) avec succès`,
+        data: { subscribed_user_ids: subscribed },
+        message: `${subscribed.length} utilisateur(s) abonné(s) avec succès`,
       },
       { status: 201 }
     )

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { sendAmbassadorCodeAssignedEmail, sendAmbassadorWelcomeEmail } from '@/lib/ambassadors/email'
 import { z } from 'zod'
+import { deleteResendContactByEmail } from '@/lib/email/resendAudiences'
 
 const updateUserSchema = z
   .object({
@@ -229,6 +230,16 @@ export async function DELETE(
     }
 
     const admin = supabaseAdmin()
+    const { data: targetAuthUser, error: targetAuthUserError } = await admin.auth.admin.getUserById(id)
+    if (targetAuthUserError) {
+      throw targetAuthUserError
+    }
+
+    const targetEmail = targetAuthUser.user?.email?.trim().toLowerCase() || null
+    if (targetEmail) {
+      await deleteResendContactByEmail(targetEmail)
+    }
+
     const { error: authError } = await admin.auth.admin.deleteUser(id)
     if (authError) {
       throw authError
