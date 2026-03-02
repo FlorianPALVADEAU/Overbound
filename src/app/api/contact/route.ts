@@ -5,7 +5,6 @@ import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendSupportContactEmail, sendSupportContactConfirmationEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 import { captureException } from '@/lib/sentry'
-import { verifyHCaptcha } from '@/lib/hcaptcha'
 
 export const runtime = 'nodejs'
 
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
     let reason = ''
     let message = ''
     let attachmentFile: File | null = null
-    let captchaToken = ''
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData()
@@ -48,7 +46,6 @@ export async function POST(request: NextRequest) {
       email = parseString(formData.get('email'))
       reason = parseString(formData.get('reason'))
       message = parseString(formData.get('message'))
-      captchaToken = parseString(formData.get('captchaToken'))
       const dossier = formData.get('dossier')
       if (dossier instanceof File && dossier.size > 0) {
         attachmentFile = dossier
@@ -64,7 +61,6 @@ export async function POST(request: NextRequest) {
       email = parseString((payload as Record<string, unknown>).email)
       reason = parseString((payload as Record<string, unknown>).reason)
       message = parseString((payload as Record<string, unknown>).message)
-      captchaToken = parseString((payload as Record<string, unknown>).captchaToken)
     }
 
     if (!fullName) {
@@ -84,11 +80,6 @@ export async function POST(request: NextRequest) {
         { error: `Le message est trop long (${message.length} caractères).` },
         { status: 400 },
       )
-    }
-
-    const captchaOk = await verifyHCaptcha(captchaToken, ip)
-    if (!captchaOk) {
-      return NextResponse.json({ error: 'Captcha invalide.' }, { status: 400 })
     }
 
     let attachment: {

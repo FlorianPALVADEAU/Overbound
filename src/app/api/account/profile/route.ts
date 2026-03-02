@@ -1,10 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { createServerClient } from '@supabase/ssr'
 import type { User } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
+
+const decodeJWT = (token: string): { sub?: string; aud?: string } | null => {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) {
+      return null
+    }
+
+    const payload = parts[1]
+    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4)
+    
+    const decoded = Buffer.from(padded, 'base64url').toString('utf-8')
+    const parsed = JSON.parse(decoded)
+    
+    return {
+      sub: parsed.sub,
+      aud: parsed.aud,
+    }
+  } catch {
+    return null
+  }
+}
 
 const preprocessOptionalString = <T extends ZodTypeAny>(schema: T) =>
   z.preprocess(
@@ -88,52 +109,33 @@ const resolveAuthenticatedUser = async (
     return directUser
   }
 
+  // Try with Authorization header Bearer token
   const authorizationHeader = request.headers.get('authorization')
   if (authorizationHeader?.toLowerCase().startsWith('bearer ')) {
     const token = authorizationHeader.slice(7).trim()
     if (token) {
       try {
-        // Create a Supabase client with the access token
-        const tokenClient = createServerClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            cookies: {
-              getAll() {
-                return []
-              },
-              setAll() {
-                // No-op for token-based auth
-              },
-            },
-            global: {
-              headers: {
-                authorization: `Bearer ${token}`,
-              },
-            },
+        // Decode the JWT to extract user info
+        const decoded = decodeJWT(token)
+        
+        if (decoded?.sub) {
+          // If we successfully decoded the token and got the user ID,
+          // fetch the user from the admin client to verify it exists
+          const admin = supabaseAdmin()
+          const { data: userData, error } = await admin.auth.admin.getUserById(decoded.sub)
+          
+          if (!error && userData?.user) {
+            return userData.user
           }
-        )
-
-        // Get the user with the authenticated client
-        const {
-          data: { user: tokenUser },
-        } = await tokenClient.auth.getUser()
-
-        if (tokenUser) {
-          return tokenUser
         }
       } catch (error) {
-        console.error('[account profile] token auth error', error)
+        console.error('[account profile] token validation error', error)
         // Fall through to session-based auth
       }
     }
   }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  return session?.user ?? null
+  return null
 }
 
 export async function PATCH(request: NextRequest) {

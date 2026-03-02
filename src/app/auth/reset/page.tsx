@@ -1,13 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { AlertCircleIcon, CheckCircleIcon, LoaderIcon, MailIcon } from 'lucide-react'
 
 type MessageState = { type: 'success' | 'error'; text: string }
@@ -18,10 +17,6 @@ export default function ResetPasswordRequestPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<HCaptcha | null>(null)
-  const hcaptchaSiteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ?? ''
-  const shouldUseCaptcha = Boolean(hcaptchaSiteKey)
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
@@ -38,24 +33,16 @@ export default function ResetPasswordRequestPage() {
       return
     }
 
-    if (shouldUseCaptcha && !captchaToken) {
-      setMessage({ type: 'error', text: 'Merci de valider le captcha avant de continuer.' })
-      return
-    }
-
     setLoading(true)
     setMessage(null)
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset/update`,
-        ...(shouldUseCaptcha ? { captchaToken: captchaToken ?? undefined } : {}),
       })
 
       if (error) {
         setMessage({ type: 'error', text: error.message })
-        captchaRef.current?.resetCaptcha()
-        setCaptchaToken(null)
         return
       }
 
@@ -63,13 +50,9 @@ export default function ResetPasswordRequestPage() {
         type: 'success',
         text: 'Un email de réinitialisation vient de t’être envoyé. Clique sur le lien pour choisir un nouveau mot de passe.',
       })
-      captchaRef.current?.resetCaptcha()
-      setCaptchaToken(null)
     } catch (err) {
       console.error('[reset] resetPasswordForEmail failed', err)
       setMessage({ type: 'error', text: 'Impossible d’envoyer l’email pour le moment.' })
-      captchaRef.current?.resetCaptcha()
-      setCaptchaToken(null)
     } finally {
       setLoading(false)
     }
@@ -108,18 +91,6 @@ export default function ResetPasswordRequestPage() {
                   autoFocus
                 />
               </div>
-
-              {shouldUseCaptcha ? (
-                <div className="flex justify-center">
-                  <HCaptcha
-                    ref={captchaRef}
-                    sitekey={hcaptchaSiteKey}
-                    onVerify={(token) => setCaptchaToken(token)}
-                    onExpire={() => setCaptchaToken(null)}
-                    onError={() => setCaptchaToken(null)}
-                  />
-                </div>
-              ) : null}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
