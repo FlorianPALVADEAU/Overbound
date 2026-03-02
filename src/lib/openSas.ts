@@ -5,6 +5,11 @@ export const OPEN_SAS_CONFIG = {
   waveCapacity: 50,
 } as const
 
+export const RANKED_START_CONFIG = {
+  hour: 15,
+  minute: 0,
+} as const
+
 export type OpenWaveSchedule = {
   firstDeparture: Date
   lastDeparture: Date
@@ -26,6 +31,17 @@ export type OpenWaveAssignment = {
 export const isOpenFormatTicket = (ticketName?: string | null, raceName?: string | null) => {
   const name = `${ticketName ?? ''} ${raceName ?? ''}`.toLowerCase()
   return name.includes('open')
+}
+
+export const isRankedFormatTicket = (ticketName?: string | null, raceName?: string | null) => {
+  const name = `${ticketName ?? ''} ${raceName ?? ''}`.toLowerCase()
+  return name.includes('ranked')
+}
+
+export const getRankedStartTime = (eventDateIso: string) => {
+  const start = new Date(eventDateIso)
+  start.setHours(RANKED_START_CONFIG.hour, RANKED_START_CONFIG.minute, 0, 0)
+  return start
 }
 
 export const buildOpenWaveSchedule = (eventDateIso: string): OpenWaveSchedule => {

@@ -66,11 +66,10 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
     null,
   )
   const [isCheckingSocialIdentities, setIsCheckingSocialIdentities] = useState(true)
-  const [linkedProviders, setLinkedProviders] = useState<{ google: boolean; facebook: boolean }>({
+  const [linkedProviders, setLinkedProviders] = useState<{ google: boolean }>({
     google: false,
-    facebook: false,
   })
-  const [linkingProvider, setLinkingProvider] = useState<'google' | 'facebook' | null>(null)
+  const [linkingProvider, setLinkingProvider] = useState<'google' | null>(null)
 
   useEffect(() => {
     setSavedValues(initialValues)
@@ -90,7 +89,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
       if (error) {
         console.warn('[account profile] getUserIdentities failed', error)
-        setLinkedProviders({ google: false, facebook: false })
+        setLinkedProviders({ google: false })
         setIsCheckingSocialIdentities(false)
         return
       }
@@ -99,13 +98,9 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       const hasGoogle = identities.some(
         (identity) => identity.provider?.toLowerCase() === 'google',
       )
-      const hasFacebook = identities.some(
-        (identity) => identity.provider?.toLowerCase() === 'facebook',
-      )
 
       setLinkedProviders({
         google: hasGoogle,
-        facebook: hasFacebook,
       })
       setIsCheckingSocialIdentities(false)
     }
@@ -288,7 +283,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const isSubmitting = mutation.isPending
 
-  const handleLinkProvider = async (provider: 'google' | 'facebook') => {
+  const handleLinkProvider = async (provider: 'google') => {
     setLinkingProvider(provider)
     setFeedback(null)
 
@@ -317,7 +312,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       console.error('[account profile] linkIdentity failed', error)
       setFeedback({
         type: 'error',
-        message: `Impossible de lier ${provider === 'google' ? 'Google' : 'Facebook'} pour le moment.`,
+        message: 'Impossible de lier Google pour le moment.',
       })
     } finally {
       setLinkingProvider(null)
@@ -349,10 +344,10 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             readOnly
           />
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            {(['google', 'facebook'] as const).map((provider) => {
+            {(['google'] as const).map((provider) => {
               const isLinked = linkedProviders[provider]
               const isLinking = linkingProvider === provider
-              const providerLabel = provider === 'google' ? 'Google' : 'Facebook'
+              const providerLabel = 'Google'
 
               return (
                 <div key={provider} className="flex items-center gap-2">

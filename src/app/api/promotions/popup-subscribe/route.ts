@@ -3,6 +3,10 @@ import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
+import {
+  mapSlugsToAudienceIds,
+  subscribeResendContactToAudiences,
+} from '@/lib/email/resendAudiences'
 
 const subscribeSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -95,6 +99,27 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    const { audienceIds, missingSlugs } = mapSlugsToAudienceIds(marketingLists.map((list) => list.slug))
+    if (audienceIds.length === 0) {
+      return NextResponse.json(
+        { error: 'Aucune audience Resend configurée pour les listes marketing.' },
+        { status: 500 }
+      )
+    }
+
+    if (missingSlugs.length > 0) {
+      console.warn('[popup-subscribe] missing Resend audience mapping for slugs', missingSlugs)
+    }
+
+    await subscribeResendContactToAudiences({
+      email,
+      fullName,
+      audienceIds,
+      properties: {
+        source: `popup-${validatedData.promotion_id}`,
+      },
+    })
 
     // Vérifier si cet email existe déjà dans auth.users
     const admin = supabaseAdmin()

@@ -7,7 +7,13 @@ import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
-import { assignOpenWaveToRegistration, formatWaveStartTime } from '@/lib/openSas'
+import {
+  assignOpenWaveToRegistration,
+  formatWaveStartTime,
+  getRankedStartTime,
+  isOpenFormatTicket,
+  isRankedFormatTicket,
+} from '@/lib/openSas'
 
 export const runtime = 'nodejs'
 
@@ -225,6 +231,11 @@ export async function POST(request: NextRequest) {
         const participantName =
           (metadata.participant_name as string | undefined) || resolvedParticipantEmail
 
+        const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name ?? null)
+        const isRankedFormat = isRankedFormatTicket(ticket.name, ticket.race?.name ?? null)
+        const idealDistance = parseDistance(distance_ideal_km) ?? participantDistances.distanceIdealKm ?? null
+        const minDistance = parseDistance(distance_min_km) ?? participantDistances.distanceMinKm ?? null
+
         // Create registration
         const { data: registration, error: registrationError } = await admin
           .from('registrations')
@@ -240,8 +251,10 @@ export async function POST(request: NextRequest) {
             approval_status: 'pending',
             race_id: race_id || null,
             promotional_code_id: promotionalCodeId,
-            distance_ideal_km: parseDistance(distance_ideal_km) ?? participantDistances.distanceIdealKm ?? null,
-            distance_min_km: parseDistance(distance_min_km) ?? participantDistances.distanceMinKm ?? null,
+            // DB constraints require non-null positive distances; for non-OPEN formats
+            // we store a neutral placeholder and skip OPEN SAS logic.
+            distance_ideal_km: isOpenFormat ? idealDistance : 1,
+            distance_min_km: isOpenFormat ? minDistance : 1,
           })
           .select()
           .single()
@@ -253,28 +266,53 @@ export async function POST(request: NextRequest) {
 
         if (event?.date) {
           try {
-          const assignment = await assignOpenWaveToRegistration({
-            admin,
-            eventId: event_id,
-            registrationId: registration.id,
-            eventDateIso: event.date,
-            ticketName: ticket.name,
-            raceName: ticket.race?.name ?? null,
-            distanceIdealKm: distance_ideal_km ?? participantDistances.distanceIdealKm ?? null,
-            distanceMinKm: distance_min_km ?? participantDistances.distanceMinKm ?? null,
-          })
+            if (isOpenFormat) {
+              const assignment = await assignOpenWaveToRegistration({
+                admin,
+                eventId: event_id,
+                registrationId: registration.id,
+                eventDateIso: event.date,
+                ticketName: ticket.name,
+                raceName: ticket.race?.name ?? null,
+                distanceIdealKm: idealDistance,
+                distanceMinKm: minDistance,
+              })
 
-          if (assignment) {
-            registration.start_time = assignment.startTime
-            registration.wave_index = assignment.waveIndex
-            registration.wave_capacity = assignment.waveCapacity
-            registration.wave_position = assignment.wavePosition
-            registration.auto_assigned = true
-            registration.preferred_window_start = assignment.preferredWindowStart
-            registration.preferred_window_end = assignment.preferredWindowEnd
-            registration.latest_allowed_time = assignment.latestAllowedTime
-            registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
-          }
+              if (assignment) {
+                registration.start_time = assignment.startTime
+                registration.wave_index = assignment.waveIndex
+                registration.wave_capacity = assignment.waveCapacity
+                registration.wave_position = assignment.wavePosition
+                registration.auto_assigned = true
+                registration.preferred_window_start = assignment.preferredWindowStart
+                registration.preferred_window_end = assignment.preferredWindowEnd
+                registration.latest_allowed_time = assignment.latestAllowedTime
+                registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+              }
+            } else if (isRankedFormat) {
+              const rankedStart = getRankedStartTime(event.date).toISOString()
+              const { error: rankedUpdateError } = await admin
+                .from('registrations')
+                .update({
+                  start_time: rankedStart,
+                  auto_assigned: true,
+                  wave_index: null,
+                  wave_capacity: null,
+                  wave_position: null,
+                  preferred_window_start: null,
+                  preferred_window_end: null,
+                  latest_allowed_time: null,
+                  assignment_constraint_breached: false,
+                })
+                .eq('id', registration.id)
+
+              if (rankedUpdateError) {
+                throw rankedUpdateError
+              }
+
+              registration.start_time = rankedStart
+              registration.auto_assigned = true
+            }
           } catch (assignmentError) {
             console.error('Erreur attribution SAS OPEN:', assignmentError)
             throw assignmentError
@@ -306,19 +344,33 @@ export async function POST(request: NextRequest) {
 
         // Create upsell records
         if (upsells && upsells.length > 0) {
-          const upsellRecords = upsells.map((upsell: any) => ({
-            registration_id: registration.id,
-            name: upsell.name,
-            price_cents: upsell.price,
-            currency: paymentIntent.currency,
-          }))
+          const upsellRecords = upsells
+            .map((upsell: any) => {
+              const quantity = Number(upsell.quantity || 0)
+              if (!upsell.name || !Number.isFinite(quantity) || quantity <= 0) return null
+              return {
+                registration_id: registration.id,
+                name: upsell.name,
+                price_cents: upsell.price || 0,
+                quantity,
+                currency: paymentIntent.currency,
+                meta: upsell.meta ?? null,
+              }
+            })
+            .filter(Boolean)
 
-          const { error: upsellError } = await admin
-            .from('registration_upsells')
-            .insert(upsellRecords)
+          if (upsellRecords.length > 0) {
+            const { error: upsellError } = await admin
+              .from('registration_upsells')
+              .insert(upsellRecords)
 
-          if (upsellError) {
-            console.error('Error creating upsells:', upsellError)
+            if (upsellError) {
+              if ((upsellError as any)?.code === 'PGRST205') {
+                console.warn('registration_upsells table missing, skipping upsell persistence.')
+              } else {
+                console.error('Error creating upsells:', upsellError)
+              }
+            }
           }
         }
 

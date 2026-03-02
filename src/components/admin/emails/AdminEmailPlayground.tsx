@@ -89,6 +89,7 @@ interface OpeningAudienceStats {
   sourceCounts: {
     auth: number
     list_subscriptions: number
+    resend_audience?: number
   }
 }
 
@@ -373,112 +374,6 @@ export function AdminEmailPlayground() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Campagne “Ouverture des inscriptions”</CardTitle>
-          <CardDescription>
-            Audience unique fusionnée (comptes + listes de diffusion, sans doublon). Tu peux d’abord t’envoyer un test, puis lancer l’envoi global.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <Button variant="outline" onClick={fetchOpeningAudience} disabled={audienceStatus.state === 'loading' || campaignStatus.state === 'loading'}>
-              {audienceStatus.state === 'loading' ? 'Chargement…' : 'Visualiser l’audience'}
-            </Button>
-            <Button variant="outline" onClick={runOpeningDryRun} disabled={dryRunStatus.state === 'loading' || campaignStatus.state === 'loading'}>
-              {dryRunStatus.state === 'loading'
-                ? 'Validation…'
-                : 'Valider la campagne (sans envoi)'}
-            </Button>
-            <Button onClick={() => sendOpeningCampaign('self')} disabled={campaignStatus.state === 'loading'}>
-              {campaignStatus.state === 'loading' ? 'Envoi…' : 'Envoyer à moi'}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => sendOpeningCampaign('all')}
-              disabled={campaignStatus.state === 'loading' || !dryRunToken}
-            >
-              {campaignStatus.state === 'loading' ? 'Envoi…' : 'Envoyer à tout le monde'}
-            </Button>
-          </div>
-
-          {audienceStatus.state === 'error' && audienceStatus.message ? (
-            <Alert variant="destructive">
-              <AlertDescription>{audienceStatus.message}</AlertDescription>
-            </Alert>
-          ) : null}
-          {audienceStatus.state === 'success' && audienceStatus.message ? (
-            <Alert>
-              <AlertDescription>{audienceStatus.message}</AlertDescription>
-            </Alert>
-          ) : null}
-          {dryRunStatus.state === 'error' && dryRunStatus.message ? (
-            <Alert variant="destructive">
-              <AlertDescription>{dryRunStatus.message}</AlertDescription>
-            </Alert>
-          ) : null}
-          {dryRunStatus.state === 'success' && dryRunStatus.message ? (
-            <Alert>
-              <AlertDescription>{dryRunStatus.message}</AlertDescription>
-            </Alert>
-          ) : null}
-
-          {campaignStatus.state === 'error' && campaignStatus.message ? (
-            <Alert variant="destructive">
-              <AlertDescription>{campaignStatus.message}</AlertDescription>
-            </Alert>
-          ) : null}
-          {campaignStatus.state === 'success' && campaignStatus.message ? (
-            <Alert>
-              <AlertDescription>{campaignStatus.message}</AlertDescription>
-            </Alert>
-          ) : null}
-          {campaignReport ? (
-            <div className="rounded-lg border border-border p-3 text-xs text-muted-foreground space-y-2">
-              <p>
-                Total: {campaignReport.total ?? '-'} • Envoyés: {campaignReport.sent ?? '-'} • Échecs:{' '}
-                {campaignReport.failed ?? '-'}
-              </p>
-              {campaignReport.failures && campaignReport.failures.length > 0 ? (
-                <div className="max-h-32 overflow-auto space-y-1">
-                  {campaignReport.failures.map((failure) => (
-                    <p key={`${failure.email}-${failure.error}`}>
-                      {failure.email} — {failure.error}
-                    </p>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {openingAudience ? (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">
-                Destinataires uniques: {openingAudience.total}
-              </p>
-              {openingAudience.stats ? (
-                <p className="text-xs text-muted-foreground">
-                  Entrées sources: {openingAudience.stats.totalEntries} • Doublons fusionnés:{' '}
-                  {openingAudience.stats.duplicatesCollapsed} • Emails invalides ignorés:{' '}
-                  {openingAudience.stats.invalidEmailSkipped}
-                </p>
-              ) : null}
-              <div className="max-h-72 overflow-auto rounded-lg border border-border p-3">
-                <div className="space-y-1">
-                  {openingAudience.recipients.map((recipient) => (
-                    <div key={recipient.email} className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
-                      <span className="font-mono">{recipient.email}</span>
-                      <span className="text-muted-foreground">
-                        {recipient.sources.join(' + ')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Notifications téléphone (Web Push)</CardTitle>

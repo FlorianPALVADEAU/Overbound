@@ -1,5 +1,10 @@
 import type { User } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import {
+  DEFAULT_MARKETING_LIST_SLUGS,
+  mapSlugsToAudienceIds,
+  subscribeResendContactToAudiences,
+} from '@/lib/email/resendAudiences'
 
 type ProfileRow = {
   id: string
@@ -232,4 +237,25 @@ async function linkEmailSubscriptionsToUser(user: User, profile: ProfileRow | nu
 export async function runPostAuthSync(user: User) {
   const profile = await ensureProfile(user)
   await linkEmailSubscriptionsToUser(user, profile)
+
+  // Keep Resend in sync for every authenticated account so account emails are always present.
+  if (user.email) {
+    const { audienceIds } = mapSlugsToAudienceIds([...DEFAULT_MARKETING_LIST_SLUGS])
+    if (audienceIds.length > 0) {
+      const fullName = profile?.full_name ?? resolveUserName(user) ?? null
+      try {
+        await subscribeResendContactToAudiences({
+          email: user.email,
+          fullName,
+          audienceIds,
+          properties: {
+            user_id: user.id,
+            source: 'post_auth_sync',
+          },
+        })
+      } catch (error) {
+        console.error('[post-auth-sync] resend sync failed', error)
+      }
+    }
+  }
 }

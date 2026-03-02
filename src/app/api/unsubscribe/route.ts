@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateUnsubscribeToken } from '@/lib/email/unsubscribe'
+import {
+  DEFAULT_MARKETING_LIST_SLUGS,
+  mapSlugsToAudienceIds,
+  unsubscribeResendContactFromAudiences,
+} from '@/lib/email/resendAudiences'
+
+async function syncResendUnsubscribe(email: string, slugs: string[]) {
+  const mapping = mapSlugsToAudienceIds(slugs)
+
+  if (mapping.missingSlugs.length > 0) {
+    console.warn('[unsubscribe] missing Resend audience mapping', mapping.missingSlugs)
+  }
+
+  if (mapping.audienceIds.length === 0) {
+    return
+  }
+
+  await unsubscribeResendContactFromAudiences({
+    email,
+    audienceIds: mapping.audienceIds,
+  })
+}
 
 /**
  * POST /api/unsubscribe
@@ -101,6 +123,10 @@ export async function POST(request: NextRequest) {
           .update({ [listMapping[list.slug]]: false })
           .eq('user_id', payload.userId)
       }
+
+      if (list?.slug) {
+        await syncResendUnsubscribe(payload.email, [list.slug])
+      }
     } else {
       // No specific list - unsubscribe from ALL marketing lists
       let allListsQuery = supabase
@@ -152,6 +178,8 @@ export async function POST(request: NextRequest) {
           )
         }
       }
+
+      await syncResendUnsubscribe(payload.email, [...DEFAULT_MARKETING_LIST_SLUGS])
     }
 
     // Log the unsubscribe event (only if we have a user_id)
@@ -277,6 +305,10 @@ export async function GET(request: NextRequest) {
           .update({ [listMapping[list.slug]]: false })
           .eq('user_id', payload.userId)
       }
+
+      if (list?.slug) {
+        await syncResendUnsubscribe(payload.email, [list.slug])
+      }
     } else {
       // No specific list - unsubscribe from ALL marketing lists
       let allListsQuery = supabase
@@ -328,6 +360,8 @@ export async function GET(request: NextRequest) {
           )
         }
       }
+
+      await syncResendUnsubscribe(payload.email, [...DEFAULT_MARKETING_LIST_SLUGS])
     }
 
     // Log the unsubscribe event (only if we have a user_id)
