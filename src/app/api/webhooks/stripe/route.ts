@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       }
 
       const {
+        registration_flow,
         user_id,
         event_id,
         ticket_id,
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
         participants: participantsJson,
       } = metadata
 
-      if ((!ticket_id || ticket_id.trim() === '') && metadata.ticket_selections) {
+      if (registration_flow === 'multi') {
         console.log('Webhook skip: handled by multi-inscription flow for PaymentIntent', paymentIntent.id)
         return new Response('ok', { status: 200 })
       }
