@@ -504,10 +504,18 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatAmount(
-                            registration.order?.amount_total ?? null,
+                            (registration.order as any)?.amount_per_registration ??
+                              registration.order?.amount_total ??
+                              null,
                             registration.order?.currency ?? null
                           )}
                         </span>
+                        {typeof (registration.order as any)?.registrations_count === 'number' &&
+                        (registration.order as any).registrations_count > 1 ? (
+                          <span className="text-[11px] text-muted-foreground">
+                            Commande partagée ({(registration.order as any).registrations_count} participants)
+                          </span>
+                        ) : null}
                       </div>
                     </TableCell>
                     <TableCell>

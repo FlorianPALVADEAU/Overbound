@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,6 +17,22 @@ import {
   LoaderIcon,
   UserIcon,
 } from 'lucide-react'
+import {
+  AUTH_CONFIG_ERROR_MESSAGE,
+  buildAuthCallbackUrl,
+  mapRegisterAuthErrorMessage,
+  mapResendConfirmationErrorMessage,
+  resolveAuthBaseUrl,
+  resolveSafeNextPath,
+  registerValidationErrorMessage,
+  validateRegisterInput,
+} from '@/lib/auth/clientValidation'
+import {
+  buildExternalBrowserUrl,
+  detectInAppBrowser,
+  isInAppBrowser,
+} from '@/lib/auth/inAppBrowser'
+import { buildExternalOAuthUrl, shouldAutoStartGoogleOAuth } from '@/lib/auth/oauthFlow'
 
 type MessageState = { type: 'success' | 'error'; text: string }
 
@@ -34,42 +50,42 @@ function RegisterInner() {
   const [resendingConfirmation, setResendingConfirmation] = useState(false)
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
+  const [inAppBrowserName, setInAppBrowserName] = useState<string | null>(null)
+  const autoOauthTriggeredRef = useRef(false)
 
-  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return
+    const userAgent = navigator.userAgent || ''
+    if (!isInAppBrowser(userAgent)) return
+    setInAppBrowserName(detectInAppBrowser(userAgent))
+  }, [])
 
   const resolveNextPath = () => {
     const next = searchParams.get('next')
-    return next && next.startsWith('/') ? next : '/account'
+    return resolveSafeNextPath(next)
   }
 
   const resolveAuthRedirectUrl = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL
-    if (!origin) {
+    const base = resolveAuthBaseUrl(
+      typeof window !== 'undefined' ? window.location.origin : undefined,
+      process.env.NEXT_PUBLIC_SITE_URL,
+    )
+    if (!base) {
       return null
     }
-    return `${origin.replace(/\/$/, '')}/auth/callback?next=/account`
+    return buildAuthCallbackUrl(base, '/account')
   }
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!email || !password || !confirmPassword) {
-      setMessage({ type: 'error', text: 'Veuillez remplir tous les champs obligatoires.' })
-      return
-    }
-
-    if (!isValidEmail(email)) {
-      setMessage({ type: 'error', text: 'Adresse email invalide.' })
-      return
-    }
-
-    if (password.length < 6) {
-      setMessage({ type: 'error', text: 'Le mot de passe doit contenir au moins 6 caractères.' })
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas.' })
+    const validationError = validateRegisterInput({
+      email,
+      password,
+      confirmPassword,
+    })
+    if (validationError) {
+      setMessage({ type: 'error', text: registerValidationErrorMessage(validationError) })
       return
     }
 
@@ -81,7 +97,7 @@ function RegisterInner() {
       const emailRedirectTo = resolveAuthRedirectUrl()
 
       if (!emailRedirectTo) {
-        setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+        setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
         return
       }
 
@@ -97,17 +113,9 @@ function RegisterInner() {
       })
 
       if (error) {
-        const normalizedError = error.message.toLowerCase()
-        const accountAlreadyExists =
-          normalizedError.includes('already registered') ||
-          normalizedError.includes('already exists') ||
-          normalizedError.includes('user already')
-
         setMessage({
           type: 'error',
-          text: accountAlreadyExists
-            ? 'Cette adresse est déjà utilisée. Connecte-toi avec Google ou utilise "Mot de passe oublié".'
-            : error.message,
+          text: mapRegisterAuthErrorMessage(error.message),
         })
         return
       }
@@ -153,7 +161,7 @@ function RegisterInner() {
 
     const emailRedirectTo = resolveAuthRedirectUrl()
     if (!emailRedirectTo) {
-      setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+      setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
       return
     }
 
@@ -168,17 +176,9 @@ function RegisterInner() {
       })
 
       if (error) {
-        const normalized = error.message.toLowerCase()
-        const isRateLimited =
-          normalized.includes('security purposes') ||
-          normalized.includes('wait') ||
-          normalized.includes('too many')
-
         setMessage({
           type: 'error',
-          text: isRateLimited
-            ? "Trop de demandes rapprochées. Attends une minute puis réessaie de renvoyer l'email."
-            : error.message,
+          text: mapResendConfirmationErrorMessage(error.message),
         })
         return
       }
@@ -198,26 +198,27 @@ function RegisterInner() {
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true)
     setMessage(null)
 
     try {
-      const base = typeof window !== 'undefined'
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_SITE_URL
+      const base = resolveAuthBaseUrl(
+        typeof window !== 'undefined' ? window.location.origin : undefined,
+        process.env.NEXT_PUBLIC_SITE_URL,
+      )
 
       if (!base) {
-        setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+        setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
         setLoading(false)
         return
       }
 
-      const target = resolveNextPath()
+      const target = resolveSafeNextPath(searchParams.get('next'))
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${base.replace(/\/$/, '')}/auth/callback?next=${encodeURIComponent(target)}`,
+          redirectTo: buildAuthCallbackUrl(base, target),
         },
       })
 
@@ -230,6 +231,30 @@ function RegisterInner() {
       setMessage({ type: 'error', text: 'Connexion Google indisponible pour le moment.' })
       setLoading(false)
     }
+  }, [searchParams, supabase])
+
+  useEffect(() => {
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
+    const shouldStart = shouldAutoStartGoogleOAuth({
+      oauthParam: searchParams.get('oauth'),
+      userAgent,
+      alreadyTriggered: autoOauthTriggeredRef.current,
+    })
+    if (!shouldStart) {
+      return
+    }
+
+    autoOauthTriggeredRef.current = true
+    void signInWithGoogle()
+  }, [searchParams, signInWithGoogle])
+
+  const openInExternalBrowser = (oauthProvider?: 'google') => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return
+    const currentUrl = oauthProvider
+      ? buildExternalOAuthUrl(window.location.href, oauthProvider)
+      : window.location.href
+    const url = buildExternalBrowserUrl(currentUrl, navigator.userAgent || '')
+    window.location.href = url
   }
 
   return (
@@ -250,7 +275,13 @@ function RegisterInner() {
 
           <CardContent className="space-y-4">
             <Button
-              onClick={signInWithGoogle}
+              onClick={() => {
+                if (inAppBrowserName) {
+                  openInExternalBrowser('google')
+                  return
+                }
+                void signInWithGoogle()
+              }}
               variant="outline"
               className="w-full"
               disabled={loading}
@@ -275,6 +306,25 @@ function RegisterInner() {
               </svg>
               Continuer avec Google
             </Button>
+
+            {inAppBrowserName ? (
+              <Alert>
+                <AlertCircleIcon className="h-4 w-4" />
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Le navigateur intégré ({inAppBrowserName}) bloque souvent la connexion Google.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => openInExternalBrowser('google')}
+                  >
+                    Ouvrir dans Safari / Chrome
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

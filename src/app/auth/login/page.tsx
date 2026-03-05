@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +11,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { useQueryClient } from '@tanstack/react-query'
 import { SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
+import {
+  AUTH_CONFIG_ERROR_MESSAGE,
+  buildAuthCallbackUrl,
+  isValidEmail,
+  mapOAuthCallbackErrorMessage,
+  resolveAuthBaseUrl,
+  resolveSafeNextPath,
+} from '@/lib/auth/clientValidation'
+import {
+  buildExternalBrowserUrl,
+  detectInAppBrowser,
+  isInAppBrowser,
+} from '@/lib/auth/inAppBrowser'
+import { buildExternalOAuthUrl, shouldAutoStartGoogleOAuth } from '@/lib/auth/oauthFlow'
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -33,11 +47,14 @@ function LoginInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<MessageState | null>(null)
+  const [inAppBrowserName, setInAppBrowserName] = useState<string | null>(null)
+  const autoOauthTriggeredRef = useRef(false)
 
   useEffect(() => {
     const error = searchParams.get('error')
     if (error) {
-      setMessage({ type: 'error', text: decodeURIComponent(error) })
+      const decodedError = decodeURIComponent(error)
+      setMessage({ type: 'error', text: mapOAuthCallbackErrorMessage(decodedError) })
       return
     }
 
@@ -47,11 +64,16 @@ function LoginInner() {
     }
   }, [searchParams])
 
-  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return
+    const userAgent = navigator.userAgent || ''
+    if (!isInAppBrowser(userAgent)) return
+    setInAppBrowserName(detectInAppBrowser(userAgent))
+  }, [])
 
   const resolveNextPath = () => {
     const next = searchParams.get('next')
-    return next && next.startsWith('/') ? next : '/account'
+    return resolveSafeNextPath(next)
   }
 
   const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -120,23 +142,23 @@ function LoginInner() {
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true)
     setMessage(null)
   
     try {
       const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : undefined
       const siteUrlFromEnv = process.env.NEXT_PUBLIC_SITE_URL
-      const base = runtimeOrigin ?? siteUrlFromEnv
+      const base = resolveAuthBaseUrl(runtimeOrigin, siteUrlFromEnv)
       if (!base) {
         console.error('[auth] No base URL available for redirect. NEXT_PUBLIC_SITE_URL is not set and window is undefined.')
-        setMessage({ type: 'error', text: "Erreur de configuration : URL de l'application introuvable." })
+        setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
         setLoading(false)
         return
       }
   
-      const target = resolveNextPath()
-      const redirectTo = `${base.replace(/\/$/, '')}/auth/callback?next=${encodeURIComponent(target)}`
+      const target = resolveSafeNextPath(searchParams.get('next'))
+      const redirectTo = buildAuthCallbackUrl(base, target)
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -155,6 +177,30 @@ function LoginInner() {
       setMessage({ type: 'error', text: 'Connexion Google indisponible pour le moment.' })
       setLoading(false)
     }
+  }, [searchParams, supabase])
+
+  useEffect(() => {
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
+    const shouldStart = shouldAutoStartGoogleOAuth({
+      oauthParam: searchParams.get('oauth'),
+      userAgent,
+      alreadyTriggered: autoOauthTriggeredRef.current,
+    })
+    if (!shouldStart) {
+      return
+    }
+
+    autoOauthTriggeredRef.current = true
+    void signInWithGoogle()
+  }, [searchParams, signInWithGoogle])
+
+  const openInExternalBrowser = (oauthProvider?: 'google') => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return
+    const currentUrl = oauthProvider
+      ? buildExternalOAuthUrl(window.location.href, oauthProvider)
+      : window.location.href
+    const url = buildExternalBrowserUrl(currentUrl, navigator.userAgent || '')
+    window.location.href = url
   }
 
 
@@ -176,7 +222,13 @@ function LoginInner() {
 
           <CardContent className="space-y-4">
             <Button
-              onClick={signInWithGoogle}
+              onClick={() => {
+                if (inAppBrowserName) {
+                  openInExternalBrowser('google')
+                  return
+                }
+                void signInWithGoogle()
+              }}
               variant="outline"
               className="w-full"
               disabled={loading}
@@ -201,6 +253,25 @@ function LoginInner() {
               </svg>
               Continuer avec Google
             </Button>
+
+            {inAppBrowserName ? (
+              <Alert>
+                <AlertCircleIcon className="h-4 w-4" />
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Le navigateur intégré ({inAppBrowserName}) bloque souvent la connexion Google.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => openInExternalBrowser('google')}
+                  >
+                    Ouvrir dans Safari / Chrome
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

@@ -9,8 +9,8 @@ import {
 } from '@/lib/email/resendAudiences'
 
 const subscribeSchema = z.object({
-  email: z.string().email('Email invalide'),
-  full_name: z.string().min(1, 'Le prénom est requis'),
+  email: z.string().trim().min(1, "L'adresse email est requise").email('Email invalide'),
+  full_name: z.string().trim().min(1, 'Le prénom est requis'),
   promotion_id: z.string().uuid('ID de promotion invalide'),
   website: z.string().optional(),
   elapsed_ms: z.number().int().nonnegative().nullable().optional(),
