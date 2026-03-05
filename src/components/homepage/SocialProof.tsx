@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Pause, Play, Star, Volume2, VolumeX } from 'lucide-react'
 import Headings from '../globals/Headings'
 import SubHeadings from '../globals/SubHeadings'
@@ -47,12 +47,22 @@ const shuffleWithSeed = <T,>(array: T[], seed: number): T[] => {
   return result
 }
 
+const getTestimonialPosterUrl = (mediaUrl: string) => {
+  const fileName = mediaUrl.split('/').pop()?.replace(/\.(webm|mp4)$/i, '')
+  if (!fileName) {
+    return '/images/hero_header_poster.avif'
+  }
+  return `/images/feedbacks/posters/${fileName}.jpg`
+}
+
 const SocialProof = () => {
+  const sectionRef = useRef<HTMLElement | null>(null)
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
   const [isMuted, setIsMuted] = useState(true)
   const [hoveredVideo, setHoveredVideo] = useState<string | null>(null)
   const [pausedVideoId, setPausedVideoId] = useState<string | null>(null)
+  const [canLoadMedia, setCanLoadMedia] = useState(false)
 
   const uniqueTestimonials = useMemo(() => {
     const seen = new Set<string>()
@@ -117,6 +127,23 @@ const SocialProof = () => {
     }
   }, [carouselApi])
 
+  useEffect(() => {
+    if (!sectionRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (!entry?.isIntersecting) return
+        setCanLoadMedia(true)
+        observer.disconnect()
+      },
+      { root: null, rootMargin: '450px 0px', threshold: 0.01 },
+    )
+
+    observer.observe(sectionRef.current)
+    return () => observer.disconnect()
+  }, [])
+
   const handlePlayClick = (videoId: string, videoElement: HTMLVideoElement | null) => {
     if (!videoElement) return
 
@@ -163,12 +190,13 @@ const SocialProof = () => {
   const renderVideoSlide = (testimonial: TestimonialType) => {
     const videoId = testimonial.id.toString()
     const isHovered = hoveredVideo === videoId
+    const posterUrl = getTestimonialPosterUrl(testimonial.mediaUrl)
     let videoRef: HTMLVideoElement | null = null
 
     return (
-      <div className="relative flex h-full max-h-[640px] flex-col overflow-hidden rounded-2xl bg-gray-900 shadow-xl">
+      <div className="relative flex h-full max-h-160 flex-col overflow-hidden rounded-2xl bg-gray-900 shadow-xl">
         <div
-          className="relative w-full flex-1 min-h-[360px] overflow-hidden sm:min-h-[400px]"
+          className="relative w-full flex-1 min-h-90 overflow-hidden sm:min-h-100"
           onMouseEnter={() => setHoveredVideo(videoId)}
           onMouseLeave={() => setHoveredVideo(null)}
         >
@@ -177,19 +205,24 @@ const SocialProof = () => {
             loop
             muted={activeVideoId === videoId ? isMuted : true}
             playsInline
+            preload="none"
             autoPlay
+            poster={posterUrl}
             onEnded={activeVideoId === videoId ? handleVideoEnded : undefined}
             ref={(video) => {
               videoRef = video
-              if (!video) return
-              // Videos autoplay by default, unless paused
+              if (!video || !canLoadMedia) return
               if (pausedVideoId !== videoId) {
                 void video.play()
               }
             }}
           >
-            <source src={testimonial.mediaUrl} type="video/webm" />
-            <source src={testimonial.mediaUrl.replace('.webm', '.mp4')} type="video/mp4" />
+            {canLoadMedia ? (
+              <>
+                <source src={testimonial.mediaUrl} type="video/webm" />
+                <source src={testimonial.mediaUrl.replace('.webm', '.mp4')} type="video/mp4" />
+              </>
+            ) : null}
           </video>
           {/* Remove backdrop when video is active */}
           <div className={`absolute inset-0 transition-all duration-300 ${
@@ -243,7 +276,7 @@ const SocialProof = () => {
           )}
         </div>
 
-        <div className="absolute bottom-8 left-1/2 w-[92%] max-w-[600px] -translate-x-1/2 rounded-xl bg-white/95 p-4.5 shadow-xl sm:p-5.5">
+        <div className="absolute bottom-8 left-1/2 w-[92%] max-w-150 -translate-x-1/2 rounded-xl bg-white/95 p-4.5 shadow-xl sm:p-5.5">
           <div className="mb-3 flex flex-wrap items-center gap-2">
               {renderStars(testimonial.rating)}
             <span className="text-xs font-medium text-gray-700 sm:text-sm">
@@ -262,7 +295,7 @@ const SocialProof = () => {
                 {testimonial.age} ans • {testimonial.location}
               </p>
             </div>
-            <div className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
+            <div className="ml-2 shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
               ✓ Vérifié
             </div>
           </div>
@@ -297,7 +330,7 @@ const SocialProof = () => {
             {testimonial.age} ans • {testimonial.location}
           </p>
         </div>
-        <div className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
+        <div className="ml-2 shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
           ✓ Vérifié
         </div>
       </div>
@@ -305,7 +338,7 @@ const SocialProof = () => {
   )
 
   const renderCommentSlide = (group: TestimonialType[]) => (
-    <div className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-primary/40 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-xl sm:p-6">
+    <div className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-primary/40 bg-linear-to-br from-white to-slate-50/80 p-4 shadow-xl sm:p-6">
       <div className="flex flex-1 flex-col gap-5">
         {group.map((item) => renderCommentBlock(item))}
       </div>
@@ -318,7 +351,10 @@ const SocialProof = () => {
   )
 
   return (
-    <section className="relative flex w-full flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-12 pt-40 sm:px-6 lg:px-8 xl:px-24">
+    <section
+      ref={sectionRef}
+      className="relative flex w-full flex-col items-center justify-center bg-linear-to-b from-gray-50 to-white px-4 py-12 pt-40 sm:px-6 lg:px-8 xl:px-24"
+    >
       <Image
         src="/images/decorations/mountain-vector.svg"
         alt="Background"
@@ -343,7 +379,7 @@ const SocialProof = () => {
             {slides.map((slide) => (
               <CarouselItem
                 key={slide.id}
-                className="basis-[95%] pl-2 sm:pl-3 md:pl-4 md:basis-1/2 xl:basis-1/3 h-[540px] sm:h-[560px] lg:h-[600px]"
+                className="basis-[95%] pl-2 sm:pl-3 md:pl-4 md:basis-1/2 xl:basis-1/3 h-135 sm:h-140 lg:h-150"
               >
                 {slide.type === 'video'
                   ? renderVideoSlide(slide.data)
@@ -352,8 +388,8 @@ const SocialProof = () => {
             ))}
           </CarouselContent>
           <div className="hidden md:block">
-            <CarouselPrevious className="left-4 top-auto bottom-4 bg-primary text-white border-primary hover:bg-primary/90 shadow-lg" />
-            <CarouselNext className="left-16 right-auto top-auto bottom-4 bg-primary text-white border-primary hover:bg-primary/90 shadow-lg" />
+            <CarouselPrevious className="left-4 top-auto bottom-4 bg-primary text-black border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
+            <CarouselNext className="left-16 right-auto top-auto bottom-4 bg-primary text-black border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
           </div>
         </Carousel>
 
@@ -363,7 +399,7 @@ const SocialProof = () => {
           />
         </div>
 
-        <div className="flex w-full flex-col items-start justify-start gap-4 mt-6">
+        {/* <div className="flex w-full flex-col items-start justify-start gap-4 mt-6">
           <SubHeadings title="Overbound, en chiffres" sx='text-black' />
           <div className="flex w-full flex-col items-center justify-center gap-6 sm:flex-row sm:justify-between sm:gap-4">
             <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg sm:h-56 sm:w-[30%]">
@@ -391,7 +427,7 @@ const SocialProof = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   )

@@ -1,12 +1,7 @@
 import type { Metadata } from 'next';
-import CTA from '@/components/homepage/CTA';
-import DistanceFormatsAndDifficulties from '@/components/homepage/DistanceFormatsAndDifficulties';
-import FAQ from '@/components/homepage/FAQ';
 import HeroHeader from '@/components/homepage/HeroHeader';
 import NextEvents from '@/components/homepage/NextEvents';
-import ObstaclesOverview from '@/components/homepage/ObstaclesOverview';
-import SocialProof from '@/components/homepage/SocialProof';
-import VolunteersAppeal from '@/components/homepage/VolunteersAppeal';
+import { HomeDeferredSections } from '@/components/homepage/HomeDeferredSections';
 import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 import { PricingExplainer } from '@/components/pricing/PricingExplainer';
 import { metadata as baseMetadata } from './metadata';
@@ -36,13 +31,7 @@ export default function Home() {
       <section className="w-full px-4 py-12 sm:px-6 xl:px-32">
           <PricingExplainer />
       </section>
-      <DistanceFormatsAndDifficulties />
-      <ObstaclesOverview />
-      <SocialProof />
-      <CTA />
-      <FAQ />
-      {/* <RelevantBlogArticles /> */}
-      <VolunteersAppeal />
+      <HomeDeferredSections />
     </div>
   );
 }

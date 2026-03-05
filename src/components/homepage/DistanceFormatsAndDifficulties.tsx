@@ -117,22 +117,6 @@ useEffect(() => {
 }, [activeStep, progress]);
 
 useEffect(() => {
-	const preloadedImages = steps.map((step) => {
-		if (typeof window === "undefined") return null;
-		const img = new window.Image();
-		img.src = step.image;
-		return img;
-	});
-
-	return () => {
-		preloadedImages.forEach((img) => {
-			if (!img) return;
-			img.src = "";
-		});
-	};
-}, []);
-
-useEffect(() => {
 	const observers = stepRefs.current.map((ref, index) => {
 		if (!ref) return null;
 

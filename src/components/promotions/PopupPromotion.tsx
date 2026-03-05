@@ -25,6 +25,7 @@ interface PopupPromotionProps {
 }
 
 const POPUP_SUBSCRIBED_STORAGE_KEY = 'overbound-popup-subscribed'
+const POPUP_LAST_SEEN_STORAGE_KEY = 'overbound-popup-last-seen-id'
 
 export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const { data: promotions = [], isLoading } = usePromotions()
@@ -61,6 +62,10 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
     const hasAlreadySubscribed = localStorage.getItem(POPUP_SUBSCRIBED_STORAGE_KEY)
     if (hasAlreadySubscribed === 'true') return
 
+    // Don't show again if this popup has already been seen in a previous session.
+    const lastSeenPopupId = localStorage.getItem(POPUP_LAST_SEEN_STORAGE_KEY)
+    if (lastSeenPopupId === activePopup.id) return
+
     // Check if already shown in this session
     const sessionKey = `popup-seen-${activePopup.id}`
     const hasSeenInSession = sessionStorage.getItem(sessionKey)
@@ -80,8 +85,9 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
 
   const handleClose = () => {
     if (activePopup) {
-      // Mark as seen in this session
+      // Mark as seen in this session and persist across sessions for this popup.
       sessionStorage.setItem(`popup-seen-${activePopup.id}`, 'true')
+      localStorage.setItem(POPUP_LAST_SEEN_STORAGE_KEY, activePopup.id)
     }
     setIsOpen(false)
   }
@@ -137,6 +143,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
 
       // Mark as seen
       sessionStorage.setItem(`popup-seen-${activePopup.id}`, 'true')
+      localStorage.setItem(POPUP_LAST_SEEN_STORAGE_KEY, activePopup.id)
       localStorage.setItem(POPUP_SUBSCRIBED_STORAGE_KEY, 'true')
 
       // Close after showing success message
@@ -166,7 +173,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
       }}
     >
       <DialogContent
-        className="max-w-5xl"
+        className="relative max-w-5xl overflow-hidden border-border/80 bg-background/98 shadow-[0_30px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/15 backdrop-blur-sm"
         onPointerDownOutside={(e) => {
           if (!config.backdrop_dismissible) {
             e.preventDefault()
@@ -190,7 +197,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
 
         {config.background_image_url && (
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-10 -z-10"
+            className="absolute inset-0 -z-10 bg-cover bg-center opacity-[0.12]"
             style={{ backgroundImage: `url(${config.background_image_url})` }}
           />
         )}

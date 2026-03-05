@@ -49,7 +49,6 @@ const WhatsOverbound = () => {
         className='object-cover object-center absolute w-full -bottom-3 sm:-bottom-4 md:-bottom-5 -right-0 pointer-events-none'
         height={'600'}
         width={'600'}
-        priority
       />
     </section>
   )
