@@ -1,27 +1,74 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import AnimatedBanner from "./AnimatedBanner";
 import { PARTNERS_DATA } from "@/datas/Partners";
 
 export const HeroHeader = () => {
+    const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+
+    useEffect(() => {
+        const isMobileViewport = window.matchMedia("(max-width: 768px)").matches;
+        const connection = (navigator as Navigator & {
+            connection?: { saveData?: boolean; effectiveType?: string };
+        }).connection;
+
+        const isConstrainedNetwork = Boolean(
+            connection?.saveData ||
+            connection?.effectiveType === "slow-2g" ||
+            connection?.effectiveType === "2g" ||
+            connection?.effectiveType === "3g"
+        );
+
+        if (isMobileViewport || isConstrainedNetwork) {
+            setShouldLoadVideo(false);
+            return;
+        }
+
+        const requestIdle = globalThis.requestIdleCallback;
+        const cancelIdle = globalThis.cancelIdleCallback;
+
+        if (typeof requestIdle === "function" && typeof cancelIdle === "function") {
+            const idleHandle = requestIdle(
+                () => setShouldLoadVideo(true),
+                { timeout: 2500 }
+            );
+
+            return () => {
+                cancelIdle(idleHandle);
+            };
+        }
+
+        const timeoutHandle = globalThis.setTimeout(() => setShouldLoadVideo(true), 1800);
+        return () => {
+            globalThis.clearTimeout(timeoutHandle);
+        };
+    }, []);
+
     return (
         <>
             <section className="relative w-full h-[75vh] overflow-hidden">
-                <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
-                    poster="/images/hero_header_poster.avif"
-                    className="absolute top-0 left-0 w-full h-full object-cover"
-                >
-                    <source src="/videos/hero_header_video.webm" type="video/webm" />
-                    <source src="/videos/hero_header_video.mp4" type="video/mp4" />
-                    Ton navigateur ne supporte pas les vidéos HTML5.
-                </video>
+                {shouldLoadVideo ? (
+                    <video
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        poster="/images/hero_header_poster.avif"
+                        className="absolute top-0 left-0 w-full h-full object-cover"
+                    >
+                        <source src="/videos/hero_header_video.webm" type="video/webm" />
+                        <source src="/videos/hero_header_video.mp4" type="video/mp4" />
+                        Ton navigateur ne supporte pas les vidéos HTML5.
+                    </video>
+                ) : (
+                    <div
+                        className="absolute top-0 left-0 w-full h-full bg-cover bg-center"
+                        style={{ backgroundImage: "url('/images/hero_header_poster.avif')" }}
+                    />
+                )}
 
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-black/40" />

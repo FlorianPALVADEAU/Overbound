@@ -1,10 +1,10 @@
 'use client'
 
 import { ReactNode, useCallback, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PromotionsBanner } from './PromotionsBanner'
-import { PopupPromotion } from '@/components/promotions/PopupPromotion'
 import { useSession, SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -14,6 +14,11 @@ import type { Session } from '@supabase/supabase-js'
 interface LayoutProps {
   children: ReactNode
 }
+
+const PopupPromotion = dynamic(
+  () => import('@/components/promotions/PopupPromotion').then((module) => module.PopupPromotion),
+  { ssr: false }
+)
 
 export function Layout({ children }: LayoutProps) {
   const { data, isLoading } = useSession()
