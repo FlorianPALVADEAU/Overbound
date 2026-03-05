@@ -4,6 +4,7 @@ import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { notifyEventUpdate } from '@/lib/email/eventUpdates'
 import { notifyEventOpening } from '@/lib/email/eventOpenings'
+import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -87,7 +88,7 @@ const handleGet = async (
 
     const { data: registrationsOrders, error: registrationsOrdersError } = await admin
       .from('registrations')
-      .select('order:orders(amount_total, currency, status)')
+      .select('order_id')
       .eq('event_id', id)
 
     if (registrationsOrdersError) {
@@ -96,15 +97,27 @@ const handleGet = async (
 
     let totalRevenueCents = 0
     let revenueCurrency: string | null = null
-    if (registrationsOrders) {
-      for (const registration of registrationsOrders) {
-        const order = (registration as unknown as { order?: { amount_total: number | null; currency: string | null; status: string | null } }).order
+    const uniqueOrderIds = Array.from(
+      new Set(
+        (registrationsOrders ?? [])
+          .map((registration) => (registration as { order_id?: string | null }).order_id ?? null)
+          .filter((orderId): orderId is string => Boolean(orderId)),
+      ),
+    )
 
-        if (!order || order.amount_total == null || order.status !== 'paid') continue
-        totalRevenueCents += Number(order.amount_total)
-        if (!revenueCurrency && order.currency) {
-          revenueCurrency = order.currency
-        }
+    if (uniqueOrderIds.length > 0) {
+      const { data: paidOrders, error: paidOrdersError } = await admin
+        .from('orders')
+        .select('id, amount_total, currency, status')
+        .in('id', uniqueOrderIds)
+        .eq('status', 'paid')
+
+      if (paidOrdersError) {
+        console.error('[admin event detail] paid orders fetch error', paidOrdersError)
+      } else {
+        const revenue = computeUniquePaidRevenueCents(paidOrders ?? [])
+        totalRevenueCents = revenue.totalRevenueCents
+        revenueCurrency = revenue.revenueCurrency
       }
     }
 

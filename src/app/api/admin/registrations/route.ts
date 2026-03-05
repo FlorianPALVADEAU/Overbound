@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import {
+  buildOrderSummaries,
+  countRegistrationsByOrder,
+} from '@/lib/admin/orderRevenue'
 
 export async function GET(request: Request) {
   try {
@@ -119,13 +123,30 @@ export async function GET(request: Request) {
       })
     }
     const orderMap = new Map<string, any>()
-    for (const order of ordersResult.data ?? []) {
-      orderMap.set(order.id, {
-        id: order.id,
-        amount_total: order.amount_total ?? null,
-        currency: order.currency ?? null,
-        status: order.status ?? null,
+
+    if (orderIds.length > 0) {
+      const { data: orderRegistrationRows, error: orderRegistrationRowsError } = await adminClient
+        .from('registrations')
+        .select('order_id')
+        .in('order_id', orderIds)
+
+      const summaries = buildOrderSummaries({
+        orders: (ordersResult.data ?? []).map((order) => ({
+          id: order.id,
+          amount_total: order.amount_total,
+          currency: order.currency,
+          status: order.status,
+        })),
+        registrationsByOrder: countRegistrationsByOrder(orderRegistrationRows ?? []),
       })
+
+      if (orderRegistrationRowsError) {
+        console.error('[admin registrations] order registrations count error', orderRegistrationRowsError)
+      }
+
+      for (const [orderId, summary] of summaries.entries()) {
+        orderMap.set(orderId, summary)
+      }
     }
 
     const documentCountMap = new Map<string, number>()
@@ -245,6 +266,10 @@ export async function GET(request: Request) {
               ? {
                   id: orderRecord.id ?? null,
                   amount_total: orderRecord.amount_total ?? null,
+                  amount_per_registration:
+                    orderMap.get(orderRecord.id ?? '')?.amount_per_registration ?? null,
+                  registrations_count:
+                    orderMap.get(orderRecord.id ?? '')?.registrations_count ?? null,
                   currency: orderRecord.currency ?? null,
                   status: orderRecord.status ?? null,
                 }

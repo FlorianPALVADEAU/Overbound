@@ -15,6 +15,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, CheckCircle2, X } from 'lucide-react'
+import {
+  getPopupSubscribeValidationError,
+  normalizePopupSubscribeValue,
+} from '@/lib/promotions/popupSubscribeValidation'
 
 interface PopupPromotionProps {
   isAuthenticated: boolean
@@ -96,6 +100,15 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
       return
     }
 
+    const validationError = getPopupSubscribeValidationError({ fullName, email })
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    const normalizedEmail = normalizePopupSubscribeValue(email)
+    const normalizedFullName = normalizePopupSubscribeValue(fullName)
+
     setIsSubmitting(true)
     setError(null)
 
@@ -106,8 +119,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: email.trim(),
-          full_name: fullName.trim(),
+          email: normalizedEmail,
+          full_name: normalizedFullName,
           promotion_id: activePopup.id,
           website: website.trim(),
           elapsed_ms: elapsedMs,
@@ -140,6 +153,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   if (isLoading || !activePopup) return null
 
   const config = activePopup.popup_config!
+  const validationError = getPopupSubscribeValidationError({ fullName, email })
+  const canSubmit = !isSubmitting && !validationError
 
   return (
     <Dialog
@@ -255,7 +270,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={!canSubmit}
               >
                 {isSubmitting ? (
                   <>
