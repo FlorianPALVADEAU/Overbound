@@ -24,9 +24,9 @@ export function resolveSafeNextPath(next: string | null | undefined) {
 }
 
 export function resolveAuthBaseUrl(runtimeOrigin?: string | null, envSiteUrl?: string | null) {
-  // In production, always prefer the canonical site URL to avoid OAuth/session
-  // domain drift (e.g. www vs apex) which can lead to intermittent 401s.
-  const base = envSiteUrl || runtimeOrigin || null
+  // Prefer the current runtime origin so OAuth callbacks stay on the same host
+  // the user is currently using (preview/custom domains, www/apex variants).
+  const base = runtimeOrigin || envSiteUrl || null
   if (!base) return null
   return base.replace(/\/$/, '')
 }
