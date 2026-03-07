@@ -68,6 +68,25 @@ const formatDateTime = (value?: string | null) =>
       })
     : '—'
 
+const formatStartTime = (value?: string | null) =>
+  (() => {
+    if (!value) return '—'
+
+    const timeMatch = value.match(/(?:T|\s)(\d{2}):(\d{2})/)
+    if (timeMatch) {
+      return `${timeMatch[1]}:${timeMatch[2]}`
+    }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) return '—'
+
+    return parsed.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    })
+  })()
+
 const formatAmount = (amount?: number | null, currency?: string | null) => {
   if (amount == null) return '—'
   return (amount / 100).toLocaleString('fr-FR', {
@@ -111,6 +130,16 @@ const formatRequiredType = (value: string) => {
   }
 
   return lookup[value] || value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+const getParticipantName = (registration: AdminRegistration) => {
+  const fullName = registration.participant_profile?.full_name?.trim()
+  if (fullName) return fullName
+
+  const emailLocalPart = registration.email.split('@')[0]?.trim()
+  if (emailLocalPart) return emailLocalPart
+
+  return 'Nom non renseigné'
 }
 
 export function RegistrationsSection({ eventId, lockEventFilter = false }: RegistrationsSectionProps) {
@@ -469,8 +498,12 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                   <TableRow key={registration.id}>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium">{registration.email}</span>
-                        {registration.user_id ? (
+                        <span className="font-medium">{getParticipantName(registration)}</span>
+                        <span className="text-xs text-muted-foreground">{registration.email}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Départ assigné: {formatStartTime(registration.start_time)}
+                        </span>
+                        {registration.user_id && !registration.participant_profile?.full_name ? (
                           <span className="text-xs text-muted-foreground">
                             Utilisateur #{registration.user_id.slice(0, 8)}
                           </span>

@@ -71,6 +71,62 @@ export async function GET(
   }
 
   await ensureWaves(admin, event.id, event.date)
+  const url = new URL(request.url)
+  const includeRegistrations = url.searchParams.get('include_registrations') === 'true'
+  const waveIndexParam = Number.parseInt(url.searchParams.get('wave_index') ?? '', 10)
+
+  if (includeRegistrations) {
+    if (!Number.isFinite(waveIndexParam) || waveIndexParam <= 0) {
+      return NextResponse.json({ error: 'wave_index invalide' }, { status: 400 })
+    }
+
+    const { data: rows, error: registrationsError } = await admin
+      .from('registrations')
+      .select('id, email, start_time, wave_position, user_id, created_at')
+      .eq('event_id', event.id)
+      .eq('wave_index', waveIndexParam)
+      .order('wave_position', { ascending: true })
+      .order('created_at', { ascending: true })
+
+    if (registrationsError) {
+      console.error('[admin waves] registrations fetch error', registrationsError)
+      return NextResponse.json({ error: 'Impossible de récupérer les inscrits du SAS' }, { status: 500 })
+    }
+
+    const profileIds = Array.from(
+      new Set((rows ?? []).map((row) => row.user_id).filter(Boolean)),
+    ) as string[]
+
+    const { data: profiles, error: profilesError } = profileIds.length
+      ? await admin
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', profileIds)
+      : { data: [], error: null }
+
+    if (profilesError) {
+      console.error('[admin waves] profiles fetch error', profilesError)
+    }
+
+    const profileMap = new Map((profiles ?? []).map((profile: any) => [profile.id, profile.full_name ?? null]))
+    const participants = (rows ?? []).map((row) => {
+      const profileName = row.user_id ? profileMap.get(row.user_id) ?? null : null
+      const fallbackName = row.email.split('@')[0] || 'Nom non renseigné'
+
+      return {
+        id: row.id,
+        email: row.email,
+        full_name: profileName || fallbackName,
+        start_time: row.start_time,
+        wave_position: row.wave_position,
+      }
+    })
+
+    return NextResponse.json({
+      wave_index: waveIndexParam,
+      participants,
+    })
+  }
 
   const { data: waves, error } = await admin
     .from('event_waves')
@@ -83,7 +139,6 @@ export async function GET(
     return NextResponse.json({ error: 'Impossible de récupérer les SAS' }, { status: 500 })
   }
 
-  const url = new URL(request.url)
   if (url.searchParams.get('format') === 'csv') {
     const csv = toCsv(waves ?? [])
     return new NextResponse(csv, {

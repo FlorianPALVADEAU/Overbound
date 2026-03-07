@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await resolveRequestUser(request)
 
     if (!user) {
       return NextResponse.json({ user: null, profile: null })
     }
 
-    const { data: profileData } = await supabase
+    const admin = supabaseAdmin()
+
+    const { data: profileData } = await admin
       .from('profiles')
       .select('full_name, phone, date_of_birth, marketing_opt_in, role')
       .eq('id', user.id)
@@ -27,7 +27,6 @@ export async function GET() {
 
     let needsDocumentAction = false
     try {
-      const admin = supabaseAdmin()
       const { data: registrationMeta } = await admin
         .from('registrations')
         .select(

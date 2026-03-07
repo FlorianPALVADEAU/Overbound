@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { SessionProfile, SessionUser } from '@/app/api/session/sessionQueries'
 import type { AccountRegistrationItem } from '@/components/account/AccountRegistrationsList'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 export interface AccountRegistrationsResponse {
   user: SessionUser | null
@@ -16,8 +17,19 @@ export interface AccountRegistrationsResponse {
 export const ACCOUNT_REGISTRATIONS_QUERY_KEY = ['account', 'registrations'] as const
 
 const fetchAccountRegistrations = async (): Promise<AccountRegistrationsResponse> => {
+  const supabase = createSupabaseBrowser()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const headers: HeadersInit = {}
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`
+  }
+
   const response = await fetch('/api/account/registrations', { 
     cache: 'no-store',
+    headers,
     credentials: 'include', // Ensure cookies are sent with the request
   })
   if (!response.ok) {
