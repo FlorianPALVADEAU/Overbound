@@ -72,16 +72,23 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
-      const authHeaders = await getClientAuthHeaders()
-      const response = await fetch('/api/account/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify(payload),
-        credentials: 'include',
-      })
+      const doRequest = async (forceRefresh = false) => {
+        const authHeaders = await getClientAuthHeaders({ forceRefresh })
+        return fetch('/api/account/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
+          body: JSON.stringify(payload),
+          credentials: 'include',
+        })
+      }
+
+      let response = await doRequest()
+      if (response.status === 401) {
+        response = await doRequest(true)
+      }
 
       const data = (await response.json().catch(() => ({}))) as UpdateProfileResponse
 

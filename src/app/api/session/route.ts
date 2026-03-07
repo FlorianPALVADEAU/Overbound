@@ -7,7 +7,15 @@ export async function GET(request: Request) {
     const user = await resolveRequestUser(request)
 
     if (!user) {
-      return NextResponse.json({ user: null, profile: null })
+      return NextResponse.json(
+        {
+          error: 'Non authentifié',
+          code: 'UNAUTHENTICATED',
+          user: null,
+          profile: null,
+        },
+        { status: 401 },
+      )
     }
 
     const admin = supabaseAdmin()
