@@ -16,6 +16,7 @@ export function usePaymentIntent(
   participants: Participant[],
   selectedUpsells: SelectedUpsellState,
   appliedPromo: AppliedPromo | null,
+  ambassadorReferralCode: string | null,
   totalDue: number,
 ) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -85,6 +86,7 @@ export function usePaymentIntent(
             meta: config.meta || {},
           })),
           promoCode: appliedPromo?.code || null,
+          ambassadorReferralCode,
         }),
       })
 
@@ -112,7 +114,7 @@ export function usePaymentIntent(
     } finally {
       setIsCreatingPaymentIntent(false)
     }
-  }, [appliedPromo?.code, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
+  }, [appliedPromo?.code, ambassadorReferralCode, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
 
   return {
     clientSecret,

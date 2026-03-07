@@ -59,6 +59,7 @@ export type RegistrationDraft = {
   participants: RegistrationParticipant[]
   upsells: RegistrationUpsellSelection[]
   promoCode: string | null
+  ambassadorReferralCode: string | null
   summary: RegistrationSummary
   signature: RegistrationSignature
   disclaimer: RegistrationDisclaimer

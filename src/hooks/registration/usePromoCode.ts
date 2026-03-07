@@ -5,6 +5,7 @@ export function usePromoCode(eventId: string) {
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null)
   const [promoInput, setPromoInput] = useState('')
   const [promoError, setPromoError] = useState<string | null>(null)
+  const [ambassadorReferralCode, setAmbassadorReferralCode] = useState<string | null>(null)
 
   const validatePromoCode = useCallback(async () => {
     const normalized = promoInput.trim().toUpperCase()
@@ -27,15 +28,18 @@ export function usePromoCode(eventId: string) {
 
       const data = (await response.json()) as { promotionalCode: AppliedPromo }
       setAppliedPromo(data.promotionalCode)
+      setAmbassadorReferralCode(data.promotionalCode.is_ambassador ? data.promotionalCode.code : null)
       setPromoError(null)
     } catch (error) {
       setAppliedPromo(null)
+      setAmbassadorReferralCode(null)
       setPromoError(error instanceof Error ? error.message : "Impossible d'appliquer ce code")
     }
   }, [eventId, promoInput])
 
   const removePromo = useCallback(() => {
     setAppliedPromo(null)
+    setAmbassadorReferralCode(null)
     setPromoInput('')
     setPromoError(null)
   }, [])
@@ -47,6 +51,8 @@ export function usePromoCode(eventId: string) {
     setPromoInput,
     promoError,
     setPromoError,
+    ambassadorReferralCode,
+    setAmbassadorReferralCode,
     validatePromoCode,
     removePromo,
   }

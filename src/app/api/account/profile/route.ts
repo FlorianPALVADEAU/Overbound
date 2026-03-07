@@ -1,31 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { User } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
-
-const decodeJWT = (token: string): { sub?: string; aud?: string } | null => {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) {
-      return null
-    }
-
-    const payload = parts[1]
-    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4)
-    
-    const decoded = Buffer.from(padded, 'base64url').toString('utf-8')
-    const parsed = JSON.parse(decoded)
-    
-    return {
-      sub: parsed.sub,
-      aud: parsed.aud,
-    }
-  } catch {
-    return null
-  }
-}
 
 const preprocessOptionalString = <T extends ZodTypeAny>(schema: T) =>
   z.preprocess(
@@ -115,21 +94,17 @@ const resolveAuthenticatedUser = async (
     const token = authorizationHeader.slice(7).trim()
     if (token) {
       try {
-        // Decode the JWT to extract user info
-        const decoded = decodeJWT(token)
-        
-        if (decoded?.sub) {
-          // If we successfully decoded the token and got the user ID,
-          // fetch the user from the admin client to verify it exists
-          const admin = supabaseAdmin()
-          const { data: userData, error } = await admin.auth.admin.getUserById(decoded.sub)
-          
-          if (!error && userData?.user) {
-            return userData.user
-          }
+        // Validate token directly with Supabase Auth to avoid false 401s.
+        const authClient = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        )
+        const { data, error } = await authClient.auth.getUser(token)
+        if (!error && data?.user) {
+          return data.user
         }
       } catch (error) {
-        console.error('[account profile] token validation error', error)
+        console.error('[account profile] bearer token validation error', error)
         // Fall through to session-based auth
       }
     }

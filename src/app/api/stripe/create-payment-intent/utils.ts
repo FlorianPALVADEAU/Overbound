@@ -52,6 +52,11 @@ type UpsellRow = {
   price_cents: number
 }
 
+const hasAmbassadorLink = (value: unknown) => {
+  if (Array.isArray(value)) return value.length > 0
+  return Boolean(value && typeof value === 'object')
+}
+
 export const supabaseAdminClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -270,7 +275,7 @@ export const calcPromo = (
       discount_percent: promo.discount_percent,
       discount_amount: promo.discount_amount,
       currency: promo.currency,
-      is_ambassador: Array.isArray(promo.ambassadors) && promo.ambassadors.length > 0,
+      is_ambassador: hasAmbassadorLink(promo.ambassadors),
     },
   }
 }

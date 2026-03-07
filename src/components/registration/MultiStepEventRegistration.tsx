@@ -78,6 +78,8 @@ export default function MultiStepEventRegistration({
   const {
     appliedPromo,
     setAppliedPromo,
+    ambassadorReferralCode,
+    setAmbassadorReferralCode,
     promoInput,
     setPromoInput,
     promoError,
@@ -115,6 +117,7 @@ export default function MultiStepEventRegistration({
     participants,
     selectedUpsells,
     appliedPromo,
+    ambassadorReferralCode,
     totalDue,
   )
 
@@ -180,6 +183,7 @@ export default function MultiStepEventRegistration({
       participants,
       selectedUpsells,
       appliedPromo,
+      ambassadorReferralCode,
       summaryPricing,
       clientSecret,
       paymentIntentId,
@@ -192,6 +196,7 @@ export default function MultiStepEventRegistration({
       setParticipants,
       setSelectedUpsells,
       setAppliedPromo,
+      setAmbassadorReferralCode,
       setPromoInput,
       setPromoError,
       setDisclaimerRead,
@@ -304,6 +309,7 @@ export default function MultiStepEventRegistration({
         meta: config.meta || {},
       })),
       promoCode: appliedPromo?.code || null,
+      ambassadorReferralCode: ambassadorReferralCode ?? null,
       summary: localPricing ?? summaryPricing,
       signature: {
         imageDataUrl: signatureImage,

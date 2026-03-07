@@ -59,6 +59,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           participants: registrationDraft.participants.map(({ id: _id, ...participant }) => participant),
           upsells: registrationDraft.upsells,
           promoCode: registrationDraft.promoCode,
+          ambassadorReferralCode: registrationDraft.ambassadorReferralCode,
           signatureImage: registrationDraft.signature.imageDataUrl,
           signatureMetadata: {
             regulationVersion: registrationDraft.signature.regulationVersion,

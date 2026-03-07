@@ -19,6 +19,11 @@ import { sendAdminPushNotification } from '@/lib/push'
 
 export const runtime = 'nodejs'
 
+const hasAmbassadorLink = (value: unknown) => {
+  if (Array.isArray(value)) return value.length > 0
+  return Boolean(value && typeof value === 'object')
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-08-27.basil',
 })
@@ -42,6 +47,7 @@ export async function POST(request: NextRequest) {
       participants = [],
       upsells = [],
       promoCode = null,
+      ambassadorReferralCode = null,
       signatureImage = null,
       signatureMetadata = {},
       disclaimer = { read: false, accepted: false },
@@ -66,6 +72,7 @@ export async function POST(request: NextRequest) {
       }>
       upsells: Array<{ upsellId: string; quantity: number; meta?: Record<string, any> }>
       promoCode: string | null
+      ambassadorReferralCode?: string | null
       signatureImage: string | null
       signatureMetadata: Record<string, any>
       disclaimer: { read: boolean; accepted: boolean }
@@ -222,17 +229,45 @@ export async function POST(request: NextRequest) {
 
     const discountApplied = Number(paymentIntent.metadata?.discount_applied || 0) || 0
 
+    const promoCodeFromMetadata = paymentIntent.metadata?.promo_code || null
+    const appliedPromoCode = (
+      typeof promoCodeFromMetadata === 'string' && promoCodeFromMetadata.trim().length > 0
+        ? promoCodeFromMetadata
+        : promoCode
+    )?.trim().toUpperCase() || null
+
     let promotionalCodeId: string | null = null
-    if (promoCode) {
-      const normalizedPromoCode = promoCode.trim().toUpperCase()
+    if (appliedPromoCode) {
       const { data: promoRecord } = await admin
         .from('promotional_codes')
         .select('id')
-        .ilike('code', normalizedPromoCode)
+        .ilike('code', appliedPromoCode)
         .maybeSingle()
 
       promotionalCodeId = promoRecord?.id ?? null
     }
+
+    const ambassadorReferralFromMetadata = paymentIntent.metadata?.ambassador_referral_code || null
+    const ambassadorReferralCandidate = (
+      typeof ambassadorReferralCode === 'string' && ambassadorReferralCode.trim().length > 0
+        ? ambassadorReferralCode
+        : ambassadorReferralFromMetadata
+    )?.trim().toUpperCase() || null
+
+    let ambassadorReferralPromoId: string | null = null
+    if (ambassadorReferralCandidate) {
+      const { data: ambassadorPromo } = await admin
+        .from('promotional_codes')
+        .select('id, ambassadors:ambassadors(id)')
+        .ilike('code', ambassadorReferralCandidate)
+        .maybeSingle()
+
+      const isAmbassadorCode = hasAmbassadorLink((ambassadorPromo as any)?.ambassadors)
+
+      ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromo?.id ?? null : null
+    }
+
+    const registrationPromotionalCodeId = ambassadorReferralPromoId ?? promotionalCodeId
 
     // Create order record
     const { data: order, error: orderError } = await admin
@@ -309,7 +344,7 @@ export async function POST(request: NextRequest) {
           claim_status: 'pending',
           approval_status: 'pending',
           race_id: ticket.race?.id || null,
-          promotional_code_id: promotionalCodeId,
+          promotional_code_id: registrationPromotionalCodeId,
           difficulty_level: participant.difficultyLevel || null,
           // DB constraints require non-null positive distances; for non-OPEN formats
           // we store a neutral placeholder and skip OPEN SAS logic.

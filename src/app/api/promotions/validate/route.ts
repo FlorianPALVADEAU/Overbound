@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+
+const hasAmbassadorLink = (value: unknown) => {
+  if (Array.isArray(value)) return value.length > 0
+  return Boolean(value && typeof value === 'object')
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,9 +16,9 @@ export async function POST(request: NextRequest) {
 
     const normalizedCode = String(code).trim().toUpperCase()
 
-    const supabase = await createSupabaseServer()
+    const admin = supabaseAdmin()
 
-    const { data: promotionalCode, error } = await supabase
+    const { data: promotionalCode, error } = await admin
       .from('promotional_codes')
       .select(
         `
@@ -76,9 +81,7 @@ export async function POST(request: NextRequest) {
         discount_percent: promotionalCode.discount_percent,
         discount_amount: promotionalCode.discount_amount,
         currency: promotionalCode.currency,
-        is_ambassador:
-          Array.isArray((promotionalCode as { ambassadors?: Array<{ id: string }> }).ambassadors) &&
-          ((promotionalCode as { ambassadors?: Array<{ id: string }> }).ambassadors?.length ?? 0) > 0,
+        is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
       },
     })
   } catch (error) {

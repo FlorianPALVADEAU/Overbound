@@ -31,7 +31,7 @@ export default function PromoCodeInput({
             ) : null}
             {appliedPromo.is_ambassador ? (
               <p className="text-xs text-muted-foreground">
-                Code ambassadeur applique. Un seul code promo est autorise par commande.
+                Code ambassadeur appliqué. Un seul code promo est autorise par commande.
               </p>
             ) : null}
           </div>
