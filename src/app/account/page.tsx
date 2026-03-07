@@ -180,12 +180,12 @@ export default function AccountPage() {
                     </Button>
                   </Link>
                 ) : null}
-                <Link href="/logout">
-                  <Button variant="ghost" size="sm">
+                <form action="/logout" method="post">
+                  <Button variant="ghost" size="sm" type="submit">
                     <LogOutIcon className="h-4 w-4" />
                     <span className="sr-only sm:not-sr-only sm:ml-1.5">Déconnexion</span>
                   </Button>
-                </Link>
+                </form>
               </div>
             </div>
           </CardContent>
