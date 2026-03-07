@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
-import { createSupabaseBrowser } from '@/lib/supabase/client'
+import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -48,7 +48,6 @@ const normalize = (value: string) => value.trim()
 
 export function AccountProfileForm({ profile, email, onSuccess }: AccountProfileFormProps) {
   const queryClient = useQueryClient()
-  const supabase = createSupabaseBrowser()
 
   const initialValues = useMemo<FormValues>(
     () => ({
@@ -65,62 +64,20 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null,
   )
-  const [isCheckingSocialIdentities, setIsCheckingSocialIdentities] = useState(true)
-  const [linkedProviders, setLinkedProviders] = useState<{ google: boolean }>({
-    google: false,
-  })
-  const [linkingProvider, setLinkingProvider] = useState<'google' | null>(null)
 
   useEffect(() => {
     setSavedValues(initialValues)
     setFormValues(initialValues)
   }, [initialValues])
 
-  useEffect(() => {
-    let cancelled = false
-
-    const loadIdentities = async () => {
-      setIsCheckingSocialIdentities(true)
-      const { data, error } = await supabase.auth.getUserIdentities()
-
-      if (cancelled) {
-        return
-      }
-
-      if (error) {
-        const isMissingSession = error.message?.toLowerCase().includes('auth session missing')
-        if (!isMissingSession) {
-          console.warn('[account profile] getUserIdentities failed', error)
-        }
-        setLinkedProviders({ google: false })
-        setIsCheckingSocialIdentities(false)
-        return
-      }
-
-      const identities = data?.identities ?? []
-      const hasGoogle = identities.some(
-        (identity) => identity.provider?.toLowerCase() === 'google',
-      )
-
-      setLinkedProviders({
-        google: hasGoogle,
-      })
-      setIsCheckingSocialIdentities(false)
-    }
-
-    void loadIdentities()
-
-    return () => {
-      cancelled = true
-    }
-  }, [supabase])
-
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
+      const authHeaders = await getClientAuthHeaders()
       const response = await fetch('/api/account/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...authHeaders,
         },
         body: JSON.stringify(payload),
         credentials: 'include',
@@ -276,43 +233,6 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   )
 
   const isSubmitting = mutation.isPending
-
-  const handleLinkProvider = async (provider: 'google') => {
-    setLinkingProvider(provider)
-    setFeedback(null)
-
-    try {
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent('/account')}`
-      const { error } = await supabase.auth.linkIdentity({
-        provider,
-        options: {
-          redirectTo,
-        },
-      })
-
-      if (error) {
-        const message = error.message.toLowerCase()
-        const manualLinkingDisabled =
-          message.includes('manual linking') || message.includes('linking is disabled')
-
-        setFeedback({
-          type: 'error',
-          message: manualLinkingDisabled
-            ? "Le linking manuel n'est pas activé côté Supabase (Authentication > Sign In / Providers)."
-            : error.message,
-        })
-      }
-    } catch (error) {
-      console.error('[account profile] linkIdentity failed', error)
-      setFeedback({
-        type: 'error',
-        message: 'Impossible de lier Google pour le moment.',
-      })
-    } finally {
-      setLinkingProvider(null)
-    }
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
@@ -337,35 +257,9 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             disabled
             readOnly
           />
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            {(['google'] as const).map((provider) => {
-              const isLinked = linkedProviders[provider]
-              const isLinking = linkingProvider === provider
-              const providerLabel = 'Google'
-
-              return (
-                <div key={provider} className="flex items-center gap-2">
-                  <span>
-                    {providerLabel}:{' '}
-                    {isCheckingSocialIdentities
-                      ? 'vérification…'
-                      : isLinked
-                        ? 'lié'
-                        : 'non lié'}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void handleLinkProvider(provider)}
-                    disabled={isCheckingSocialIdentities || isLinked || linkingProvider !== null}
-                  >
-                    {isLinked ? `${providerLabel} déjà lié` : isLinking ? 'Redirection…' : `Lier ${providerLabel}`}
-                  </Button>
-                </div>
-              )
-            })}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Pour des raisons de stabilité, la gestion des comptes liés (Google) est temporairement désactivée ici.
+          </p>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-phone">Téléphone</Label>
