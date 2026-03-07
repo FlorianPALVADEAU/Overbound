@@ -10,6 +10,7 @@ import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constant
 import { captureException } from '@/lib/sentry'
 import {
   assignOpenWaveToRegistration,
+  type OpenWaveAssignment,
   formatWaveStartTime,
   getRankedStartTime,
   isOpenFormatTicket,
@@ -290,6 +291,8 @@ export async function POST(request: NextRequest) {
     }
 
     const createdRegistrations: any[] = []
+    let openGroupAnchor: OpenWaveAssignment | null = null
+    let openGroupCount = 0
 
     for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
@@ -364,27 +367,62 @@ export async function POST(request: NextRequest) {
 
       try {
         if (isOpenFormat) {
-          const assignment = await assignOpenWaveToRegistration({
-            admin,
-            eventId,
-            registrationId: registration.id,
-            eventDateIso: eventRow.date,
-            ticketName: ticket.name,
-            raceName: ticket.race?.name ?? null,
-            distanceIdealKm: distanceIdeal,
-            distanceMinKm: distanceMin,
-          })
+          if (!openGroupAnchor) {
+            const assignment = await assignOpenWaveToRegistration({
+              admin,
+              eventId,
+              registrationId: registration.id,
+              eventDateIso: eventRow.date,
+              ticketName: ticket.name,
+              raceName: ticket.race?.name ?? null,
+              distanceIdealKm: distanceIdeal,
+              distanceMinKm: distanceMin,
+            })
 
-          if (assignment) {
-            registration.start_time = assignment.startTime
-            registration.wave_index = assignment.waveIndex
-            registration.wave_capacity = assignment.waveCapacity
-            registration.wave_position = assignment.wavePosition
+            if (assignment) {
+              openGroupAnchor = assignment
+              openGroupCount = 1
+              registration.start_time = assignment.startTime
+              registration.wave_index = assignment.waveIndex
+              registration.wave_capacity = assignment.waveCapacity
+              registration.wave_position = assignment.wavePosition
+              registration.auto_assigned = true
+              registration.preferred_window_start = assignment.preferredWindowStart
+              registration.preferred_window_end = assignment.preferredWindowEnd
+              registration.latest_allowed_time = assignment.latestAllowedTime
+              registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+            }
+          } else {
+            openGroupCount += 1
+            const copiedWavePosition = (openGroupAnchor.wavePosition ?? 1) + openGroupCount - 1
+            const { error: syncOpenError } = await admin
+              .from('registrations')
+              .update({
+                start_time: openGroupAnchor.startTime,
+                wave_index: openGroupAnchor.waveIndex,
+                wave_capacity: openGroupAnchor.waveCapacity,
+                wave_position: copiedWavePosition,
+                auto_assigned: true,
+                preferred_window_start: openGroupAnchor.preferredWindowStart,
+                preferred_window_end: openGroupAnchor.preferredWindowEnd,
+                latest_allowed_time: openGroupAnchor.latestAllowedTime,
+                assignment_constraint_breached: openGroupAnchor.assignmentConstraintBreached,
+              })
+              .eq('id', registration.id)
+
+            if (syncOpenError) {
+              throw syncOpenError
+            }
+
+            registration.start_time = openGroupAnchor.startTime
+            registration.wave_index = openGroupAnchor.waveIndex
+            registration.wave_capacity = openGroupAnchor.waveCapacity
+            registration.wave_position = copiedWavePosition
             registration.auto_assigned = true
-            registration.preferred_window_start = assignment.preferredWindowStart
-            registration.preferred_window_end = assignment.preferredWindowEnd
-            registration.latest_allowed_time = assignment.latestAllowedTime
-            registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+            registration.preferred_window_start = openGroupAnchor.preferredWindowStart
+            registration.preferred_window_end = openGroupAnchor.preferredWindowEnd
+            registration.latest_allowed_time = openGroupAnchor.latestAllowedTime
+            registration.assignment_constraint_breached = openGroupAnchor.assignmentConstraintBreached
           }
         } else if (isRankedFormat) {
           const rankedStart = getRankedStartTime(eventRow.date).toISOString()
@@ -465,6 +503,32 @@ export async function POST(request: NextRequest) {
 
         if (signatureError) {
           console.error('Erreur création signature:', signatureError)
+        }
+      }
+    }
+
+    if (openGroupAnchor && openGroupCount > 1) {
+      const { data: waveRow, error: waveFetchError } = await admin
+        .from('event_waves')
+        .select('id, assigned_count')
+        .eq('event_id', eventId)
+        .eq('wave_index', openGroupAnchor.waveIndex)
+        .maybeSingle()
+
+      if (waveFetchError) {
+        console.error('Erreur récupération compteur SAS OPEN:', waveFetchError)
+      } else if (waveRow?.id) {
+        const extraAssigned = openGroupCount - 1
+        const { error: waveUpdateError } = await admin
+          .from('event_waves')
+          .update({
+            assigned_count: (waveRow.assigned_count ?? 0) + extraAssigned,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', waveRow.id)
+
+        if (waveUpdateError) {
+          console.error('Erreur mise à jour compteur SAS OPEN:', waveUpdateError)
         }
       }
     }

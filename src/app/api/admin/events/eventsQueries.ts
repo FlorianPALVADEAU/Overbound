@@ -77,6 +77,19 @@ interface AdminEventWavesResponse {
   waves: AdminEventWave[]
 }
 
+export interface AdminWaveParticipant {
+  id: string
+  email: string
+  full_name: string
+  start_time: string | null
+  wave_position: number | null
+}
+
+interface AdminWaveParticipantsResponse {
+  wave_index: number
+  participants: AdminWaveParticipant[]
+}
+
 interface EventsResponse {
   events: AdminEventSummary[]
 }
@@ -89,6 +102,8 @@ const ADMIN_EVENTS_QUERY_KEY = ['admin', 'events'] as const
 const ADMIN_EVENT_DETAIL_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId] as const
 const ADMIN_EVENT_VOLUNTEERS_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'volunteers'] as const
 const ADMIN_EVENT_WAVES_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'waves'] as const
+const ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY = (eventId: string, waveIndex: number) =>
+  ['admin', 'events', eventId, 'waves', waveIndex, 'participants'] as const
 
 const fetchAdminEvents = async (): Promise<AdminEventSummary[]> => {
   const response = await axiosClient.get<EventsResponse>('/admin/events')
@@ -170,6 +185,32 @@ export const useAdminEventWaves = (eventId?: string | null) =>
     queryKey: eventId ? ADMIN_EVENT_WAVES_QUERY_KEY(eventId) : ['admin', 'events', 'waves'],
     queryFn: () => fetchAdminEventWaves(eventId as string),
     enabled: Boolean(eventId),
+  })
+
+const fetchAdminWaveParticipants = async (
+  eventId: string,
+  waveIndex: number,
+): Promise<AdminWaveParticipant[]> => {
+  const response = await axiosClient.get<AdminWaveParticipantsResponse>(
+    `/admin/events/${eventId}/waves?include_registrations=true&wave_index=${waveIndex}`,
+  )
+  if (response.status !== 200) {
+    throw new Error('Erreur lors du chargement des inscrits du SAS')
+  }
+  return response.data.participants ?? []
+}
+
+export const useAdminWaveParticipants = (
+  eventId?: string | null,
+  waveIndex?: number | null,
+) =>
+  useQuery<AdminWaveParticipant[], Error>({
+    queryKey:
+      eventId && waveIndex
+        ? ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY(eventId, waveIndex)
+        : ['admin', 'events', 'waves', 'participants'],
+    queryFn: () => fetchAdminWaveParticipants(eventId as string, waveIndex as number),
+    enabled: Boolean(eventId && waveIndex),
   })
 
 export const updateAdminEventWave = async (

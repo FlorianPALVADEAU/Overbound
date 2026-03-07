@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import type { User } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
 
 export const runtime = 'nodejs'
 
@@ -75,47 +74,9 @@ const validateBirthdate = (date: string) => {
   return parsed >= earliest
 }
 
-const resolveAuthenticatedUser = async (
-  request: NextRequest,
-): Promise<User | null> => {
-  // First, try to get user from cookies (standard server-side auth)
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user: directUser },
-  } = await supabase.auth.getUser()
-
-  if (directUser) {
-    return directUser
-  }
-
-  // Try with Authorization header Bearer token
-  const authorizationHeader = request.headers.get('authorization')
-  if (authorizationHeader?.toLowerCase().startsWith('bearer ')) {
-    const token = authorizationHeader.slice(7).trim()
-    if (token) {
-      try {
-        // Validate token directly with Supabase Auth to avoid false 401s.
-        const authClient = createSupabaseClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        )
-        const { data, error } = await authClient.auth.getUser(token)
-        if (!error && data?.user) {
-          return data.user
-        }
-      } catch (error) {
-        console.error('[account profile] bearer token validation error', error)
-        // Fall through to session-based auth
-      }
-    }
-  }
-
-  return null
-}
-
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await resolveAuthenticatedUser(request)
+    const user = await resolveRequestUser(request)
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })

@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
 import { processAccountEngagementEmails } from '@/lib/email/engagement'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await resolveRequestUser(request)
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { data: profileData } = await supabase
+    const admin = supabaseAdmin()
+
+    const { data: profileData } = await admin
       .from('profiles')
       .select('full_name, phone, date_of_birth, marketing_opt_in, role')
       .eq('id', user.id)
@@ -29,7 +29,7 @@ export async function GET() {
           }
         : null
 
-    const { data: registrations, error } = await supabase
+    const { data: registrations, error } = await admin
       .from('my_registrations')
       .select('*')
       .eq('user_id', user.id)
@@ -40,7 +40,6 @@ export async function GET() {
     }
 
     const registrationIds = (registrations ?? []).map((registration) => registration.registration_id)
-    const admin = supabaseAdmin()
     type RegistrationMetaRow = {
       id: string
       transfer_token: string | null

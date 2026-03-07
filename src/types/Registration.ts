@@ -115,6 +115,7 @@ export interface AdminRegistration extends Registration {
   } | null
   ticket: Pick<Ticket, 'id' | 'name' | 'distance_km' | 'requires_document' | 'document_types'> | null
   order: Pick<Order, 'id' | 'amount_total' | 'currency' | 'status'> | null
+  participant_profile?: RegistrationProfileSummary | null
   approved_by_profile?: RegistrationProfileSummary | null
   notification_preferences?: NotificationPreference | null
   upsells?: Upsell[] | null

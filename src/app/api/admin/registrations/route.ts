@@ -71,10 +71,17 @@ export async function GET(request: Request) {
           .filter((value: string | null) => Boolean(value)),
       ),
     ) as string[]
+    const profileIds = Array.from(
+      new Set(
+        rows
+          .map((row: any) => row.user_id)
+          .filter((value: string | null) => Boolean(value)),
+      ),
+    ) as string[]
 
     const adminClient = supabaseAdmin()
 
-    const [eventsResult, ticketsResult, ordersResult] = await Promise.all([
+    const [eventsResult, ticketsResult, ordersResult, profilesResult] = await Promise.all([
       eventIds.length
         ? adminClient
             .from('events')
@@ -93,6 +100,12 @@ export async function GET(request: Request) {
             .select('id, amount_total, currency, status')
             .in('id', orderIds)
         : Promise.resolve({ data: [] as any[], error: null }),
+      profileIds.length
+        ? adminClient
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', profileIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
     ])
 
     if (eventsResult.error) {
@@ -103,6 +116,9 @@ export async function GET(request: Request) {
     }
     if (ordersResult.error) {
       console.error('[admin registrations] orders fetch error', ordersResult.error)
+    }
+    if (profilesResult.error) {
+      console.error('[admin registrations] profiles fetch error', profilesResult.error)
     }
 
     const eventMap = new Map<string, any>()
@@ -123,6 +139,13 @@ export async function GET(request: Request) {
       })
     }
     const orderMap = new Map<string, any>()
+    const profileMap = new Map<string, { id: string; full_name: string | null }>()
+    for (const profile of profilesResult.data ?? []) {
+      profileMap.set(profile.id, {
+        id: profile.id,
+        full_name: profile.full_name ?? null,
+      })
+    }
 
     if (orderIds.length > 0) {
       const { data: orderRegistrationRows, error: orderRegistrationRowsError } = await adminClient
@@ -298,6 +321,10 @@ export async function GET(request: Request) {
           row.order ??
           orderMap.get(row.order_id ?? '') ??
           null,
+        participant_profile:
+          row.user_id
+            ? profileMap.get(row.user_id) ?? null
+            : null,
         approval_status: meta.approval_status ?? row.approval_status,
         document_url: meta.document_url ?? row.document_url ?? null,
         document_filename: meta.document_filename ?? row.document_filename ?? null,
