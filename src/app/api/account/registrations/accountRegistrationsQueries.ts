@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { SessionProfile, SessionUser } from '@/app/api/session/sessionQueries'
 import type { AccountRegistrationItem } from '@/components/account/AccountRegistrationsList'
-import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 export interface AccountRegistrationsResponse {
@@ -52,11 +51,8 @@ const fetchAccountRegistrations = async (): Promise<AccountRegistrationsResponse
     data: { session: localSession },
   } = await supabase.auth.getSession()
 
-  const headers = await getClientAuthHeaders()
-
   const response = await fetch('/api/account/registrations', { 
     cache: 'no-store',
-    headers,
     credentials: 'include', // Ensure cookies are sent with the request
   })
   if (!response.ok) {
