@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 export interface SessionProfile {
@@ -68,11 +67,8 @@ const fetchSession = async (): Promise<SessionResponse> => {
     data: { session: localSession },
   } = await supabase.auth.getSession()
 
-  const headers = await getClientAuthHeaders()
-
-  const response = await fetch('/api/session', { 
+  const response = await fetch('/api/session', {
     cache: 'no-store',
-    headers,
     credentials: 'include', // Ensure cookies are sent with the request
   })
   if (!response.ok) {
