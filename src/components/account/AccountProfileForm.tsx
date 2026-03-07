@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
+import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -114,15 +115,10 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      const headers: Record<string, string> = {
+      const authHeaders = await getClientAuthHeaders()
+      const headers: HeadersInit = {
         'Content-Type': 'application/json',
-      }
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`
+        ...authHeaders,
       }
 
       const response = await fetch('/api/account/profile', {
