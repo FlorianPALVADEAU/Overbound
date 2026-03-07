@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export const createSupabaseServer = async () => {
@@ -15,7 +15,7 @@ export const createSupabaseServer = async () => {
           cookiesToSet: Array<{
             name: string
             value: string
-            options?: Parameters<typeof cookieStore.set>[2]
+            options: CookieOptions
           }>
         ) {
           try {

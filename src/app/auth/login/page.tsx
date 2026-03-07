@@ -25,7 +25,6 @@ import {
 } from '@/lib/auth/inAppBrowser'
 import { buildExternalOAuthUrl, shouldAutoStartGoogleOAuth } from '@/lib/auth/oauthFlow'
 import { AUTH_VISUALS, pickRandomAuthVisual } from '@/lib/auth/authVisuals'
-import { writeMirroredSession } from '@/lib/auth/clientSessionMirror'
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -113,10 +112,6 @@ function LoginInner() {
           text: 'Email ou mot de passe incorrect. Si ton compte vient de Google, connecte-toi avec Google ou utilise "Mot de passe oublié".',
         })
         return
-      }
-
-      if (signInData.session) {
-        writeMirroredSession(signInData.session)
       }
 
       void fetch('/api/auth/post-auth-sync', { method: 'POST' }).catch((syncError) => {

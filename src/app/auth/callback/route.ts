@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
 const getSafeNextPath = (next: string | null): string => {
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
           cookiesToSet: Array<{
             name: string
             value: string
-            options?: Parameters<typeof response.cookies.set>[2]
+            options: CookieOptions
           }>
         ) {
           cookiesToSet.forEach(({ name, value, options }) => {

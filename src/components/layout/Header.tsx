@@ -28,7 +28,6 @@ import { useRouter } from 'next/navigation'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
-import { clearMirroredSession, markExplicitSignOut } from '@/lib/auth/clientSessionMirror'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -79,9 +78,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   }
 
   const handleSignOut = async () => {
-    markExplicitSignOut()
     await supabase.auth.signOut()
-    clearMirroredSession()
     queryClient.setQueryData(SESSION_QUERY_KEY, {
       user: null,
       profile: null,
