@@ -1,88 +1,124 @@
 import { createSupabaseBrowser } from '@/lib/supabase/client'
-import type { Session } from '@supabase/supabase-js'
-
-const TOKEN_REFRESH_SAFETY_WINDOW_SECONDS = 60
 
 type StoredAuthTokens = {
   accessToken: string | null
   refreshToken: string | null
 }
 
+const decodeBase64 = (value: string): string | null => {
+  try {
+    if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+      return window.atob(value)
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+const parseTokenContainer = (raw: string): StoredAuthTokens => {
+  const normalized = raw.startsWith('base64-') ? raw.slice('base64-'.length) : raw
+  const decoded = raw.startsWith('base64-') ? decodeBase64(normalized) : normalized
+  const source = decoded ?? normalized
+
+  try {
+    const parsed = JSON.parse(source) as
+      | {
+          access_token?: string
+          refresh_token?: string
+          currentSession?: { access_token?: string; refresh_token?: string }
+        }
+      | [string, string]
+      | null
+
+    if (Array.isArray(parsed)) {
+      return {
+        accessToken: typeof parsed[0] === 'string' ? parsed[0] : null,
+        refreshToken: typeof parsed[1] === 'string' ? parsed[1] : null,
+      }
+    }
+
+    const accessToken = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null
+    const refreshToken = parsed?.refresh_token ?? parsed?.currentSession?.refresh_token ?? null
+    return {
+      accessToken: typeof accessToken === 'string' ? accessToken : null,
+      refreshToken: typeof refreshToken === 'string' ? refreshToken : null,
+    }
+  } catch {
+    return {
+      accessToken: null,
+      refreshToken: null,
+    }
+  }
+}
+
+const mergeTokenCandidate = (current: StoredAuthTokens, candidate: StoredAuthTokens): StoredAuthTokens => ({
+  accessToken: current.accessToken ?? candidate.accessToken,
+  refreshToken: current.refreshToken ?? candidate.refreshToken,
+})
+
 const getTokensFromStorage = (): StoredAuthTokens => {
   if (typeof window === 'undefined') {
     return { accessToken: null, refreshToken: null }
   }
 
+  let tokens: StoredAuthTokens = { accessToken: null, refreshToken: null }
+
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i)
-      if (!key || !key.endsWith('-auth-token')) continue
+      if (!key || !key.includes('auth-token')) continue
 
       const raw = window.localStorage.getItem(key)
       if (!raw) continue
 
-      const parsed = JSON.parse(raw) as
-        | {
-            access_token?: string
-            refresh_token?: string
-            currentSession?: { access_token?: string; refresh_token?: string }
-          }
-        | null
-      const accessToken = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null
-      const refreshToken = parsed?.refresh_token ?? parsed?.currentSession?.refresh_token ?? null
-
-      if (typeof accessToken === 'string' && accessToken.length > 0) {
-        return {
-          accessToken,
-          refreshToken: typeof refreshToken === 'string' && refreshToken.length > 0 ? refreshToken : null,
-        }
+      const candidate = parseTokenContainer(raw)
+      tokens = mergeTokenCandidate(tokens, candidate)
+      if (tokens.accessToken && tokens.refreshToken) {
+        return tokens
       }
     }
   } catch (error) {
     console.warn('[auth headers] localStorage token read failed', error)
   }
 
-  return {
-    accessToken: null,
-    refreshToken: null,
+  try {
+    const cookies = document.cookie
+      .split(';')
+      .map((value) => value.trim())
+      .filter(Boolean)
+
+    for (const cookie of cookies) {
+      const separatorIndex = cookie.indexOf('=')
+      if (separatorIndex <= 0) continue
+
+      const key = decodeURIComponent(cookie.slice(0, separatorIndex))
+      if (!key.includes('auth-token')) continue
+
+      const value = decodeURIComponent(cookie.slice(separatorIndex + 1))
+      const candidate = parseTokenContainer(value)
+      tokens = mergeTokenCandidate(tokens, candidate)
+      if (tokens.accessToken && tokens.refreshToken) {
+        return tokens
+      }
+    }
+  } catch (error) {
+    console.warn('[auth headers] cookie token read failed', error)
   }
+
+  return tokens
 }
 
-export const ensureClientSession = async (): Promise<Session | null> => {
+const getClientSession = async () => {
   const supabase = createSupabaseBrowser()
-
-  let {
+  const {
     data: { session },
   } = await supabase.auth.getSession()
-
-  const expiresAt = session?.expires_at ?? null
-  const isNearExpiry =
-    typeof expiresAt === 'number' &&
-    expiresAt <= Math.floor(Date.now() / 1000) + TOKEN_REFRESH_SAFETY_WINDOW_SECONDS
-
-  // Important: never call refreshSession() when session is missing.
-  // It can trigger an auth reset flow on some clients right after login.
-  if (session && isNearExpiry) {
-    const { data: refreshed } = await supabase.auth.refreshSession()
-    session = refreshed.session ?? session
-  }
-
-  if (!session) {
-    const storedTokens = getTokensFromStorage()
-    if (storedTokens.accessToken && storedTokens.refreshToken) {
-      const { data: restored } = await supabase.auth.setSession({
-        access_token: storedTokens.accessToken,
-        refresh_token: storedTokens.refreshToken,
-      })
-      session = restored.session ?? null
-    }
-  }
-
   return session ?? null
 }
 
 export const getClientAuthHeaders = async (): Promise<Record<string, string>> => {
-  const session = await ensureClientSession()
+  const session = await getClientSession()
   const fallbackTokens = session ? null : getTokensFromStorage()
   const accessToken = session?.access_token ?? fallbackTokens?.accessToken ?? null
 
