@@ -89,7 +89,10 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       }
 
       if (error) {
-        console.warn('[account profile] getUserIdentities failed', error)
+        const isMissingSession = error.message?.toLowerCase().includes('auth session missing')
+        if (!isMissingSession) {
+          console.warn('[account profile] getUserIdentities failed', error)
+        }
         setLinkedProviders({ google: false })
         setIsCheckingSocialIdentities(false)
         return
@@ -116,10 +119,6 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
       const authHeaders = await getClientAuthHeaders()
-      if (!('Authorization' in authHeaders)) {
-        throw new Error('Session expirée. Merci de te reconnecter puis réessayer.')
-      }
-
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
         ...authHeaders,

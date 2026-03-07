@@ -40,9 +40,11 @@ export const getClientAuthHeaders = async (): Promise<Record<string, string>> =>
     typeof expiresAt === 'number' &&
     expiresAt <= Math.floor(Date.now() / 1000) + TOKEN_REFRESH_SAFETY_WINDOW_SECONDS
 
-  if (!session || isNearExpiry) {
+  // Important: never call refreshSession() when session is missing.
+  // It can trigger an auth reset flow on some clients right after login.
+  if (session && isNearExpiry) {
     const { data: refreshed } = await supabase.auth.refreshSession()
-    session = refreshed.session ?? session ?? null
+    session = refreshed.session ?? session
   }
 
   let accessToken = session?.access_token ?? null

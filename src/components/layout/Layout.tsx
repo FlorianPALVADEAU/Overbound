@@ -82,23 +82,21 @@ export function Layout({ children }: LayoutProps) {
   // Listen to auth state changes and invalidate session cache
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      seedSessionCache(session)
+      if (session?.user) {
+        seedSessionCache(session)
+      }
     })
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
         seedSessionCache(session)
 
         const userId = session?.user?.id
         if (userId && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
           void syncPostAuthData(userId)
         }
-      }
-
-      if (event === 'SIGNED_OUT') {
-        seedSessionCache(null)
       }
 
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
