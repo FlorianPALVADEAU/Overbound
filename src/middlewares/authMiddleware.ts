@@ -2,10 +2,6 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/api')) {
-    return NextResponse.next({ request })
-  }
-
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -44,9 +40,24 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser()
 
+  // Do not force-log users out on transient auth backend failures.
+  if (userError) {
+    console.warn('[auth middleware] getUser failed', {
+      path: request.nextUrl.pathname,
+      message: userError.message,
+    })
+    return supabaseResponse
+  }
+
   const url = request.nextUrl.clone()
+
+  // API routes must never redirect from middleware.
+  if (url.pathname.startsWith('/api')) {
+    return supabaseResponse
+  }
 
   // Protéger les routes admin
   if (url.pathname.startsWith('/admin')) {
