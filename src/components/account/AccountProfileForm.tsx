@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
-import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
+import { ensureClientSession, getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -118,18 +118,26 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
-      const authHeaders = await getClientAuthHeaders()
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        ...authHeaders,
+      const sendPatch = async () => {
+        const authHeaders = await getClientAuthHeaders()
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        }
+
+        return fetch('/api/account/profile', {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify(payload),
+          credentials: 'include',
+        })
       }
 
-      const response = await fetch('/api/account/profile', {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify(payload),
-        credentials: 'include', // Ensure cookies are sent with the request
-      })
+      let response = await sendPatch()
+      if (response.status === 401) {
+        await ensureClientSession()
+        response = await sendPatch()
+      }
 
       const data = (await response.json().catch(() => ({}))) as UpdateProfileResponse
 

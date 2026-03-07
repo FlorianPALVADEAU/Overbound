@@ -1,9 +1,17 @@
 import { createSupabaseBrowser } from '@/lib/supabase/client'
+import type { Session } from '@supabase/supabase-js'
 
 const TOKEN_REFRESH_SAFETY_WINDOW_SECONDS = 60
 
-const getAccessTokenFromStorage = (): string | null => {
-  if (typeof window === 'undefined') return null
+type StoredAuthTokens = {
+  accessToken: string | null
+  refreshToken: string | null
+}
+
+const getTokensFromStorage = (): StoredAuthTokens => {
+  if (typeof window === 'undefined') {
+    return { accessToken: null, refreshToken: null }
+  }
 
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
@@ -14,21 +22,33 @@ const getAccessTokenFromStorage = (): string | null => {
       if (!raw) continue
 
       const parsed = JSON.parse(raw) as
-        | { access_token?: string; currentSession?: { access_token?: string } }
+        | {
+            access_token?: string
+            refresh_token?: string
+            currentSession?: { access_token?: string; refresh_token?: string }
+          }
         | null
-      const token = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null
-      if (typeof token === 'string' && token.length > 0) {
-        return token
+      const accessToken = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null
+      const refreshToken = parsed?.refresh_token ?? parsed?.currentSession?.refresh_token ?? null
+
+      if (typeof accessToken === 'string' && accessToken.length > 0) {
+        return {
+          accessToken,
+          refreshToken: typeof refreshToken === 'string' && refreshToken.length > 0 ? refreshToken : null,
+        }
       }
     }
   } catch (error) {
     console.warn('[auth headers] localStorage token read failed', error)
   }
 
-  return null
+  return {
+    accessToken: null,
+    refreshToken: null,
+  }
 }
 
-export const getClientAuthHeaders = async (): Promise<Record<string, string>> => {
+export const ensureClientSession = async (): Promise<Session | null> => {
   const supabase = createSupabaseBrowser()
 
   let {
@@ -47,10 +67,24 @@ export const getClientAuthHeaders = async (): Promise<Record<string, string>> =>
     session = refreshed.session ?? session
   }
 
-  let accessToken = session?.access_token ?? null
-  if (!accessToken) {
-    accessToken = getAccessTokenFromStorage()
+  if (!session) {
+    const storedTokens = getTokensFromStorage()
+    if (storedTokens.accessToken && storedTokens.refreshToken) {
+      const { data: restored } = await supabase.auth.setSession({
+        access_token: storedTokens.accessToken,
+        refresh_token: storedTokens.refreshToken,
+      })
+      session = restored.session ?? null
+    }
   }
+
+  return session ?? null
+}
+
+export const getClientAuthHeaders = async (): Promise<Record<string, string>> => {
+  const session = await ensureClientSession()
+  const fallbackTokens = session ? null : getTokensFromStorage()
+  const accessToken = session?.access_token ?? fallbackTokens?.accessToken ?? null
 
   const headers: Record<string, string> = {}
   if (accessToken) {
