@@ -64,17 +64,28 @@ const buildFallbackFromLocalSession = (session: { user: any } | null): SessionRe
 
 const fetchSession = async (): Promise<SessionResponse> => {
   const supabase = createSupabaseBrowser()
-  const {
+  let {
     data: { session: localSession },
   } = await supabase.auth.getSession()
 
-  const headers = await getClientAuthHeaders()
+  const doRequest = async (forceRefresh = false) => {
+    const headers = await getClientAuthHeaders({ forceRefresh })
+    return fetch('/api/session', {
+      cache: 'no-store',
+      headers,
+      credentials: 'include', // Ensure cookies are sent with the request
+    })
+  }
 
-  const response = await fetch('/api/session', {
-    cache: 'no-store',
-    headers,
-    credentials: 'include', // Ensure cookies are sent with the request
-  })
+  let response = await doRequest()
+
+  if (response.status === 401) {
+    response = await doRequest(true)
+    ;({
+      data: { session: localSession },
+    } = await supabase.auth.getSession())
+  }
+
   if (!response.ok) {
     if ([401, 429, 500, 502, 503, 504].includes(response.status)) {
       const fallback = buildFallbackFromLocalSession(localSession)
@@ -85,6 +96,7 @@ const fetchSession = async (): Promise<SessionResponse> => {
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Impossible de récupérer la session utilisateur')
   }
+
   const payload = (await response.json()) as SessionResponse
   if (!payload.user) {
     const fallback = buildFallbackFromLocalSession(localSession)

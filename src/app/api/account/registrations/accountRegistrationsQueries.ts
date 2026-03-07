@@ -48,17 +48,28 @@ const buildFallbackAccountResponse = (session: { user: any } | null): AccountReg
 
 const fetchAccountRegistrations = async (): Promise<AccountRegistrationsResponse> => {
   const supabase = createSupabaseBrowser()
-  const {
+  let {
     data: { session: localSession },
   } = await supabase.auth.getSession()
 
-  const headers = await getClientAuthHeaders()
+  const doRequest = async (forceRefresh = false) => {
+    const headers = await getClientAuthHeaders({ forceRefresh })
+    return fetch('/api/account/registrations', {
+      cache: 'no-store',
+      headers,
+      credentials: 'include', // Ensure cookies are sent with the request
+    })
+  }
 
-  const response = await fetch('/api/account/registrations', { 
-    cache: 'no-store',
-    headers,
-    credentials: 'include', // Ensure cookies are sent with the request
-  })
+  let response = await doRequest()
+
+  if (response.status === 401) {
+    response = await doRequest(true)
+    ;({
+      data: { session: localSession },
+    } = await supabase.auth.getSession())
+  }
+
   if (!response.ok) {
     if ([401, 429, 500, 502, 503, 504].includes(response.status)) {
       const fallback = buildFallbackAccountResponse(localSession)
