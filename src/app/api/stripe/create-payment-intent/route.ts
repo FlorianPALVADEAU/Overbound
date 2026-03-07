@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import {
   stripeClient,
   fetchTicketsForSelections,
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
   let ticketSelections: any[] = []
   let participants: any[] = []
   let promoCode: string | null = null
+  let ambassadorReferralCode: string | null = null
 
   try {
     const requestBody = await request.json()
@@ -34,15 +36,25 @@ export async function POST(request: NextRequest) {
     participants = requestBody.participants || []
     const upsells = requestBody.upsells || []
     promoCode = requestBody.promoCode || null
+    ambassadorReferralCode = requestBody.ambassadorReferralCode || null
     if (typeof promoCode === 'string') {
       promoCode = promoCode.trim().toUpperCase()
       if (promoCode.length === 0) {
         promoCode = null
       }
     }
+    if (typeof ambassadorReferralCode === 'string') {
+      ambassadorReferralCode = ambassadorReferralCode.trim().toUpperCase()
+      if (ambassadorReferralCode.length === 0) {
+        ambassadorReferralCode = null
+      }
+    }
 
     if (promoCode && /[,;|]/.test(promoCode)) {
       return respondJson({ error: 'Un seul code promotionnel est autorise par commande.' }, 400)
+    }
+    if (ambassadorReferralCode && /[,;|]/.test(ambassadorReferralCode)) {
+      return respondJson({ error: 'Un seul code ambassadeur est autorise par commande.' }, 400)
     }
 
     if (!eventId || !userId || !userEmail || ticketSelections.length === 0) {
@@ -50,6 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createSupabaseServer()
+    const admin = supabaseAdmin()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -119,6 +132,7 @@ export async function POST(request: NextRequest) {
       activeTierIndex !== null ? expandTierAllocations(allocations) : []
 
     let ticketSubtotal = 0
+    let hasTierDiscountApplied = false
 
     for (const [index, entry] of participantEntries.entries()) {
       const ticket = ticketById.get(entry.ticketId)
@@ -139,6 +153,10 @@ export async function POST(request: NextRequest) {
         return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
       }
 
+      if (tier && tier.discount_percentage > 0) {
+        hasTierDiscountApplied = true
+      }
+
       const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
       const unitPrice = Math.round(finalPrice * discountMultiplier)
       ticketSubtotal += unitPrice
@@ -154,13 +172,59 @@ export async function POST(request: NextRequest) {
 
     let discountAmount = 0
     let appliedPromo = null
+    let validatedAmbassadorReferralCode: string | null = null
 
     if (promoCode) {
       const { data: promo, error: promoError } = await fetchPromo(supabase, promoCode)
       if (!promoError && promo) {
         const promoData = calcPromo(promo, ticketSubtotal)
         discountAmount = promoData.discountAmount
-        appliedPromo = promoData.appliedPromo
+        if (promoData.appliedPromo) {
+          const { data: ambassadorRow } = await admin
+            .from('ambassadors')
+            .select('id')
+            .eq('promotional_code_id', promo.id)
+            .limit(1)
+            .maybeSingle()
+
+          appliedPromo = {
+            ...promoData.appliedPromo,
+            is_ambassador: Boolean(ambassadorRow?.id),
+          }
+        } else {
+          appliedPromo = null
+        }
+      }
+    }
+
+    // Keep only the best discount: ambassador promo is tracked but not stacked with active tier discount.
+    if (appliedPromo?.is_ambassador && hasTierDiscountApplied) {
+      discountAmount = 0
+      appliedPromo = null
+    }
+
+    if (ambassadorReferralCode) {
+      const { data: ambassadorPromo, error: ambassadorPromoError } = await fetchPromo(supabase, ambassadorReferralCode)
+      if (!ambassadorPromoError && ambassadorPromo) {
+        const now = new Date()
+        const validFrom = ambassadorPromo.valid_from ? new Date(ambassadorPromo.valid_from) : null
+        const validUntil = ambassadorPromo.valid_until ? new Date(ambassadorPromo.valid_until) : null
+        const allowedEvents = (ambassadorPromo.events || []).map((item: { event_id: string }) => item.event_id)
+        const matchesEvent = allowedEvents.length === 0 || allowedEvents.includes(eventId)
+        const withinDates = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)
+        const usageAvailable =
+          ambassadorPromo.usage_limit == null || ambassadorPromo.used_count < ambassadorPromo.usage_limit
+        const { data: ambassadorRow } = await admin
+          .from('ambassadors')
+          .select('id')
+          .eq('promotional_code_id', ambassadorPromo.id)
+          .limit(1)
+          .maybeSingle()
+        const isAmbassadorCode = Boolean(ambassadorRow?.id)
+
+        if (ambassadorPromo.is_active && matchesEvent && withinDates && usageAvailable && isAmbassadorCode) {
+          validatedAmbassadorReferralCode = ambassadorPromo.code
+        }
       }
     }
 
@@ -188,6 +252,10 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         event_id: eventId,
         promo_code: appliedPromo?.code || '',
+        ambassador_referral_code:
+          validatedAmbassadorReferralCode && validatedAmbassadorReferralCode !== appliedPromo?.code
+            ? validatedAmbassadorReferralCode
+            : '',
         discount_applied: discountAmount.toString(),
         tier_allocations: JSON.stringify(tierAllocationsPayload),
         event_title: eventRef.title,
@@ -222,6 +290,7 @@ export async function POST(request: NextRequest) {
       ticketCount: ticketSelections?.length || 0,
       participantCount: participants?.length || 0,
       promoCode,
+      ambassadorReferralCode,
     })
 
     return respondJson({ error: 'Erreur lors de la préparation du paiement.' }, 500)

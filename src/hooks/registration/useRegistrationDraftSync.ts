@@ -18,6 +18,7 @@ interface DraftSyncConfig {
   participants: Participant[]
   selectedUpsells: SelectedUpsellState
   appliedPromo: AppliedPromo | null
+  ambassadorReferralCode: string | null
   summaryPricing: PricingSummary
   clientSecret: string | null
   paymentIntentId: string | null
@@ -31,6 +32,7 @@ interface DraftSyncSetters {
   setParticipants: (participants: Participant[]) => void
   setSelectedUpsells: (upsells: SelectedUpsellState) => void
   setAppliedPromo: (promo: AppliedPromo | null) => void
+  setAmbassadorReferralCode: (code: string | null) => void
   setPromoInput: (input: string) => void
   setPromoError: (error: string | null) => void
   setDisclaimerRead: (read: boolean) => void
@@ -93,12 +95,14 @@ export function useRegistrationDraftSync(
             discount_percent: null,
             discount_amount: null,
             currency: registrationDraft.summary.currency as any,
+            is_ambassador: registrationDraft.ambassadorReferralCode === registrationDraft.promoCode,
           })
           setters.setPromoInput(registrationDraft.promoCode)
         } else {
           setters.setAppliedPromo(null)
           setters.setPromoInput('')
         }
+        setters.setAmbassadorReferralCode(registrationDraft.ambassadorReferralCode ?? null)
 
         setters.setPromoError(null)
         // IMPORTANT: Ne jamais restaurer la décharge et la signature depuis le draft
@@ -128,6 +132,7 @@ export function useRegistrationDraftSync(
       setters.setParticipants([])
       setters.setSelectedUpsells({})
       setters.setAppliedPromo(null)
+      setters.setAmbassadorReferralCode(null)
       setters.setPromoInput('')
       setters.setPromoError(null)
       setters.setDisclaimerRead(false)
@@ -191,6 +196,7 @@ export function useRegistrationDraftSync(
       participants: participantsPayload,
       upsells: upsellsPayload,
       promoCode: config.appliedPromo?.code || null,
+      ambassadorReferralCode: config.ambassadorReferralCode ?? null,
       summary: summaryPayload,
       signature: signaturePayload,
       disclaimer: {
@@ -213,6 +219,7 @@ export function useRegistrationDraftSync(
     config.participants,
     config.selectedUpsells,
     config.appliedPromo?.code,
+    config.ambassadorReferralCode,
     config.summaryPricing.ticketTotal,
     config.summaryPricing.upsellTotal,
     config.summaryPricing.discountAmount,

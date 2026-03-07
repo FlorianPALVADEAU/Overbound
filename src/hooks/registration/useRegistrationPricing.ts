@@ -48,8 +48,14 @@ export function useRegistrationPricing(
   }, [selectedUpsells, upsells])
 
   const discountAmount = useMemo(
-    () => calculatePromoDiscount(appliedPromo, ticketSubtotal),
-    [appliedPromo, ticketSubtotal],
+    () => {
+      // Ambassador codes are tracked, but not stacked with an already active tier discount.
+      if (appliedPromo?.is_ambassador && hasActiveDiscount) {
+        return 0
+      }
+      return calculatePromoDiscount(appliedPromo, ticketSubtotal)
+    },
+    [appliedPromo, hasActiveDiscount, ticketSubtotal],
   )
 
   const totalDue = useMemo(

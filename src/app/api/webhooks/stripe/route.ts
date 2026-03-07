@@ -22,6 +22,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
+const hasAmbassadorLink = (value: unknown) => {
+  if (Array.isArray(value)) return value.length > 0
+  return Boolean(value && typeof value === 'object')
+}
+
 const isPpsOnlyAndTooEarly = (eventDate: string | null | undefined, documentTypes: string[] | null | undefined) => {
   if (!eventDate || !documentTypes || documentTypes.length === 0) return false
   const isPpsOnly = documentTypes.every((type) => String(type || '').toLowerCase().includes('pps'))
@@ -80,6 +85,7 @@ export async function POST(request: NextRequest) {
         ticket_id,
         participant_email,
         promo_code,
+        ambassador_referral_code,
         event_title,
         ticket_name,
         race_id,
@@ -209,6 +215,24 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        let ambassadorReferralPromoId: string | null = null
+        if (typeof ambassador_referral_code === 'string' && ambassador_referral_code.trim().length > 0) {
+          const { data: ambassadorPromoRow, error: ambassadorPromoError } = await admin
+            .from('promotional_codes')
+            .select('id, ambassadors:ambassadors(id)')
+            .ilike('code', ambassador_referral_code.trim().toUpperCase())
+            .maybeSingle()
+
+          if (ambassadorPromoError) {
+            console.error('Error finding ambassador referral code:', ambassadorPromoError)
+          } else {
+            const isAmbassadorCode = hasAmbassadorLink((ambassadorPromoRow as any)?.ambassadors)
+            ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromoRow?.id ?? null : null
+          }
+        }
+
+        const registrationPromotionalCodeId = ambassadorReferralPromoId ?? promotionalCodeId
+
         // Create order
         const { data: order, error: orderError } = await admin
           .from('orders')
@@ -251,7 +275,7 @@ export async function POST(request: NextRequest) {
             stripe_payment_intent_id: paymentIntent.id,
             approval_status: 'pending',
             race_id: race_id || null,
-            promotional_code_id: promotionalCodeId,
+            promotional_code_id: registrationPromotionalCodeId,
             // DB constraints require non-null positive distances; for non-OPEN formats
             // we store a neutral placeholder and skip OPEN SAS logic.
             distance_ideal_km: isOpenFormat ? idealDistance : 1,
