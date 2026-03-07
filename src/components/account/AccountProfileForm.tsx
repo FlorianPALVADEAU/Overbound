@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
+import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -71,10 +72,12 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
+      const authHeaders = await getClientAuthHeaders()
       const response = await fetch('/api/account/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...authHeaders,
         },
         body: JSON.stringify(payload),
         credentials: 'include',
