@@ -5,6 +5,19 @@ type StoredAuthTokens = {
   refreshToken: string | null
 }
 
+const getSupabaseProjectRef = (): string | null => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) return null
+
+  try {
+    const host = new URL(supabaseUrl).hostname
+    const projectRef = host.split('.')[0]
+    return projectRef || null
+  } catch {
+    return null
+  }
+}
+
 const decodeBase64 = (value: string): string | null => {
   try {
     if (typeof window !== 'undefined' && typeof window.atob === 'function') {
@@ -63,12 +76,25 @@ const getTokensFromStorage = (): StoredAuthTokens => {
   }
 
   let tokens: StoredAuthTokens = { accessToken: null, refreshToken: null }
+  const projectRef = getSupabaseProjectRef()
+  const preferredStorageKey = projectRef ? `sb-${projectRef}-auth-token` : null
 
   try {
+    if (preferredStorageKey) {
+      const rawPreferred = window.localStorage.getItem(preferredStorageKey)
+      if (rawPreferred) {
+        const preferredCandidate = parseTokenContainer(rawPreferred)
+        tokens = mergeTokenCandidate(tokens, preferredCandidate)
+        if (tokens.accessToken && tokens.refreshToken) {
+          return tokens
+        }
+      }
+    }
+
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i)
       if (!key || !key.includes('auth-token')) continue
-
+      if (preferredStorageKey && key !== preferredStorageKey) continue
       const raw = window.localStorage.getItem(key)
       if (!raw) continue
 
@@ -94,6 +120,7 @@ const getTokensFromStorage = (): StoredAuthTokens => {
 
       const key = decodeURIComponent(cookie.slice(0, separatorIndex))
       if (!key.includes('auth-token')) continue
+      if (projectRef && !key.includes(`sb-${projectRef}-auth-token`)) continue
 
       const value = decodeURIComponent(cookie.slice(separatorIndex + 1))
       const candidate = parseTokenContainer(value)

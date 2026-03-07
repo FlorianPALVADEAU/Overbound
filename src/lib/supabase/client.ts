@@ -12,6 +12,7 @@ export const createSupabaseBrowser = () => {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
         },
       },
     )

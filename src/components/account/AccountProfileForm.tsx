@@ -86,6 +86,9 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
       const data = (await response.json().catch(() => ({}))) as UpdateProfileResponse
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Session expirée ou invalide. Recharge la page et reconnecte-toi.')
+        }
         throw new Error(data.error || 'Impossible de mettre à jour le profil.')
       }
 
