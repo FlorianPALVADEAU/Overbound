@@ -17,6 +17,19 @@ const getSafeNextPath = (next: string | null): string => {
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const origin = requestUrl.origin
+  const canonicalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (canonicalSiteUrl) {
+    try {
+      const canonical = new URL(canonicalSiteUrl)
+      if (requestUrl.host !== canonical.host) {
+        const canonicalCallbackUrl = new URL(requestUrl.pathname + requestUrl.search, canonical.origin)
+        return NextResponse.redirect(canonicalCallbackUrl, 307)
+      }
+    } catch (error) {
+      console.warn('[auth callback] invalid NEXT_PUBLIC_SITE_URL', error)
+    }
+  }
+
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')

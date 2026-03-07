@@ -24,7 +24,7 @@ export function resolveSafeNextPath(next: string | null | undefined) {
 }
 
 export function resolveAuthBaseUrl(runtimeOrigin?: string | null, envSiteUrl?: string | null) {
-  const base = runtimeOrigin || envSiteUrl || null
+  const base = envSiteUrl || runtimeOrigin || null
   if (!base) return null
   return base.replace(/\/$/, '')
 }
