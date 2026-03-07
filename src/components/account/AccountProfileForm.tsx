@@ -116,6 +116,10 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
       const authHeaders = await getClientAuthHeaders()
+      if (!('Authorization' in authHeaders)) {
+        throw new Error('Session expirée. Merci de te reconnecter puis réessayer.')
+      }
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
         ...authHeaders,
