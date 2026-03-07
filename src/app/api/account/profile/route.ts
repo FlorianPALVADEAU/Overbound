@@ -82,6 +82,9 @@ export async function PATCH(request: NextRequest) {
       console.warn('[account profile] unauthenticated patch attempt', {
         hasAuthorizationHeader: Boolean(request.headers.get('authorization')),
         cookieCount: request.cookies.getAll().length,
+        host: request.headers.get('host'),
+        origin: request.headers.get('origin'),
+        referer: request.headers.get('referer'),
       })
       return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
     }

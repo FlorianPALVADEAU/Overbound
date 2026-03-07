@@ -33,6 +33,7 @@ import {
 } from '@/lib/auth/inAppBrowser'
 import { buildExternalOAuthUrl, shouldAutoStartGoogleOAuth } from '@/lib/auth/oauthFlow'
 import { AUTH_VISUALS, pickRandomAuthVisual } from '@/lib/auth/authVisuals'
+import { writeMirroredSession } from '@/lib/auth/clientSessionMirror'
 
 type MessageState = { type: 'success' | 'error'; text: string }
 
@@ -130,6 +131,7 @@ function RegisterInner() {
       }
 
       if (data.session) {
+        writeMirroredSession(data.session)
         void fetch('/api/auth/post-auth-sync', { method: 'POST' }).catch((syncError) => {
           console.warn('[register] post-auth sync failed', syncError)
         })

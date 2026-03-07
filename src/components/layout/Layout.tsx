@@ -10,6 +10,13 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { CookieConsentBanner } from '@/components/consent/CookieConsentBanner'
 import type { Session } from '@supabase/supabase-js'
+import {
+  clearMirroredSession,
+  consumeExplicitSignOutMarker,
+  isMirroredSessionExpired,
+  readMirroredSession,
+  writeMirroredSession,
+} from '@/lib/auth/clientSessionMirror'
 
 interface LayoutProps {
   children: ReactNode
@@ -83,6 +90,7 @@ export function Layout({ children }: LayoutProps) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        writeMirroredSession(session)
         seedSessionCache(session)
       }
     })
@@ -91,11 +99,26 @@ export function Layout({ children }: LayoutProps) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        writeMirroredSession(session)
         seedSessionCache(session)
 
         const userId = session?.user?.id
         if (userId && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
           void syncPostAuthData(userId)
+        }
+      }
+
+      if (event === 'SIGNED_OUT') {
+        const explicitSignOut = consumeExplicitSignOutMarker()
+        const mirrored = readMirroredSession()
+        const expired = isMirroredSessionExpired(mirrored, 15)
+
+        if (explicitSignOut || expired) {
+          clearMirroredSession()
+        } else {
+          // Ignore transient SIGNED_OUT events when a valid mirrored session still exists.
+          // We keep the current session cache to avoid false UI logouts.
+          return
         }
       }
 
