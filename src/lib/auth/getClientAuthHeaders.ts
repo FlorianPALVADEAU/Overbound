@@ -2,7 +2,33 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 const TOKEN_REFRESH_SAFETY_WINDOW_SECONDS = 60
 
-export const getClientAuthHeaders = async (): Promise<HeadersInit> => {
+const getAccessTokenFromStorage = (): string | null => {
+  if (typeof window === 'undefined') return null
+
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i)
+      if (!key || !key.endsWith('-auth-token')) continue
+
+      const raw = window.localStorage.getItem(key)
+      if (!raw) continue
+
+      const parsed = JSON.parse(raw) as
+        | { access_token?: string; currentSession?: { access_token?: string } }
+        | null
+      const token = parsed?.access_token ?? parsed?.currentSession?.access_token ?? null
+      if (typeof token === 'string' && token.length > 0) {
+        return token
+      }
+    }
+  } catch (error) {
+    console.warn('[auth headers] localStorage token read failed', error)
+  }
+
+  return null
+}
+
+export const getClientAuthHeaders = async (): Promise<Record<string, string>> => {
   const supabase = createSupabaseBrowser()
 
   let {
@@ -19,9 +45,14 @@ export const getClientAuthHeaders = async (): Promise<HeadersInit> => {
     session = refreshed.session ?? session ?? null
   }
 
-  const headers: HeadersInit = {}
-  if (session?.access_token) {
-    headers.Authorization = `Bearer ${session.access_token}`
+  let accessToken = session?.access_token ?? null
+  if (!accessToken) {
+    accessToken = getAccessTokenFromStorage()
+  }
+
+  const headers: Record<string, string> = {}
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
   }
 
   return headers
