@@ -1,4 +1,5 @@
 import { createSupabaseBrowser } from '@/lib/supabase/client'
+import { readMirroredSession } from '@/lib/auth/clientSessionMirror'
 
 type StoredAuthTokens = {
   accessToken: string | null
@@ -145,6 +146,17 @@ const getClientSession = async () => {
 }
 
 export const getClientAuthHeaders = async (): Promise<Record<string, string>> => {
+  const mirrored = readMirroredSession()
+  const mirroredIsFresh =
+    mirrored?.expiresAt == null ||
+    mirrored.expiresAt > Math.floor(Date.now() / 1000) + 30
+
+  if (mirrored?.accessToken && mirroredIsFresh) {
+    return {
+      Authorization: `Bearer ${mirrored.accessToken}`,
+    }
+  }
+
   const session = await getClientSession()
   const fallbackTokens = session ? null : getTokensFromStorage()
   const accessToken = session?.access_token ?? fallbackTokens?.accessToken ?? null
