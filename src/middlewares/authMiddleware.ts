@@ -80,14 +80,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protéger les routes account
-  if (url.pathname.startsWith('/account')) {
-    if (!user) {
-      url.pathname = '/auth/login'
-      url.searchParams.set('next', request.nextUrl.pathname)
-      return NextResponse.redirect(url)
-    }
-  }
+  // Do not hard-redirect /account from middleware.
+  // In production, right after OAuth/password sign-in, there can be a brief
+  // propagation window where edge middleware does not yet see the fresh
+  // session cookies, which causes false logout redirects.
+  // Account APIs/pages enforce auth themselves and remain the source of truth.
 
   // Rediriger les utilisateurs connectés depuis /login vers /account
   if ((url.pathname === '/login' || url.pathname === '/auth/login') && user) {
