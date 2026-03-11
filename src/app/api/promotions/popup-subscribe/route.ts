@@ -71,6 +71,37 @@ export async function POST(request: NextRequest) {
     const email = validatedData.email.toLowerCase().trim()
     const fullName = validatedData.full_name.trim()
 
+    // Si un compte existe déjà avec cet email, ne rien enregistrer et inviter à se connecter.
+    const admin = supabaseAdmin()
+    const existingUser = await findAuthUserByEmail(admin, email)
+    if (existingUser) {
+      return NextResponse.json(
+        {
+          error: 'Cette adresse email est déjà associée à un compte.',
+          code: 'EMAIL_ALREADY_REGISTERED',
+          redirect_to: '/auth/login',
+        },
+        { status: 409 }
+      )
+    }
+
+    const { data: existingDatabaseSubscription } = await admin
+      .from('list_subscriptions')
+      .select('id')
+      .eq('email', email)
+      .limit(1)
+
+    if ((existingDatabaseSubscription?.length ?? 0) > 0) {
+      return NextResponse.json(
+        {
+          error: 'Cette adresse existe déjà dans notre base. Prochaine étape: crée ton compte.',
+          code: 'EMAIL_ALREADY_IN_DATABASE',
+          redirect_to: '/auth/register',
+        },
+        { status: 409 }
+      )
+    }
+
     // Vérifier que la promotion existe et est active
     const { data: promotion, error: promoError } = await supabase
       .from('site_promotions')
@@ -121,28 +152,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Vérifier si cet email existe déjà dans auth.users
-    const admin = supabaseAdmin()
-    const existingUser = await findAuthUserByEmail(admin, email)
-    const userId = existingUser?.id
-
     // Vérifier quelles subscriptions existent déjà (utiliser admin pour contourner RLS)
-    let existingSubscriptions
-    if (userId) {
-      const { data } = await admin
-        .from('list_subscriptions')
-        .select('list_id')
-        .eq('user_id', userId)
-        .in('list_id', marketingLists.map((l) => l.id))
-      existingSubscriptions = data || []
-    } else {
-      const { data } = await admin
-        .from('list_subscriptions')
-        .select('list_id')
-        .eq('email', email)
-        .in('list_id', marketingLists.map((l) => l.id))
-      existingSubscriptions = data || []
-    }
+    const { data: existingSubscriptionsData } = await admin
+      .from('list_subscriptions')
+      .select('list_id')
+      .eq('email', email)
+      .in('list_id', marketingLists.map((l) => l.id))
+    const existingSubscriptions = existingSubscriptionsData || []
 
     const existingListIds = new Set(existingSubscriptions.map((s) => s.list_id))
 
@@ -151,9 +167,9 @@ export async function POST(request: NextRequest) {
       .filter((list) => !existingListIds.has(list.id))
       .map((list) => ({
         list_id: list.id,
-        user_id: userId || null,
-        email: userId ? null : email,
-        full_name: userId ? null : fullName,
+        user_id: null,
+        email,
+        full_name: fullName,
         subscribed: true,
         subscribed_at: new Date().toISOString(),
         source: `popup-${validatedData.promotion_id}`,
@@ -180,7 +196,6 @@ export async function POST(request: NextRequest) {
       await sendPopupSubscribeConfirmationEmail({
         to: email,
         fullName: fullName,
-        userId: userId,
         eventsUrl: `${baseUrl}/events`,
         blogUrl: `${baseUrl}/blog`,
       })

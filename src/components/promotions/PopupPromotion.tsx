@@ -1,16 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePromotions } from '@/app/api/promotions/promotionsQueries'
 import { isPopupPromotion } from '@/types/Promotion'
 import type { Promotion, PopupConfig } from '@/types/Promotion'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +19,10 @@ interface PopupPromotionProps {
 
 const POPUP_SUBSCRIBED_STORAGE_KEY = 'overbound-popup-subscribed'
 const POPUP_LAST_SEEN_STORAGE_KEY = 'overbound-popup-last-seen-id'
+const buildRedirectUrlWithNotice = (basePath: string, notice: string) => {
+  const separator = basePath.includes('?') ? '&' : '?'
+  return `${basePath}${separator}popup_notice=${encodeURIComponent(notice)}`
+}
 
 export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const { data: promotions = [], isLoading } = usePromotions()
@@ -58,7 +55,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   useEffect(() => {
     if (!activePopup) return
 
-    // Don't show again if the user already submitted the popup.
+     // Don't show again if the user already submitted the popup.
     const hasAlreadySubscribed = localStorage.getItem(POPUP_SUBSCRIBED_STORAGE_KEY)
     if (hasAlreadySubscribed === 'true') return
 
@@ -83,14 +80,27 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
     return () => clearTimeout(timer)
   }, [activePopup])
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (activePopup) {
       // Mark as seen in this session and persist across sessions for this popup.
       sessionStorage.setItem(`popup-seen-${activePopup.id}`, 'true')
       localStorage.setItem(POPUP_LAST_SEEN_STORAGE_KEY, activePopup.id)
     }
     setIsOpen(false)
-  }
+  }, [activePopup])
+
+  useEffect(() => {
+    if (!isOpen || !activePopup?.popup_config?.backdrop_dismissible) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleClose()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isOpen, activePopup, handleClose])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,6 +143,29 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
         }),
       })
 
+      if (response.status === 409) {
+        const data = await response.json()
+        if (data?.code === 'EMAIL_ALREADY_REGISTERED') {
+          sessionStorage.setItem(`popup-seen-${activePopup.id}`, 'true')
+          localStorage.setItem(POPUP_LAST_SEEN_STORAGE_KEY, activePopup.id)
+          localStorage.setItem(POPUP_SUBSCRIBED_STORAGE_KEY, 'true')
+          window.location.href = buildRedirectUrlWithNotice(
+            data.redirect_to || '/auth/login',
+            'email_registered_login'
+          )
+          return
+        }
+        if (data?.code === 'EMAIL_ALREADY_IN_DATABASE') {
+          sessionStorage.setItem(`popup-seen-${activePopup.id}`, 'true')
+          localStorage.setItem(POPUP_LAST_SEEN_STORAGE_KEY, activePopup.id)
+          window.location.href = buildRedirectUrlWithNotice(
+            data.redirect_to || '/auth/register',
+            'email_in_database_register'
+          )
+          return
+        }
+      }
+
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || 'Erreur lors de l\'inscription')
@@ -164,27 +197,23 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const canSubmit = !isSubmitting && !validationError
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open && config.backdrop_dismissible) {
-          handleClose()
-        }
-      }}
-    >
-      <DialogContent
-        className="relative max-w-5xl overflow-hidden border-border/80 bg-background/98 shadow-[0_30px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/15 backdrop-blur-sm"
-        onPointerDownOutside={(e) => {
-          if (!config.backdrop_dismissible) {
-            e.preventDefault()
-          }
-        }}
-        onEscapeKeyDown={(e) => {
-          if (!config.backdrop_dismissible) {
-            e.preventDefault()
-          }
-        }}
-      >
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+            onClick={() => {
+              if (config.backdrop_dismissible) {
+                handleClose()
+              }
+            }}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-[10001] w-full max-w-5xl overflow-hidden rounded-lg border border-border/80 bg-background p-6 shadow-[0_30px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/15 backdrop-blur-sm"
+          >
         {config.show_close_button && !isSuccess && (
           <button
             onClick={handleClose}
@@ -205,23 +234,23 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="h-16 w-16 text-green-600 mb-4" />
-            <DialogTitle className="text-2xl font-bold mb-2">
+            <h2 className="text-2xl font-bold mb-2">
               {config.success_message || 'Merci !'}
-            </DialogTitle>
-            <DialogDescription className="text-base">
+            </h2>
+            <p className="text-base text-muted-foreground">
               Tu vas recevoir un email de confirmation très bientôt.
-            </DialogDescription>
+            </p>
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">
                 {config.form_title}
-              </DialogTitle>
-              <DialogDescription className="text-base">
+              </h2>
+              <p className="text-base text-muted-foreground">
                 {config.form_description}
-              </DialogDescription>
-            </DialogHeader>
+              </p>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
@@ -269,7 +298,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
               </div>
 
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                <div className="rounded-md border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
                   {error}
                 </div>
               )}
@@ -296,7 +325,9 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
             </form>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
