@@ -62,6 +62,15 @@ function LoginInner() {
     const success = searchParams.get('success')
     if (success) {
       setMessage({ type: 'success', text: decodeURIComponent(success) || 'Connexion réussie !' })
+      return
+    }
+
+    const popupNotice = searchParams.get('popup_notice')
+    if (popupNotice === 'email_registered_login') {
+      setMessage({
+        type: 'error',
+        text: 'Cette adresse e-mail existe déjà. Prochaine étape: connecte-toi.',
+      })
     }
   }, [searchParams])
 

@@ -67,6 +67,16 @@ function RegisterInner() {
   }, [])
 
   useEffect(() => {
+    const popupNotice = searchParams.get('popup_notice')
+    if (popupNotice === 'email_in_database_register') {
+      setMessage({
+        type: 'error',
+        text: 'Cette adresse e-mail existe déjà dans notre base. Prochaine étape: crée ton compte.',
+      })
+    }
+  }, [searchParams])
+
+  useEffect(() => {
     const storageKey = 'overbound-auth-visual'
     const persisted = window.localStorage.getItem(storageKey)
     if (persisted && AUTH_VISUALS.includes(persisted as (typeof AUTH_VISUALS)[number])) {
