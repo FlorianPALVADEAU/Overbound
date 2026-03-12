@@ -74,9 +74,10 @@ export default function AccountTicketsPage() {
     return null
   }
 
-  const upcomingRegistrations = data.registrations.filter((registration) => {
-    if (!registration.event_date) return false
-    return new Date(registration.event_date) >= new Date()
+  const sortedRegistrations = [...data.registrations].sort((a, b) => {
+    const aDate = a.event_date ? new Date(a.event_date).getTime() : 0
+    const bDate = b.event_date ? new Date(b.event_date).getTime() : 0
+    return bDate - aDate
   })
   const needsDocumentAction = data.registrations.some(
     (registration) => registration.document_requires_attention,
@@ -115,12 +116,12 @@ export default function AccountTicketsPage() {
             <CardTitle>Billets disponibles</CardTitle>
           </CardHeader>
           <CardContent>
-            {upcomingRegistrations.length === 0 ? (
+            {sortedRegistrations.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
                 Aucun billet disponible pour le moment. Consultez vos inscriptions passées dans votre espace compte ou inscrivez-vous à un nouvel événement.
               </div>
             ) : (
-              <AccountRegistrationsList registrations={upcomingRegistrations} />
+              <AccountRegistrationsList registrations={sortedRegistrations} />
             )}
           </CardContent>
         </Card>

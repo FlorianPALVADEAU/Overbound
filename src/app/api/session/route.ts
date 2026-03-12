@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
+import { computeDocumentAction } from '@/lib/documents/documentAction'
 
 export async function GET(request: Request) {
   try {
@@ -91,8 +92,6 @@ export async function GET(request: Request) {
         }
       }
 
-      const isPpsType = (value: string) => value.toLowerCase().includes('pps')
-
       needsDocumentAction = registrationRows.some(
         ({ id, ticket, approval_status, document_url }) => {
           const requiresDocument = Boolean(ticket?.requires_document)
@@ -113,27 +112,21 @@ export async function GET(request: Request) {
               ? ticket.document_types.length
               : 1
 
-          const requiredTypes = Array.isArray(ticket?.document_types) ? ticket!.document_types! : []
           const uploadedTypes = documentTypeMap.get(id)
             ? Array.from(documentTypeMap.get(id)!)
             : []
-          const missingTypes = requiredTypes.length > 0
-            ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
-            : []
 
-          if (eventDate && missingTypes.length > 0 && missingTypes.every((type) => isPpsType(type))) {
-            const earliestAllowed = new Date(eventDate)
-            earliestAllowed.setMonth(earliestAllowed.getMonth() - 3)
-            if (Date.now() < earliestAllowed.getTime()) {
-              return false
-            }
-          }
-
-          if (uploadedCount < requiredCount) {
-            return true
-          }
-
-          return approval_status !== 'approved'
+          return computeDocumentAction({
+            requiresDocument,
+            eventDate,
+            approvalStatus: approval_status,
+            requiredTypes: Array.isArray(ticket?.document_types) ? ticket.document_types : [],
+            uploadedTypes,
+            uploadedCount,
+            requiredCount,
+            hasLegacyDocumentUrl: Boolean(document_url),
+            now,
+          }).requiresAttention
         },
       )
     } catch (sessionAlertError) {

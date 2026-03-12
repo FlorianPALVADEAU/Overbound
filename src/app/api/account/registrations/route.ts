@@ -3,8 +3,49 @@ import QRCode from 'qrcode'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
 import { processAccountEngagementEmails } from '@/lib/email/engagement'
+import { computeDocumentAction } from '@/lib/documents/documentAction'
 
 export const runtime = 'nodejs'
+
+const normalizeViewRegistration = (row: any) => ({
+  ...row,
+  registration_id: row.registration_id ?? row.id,
+  registration_created_at: row.registration_created_at ?? row.created_at ?? null,
+})
+
+const firstRelation = <T,>(value: T | T[] | null | undefined): T | null => {
+  if (!value) return null
+  return Array.isArray(value) ? value[0] ?? null : value
+}
+
+const normalizeDirectRegistration = (row: any) => {
+  const ticket = firstRelation(row.ticket)
+  const event = firstRelation(row.event)
+  const order = firstRelation(row.order)
+
+  return {
+    registration_id: row.id,
+    user_id: row.user_id ?? null,
+    checked_in: Boolean(row.checked_in),
+    claim_status: row.claim_status ?? 'pending',
+    qr_code_token: row.qr_code_token ?? null,
+    created_at: row.created_at ?? null,
+    registration_created_at: row.created_at ?? null,
+    ticket_id: row.ticket_id ?? null,
+    ticket_name: ticket?.name ?? null,
+    difficulty_level: row.difficulty_level ?? null,
+    event_id: row.event_id ?? null,
+    event_title: event?.title ?? null,
+    event_date: event?.date ?? null,
+    event_location: event?.location ?? null,
+    amount_total: order?.amount_total ?? null,
+    currency: order?.currency ?? null,
+    order_status: order?.status ?? null,
+    invoice_url: order?.invoice_url ?? null,
+    order_created_at: order?.created_at ?? null,
+    email: row.email ?? null,
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -29,15 +70,100 @@ export async function GET(request: Request) {
           }
         : null
 
-    const { data: registrations, error } = await admin
+    const byUserIdPromise = admin
       .from('my_registrations')
       .select('*')
       .eq('user_id', user.id)
-      .order('registration_id', { ascending: false })
 
-    if (error) {
-      console.error('[account api] registrations error', error)
+    const byEmailPromise = user.email
+      ? admin
+          .from('my_registrations')
+          .select('*')
+          .eq('email', user.email)
+      : Promise.resolve({ data: [], error: null } as { data: any[]; error: any })
+
+    const [
+      { data: registrationsByUserId, error: byUserIdError },
+      { data: registrationsByEmail, error: byEmailError },
+    ] = await Promise.all([byUserIdPromise, byEmailPromise])
+
+    if (byUserIdError) {
+      console.error('[account api] registrations by user id error', byUserIdError)
     }
+    if (byEmailError) {
+      console.error('[account api] registrations by email error', byEmailError)
+    }
+
+    const directByUserIdPromise = admin
+      .from('registrations')
+      .select(
+        `
+          id,
+          user_id,
+          email,
+          checked_in,
+          claim_status,
+          qr_code_token,
+          created_at,
+          ticket_id,
+          event_id,
+          difficulty_level,
+          ticket:tickets(name),
+          event:events(title, date, location),
+          order:orders(status, amount_total, currency, invoice_url, created_at)
+        `,
+      )
+      .eq('user_id', user.id)
+
+    const directByEmailPromise = user.email
+      ? admin
+          .from('registrations')
+          .select(
+            `
+              id,
+              user_id,
+              email,
+              checked_in,
+              claim_status,
+              qr_code_token,
+              created_at,
+              ticket_id,
+              event_id,
+              difficulty_level,
+              ticket:tickets(name),
+              event:events(title, date, location),
+              order:orders(status, amount_total, currency, invoice_url, created_at)
+            `,
+          )
+          .eq('email', user.email)
+      : Promise.resolve({ data: [], error: null } as { data: any[]; error: any })
+
+    const [
+      { data: directByUserId, error: directByUserIdError },
+      { data: directByEmail, error: directByEmailError },
+    ] = await Promise.all([directByUserIdPromise, directByEmailPromise])
+
+    if (directByUserIdError) {
+      console.error('[account api] direct registrations by user id error', directByUserIdError)
+    }
+    if (directByEmailError) {
+      console.error('[account api] direct registrations by email error', directByEmailError)
+    }
+
+    const registrations = Array.from(
+      new Map(
+        [
+          ...(registrationsByUserId ?? []).map(normalizeViewRegistration),
+          ...(registrationsByEmail ?? []).map(normalizeViewRegistration),
+          ...(directByUserId ?? []).map(normalizeDirectRegistration),
+          ...(directByEmail ?? []).map(normalizeDirectRegistration),
+        ].map((registration) => [registration.registration_id, registration]),
+      ).values(),
+    ).sort(
+      (a, b) =>
+        new Date(b.registration_created_at ?? b.created_at ?? 0).getTime() -
+        new Date(a.registration_created_at ?? a.created_at ?? 0).getTime(),
+    )
 
     const registrationIds = (registrations ?? []).map((registration) => registration.registration_id)
     type RegistrationMetaRow = {
@@ -169,8 +295,6 @@ export async function GET(request: Request) {
             ? await QRCode.toDataURL(registration.qr_code_token)
             : null
 
-        const eventDate = registration.event_date ? new Date(registration.event_date) : null
-        const isEventUpcoming = eventDate ? eventDate >= now : false
         const uploadedTypes = documentTypeMap.get(registration.registration_id)
         const uploadedCount = uploadedTypes?.size ?? (meta.document_url ? 1 : 0)
         const requiredCount = meta.requires_document
@@ -178,10 +302,17 @@ export async function GET(request: Request) {
           : 0
         const documentsComplete = requiredCount === 0 ? true : uploadedCount >= requiredCount
 
-        const documentRequiresAttention =
-          meta.requires_document &&
-          isEventUpcoming &&
-          (!documentsComplete || meta.approval_status !== 'approved')
+        const { requiresAttention: documentRequiresAttention } = computeDocumentAction({
+          requiresDocument: meta.requires_document,
+          eventDate: registration.event_date,
+          approvalStatus: meta.approval_status,
+          requiredTypes: meta.document_types,
+          uploadedTypes: Array.from(uploadedTypes ?? []),
+          uploadedCount,
+          requiredCount,
+          hasLegacyDocumentUrl: Boolean(meta.document_url),
+          now,
+        })
 
         return {
           ...registration,

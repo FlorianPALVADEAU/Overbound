@@ -244,7 +244,7 @@ export default function EventSuccessPage() {
                   </p>
                 ) : null}
                 <div className="flex gap-2">
-                  <Link href={`/account/ticket/${registration.id}`}>
+                  <Link href={`/account/tickets?ticket=${registration.id}`}>
                     <Button size="sm">
                       <QrCode className="mr-2 h-4 w-4" /> Voir mon billet
                     </Button>

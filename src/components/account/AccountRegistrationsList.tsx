@@ -215,7 +215,11 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
           <div key={registration.registration_id}>
             <div className="flex flex-col gap-6 rounded-lg border bg-card p-6 lg:flex-row">
               <div className="flex h-32 w-full flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 lg:w-48">
-                <CalendarIcon className="h-12 w-12 text-primary/40" />
+                <img
+                  src="/images/images/a-young-men-carrying-a-wooden-log-on-his-shoulder-staring-at-the-camera.avif"
+                  alt="Participant Overbound"
+                  className="h-full w-full rounded-lg object-cover"
+                />
               </div>
 
               <div className="flex-1 min-w-0">
@@ -380,6 +384,14 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                         className="border-none bg-transparent p-0 shadow-none outline-none focus-visible:outline-none"
                         showCloseButton={false}
                       >
+                        <DialogHeader className="sr-only">
+                          <DialogTitle>
+                            Billet {registration.ticket_name || 'Overbound'} — {registration.event_title || 'Événement'}
+                          </DialogTitle>
+                          <DialogDescription>
+                            Affiche le QR code de check-in pour ce billet.
+                          </DialogDescription>
+                        </DialogHeader>
                         <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-6 text-center shadow-2xl">
                           <div className="text-sm font-medium text-muted-foreground">
                             Présente ce QR au check-in

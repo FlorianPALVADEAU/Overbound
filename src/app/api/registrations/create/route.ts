@@ -633,7 +633,7 @@ export async function POST(request: NextRequest) {
           ticketName: ticket.name,
           startTime: formatWaveStartTime(registration.start_time),
           qrUrl: `data:image/png;base64,${qrCodeBase64}`,
-          manageUrl: `${siteUrl}/account/ticket/${registration.id}`,
+          manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`,
         })
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)

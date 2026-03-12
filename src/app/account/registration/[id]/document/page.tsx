@@ -62,7 +62,7 @@ export default function RegistrationDocumentPage() {
   const registration = data.registration
 
   if (!registration.ticket.requires_document) {
-    router.replace(`/account/ticket/${registration.id}`)
+    router.replace(`/account/tickets?ticket=${registration.id}`)
     return null
   }
 
@@ -81,6 +81,19 @@ export default function RegistrationDocumentPage() {
   const requiredDocumentTypes = registration.ticket.document_types || []
   const requiredCount = requiredDocumentTypes.length > 0 ? requiredDocumentTypes.length : 1
   const uploadedCount = existingDocuments.length
+  const isPpsType = (value: string) => value.toLowerCase().includes('pps')
+  const ppsAvailableDate = (() => {
+    if (!registration.event?.date) return null
+    const eventDate = new Date(registration.event.date)
+    if (Number.isNaN(eventDate.getTime())) return null
+    const available = new Date(eventDate)
+    available.setMonth(available.getMonth() - 3)
+    return available
+  })()
+  const ppsBlocked = Boolean(ppsAvailableDate && Date.now() < ppsAvailableDate.getTime())
+  const isPpsOnlyRequirement =
+    requiredDocumentTypes.length > 0 && requiredDocumentTypes.every((docType: string) => isPpsType(docType))
+  const showPpsNotOpenYet = uploadedCount === 0 && isPpsOnlyRequirement && ppsBlocked
 
   return (
     <main className="min-h-screen bg-muted/30">
@@ -176,6 +189,22 @@ export default function RegistrationDocumentPage() {
                     <span className="flex items-center gap-1 text-red-600">
                       <AlertCircle className="h-3 w-3" />
                       Document rejeté — merci de déposer un nouveau fichier.
+                    </span>
+                  ) : showPpsNotOpenYet ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <AlertCircle className="h-3 w-3" />
+                      PPS à déposer à partir du{' '}
+                      {ppsAvailableDate?.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                      .
+                    </span>
+                  ) : uploadedCount === 0 ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <AlertCircle className="h-3 w-3" />
+                      Document à déposer.
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-amber-600">

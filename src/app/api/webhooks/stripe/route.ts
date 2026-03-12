@@ -475,7 +475,7 @@ export async function POST(request: NextRequest) {
             ticketName: ticket_name || ticket.name,
             startTime: formatWaveStartTime(registration.start_time),
             qrUrl, // Public URL from Supabase Storage
-            manageUrl: `${siteUrl}/account/ticket/${registration.id}`
+            manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`
           })
 
           console.log('Confirmation email sent to:', registration.email)
