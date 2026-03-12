@@ -313,6 +313,25 @@ export function DocumentUpload({
 
   const statusMeta = statusBadge(documentStatus, rejectionReason)
   const canUpload = documentStatus !== 'approved'
+  const hasDocuments = documents.length > 0
+  const isPpsOnlyRequirement =
+    requiredDocumentTypes.length > 0 && requiredDocumentTypes.every((docType) => isPpsType(docType))
+  const isPpsTemporarilyBlocked = isPpsOnlyRequirement && !isPpsUploadAllowed()
+  const globalStatusMeta = hasDocuments
+    ? statusMeta
+    : isPpsTemporarilyBlocked
+      ? {
+          label: `PPS disponible le ${formatPpsAvailableDate()}`,
+          variant: 'secondary' as const,
+          icon: <Clock className="h-4 w-4" />,
+          description: "Aucun document n'est requis pour l'instant. Tu pourras déposer ton PPS à partir de cette date.",
+        }
+      : {
+          label: 'Document à déposer',
+          variant: 'secondary' as const,
+          icon: <AlertTriangle className="h-4 w-4" />,
+          description: 'Aucun document reçu pour le moment.',
+        }
 
   return (
     <div className="space-y-5">
@@ -323,10 +342,10 @@ export function DocumentUpload({
           </div>
           <div>
             <Badge variant={statusMeta.variant} className="inline-flex items-center gap-1">
-              {statusMeta.icon}
-              {statusMeta.label}
+              {globalStatusMeta.icon}
+              {globalStatusMeta.label}
             </Badge>
-            <p className="mt-2 text-xs text-muted-foreground">{statusMeta.description}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{globalStatusMeta.description}</p>
           </div>
         </div>
       </div>
@@ -338,9 +357,23 @@ export function DocumentUpload({
           const progress = progressMap[docType] ?? 0
           const message = messageMap[docType]
           const isDragOver = dragOverType === docType
-          const docStatus = doc?.status ?? documentStatus
-          const docStatusMeta = statusBadge(docStatus, doc?.rejectionReason ?? rejectionReason)
           const ppsBlocked = isPpsType(docType) && !isPpsUploadAllowed()
+          const docStatus = doc?.status ?? documentStatus
+          const docStatusMeta = doc
+            ? statusBadge(docStatus, doc?.rejectionReason ?? rejectionReason)
+            : ppsBlocked
+              ? {
+                  label: `Ouverture le ${formatPpsAvailableDate()}`,
+                  variant: 'secondary' as const,
+                  icon: <Clock className="h-4 w-4" />,
+                  description: '',
+                }
+              : {
+                  label: 'Document manquant',
+                  variant: 'secondary' as const,
+                  icon: <AlertTriangle className="h-4 w-4" />,
+                  description: '',
+                }
 
           return (
             <div key={docType} className="rounded-2xl border border-border bg-card/80 p-5 space-y-4">
