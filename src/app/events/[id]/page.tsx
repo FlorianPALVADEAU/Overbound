@@ -122,7 +122,7 @@ export default function EventDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <main className="flex min-h-screen items-center justify-center bg-linear-to-b from-background to-muted/20">
         <div className="text-sm text-muted-foreground">Chargement de l'événement…</div>
       </main>
     )
@@ -130,7 +130,7 @@ export default function EventDetailPage() {
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <main className="min-h-screen bg-linear-to-b from-background to-muted/20">
         <div className="container mx-auto max-w-lg px-6 py-12">
           <Card>
             <CardHeader>
@@ -282,7 +282,7 @@ export default function EventDetailPage() {
             <p className="text-3xl font-extrabold sm:text-4xl">Bientôt en vente</p>
           )}
         </div>
-        <p className="text-sm text-primary-foreground/80 sm:max-w-[220px] sm:text-right lg:text-left">
+        <p className="text-sm text-primary-foreground/80 sm:max-w-55 sm:text-right lg:text-left">
           Tarifs évolutifs selon le format choisi et la période d'inscription.
         </p>
       </div>
@@ -394,10 +394,10 @@ export default function EventDetailPage() {
               />
             )
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-background via-muted/40 to-background" />
+            <div className="h-full w-full bg-linear-to-br from-background via-muted/40 to-background" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/90 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-b from-background/10 via-background/70 to-background" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-background via-background/90 to-transparent" />
         </div>
 
         <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -453,7 +453,8 @@ export default function EventDetailPage() {
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Date</p>
                     <p className="font-semibold">{formattedDate}</p>
-                    <p className="text-sm text-muted-foreground">{formattedTime}</p>
+                    <p className="text-sm text-muted-foreground">Vagues format OPEN : {formattedTime} - 14:30. <br/> Il y a 1 départ toutes les 10 minutes !</p><br/> 
+                    <p className="text-sm text-muted-foreground">Début format RANKED : 15:00 <br/> 20 minutes pour finir la boucle, élimination si non terminé dans le temps imparti</p>
                     {event.status === 'announced' && formattedSalesStart ? (
                       <p className="text-sm text-muted-foreground">
                         Ouverture des inscriptions : {formattedSalesStart}
@@ -471,6 +472,9 @@ export default function EventDetailPage() {
                       <p className="text-sm text-muted-foreground">
                         {availableSpots > 0 ? 'Places limitées' : 'Complètement réservé'}
                       </p>
+                      <Button variant="link" size="sm" className="px-0 md:pt-15 text-sm text-primary hover:underline" asChild>
+                        <a href="https://maps.app.goo.gl/BKCCmG4ffWhJRUw58" target="_blank" rel="noopener noreferrer" className="text-sm text-white hover:underline">Voir sur la carte</a>
+                      </Button>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 rounded-2xl bg-card/80 p-5 shadow-sm ring-1 ring-border/60 backdrop-blur transition hover:shadow-md hover:ring-primary/20">
@@ -528,15 +532,47 @@ export default function EventDetailPage() {
                 </div>
 
                 {isUltraArena && (
-                  <div className="flex justify-center lg:block">
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="lg"
-                      className="w-full max-w-md sm:w-auto lg:w-fit lg:max-w-none rounded-2xl border-primary/40 bg-primary/10 px-8 py-6 text-base font-semibold text-primary shadow-sm backdrop-blur hover:bg-primary/15"
-                    >
-                      <a href="#infos-pratiques">Découvrez toutes les infos pratiques ici</a>
-                    </Button>
+                  <div className="mt-2 w-full">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="w-full lg:min-w-0 lg:flex-1">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="lg"
+                          className="h-auto w-full justify-center rounded-xl border-primary/45 bg-primary/10 px-6 py-4 text-center text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 sm:text-base"
+                      >
+                        <a href="#infos-pratiques">Découvrez toutes les infos pratiques ici</a>
+                      </Button>
+                      </div>
+                      <div className="h-full grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:shrink-0">
+                        <div className="group relative w-full">
+                          <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-md bg-foreground px-3 py-1.5 text-xs whitespace-nowrap text-background opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                            Ça arrive bientôt !
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            disabled
+                            className="h-full w-full cursor-not-allowed justify-center rounded-xl border-border/60 bg-muted/10 px-4 py-3 text-center text-sm font-semibold text-foreground/60 opacity-70"
+                          >
+                            Règlement OPEN
+                          </Button>
+                        </div>
+                        <div className="group relative w-full">
+                          <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-md bg-foreground px-3 py-1.5 text-xs whitespace-nowrap text-background opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                            Ça arrive bientôt !
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            disabled
+                            className="h-full w-full cursor-not-allowed justify-center rounded-xl border-border/60 bg-muted/10 px-4 py-3 text-center text-sm font-semibold text-foreground/60 opacity-70"
+                          >
+                            Règlement RANKED
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -668,7 +704,7 @@ export default function EventDetailPage() {
               </p>
             </div>
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="relative overflow-hidden rounded-2xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-card to-card p-8 shadow-lg transition hover:border-blue-500/50 hover:shadow-xl">
+              <div className="relative overflow-hidden rounded-2xl border-2 border-blue-500/30 bg-linear-to-br from-blue-500/5 via-card to-card p-8 shadow-lg transition hover:border-blue-500/50 hover:shadow-xl">
                 <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
                 <div className="relative">
                   <div className="mb-4 flex items-center gap-3">
@@ -694,7 +730,7 @@ export default function EventDetailPage() {
                   )}
                 </div>
               </div>
-              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-card p-8 shadow-lg transition hover:border-amber-500/50 hover:shadow-xl">
+              <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-linear-to-br from-amber-500/5 via-card to-card p-8 shadow-lg transition hover:border-amber-500/50 hover:shadow-xl">
                 <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-500/10 blur-2xl" />
                 <div className="relative">
                   <div className="mb-4 flex items-center gap-3">
@@ -1058,7 +1094,7 @@ export default function EventDetailPage() {
 
       {/* Ancien bloc réservation (commenté pour refacto)
       <section id="tickets-old" className="relative overflow-hidden bg-background py-16">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5" />
+        <div className="absolute inset-0 bg-linear-to-b from-primary/5 via-background to-primary/5" />
         <div className="pointer-events-none absolute -top-24 right-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-10 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
         <div className="container relative mx-auto max-w-7xl px-6">
