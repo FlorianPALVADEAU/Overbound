@@ -35,9 +35,10 @@ export default function TicketCard({
 
   const currentRegistrations = ticket.current_registrations ?? 0
   const maxParticipants = ticket.max_participants ?? 0
+  const remainingSpots = Math.max(maxParticipants - currentRegistrations, 0)
   const isSoldOut = maxParticipants > 0 && currentRegistrations >= maxParticipants
   const rawPercentage =
-    maxParticipants > 0 ? Math.min((currentRegistrations / maxParticipants) * 100, 100) : 0
+    maxParticipants > 0 ? Math.min(Math.max((currentRegistrations / maxParticipants) * 100, 0), 100) : 0
   const progressPercentage = maxParticipants > 0 ? Math.max(rawPercentage, 4) : 0
 
   return (
@@ -108,10 +109,10 @@ export default function TicketCard({
       {maxParticipants > 0 && (
         <CardContent className="pt-0 pb-4">
           <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               {isSoldOut
-                ? 'Plus de places disponibles'
-                : 'Places limitées'}
+                ? 'Complet !'
+                : 'Places limitées !'}
             </div>
             <Progress
               value={progressPercentage}

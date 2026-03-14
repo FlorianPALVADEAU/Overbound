@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { getEffectiveEventStatus, isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 
 export const runtime = 'nodejs'
@@ -11,6 +11,7 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createSupabaseServer()
+    const admin = supabaseAdmin()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -66,7 +67,7 @@ export async function GET(
       return NextResponse.json({ error: "Les inscriptions ne sont pas encore ouvertes pour cet événement." }, { status: 409 })
     }
 
-    const { count: totalRegistrations } = await supabase
+    const { count: totalRegistrations } = await admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', event.id)
@@ -75,7 +76,7 @@ export async function GET(
 
     // Get registration counts per ticket
     const ticketIds = (event.tickets || []).map((t: { id: string }) => t.id)
-    const { data: ticketRegistrations } = await supabase
+    const { data: ticketRegistrations } = await admin
       .from('registrations')
       .select('ticket_id')
       .eq('event_id', event.id)
