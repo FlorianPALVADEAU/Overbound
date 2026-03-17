@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 export const runtime = 'nodejs'
 
@@ -10,7 +11,7 @@ const payloadSchema = z.object({
   recruits_ranked: z.number().int().min(0),
 })
 
-export async function PATCH(
+async function handlePatch(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -76,3 +77,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const PATCH = withRequestLogging(handlePatch, {
+  actionType: 'Mise à jour points ambassadeur admin',
+})

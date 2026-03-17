@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 /**
  * POST endpoint to manually trigger tier progression check for an event
  * This checks if the current active tier code should be deactivated and the next tier activated
  * Only accessible to admins
  */
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     // Verify admin authentication
     const supabase = await createSupabaseServer()
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
  * POST endpoint to check progression for ALL events
  * Useful for scheduled jobs or bulk operations
  */
-export async function PUT(request: NextRequest) {
+async function handlePut(request: NextRequest) {
   try {
     // Verify admin authentication
     const supabase = await createSupabaseServer()
@@ -134,3 +135,11 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Vérification progression paliers événement admin',
+})
+
+export const PUT = withRequestLogging(handlePut, {
+  actionType: 'Vérification progression paliers globale admin',
+})

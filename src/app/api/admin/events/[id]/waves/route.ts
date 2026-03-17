@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { buildOpenWaveRows } from '@/lib/openSas'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const ensureAdmin = async () => {
   const supabase = await createSupabaseServer()
@@ -153,7 +154,7 @@ export async function GET(
   return NextResponse.json({ waves: waves ?? [] })
 }
 
-export async function PATCH(
+async function handlePatch(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -224,3 +225,7 @@ export async function PATCH(
 
   return NextResponse.json({ success: true })
 }
+
+export const PATCH = withRequestLogging(handlePatch, {
+  actionType: 'Mise à jour vagues événement admin',
+})

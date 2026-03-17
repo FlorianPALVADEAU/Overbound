@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import type {
   CreateDistributionListData,
   DistributionListType,
@@ -230,7 +231,7 @@ async function addEventOpeningVirtualList({
  * POST /api/admin/distribution-lists
  * Create a new distribution list (admin only)
  */
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const supabase = await createClient()
 
@@ -306,3 +307,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Création liste de distribution admin',
+})

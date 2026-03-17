@@ -3,6 +3,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { sendAmbassadorCodeAssignedEmail, sendAmbassadorWelcomeEmail } from '@/lib/ambassadors/email'
 import { z } from 'zod'
 import { deleteResendContactByEmail } from '@/lib/email/resendAudiences'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const updateUserSchema = z
   .object({
@@ -17,7 +18,7 @@ const updateUserSchema = z
     message: 'Aucune donnée à mettre à jour.',
   })
 
-export async function PATCH(
+async function handlePatch(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -200,7 +201,7 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
+async function handleDelete(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -256,3 +257,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const PATCH = withRequestLogging(handlePatch, {
+  actionType: 'Mise à jour utilisateur admin',
+})
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression utilisateur admin',
+})

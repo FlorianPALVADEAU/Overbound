@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { sendReceiptEmail } from '@/lib/email'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 export const runtime = 'nodejs'
 
@@ -9,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
 })
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const supabase = await createSupabaseServer()
     const {
@@ -142,6 +143,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Renvoi reçu paiement admin',
+})
 
 const toMajor = (amountCents: number) => amountCents / 100
 
