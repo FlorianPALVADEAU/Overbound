@@ -1,6 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+const SUPPORTED_EMAIL_OTP_TYPES = ['signup', 'magiclink', 'recovery', 'invite', 'email', 'email_change'] as const
+type SupportedEmailOtpType = (typeof SUPPORTED_EMAIL_OTP_TYPES)[number]
+
 const getSafeNextPath = (next: string | null): string => {
   if (!next) {
     return '/account'
@@ -12,6 +15,14 @@ const getSafeNextPath = (next: string | null): string => {
   } catch {
     return next.startsWith('/') ? next : '/account'
   }
+}
+
+const getSupportedOtpType = (value: string | null): SupportedEmailOtpType | null => {
+  if (!value) return null
+  if ((SUPPORTED_EMAIL_OTP_TYPES as readonly string[]).includes(value)) {
+    return value as SupportedEmailOtpType
+  }
+  return null
 }
 
 export async function GET(request: NextRequest) {
@@ -31,6 +42,8 @@ export async function GET(request: NextRequest) {
   }
 
   const code = requestUrl.searchParams.get('code')
+  const tokenHash = requestUrl.searchParams.get('token_hash')
+  const otpType = getSupportedOtpType(requestUrl.searchParams.get('type'))
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')
   const nextPath = getSafeNextPath(requestUrl.searchParams.get('next'))
@@ -39,11 +52,6 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     loginUrl.searchParams.set('error', errorDescription || error)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  if (!code) {
-    loginUrl.searchParams.set('error', "Code d'authentification manquant")
     return NextResponse.redirect(loginUrl)
   }
 
@@ -73,6 +81,25 @@ export async function GET(request: NextRequest) {
       },
     },
   )
+
+  if (tokenHash && otpType) {
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      type: otpType,
+      token_hash: tokenHash,
+    })
+
+    if (verifyError) {
+      loginUrl.searchParams.set('error', verifyError.message)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    return response
+  }
+
+  if (!code) {
+    loginUrl.searchParams.set('error', "Code d'authentification manquant")
+    return NextResponse.redirect(loginUrl)
+  }
 
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 

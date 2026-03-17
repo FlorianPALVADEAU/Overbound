@@ -432,7 +432,7 @@ export function UsersSection() {
                   </SelectTrigger>
                   <SelectContent>
                     {availablePromoCodes.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="__no_code_available__" disabled>
                         Aucun code promo disponible
                       </SelectItem>
                     ) : null}
