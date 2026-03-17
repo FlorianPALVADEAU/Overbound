@@ -31,6 +31,13 @@ export interface AmbassadorNextReward {
   points_remaining: number
 }
 
+export interface AmbassadorLeaderboardEntry {
+  rank: number
+  name: string
+  points: number
+  is_current_user: boolean
+}
+
 export interface AmbassadorDashboardData {
   code: string | null
   total_points: number
@@ -40,5 +47,10 @@ export interface AmbassadorDashboardData {
   }
   rewards: AmbassadorReward[]
   next_reward: AmbassadorNextReward | null
+  leaderboard: {
+    current_user_rank: number | null
+    total_ambassadors: number
+    top: AmbassadorLeaderboardEntry[]
+  }
   recruits_table: AmbassadorRecruitRow[]
 }

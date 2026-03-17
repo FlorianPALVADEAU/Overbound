@@ -5,15 +5,16 @@ import type {
 } from '@/types/Ambassador'
 
 export const AMBASSADOR_REWARD_LEVELS = [
-  { reward_level: 1, reward_name: 'T-shirt ambassadeur', points_required: 5 },
-  { reward_level: 2, reward_name: 'Dossard Open offert', points_required: 10 },
-  { reward_level: 3, reward_name: 'Dossard Ranked offert', points_required: 20 },
-  {
-    reward_level: 4,
-    reward_name: 'Pack VIP (file prioritaire + badge + mention officielle)',
-    points_required: 35,
-  },
-  { reward_level: 5, reward_name: 'Dossard offert édition suivante', points_required: 50 },
+  { reward_level: 1, reward_name: 'Badge ambassadeur + accès classement', points_required: 1 },
+  { reward_level: 2, reward_name: 'Récompense starter (réduction / avantage course)', points_required: 2 },
+  { reward_level: 3, reward_name: 'Réduction 50% sur un dossard (utilisable sous 72h)', points_required: 3 },
+  { reward_level: 4, reward_name: 'Dossard Open offert', points_required: 5 },
+  { reward_level: 5, reward_name: 'Upgrade VIP (file prioritaire + badge spécial)', points_required: 8 },
+  { reward_level: 6, reward_name: 'T-shirt ambassadeur / mise en avant réseau', points_required: 10 },
+  { reward_level: 7, reward_name: 'Statut confirmé (avantages exclusifs)', points_required: 15 },
+  { reward_level: 8, reward_name: 'Remboursement total', points_required: 20 },
+  { reward_level: 9, reward_name: 'Dossard offert édition suivante', points_required: 25 },
+  { reward_level: 10, reward_name: 'Statut ambassadeur officiel (premium)', points_required: 30 },
 ] as const
 
 export const resolveRaceFormat = (value: string | null | undefined): AmbassadorRaceFormat =>
@@ -42,10 +43,8 @@ export const getNextReward = (totalPoints: number): AmbassadorNextReward | null 
 }
 
 export const getCurrentRewardLevel = (totalPoints: number) => {
-  if (totalPoints >= 50) return 5
-  if (totalPoints >= 35) return 4
-  if (totalPoints >= 20) return 3
-  if (totalPoints >= 10) return 2
-  if (totalPoints >= 5) return 1
-  return 0
+  return AMBASSADOR_REWARD_LEVELS.reduce(
+    (maxUnlocked, level) => (totalPoints >= level.points_required ? level.reward_level : maxUnlocked),
+    0,
+  )
 }
