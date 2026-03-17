@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const updateEventPriceTierSchema = z.object({
   name: z.string().min(1).optional(),
@@ -11,7 +12,7 @@ const updateEventPriceTierSchema = z.object({
   max_registrations: z.number().int().min(0).nullable().optional(),
 })
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handlePut(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createSupabaseServer()
     const {
@@ -59,7 +60,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handleDelete(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createSupabaseServer()
     const {
@@ -92,3 +93,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const PUT = withRequestLogging(handlePut, {
+  actionType: 'Mise à jour palier tarifaire événement admin',
+})
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression palier tarifaire événement admin',
+})

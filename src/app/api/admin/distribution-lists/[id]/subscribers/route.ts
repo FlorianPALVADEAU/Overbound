@@ -7,6 +7,7 @@ import {
   subscribeResendContactToAudiences,
   unsubscribeResendContactFromAudiences,
 } from '@/lib/email/resendAudiences'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 /**
  * GET /api/admin/distribution-lists/[id]/subscribers
@@ -178,7 +179,7 @@ export async function GET(
  * DELETE /api/admin/distribution-lists/[id]/subscribers
  * Remove a subscriber from a distribution list (admin only)
  */
-export async function DELETE(
+async function handleDelete(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -280,7 +281,7 @@ export async function DELETE(
  * POST /api/admin/distribution-lists/[id]/subscribers
  * Add subscribers to a distribution list (admin only)
  */
-export async function POST(
+async function handlePost(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -400,3 +401,11 @@ export async function POST(
     )
   }
 }
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Désabonnement liste de distribution admin',
+})
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Abonnement liste de distribution admin',
+})

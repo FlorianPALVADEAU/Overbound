@@ -11,6 +11,7 @@ import {
   dispatchCampaign,
   type CampaignAudienceRecipient,
 } from '@/lib/email/adminCampaigns'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 export const runtime = 'nodejs'
 
@@ -111,7 +112,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const adminCheck = await ensureAdmin()
     if ('error' in adminCheck) {
@@ -251,3 +252,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Envoi campagne ouverture inscriptions admin',
+})

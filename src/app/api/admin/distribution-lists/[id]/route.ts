@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { UpdateDistributionListData } from '@/types/DistributionList'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 // Validation schema for update
 const updateDistributionListSchema = z.object({
@@ -87,7 +88,7 @@ export async function GET(
  * PATCH /api/admin/distribution-lists/[id]
  * Update a distribution list (admin only)
  */
-export async function PATCH(
+async function handlePatch(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -190,7 +191,7 @@ export async function PATCH(
  * DELETE /api/admin/distribution-lists/[id]
  * Delete a distribution list (admin only)
  */
-export async function DELETE(
+async function handleDelete(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -244,3 +245,11 @@ export async function DELETE(
     )
   }
 }
+
+export const PATCH = withRequestLogging(handlePatch, {
+  actionType: 'Mise à jour liste de distribution admin',
+})
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression liste de distribution admin',
+})

@@ -7,6 +7,7 @@ import { generateUnsubscribeToken, generateUnsubscribeUrl } from '@/lib/email/un
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { captureException } from '@/lib/sentry'
 import { listResendAudienceContacts, mapSlugsToAudienceIds } from '@/lib/email/resendAudiences'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -21,7 +22,7 @@ const sendEmailSchema = z.object({
  * POST /api/admin/distribution-lists/send-email
  * Send an email to distribution list subscribers (admin only)
  */
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const supabase = await createClient()
 
@@ -253,3 +254,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Envoi campagne liste de distribution admin',
+})

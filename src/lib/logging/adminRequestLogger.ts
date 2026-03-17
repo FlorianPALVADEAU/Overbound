@@ -6,13 +6,31 @@ type LoggedMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 const LOGGED_METHODS: LoggedMethod[] = ['POST', 'PUT', 'PATCH', 'DELETE']
 const MAX_BODY_LENGTH = 8_192
 
-const sanitizeBody = async (request: NextRequest | Request | null) => {
+export const sanitizeAdminRequestBody = async (request: NextRequest | Request | null) => {
   if (!request) return null
   try {
     const contentType = request.headers.get('content-type')?.toLowerCase() ?? ''
     if (contentType.includes('application/json')) {
       const body = await request.json()
       return body
+    }
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      const entries = Array.from(formData.entries()).map(([key, value]) => {
+        if (typeof value === 'string') {
+          return [key, value] as const
+        }
+        return [
+          key,
+          {
+            _type: 'file',
+            name: value.name,
+            size: value.size,
+            content_type: value.type || null,
+          },
+        ] as const
+      })
+      return Object.fromEntries(entries)
     }
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const formData = await request.formData()
@@ -22,9 +40,18 @@ const sanitizeBody = async (request: NextRequest | Request | null) => {
       const text = await request.text()
       return text.length > MAX_BODY_LENGTH ? `${text.slice(0, MAX_BODY_LENGTH)}…` : text
     }
-    return '[non-loggable-body]'
+    const text = await request.text().catch(() => '')
+    if (text) {
+      return text.length > MAX_BODY_LENGTH ? `${text.slice(0, MAX_BODY_LENGTH)}…` : text
+    }
+    return {
+      _content_type: contentType || null,
+      _note: 'body-unavailable',
+    }
   } catch {
-    return null
+    return {
+      _note: 'body-parse-failed',
+    }
   }
 }
 
@@ -72,6 +99,21 @@ interface LogAdminRequestOptions {
   requestBody?: unknown
 }
 
+const getRequestUrlParts = (request: NextRequest | Request) => {
+  if ('nextUrl' in request && request.nextUrl) {
+    return {
+      pathname: request.nextUrl.pathname,
+      searchParams: request.nextUrl.searchParams,
+    }
+  }
+
+  const parsed = new URL(request.url)
+  return {
+    pathname: parsed.pathname,
+    searchParams: parsed.searchParams,
+  }
+}
+
 const logAdminRequest = async ({
   request,
   response,
@@ -79,7 +121,7 @@ const logAdminRequest = async ({
   durationMs,
   options,
 }: {
-  request: NextRequest
+  request: NextRequest | Request
   response?: NextResponse
   error?: unknown
   durationMs: number
@@ -92,14 +134,14 @@ const logAdminRequest = async ({
     } = await supabase.auth.getUser()
 
     const admin = supabaseAdmin()
-    const url = request.nextUrl
+    const { pathname, searchParams } = getRequestUrlParts(request)
     const method = request.method.toUpperCase()
-    const queryObject = Object.fromEntries(url.searchParams.entries())
+    const queryObject = Object.fromEntries(searchParams.entries())
     const summaryBuilder = options?.summaryBuilder ?? defaultSummaryBuilder
     const statusCode = response ? response.status : error ? 500 : 200
     const summary = summaryBuilder({
       method,
-      path: url.pathname,
+      path: pathname,
       statusCode,
       userEmail: user?.email,
       actionType: options?.actionType ?? null,
@@ -107,7 +149,7 @@ const logAdminRequest = async ({
 
     await admin.from('admin_request_logs').insert({
       method,
-      path: url.pathname,
+      path: pathname,
       query_params: Object.keys(queryObject).length > 0 ? queryObject : null,
       body: truncateJson(options?.requestBody),
       user_id: user?.id ?? null,
@@ -139,7 +181,7 @@ export function withRequestLogging<Handler extends (...args: any[]) => Promise<a
   options?: WithLoggingOptions,
 ) {
   return (async (...args: Parameters<Handler>) => {
-    const request = args[0] as NextRequest
+    const request = args[0] as NextRequest | Request
     const method = request.method.toUpperCase() as LoggedMethod
     const methodsToLog = options?.methods ?? LOGGED_METHODS
     const shouldLog = methodsToLog.includes(method)
@@ -155,7 +197,7 @@ export function withRequestLogging<Handler extends (...args: any[]) => Promise<a
       throw error
     } finally {
       if (shouldLog && clonedRequest) {
-        const requestBody = await sanitizeBody(clonedRequest)
+        const requestBody = await sanitizeAdminRequestBody(clonedRequest)
         await logAdminRequest({
           request,
           response: response instanceof NextResponse ? response : undefined,
