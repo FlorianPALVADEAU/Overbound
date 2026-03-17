@@ -49,6 +49,17 @@ const formatRecruitName = (fullName: string | null | undefined, email: string | 
   return 'Utilisateur'
 }
 
+const formatLeaderboardName = (fullName: string | null | undefined, profileId: string) => {
+  const rawName = (fullName || '').trim()
+  if (!rawName) {
+    return `Ambassadeur ${profileId.slice(0, 4).toUpperCase()}`
+  }
+  const parts = rawName.split(/\s+/).filter(Boolean)
+  const first = parts[0] ?? 'Ambassadeur'
+  const lastInitial = parts.length > 1 ? `${parts[parts.length - 1][0]?.toUpperCase() ?? ''}.` : ''
+  return [first, lastInitial].filter(Boolean).join(' ').trim()
+}
+
 const getTicketDetails = (value: unknown) => {
   const rawTicket = Array.isArray(value) ? value[0] : value
   if (!rawTicket || typeof rawTicket !== 'object') {
@@ -122,6 +133,11 @@ export async function GET() {
       },
       rewards: [],
       next_reward: getNextReward(0),
+      leaderboard: {
+        current_user_rank: null,
+        total_ambassadors: 0,
+        top: [],
+      },
       recruits_table: [],
     }
 
@@ -308,6 +324,84 @@ export async function GET() {
       pointsData?.recruits_ranked ??
       recruitsTable.filter((row) => row.race_format === 'ranked' && row.points > 0).length
 
+    const { data: activeAmbassadorsData, error: activeAmbassadorsError } = await admin
+      .from('ambassadors')
+      .select('id, profile_id')
+      .eq('is_active', true)
+
+    if (activeAmbassadorsError) {
+      console.error('[ambassador dashboard] active ambassadors error', activeAmbassadorsError)
+      return NextResponse.json({ error: 'Erreur classement' }, { status: 500 })
+    }
+
+    const activeAmbassadors = (activeAmbassadorsData || []) as Array<{ id: string; profile_id: string }>
+    const activeAmbassadorIds = activeAmbassadors.map((row) => row.id)
+    const activeProfileIds = activeAmbassadors.map((row) => row.profile_id)
+
+    const [{ data: leaderboardPointsData, error: leaderboardPointsError }, { data: leaderboardProfilesData, error: leaderboardProfilesError }] =
+      await Promise.all([
+        activeAmbassadorIds.length > 0
+          ? admin
+              .from('ambassador_points')
+              .select('ambassador_id, total_points')
+              .in('ambassador_id', activeAmbassadorIds)
+          : Promise.resolve({ data: [], error: null }),
+        activeProfileIds.length > 0
+          ? admin
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', activeProfileIds)
+          : Promise.resolve({ data: [], error: null }),
+      ])
+
+    if (leaderboardPointsError) {
+      console.error('[ambassador dashboard] leaderboard points error', leaderboardPointsError)
+      return NextResponse.json({ error: 'Erreur classement' }, { status: 500 })
+    }
+
+    if (leaderboardProfilesError) {
+      console.error('[ambassador dashboard] leaderboard profiles error', leaderboardProfilesError)
+      return NextResponse.json({ error: 'Erreur classement' }, { status: 500 })
+    }
+
+    const leaderboardPointsMap = new Map<string, number>()
+    for (const row of (leaderboardPointsData || []) as Array<{ ambassador_id: string; total_points: number | null }>) {
+      leaderboardPointsMap.set(row.ambassador_id, Number(row.total_points ?? 0))
+    }
+
+    const leaderboardProfileNameMap = new Map<string, string | null>()
+    for (const row of (leaderboardProfilesData || []) as Array<{ id: string; full_name: string | null }>) {
+      leaderboardProfileNameMap.set(row.id, row.full_name)
+    }
+
+    const leaderboardRows = activeAmbassadors
+      .map((row) => ({
+        ambassador_id: row.id,
+        profile_id: row.profile_id,
+        points: leaderboardPointsMap.get(row.id) ?? 0,
+        name: formatLeaderboardName(leaderboardProfileNameMap.get(row.profile_id), row.profile_id),
+      }))
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points
+        return a.name.localeCompare(b.name, 'fr')
+      })
+
+    const rankedLeaderboard = leaderboardRows.map((row, index) => ({
+      rank: index + 1,
+      name: row.name,
+      points: row.points,
+      is_current_user: row.ambassador_id === ambassadorId,
+      ambassador_id: row.ambassador_id,
+    }))
+
+    const currentUserLeaderboardRow = rankedLeaderboard.find((row) => row.is_current_user) ?? null
+    const leaderboardTop = rankedLeaderboard.slice(0, 10).map(({ rank, name, points, is_current_user }) => ({
+      rank,
+      name,
+      points,
+      is_current_user,
+    }))
+
     const response: AmbassadorDashboardData = {
       code: ambassadorCode,
       total_points: totalPoints,
@@ -317,6 +411,11 @@ export async function GET() {
       },
       rewards,
       next_reward: getNextReward(totalPoints),
+      leaderboard: {
+        current_user_rank: currentUserLeaderboardRow?.rank ?? null,
+        total_ambassadors: rankedLeaderboard.length,
+        top: leaderboardTop,
+      },
       recruits_table: recruitsTable,
     }
 

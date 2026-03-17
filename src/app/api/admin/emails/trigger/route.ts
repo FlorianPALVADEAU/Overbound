@@ -345,7 +345,7 @@ const handlePost = async (request: NextRequest) => {
           fullName,
           ambassadorCode: 'OB-AMBASSADOR',
           rewards: [
-            { reward_level: 1, reward_name: 'T-shirt ambassadeur' },
+            { reward_level: 1, reward_name: 'Badge ambassadeur + accès classement' },
           ],
         })
         return 'Mock palier ambassadeur envoyé.'
@@ -355,7 +355,7 @@ const handlePost = async (request: NextRequest) => {
           to: user.email!,
           fullName,
           ambassadorCode: 'OB-AMBASSADOR',
-          reward: { reward_level: 2, reward_name: 'Dossard Open offert' },
+          reward: { reward_level: 4, reward_name: 'Dossard Open offert' },
           statusLabel: 'Réclamée',
         })
         return 'Mock statut récompense envoyé.'

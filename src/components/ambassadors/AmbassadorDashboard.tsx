@@ -20,12 +20,15 @@ import {
   ChevronUp,
   Copy,
   Crown,
+  Gift,
   Lock,
   Medal,
+  Shield,
   Share2,
   Shirt,
   Star,
   Ticket,
+  Trophy,
   Users,
   Zap,
 } from 'lucide-react'
@@ -42,11 +45,29 @@ import { AMBASSADOR_REWARD_LEVELS } from '@/lib/ambassadors/program'
 // ─── Tier metadata ─────────────────────────────────────────────────────────────
 
 const TIER_META: Record<number, { icon: LucideIcon; description: string }> = {
-  1: { icon: Shirt, description: 'T-shirt exclusif aux couleurs Overbound.' },
-  2: { icon: Ticket, description: 'Un dossard Open offert pour la prochaine éd.' },
-  3: { icon: Medal, description: 'Un dossard Ranked offert — accès aux classements officiels.' },
-  4: { icon: Crown, description: 'File prioritaire, badge VIP et mention officielle Overbound.' },
-  5: { icon: Star, description: 'Ton dossard offert pour l\u2019édition suivante, quoi qu\u2019il arrive.' },
+  1: { icon: Medal, description: 'Badge ambassadeur et accès au classement.' },
+  2: { icon: Gift, description: 'Récompense starter pour maintenir la motivation.' },
+  3: { icon: Gift, description: 'Palier psychologique clé: -50% sur un dossard, utilisable immédiatement.' },
+  4: { icon: Trophy, description: 'Premier vrai dossard offert: format Open.' },
+  5: { icon: Crown, description: 'Upgrade VIP avec avantages exclusifs le jour J.' },
+  6: { icon: Shirt, description: 'T-shirt ambassadeur ou mise en avant réseau.' },
+  7: { icon: Shield, description: 'Statut confirmé avec perks dédiés.' },
+  8: { icon: Star, description: 'Niveau élite: remboursement total.' },
+  9: { icon: Ticket, description: 'Dossard offert pour l’édition suivante.' },
+  10: { icon: Crown, description: 'Statut ambassadeur officiel premium.' },
+}
+
+const BADGE_META: Record<number, { label: string; colorClass: string }> = {
+  1: { label: 'Badge Starter', colorClass: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600' },
+  2: { label: 'Badge Relayeur', colorClass: 'border-sky-500/40 bg-sky-500/10 text-sky-600' },
+  3: { label: 'Badge Booster', colorClass: 'border-amber-500/40 bg-amber-500/10 text-amber-600' },
+  4: { label: 'Badge Open Hero', colorClass: 'border-indigo-500/40 bg-indigo-500/10 text-indigo-600' },
+  5: { label: 'Badge VIP', colorClass: 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-600' },
+  6: { label: 'Badge Communauté', colorClass: 'border-orange-500/40 bg-orange-500/10 text-orange-600' },
+  7: { label: 'Badge Confirmé', colorClass: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-600' },
+  8: { label: 'Badge Elite', colorClass: 'border-rose-500/40 bg-rose-500/10 text-rose-600' },
+  9: { label: 'Badge Légende', colorClass: 'border-violet-500/40 bg-violet-500/10 text-violet-600' },
+  10: { label: 'Badge Officiel', colorClass: 'border-primary/50 bg-primary/10 text-primary' },
 }
 
 // ─── Label maps ────────────────────────────────────────────────────────────────
@@ -149,12 +170,16 @@ export function AmbassadorDashboard({
   const totalPoints = data.total_points
   const nextRewardLevel = data.next_reward?.reward_level ?? null
   const segmentFill = getCurrentSegmentFill(totalPoints, nextRewardLevel)
+  const latestPointsEvent = data.recruits_table.find((row) => row.points > 0 && row.payment_status === 'paid') ?? null
 
   const levels = AMBASSADOR_REWARD_LEVELS as unknown as Array<{
     reward_level: number
     reward_name: string
     points_required: number
   }>
+  const unlockedLevels = levels.filter((level) => level.points_required <= totalPoints)
+  const currentBadgeLevel = unlockedLevels.length > 0 ? unlockedLevels[unlockedLevels.length - 1].reward_level : null
+  const nextBadgeLevels = levels.filter((level) => level.points_required > totalPoints).slice(0, 3)
 
   const handleCopy = async () => {
     if (!data.code) return
@@ -237,6 +262,48 @@ export function AmbassadorDashboard({
           </div>
         </div>
 
+
+        {/* ── Code card ── */}
+        <Card className="border-border/60">
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Ton code ambassadeur
+                </p>
+                {data.code ? (
+                  <>
+                    <p className="break-all text-2xl font-black tracking-[0.2em] text-primary sm:text-4xl sm:tracking-[0.3em]">
+                      {data.code}
+                    </p>
+                    <p className="mt-2 max-w-sm text-xs text-muted-foreground">
+                      Partage ce code : tes filleuls obtiennent une réduction, toi tu gagnes des points.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-semibold text-muted-foreground">Non configuré</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Contacte l&apos;équipe Overbound pour associer ton code.
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopy} disabled={!data.code} className="gap-2">
+                  <Copy className="h-4 w-4" />
+                  {copyFeedback === 'copied' ? 'Copié !' : 'Copier'}
+                </Button>
+                <Button size="sm" onClick={handleShare} disabled={!data.code} className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Partager
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
         {/* ── Conditions notice ── */}
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
           Les conditions du programme ambassadeur sont disponibles plus bas sur la page.
@@ -307,6 +374,68 @@ export function AmbassadorDashboard({
           </Card>
         </div>
 
+        {/* ── Ambassador badges ── */}
+        <Card className="border-border/60">
+          <CardHeader className="pb-2 pt-5">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Medal className="h-4 w-4" />
+              Badges ambassadeur
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {currentBadgeLevel ? (
+              <div className="rounded-lg border border-primary/25 bg-primary/5 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Badge actuel</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge className={cn(BADGE_META[currentBadgeLevel]?.colorClass)}>
+                    {BADGE_META[currentBadgeLevel]?.label ?? `Badge palier ${currentBadgeLevel}`}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Palier {currentBadgeLevel}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                Aucun badge débloqué pour l’instant. Premier badge à 1 point.
+              </div>
+            )}
+
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {unlockedLevels.map((level) => {
+                const meta = BADGE_META[level.reward_level]
+                const Icon = TIER_META[level.reward_level]?.icon ?? Medal
+                return (
+                  <div key={level.reward_level} className="rounded-lg border border-border/60 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <Badge className={cn(meta?.colorClass)}>{meta?.label ?? `Badge palier ${level.reward_level}`}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Débloqué à {level.points_required} pts
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {nextBadgeLevels.length > 0 && (
+              <div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Prochains badges</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {nextBadgeLevels.map((level) => (
+                    <Badge key={level.reward_level} variant="outline" className="text-xs text-muted-foreground">
+                      {BADGE_META[level.reward_level]?.label ?? `Badge palier ${level.reward_level}`} · {level.points_required} pts
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* ── Timeline ── */}
         <Card className="overflow-visible">
           <CardHeader className="pb-0 pt-5">
@@ -315,8 +444,8 @@ export function AmbassadorDashboard({
             </p>
           </CardHeader>
           <CardContent className="pt-8 pb-7">
-            <div className="overflow-visible">
-              <div className="flex w-full items-start gap-2 px-2 sm:gap-3">
+            <div className="overflow-x-auto pb-2">
+              <div className="flex min-w-[1200px] items-start gap-2 px-2 sm:gap-3">
                 {levels.map((tier, i) => {
                   const state = getTierState(tier.points_required, totalPoints, nextRewardLevel, tier.reward_level)
                   const meta = TIER_META[tier.reward_level]
@@ -330,9 +459,9 @@ export function AmbassadorDashboard({
                     <div key={tier.reward_level} className="flex flex-1 items-start">
                       <div className="flex min-w-[120px] flex-1 flex-col items-center gap-1.5 sm:min-w-[130px]">
                         {/* Node circle */}
-                        <div className="relative">
+                        <div className="relative flex h-16 w-16 items-center justify-center">
                           {state === 'current' && (
-                            <span className="absolute -inset-2.5 animate-ping rounded-full bg-primary/20" />
+                            <span className="absolute inset-0 rounded-full border border-primary/30 bg-primary/10 animate-pulse" />
                           )}
                           <div
                             className={cn(
@@ -396,7 +525,7 @@ export function AmbassadorDashboard({
 
                       {/* Connector */}
                       {!isLast && (
-                      <div className="relative mt-[23px] mx-1 h-1 flex-1 overflow-hidden rounded-full bg-border/30">
+                      <div className="relative mt-8 mx-1 h-1 flex-1 overflow-hidden rounded-full bg-border/30">
                           <div
                             className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-700"
                             style={{ width: `${connFill}%` }}
@@ -411,46 +540,6 @@ export function AmbassadorDashboard({
           </CardContent>
         </Card>
 
-        {/* ── Code card ── */}
-        <Card className="border-border/60">
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Ton code ambassadeur
-                </p>
-                {data.code ? (
-                  <>
-                    <p className="break-all text-2xl font-black tracking-[0.2em] text-primary sm:text-4xl sm:tracking-[0.3em]">
-                      {data.code}
-                    </p>
-                    <p className="mt-2 max-w-sm text-xs text-muted-foreground">
-                      Partage ce code : tes filleuls obtiennent une réduction, toi tu gagnes des points.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xl font-semibold text-muted-foreground">Non configuré</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Contacte l&apos;équipe Overbound pour associer ton code.
-                    </p>
-                  </>
-                )}
-              </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={handleCopy} disabled={!data.code} className="gap-2">
-                  <Copy className="h-4 w-4" />
-                  {copyFeedback === 'copied' ? 'Copié !' : 'Copier'}
-                </Button>
-                <Button size="sm" onClick={handleShare} disabled={!data.code} className="gap-2">
-                  <Share2 className="h-4 w-4" />
-                  Partager
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* ── Motivational / FOMO banner ── */}
         {data.next_reward ? (
           <div className="overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-r from-primary/8 via-primary/4 to-transparent p-5">
@@ -458,11 +547,7 @@ export function AmbassadorDashboard({
               <div className="flex items-start gap-3">
                 <Zap className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="font-bold">
-                    {data.next_reward.points_remaining <= 2
-                      ? `🔥 Plus que ${data.next_reward.points_remaining} inscription${data.next_reward.points_remaining > 1 ? 's' : ''} !`
-                      : `Encore ${data.next_reward.points_remaining} inscription${data.next_reward.points_remaining > 1 ? 's' : ''} pour décrocher :`}
-                  </p>
+                  <p className="font-bold">Plus que {data.next_reward.points_remaining} point{data.next_reward.points_remaining > 1 ? 's' : ''} pour débloquer :</p>
                   <p className="mt-0.5 text-sm font-semibold text-primary">
                     {data.next_reward.reward_name}
                   </p>
@@ -474,6 +559,12 @@ export function AmbassadorDashboard({
                   <p className="mt-1.5 text-[11px] text-muted-foreground/70">
                     Open = 1 pt · Ranked = 2 pts
                   </p>
+                  {latestPointsEvent && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-emerald-600">
+                      Dernier gain: +{latestPointsEvent.points} point{latestPointsEvent.points > 1 ? 's' : ''}
+                      {latestPointsEvent.race_format === 'ranked' ? ' (bonus Ranked)' : ''}
+                    </p>
+                  )}
                 </div>
               </div>
               {data.code && (
@@ -524,6 +615,52 @@ export function AmbassadorDashboard({
             </div>
           </div>
         )}
+
+        {/* ── Leaderboard ── */}
+        <Card>
+          <CardHeader className="pb-3 pt-5">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Trophy className="h-4 w-4" />
+              Classement ambassadeurs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+              {data.leaderboard.current_user_rank ? (
+                <p>
+                  Tu es actuellement <span className="font-bold text-primary">#{data.leaderboard.current_user_rank}</span> sur {data.leaderboard.total_ambassadors} ambassadeurs actifs.
+                </p>
+              ) : (
+                <p>Tu apparaitras dans le classement dès que ton profil ambassadeur sera actif.</p>
+              )}
+            </div>
+            {data.leaderboard.top.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Classement indisponible pour le moment.</p>
+            ) : (
+              <div className="space-y-2">
+                {data.leaderboard.top.map((entry) => (
+                  <div
+                    key={`${entry.rank}-${entry.name}`}
+                    className={cn(
+                      'flex items-center justify-between rounded-lg border px-3 py-2 text-sm',
+                      entry.is_current_user && 'border-primary/40 bg-primary/10',
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={cn('w-7 text-center font-semibold', entry.rank <= 3 && 'text-primary')}>
+                        #{entry.rank}
+                      </span>
+                      <span className={cn(entry.is_current_user && 'font-semibold text-primary')}>
+                        {entry.name}
+                      </span>
+                    </div>
+                    <span className="font-semibold tabular-nums">{entry.points} pts</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* ── Earned rewards ── */}
         {data.rewards.length > 0 && (
