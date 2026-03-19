@@ -4,14 +4,14 @@ export type PartnerType = {
 };
 
 export const PARTNERS_DATA: PartnerType[] = [
-    {
-        name: 'Au Vieux Campeur',
-        logo: '/images/partners_logo/avc_logo.webp',
-    },
-    {
-        name: 'Decathlon',
-        logo: '/images/partners_logo/decathlon_logo.webp',
-    },
+    // {
+    //     name: 'Au Vieux Campeur',
+    //     logo: '/images/partners_logo/avc_logo.webp',
+    // },
+    // {
+    //     name: 'Decathlon',
+    //     logo: '/images/partners_logo/decathlon_logo.webp',
+    // },
     {
         name: 'Fiskars',
         logo: '/images/partners_logo/fiskars_logo.webp',
