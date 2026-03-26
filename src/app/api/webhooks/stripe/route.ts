@@ -461,7 +461,10 @@ export async function POST(request: NextRequest) {
 
         // Send confirmation email
         try {
-          const eventDateLabel = new Date(event.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })
+          const eventDateLabel = new Date(event.date).toLocaleDateString('fr-FR', {
+            dateStyle: 'full',
+            timeZone: 'Europe/Paris',
+          })
 
           // Generate QR code and upload to Supabase Storage
           const qrUrl = await generateAndUploadQRCode(qrToken)

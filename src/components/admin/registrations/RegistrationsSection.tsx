@@ -29,6 +29,7 @@ import type { UpsellSummaryRow } from '@/app/api/admin/registrations/upsells-sum
 import { RegistrationStats } from './RegistrationStats'
 import { RegistrationDocumentDialog } from './RegistrationDocumentDialog'
 import { RegistrationApprovalDialog } from './RegistrationApprovalDialog'
+import { RegistrationDetailsDialog } from './RegistrationDetailsDialog'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { AdminRegistration, RegistrationApprovalStatus } from '@/types/Registration'
 import {
@@ -38,6 +39,7 @@ import {
   useAdminRegistrations,
 } from '@/app/api/admin/registrations/registrationsQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 interface RegistrationsSectionProps {
   eventId?: string
@@ -69,23 +71,7 @@ const formatDateTime = (value?: string | null) =>
     : '—'
 
 const formatStartTime = (value?: string | null) =>
-  (() => {
-    if (!value) return '—'
-
-    const timeMatch = value.match(/(?:T|\s)(\d{2}):(\d{2})/)
-    if (timeMatch) {
-      return `${timeMatch[1]}:${timeMatch[2]}`
-    }
-
-    const parsed = new Date(value)
-    if (Number.isNaN(parsed.getTime())) return '—'
-
-    return parsed.toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC',
-    })
-  })()
+  formatClockTimeParis(value) ?? '—'
 
 const formatAmount = (amount?: number | null, currency?: string | null) => {
   if (amount == null) return '—'
@@ -133,11 +119,23 @@ const formatRequiredType = (value: string) => {
 }
 
 const getParticipantName = (registration: AdminRegistration) => {
+  const emailLocalPart = registration.email.split('@')[0]?.trim()
+  const emailDerivedName = emailLocalPart
+    ? emailLocalPart
+        .replace(/[._-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase())
+    : null
+  const registrationsCount = (registration.order as any)?.registrations_count
+  const isSharedOrder = typeof registrationsCount === 'number' && registrationsCount > 1
+
+  if (isSharedOrder && emailDerivedName) return emailDerivedName
+
   const fullName = registration.participant_profile?.full_name?.trim()
   if (fullName) return fullName
 
-  const emailLocalPart = registration.email.split('@')[0]?.trim()
-  if (emailLocalPart) return emailLocalPart
+  if (emailDerivedName) return emailDerivedName
 
   return 'Nom non renseigné'
 }
@@ -152,6 +150,8 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
   const [selectedRegistration, setSelectedRegistration] = useState<AdminRegistration | null>(null)
+  const [detailsRegistration, setDetailsRegistration] = useState<AdminRegistration | null>(null)
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false)
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
@@ -234,6 +234,11 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const handleViewDocument = (registration: AdminRegistration) => {
     setSelectedRegistration(registration)
     setDocumentDialogOpen(true)
+  }
+
+  const handleViewDetails = (registration: AdminRegistration) => {
+    setDetailsRegistration(registration)
+    setDetailsDialogOpen(true)
   }
 
   const handleOpenApproval = (registration: AdminRegistration) => {
@@ -640,6 +645,13 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleViewDetails(registration)}
+                        >
+                          Détails
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleViewDocument(registration)}
                           disabled={(registration.documents_count ?? (registration.document_url?.trim() ? 1 : 0)) === 0}
                         >
@@ -689,6 +701,17 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
           }
         }}
         onStatusChange={handleDocumentStatusChange}
+      />
+
+      <RegistrationDetailsDialog
+        registration={detailsRegistration}
+        open={detailsDialogOpen}
+        onOpenChange={(open) => {
+          setDetailsDialogOpen(open)
+          if (!open) {
+            setDetailsRegistration(null)
+          }
+        }}
       />
 
       <RegistrationApprovalDialog

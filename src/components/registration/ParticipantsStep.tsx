@@ -22,6 +22,7 @@ export default function ParticipantsStep({
         <AlertDescription className='text-white-500 font-medium'>
           Pour être dans le même SAS, inscrivez-vous ensemble dans une seule commande.
           L’inscription en groupe est possible en ajoutant tous les participants au même paiement.
+          Si vous souhaitez rejoindre un groupe d'amis déjà inscrit, inscrivez-vous puis faites nous la demande par mail contact@overbound-race.com.
         </AlertDescription>
       </Alert>
       {participants.length === 0 ? (

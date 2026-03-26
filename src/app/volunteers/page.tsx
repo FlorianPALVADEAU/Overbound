@@ -145,6 +145,11 @@ const initialFormState = {
 }
 
 type VolunteerFormState = typeof initialFormState
+type VolunteerSubmissionSnapshot = {
+  fullName: string
+  email: string
+  eventName: string
+}
 
 interface EventOption {
   id: string
@@ -165,6 +170,7 @@ export default function VolunteersPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submittedSnapshot, setSubmittedSnapshot] = useState<VolunteerSubmissionSnapshot | null>(null)
 
   const availabilityLabels = useMemo(() => {
     const map = new Map<string, string>()
@@ -298,6 +304,7 @@ export default function VolunteersPage() {
     }
     if (submitSuccess) {
       setSubmitSuccess(false)
+      setSubmittedSnapshot(null)
     }
   }
 
@@ -440,6 +447,11 @@ export default function VolunteersPage() {
       }
 
       setSubmitSuccess(true)
+      setSubmittedSnapshot({
+        fullName: trimmedName,
+        email: trimmedEmail,
+        eventName: eventName ?? 'Disponible pour plusieurs événements',
+      })
       setFieldErrors({})
       setFormValues({
         ...initialFormState,
@@ -673,9 +685,14 @@ export default function VolunteersPage() {
 							<>
 								{submitSuccess ? (
 									<Alert className='border-primary/40 bg-primary/10'>
-										<AlertTitle>Merci !</AlertTitle>
+										<AlertTitle>Candidature bien enregistrée</AlertTitle>
 										<AlertDescription>
-											Ta candidature est bien envoyée. L’équipe tribu te contacte très vite pour te briefer.
+											Ta candidature a bien été prise en compte. L’équipe tribu te contacte très vite pour le brief.
+											{submittedSnapshot ? (
+												<span className='mt-2 block text-xs text-muted-foreground'>
+													Confirmation envoyée pour <strong>{submittedSnapshot.fullName}</strong> ({submittedSnapshot.email}) • {submittedSnapshot.eventName}
+												</span>
+											) : null}
 										</AlertDescription>
 									</Alert>
 								) : null}

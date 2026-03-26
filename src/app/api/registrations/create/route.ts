@@ -85,6 +85,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Paramètres manquants.' }, { status: 400 })
     }
 
+    const hasSignature =
+      typeof signatureImage === 'string' && signatureImage.trim().length > 0
+    const hasAcceptedDisclaimer =
+      Boolean(disclaimer?.read) && Boolean(disclaimer?.accepted)
+
+    if (!hasSignature || !hasAcceptedDisclaimer) {
+      return NextResponse.json(
+        { error: 'Signature et acceptation de la décharge obligatoires avant paiement.' },
+        { status: 422 },
+      )
+    }
+
     const supabase = await createSupabaseServer()
 
     // Verify user is authenticated
@@ -622,7 +634,10 @@ export async function POST(request: NextRequest) {
     for (const { registration, ticket, participantName } of createdRegistrations) {
       try {
         const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
-        const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })
+        const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', {
+          dateStyle: 'full',
+          timeZone: 'Europe/Paris',
+        })
 
         await sendTicketEmail({
           to: registration.email,
