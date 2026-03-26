@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Eye, RefreshCw, Save, Download } from 'lucide-react'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 interface EventOpenWavesSectionProps {
   eventId: string
@@ -34,12 +35,7 @@ type EditRow = {
 }
 
 const formatClockTime = (value?: string | null) => {
-  if (!value) return '—'
-  const timeMatch = value.match(/(?:T|\s)(\d{2}):(\d{2})/)
-  if (timeMatch) {
-    return `${timeMatch[1]}:${timeMatch[2]}`
-  }
-  return '—'
+  return formatClockTimeParis(value) ?? '—'
 }
 
 export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {

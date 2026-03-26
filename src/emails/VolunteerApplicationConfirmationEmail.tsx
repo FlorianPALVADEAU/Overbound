@@ -25,6 +25,7 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
           day: 'numeric',
           month: 'long',
           year: 'numeric',
+          timeZone: 'Europe/Paris',
         })
       : null
 

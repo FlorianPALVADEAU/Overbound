@@ -28,6 +28,7 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 export interface AccountRegistrationItem {
   registration_id: string
@@ -123,17 +124,12 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
         const isUpcoming = eventDate ? eventDate > now : false
         const isPast = eventDate ? eventDate < now : false
         const formattedEventDate = eventDate
-          ? eventDate.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
+          ? eventDate.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
           : null
         const formattedOrderDate = registration.order_created_at
           ? new Date(registration.order_created_at).toLocaleDateString('fr-FR')
           : null
-        const formattedStartTime = registration.start_time
-          ? new Date(registration.start_time).toLocaleTimeString('fr-FR', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : null
+        const formattedStartTime = formatClockTimeParis(registration.start_time)
 
         const amountLabel =
           typeof registration.amount_total === 'number' && registration.currency
@@ -263,7 +259,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                 {formattedEventDate ? (
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{formattedEventDate}</span>
+                    <span>Début de l'événement : {formattedEventDate}</span>
                   </div>
                 ) : null}
                 {formattedStartTime ? (

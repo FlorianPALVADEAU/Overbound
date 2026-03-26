@@ -120,7 +120,8 @@ export function AdminDigestEmail({ periodLabel, totalActions, totalErrors, items
                   <Text style={styles.activityTimestamp}>
                     {new Date(item.timestamp).toLocaleString('fr-FR', {
                       dateStyle: 'short',
-                      timeStyle: 'medium'
+                      timeStyle: 'medium',
+                      timeZone: 'Europe/Paris',
                     })}
                   </Text>
 

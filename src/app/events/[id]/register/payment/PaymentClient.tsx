@@ -42,6 +42,21 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
 
   const handlePaymentSuccess = async (paymentIntent: any) => {
     if (!registrationDraft) return
+    const hasSignature =
+      typeof registrationDraft.signature.imageDataUrl === 'string' &&
+      registrationDraft.signature.imageDataUrl.trim().length > 0
+    const hasAcceptedDisclaimer =
+      Boolean(registrationDraft.disclaimer?.read) &&
+      Boolean(registrationDraft.disclaimer?.accepted)
+
+    if (!hasSignature || !hasAcceptedDisclaimer) {
+      setMessage({
+        type: 'error',
+        text: 'Signature et acceptation de la décharge obligatoires. Merci de revenir à l’étape précédente.',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     setMessage(null)
 
@@ -150,6 +165,32 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           <Link href={`/events/${event.slug}/register`}>
             <ChevronLeft className="mr-1 h-4 w-4" />
             Retour à l'inscription
+          </Link>
+        </Button>
+      </div>
+    )
+  }
+
+  const hasSignature =
+    typeof registrationDraft.signature.imageDataUrl === 'string' &&
+    registrationDraft.signature.imageDataUrl.trim().length > 0
+  const hasAcceptedDisclaimer =
+    Boolean(registrationDraft.disclaimer?.read) &&
+    Boolean(registrationDraft.disclaimer?.accepted)
+
+  if (!hasSignature || !hasAcceptedDisclaimer) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            La signature et l’acceptation de la décharge sont obligatoires avant paiement.
+          </AlertDescription>
+        </Alert>
+        <Button asChild variant="outline">
+          <Link href={`/events/${event.slug}/register`}>
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Retour à la confirmation
           </Link>
         </Button>
       </div>

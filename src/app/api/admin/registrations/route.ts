@@ -174,6 +174,7 @@ export async function GET(request: Request) {
 
     const documentCountMap = new Map<string, number>()
     const documentTypeMap = new Map<string, Set<string>>()
+    const signaturesMap = new Map<string, Array<{ registration_id: string; regulation_version: string; signed_at: string }>>()
     if (registrationIds.length > 0) {
       const { data: documentRows, error: documentRowsError } = await adminClient
         .from('registration_documents')
@@ -192,6 +193,28 @@ export async function GET(request: Request) {
           if (row.document_type) {
             documentTypeMap.get(row.registration_id)!.add(row.document_type)
           }
+        }
+      }
+
+      const { data: signatureRows, error: signatureRowsError } = await adminClient
+        .from('registration_signatures')
+        .select('registration_id, regulation_version, signed_at')
+        .in('registration_id', registrationIds)
+        .order('signed_at', { ascending: false })
+
+      if (signatureRowsError) {
+        console.error('[admin registrations] signatures fetch error', signatureRowsError)
+      } else if (signatureRows) {
+        for (const row of signatureRows as any[]) {
+          const registrationId = row.registration_id as string
+          if (!signaturesMap.has(registrationId)) {
+            signaturesMap.set(registrationId, [])
+          }
+          signaturesMap.get(registrationId)!.push({
+            registration_id: registrationId,
+            regulation_version: row.regulation_version ?? '',
+            signed_at: row.signed_at ?? '',
+          })
         }
       }
     }
@@ -347,6 +370,7 @@ export async function GET(request: Request) {
         document_requires_attention:
           meta.document_requires_attention ??
           (meta.requires_document && (!meta.document_url || meta.approval_status !== 'approved')),
+        signatures: signaturesMap.get(row.id) ?? [],
       }
     })
 

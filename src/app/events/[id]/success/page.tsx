@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventSuccess } from '@/app/api/events/[id]/success/successQueries'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 const formatPrice = (priceInCents: number, currency: string) =>
   (priceInCents / 100).toLocaleString('fr-FR', {
@@ -87,9 +88,7 @@ export default function EventSuccessPage() {
   }
 
   const { registration } = data
-  const startTimeLabel = registration.start_time
-    ? new Date(registration.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    : null
+  const startTimeLabel = formatClockTimeParis(registration.start_time)
   const assignmentBreached = Boolean(registration.assignment_constraint_breached)
 
   return (

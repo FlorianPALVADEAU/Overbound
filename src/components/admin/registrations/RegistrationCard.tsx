@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { AdminRegistration } from '@/types/Registration'
 import { Calendar, CheckCircle, Clock, DollarSign, Eye, Filter, Ticket, XCircle } from 'lucide-react'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 interface RegistrationCardProps {
   registration: AdminRegistration
@@ -47,6 +48,8 @@ function formatAmount(amount: number | null | undefined, currency: string | null
 }
 
 export function RegistrationCard({ registration, loadingId, onViewDocument, onOpenApproval }: RegistrationCardProps) {
+  const startTimeLabel = formatClockTimeParis(registration.start_time)
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -100,10 +103,10 @@ export function RegistrationCard({ registration, loadingId, onViewDocument, onOp
                   {new Date(registration.created_at).toLocaleDateString('fr-FR')}
                 </span>
               </div>
-              {registration.start_time ? (
+              {startTimeLabel ? (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>Départ {new Date(registration.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>Départ {startTimeLabel}</span>
                   {registration.assignment_constraint_breached ? (
                     <Badge variant="destructive" className="text-xs">Hors préférence</Badge>
                   ) : null}
