@@ -15,7 +15,7 @@ export function usePaymentIntent(
   ticketSelections: TicketSelections,
   participants: Participant[],
   selectedUpsells: SelectedUpsellState,
-  appliedPromo: AppliedPromo | null,
+  appliedPromos: AppliedPromo[],
   ambassadorReferralCode: string | null,
   totalDue: number,
 ) {
@@ -37,7 +37,7 @@ export function usePaymentIntent(
   // Reset when promo or upsells change
   useEffect(() => {
     resetPaymentIntent()
-  }, [appliedPromo, selectedUpsells, resetPaymentIntent])
+  }, [appliedPromos, selectedUpsells, resetPaymentIntent])
 
   const ensurePaymentIntent = useCallback(async () => {
     if (!user) {
@@ -85,7 +85,7 @@ export function usePaymentIntent(
             quantity: config.quantity,
             meta: config.meta || {},
           })),
-          promoCode: appliedPromo?.code || null,
+          promoCodes: appliedPromos.map((promo) => promo.code),
           ambassadorReferralCode,
         }),
       })
@@ -114,7 +114,7 @@ export function usePaymentIntent(
     } finally {
       setIsCreatingPaymentIntent(false)
     }
-  }, [appliedPromo?.code, ambassadorReferralCode, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
+  }, [appliedPromos, ambassadorReferralCode, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
 
   return {
     clientSecret,

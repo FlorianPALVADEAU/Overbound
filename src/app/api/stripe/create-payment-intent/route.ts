@@ -1,13 +1,11 @@
 import { NextRequest } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/server'
 import {
   stripeClient,
   fetchTicketsForSelections,
   fetchUpsellsForEvent,
   fetchPromo,
   getUpsellSubtotal,
-  calcPromo,
   ensureAvailability,
   respondJson,
   allocateParticipantsToTiers,
@@ -19,12 +17,31 @@ import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 
 export const runtime = 'nodejs'
 
+const MAX_PROMO_CODES = 2
+
+const normalizePromoCode = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null
+  const normalized = value.trim().toUpperCase()
+  return normalized.length > 0 ? normalized : null
+}
+
+const isPromoValidForEvent = (promo: any, eventId: string) => {
+  const now = new Date()
+  const validFrom = promo.valid_from ? new Date(promo.valid_from) : null
+  const validUntil = promo.valid_until ? new Date(promo.valid_until) : null
+  const allowedEvents = (promo.events || []).map((item: { event_id: string }) => item.event_id)
+  const matchesEvent = allowedEvents.length === 0 || allowedEvents.includes(eventId)
+  const withinDates = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)
+  const usageAvailable = promo.usage_limit == null || promo.used_count < promo.usage_limit
+  return promo.is_active && matchesEvent && withinDates && usageAvailable
+}
+
 export async function POST(request: NextRequest) {
   let eventId: string | undefined
   let userId: string | undefined
   let ticketSelections: any[] = []
   let participants: any[] = []
-  let promoCode: string | null = null
+  let promoCodes: string[] = []
   let ambassadorReferralCode: string | null = null
 
   try {
@@ -35,26 +52,33 @@ export async function POST(request: NextRequest) {
     ticketSelections = requestBody.ticketSelections || []
     participants = requestBody.participants || []
     const upsells = requestBody.upsells || []
-    promoCode = requestBody.promoCode || null
-    ambassadorReferralCode = requestBody.ambassadorReferralCode || null
-    if (typeof promoCode === 'string') {
-      promoCode = promoCode.trim().toUpperCase()
-      if (promoCode.length === 0) {
-        promoCode = null
-      }
+    const legacyPromoCode = normalizePromoCode(requestBody.promoCode)
+    const inputPromoCodes: string[] = Array.isArray(requestBody.promoCodes)
+      ? requestBody.promoCodes
+          .map((code: unknown) => normalizePromoCode(code))
+          .filter((code: string | null): code is string => Boolean(code))
+      : legacyPromoCode
+        ? [legacyPromoCode]
+        : []
+    const inputAmbassadorReferralCode = normalizePromoCode(requestBody.ambassadorReferralCode)
+
+    promoCodes = [...new Set(inputPromoCodes)]
+    if (promoCodes.length > MAX_PROMO_CODES) {
+      return respondJson({ error: 'Vous pouvez appliquer au maximum 2 codes promo.' }, 400)
     }
-    if (typeof ambassadorReferralCode === 'string') {
-      ambassadorReferralCode = ambassadorReferralCode.trim().toUpperCase()
-      if (ambassadorReferralCode.length === 0) {
-        ambassadorReferralCode = null
-      }
+    if (promoCodes.some((code) => /[,;|]/.test(code))) {
+      return respondJson({ error: 'Format de code promo invalide.' }, 400)
     }
 
-    if (promoCode && /[,;|]/.test(promoCode)) {
-      return respondJson({ error: 'Un seul code promotionnel est autorise par commande.' }, 400)
-    }
+    ambassadorReferralCode = inputAmbassadorReferralCode
     if (ambassadorReferralCode && /[,;|]/.test(ambassadorReferralCode)) {
-      return respondJson({ error: 'Un seul code ambassadeur est autorise par commande.' }, 400)
+      return respondJson({ error: 'Format de code ambassadeur invalide.' }, 400)
+    }
+    if (ambassadorReferralCode && !promoCodes.includes(ambassadorReferralCode) && promoCodes.length >= MAX_PROMO_CODES) {
+      return respondJson({ error: 'Vous pouvez appliquer au maximum 2 codes promo.' }, 400)
+    }
+    if (ambassadorReferralCode && !promoCodes.includes(ambassadorReferralCode)) {
+      promoCodes.push(ambassadorReferralCode)
     }
 
     if (!eventId || !userId || !userEmail || ticketSelections.length === 0) {
@@ -62,7 +86,6 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createSupabaseServer()
-    const admin = supabaseAdmin()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -132,7 +155,6 @@ export async function POST(request: NextRequest) {
       activeTierIndex !== null ? expandTierAllocations(allocations) : []
 
     let ticketSubtotal = 0
-    let hasTierDiscountApplied = false
 
     for (const [index, entry] of participantEntries.entries()) {
       const ticket = ticketById.get(entry.ticketId)
@@ -153,10 +175,6 @@ export async function POST(request: NextRequest) {
         return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
       }
 
-      if (tier && tier.discount_percentage > 0) {
-        hasTierDiscountApplied = true
-      }
-
       const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
       const unitPrice = Math.round(finalPrice * discountMultiplier)
       ticketSubtotal += unitPrice
@@ -171,62 +189,61 @@ export async function POST(request: NextRequest) {
     const upsellSubtotal = getUpsellSubtotal(upsells, upsellMap)
 
     let discountAmount = 0
-    let appliedPromo = null
+    const appliedPromos: Array<{
+      id: string
+      code: string
+      discount_percent: number | null
+      discount_amount: number | null
+      currency: string | null
+      is_ambassador: boolean
+    }> = []
     let validatedAmbassadorReferralCode: string | null = null
+    let regularPromoCount = 0
+    let ambassadorPromoCount = 0
 
-    if (promoCode) {
+    for (const promoCode of promoCodes) {
       const { data: promo, error: promoError } = await fetchPromo(supabase, promoCode)
-      if (!promoError && promo) {
-        const promoData = calcPromo(promo, ticketSubtotal)
-        discountAmount = promoData.discountAmount
-        if (promoData.appliedPromo) {
-          const { data: ambassadorRow } = await admin
-            .from('ambassadors')
-            .select('id')
-            .eq('promotional_code_id', promo.id)
-            .limit(1)
-            .maybeSingle()
-
-          appliedPromo = {
-            ...promoData.appliedPromo,
-            is_ambassador: Boolean(ambassadorRow?.id),
-          }
-        } else {
-          appliedPromo = null
-        }
+      if (promoError || !promo || !isPromoValidForEvent(promo, eventId)) {
+        return respondJson({ error: `Le code promo ${promoCode} est invalide ou expiré.` }, 409)
       }
-    }
 
-    // Keep only the best discount: ambassador promo is tracked but not stacked with active tier discount.
-    if (appliedPromo?.is_ambassador && hasTierDiscountApplied) {
-      discountAmount = 0
-      appliedPromo = null
-    }
-
-    if (ambassadorReferralCode) {
-      const { data: ambassadorPromo, error: ambassadorPromoError } = await fetchPromo(supabase, ambassadorReferralCode)
-      if (!ambassadorPromoError && ambassadorPromo) {
-        const now = new Date()
-        const validFrom = ambassadorPromo.valid_from ? new Date(ambassadorPromo.valid_from) : null
-        const validUntil = ambassadorPromo.valid_until ? new Date(ambassadorPromo.valid_until) : null
-        const allowedEvents = (ambassadorPromo.events || []).map((item: { event_id: string }) => item.event_id)
-        const matchesEvent = allowedEvents.length === 0 || allowedEvents.includes(eventId)
-        const withinDates = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)
-        const usageAvailable =
-          ambassadorPromo.usage_limit == null || ambassadorPromo.used_count < ambassadorPromo.usage_limit
-        const { data: ambassadorRow } = await admin
-          .from('ambassadors')
-          .select('id')
-          .eq('promotional_code_id', ambassadorPromo.id)
-          .limit(1)
-          .maybeSingle()
-        const isAmbassadorCode = Boolean(ambassadorRow?.id)
-
-        if (ambassadorPromo.is_active && matchesEvent && withinDates && usageAvailable && isAmbassadorCode) {
-          validatedAmbassadorReferralCode = ambassadorPromo.code
-        }
+      const isAmbassadorCode = Array.isArray(promo.ambassadors) && promo.ambassadors.length > 0
+      if (isAmbassadorCode) {
+        ambassadorPromoCount += 1
+      } else {
+        regularPromoCount += 1
       }
+
+      if (regularPromoCount > 1) {
+        return respondJson({ error: 'Un seul code promo standard peut être appliqué par commande.' }, 409)
+      }
+      if (ambassadorPromoCount > 1) {
+        return respondJson({ error: 'Un seul code ambassadeur peut être appliqué par commande.' }, 409)
+      }
+
+      if (isAmbassadorCode) {
+        validatedAmbassadorReferralCode = promo.code
+      }
+
+      let promoDiscountAmount = 0
+      if (promo.discount_percent && promo.discount_percent > 0) {
+        promoDiscountAmount = Math.round(ticketSubtotal * (promo.discount_percent / 100))
+      } else if (promo.discount_amount && promo.discount_amount > 0) {
+        promoDiscountAmount = promo.discount_amount
+      }
+      discountAmount += Math.max(0, Math.min(promoDiscountAmount, ticketSubtotal))
+
+      appliedPromos.push({
+        id: promo.id,
+        code: promo.code,
+        discount_percent: promo.discount_percent,
+        discount_amount: promo.discount_amount,
+        currency: promo.currency,
+        is_ambassador: isAmbassadorCode,
+      })
     }
+
+    discountAmount = Math.min(discountAmount, ticketSubtotal)
 
     const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0)
 
@@ -241,6 +258,9 @@ export async function POST(request: NextRequest) {
         ? allocations.map(({ tier, quantity }) => ({ tier_id: tier.id, quantity }))
         : []
 
+    const primaryPromo = appliedPromos.find((promo) => !promo.is_ambassador) ?? appliedPromos[0] ?? null
+    const promoCodesMetadata = appliedPromos.map((promo) => promo.code).join(',')
+
     const paymentIntent = await stripeClient.paymentIntents.create({
       amount: totalAmount,
       currency,
@@ -251,11 +271,9 @@ export async function POST(request: NextRequest) {
         registration_flow: 'multi',
         user_id: userId,
         event_id: eventId,
-        promo_code: appliedPromo?.code || '',
-        ambassador_referral_code:
-          validatedAmbassadorReferralCode && validatedAmbassadorReferralCode !== appliedPromo?.code
-            ? validatedAmbassadorReferralCode
-            : '',
+        promo_code: primaryPromo?.code || '',
+        promo_codes: promoCodesMetadata,
+        ambassador_referral_code: validatedAmbassadorReferralCode || '',
         discount_applied: discountAmount.toString(),
         tier_allocations: JSON.stringify(tierAllocationsPayload),
         event_title: eventRef.title,
@@ -276,7 +294,8 @@ export async function POST(request: NextRequest) {
         totalDue: totalAmount,
         currency,
       },
-      appliedPromo,
+      appliedPromo: primaryPromo,
+      appliedPromos,
     })
   } catch (error) {
     console.error('Erreur création PaymentIntent:', error)
@@ -289,7 +308,7 @@ export async function POST(request: NextRequest) {
       userId,
       ticketCount: ticketSelections?.length || 0,
       participantCount: participants?.length || 0,
-      promoCode,
+      promoCodes: promoCodes.join(','),
       ambassadorReferralCode,
     })
 

@@ -23,12 +23,12 @@ interface OrderSummarySidebarProps {
   hasActiveDiscount: boolean
   upsellSummaryItems: UpsellSummaryItem[]
   summaryPricing: PricingSummary
-  appliedPromo: AppliedPromo | null
+  appliedPromos: AppliedPromo[]
   promoInput: string
   promoError: string | null
   onPromoInputChange: (value: string) => void
   onValidatePromo: () => void
-  onRemovePromo: () => void
+  onRemovePromo: (code: string) => void
 }
 
 export default function OrderSummarySidebar({
@@ -40,7 +40,7 @@ export default function OrderSummarySidebar({
   hasActiveDiscount,
   upsellSummaryItems,
   summaryPricing,
-  appliedPromo,
+  appliedPromos,
   promoInput,
   promoError,
   onPromoInputChange,
@@ -55,7 +55,7 @@ export default function OrderSummarySidebar({
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <PromoCodeInput
-          appliedPromo={appliedPromo}
+          appliedPromos={appliedPromos}
           promoInput={promoInput}
           error={promoError}
           onInputChange={onPromoInputChange}
