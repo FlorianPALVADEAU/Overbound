@@ -5,6 +5,7 @@ import {
   normalizeTshirtSizes,
   buildTshirtMeta,
   calculatePromoDiscount,
+  calculatePromoDiscounts,
   joinName,
   humanizeMetaKey,
 } from './registration'
@@ -202,6 +203,39 @@ describe('registration utils', () => {
     it('rounds correctly for non-round percentages', () => {
       // 33% de 10001 = 3300.33 → arrondi à 3300
       expect(calculatePromoDiscount({ ...basePromo, discount_percent: 33 }, 10001)).toBe(3300)
+    })
+  })
+
+  describe('calculatePromoDiscounts', () => {
+    const basePromo = {
+      id: 'promo1',
+      code: 'TEST10',
+      currency: 'eur' as const,
+      discount_percent: null as number | null,
+      discount_amount: null as number | null,
+      is_ambassador: false,
+    }
+
+    it('returns 0 when no promos are provided', () => {
+      expect(calculatePromoDiscounts([], 10000)).toBe(0)
+    })
+
+    it('sums multiple promo discounts and caps at subtotal', () => {
+      const promos = [
+        { ...basePromo, code: 'A', discount_percent: 20 },
+        { ...basePromo, code: 'B', discount_amount: 1500 },
+      ]
+
+      expect(calculatePromoDiscounts(promos, 10000)).toBe(3500)
+    })
+
+    it('caps combined discount at ticket subtotal', () => {
+      const promos = [
+        { ...basePromo, code: 'A', discount_amount: 9000 },
+        { ...basePromo, code: 'B', discount_amount: 5000 },
+      ]
+
+      expect(calculatePromoDiscounts(promos, 10000)).toBe(10000)
     })
   })
 

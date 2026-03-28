@@ -17,7 +17,7 @@ interface DraftSyncConfig {
   ticketSelections: TicketSelections
   participants: Participant[]
   selectedUpsells: SelectedUpsellState
-  appliedPromo: AppliedPromo | null
+  appliedPromos: AppliedPromo[]
   ambassadorReferralCode: string | null
   summaryPricing: PricingSummary
   clientSecret: string | null
@@ -31,8 +31,7 @@ interface DraftSyncSetters {
   setTicketSelections: (selections: TicketSelections) => void
   setParticipants: (participants: Participant[]) => void
   setSelectedUpsells: (upsells: SelectedUpsellState) => void
-  setAppliedPromo: (promo: AppliedPromo | null) => void
-  setAmbassadorReferralCode: (code: string | null) => void
+  setAppliedPromos: (promos: AppliedPromo[]) => void
   setPromoInput: (input: string) => void
   setPromoError: (error: string | null) => void
   setDisclaimerRead: (read: boolean) => void
@@ -87,22 +86,27 @@ export function useRegistrationDraftSync(
         })
         setters.setSelectedUpsells(upsellRecord)
 
-        if (registrationDraft.promoCode) {
-          setters.setAppliedPromo({
-            id: registrationDraft.promoCode,
-            code: registrationDraft.promoCode,
+        const legacyPromoCode =
+          (registrationDraft as RegistrationDraft & { promoCode?: string | null }).promoCode ?? null
+        const restoredPromoCodes =
+          registrationDraft.promoCodes && registrationDraft.promoCodes.length > 0
+            ? registrationDraft.promoCodes
+            : legacyPromoCode
+              ? [legacyPromoCode]
+              : []
+
+        setters.setAppliedPromos(
+          restoredPromoCodes.map((code) => ({
+            id: code,
+            code,
             description: '',
             discount_percent: null,
             discount_amount: null,
             currency: registrationDraft.summary.currency as any,
-            is_ambassador: registrationDraft.ambassadorReferralCode === registrationDraft.promoCode,
-          })
-          setters.setPromoInput(registrationDraft.promoCode)
-        } else {
-          setters.setAppliedPromo(null)
-          setters.setPromoInput('')
-        }
-        setters.setAmbassadorReferralCode(registrationDraft.ambassadorReferralCode ?? null)
+            is_ambassador: registrationDraft.ambassadorReferralCode === code,
+          })),
+        )
+        setters.setPromoInput('')
 
         setters.setPromoError(null)
         // IMPORTANT: Ne jamais restaurer la décharge et la signature depuis le draft
@@ -131,8 +135,7 @@ export function useRegistrationDraftSync(
 
       setters.setParticipants([])
       setters.setSelectedUpsells({})
-      setters.setAppliedPromo(null)
-      setters.setAmbassadorReferralCode(null)
+      setters.setAppliedPromos([])
       setters.setPromoInput('')
       setters.setPromoError(null)
       setters.setDisclaimerRead(false)
@@ -195,7 +198,7 @@ export function useRegistrationDraftSync(
       ticketSelections: ticketSelectionArray,
       participants: participantsPayload,
       upsells: upsellsPayload,
-      promoCode: config.appliedPromo?.code || null,
+      promoCodes: config.appliedPromos.map((promo) => promo.code),
       ambassadorReferralCode: config.ambassadorReferralCode ?? null,
       summary: summaryPayload,
       signature: signaturePayload,
@@ -218,7 +221,7 @@ export function useRegistrationDraftSync(
     config.ticketSelections,
     config.participants,
     config.selectedUpsells,
-    config.appliedPromo?.code,
+    config.appliedPromos,
     config.ambassadorReferralCode,
     config.summaryPricing.ticketTotal,
     config.summaryPricing.upsellTotal,

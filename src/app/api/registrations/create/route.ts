@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       participants = [],
       upsells = [],
       promoCode = null,
+      promoCodes = [],
       ambassadorReferralCode = null,
       signatureImage = null,
       signatureMetadata = {},
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       }>
       upsells: Array<{ upsellId: string; quantity: number; meta?: Record<string, any> }>
       promoCode: string | null
+      promoCodes?: string[]
       ambassadorReferralCode?: string | null
       signatureImage: string | null
       signatureMetadata: Record<string, any>
@@ -242,22 +244,33 @@ export async function POST(request: NextRequest) {
 
     const discountApplied = Number(paymentIntent.metadata?.discount_applied || 0) || 0
 
+    const promoCodesFromMetadata = paymentIntent.metadata?.promo_codes || null
     const promoCodeFromMetadata = paymentIntent.metadata?.promo_code || null
-    const appliedPromoCode = (
-      typeof promoCodeFromMetadata === 'string' && promoCodeFromMetadata.trim().length > 0
-        ? promoCodeFromMetadata
-        : promoCode
-    )?.trim().toUpperCase() || null
+    const fallbackPayloadCodes = Array.isArray(promoCodes) ? promoCodes : []
+    const normalizedPromoCodes = [...new Set([
+      ...(typeof promoCodesFromMetadata === 'string'
+        ? promoCodesFromMetadata.split(',').map((value) => value.trim().toUpperCase()).filter((value) => value.length > 0)
+        : []),
+      ...(typeof promoCodeFromMetadata === 'string' && promoCodeFromMetadata.trim().length > 0
+        ? [promoCodeFromMetadata.trim().toUpperCase()]
+        : []),
+      ...fallbackPayloadCodes
+        .map((value) => String(value ?? '').trim().toUpperCase())
+        .filter((value) => value.length > 0),
+      ...(typeof promoCode === 'string' && promoCode.trim().length > 0 ? [promoCode.trim().toUpperCase()] : []),
+    ])]
 
-    let promotionalCodeId: string | null = null
-    if (appliedPromoCode) {
+    const promotionalCodeIds = new Set<string>()
+    for (const appliedCode of normalizedPromoCodes) {
       const { data: promoRecord } = await admin
         .from('promotional_codes')
         .select('id')
-        .ilike('code', appliedPromoCode)
+        .ilike('code', appliedCode)
         .maybeSingle()
 
-      promotionalCodeId = promoRecord?.id ?? null
+      if (promoRecord?.id) {
+        promotionalCodeIds.add(promoRecord.id)
+      }
     }
 
     const ambassadorReferralFromMetadata = paymentIntent.metadata?.ambassador_referral_code || null
@@ -280,7 +293,7 @@ export async function POST(request: NextRequest) {
       ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromo?.id ?? null : null
     }
 
-    const registrationPromotionalCodeId = ambassadorReferralPromoId ?? promotionalCodeId
+    const registrationPromotionalCodeId = ambassadorReferralPromoId ?? Array.from(promotionalCodeIds)[0] ?? null
 
     // Create order record
     const { data: order, error: orderError } = await admin
@@ -579,15 +592,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (ambassadorReferralPromoId) {
+      promotionalCodeIds.add(ambassadorReferralPromoId)
+    }
+
     // Increment promotional code usage count
-    if (promotionalCodeId) {
+    for (const promotionalCodeId of promotionalCodeIds) {
       const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
         promo_code_id: promotionalCodeId,
       })
 
       if (promoIncrementError) {
         console.error('Erreur incrémentation code promo:', promoIncrementError)
-        // Non-blocking error: registration is already created, just log it
       }
     }
 
@@ -718,7 +734,12 @@ export async function POST(request: NextRequest) {
           items: receiptItems,
           subtotal: toMajor(subtotalCents),
           discount: discountCents > 0 ? toMajor(discountCents) : undefined,
-          discountLabel: discountCents > 0 ? (promoCode ? `Code promo ${promoCode}` : 'Réduction') : undefined,
+          discountLabel:
+            discountCents > 0
+              ? normalizedPromoCodes.length > 0
+                ? `Codes promo ${normalizedPromoCodes.join(', ')}`
+                : 'Réduction'
+              : undefined,
           total: toMajor(totalCents),
           currency: (paymentIntent.currency || 'eur').toUpperCase(),
           paymentMethod: formatPaymentMethod(paymentIntent.payment_method_types?.[0]),

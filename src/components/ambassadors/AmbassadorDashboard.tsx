@@ -833,7 +833,7 @@ export function AmbassadorDashboard({
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>Les récompenses sont personnelles, non revendables et non convertibles en cash.</p>
             <p>Les points sont attribués uniquement pour des commandes payées.</p>
-            <p>Un seul code promo peut s’appliquer par commande.</p>
+            <p>Deux codes promo maximum par commande (1 standard + 1 ambassadeur).</p>
             <p>En cas de conflit de codes, la meilleure réduction est conservée et l’utilisateur est informé.</p>
             <p>Tu peux suivre tes points, tes paliers et tes récompenses dans cet espace.</p>
           </CardContent>

@@ -82,6 +82,16 @@ export const calculatePromoDiscount = (
   return 0
 }
 
+export const calculatePromoDiscounts = (
+  promos: AppliedPromo[],
+  ticketSubtotal: number,
+): number => {
+  if (!Array.isArray(promos) || promos.length === 0 || ticketSubtotal <= 0) return 0
+
+  const total = promos.reduce((acc, promo) => acc + calculatePromoDiscount(promo, ticketSubtotal), 0)
+  return Math.min(total, ticketSubtotal)
+}
+
 export const joinName = (first: string, last: string): string =>
   `${first.trim()} ${last.trim()}`.trim()
 

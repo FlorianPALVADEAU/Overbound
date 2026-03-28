@@ -76,10 +76,9 @@ export default function MultiStepEventRegistration({
   } = useUpsells(upsells, selectedTicketSlots, participants, defaultCurrency)
 
   const {
-    appliedPromo,
-    setAppliedPromo,
+    appliedPromos,
+    setAppliedPromos,
     ambassadorReferralCode,
-    setAmbassadorReferralCode,
     promoInput,
     setPromoInput,
     promoError,
@@ -94,7 +93,7 @@ export default function MultiStepEventRegistration({
     ticketMap,
     selectedUpsells,
     upsells,
-    appliedPromo,
+    appliedPromos,
     eventPriceTiers,
     null,
   )
@@ -116,7 +115,7 @@ export default function MultiStepEventRegistration({
     ticketSelections,
     participants,
     selectedUpsells,
-    appliedPromo,
+    appliedPromos,
     ambassadorReferralCode,
     totalDue,
   )
@@ -182,7 +181,7 @@ export default function MultiStepEventRegistration({
       ticketSelections,
       participants,
       selectedUpsells,
-      appliedPromo,
+      appliedPromos,
       ambassadorReferralCode,
       summaryPricing,
       clientSecret,
@@ -195,8 +194,7 @@ export default function MultiStepEventRegistration({
       setTicketSelections,
       setParticipants,
       setSelectedUpsells,
-      setAppliedPromo,
-      setAmbassadorReferralCode,
+      setAppliedPromos,
       setPromoInput,
       setPromoError,
       setDisclaimerRead,
@@ -308,7 +306,7 @@ export default function MultiStepEventRegistration({
         quantity: config.quantity,
         meta: config.meta || {},
       })),
-      promoCode: appliedPromo?.code || null,
+      promoCodes: appliedPromos.map((promo) => promo.code),
       ambassadorReferralCode: ambassadorReferralCode ?? null,
       summary: localPricing ?? summaryPricing,
       signature: {
@@ -421,7 +419,7 @@ export default function MultiStepEventRegistration({
                 hasActiveDiscount={hasActiveDiscount}
                 upsellSummaryItems={upsellSummaryItems}
                 summaryPricing={summaryPricing}
-                appliedPromo={appliedPromo}
+                appliedPromos={appliedPromos}
                 promoInput={promoInput}
                 promoError={promoError}
                 onPromoInputChange={setPromoInput}

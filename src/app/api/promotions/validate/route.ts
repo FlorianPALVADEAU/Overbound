@@ -8,13 +8,27 @@ const hasAmbassadorLink = (value: unknown) => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, eventId } = await request.json()
+    const { code, eventId, existingCodes } = await request.json()
 
     if (!code || !eventId) {
       return NextResponse.json({ error: 'Code promo ou événement manquant.' }, { status: 400 })
     }
 
     const normalizedCode = String(code).trim().toUpperCase()
+
+    const normalizedExistingCodes = Array.isArray(existingCodes)
+      ? existingCodes
+          .map((value) => String(value ?? '').trim().toUpperCase())
+          .filter((value) => value.length > 0)
+      : []
+
+    const uniqueExistingCodes = [...new Set(normalizedExistingCodes)]
+    if (uniqueExistingCodes.length >= 2) {
+      return NextResponse.json({ error: 'Vous avez déjà atteint la limite de 2 codes promo.' }, { status: 409 })
+    }
+    if (uniqueExistingCodes.includes(normalizedCode)) {
+      return NextResponse.json({ error: 'Ce code promo est déjà appliqué.' }, { status: 409 })
+    }
 
     const admin = supabaseAdmin()
 
@@ -71,6 +85,42 @@ export async function POST(request: NextRequest) {
     const allowedEvents = (promotionalCode.events || []).map((event: { event_id: string }) => event.event_id)
     if (allowedEvents.length > 0 && !allowedEvents.includes(eventId)) {
       return NextResponse.json({ error: 'Ce code promo ne s’applique pas à cet événement.' }, { status: 403 })
+    }
+
+    if (uniqueExistingCodes.length > 0) {
+      const { data: existingPromoRows, error: existingPromoError } = await admin
+        .from('promotional_codes')
+        .select('code, ambassadors:ambassadors(id)')
+        .in('code', uniqueExistingCodes)
+
+      if (existingPromoError) {
+        return NextResponse.json({ error: 'Impossible de vérifier les codes déjà appliqués.' }, { status: 500 })
+      }
+
+      let ambassadorCount = 0
+      let regularCount = 0
+
+      for (const existingPromo of existingPromoRows || []) {
+        if (hasAmbassadorLink((existingPromo as { ambassadors?: unknown }).ambassadors)) {
+          ambassadorCount += 1
+        } else {
+          regularCount += 1
+        }
+      }
+
+      const isIncomingAmbassador = hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors)
+      if (isIncomingAmbassador && ambassadorCount >= 1) {
+        return NextResponse.json(
+          { error: 'Un seul code ambassadeur peut être appliqué par commande.' },
+          { status: 409 },
+        )
+      }
+      if (!isIncomingAmbassador && regularCount >= 1) {
+        return NextResponse.json(
+          { error: 'Un seul code promo standard peut être appliqué par commande.' },
+          { status: 409 },
+        )
+      }
     }
 
     return NextResponse.json({

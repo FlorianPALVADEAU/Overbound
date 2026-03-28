@@ -8,7 +8,7 @@ import type {
 } from '@/components/registration/types'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { getCurrentPriceTier, calculateCurrentPrice } from '@/types/EventPriceTier'
-import { calculatePromoDiscount } from '@/lib/registration'
+import { calculatePromoDiscounts } from '@/lib/registration'
 
 export function useRegistrationPricing(
   tickets: EventTicket[],
@@ -16,7 +16,7 @@ export function useRegistrationPricing(
   ticketMap: Record<string, EventTicket>,
   selectedUpsells: SelectedUpsellState,
   upsells: EventUpsell[],
-  appliedPromo: AppliedPromo | null,
+  appliedPromos: AppliedPromo[],
   eventPriceTiers: EventPriceTier[],
   serverPricing: PricingSummary | null,
 ) {
@@ -48,14 +48,8 @@ export function useRegistrationPricing(
   }, [selectedUpsells, upsells])
 
   const discountAmount = useMemo(
-    () => {
-      // Ambassador codes are tracked, but not stacked with an already active tier discount.
-      if (appliedPromo?.is_ambassador && hasActiveDiscount) {
-        return 0
-      }
-      return calculatePromoDiscount(appliedPromo, ticketSubtotal)
-    },
-    [appliedPromo, hasActiveDiscount, ticketSubtotal],
+    () => calculatePromoDiscounts(appliedPromos, ticketSubtotal),
+    [appliedPromos, ticketSubtotal],
   )
 
   const totalDue = useMemo(

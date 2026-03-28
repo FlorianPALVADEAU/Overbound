@@ -73,7 +73,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           ticketSelections: registrationDraft.ticketSelections,
           participants: registrationDraft.participants.map(({ id: _id, ...participant }) => participant),
           upsells: registrationDraft.upsells,
-          promoCode: registrationDraft.promoCode,
+          promoCodes: registrationDraft.promoCodes || [],
           ambassadorReferralCode: registrationDraft.ambassadorReferralCode,
           signatureImage: registrationDraft.signature.imageDataUrl,
           signatureMetadata: {
@@ -324,9 +324,9 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
                     currency: registrationDraft.summary.currency.toUpperCase(),
                   })}</span>
                 </div>
-                {registrationDraft.promoCode ? (
+                {registrationDraft.promoCodes && registrationDraft.promoCodes.length > 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    Code promotionnel appliqué : <span className="font-medium">{registrationDraft.promoCode}</span>
+                    Codes promotionnels appliqués : <span className="font-medium">{registrationDraft.promoCodes.join(', ')}</span>
                   </p>
                 ) : null}
               </div>
