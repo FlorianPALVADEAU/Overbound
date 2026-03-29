@@ -74,8 +74,10 @@ describe('Pricing Utils', () => {
       expect(formatPrice(0, 'EUR')).toBe('0 €')
     })
 
-    it('should round to integers for EUR/USD/GBP', () => {
-      expect(formatPrice(5555, 'EUR')).toBe('56 €') // 55.55 rounded
+    it('should keep exact cents (no rounding) for EUR/USD/GBP', () => {
+      expect(formatPrice(5555, 'EUR')).toBe('55,55 €')
+      expect(formatPrice(5555, 'USD')).toBe('$55.55')
+      expect(formatPrice(5555, 'GBP')).toBe('£55.55')
     })
   })
 

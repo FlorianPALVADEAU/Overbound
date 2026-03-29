@@ -59,6 +59,11 @@ interface Props {
   availableSpots: number
   user: EventUser | null
   eventPriceTiers?: EventPriceTier[]
+  onRegisterClick?: (payload: {
+    ticketId: string
+    ticketName: string
+    raceType?: string | null
+  }) => void
 }
 
 export default function EventTicketListWithRegistration({
@@ -67,6 +72,7 @@ export default function EventTicketListWithRegistration({
   availableSpots,
   user,
   eventPriceTiers = [],
+  onRegisterClick,
 }: Props) {
   const formattedSalesStart = event.sales_start
     ? new Date(event.sales_start).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
@@ -267,6 +273,13 @@ export default function EventTicketListWithRegistration({
                                     href={user
                                       ? `/events/${event.slug}/register?ticket=${ticket.id}`
                                       : `/auth/login?next=${encodeURIComponent(`/events/${event.slug}/register?ticket=${ticket.id}`)}`}
+                                    onClick={() =>
+                                      onRegisterClick?.({
+                                        ticketId: ticket.id,
+                                        ticketName: ticket.name,
+                                        raceType: ticket.race?.type ?? null,
+                                      })
+                                    }
                                   >
                                     {getCtaLabel()}
                                   </Link>
