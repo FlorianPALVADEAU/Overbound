@@ -22,6 +22,31 @@ export type UpdateEventPriceTier = Partial<
   Omit<EventPriceTier, 'id' | 'created_at' | 'event_id'>
 > & { id: UUID }
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Parse tier timestamp safely without forcing UTC drift for date-only values.
+ * - "YYYY-MM-DD" is interpreted as local midnight.
+ * - Full ISO/timestamp values keep native Date parsing behavior.
+ */
+export function parseTierDate(value: Timestamp | null): Date | null {
+  if (!value) return null
+
+  if (DATE_ONLY_RE.test(value)) {
+    const [year, month, day] = value.split('-').map(Number)
+    return new Date(year, month - 1, day, 0, 0, 0, 0)
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed
+}
+
+const getTierTime = (value: Timestamp | null, fallback: number) => {
+  const parsed = parseTierDate(value)
+  return parsed ? parsed.getTime() : fallback
+}
+
 /**
  * Get the currently active price tier based on the current date
  * @param tiers - Array of price tiers sorted by available_from
@@ -38,8 +63,8 @@ export function getCurrentPriceTier(
 
   // Find the tier that is currently active
   const activeTier = tiers.find((tier) => {
-    const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
-    const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+    const startTime = getTierTime(tier.available_from, 0)
+    const endTime = getTierTime(tier.available_until, Infinity)
 
     return currentTime >= startTime && currentTime < endTime
   })
@@ -64,12 +89,12 @@ export function getNextPriceTier(
   // Find the next tier that starts after now
   const nextTier = tiers
     .filter((tier) => {
-      const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+      const startTime = getTierTime(tier.available_from, 0)
       return startTime > currentTime
     })
     .sort((a, b) => {
-      const aTime = a.available_from ? new Date(a.available_from).getTime() : 0
-      const bTime = b.available_from ? new Date(b.available_from).getTime() : 0
+      const aTime = getTierTime(a.available_from, 0)
+      const bTime = getTierTime(b.available_from, 0)
       return aTime - bTime
     })[0]
 
@@ -83,8 +108,8 @@ export function getNextPriceTier(
  */
 export function sortPriceTiersByDate(tiers: EventPriceTier[]): EventPriceTier[] {
   return [...tiers].sort((a, b) => {
-    const aTime = a.available_from ? new Date(a.available_from).getTime() : 0
-    const bTime = b.available_from ? new Date(b.available_from).getTime() : 0
+    const aTime = getTierTime(a.available_from, 0)
+    const bTime = getTierTime(b.available_from, 0)
     return aTime - bTime
   })
 }
@@ -97,8 +122,8 @@ export function sortPriceTiersByDate(tiers: EventPriceTier[]): EventPriceTier[] 
  */
 export function isPriceTierActive(tier: EventPriceTier, now: Date = new Date()): boolean {
   const currentTime = now.getTime()
-  const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
-  const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+  const startTime = getTierTime(tier.available_from, 0)
+  const endTime = getTierTime(tier.available_until, Infinity)
 
   return currentTime >= startTime && currentTime < endTime
 }
