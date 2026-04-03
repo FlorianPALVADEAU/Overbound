@@ -14,6 +14,7 @@ import {
 } from './utils'
 import { captureException } from '@/lib/sentry'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
+import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 
 export const runtime = 'nodejs'
 
@@ -45,6 +46,14 @@ export async function POST(request: NextRequest) {
   let ambassadorReferralCode: string | null = null
 
   try {
+    const clientIpAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      null
+    const clientUserAgent = request.headers.get('user-agent')
+    const fbp = request.cookies.get('_fbp')?.value ?? null
+    const fbc = request.cookies.get('_fbc')?.value ?? null
+
     const requestBody = await request.json()
     eventId = requestBody.eventId
     userId = requestBody.userId
@@ -279,9 +288,40 @@ export async function POST(request: NextRequest) {
         event_title: eventRef.title,
         ticket_count: String(ticketSelections.length),
         participant_count: String(participantEntries.length),
+        fbp: fbp || '',
+        fbc: fbc || '',
+        event_source_url:
+          request.headers.get('referer') ??
+          request.headers.get('origin') ??
+          `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'}/events/${eventId}/register`,
       },
       receipt_email: userEmail,
       description: `${eventRef.title} - Billets et options`,
+    })
+
+    await sendMetaCapiEvent({
+      eventName: 'InitiateCheckout',
+      eventId: `initiate_checkout_${paymentIntent.id}`,
+      eventSourceUrl:
+        request.headers.get('referer') ??
+        request.headers.get('origin') ??
+        `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'}/events/${eventId}/register`,
+      userData: {
+        email: userEmail,
+        externalId: userId,
+        clientIpAddress,
+        clientUserAgent,
+        fbp,
+        fbc,
+      },
+      customData: {
+        currency: currency.toUpperCase(),
+        value: Number((totalAmount / 100).toFixed(2)),
+        content_type: 'product',
+        content_ids: ticketSelections.map((item: any) => String(item.ticketId)),
+        content_name: eventRef.title,
+        event_id: eventId,
+      },
     })
 
     return respondJson({

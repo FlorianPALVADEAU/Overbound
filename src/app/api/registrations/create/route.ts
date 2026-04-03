@@ -17,6 +17,7 @@ import {
   isRankedFormatTicket,
 } from '@/lib/openSas'
 import { sendAdminPushNotification } from '@/lib/push'
+import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 
 export const runtime = 'nodejs'
 
@@ -40,6 +41,14 @@ const isPpsOnlyAndTooEarly = (eventDate: string | null | undefined, documentType
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIpAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      null
+    const clientUserAgent = request.headers.get('user-agent')
+    const fbpCookie = request.cookies.get('_fbp')?.value ?? null
+    const fbcCookie = request.cookies.get('_fbc')?.value ?? null
+
     const {
       paymentIntentId,
       eventId,
@@ -761,6 +770,62 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       event_id: eventId,
       amount: paymentIntent.amount,
+    })
+
+    await sendMetaCapiEvent({
+      eventName: 'Purchase',
+      eventId: `purchase_${order.id}`,
+      eventSourceUrl:
+        (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
+        request.headers.get('referer') ||
+        `${siteUrl}/events/${eventId}/register`,
+      userData: {
+        email: user.email,
+        externalId: userId,
+        clientIpAddress,
+        clientUserAgent,
+        fbp:
+          (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
+          fbpCookie,
+        fbc:
+          (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
+          fbcCookie,
+      },
+      customData: {
+        currency: (paymentIntent.currency || 'eur').toUpperCase(),
+        value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+        content_type: 'product',
+        content_ids: createdRegistrations.map(({ ticket }) => String(ticket.id)),
+        content_name: eventRow.title,
+        order_id: order.id,
+        event_id: eventId,
+      },
+    })
+    await sendMetaCapiEvent({
+      eventName: 'PaymentConfirmed',
+      eventId: `payment_confirmed_${order.id}`,
+      eventSourceUrl:
+        (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
+        request.headers.get('referer') ||
+        `${siteUrl}/events/${eventId}/register`,
+      userData: {
+        email: user.email,
+        externalId: userId,
+        clientIpAddress,
+        clientUserAgent,
+        fbp:
+          (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
+          fbpCookie,
+        fbc:
+          (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
+          fbcCookie,
+      },
+      customData: {
+        transaction_id: order.id,
+        currency: (paymentIntent.currency || 'eur').toUpperCase(),
+        value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+        event_id: eventId,
+      },
     })
 
     return NextResponse.json({

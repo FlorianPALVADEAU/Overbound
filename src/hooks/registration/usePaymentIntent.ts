@@ -101,6 +101,37 @@ export function usePaymentIntent(
         pricing: PricingSummary
       }
 
+      if (typeof window !== 'undefined') {
+        const eventId = `initiate_checkout_${data.paymentIntentId}`
+        const analyticsWindow = window as Window & {
+          dataLayer?: Array<Record<string, unknown>>
+          fbq?: (...args: unknown[]) => void
+        }
+        analyticsWindow.dataLayer?.push({
+          event: 'begin_checkout',
+          event_id: eventId,
+          event_slug: event.slug,
+          event_key: event.id,
+          value: Number((data.pricing.totalDue / 100).toFixed(2)),
+          currency: data.pricing.currency.toUpperCase(),
+        })
+        analyticsWindow.fbq?.(
+          'track',
+          'InitiateCheckout',
+          {
+            content_name: event.title || event.slug,
+            content_category: 'event',
+            content_ids: Object.entries(ticketSelections)
+              .filter(([, quantity]) => (quantity || 0) > 0)
+              .map(([ticketId]) => ticketId),
+            content_type: 'product',
+            value: Number((data.pricing.totalDue / 100).toFixed(2)),
+            currency: data.pricing.currency.toUpperCase(),
+          },
+          { eventID: eventId },
+        )
+      }
+
       setClientSecret(data.clientSecret)
       setPaymentIntentId(data.paymentIntentId)
       setPricing(data.pricing)
@@ -114,7 +145,18 @@ export function usePaymentIntent(
     } finally {
       setIsCreatingPaymentIntent(false)
     }
-  }, [appliedPromos, ambassadorReferralCode, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
+  }, [
+    appliedPromos,
+    ambassadorReferralCode,
+    event.id,
+    event.slug,
+    event.title,
+    participants,
+    selectedUpsells,
+    ticketSelections,
+    totalDue,
+    user,
+  ])
 
   return {
     clientSecret,

@@ -1,7 +1,5 @@
 'use client'
-
-/* eslint-disable react/no-unescaped-entities */
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSearchParams, useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -43,6 +41,7 @@ export default function EventSuccessPage() {
   const registrationId = searchParams?.get('registration_id') ?? ''
   const hasReference = Boolean(sessionId || paymentIntentId || registrationId)
   const { data: session, isLoading: sessionLoading } = useSession()
+  const purchaseTrackedRef = useRef(false)
   const { data, isLoading, error, refetch } = useEventSuccess(params.id, {
     sessionId,
     paymentIntentId,
@@ -50,6 +49,58 @@ export default function EventSuccessPage() {
   }, {
     enabled: Boolean(session?.user) && hasReference,
   })
+
+  useEffect(() => {
+    const registration = data?.registration
+    if (!registration || purchaseTrackedRef.current) return
+    purchaseTrackedRef.current = true
+
+    const analyticsWindow = window as Window & {
+      dataLayer?: Array<Record<string, unknown>>
+      gtag?: (...args: unknown[]) => void
+      fbq?: (...args: unknown[]) => void
+    }
+
+    const value = Number((registration.order.amount_total / 100).toFixed(2))
+    const currency = registration.order.currency.toUpperCase()
+    const transactionId = registration.order.id
+    const eventId = `purchase_${transactionId}`
+
+    analyticsWindow.dataLayer?.push({
+      event: 'purchase',
+      transaction_id: transactionId,
+      value,
+      currency,
+      event_slug: registration.event.slug,
+      event_id: registration.event.id,
+    })
+
+    analyticsWindow.gtag?.('event', 'purchase', {
+      transaction_id: transactionId,
+      value,
+      currency,
+      items: [
+        {
+          item_id: registration.ticket.id,
+          item_name: registration.ticket.name,
+          item_category: 'event_ticket',
+        },
+      ],
+    })
+
+    analyticsWindow.fbq?.(
+      'track',
+      'Purchase',
+      {
+        value,
+        currency,
+        content_name: registration.event.title,
+        content_ids: [registration.ticket.id],
+        content_type: 'product',
+      },
+      { eventID: eventId },
+    )
+  }, [data?.registration])
 
   useEffect(() => {
     if (!hasReference) {

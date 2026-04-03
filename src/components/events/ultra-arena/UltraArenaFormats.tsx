@@ -160,6 +160,18 @@ export function UltraArenaFormats({
         <p className="mt-5 text-center text-xs text-muted-foreground">
           Pas encore sûr(e) ? Tous les détails des billets avec les prix exacts sont disponibles plus bas.
         </p>
+
+        <div className="mt-6 flex justify-center">
+          {isOnSale ? (
+            <Button asChild size="lg" className="h-12 rounded-xl px-8 text-base font-semibold" onClick={onMidCtaClick}>
+              <Link href={registerHref()}>Je prends ma place</Link>
+            </Button>
+          ) : (
+            <Button asChild size="lg" variant="outline" className="h-12 rounded-xl px-8" onClick={onMidCtaClick}>
+              <a href="#tarifs-inscription">Voir les tarifs</a>
+            </Button>
+          )}
+        </div>
       </div>
     </section>
   )

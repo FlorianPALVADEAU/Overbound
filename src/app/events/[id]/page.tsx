@@ -143,6 +143,7 @@ export default function EventDetailPage() {
       const analyticsWindow = window as Window & {
         dataLayer?: Array<Record<string, unknown>>
         gtag?: (...args: unknown[]) => void
+        fbq?: (...args: unknown[]) => void
       }
 
       const basePayload: Record<string, unknown> = {
@@ -159,6 +160,31 @@ export default function EventDetailPage() {
         event_label: trackedEvent.slug,
         ...payload,
       })
+
+      // Meta Pixel mirror for retargeting/optimization
+      if (analyticsWindow.fbq) {
+        if (eventName === 'view_content' || eventName === 'page_view_event_landing') {
+          analyticsWindow.fbq('track', 'ViewContent', {
+            content_name: trackedEvent.title ?? trackedEvent.slug,
+            content_category: 'event',
+            content_ids: [trackedEvent.id],
+          })
+        }
+        if (eventName === 'add_to_cart') {
+          analyticsWindow.fbq('track', 'AddToCart', {
+            content_name: trackedEvent.title ?? trackedEvent.slug,
+            content_category: 'event',
+            content_ids: [trackedEvent.id],
+          })
+        }
+        if (eventName === 'begin_checkout' || eventName === 'begin_checkout_event') {
+          analyticsWindow.fbq('track', 'InitiateCheckout', {
+            content_name: trackedEvent.title ?? trackedEvent.slug,
+            content_category: 'event',
+            content_ids: [trackedEvent.id],
+          })
+        }
+      }
     },
     [trackedEvent],
   )
@@ -169,6 +195,10 @@ export default function EventDetailPage() {
     trackEvent('page_view_event_landing', {
       page_path: `/events/${params.id}`,
       has_price: trackedLowestPrice !== null,
+    })
+    trackEvent('view_content', {
+      page_path: `/events/${params.id}`,
+      content_type: 'event',
     })
   }, [isUltraArena, trackedEvent, trackedLowestPrice, params.id, trackEvent])
 
@@ -205,6 +235,25 @@ export default function EventDetailPage() {
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
+  }, [isUltraArena, trackEvent])
+
+  // Pricing section visibility (decision zone)
+  useEffect(() => {
+    if (!isUltraArena) return
+    const target = document.getElementById('tarifs-inscription')
+    if (!target) return
+    let fired = false
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (fired || !entry?.isIntersecting) return
+        fired = true
+        trackEvent('view_pricing', { section: 'pricing' })
+        observer.disconnect()
+      },
+      { threshold: 0.25 },
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
   }, [isUltraArena, trackEvent])
 
   // -------------------------------------------------------------------------
@@ -388,11 +437,12 @@ export default function EventDetailPage() {
           onDiscoverClick={() => {
             trackEvent('click_cta_hero_discover', { cta_location: 'hero' })
             trackEvent('click_cta_hero', { cta_location: 'hero', cta_variant: 'discover' })
+            trackEvent('click_cta_secondary', { cta_location: 'hero' })
           }}
           onRegisterClick={() => {
             trackEvent('click_cta_hero_register', { cta_location: 'hero' })
             trackEvent('click_cta_hero', { cta_location: 'hero', cta_variant: 'register' })
-            trackEvent('begin_checkout_event', { cta_location: 'hero' })
+            trackEvent('click_cta_primary', { cta_location: 'hero' })
           }}
         />
 
@@ -400,7 +450,10 @@ export default function EventDetailPage() {
         <UltraArenaWhyDifferent
           isOnSale={isOnSale}
           registerHref={registerHref()}
-          onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'why_different' })}
+          onCtaClick={() => {
+            trackEvent('click_cta_midpage', { cta_location: 'why_different' })
+            trackEvent('click_cta_secondary', { cta_location: 'why_different' })
+          }}
         />
 
         {/* 4. PROJECTION — emotional buy-in */}
@@ -408,7 +461,10 @@ export default function EventDetailPage() {
           galleryImages={galleryImages}
           isOnSale={isOnSale}
           registerHref={registerHref()}
-          onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'projection' })}
+          onCtaClick={() => {
+            trackEvent('click_cta_midpage', { cta_location: 'projection' })
+            trackEvent('click_cta_secondary', { cta_location: 'projection' })
+          }}
         />
 
         {/* 5. TESTIMONIALS — social proof before price reveal */}
@@ -418,14 +474,20 @@ export default function EventDetailPage() {
           }
           isOnSale={isOnSale}
           registerHref={registerHref()}
-          onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'participants' })}
+          onCtaClick={() => {
+            trackEvent('click_cta_midpage', { cta_location: 'participants' })
+            trackEvent('click_cta_secondary', { cta_location: 'participants' })
+          }}
         />
 
         {/* 6. COME TOGETHER — boost group conversion */}
         <UltraArenaComeTogether
           isOnSale={isOnSale}
           registerHref={registerHref()}
-          onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'group_section' })}
+          onCtaClick={() => {
+            trackEvent('click_cta_midpage', { cta_location: 'group_section' })
+            trackEvent('click_cta_secondary', { cta_location: 'group_section' })
+          }}
         />
 
         {/* 7. FORMATS — help visitors self-select */}
@@ -436,13 +498,18 @@ export default function EventDetailPage() {
           registerHref={registerHref}
           onOpenClick={() => {
             trackEvent('click_format_open', { source: 'formats_section' })
-            trackEvent('begin_checkout_event', { source: 'formats_open' })
+            trackEvent('select_format_open', { source: 'formats_section' })
+            trackEvent('click_cta_primary', { cta_location: 'formats_open' })
           }}
           onRankedClick={() => {
             trackEvent('click_format_ranked', { source: 'formats_section' })
-            trackEvent('begin_checkout_event', { source: 'formats_ranked' })
+            trackEvent('select_format_ranked', { source: 'formats_section' })
+            trackEvent('click_cta_primary', { cta_location: 'formats_ranked' })
           }}
-          onMidCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'formats' })}
+          onMidCtaClick={() => {
+            trackEvent('click_cta_midpage', { cta_location: 'formats' })
+            trackEvent('click_cta_secondary', { cta_location: 'formats' })
+          }}
         />
 
         {/* 7. REASSURANCE — practical info + location */}
@@ -481,16 +548,12 @@ export default function EventDetailPage() {
               ticket_name: ticketName,
               race_type: raceType ?? null,
             })
-            trackEvent('begin_checkout_event', {
-              cta_location: 'ticket_card',
-              ticket_id: ticketId,
-              ticket_name: ticketName,
-            })
+            trackEvent('click_cta_primary', { cta_location: 'ticket_card' })
           }}
           onPriceSectionRegisterClick={() => {
             trackEvent('click_price_section_register', { cta_location: 'price_section' })
             trackEvent('click_cta_price', { cta_location: 'price_section' })
-            trackEvent('begin_checkout_event', { cta_location: 'price_section' })
+            trackEvent('click_cta_primary', { cta_location: 'price_section' })
           }}
         />
 
@@ -511,7 +574,7 @@ export default function EventDetailPage() {
               onClick={() => {
                 trackEvent('click_sticky_register', { cta_location: 'sticky_mobile' })
                 trackEvent('click_sticky_cta', { cta_location: 'sticky_mobile' })
-                trackEvent('begin_checkout_event', { cta_location: 'sticky_mobile' })
+                trackEvent('click_cta_primary', { cta_location: 'sticky_mobile' })
               }}
             >
               <Link href={registerHref()}>Je prends ma place</Link>

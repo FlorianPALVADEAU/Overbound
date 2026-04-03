@@ -7,6 +7,7 @@ import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
+import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import {
   assignOpenWaveToRegistration,
   formatWaveStartTime,
@@ -406,6 +407,51 @@ export async function POST(request: NextRequest) {
           event_id,
           payment_intent_id: paymentIntent.id,
           amount: paymentIntent.amount
+        })
+
+        await sendMetaCapiEvent({
+          eventName: 'Purchase',
+          eventId: `purchase_${order.id}`,
+          eventSourceUrl:
+            typeof metadata.event_source_url === 'string' && metadata.event_source_url
+              ? metadata.event_source_url
+              : `${siteUrl}/events/${event.slug ?? event_id}`,
+          userData: {
+            email: resolvedParticipantEmail,
+            externalId: String(user_id),
+            fbp: typeof metadata.fbp === 'string' ? metadata.fbp : null,
+            fbc: typeof metadata.fbc === 'string' ? metadata.fbc : null,
+          },
+          customData: {
+            currency: (paymentIntent.currency || 'eur').toUpperCase(),
+            value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+            content_ids: [String(ticket_id)],
+            content_type: 'product',
+            content_name: `${event_title || event.title} - ${ticket_name || ticket.name}`,
+            order_id: order.id,
+            event_id: String(event_id),
+            ticket_id: String(ticket_id),
+          },
+        })
+        await sendMetaCapiEvent({
+          eventName: 'PaymentConfirmed',
+          eventId: `payment_confirmed_${order.id}`,
+          eventSourceUrl:
+            typeof metadata.event_source_url === 'string' && metadata.event_source_url
+              ? metadata.event_source_url
+              : `${siteUrl}/events/${event.slug ?? event_id}`,
+          userData: {
+            email: resolvedParticipantEmail,
+            externalId: String(user_id),
+            fbp: typeof metadata.fbp === 'string' ? metadata.fbp : null,
+            fbc: typeof metadata.fbc === 'string' ? metadata.fbc : null,
+          },
+          customData: {
+            transaction_id: order.id,
+            currency: (paymentIntent.currency || 'eur').toUpperCase(),
+            value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+            event_id: String(event_id),
+          },
         })
 
         if (ticket.requires_document) {

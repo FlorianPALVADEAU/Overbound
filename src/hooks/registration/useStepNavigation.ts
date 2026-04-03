@@ -10,7 +10,6 @@ interface StepValidation {
 
 export function useStepNavigation(
   validation: StepValidation,
-  ensurePaymentIntent: () => Promise<any>,
 ) {
   const [stepIndex, setStepIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -39,18 +38,14 @@ export function useStepNavigation(
     setIsTransitioning(true)
 
     try {
-      if (REGISTRATION_STEPS[stepIndex + 1]?.id === 'confirmation') {
-        await ensurePaymentIntent()
-      }
-
       await new Promise((resolve) => setTimeout(resolve, 400))
       setStepIndex((i) => i + 1)
     } catch {
-      // Error already handled by ensurePaymentIntent
+      // noop
     } finally {
       setIsTransitioning(false)
     }
-  }, [stepIndex, ensurePaymentIntent])
+  }, [stepIndex])
 
   const goToPreviousStep = useCallback(() => {
     setStepIndex((i) => Math.max(0, i - 1))
