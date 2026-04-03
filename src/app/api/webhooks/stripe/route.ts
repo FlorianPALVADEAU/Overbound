@@ -97,7 +97,22 @@ export async function POST(request: NextRequest) {
       } = metadata
 
       if (registration_flow === 'multi') {
-        console.log('Webhook skip: handled by multi-inscription flow for PaymentIntent', paymentIntent.id)
+        console.error('Webhook skip (multi flow): paid PaymentIntent requires manual registration check', {
+          payment_intent_id: paymentIntent.id,
+          user_id,
+          event_id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+        })
+        try {
+          await sendAdminPushNotification({
+            title: 'Paiement OK sans inscription (multi)',
+            body: `${paymentIntent.id} • ${paymentIntent.amount / 100} ${(paymentIntent.currency || 'eur').toUpperCase()}`,
+            url: `${siteUrl}/dashboard?tab=members${event_id ? `&event=${event_id}` : ''}`,
+          })
+        } catch (pushError) {
+          console.error('[push] multi-flow warning notification error', pushError)
+        }
         return new Response('ok', { status: 200 })
       }
 

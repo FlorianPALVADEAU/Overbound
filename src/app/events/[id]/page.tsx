@@ -99,6 +99,7 @@ export default function EventDetailPage() {
   const [notifyStatus, setNotifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null)
   const [openedFaqs, setOpenedFaqs] = useState<string[]>([])
+  const [showDesktopCta, setShowDesktopCta] = useState(false)
 
   useEffect(() => {
     if (!salesStartDate || !isAnnounced) return
@@ -236,6 +237,15 @@ export default function EventDetailPage() {
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
   }, [isUltraArena, trackEvent])
+
+  // Desktop sticky CTA — show after scrolling past the hero (~400px)
+  useEffect(() => {
+    if (!isUltraArena) return
+    const onScroll = () => setShowDesktopCta(window.scrollY > 400)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [isUltraArena])
 
   // Pricing section visibility (decision zone)
   useEffect(() => {
@@ -579,6 +589,34 @@ export default function EventDetailPage() {
             >
               <Link href={registerHref()}>Je prends ma place</Link>
             </Button>
+          </div>
+        ) : null}
+
+        {/* Sticky desktop CTA — bottom-right popup, appears after scrolling past hero */}
+        {isOnSale ? (
+          <div
+            className={[
+              'fixed bottom-6 right-6 z-40 hidden md:flex',
+              'flex-col items-end gap-2',
+              'transition-all duration-300',
+              showDesktopCta
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-4 opacity-0 pointer-events-none',
+            ].join(' ')}
+          >
+            <div className="rounded-2xl border border-primary/30 bg-background/95 p-3 shadow-2xl backdrop-blur">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-xl px-6 text-base font-semibold shadow-lg"
+                onClick={() => {
+                  trackEvent('click_sticky_register', { cta_location: 'sticky_desktop' })
+                  trackEvent('click_cta_primary', { cta_location: 'sticky_desktop' })
+                }}
+              >
+                <Link href={registerHref()}>Je prends ma place →</Link>
+              </Button>
+            </div>
           </div>
         ) : null}
       </main>
