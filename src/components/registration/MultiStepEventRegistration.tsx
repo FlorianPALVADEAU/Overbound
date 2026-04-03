@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
@@ -38,6 +38,7 @@ export default function MultiStepEventRegistration({
 }: MultiStepEventRegistrationProps) {
   const router = useRouter()
   const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
+  const addToCartTrackedRef = useRef(false)
 
   // Local UI state
   const [disclaimerRead, setDisclaimerRead] = useState(false)
@@ -122,6 +123,30 @@ export default function MultiStepEventRegistration({
 
   const summaryPricing = serverPricing ?? computedPricing
 
+  const trackRegistrationEvent = (
+    eventName: string,
+    payload: Record<string, unknown> = {},
+  ) => {
+    if (typeof window === 'undefined') return
+    const analyticsWindow = window as Window & {
+      dataLayer?: Array<Record<string, unknown>>
+      gtag?: (...args: unknown[]) => void
+      fbq?: (...args: unknown[]) => void
+    }
+    const eventPayload = {
+      event: eventName,
+      event_slug: event.slug,
+      event_id: event.id,
+      ...payload,
+    }
+    analyticsWindow.dataLayer?.push(eventPayload)
+    analyticsWindow.gtag?.('event', eventName, {
+      event_category: 'event_register',
+      event_label: event.slug,
+      ...payload,
+    })
+  }
+
   // Step validation
   const isTicketsStepValid = totalParticipants > 0
 
@@ -168,10 +193,11 @@ export default function MultiStepEventRegistration({
     canContinue,
     proceedToNextStep,
     goToPreviousStep,
-  } = useStepNavigation(
-    { isTicketsStepValid, isParticipantsStepValid, isConfirmationStepValid },
-    ensurePaymentIntent,
-  )
+  } = useStepNavigation({
+    isTicketsStepValid,
+    isParticipantsStepValid,
+    isConfirmationStepValid,
+  })
 
   // Draft sync
   useRegistrationDraftSync(
@@ -220,6 +246,34 @@ export default function MultiStepEventRegistration({
       })
       return
     }
+
+    if (currentStepId === 'tickets' && !addToCartTrackedRef.current && totalParticipants > 0) {
+      const selectedTicketIds = Object.entries(ticketSelections)
+        .filter(([, quantity]) => (quantity || 0) > 0)
+        .map(([ticketId]) => ticketId)
+
+      trackRegistrationEvent('add_to_cart', {
+        step: 'participants',
+        ticket_count: selectedTicketIds.length,
+        participant_count: totalParticipants,
+        ticket_ids: selectedTicketIds.join(','),
+      })
+
+      const analyticsWindow = window as Window & {
+        fbq?: (...args: unknown[]) => void
+      }
+      analyticsWindow.fbq?.('track', 'AddToCart', {
+        content_name: event.title || event.slug,
+        content_category: 'event_register',
+        content_type: 'product',
+        content_ids: selectedTicketIds,
+        value: Number((summaryPricing.totalDue / 100).toFixed(2)),
+        currency: summaryPricing.currency.toUpperCase(),
+      })
+
+      addToCartTrackedRef.current = true
+    }
+
     setShowValidationErrors(false)
     setSubmissionMessage(null)
     await proceedToNextStep()
