@@ -107,98 +107,101 @@ export function UltraArenaPricing({
           </p>
         </div>
 
-        {/* ── Pricing timeline FIRST — urgency before the price card ── */}
-        {/* Note: PricingTimeline uses absolute-positioned labels (-bottom-10 = 40px),
-            so the wrapper needs enough bottom padding to avoid visual overlap. */}
-        {eventPriceTiers.length > 0 && tickets.length > 0 ? (
-          <div className="mb-6 rounded-2xl border border-primary/20 bg-card/80 px-5 pb-14 pt-5 sm:px-8 sm:pb-16 sm:pt-7">
-            <PricingTimeline
-              ticket={tickets.reduce((min: any, t: any) =>
-                (t.final_price_cents ?? Infinity) < (min.final_price_cents ?? Infinity) ? t : min,
-                tickets[0]
-              )}
-              eventPriceTiers={eventPriceTiers}
-              currency={priceCurrency as 'eur' | 'usd' | 'gbp'}
-              eventDate={event.date}
-            />
-          </div>
-        ) : null}
-
-        {/* ── Price summary card ── */}
-        <Card className="mb-6 border-primary/20 bg-primary/5">
+        {/* ── Unified pricing card: timeline + current price + CTA ── */}
+        <Card className="mb-6 border-primary/20 bg-card/80">
           <CardContent className="pt-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                  Tarif en cours
-                </p>
-                <p className="mt-1 text-xs font-medium text-muted-foreground">
-                  Même expérience. Juste plus cher plus tard.
-                </p>
-                {lowestPrice !== null ? (
-                  <div className="mt-1">
-                    {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice ? (
-                      <p className="text-sm font-semibold text-muted-foreground line-through">
-                        dès {formatCurrency(baseLowestPrice)}
+
+            {/* Timeline — top of the card, needs extra bottom padding for absolute labels */}
+            {eventPriceTiers.length > 0 && tickets.length > 0 ? (
+              <div className="px-1 pb-14 sm:px-3 sm:pb-16">
+                <PricingTimeline
+                  ticket={tickets.reduce((min: any, t: any) =>
+                    (t.final_price_cents ?? Infinity) < (min.final_price_cents ?? Infinity) ? t : min,
+                    tickets[0]
+                  )}
+                  eventPriceTiers={eventPriceTiers}
+                  currency={priceCurrency as 'eur' | 'usd' | 'gbp'}
+                  eventDate={event.date}
+                />
+              </div>
+            ) : null}
+
+            {/* Divider + current price + CTA */}
+            <div className="border-t border-border/40 pt-5">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    Tarif en cours
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">
+                    Même expérience. Juste plus cher plus tard.
+                  </p>
+                  {lowestPrice !== null ? (
+                    <div className="mt-1">
+                      {hasDiscount && baseLowestPrice && baseLowestPrice > lowestPrice ? (
+                        <p className="text-sm font-semibold text-muted-foreground line-through">
+                          dès {formatCurrency(baseLowestPrice)}
+                        </p>
+                      ) : null}
+                      <p className="text-3xl font-black text-foreground sm:text-4xl">
+                        dès {formatCurrency(lowestPrice)}
                       </p>
-                    ) : null}
-                    <p className="text-3xl font-black text-foreground sm:text-4xl">
-                      dès {formatCurrency(lowestPrice)}
-                    </p>
-                  </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-2xl font-bold">Ouverture prochaine</p>
+                  )}
+                </div>
+
+                {isOnSale ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="h-12 rounded-xl px-8 text-base font-semibold"
+                    onClick={onPriceSectionRegisterClick}
+                  >
+                    <Link href={`/events/${event.slug}/register`}>Je bloque ma place maintenant</Link>
+                  </Button>
                 ) : (
-                  <p className="mt-1 text-2xl font-bold">Ouverture prochaine</p>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 rounded-xl px-8 text-base font-semibold"
+                    disabled
+                  >
+                    Inscriptions à venir
+                  </Button>
                 )}
               </div>
 
-              {isOnSale ? (
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-12 rounded-xl px-8 text-base font-semibold"
-                  onClick={onPriceSectionRegisterClick}
-                >
-                  <Link href={`/events/${event.slug}/register`}>Je bloque ma place maintenant</Link>
-                </Button>
-              ) : (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 rounded-xl px-8 text-base font-semibold"
-                  disabled
-                >
-                  Inscriptions à venir
-                </Button>
-              )}
-            </div>
+              {/* Included items */}
+              <div className="mt-5 border-t border-border/40 pt-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Inclus dans ton inscription
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {WHAT_IS_INCLUDED.map((item) => (
+                    <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            {/* Included items */}
-            <div className="mt-5 border-t border-border/40 pt-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Inclus dans ton inscription
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                {WHAT_IS_INCLUDED.map((item) => (
-                  <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    {item}
-                  </div>
-                ))}
+              {isOnSale ? (
+                <p className="mt-3 text-xs font-semibold text-primary">
+                  Prochaine augmentation à venir.
+                </p>
+              ) : null}
+
+              {/* Trust badges */}
+              <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+                <div className="rounded-lg bg-background/70 p-3">Paiement sécurisé Stripe</div>
+                <div className="rounded-lg bg-background/70 p-3">Billet + QR code par email</div>
+                <div className="rounded-lg bg-background/70 p-3">Inscription en quelques minutes</div>
               </div>
             </div>
 
-            {isOnSale ? (
-              <p className="mt-3 text-xs font-semibold text-primary">
-                Prochaine augmentation à venir.
-              </p>
-            ) : null}
-
-            {/* Trust badges */}
-            <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-              <div className="rounded-lg bg-background/70 p-3">Paiement sécurisé Stripe</div>
-              <div className="rounded-lg bg-background/70 p-3">Billet + QR code par email</div>
-              <div className="rounded-lg bg-background/70 p-3">Inscription en quelques minutes</div>
-            </div>
           </CardContent>
         </Card>
 

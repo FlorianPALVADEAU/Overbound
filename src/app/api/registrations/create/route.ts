@@ -120,6 +120,16 @@ export async function POST(request: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
     
     if (paymentIntent.status !== 'succeeded') {
+      if (paymentIntent.status === 'processing' || paymentIntent.status === 'requires_capture') {
+        return NextResponse.json(
+          {
+            pending: true,
+            payment_intent_status: paymentIntent.status,
+            message: 'Paiement en cours de confirmation',
+          },
+          { status: 202 },
+        )
+      }
       return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 400 })
     }
 
