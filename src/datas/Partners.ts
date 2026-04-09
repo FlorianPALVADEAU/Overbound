@@ -5,10 +5,11 @@ export type PartnerType = {
 };
 
 export const PARTNERS_DATA: PartnerType[] = [
-    // {
-    //     name: 'Au Vieux Campeur',
-    //     logo: '/images/partners_logo/avc_logo.webp',
-    // },
+    {
+        name: 'Au Vieux Campeur',
+        logo: '/images/partners_logo/avc_logo.webp',
+        url: 'https://www.auvieuxcampeur.fr/'
+    },
     // {
     //     name: 'Decathlon',
     //     logo: '/images/partners_logo/decathlon_logo.webp',
