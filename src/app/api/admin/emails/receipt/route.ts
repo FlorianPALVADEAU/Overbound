@@ -105,14 +105,14 @@ async function handlePost(request: NextRequest) {
     })
 
     const subtotalCents =
-      (session?.amount_subtotal ?? null) ??
+      session?.amount_subtotal ??
       items.reduce((sum, item) => sum + Math.round(item.unitPrice * 100) * item.quantity, 0)
     const totalCents =
-      (session?.amount_total ?? null) ??
+      session?.amount_total ??
       paymentIntent.amount ??
       subtotalCents
     const discountCents =
-      (session?.total_details?.amount_discount ?? null) ??
+      session?.total_details?.amount_discount ??
       Math.max(subtotalCents - totalCents, 0)
 
     await sendReceiptEmail({
