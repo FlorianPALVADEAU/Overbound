@@ -19,6 +19,7 @@ import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 export const runtime = 'nodejs'
 
 const MAX_PROMO_CODES = 2
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['JUOFF30'])
 
 const normalizePromoCode = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
       activeTierIndex !== null ? expandTierAllocations(allocations) : []
 
     let ticketSubtotal = 0
+    let baseTicketSubtotal = 0
 
     for (const [index, entry] of participantEntries.entries()) {
       const ticket = ticketById.get(entry.ticketId)
@@ -184,10 +186,14 @@ export async function POST(request: NextRequest) {
         return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
       }
 
+      baseTicketSubtotal += finalPrice
+
       const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
       const unitPrice = Math.round(finalPrice * discountMultiplier)
       ticketSubtotal += unitPrice
     }
+
+    const tierDiscountAmount = Math.max(0, baseTicketSubtotal - ticketSubtotal)
 
     const { data: upsellRows } = await fetchUpsellsForEvent(supabase, eventId)
     const upsellMap = new Map<string, any>()
@@ -234,13 +240,30 @@ export async function POST(request: NextRequest) {
         validatedAmbassadorReferralCode = promo.code
       }
 
-      let promoDiscountAmount = 0
-      if (promo.discount_percent && promo.discount_percent > 0) {
-        promoDiscountAmount = Math.round(ticketSubtotal * (promo.discount_percent / 100))
-      } else if (promo.discount_amount && promo.discount_amount > 0) {
-        promoDiscountAmount = promo.discount_amount
+      const normalizedPromoCode = promo.code.trim().toUpperCase()
+
+      const calculatePromoForSubtotal = (subtotal: number) => {
+        if (promo.discount_percent && promo.discount_percent > 0) {
+          return Math.min(subtotal, Math.round(subtotal * (promo.discount_percent / 100)))
+        }
+        if (promo.discount_amount && promo.discount_amount > 0) {
+          return Math.min(subtotal, promo.discount_amount)
+        }
+        return 0
       }
+
+      let promoDiscountAmount = calculatePromoForSubtotal(ticketSubtotal)
+
+      if (NON_CUMULABLE_WITH_TIER_CODES.has(normalizedPromoCode)) {
+        const standalonePromoDiscount = calculatePromoForSubtotal(baseTicketSubtotal)
+        promoDiscountAmount = Math.max(0, standalonePromoDiscount - tierDiscountAmount)
+      }
+
       discountAmount += Math.max(0, Math.min(promoDiscountAmount, ticketSubtotal))
+
+      if (promoDiscountAmount <= 0) {
+        continue
+      }
 
       appliedPromos.push({
         id: promo.id,

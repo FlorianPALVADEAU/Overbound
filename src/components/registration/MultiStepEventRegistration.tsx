@@ -88,7 +88,13 @@ export default function MultiStepEventRegistration({
     removePromo,
   } = usePromoCode(event.id)
 
-  const { activeTier, hasActiveDiscount, totalDue, computedPricing } = useRegistrationPricing(
+  const {
+    activeTier,
+    hasActiveDiscount,
+    isTierDiscountOverriddenByPromo,
+    totalDue,
+    computedPricing,
+  } = useRegistrationPricing(
     tickets,
     selectedTicketSlots,
     ticketMap,
@@ -471,6 +477,7 @@ export default function MultiStepEventRegistration({
                 defaultCurrency={defaultCurrency}
                 activeTier={activeTier}
                 hasActiveDiscount={hasActiveDiscount}
+                isTierDiscountOverriddenByPromo={isTierDiscountOverriddenByPromo}
                 upsellSummaryItems={upsellSummaryItems}
                 summaryPricing={summaryPricing}
                 appliedPromos={appliedPromos}

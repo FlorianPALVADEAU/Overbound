@@ -21,6 +21,7 @@ interface OrderSummarySidebarProps {
   defaultCurrency: string
   activeTier: EventPriceTier | null
   hasActiveDiscount: boolean
+  isTierDiscountOverriddenByPromo: boolean
   upsellSummaryItems: UpsellSummaryItem[]
   summaryPricing: PricingSummary
   appliedPromos: AppliedPromo[]
@@ -38,6 +39,7 @@ export default function OrderSummarySidebar({
   defaultCurrency,
   activeTier,
   hasActiveDiscount,
+  isTierDiscountOverriddenByPromo,
   upsellSummaryItems,
   summaryPricing,
   appliedPromos,
@@ -47,6 +49,8 @@ export default function OrderSummarySidebar({
   onValidatePromo,
   onRemovePromo,
 }: OrderSummarySidebarProps) {
+  const showActiveTierDiscount = hasActiveDiscount && !isTierDiscountOverriddenByPromo
+
   return (
     <Card>
       <CardHeader>
@@ -100,14 +104,14 @@ export default function OrderSummarySidebar({
                         </Badge>
                       </div>
                     )}
-                    {hasActiveDiscount && activeTier && ticket.final_price_cents && (
+                    {showActiveTierDiscount && activeTier && ticket.final_price_cents && (
                       <p className="text-xs text-green-600 font-semibold">
                         -{activeTier.discount_percentage}% ({activeTier.name})
                       </p>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-0.5">
-                    {hasActiveDiscount && ticket.final_price_cents && (
+                    {showActiveTierDiscount && ticket.final_price_cents && (
                       <span className="text-xs text-muted-foreground line-through">
                         {formatPrice(
                           ticket.final_price_cents,
