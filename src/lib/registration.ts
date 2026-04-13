@@ -1,6 +1,13 @@
 import type { AppliedPromo, EventUpsell } from '@/components/registration/types'
 import { DEFAULT_TSHIRT_SIZES } from '@/constants/registration'
 
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['JUOFF30'])
+
+type PromoDiscountOptions = {
+  tierDiscountAmount?: number
+  baseTicketSubtotal?: number
+}
+
 export const resolveUpsellSizes = (upsell: EventUpsell): string[] => {
   const sizes = upsell.options?.sizes
   return sizes && sizes.length > 0 ? sizes : DEFAULT_TSHIRT_SIZES
@@ -68,27 +75,45 @@ export const formatPrice = (valueInCents: number, currency: string): string => {
 export const calculatePromoDiscount = (
   promo: AppliedPromo | null,
   ticketSubtotal: number,
+  options?: PromoDiscountOptions,
 ): number => {
   if (!promo || ticketSubtotal <= 0) return 0
 
-  if (promo.discount_percent && promo.discount_percent > 0) {
-    return Math.min(ticketSubtotal, Math.round(ticketSubtotal * (promo.discount_percent / 100)))
+  const calculateDiscountForSubtotal = (subtotal: number) => {
+    if (promo.discount_percent && promo.discount_percent > 0) {
+      return Math.min(subtotal, Math.round(subtotal * (promo.discount_percent / 100)))
+    }
+
+    if (promo.discount_amount && promo.discount_amount > 0) {
+      return Math.min(subtotal, promo.discount_amount)
+    }
+
+    return 0
   }
 
-  if (promo.discount_amount && promo.discount_amount > 0) {
-    return Math.min(ticketSubtotal, promo.discount_amount)
+  const normalizedCode = promo.code?.trim().toUpperCase()
+
+  if (normalizedCode && NON_CUMULABLE_WITH_TIER_CODES.has(normalizedCode)) {
+    const tierDiscountAmount = Math.max(0, options?.tierDiscountAmount ?? 0)
+    const baseTicketSubtotal = Math.max(ticketSubtotal, options?.baseTicketSubtotal ?? ticketSubtotal)
+    const standalonePromoDiscount = calculateDiscountForSubtotal(baseTicketSubtotal)
+    return Math.min(ticketSubtotal, Math.max(0, standalonePromoDiscount - tierDiscountAmount))
   }
 
-  return 0
+  return calculateDiscountForSubtotal(ticketSubtotal)
 }
 
 export const calculatePromoDiscounts = (
   promos: AppliedPromo[],
   ticketSubtotal: number,
+  options?: PromoDiscountOptions,
 ): number => {
   if (!Array.isArray(promos) || promos.length === 0 || ticketSubtotal <= 0) return 0
 
-  const total = promos.reduce((acc, promo) => acc + calculatePromoDiscount(promo, ticketSubtotal), 0)
+  const total = promos.reduce(
+    (acc, promo) => acc + calculatePromoDiscount(promo, ticketSubtotal, options),
+    0,
+  )
   return Math.min(total, ticketSubtotal)
 }
 

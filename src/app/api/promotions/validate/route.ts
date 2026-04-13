@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['JUOFF30'])
+
 const hasAmbassadorLink = (value: unknown) => {
   if (Array.isArray(value)) return value.length > 0
   return Boolean(value && typeof value === 'object')
@@ -85,6 +87,35 @@ export async function POST(request: NextRequest) {
     const allowedEvents = (promotionalCode.events || []).map((event: { event_id: string }) => event.event_id)
     if (allowedEvents.length > 0 && !allowedEvents.includes(eventId)) {
       return NextResponse.json({ error: 'Ce code promo ne s’applique pas à cet événement.' }, { status: 403 })
+    }
+
+    if (NON_CUMULABLE_WITH_TIER_CODES.has(normalizedCode)) {
+      const { data: eventPriceTiers, error: tierError } = await admin
+        .from('event_price_tiers')
+        .select('discount_percentage, available_from, available_until, display_order')
+        .eq('event_id', eventId)
+        .order('display_order', { ascending: true })
+
+      if (tierError) {
+        return NextResponse.json({ error: 'Impossible de vérifier le palier tarifaire actif.' }, { status: 500 })
+      }
+
+      const nowTime = Date.now()
+      const activeTier = (eventPriceTiers || []).find((tier) => {
+        const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+        const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+        return nowTime >= startTime && nowTime < endTime
+      })
+
+      const activeTierDiscount = Number(activeTier?.discount_percentage || 0)
+      const promoPercent = Number(promotionalCode.discount_percent || 0)
+
+      if (promoPercent > 0 && activeTierDiscount >= promoPercent) {
+        return NextResponse.json(
+          { error: 'Ce code promo ne peut pas être cumulé avec le palier actuel, déjà plus avantageux.' },
+          { status: 409 },
+        )
+      }
     }
 
     if (uniqueExistingCodes.length > 0) {

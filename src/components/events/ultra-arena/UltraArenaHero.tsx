@@ -72,7 +72,7 @@ export function UltraArenaHero({
         </div>
 
         <div className="grid items-start gap-10 lg:grid-cols-[1.3fr_0.7fr]">
-          {/* Left: Headline + CTAs */}
+          {/* Left: Headline + facts */}
           <div className="space-y-7">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
               Ultra Arena 2026
@@ -113,39 +113,6 @@ export function UltraArenaHero({
               </div>
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 rounded-xl px-7 text-base font-semibold"
-                onClick={onDiscoverClick}
-              >
-                <a href="#pourquoi-different">Voir si c&apos;est pour moi</a>
-              </Button>
-
-              {isOnSale ? (
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="h-12 rounded-xl border-primary/40 bg-background/80 px-7 text-base font-semibold backdrop-blur"
-                  onClick={onRegisterClick}
-                >
-                  <Link href={registerHref}>Je veux ma place</Link>
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="h-12 rounded-xl border-primary/40 bg-background/80 px-7 text-base font-semibold backdrop-blur"
-                >
-                  <a href="#formats">Voir les formats</a>
-                </Button>
-              )}
-            </div>
-
             {isAnnounced && formattedSalesStart && (
               <p className="text-xs text-muted-foreground">
                 Ouverture des inscriptions prévue le {formattedSalesStart}.
@@ -159,47 +126,81 @@ export function UltraArenaHero({
             ) : null}
           </div>
 
-          {/* Right: Experience preview card */}
-          <Card className="border-primary/15 bg-card/85 shadow-2xl shadow-black/15 backdrop-blur">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold">Ce que tu vas vivre</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Mountain className="h-4 w-4" />
+          {/* Right: Experience preview card + CTA */}
+          <div className="space-y-3">
+            <Card className="border-primary/15 bg-card/85 shadow-2xl shadow-black/15 backdrop-blur">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-bold">Ce que tu vas vivre</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Mountain className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Une boucle de ~2 km</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      Obstacles physiques et mentaux. Répète tant que tu veux — ou tant que tu peux.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">Une boucle de ~2 km</p>
-                  <p className="mt-0.5 text-muted-foreground">
-                    Obstacles physiques et mentaux. Répète tant que tu veux — ou tant que tu peux.
-                  </p>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Target className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Tu pilotes ton engagement</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      À chaque obstacle, tu ajustes. Pas de format imposé qui te dépasse ou te sous-estime.
+                    </p>
+                  </div>
                 </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Ambiance village + encadrement terrain</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      Solo ou en groupe, l'événement est pensé pour vivre un vrai moment ensemble.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-4 backdrop-blur">
+              <div className="flex flex-col items-stretch gap-2.5">
+              {isOnSale ? (
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-14 w-full rounded-2xl px-8 text-base font-bold"
+                  onClick={onRegisterClick}
+                >
+                  <Link href={registerHref}>Je m&apos;inscris maintenant</Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-14 w-full rounded-2xl px-8 text-base font-bold"
+                >
+                  <a href="#formats">Voir les formats</a>
+                </Button>
+              )}
+
+              <Button
+                asChild
+                variant="ghost"
+                className="h-11 w-full rounded-xl border border-border/60 bg-background/45 px-4 text-sm font-semibold text-foreground/90 hover:bg-background/70"
+                onClick={onDiscoverClick}
+              >
+                <a href="#pourquoi-different">Voir si c&apos;est pour moi</a>
+              </Button>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Target className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="font-semibold">Tu pilotes ton engagement</p>
-                  <p className="mt-0.5 text-muted-foreground">
-                    À chaque obstacle, tu ajustes. Pas de format imposé qui te dépasse ou te sous-estime.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Users className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="font-semibold">Ambiance village + encadrement terrain</p>
-                  <p className="mt-0.5 text-muted-foreground">
-                    Solo ou en groupe, l'événement est pensé pour vivre un vrai moment ensemble.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </section>

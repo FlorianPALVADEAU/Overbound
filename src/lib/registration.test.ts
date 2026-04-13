@@ -204,6 +204,33 @@ describe('registration utils', () => {
       // 33% de 10001 = 3300.33 → arrondi à 3300
       expect(calculatePromoDiscount({ ...basePromo, discount_percent: 33 }, 10001)).toBe(3300)
     })
+
+    it('applies JUOFF30 only as the better-over-tier delta when non-cumulable', () => {
+      const result = calculatePromoDiscount(
+        { ...basePromo, code: 'JUOFF30', discount_percent: 30 },
+        8000,
+        {
+          baseTicketSubtotal: 10000,
+          tierDiscountAmount: 2000,
+        },
+      )
+
+      // Palier = 2000, JUOFF30 seule = 3000 -> on n'ajoute que 1000 (meilleur écart)
+      expect(result).toBe(1000)
+    })
+
+    it('does not apply JUOFF30 when active tier discount is already better', () => {
+      const result = calculatePromoDiscount(
+        { ...basePromo, code: 'JUOFF30', discount_percent: 30 },
+        6000,
+        {
+          baseTicketSubtotal: 10000,
+          tierDiscountAmount: 4000,
+        },
+      )
+
+      expect(result).toBe(0)
+    })
   })
 
   describe('calculatePromoDiscounts', () => {
@@ -236,6 +263,19 @@ describe('registration utils', () => {
       ]
 
       expect(calculatePromoDiscounts(promos, 10000)).toBe(10000)
+    })
+
+    it('keeps JUOFF30 non-cumulable with tier discounts at aggregate level', () => {
+      const promos = [
+        { ...basePromo, code: 'JUOFF30', discount_percent: 30 },
+      ]
+
+      const discount = calculatePromoDiscounts(promos, 8000, {
+        baseTicketSubtotal: 10000,
+        tierDiscountAmount: 2000,
+      })
+
+      expect(discount).toBe(1000)
     })
   })
 
