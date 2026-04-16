@@ -70,7 +70,7 @@ export function useRegistrationPricing(
   )
 
   const isTierDiscountOverriddenByPromo = useMemo(() => {
-    const juoffPromo = appliedPromos.find((promo) => promo.code?.trim().toUpperCase() === 'JUOFF30')
+    const juoffPromo = appliedPromos.find((promo) => promo.code?.trim().toUpperCase() === 'LUOFF30')
     if (!juoffPromo) return false
 
     const juoffExtraDiscount = calculatePromoDiscount(juoffPromo, ticketSubtotal, {

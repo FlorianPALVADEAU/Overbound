@@ -1,7 +1,7 @@
 import type { AppliedPromo, EventUpsell } from '@/components/registration/types'
 import { DEFAULT_TSHIRT_SIZES } from '@/constants/registration'
 
-const NON_CUMULABLE_WITH_TIER_CODES = new Set(['JUOFF30'])
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30'])
 
 type PromoDiscountOptions = {
   tierDiscountAmount?: number

@@ -19,7 +19,7 @@ import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 export const runtime = 'nodejs'
 
 const MAX_PROMO_CODES = 2
-const NON_CUMULABLE_WITH_TIER_CODES = new Set(['JUOFF30'])
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30'])
 
 const normalizePromoCode = (value: unknown): string | null => {
   if (typeof value !== 'string') return null

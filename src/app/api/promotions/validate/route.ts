@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
-const NON_CUMULABLE_WITH_TIER_CODES = new Set(['JUOFF30'])
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30'])
 
 const hasAmbassadorLink = (value: unknown) => {
   if (Array.isArray(value)) return value.length > 0
