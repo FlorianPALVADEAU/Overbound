@@ -24,9 +24,24 @@ export const PARTNERS_DATA: PartnerType[] = [
         url: 'https://www.intersport.fr/Yvelines-78/PLAISIR-LESCLAYESSOUSBOIS-78340/INTERSPORT-LESCLAYESSOUSBOIS/00628_000/'
     },
     {
+        name: 'Columbia One Nation',
+        logo: '/images/partners_logo/columbia_one_nation_logo.webp',
+        url: 'https://www.onenation.fr/fr/brand/columbia/'
+    },
+    {
+        name: 'Gossip Fit',
+        logo: '/images/partners_logo/gossipfit_logo.webp',
+        url: 'https://www.gossipfit.fr/'
+    },
+    {
         name: 'Saint Quentin en Yvelines',
         logo: '/images/partners_logo/sqy_logo.webp',
         url: 'https://saint-quentin-en-yvelines.fr/'
+    },
+    {
+        name: 'Fitness Park Maurepas',
+        logo: '/images/partners_logo/fitnesspark_logo.webp',
+        url: 'https://www.fitnesspark.fr/club/maurepas-pariwest/'
     },
     {
         name: 'Département des Yvelines',
