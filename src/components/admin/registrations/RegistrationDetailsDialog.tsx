@@ -19,7 +19,7 @@ interface RegistrationDetailsDialogProps {
 }
 
 const formatAmount = (amount?: number | null, currency?: string | null) => {
-  if (amount == null) return '—'
+  if (amount == null) return 'Non renseigné'
   return (amount / 100).toLocaleString('fr-FR', {
     style: 'currency',
     currency: (currency || 'EUR').toUpperCase(),
@@ -27,12 +27,12 @@ const formatAmount = (amount?: number | null, currency?: string | null) => {
 }
 
 const formatBoolean = (value?: boolean | null) => {
-  if (value == null) return '—'
+  if (value == null) return 'Non renseigné'
   return value ? 'Oui' : 'Non'
 }
 
 const statusLabel = (value?: string | null) => {
-  if (!value) return '—'
+  if (!value) return 'Non renseigné'
   const lookup: Record<string, string> = {
     pending: 'En attente',
     approved: 'Approuvé',
@@ -45,6 +45,56 @@ const statusLabel = (value?: string | null) => {
 }
 
 const rowClassName = 'grid grid-cols-1 gap-1 text-sm sm:grid-cols-[220px_1fr]'
+
+const withFallback = (value?: string | null) => {
+  if (!value || value.trim().length === 0) return 'Non renseigné'
+  return value
+}
+
+const formatPromoDiscount = (promo: {
+  discount_percent?: number | null
+  discount_amount?: number | null
+  currency?: string | null
+}) => {
+  if (typeof promo.discount_percent === 'number' && promo.discount_percent > 0) {
+    return `-${promo.discount_percent}%`
+  }
+  if (typeof promo.discount_amount === 'number' && promo.discount_amount > 0) {
+    return `-${formatAmount(promo.discount_amount, promo.currency ?? 'EUR')}`
+  }
+  return null
+}
+
+const humanizeMetaKey = (key: string) =>
+  key
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\w/, (char) => char.toUpperCase())
+
+const renderUpsellMeta = (meta: unknown) => {
+  if (!meta || typeof meta !== 'object') return [] as string[]
+  const details: string[] = []
+  for (const [key, value] of Object.entries(meta as Record<string, unknown>)) {
+    if (value == null) continue
+    if (key === 'sizes' && Array.isArray(value)) {
+      const sizes = value.filter((item) => typeof item === 'string' && item.trim().length > 0)
+      if (sizes.length > 0) details.push(`Tailles: ${sizes.join(', ')}`)
+      continue
+    }
+    if (key === 'size' && typeof value === 'string' && value.trim().length > 0) {
+      details.push(`Taille: ${value.trim()}`)
+      continue
+    }
+    if (Array.isArray(value)) {
+      details.push(`${humanizeMetaKey(key)}: ${value.map((item) => String(item)).join(', ')}`)
+      continue
+    }
+    if (typeof value === 'object') continue
+    details.push(`${humanizeMetaKey(key)}: ${String(value)}`)
+  }
+  return details
+}
 
 export function RegistrationDetailsDialog({
   registration,
@@ -72,6 +122,14 @@ export function RegistrationDetailsDialog({
   const uploadedTypes = Array.isArray(registration.uploaded_document_types)
     ? registration.uploaded_document_types
     : []
+  const promotionalCodes = Array.isArray(registration.promotional_codes)
+    ? registration.promotional_codes
+    : []
+  const upsellItems = Array.isArray(registration.upsell_items)
+    ? registration.upsell_items
+    : []
+  const hasTshirt = Boolean(registration.has_tshirt)
+  const tshirtSizes = Array.isArray(registration.tshirt_sizes) ? registration.tshirt_sizes : []
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,11 +158,11 @@ export function RegistrationDetailsDialog({
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">User ID</span>
-              <span className="font-mono text-xs break-all">{registration.user_id ?? '—'}</span>
+              <span className="font-mono text-xs break-all">{withFallback(registration.user_id)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Créée le</span>
-              <span>{formatDateTimeParis(registration.created_at) ?? '—'}</span>
+              <span>{withFallback(formatDateTimeParis(registration.created_at))}</span>
             </div>
           </section>
 
@@ -114,23 +172,23 @@ export function RegistrationDetailsDialog({
             <h4 className="font-semibold">Événement & billet</h4>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Événement</span>
-              <span>{registration.event?.title ?? '—'}</span>
+              <span>{withFallback(registration.event?.title)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Date événement</span>
-              <span>{formatDateTimeParis(registration.event?.date) ?? '—'}</span>
+              <span>{withFallback(formatDateTimeParis(registration.event?.date))}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Lieu</span>
-              <span>{registration.event?.location ?? '—'}</span>
+              <span>{withFallback(registration.event?.location)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Billet</span>
-              <span>{registration.ticket?.name ?? '—'}</span>
+              <span>{withFallback(registration.ticket?.name)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Order ID</span>
-              <span className="font-mono text-xs break-all">{registration.order?.id ?? '—'}</span>
+              <span className="font-mono text-xs break-all">{withFallback(registration.order?.id)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Paiement</span>
@@ -149,19 +207,108 @@ export function RegistrationDetailsDialog({
           <Separator />
 
           <section className="space-y-2">
+            <h4 className="font-semibold">Commande complète</h4>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Email commande</span>
+              <span>{withFallback(registration.order?.email)}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Provider</span>
+              <span>{withFallback(registration.order?.provider)}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Provider Order ID</span>
+              <span className="font-mono text-xs break-all">{withFallback(registration.order?.provider_order_id)}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Créée le</span>
+              <span>{withFallback(formatDateTimeParis(registration.order?.created_at))}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Montant total commande</span>
+              <span>{formatAmount(registration.order?.amount_total, registration.order?.currency)}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Montant par participant</span>
+              <span>
+                {formatAmount((registration.order as any)?.amount_per_registration, registration.order?.currency)}
+              </span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Participants commande</span>
+              <span>{(registration.order as any)?.registrations_count ?? 'Non renseigné'}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Facture</span>
+              <span className="break-all">{withFallback(registration.order?.invoice_url)}</span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Codes promo</span>
+              <span className="flex flex-wrap gap-1">
+                {promotionalCodes.length > 0 ? (
+                  promotionalCodes.map((promo) => {
+                    const discount = formatPromoDiscount(promo)
+                    return (
+                      <Badge key={promo.id} variant="outline" className="text-[11px]">
+                        {promo.code}
+                        {discount ? ` • ${discount}` : ''}
+                      </Badge>
+                    )
+                  })
+                ) : (
+                  <span>Aucun code promo</span>
+                )}
+              </span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">T-shirt</span>
+              <span>
+                {hasTshirt
+                  ? `Oui${
+                      (registration.tshirt_quantity ?? 0) > 0 ? ` (x${registration.tshirt_quantity})` : ''
+                    }${tshirtSizes.length > 0 ? ` • tailles ${tshirtSizes.join(', ')}` : ''}`
+                  : 'Non'}
+              </span>
+            </div>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Options upsell</span>
+              <span className="space-y-1">
+                {upsellItems.length > 0 ? (
+                  upsellItems.map((item, index) => (
+                    <div key={`${item.registration_id}-${item.name}-${index}`} className="rounded border border-border/50 px-2 py-1">
+                      <p className="text-xs font-medium">
+                        {item.quantity} × {item.name} — {formatAmount(item.price_cents, item.currency)} / unité
+                      </p>
+                      {renderUpsellMeta(item.meta).map((detail) => (
+                        <p key={detail} className="text-[11px] text-muted-foreground">
+                          {detail}
+                        </p>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <span>Aucune option</span>
+                )}
+              </span>
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-2">
             <h4 className="font-semibold">Départ & affectation</h4>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Départ assigné (Paris)</span>
-              <span>{formatClockTimeParis(registration.start_time) ?? '—'}</span>
+              <span>{withFallback(formatClockTimeParis(registration.start_time))}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Start UTC</span>
-              <span>{registration.start_time ?? '—'}</span>
+              <span>{withFallback(registration.start_time)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Wave</span>
               <span>
-                {registration.wave_index ?? '—'}
+                {registration.wave_index ?? 'Non assigné'}
                 {registration.wave_position ? ` • position ${registration.wave_position}` : ''}
                 {registration.wave_capacity ? ` / ${registration.wave_capacity}` : ''}
               </span>
@@ -173,13 +320,13 @@ export function RegistrationDetailsDialog({
             <div className={rowClassName}>
               <span className="text-muted-foreground">Fenêtre préférée</span>
               <span>
-                {formatClockTimeParis(registration.preferred_window_start) ?? '—'} →{' '}
-                {formatClockTimeParis(registration.preferred_window_end) ?? '—'}
+                {formatClockTimeParis(registration.preferred_window_start) ?? 'Non renseigné'} →{' '}
+                {formatClockTimeParis(registration.preferred_window_end) ?? 'Non renseigné'}
               </span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Dernier départ autorisé</span>
-              <span>{formatClockTimeParis(registration.latest_allowed_time) ?? '—'}</span>
+              <span>{formatClockTimeParis(registration.latest_allowed_time) ?? 'Non renseigné'}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Contrainte dépassée</span>
@@ -223,7 +370,7 @@ export function RegistrationDetailsDialog({
                     </Badge>
                   ))
                 ) : (
-                  <span>—</span>
+                  <span>Aucun document uploadé</span>
                 )}
               </span>
             </div>
@@ -239,11 +386,11 @@ export function RegistrationDetailsDialog({
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Dernière version règlement</span>
-              <span>{latestSignature?.regulation_version ?? '—'}</span>
+              <span>{withFallback(latestSignature?.regulation_version)}</span>
             </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Dernière signature</span>
-              <span>{formatDateTimeParis(latestSignature?.signed_at) ?? '—'}</span>
+              <span>{withFallback(formatDateTimeParis(latestSignature?.signed_at))}</span>
             </div>
           </section>
         </div>

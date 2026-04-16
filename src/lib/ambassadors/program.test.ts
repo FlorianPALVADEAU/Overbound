@@ -127,6 +127,11 @@ describe('Ambassador Program Utils', () => {
       const expectedLevel = AMBASSADOR_REWARD_LEVELS.find((l) => l.reward_level === 1)
       expect(result?.reward_name).toBe(expectedLevel?.reward_name)
     })
+
+    it('level 8 reward name is "Pack Média Offert"', () => {
+      const result = getNextReward(15)
+      expect(result?.reward_name).toBe('Pack Média Offert')
+    })
   })
 
   describe('getCurrentRewardLevel', () => {

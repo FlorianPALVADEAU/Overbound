@@ -6,84 +6,23 @@ import {
   resolvePaymentStatus,
   resolveRaceFormat,
 } from '@/lib/ambassadors/program'
+import {
+  resolveRewardStatus,
+  inferFormatFromLabels,
+  pointsForFormat,
+  formatRecruitName,
+  formatLeaderboardName,
+  getTicketDetails,
+} from '@/lib/ambassadors/dashboardHelpers'
 import type {
   AmbassadorDashboardData,
   AmbassadorPaymentStatus,
   AmbassadorRaceFormat,
   AmbassadorRecruitRow,
   AmbassadorReward,
-  AmbassadorRewardStatus,
 } from '@/types/Ambassador'
 
-export const runtime = 'nodejs'
-
-const resolveRewardStatus = (value: string | null | undefined): AmbassadorRewardStatus => {
-  const normalized = String(value || '').toLowerCase()
-  if (normalized === 'claimed') return 'claimed'
-  if (normalized === 'fulfilled') return 'fulfilled'
-  return 'earned'
-}
-
-const inferFormatFromLabels = (ticketName: string | null | undefined, raceName: string | null | undefined) => {
-  const haystack = `${ticketName || ''} ${raceName || ''}`.toLowerCase()
-  if (haystack.includes('ranked')) {
-    return 'ranked' as const
-  }
-  return 'open' as const
-}
-
-const pointsForFormat = (format: AmbassadorRaceFormat) => (format === 'ranked' ? 2 : 1)
-
-const formatRecruitName = (fullName: string | null | undefined, email: string | null | undefined) => {
-  const rawName = (fullName || '').trim()
-  if (rawName) {
-    const parts = rawName.split(/\s+/).filter(Boolean)
-    const first = parts[0] ?? ''
-    const lastInitial = parts.length > 1 ? `${parts[parts.length - 1][0]?.toUpperCase() ?? ''}.` : ''
-    return [first, lastInitial].filter(Boolean).join(' ').trim()
-  }
-  if (email) {
-    const base = email.split('@')[0] || email
-    return base
-  }
-  return 'Utilisateur'
-}
-
-const formatLeaderboardName = (fullName: string | null | undefined, profileId: string) => {
-  const rawName = (fullName || '').trim()
-  if (!rawName) {
-    return `Ambassadeur ${profileId.slice(0, 4).toUpperCase()}`
-  }
-  const parts = rawName.split(/\s+/).filter(Boolean)
-  const first = parts[0] ?? 'Ambassadeur'
-  const lastInitial = parts.length > 1 ? `${parts[parts.length - 1][0]?.toUpperCase() ?? ''}.` : ''
-  return [first, lastInitial].filter(Boolean).join(' ').trim()
-}
-
-const getTicketDetails = (value: unknown) => {
-  const rawTicket = Array.isArray(value) ? value[0] : value
-  if (!rawTicket || typeof rawTicket !== 'object') {
-    return { name: null, race_format: null, race_name: null }
-  }
-
-  const ticket = rawTicket as {
-    name?: string | null
-    race_format?: string | null
-    race?: unknown
-  }
-
-  const rawRace = Array.isArray(ticket.race) ? ticket.race[0] : ticket.race
-  const raceName =
-    rawRace && typeof rawRace === 'object' ? ((rawRace as { name?: string | null }).name ?? null) : null
-
-  return {
-    name: ticket.name ?? null,
-    race_format: ticket.race_format ?? null,
-    race_name: raceName,
-  }
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createSupabaseServer()
     const {
@@ -106,18 +45,24 @@ export async function GET() {
     }
 
     const role = profileData?.role ?? null
-    if (!hasAmbassadorAccess({ role, email: user.email ?? null })) {
+    const viewAs = new URL(request.url).searchParams.get('view_as')
+
+    // view_as is admin-only
+    if (viewAs && role !== 'admin') {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    }
+
+    if (!viewAs && !hasAmbassadorAccess({ role, email: user.email ?? null })) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
     const admin = supabaseAdmin()
 
-    const { data: ambassadorData, error: ambassadorError } = await admin
-      .from('ambassadors')
-      .select('id, profile_id, promotional_code_id')
-      .eq('profile_id', user.id)
-      .eq('is_active', true)
-      .maybeSingle()
+    const ambassadorQuery = viewAs
+      ? admin.from('ambassadors').select('id, profile_id, promotional_code_id').eq('id', viewAs).eq('is_active', true).maybeSingle()
+      : admin.from('ambassadors').select('id, profile_id, promotional_code_id').eq('profile_id', user.id).eq('is_active', true).maybeSingle()
+
+    const { data: ambassadorData, error: ambassadorError } = await ambassadorQuery
 
     if (ambassadorError) {
       console.error('[ambassador dashboard] ambassador error', ambassadorError)
@@ -146,13 +91,35 @@ export async function GET() {
     }
 
     const ambassadorId = ambassadorData.id as string
-    const promotionalCodeId = ambassadorData.promotional_code_id as string
 
-    const { data: promoData, error: promoError } = await admin
-      .from('promotional_codes')
-      .select('code')
-      .eq('id', promotionalCodeId)
-      .maybeSingle()
+    // Fetch all codes (current + historical) from junction table
+    const { data: allCodesRows } = await admin
+      .from('ambassador_promotional_codes')
+      .select('promotional_code_id, is_current')
+      .eq('ambassador_id', ambassadorId)
+
+    const hasJunctionData = allCodesRows != null && allCodesRows.length > 0
+
+    const currentCodeId: string | null = hasJunctionData
+      ? ((allCodesRows as Array<{ promotional_code_id: string; is_current: boolean }>)
+          .find((r) => r.is_current)?.promotional_code_id ??
+          (allCodesRows as Array<{ promotional_code_id: string }>)[0]?.promotional_code_id ??
+          null)
+      : (ambassadorData.promotional_code_id as string | null)
+
+    const allCodeIds: string[] = hasJunctionData
+      ? (allCodesRows as Array<{ promotional_code_id: string }>).map((r) => r.promotional_code_id)
+      : currentCodeId
+        ? [currentCodeId]
+        : []
+
+    const { data: promoData, error: promoError } = currentCodeId
+      ? await admin
+          .from('promotional_codes')
+          .select('code')
+          .eq('id', currentCodeId)
+          .maybeSingle()
+      : { data: null, error: null }
 
     if (promoError) {
       console.error('[ambassador dashboard] promo error', promoError)
@@ -192,23 +159,25 @@ export async function GET() {
       fulfilled_at: row.fulfilled_at,
     }))
 
-    const { data: registrationsData, error: registrationsError } = await admin
-      .from('registrations')
-      .select(
-        `
-        id,
-        user_id,
-        email,
-        created_at,
-        order_id,
-        ticket:tickets(
-          name,
-          race_format,
-          race:races(name)
-        )
-      `,
-      )
-      .eq('promotional_code_id', promotionalCodeId)
+    const { data: registrationsData, error: registrationsError } = allCodeIds.length > 0
+      ? await admin
+          .from('registrations')
+          .select(
+            `
+            id,
+            user_id,
+            email,
+            created_at,
+            order_id,
+            ticket:tickets(
+              name,
+              race_format,
+              race:races(name)
+            )
+          `,
+          )
+          .in('promotional_code_id', allCodeIds)
+      : { data: [], error: null }
 
     if (registrationsError) {
       console.error('[ambassador dashboard] registrations error', registrationsError)
@@ -284,6 +253,14 @@ export async function GET() {
       })
     }
 
+    // Count registrations per order to detect shared orders
+    const orderRegistrationCount = new Map<string, number>()
+    for (const row of registrationRows) {
+      if (row.order_id) {
+        orderRegistrationCount.set(row.order_id, (orderRegistrationCount.get(row.order_id) ?? 0) + 1)
+      }
+    }
+
     const recruitsTable: AmbassadorRecruitRow[] = registrationRows
       .map((row) => {
         const ticketDetails = getTicketDetails(row.ticket)
@@ -301,6 +278,7 @@ export async function GET() {
         return {
           id: row.id,
           name: formatRecruitName(
+            row.order_id ? (orderRegistrationCount.get(row.order_id) ?? 1) > 1 : false,
             row.user_id ? profilesMap.get(row.user_id) : null,
             row.email ?? null,
           ),

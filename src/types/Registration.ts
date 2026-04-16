@@ -106,6 +106,35 @@ export interface RegistrationProfileSummary {
   full_name: string | null
 }
 
+export interface AdminRegistrationPromoCode {
+  id: UUID
+  code: string
+  name?: string | null
+  discount_percent?: number | null
+  discount_amount?: number | null
+  currency?: Currency | null
+  is_active?: boolean | null
+}
+
+export interface AdminRegistrationUpsellItem {
+  registration_id: UUID
+  name: string
+  price_cents: number
+  quantity: number
+  currency: Currency | string
+  meta?: Record<string, any> | null
+}
+
+export interface AdminRegistrationOrderSummary extends Pick<Order, 'id' | 'amount_total' | 'currency' | 'status'> {
+  amount_per_registration?: number | null
+  registrations_count?: number | null
+  email?: string | null
+  provider?: Provider | null
+  provider_order_id?: string | null
+  created_at?: Timestamp | null
+  invoice_url?: string | null
+}
+
 export interface AdminRegistration extends Registration {
   event: {
     id: UUID
@@ -114,11 +143,16 @@ export interface AdminRegistration extends Registration {
     location: string
   } | null
   ticket: Pick<Ticket, 'id' | 'name' | 'distance_km' | 'requires_document' | 'document_types'> | null
-  order: Pick<Order, 'id' | 'amount_total' | 'currency' | 'status'> | null
+  order: AdminRegistrationOrderSummary | null
   participant_profile?: RegistrationProfileSummary | null
   approved_by_profile?: RegistrationProfileSummary | null
   notification_preferences?: NotificationPreference | null
   upsells?: Upsell[] | null
+  upsell_items?: AdminRegistrationUpsellItem[] | null
+  promotional_codes?: AdminRegistrationPromoCode[] | null
+  has_tshirt?: boolean | null
+  tshirt_quantity?: number | null
+  tshirt_sizes?: string[] | null
   signatures?: RegistrationSignature[] | null
   requires_document: boolean,
   documents_count?: number | null

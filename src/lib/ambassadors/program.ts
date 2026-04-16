@@ -12,7 +12,7 @@ export const AMBASSADOR_REWARD_LEVELS = [
   { reward_level: 5, reward_name: 'Upgrade VIP (file prioritaire + badge spécial)', points_required: 8 },
   { reward_level: 6, reward_name: 'T-shirt ambassadeur / mise en avant réseau', points_required: 10 },
   { reward_level: 7, reward_name: 'Statut confirmé (avantages exclusifs)', points_required: 15 },
-  { reward_level: 8, reward_name: 'Remboursement total', points_required: 20 },
+  { reward_level: 8, reward_name: 'Pack Média Offert', points_required: 20 },
   { reward_level: 9, reward_name: 'Dossard offert édition suivante', points_required: 25 },
   { reward_level: 10, reward_name: 'Statut ambassadeur officiel (premium)', points_required: 30 },
 ] as const

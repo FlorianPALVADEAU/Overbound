@@ -2,6 +2,32 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axiosClient from '../../axiosClient'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
 
+export interface AdminAmbassadorCodeRow {
+  id: string
+  promotional_code_id: string
+  code: string | null
+  name: string | null
+  is_active: boolean
+  is_current: boolean
+  assigned_at: string
+}
+
+export interface AdminAmbassadorCodesResponse {
+  codes: AdminAmbassadorCodeRow[]
+}
+
+export interface AdminPromoCodeOption {
+  id: string
+  code: string
+  name: string | null
+  is_active: boolean
+  assigned_profile_id: string | null
+}
+
+export interface AdminPromoCodesResponse {
+  codes: AdminPromoCodeOption[]
+}
+
 export interface AdminAmbassadorReward {
   id: string
   ambassador_id: string
@@ -109,6 +135,94 @@ export const useUpdateAmbassadorPoints = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADORS_QUERY_KEY })
+    },
+  })
+}
+
+export const ambassadorCodesQueryKey = (ambassadorId: string) =>
+  ['admin', 'ambassadors', ambassadorId, 'promo-codes'] as const
+
+export const useAmbassadorCodes = (ambassadorId: string | null) =>
+  useQuery<AdminAmbassadorCodesResponse, Error>({
+    queryKey: ambassadorCodesQueryKey(ambassadorId ?? ''),
+    enabled: Boolean(ambassadorId),
+    queryFn: async () => {
+      const response = await axiosClient.get<AdminAmbassadorCodesResponse>(
+        `/admin/ambassadors/${ambassadorId}/promo-codes`,
+      )
+      if (response.status !== 200) throw new Error('Erreur lors du chargement des codes')
+      return response.data
+    },
+  })
+
+const ADMIN_PROMO_CODES_QUERY_KEY = ['admin', 'ambassadors', 'promo-codes'] as const
+
+export const useAdminPromoCodes = () =>
+  useQuery<AdminPromoCodesResponse, Error>({
+    queryKey: ADMIN_PROMO_CODES_QUERY_KEY,
+    queryFn: async () => {
+      const response = await axiosClient.get<AdminPromoCodesResponse>('/admin/ambassadors/promo-codes')
+      if (response.status !== 200) throw new Error('Erreur lors du chargement des codes promo')
+      return response.data
+    },
+  })
+
+export const useAssignAmbassadorCode = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: {
+      ambassador_id: string
+      promotional_code_id: string
+      set_as_current: boolean
+    }) => {
+      const response = await axiosClient.post<{ code: AdminAmbassadorCodeRow }>(
+        `/admin/ambassadors/${payload.ambassador_id}/promo-codes`,
+        {
+          promotional_code_id: payload.promotional_code_id,
+          set_as_current: payload.set_as_current,
+        },
+      )
+      if (response.status !== 200) throw new Error('Erreur lors de l\'assignation du code')
+      return response.data.code
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ambassadorCodesQueryKey(variables.ambassador_id) })
+      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ADMIN_PROMO_CODES_QUERY_KEY })
+    },
+  })
+}
+
+export const useSetCurrentAmbassadorCode = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: { ambassador_id: string; junction_id: string }) => {
+      const response = await axiosClient.patch<{ code: AdminAmbassadorCodeRow }>(
+        `/admin/ambassadors/${payload.ambassador_id}/promo-codes/${payload.junction_id}`,
+      )
+      if (response.status !== 200) throw new Error('Erreur lors de la mise à jour du code courant')
+      return response.data.code
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ambassadorCodesQueryKey(variables.ambassador_id) })
+      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY })
+    },
+  })
+}
+
+export const useRemoveAmbassadorCode = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: { ambassador_id: string; junction_id: string }) => {
+      const response = await axiosClient.delete(
+        `/admin/ambassadors/${payload.ambassador_id}/promo-codes/${payload.junction_id}`,
+      )
+      if (response.status !== 200) throw new Error('Erreur lors de la suppression du code')
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ambassadorCodesQueryKey(variables.ambassador_id) })
+      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ADMIN_PROMO_CODES_QUERY_KEY })
     },
   })
 }

@@ -16,33 +16,51 @@ const humanizeMetaKey = (key: string) =>
     .trim()
     .replace(/^\w/, (char) => char.toUpperCase())
 
-const extractSpecLabels = (meta: unknown): string[] => {
+const extractSpecBreakdown = (
+  meta: unknown,
+  quantity: number,
+): Array<{ label: string; quantity: number }> => {
   if (!meta || typeof meta !== 'object') return []
+
   const entries = Object.entries(meta as Record<string, unknown>)
-  const labels: string[] = []
+  const counts = new Map<string, number>()
+
+  const increment = (label: string, by: number) => {
+    if (!label || by <= 0) return
+    counts.set(label, (counts.get(label) ?? 0) + by)
+  }
+
   for (const [key, value] of entries) {
     if (value === null || value === undefined) continue
+
     if (key === 'sizes' && Array.isArray(value)) {
+      // For tshirts, one size entry represents one sold item.
       for (const size of value) {
         if (typeof size === 'string' && size.trim().length > 0) {
-          labels.push(`Taille ${size.trim()}`)
+          increment(`Taille ${size.trim()}`, 1)
         }
       }
       continue
     }
+
     if (key === 'size' && typeof value === 'string' && value.trim().length > 0) {
-      labels.push(`Taille ${value.trim()}`)
+      increment(`Taille ${value.trim()}`, Math.max(1, quantity))
       continue
     }
+
     if (Array.isArray(value)) {
       const serialized = value.map((entry) => String(entry)).join(', ')
-      if (serialized.length > 0) labels.push(`${humanizeMetaKey(key)}: ${serialized}`)
+      if (serialized.length > 0) {
+        increment(`${humanizeMetaKey(key)}: ${serialized}`, Math.max(1, quantity))
+      }
       continue
     }
+
     if (typeof value === 'object') continue
-    labels.push(`${humanizeMetaKey(key)}: ${String(value)}`)
+    increment(`${humanizeMetaKey(key)}: ${String(value)}`, Math.max(1, quantity))
   }
-  return labels
+
+  return Array.from(counts.entries()).map(([label, value]) => ({ label, quantity: value }))
 }
 
 export async function GET(request: Request) {
@@ -109,12 +127,12 @@ export async function GET(request: Request) {
         })
       }
 
-      const specLabels = extractSpecLabels((row as any).meta)
-      if (specLabels.length > 0) {
+      const specBreakdown = extractSpecBreakdown((row as any).meta, quantity)
+      if (specBreakdown.length > 0) {
         if (!specsMap.has(key)) specsMap.set(key, new Map())
         const bucket = specsMap.get(key)!
-        for (const label of specLabels) {
-          bucket.set(label, (bucket.get(label) ?? 0) + quantity)
+        for (const item of specBreakdown) {
+          bucket.set(item.label, (bucket.get(item.label) ?? 0) + item.quantity)
         }
       }
     }
