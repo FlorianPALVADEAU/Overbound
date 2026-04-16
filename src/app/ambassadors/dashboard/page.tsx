@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -10,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 
-export default function AmbassadorDashboardPage() {
+function AmbassadorDashboardContent() {
   const searchParams = useSearchParams()
   const viewAs = searchParams.get('as')
   const { data: session, isLoading } = useSession()
@@ -98,5 +99,17 @@ export default function AmbassadorDashboardPage() {
         }}
       />
     </>
+  )
+}
+
+export default function AmbassadorDashboardPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-sm text-muted-foreground">Chargement...</div>
+      </main>
+    }>
+      <AmbassadorDashboardContent />
+    </Suspense>
   )
 }
