@@ -81,6 +81,20 @@ const formatAmount = (amount?: number | null, currency?: string | null) => {
   })
 }
 
+const formatPromoDiscount = (promo: {
+  discount_percent?: number | null
+  discount_amount?: number | null
+  currency?: string | null
+}) => {
+  if (typeof promo.discount_percent === 'number' && promo.discount_percent > 0) {
+    return `-${promo.discount_percent}%`
+  }
+  if (typeof promo.discount_amount === 'number' && promo.discount_amount > 0) {
+    return `-${formatAmount(promo.discount_amount, promo.currency ?? 'EUR')}`
+  }
+  return null
+}
+
 const approvalBadgeVariant = (status: RegistrationApprovalStatus) => {
   switch (status) {
     case 'approved':
@@ -554,6 +568,31 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                             Commande partagée ({(registration.order as any).registrations_count} participants)
                           </span>
                         ) : null}
+                        <span className="text-[11px] text-muted-foreground">
+                          Codes promo:{' '}
+                          {Array.isArray(registration.promotional_codes) && registration.promotional_codes.length > 0
+                            ? registration.promotional_codes
+                                .map((promo) => {
+                                  const discount = formatPromoDiscount(promo)
+                                  return discount ? `${promo.code} (${discount})` : promo.code
+                                })
+                                .join(', ')
+                            : 'Aucun'}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          T-shirt:{' '}
+                          {registration.has_tshirt
+                            ? `Oui${
+                                (registration.tshirt_quantity ?? 0) > 0
+                                  ? ` (x${registration.tshirt_quantity})`
+                                  : ''
+                              }${
+                                Array.isArray(registration.tshirt_sizes) && registration.tshirt_sizes.length > 0
+                                  ? ` • ${registration.tshirt_sizes.join(', ')}`
+                                  : ''
+                              }`
+                            : 'Non'}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>

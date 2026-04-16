@@ -34,6 +34,11 @@ import {
   useAdminAmbassadorPoints,
   useUpdateAmbassadorReward,
   useUpdateAmbassadorPoints,
+  useAmbassadorCodes,
+  useAdminPromoCodes,
+  useAssignAmbassadorCode,
+  useSetCurrentAmbassadorCode,
+  useRemoveAmbassadorCode,
 } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
 
@@ -75,6 +80,28 @@ export function AmbassadorsSection() {
     recruits_open: number
     recruits_ranked: number
   } | null>(null)
+
+  const [managingCodesFor, setManagingCodesFor] = useState<{
+    ambassador_id: string
+    ambassador_name: string
+  } | null>(null)
+  const [selectedCodeToAdd, setSelectedCodeToAdd] = useState<string>('')
+  const [setAsCurrentOnAdd, setSetAsCurrentOnAdd] = useState(false)
+
+  const { data: ambassadorCodesData, isLoading: codesLoading } = useAmbassadorCodes(
+    managingCodesFor?.ambassador_id ?? null,
+  )
+  const { data: availableCodesData } = useAdminPromoCodes()
+  const assignCode = useAssignAmbassadorCode()
+  const setCurrentCode = useSetCurrentAmbassadorCode()
+  const removeCode = useRemoveAmbassadorCode()
+
+  const assignedCodeIds = new Set(
+    (ambassadorCodesData?.codes ?? []).map((c) => c.promotional_code_id),
+  )
+  const availableCodesToAdd = (availableCodesData?.codes ?? []).filter(
+    (c) => !assignedCodeIds.has(c.id) && !c.assigned_profile_id,
+  )
 
   const rewards = data?.rewards ?? []
   const pointsRows = pointsData?.ambassadors ?? []
@@ -152,11 +179,11 @@ export function AmbassadorsSection() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ambassadeur</TableHead>
-                    <TableHead>Code</TableHead>
+                    <TableHead>Code actif</TableHead>
                     <TableHead className="text-right">Points</TableHead>
                     <TableHead className="text-right">Open</TableHead>
                     <TableHead className="text-right">Ranked</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -181,22 +208,36 @@ export function AmbassadorsSection() {
                         <TableCell className="text-right">{row.recruits_open}</TableCell>
                         <TableCell className="text-right">{row.recruits_ranked}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              setEditingPoints({
-                                ambassador_id: row.ambassador_id,
-                                ambassador_name: row.ambassador_name,
-                                ambassador_code: row.ambassador_code,
-                                total_points: row.total_points,
-                                recruits_open: row.recruits_open,
-                                recruits_ranked: row.recruits_ranked,
-                              })
-                            }
-                          >
-                            Modifier
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setManagingCodesFor({
+                                  ambassador_id: row.ambassador_id,
+                                  ambassador_name: row.ambassador_name,
+                                })
+                              }
+                            >
+                              Codes
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setEditingPoints({
+                                  ambassador_id: row.ambassador_id,
+                                  ambassador_name: row.ambassador_name,
+                                  ambassador_code: row.ambassador_code,
+                                  total_points: row.total_points,
+                                  recruits_open: row.recruits_open,
+                                  recruits_ranked: row.recruits_ranked,
+                                })
+                              }
+                            >
+                              Points
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -254,7 +295,7 @@ export function AmbassadorsSection() {
                     <TableCell>{formatDateTime(reward.earned_at)}</TableCell>
                     <TableCell>{formatDateTime(reward.claimed_at)}</TableCell>
                     <TableCell>{formatDateTime(reward.fulfilled_at)}</TableCell>
-                    <TableCell className="min-w-[160px]">
+                    <TableCell className="min-w-40">
                       <Select
                         value={reward.status}
                         onValueChange={(value) => handleStatusChange(reward.id, value as AmbassadorRewardStatus)}
@@ -278,8 +319,147 @@ export function AmbassadorsSection() {
         </div>
       </CardContent>
 
+      <Dialog
+        open={Boolean(managingCodesFor)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManagingCodesFor(null)
+            setSelectedCodeToAdd('')
+            setSetAsCurrentOnAdd(false)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-130">
+          <DialogHeader>
+            <DialogTitle>Codes promo</DialogTitle>
+            <DialogDescription>
+              {managingCodesFor?.ambassador_name} — codes assignés et historiques
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            {codesLoading ? (
+              <p className="text-sm text-muted-foreground">Chargement…</p>
+            ) : (ambassadorCodesData?.codes ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun code assigné.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {(ambassadorCodesData?.codes ?? []).map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium">{c.code ?? c.promotional_code_id}</span>
+                      {c.name ? (
+                        <span className="text-xs text-muted-foreground">{c.name}</span>
+                      ) : null}
+                      {c.is_current ? (
+                        <Badge className="border-emerald-500/40 bg-emerald-500/20 text-emerald-600 text-xs">
+                          Actif
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {!c.is_current ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={setCurrentCode.isPending}
+                          onClick={async () => {
+                            if (!managingCodesFor) return
+                            await setCurrentCode.mutateAsync({
+                              ambassador_id: managingCodesFor.ambassador_id,
+                              junction_id: c.id,
+                            })
+                          }}
+                        >
+                          Définir actif
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs text-destructive hover:text-destructive"
+                        disabled={removeCode.isPending}
+                        onClick={async () => {
+                          if (!managingCodesFor) return
+                          await removeCode.mutateAsync({
+                            ambassador_id: managingCodesFor.ambassador_id,
+                            junction_id: c.id,
+                          })
+                        }}
+                      >
+                        Retirer
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="rounded-lg border px-3 py-3">
+              <p className="mb-2 text-xs font-semibold">Ajouter un code</p>
+              <div className="flex flex-col gap-2">
+                <Select value={selectedCodeToAdd} onValueChange={setSelectedCodeToAdd}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un code promo…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCodesToAdd.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code}{c.name ? ` — ${c.name}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <label className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={setAsCurrentOnAdd}
+                    onChange={(e) => setSetAsCurrentOnAdd(e.target.checked)}
+                    className="h-3.5 w-3.5"
+                  />
+                  Définir comme code actif
+                </label>
+                <Button
+                  size="sm"
+                  disabled={!selectedCodeToAdd || assignCode.isPending}
+                  onClick={async () => {
+                    if (!managingCodesFor || !selectedCodeToAdd) return
+                    await assignCode.mutateAsync({
+                      ambassador_id: managingCodesFor.ambassador_id,
+                      promotional_code_id: selectedCodeToAdd,
+                      set_as_current: setAsCurrentOnAdd,
+                    })
+                    setSelectedCodeToAdd('')
+                    setSetAsCurrentOnAdd(false)
+                  }}
+                >
+                  {assignCode.isPending ? 'Assignation…' : 'Ajouter'}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setManagingCodesFor(null)
+                setSelectedCodeToAdd('')
+                setSetAsCurrentOnAdd(false)
+              }}
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={Boolean(editingPoints)} onOpenChange={(open) => !open && setEditingPoints(null)}>
-        <DialogContent className="sm:max-w-[520px]">
+        <DialogContent className="sm:max-w-130">
           <DialogHeader>
             <DialogTitle>Modifier les points</DialogTitle>
             <DialogDescription>

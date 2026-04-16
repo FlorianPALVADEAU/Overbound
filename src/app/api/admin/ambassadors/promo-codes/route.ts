@@ -36,19 +36,35 @@ export async function GET() {
       return NextResponse.json({ error: 'Erreur codes promo' }, { status: 500 })
     }
 
-    const { data: ambassadors, error: ambassadorsError } = await admin
-      .from('ambassadors')
-      .select('profile_id, promotional_code_id')
+    const [
+      { data: ambassadors, error: ambassadorsError },
+      { data: junctionRows, error: junctionError },
+    ] = await Promise.all([
+      admin.from('ambassadors').select('id, profile_id'),
+      admin.from('ambassador_promotional_codes').select('ambassador_id, promotional_code_id'),
+    ])
 
     if (ambassadorsError) {
       console.error('[admin ambassadors] ambassadors error', ambassadorsError)
       return NextResponse.json({ error: 'Erreur ambassadeurs' }, { status: 500 })
     }
 
-    const assignedMap = new Map<string, string>()
+    if (junctionError) {
+      console.error('[admin ambassadors] junction error', junctionError)
+      return NextResponse.json({ error: 'Erreur codes assignés' }, { status: 500 })
+    }
+
+    const ambassadorProfileMap = new Map<string, string>()
     ambassadors?.forEach((row: any) => {
-      if (row.promotional_code_id) {
-        assignedMap.set(row.promotional_code_id, row.profile_id)
+      ambassadorProfileMap.set(row.id, row.profile_id)
+    })
+
+    // Build a map: promotional_code_id → profile_id (from junction table as source of truth)
+    const assignedMap = new Map<string, string>()
+    junctionRows?.forEach((row: any) => {
+      const profileId = ambassadorProfileMap.get(row.ambassador_id)
+      if (profileId) {
+        assignedMap.set(row.promotional_code_id, profileId)
       }
     })
 

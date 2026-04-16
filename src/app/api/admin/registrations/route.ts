@@ -5,6 +5,32 @@ import {
   countRegistrationsByOrder,
 } from '@/lib/admin/orderRevenue'
 
+const isTshirtUpsell = (item: { name?: string | null; meta?: Record<string, any> | null }) => {
+  const name = String(item.name ?? '').toLowerCase()
+  if (/t\s*-?\s*shirt|maillot/.test(name)) return true
+  const sizes = (item.meta as any)?.sizes
+  const size = (item.meta as any)?.size
+  return Array.isArray(sizes) || typeof size === 'string'
+}
+
+const extractTshirtSizes = (items: Array<{ meta?: Record<string, any> | null }>) => {
+  const values: string[] = []
+  for (const item of items) {
+    const sizes = (item.meta as any)?.sizes
+    const size = (item.meta as any)?.size
+    if (Array.isArray(sizes)) {
+      for (const raw of sizes) {
+        if (typeof raw === 'string' && raw.trim().length > 0) values.push(raw.trim())
+      }
+      continue
+    }
+    if (typeof size === 'string' && size.trim().length > 0) {
+      values.push(size.trim())
+    }
+  }
+  return values
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -97,7 +123,7 @@ export async function GET(request: Request) {
       orderIds.length
         ? adminClient
             .from('orders')
-            .select('id, amount_total, currency, status')
+            .select('id, amount_total, currency, status, email, provider, provider_order_id, created_at, invoice_url')
             .in('id', orderIds)
         : Promise.resolve({ data: [] as any[], error: null }),
       profileIds.length
@@ -139,6 +165,11 @@ export async function GET(request: Request) {
       })
     }
     const orderMap = new Map<string, any>()
+    const orderRegistrationIdsMap = new Map<string, string[]>()
+    const registrationOrderMap = new Map<string, string>()
+    const orderPromoIdsMap = new Map<string, Set<string>>()
+    const orderPromotionalCodesMap = new Map<string, any[]>()
+    const orderUpsellItemsMap = new Map<string, any[]>()
     const profileMap = new Map<string, { id: string; full_name: string | null }>()
     for (const profile of profilesResult.data ?? []) {
       profileMap.set(profile.id, {
@@ -150,8 +181,97 @@ export async function GET(request: Request) {
     if (orderIds.length > 0) {
       const { data: orderRegistrationRows, error: orderRegistrationRowsError } = await adminClient
         .from('registrations')
-        .select('order_id')
+        .select('id, order_id, promotional_code_id')
         .in('order_id', orderIds)
+
+      if (orderRegistrationRows) {
+        for (const row of orderRegistrationRows as any[]) {
+          const registrationId = row.id as string | null
+          const orderId = row.order_id as string | null
+          const promotionalCodeId = row.promotional_code_id as string | null
+          if (!registrationId || !orderId) continue
+
+          registrationOrderMap.set(registrationId, orderId)
+
+          if (!orderRegistrationIdsMap.has(orderId)) {
+            orderRegistrationIdsMap.set(orderId, [])
+          }
+          orderRegistrationIdsMap.get(orderId)!.push(registrationId)
+
+          if (promotionalCodeId) {
+            if (!orderPromoIdsMap.has(orderId)) {
+              orderPromoIdsMap.set(orderId, new Set())
+            }
+            orderPromoIdsMap.get(orderId)!.add(promotionalCodeId)
+          }
+        }
+      }
+
+      const promoIds = Array.from(
+        new Set(
+          Array.from(orderPromoIdsMap.values())
+            .flatMap((set) => Array.from(set)),
+        ),
+      )
+
+      const [promoRowsResult, upsellRowsResult] = await Promise.all([
+        promoIds.length
+          ? adminClient
+              .from('promotional_codes')
+              .select('id, code, name, discount_percent, discount_amount, currency, is_active')
+              .in('id', promoIds)
+          : Promise.resolve({ data: [] as any[], error: null }),
+        registrationOrderMap.size
+          ? adminClient
+              .from('registration_upsells')
+              .select('registration_id, name, price_cents, quantity, currency, meta')
+              .in('registration_id', Array.from(registrationOrderMap.keys()))
+          : Promise.resolve({ data: [] as any[], error: null }),
+      ])
+
+      if (promoRowsResult.error) {
+        console.error('[admin registrations] promotional codes fetch error', promoRowsResult.error)
+      }
+      if (upsellRowsResult.error && (upsellRowsResult.error as any)?.code !== 'PGRST205') {
+        console.error('[admin registrations] registration upsells fetch error', upsellRowsResult.error)
+      }
+
+      const promoMap = new Map<string, any>()
+      for (const promo of promoRowsResult.data ?? []) {
+        promoMap.set(promo.id, {
+          id: promo.id,
+          code: promo.code ?? null,
+          name: promo.name ?? null,
+          discount_percent: promo.discount_percent ?? null,
+          discount_amount: promo.discount_amount ?? null,
+          currency: promo.currency ?? null,
+          is_active: promo.is_active ?? null,
+        })
+      }
+
+      for (const [orderId, promoIdSet] of orderPromoIdsMap.entries()) {
+        const promoCodes = Array.from(promoIdSet)
+          .map((promoId) => promoMap.get(promoId))
+          .filter(Boolean)
+        orderPromotionalCodesMap.set(orderId, promoCodes)
+      }
+
+      for (const upsellRow of upsellRowsResult.data ?? []) {
+        const registrationId = upsellRow.registration_id as string | null
+        if (!registrationId) continue
+        const orderId = registrationOrderMap.get(registrationId)
+        if (!orderId) continue
+        if (!orderUpsellItemsMap.has(orderId)) orderUpsellItemsMap.set(orderId, [])
+
+        orderUpsellItemsMap.get(orderId)!.push({
+          registration_id: registrationId,
+          name: upsellRow.name ?? null,
+          price_cents: upsellRow.price_cents ?? null,
+          quantity: upsellRow.quantity ?? null,
+          currency: upsellRow.currency ?? null,
+          meta: upsellRow.meta ?? null,
+        })
+      }
 
       const summaries = buildOrderSummaries({
         orders: (ordersResult.data ?? []).map((order) => ({
@@ -167,8 +287,23 @@ export async function GET(request: Request) {
         console.error('[admin registrations] order registrations count error', orderRegistrationRowsError)
       }
 
+      const ordersDataById = new Map<string, any>()
+      for (const order of ordersResult.data ?? []) {
+        ordersDataById.set(order.id, order)
+      }
+
       for (const [orderId, summary] of summaries.entries()) {
-        orderMap.set(orderId, summary)
+        const raw = ordersDataById.get(orderId)
+        orderMap.set(orderId, {
+          ...summary,
+          email: raw?.email ?? null,
+          provider: raw?.provider ?? null,
+          provider_order_id: raw?.provider_order_id ?? null,
+          created_at: raw?.created_at ?? null,
+          invoice_url: raw?.invoice_url ?? null,
+          promotional_codes: orderPromotionalCodesMap.get(orderId) ?? [],
+          upsell_items: orderUpsellItemsMap.get(orderId) ?? [],
+        })
       }
     }
 
@@ -318,6 +453,11 @@ export async function GET(request: Request) {
                     orderMap.get(orderRecord.id ?? '')?.registrations_count ?? null,
                   currency: orderRecord.currency ?? null,
                   status: orderRecord.status ?? null,
+                  email: orderMap.get(orderRecord.id ?? '')?.email ?? null,
+                  provider: orderMap.get(orderRecord.id ?? '')?.provider ?? null,
+                  provider_order_id: orderMap.get(orderRecord.id ?? '')?.provider_order_id ?? null,
+                  created_at: orderMap.get(orderRecord.id ?? '')?.created_at ?? null,
+                  invoice_url: orderMap.get(orderRecord.id ?? '')?.invoice_url ?? null,
                 }
               : null,
           })
@@ -327,6 +467,21 @@ export async function GET(request: Request) {
 
     const enrichedRows = rows.map((row: any) => {
       const meta = documentMetaMap.get(row.id) || {}
+      const orderId = row.order_id ?? meta.order?.id ?? null
+      const orderDetails = orderId ? (orderMap.get(orderId) ?? {}) : {}
+      const promotionalCodes = Array.isArray(orderDetails.promotional_codes)
+        ? orderDetails.promotional_codes
+        : []
+      const upsellItems = Array.isArray(orderDetails.upsell_items)
+        ? orderDetails.upsell_items
+        : []
+      const tshirtItems = upsellItems.filter((item: any) => isTshirtUpsell(item))
+      const tshirtQuantity = tshirtItems.reduce(
+        (acc: number, item: any) => acc + Math.max(0, Number(item.quantity || 0)),
+        0,
+      )
+      const tshirtSizes = extractTshirtSizes(tshirtItems)
+
       return {
         ...row,
         event:
@@ -344,6 +499,11 @@ export async function GET(request: Request) {
           row.order ??
           orderMap.get(row.order_id ?? '') ??
           null,
+        promotional_codes: promotionalCodes,
+        upsell_items: upsellItems,
+        has_tshirt: tshirtQuantity > 0,
+        tshirt_quantity: tshirtQuantity,
+        tshirt_sizes: tshirtSizes,
         participant_profile:
           row.user_id
             ? profileMap.get(row.user_id) ?? null

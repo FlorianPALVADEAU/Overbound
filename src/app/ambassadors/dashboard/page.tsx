@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useAmbassadorDashboard } from '@/app/api/ambassadors/dashboard/dashboardQueries'
 import { AmbassadorDashboard } from '@/components/ambassadors/AmbassadorDashboard'
@@ -10,14 +11,18 @@ import { Button } from '@/components/ui/button'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 
 export default function AmbassadorDashboardPage() {
+  const searchParams = useSearchParams()
+  const viewAs = searchParams.get('as')
   const { data: session, isLoading } = useSession()
   const role = session?.profile?.role ?? null
-  const canAccessAmbassadorDashboard = hasAmbassadorAccess({
+  const isAdmin = role === 'admin'
+  const canAccessAmbassadorDashboard = isAdmin || hasAmbassadorAccess({
     role,
     email: session?.user?.email ?? null,
   })
   const { data, isLoading: dashboardLoading, error, refetch } = useAmbassadorDashboard({
     enabled: Boolean(session?.user && canAccessAmbassadorDashboard),
+    viewAs: isAdmin && viewAs ? viewAs : null,
   })
 
   if (isLoading) {
@@ -73,13 +78,25 @@ export default function AmbassadorDashboardPage() {
   }
 
   return (
-    <AmbassadorDashboard
-      fullName={session.profile?.full_name ?? undefined}
-      email={session.user?.email ?? undefined}
-      data={data}
-      onRewardClaimed={() => {
-        void refetch()
-      }}
-    />
+    <>
+      {isAdmin && viewAs ? (
+        <div className="sticky top-0 z-50 flex items-center justify-between bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950">
+          <span>Vue admin — dashboard de {data.code ?? viewAs}</span>
+          <Link href="/ambassadors/dashboard">
+            <Button size="sm" variant="outline" className="h-7 text-xs">
+              Revenir à ma vue
+            </Button>
+          </Link>
+        </div>
+      ) : null}
+      <AmbassadorDashboard
+        fullName={isAdmin && viewAs ? undefined : (session.profile?.full_name ?? undefined)}
+        email={isAdmin && viewAs ? undefined : (session.user?.email ?? undefined)}
+        data={data}
+        onRewardClaimed={() => {
+          void refetch()
+        }}
+      />
+    </>
   )
 }
