@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { FileText, Ticket as TicketIcon, Users } from 'lucide-react'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { calculateCurrentPrice } from '@/types/EventPriceTier'
@@ -35,11 +34,7 @@ export default function TicketCard({
 
   const currentRegistrations = ticket.current_registrations ?? 0
   const maxParticipants = ticket.max_participants ?? 0
-  const remainingSpots = Math.max(maxParticipants - currentRegistrations, 0)
   const isSoldOut = maxParticipants > 0 && currentRegistrations >= maxParticipants
-  const rawPercentage =
-    maxParticipants > 0 ? Math.min(Math.max((currentRegistrations / maxParticipants) * 100, 0), 100) : 0
-  const progressPercentage = maxParticipants > 0 ? Math.max(rawPercentage, 4) : 0
 
   return (
     <Card
@@ -106,20 +101,9 @@ export default function TicketCard({
           />
         </div>
       </CardHeader>
-      {maxParticipants > 0 && (
+      {isSoldOut && (
         <CardContent className="pt-0 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              {isSoldOut
-                ? 'Complet !'
-                : 'Places limitées !'}
-            </div>
-            <Progress
-              value={progressPercentage}
-              className={`h-3 ${isSoldOut && 'bg-destructive/20'}`}
-              indicatorClassName={isSoldOut ? 'bg-destructive' : ''}
-            />
-          </div>
+          <p className="text-xs font-medium text-destructive">Complet — plus aucune place disponible.</p>
         </CardContent>
       )}
     </Card>

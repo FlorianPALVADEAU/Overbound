@@ -96,6 +96,12 @@ export default function ConfirmationStep({
                   autorisation parentale, etc.).
                 </p>
                 <p>
+                  5bis. <span className="font-semibold">Je certifie être majeur(e) (18 ans révolus).</span>{' '}
+                  La participation à cette édition est strictement réservée aux personnes majeures. Les
+                  inscriptions de mineurs ne seront pas acceptées. La prochaine édition Overbound
+                  sera ouverte aux participants mineurs accompagnés d&apos;un responsable légal.
+                </p>
+                <p>
                   6. J&apos;autorise l&apos;administration des premiers secours et de tout traitement médical
                   d&apos;urgence jugé nécessaire, et j&apos;accepte d&apos;en assumer les conséquences et coûts.
                 </p>

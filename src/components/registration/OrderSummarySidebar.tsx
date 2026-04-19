@@ -169,7 +169,11 @@ export default function OrderSummarySidebar({
           </div>
           {summaryPricing.discountAmount > 0 ? (
             <div className="flex items-center justify-between text-sm text-emerald-600">
-              <span>Réduction</span>
+              <span className="font-mono font-medium">
+                {appliedPromos.length > 0
+                  ? appliedPromos.map((p) => p.code).join(' + ')
+                  : 'Réduction'}
+              </span>
               <span>- {formatPrice(summaryPricing.discountAmount, summaryPricing.currency)}</span>
             </div>
           ) : null}
