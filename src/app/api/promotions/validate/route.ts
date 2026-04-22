@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
 const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
+const WELCOME_STACKABLE_CODE = 'WELCOME05'
 
 const hasAmbassadorLink = (value: unknown) => {
   if (Array.isArray(value)) return value.length > 0
   return Boolean(value && typeof value === 'object')
 }
+
+const isWelcomeStackableCode = (code: string | null | undefined) =>
+  (code || '').trim().toUpperCase() === WELCOME_STACKABLE_CODE
 
 export async function POST(request: NextRequest) {
   try {
@@ -130,12 +134,14 @@ export async function POST(request: NextRequest) {
 
       let ambassadorCount = 0
       let regularCount = 0
+      const regularCodes: string[] = []
 
       for (const existingPromo of existingPromoRows || []) {
         if (hasAmbassadorLink((existingPromo as { ambassadors?: unknown }).ambassadors)) {
           ambassadorCount += 1
         } else {
           regularCount += 1
+          regularCodes.push(String((existingPromo as { code?: string }).code || '').trim().toUpperCase())
         }
       }
 
@@ -147,6 +153,22 @@ export async function POST(request: NextRequest) {
         )
       }
       if (!isIncomingAmbassador && regularCount >= 1) {
+        const regularCodesWithIncoming = [...regularCodes, normalizedCode]
+        const welcomeExceptionApplies = regularCodesWithIncoming.some((code) => isWelcomeStackableCode(code))
+        if (welcomeExceptionApplies) {
+          // Allow stacking WELCOME05 with one other standard promo code.
+          return NextResponse.json({
+            promotionalCode: {
+              id: promotionalCode.id,
+              code: promotionalCode.code,
+              description: promotionalCode.description,
+              discount_percent: promotionalCode.discount_percent,
+              discount_amount: promotionalCode.discount_amount,
+              currency: promotionalCode.currency,
+              is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
+            },
+          })
+        }
         return NextResponse.json(
           { error: 'Un seul code promo standard peut être appliqué par commande.' },
           { status: 409 },
