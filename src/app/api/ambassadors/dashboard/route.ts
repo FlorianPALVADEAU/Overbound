@@ -5,6 +5,8 @@ import {
   getNextReward,
   resolvePaymentStatus,
   resolveRaceFormat,
+  getExtraTicketsEarned,
+  EXTRA_TICKET_BASE_LEVEL,
 } from '@/lib/ambassadors/program'
 import {
   resolveRewardStatus,
@@ -136,6 +138,27 @@ export async function GET(request: Request) {
 
     if (pointsError) {
       console.error('[ambassador dashboard] points error', pointsError)
+    }
+
+    await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: ambassadorId })
+
+    const pointsForExtraTickets = (pointsData?.total_points as number | null) ?? 0
+    const extraTicketsEarned = getExtraTicketsEarned(pointsForExtraTickets)
+    if (extraTicketsEarned > 0) {
+      const now = new Date().toISOString()
+      await admin
+        .from('ambassador_rewards')
+        .upsert(
+          Array.from({ length: extraTicketsEarned }, (_, i) => ({
+            ambassador_id: ambassadorId,
+            reward_level: EXTRA_TICKET_BASE_LEVEL + i,
+            reward_name: 'Dossard offert',
+            status: 'earned',
+            earned_at: now,
+            updated_at: now,
+          })),
+          { onConflict: 'ambassador_id,reward_level', ignoreDuplicates: true },
+        )
     }
 
     const { data: rewardsData, error: rewardsError } = await admin

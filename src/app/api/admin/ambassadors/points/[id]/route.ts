@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { getExtraTicketsEarned, EXTRA_TICKET_BASE_LEVEL } from '@/lib/ambassadors/program'
 
 export const runtime = 'nodejs'
 
@@ -67,6 +68,24 @@ async function handlePatch(
     }
 
     await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: id })
+
+    const extraTicketsEarned = getExtraTicketsEarned(payload.total_points)
+    if (extraTicketsEarned > 0) {
+      const now = new Date().toISOString()
+      await admin
+        .from('ambassador_rewards')
+        .upsert(
+          Array.from({ length: extraTicketsEarned }, (_, i) => ({
+            ambassador_id: id,
+            reward_level: EXTRA_TICKET_BASE_LEVEL + i,
+            reward_name: 'Dossard offert',
+            status: 'earned',
+            earned_at: now,
+            updated_at: now,
+          })),
+          { onConflict: 'ambassador_id,reward_level', ignoreDuplicates: true },
+        )
+    }
 
     return NextResponse.json({ points: updated })
   } catch (error) {
