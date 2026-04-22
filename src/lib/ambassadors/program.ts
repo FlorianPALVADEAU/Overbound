@@ -48,3 +48,17 @@ export const getCurrentRewardLevel = (totalPoints: number) => {
     0,
   )
 }
+
+export const EXTRA_TICKET_BASE_LEVEL = 11
+export const EXTRA_TICKET_BASE_POINTS = 30
+export const EXTRA_TICKET_INTERVAL = 3
+
+export const getExtraTicketsEarned = (totalPoints: number): number => {
+  if (totalPoints <= EXTRA_TICKET_BASE_POINTS) return 0
+  return Math.floor((totalPoints - EXTRA_TICKET_BASE_POINTS) / EXTRA_TICKET_INTERVAL)
+}
+
+export const getNextExtraTicketPointsRequired = (totalPoints: number): number => {
+  const earned = getExtraTicketsEarned(totalPoints)
+  return EXTRA_TICKET_BASE_POINTS + (earned + 1) * EXTRA_TICKET_INTERVAL
+}
