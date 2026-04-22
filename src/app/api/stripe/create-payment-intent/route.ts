@@ -20,6 +20,10 @@ export const runtime = 'nodejs'
 
 const MAX_PROMO_CODES = 2
 const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
+const WELCOME_STACKABLE_CODE = 'WELCOME05'
+
+const isWelcomeStackableCode = (code: string | null | undefined) =>
+  (code || '').trim().toUpperCase() === WELCOME_STACKABLE_CODE
 
 const normalizePromoCode = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -213,7 +217,7 @@ export async function POST(request: NextRequest) {
       is_ambassador: boolean
     }> = []
     let validatedAmbassadorReferralCode: string | null = null
-    let regularPromoCount = 0
+    const regularPromoCodes: string[] = []
     let ambassadorPromoCount = 0
 
     for (const promoCode of promoCodes) {
@@ -223,24 +227,22 @@ export async function POST(request: NextRequest) {
       }
 
       const isAmbassadorCode = Array.isArray(promo.ambassadors) && promo.ambassadors.length > 0
+      const normalizedPromoCode = promo.code.trim().toUpperCase()
       if (isAmbassadorCode) {
         ambassadorPromoCount += 1
       } else {
-        regularPromoCount += 1
-      }
-
-      if (regularPromoCount > 1) {
-        return respondJson({ error: 'Un seul code promo standard peut être appliqué par commande.' }, 409)
+        regularPromoCodes.push(normalizedPromoCode)
       }
       if (ambassadorPromoCount > 1) {
         return respondJson({ error: 'Un seul code ambassadeur peut être appliqué par commande.' }, 409)
+      }
+      if (regularPromoCodes.length > 1 && !regularPromoCodes.some((code) => isWelcomeStackableCode(code))) {
+        return respondJson({ error: 'Un seul code promo standard peut être appliqué par commande.' }, 409)
       }
 
       if (isAmbassadorCode) {
         validatedAmbassadorReferralCode = promo.code
       }
-
-      const normalizedPromoCode = promo.code.trim().toUpperCase()
 
       const calculatePromoForSubtotal = (subtotal: number) => {
         if (promo.discount_percent && promo.discount_percent > 0) {
