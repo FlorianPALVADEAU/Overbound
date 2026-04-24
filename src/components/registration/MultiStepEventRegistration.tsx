@@ -38,6 +38,7 @@ export default function MultiStepEventRegistration({
 }: MultiStepEventRegistrationProps) {
   const router = useRouter()
   const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
+  const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
   const addToCartTrackedRef = useRef(false)
 
   // Local UI state
@@ -320,6 +321,67 @@ export default function MultiStepEventRegistration({
       if (!localClientSecret || !localPaymentIntentId) {
         const paymentData = await ensurePaymentIntent()
         if (!paymentData) return
+
+        // Free order: 100% discount, bypass Stripe entirely
+        if ('freeOrder' in paymentData && paymentData.freeOrder) {
+          const freePayload = {
+            paymentIntentId: paymentData.freeOrderId,
+            eventId: event.id,
+            userId: user.id,
+            ticketSelections: Object.entries(ticketSelections).map(([ticketId, quantity]) => ({
+              ticketId,
+              quantity,
+            })),
+            participants: participants.map((p) => ({
+              ticketId: p.ticketId,
+              firstName: p.firstName,
+              lastName: p.lastName,
+              email: p.email,
+              birthDate: p.birthDate,
+              emergencyContactName: p.emergencyContactName,
+              emergencyContactPhone: p.emergencyContactPhone,
+              medicalInfo: p.medicalInfo,
+              licenseNumber: p.licenseNumber,
+              distanceIdealKm: p.distanceIdealKm,
+              distanceMinKm: p.distanceMinKm,
+              difficultyLevel: p.difficultyLevel || null,
+            })),
+            upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+              upsellId,
+              quantity: config.quantity,
+              meta: config.meta || {},
+            })),
+            promoCodes: appliedPromos.map((promo) => promo.code),
+            ambassadorReferralCode: ambassadorReferralCode ?? null,
+            signatureImage,
+            signatureMetadata: {
+              regulationVersion: REGULATION_VERSION,
+              signedAt: new Date().toISOString(),
+            },
+            disclaimer: { read: disclaimerRead, accepted: disclaimerAccepted },
+            freeOrderMetadata: 'freeOrderMetadata' in paymentData ? paymentData.freeOrderMetadata : {},
+          }
+
+          const freeResponse = await fetch('/api/registrations/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(freePayload),
+          })
+
+          if (!freeResponse.ok) {
+            const errorBody = await freeResponse.json().catch(() => ({}))
+            setSubmissionMessage({
+              type: 'error',
+              text: errorBody.error || 'Erreur lors de la finalisation de l\'inscription.',
+            })
+            return
+          }
+
+          clearRegistrationDraft()
+          router.replace('/account/tickets')
+          return
+        }
+
         localClientSecret = paymentData.clientSecret
         localPaymentIntentId = paymentData.paymentIntentId
         localPricing = paymentData.pricing

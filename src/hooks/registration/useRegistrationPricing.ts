@@ -8,7 +8,8 @@ import type {
 } from '@/components/registration/types'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { getCurrentPriceTier, calculateCurrentPrice } from '@/types/EventPriceTier'
-import { calculatePromoDiscount, calculatePromoDiscounts } from '@/lib/registration'
+import { calculatePromoDiscount, calculatePromoDiscounts, isOpenTicketPromoCode } from '@/lib/registration'
+import { isOpenFormatTicket } from '@/lib/openSas'
 
 export function useRegistrationPricing(
   tickets: EventTicket[],
@@ -52,6 +53,22 @@ export function useRegistrationPricing(
     [baseTicketSubtotal, ticketSubtotal],
   )
 
+  // Price of the first Open-format ticket (with tier applied), used for OPENTICKET promo codes
+  const firstOpenTicketPrice = useMemo(() => {
+    const hasOpenTicketPromo = appliedPromos.some((p) => isOpenTicketPromoCode(p.code))
+    if (!hasOpenTicketPromo) return 0
+    const firstOpenTicketId = selectedTicketSlots.find((ticketId) => {
+      const ticket = ticketMap[ticketId]
+      return ticket && isOpenFormatTicket(ticket.name)
+    })
+    if (!firstOpenTicketId) return 0
+    const ticket = ticketMap[firstOpenTicketId]
+    if (!ticket?.final_price_cents) return 0
+    return activeTier
+      ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
+      : ticket.final_price_cents
+  }, [appliedPromos, selectedTicketSlots, ticketMap, activeTier])
+
   const upsellSubtotal = useMemo(() => {
     return Object.entries(selectedUpsells).reduce((acc, [upsellId, config]) => {
       const upsell = upsells.find((u) => u.id === upsellId)
@@ -65,8 +82,9 @@ export function useRegistrationPricing(
       calculatePromoDiscounts(appliedPromos, ticketSubtotal, {
         tierDiscountAmount,
         baseTicketSubtotal,
+        firstOpenTicketPrice,
       }),
-    [appliedPromos, baseTicketSubtotal, tierDiscountAmount, ticketSubtotal],
+    [appliedPromos, baseTicketSubtotal, firstOpenTicketPrice, tierDiscountAmount, ticketSubtotal],
   )
 
   const isTierDiscountOverriddenByPromo = useMemo(() => {
@@ -78,10 +96,11 @@ export function useRegistrationPricing(
     const juoffExtraDiscount = calculatePromoDiscount(juoffPromo, ticketSubtotal, {
       tierDiscountAmount,
       baseTicketSubtotal,
+      firstOpenTicketPrice,
     })
 
     return juoffExtraDiscount > 0
-  }, [appliedPromos, baseTicketSubtotal, tierDiscountAmount, ticketSubtotal])
+  }, [appliedPromos, baseTicketSubtotal, firstOpenTicketPrice, tierDiscountAmount, ticketSubtotal])
 
   const totalDue = useMemo(
     () => Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0),

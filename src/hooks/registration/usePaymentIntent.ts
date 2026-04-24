@@ -48,14 +48,6 @@ export function usePaymentIntent(
       return null
     }
 
-    if (totalDue <= 0) {
-      setSubmissionMessage({
-        type: 'error',
-        text: 'Le montant total doit être supérieur à zéro.',
-      })
-      return null
-    }
-
     setIsCreatingPaymentIntent(true)
     setSubmissionMessage(null)
 
@@ -95,14 +87,32 @@ export function usePaymentIntent(
         throw new Error(error.error || 'Impossible de préparer le paiement')
       }
 
-      const data = (await response.json()) as {
+      const data = await response.json()
+
+      // Free order: 100% discount, no Stripe payment needed
+      if (data.freeOrder) {
+        setPaymentIntentId(data.freeOrderId)
+        setPricing(data.pricing)
+        return {
+          freeOrder: true as const,
+          freeOrderId: data.freeOrderId as string,
+          clientSecret: null,
+          paymentIntentId: data.freeOrderId as string,
+          pricing: data.pricing as PricingSummary,
+          freeOrderMetadata: data.freeOrderMetadata as Record<string, string>,
+          appliedPromo: data.appliedPromo,
+          appliedPromos: data.appliedPromos,
+        }
+      }
+
+      const typedData = data as {
         clientSecret: string
         paymentIntentId: string
         pricing: PricingSummary
       }
 
       if (typeof window !== 'undefined') {
-        const eventId = `initiate_checkout_${data.paymentIntentId}`
+        const eventId = `initiate_checkout_${typedData.paymentIntentId}`
         const analyticsWindow = window as Window & {
           dataLayer?: Array<Record<string, unknown>>
           fbq?: (...args: unknown[]) => void
@@ -112,8 +122,8 @@ export function usePaymentIntent(
           event_id: eventId,
           event_slug: event.slug,
           event_key: event.id,
-          value: Number((data.pricing.totalDue / 100).toFixed(2)),
-          currency: data.pricing.currency.toUpperCase(),
+          value: Number((typedData.pricing.totalDue / 100).toFixed(2)),
+          currency: typedData.pricing.currency.toUpperCase(),
         })
         analyticsWindow.fbq?.(
           'track',
@@ -125,17 +135,17 @@ export function usePaymentIntent(
               .filter(([, quantity]) => (quantity || 0) > 0)
               .map(([ticketId]) => ticketId),
             content_type: 'product',
-            value: Number((data.pricing.totalDue / 100).toFixed(2)),
-            currency: data.pricing.currency.toUpperCase(),
+            value: Number((typedData.pricing.totalDue / 100).toFixed(2)),
+            currency: typedData.pricing.currency.toUpperCase(),
           },
           { eventID: eventId },
         )
       }
 
-      setClientSecret(data.clientSecret)
-      setPaymentIntentId(data.paymentIntentId)
-      setPricing(data.pricing)
-      return data
+      setClientSecret(typedData.clientSecret)
+      setPaymentIntentId(typedData.paymentIntentId)
+      setPricing(typedData.pricing)
+      return typedData
     } catch (error) {
       setSubmissionMessage({
         type: 'error',
