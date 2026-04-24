@@ -15,12 +15,16 @@ import {
 import { captureException } from '@/lib/sentry'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
+import { isOpenFormatTicket } from '@/lib/openSas'
 
 export const runtime = 'nodejs'
 
 const MAX_PROMO_CODES = 2
 const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
 const WELCOME_STACKABLE_CODE = 'WELCOME05'
+const OPEN_TICKET_CODE_SUFFIX = 'OPENTICKET'
+
+const isOpenTicketCode = (code: string) => code.toUpperCase().endsWith(OPEN_TICKET_CODE_SUFFIX)
 
 const isWelcomeStackableCode = (code: string | null | undefined) =>
   (code || '').trim().toUpperCase() === WELCOME_STACKABLE_CODE
@@ -170,6 +174,7 @@ export async function POST(request: NextRequest) {
 
     let ticketSubtotal = 0
     let baseTicketSubtotal = 0
+    const openTicketUnitPrices: number[] = []
 
     for (const [index, entry] of participantEntries.entries()) {
       const ticket = ticketById.get(entry.ticketId)
@@ -195,6 +200,10 @@ export async function POST(request: NextRequest) {
       const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
       const unitPrice = Math.round(finalPrice * discountMultiplier)
       ticketSubtotal += unitPrice
+
+      if (isOpenFormatTicket(ticket.name)) {
+        openTicketUnitPrices.push(unitPrice)
+      }
     }
 
     const tierDiscountAmount = Math.max(0, baseTicketSubtotal - ticketSubtotal)
@@ -254,6 +263,30 @@ export async function POST(request: NextRequest) {
         return 0
       }
 
+      if (isOpenTicketCode(normalizedPromoCode)) {
+        if (openTicketUnitPrices.length === 0) {
+          return respondJson(
+            { error: `Le code ${promoCode} est uniquement valable pour les billets Open.` },
+            409,
+          )
+        }
+        // Discount applies to a single Open ticket only
+        const singleOpenTicketPrice = openTicketUnitPrices[0]
+        const promoDiscountAmount = calculatePromoForSubtotal(singleOpenTicketPrice)
+        discountAmount += Math.max(0, promoDiscountAmount)
+        if (promoDiscountAmount > 0) {
+          appliedPromos.push({
+            id: promo.id,
+            code: promo.code,
+            discount_percent: promo.discount_percent,
+            discount_amount: promo.discount_amount,
+            currency: promo.currency,
+            is_ambassador: isAmbassadorCode,
+          })
+        }
+        continue
+      }
+
       let promoDiscountAmount = calculatePromoForSubtotal(ticketSubtotal)
 
       if (NON_CUMULABLE_WITH_TIER_CODES.has(normalizedPromoCode)) {
@@ -281,10 +314,6 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0)
 
-    if (totalAmount <= 0) {
-      return respondJson({ error: 'Montant total invalide.' }, 422)
-    }
-
     const currency = ticketCurrencyMap.values().next().value || 'eur'
 
     const tierAllocationsPayload =
@@ -294,6 +323,31 @@ export async function POST(request: NextRequest) {
 
     const primaryPromo = appliedPromos.find((promo) => !promo.is_ambassador) ?? appliedPromos[0] ?? null
     const promoCodesMetadata = appliedPromos.map((promo) => promo.code).join(',')
+
+    if (totalAmount === 0) {
+      const freeOrderId = `free_${crypto.randomUUID()}`
+      return respondJson({
+        freeOrder: true,
+        freeOrderId,
+        pricing: {
+          ticketTotal: ticketSubtotal,
+          upsellTotal: upsellSubtotal,
+          discountAmount,
+          totalDue: 0,
+          currency,
+        },
+        appliedPromo: primaryPromo,
+        appliedPromos,
+        freeOrderMetadata: {
+          currency,
+          discount_applied: discountAmount.toString(),
+          tier_allocations: JSON.stringify(tierAllocationsPayload),
+          ambassador_referral_code: validatedAmbassadorReferralCode || '',
+          promo_codes: promoCodesMetadata,
+          promo_code: primaryPromo?.code || '',
+        },
+      })
+    }
 
     const paymentIntent = await stripeClient.paymentIntents.create({
       amount: totalAmount,

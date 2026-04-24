@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       signatureImage = null,
       signatureMetadata = {},
       disclaimer = { read: false, accepted: false },
+      freeOrderMetadata = null,
     } = await request.json() as {
       paymentIntentId: string
       eventId: string
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
       signatureImage: string | null
       signatureMetadata: Record<string, any>
       disclaimer: { read: boolean; accepted: boolean }
+      freeOrderMetadata?: Record<string, string> | null
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
@@ -116,21 +118,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    // Verify PaymentIntent is successful
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
-    
-    if (paymentIntent.status !== 'succeeded') {
-      if (paymentIntent.status === 'processing' || paymentIntent.status === 'requires_capture') {
-        return NextResponse.json(
-          {
-            pending: true,
-            payment_intent_status: paymentIntent.status,
-            message: 'Paiement en cours de confirmation',
-          },
-          { status: 202 },
-        )
+    const isFreeOrder = typeof paymentIntentId === 'string' && paymentIntentId.startsWith('free_')
+
+    // Verify PaymentIntent is successful (or synthesize for free orders)
+    let paymentIntent: {
+      id: string
+      status: string
+      amount: number
+      currency: string
+      metadata: Record<string, string>
+      payment_method_types: string[]
+    }
+
+    if (isFreeOrder) {
+      const meta = freeOrderMetadata || {}
+      paymentIntent = {
+        id: paymentIntentId,
+        status: 'succeeded',
+        amount: 0,
+        currency: meta.currency || 'eur',
+        metadata: {
+          tier_allocations: meta.tier_allocations || '[]',
+          discount_applied: meta.discount_applied || '0',
+          promo_code: meta.promo_code || '',
+          promo_codes: meta.promo_codes || '',
+          ambassador_referral_code: meta.ambassador_referral_code || '',
+        },
+        payment_method_types: ['free'],
       }
-      return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 400 })
+    } else {
+      const stripeIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+      if (stripeIntent.status !== 'succeeded') {
+        if (stripeIntent.status === 'processing' || stripeIntent.status === 'requires_capture') {
+          return NextResponse.json(
+            {
+              pending: true,
+              payment_intent_status: stripeIntent.status,
+              message: 'Paiement en cours de confirmation',
+            },
+            { status: 202 },
+          )
+        }
+        return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 400 })
+      }
+      paymentIntent = {
+        id: stripeIntent.id,
+        status: stripeIntent.status,
+        amount: stripeIntent.amount,
+        currency: stripeIntent.currency,
+        metadata: (stripeIntent.metadata || {}) as Record<string, string>,
+        payment_method_types: stripeIntent.payment_method_types as string[],
+      }
     }
 
     // Check if registration already exists for this PaymentIntent
@@ -323,7 +361,7 @@ export async function POST(request: NextRequest) {
         status: 'paid',
         amount_total: paymentIntent.amount,
         currency: paymentIntent.currency,
-        provider: 'stripe',
+        provider: isFreeOrder ? 'free' : 'stripe',
         provider_order_id: paymentIntent.id,
       })
       .select()
@@ -875,6 +913,8 @@ const formatPaymentMethod = (method?: string | null) => {
       return 'PayPal'
     case 'link':
       return 'Link'
+    case 'free':
+      return 'Code promotionnel'
     default:
       return method ? method.toUpperCase() : 'Paiement'
   }

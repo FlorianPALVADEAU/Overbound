@@ -2,10 +2,15 @@ import type { AppliedPromo, EventUpsell } from '@/components/registration/types'
 import { DEFAULT_TSHIRT_SIZES } from '@/constants/registration'
 
 const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
+const OPEN_TICKET_CODE_SUFFIX = 'OPENTICKET'
+
+export const isOpenTicketPromoCode = (code?: string | null) =>
+  Boolean(code?.trim().toUpperCase().endsWith(OPEN_TICKET_CODE_SUFFIX))
 
 type PromoDiscountOptions = {
   tierDiscountAmount?: number
   baseTicketSubtotal?: number
+  firstOpenTicketPrice?: number
 }
 
 export const resolveUpsellSizes = (upsell: EventUpsell): string[] => {
@@ -92,6 +97,12 @@ export const calculatePromoDiscount = (
   }
 
   const normalizedCode = promo.code?.trim().toUpperCase()
+
+  if (normalizedCode && isOpenTicketPromoCode(normalizedCode)) {
+    const firstOpenTicketPrice = options?.firstOpenTicketPrice ?? 0
+    if (firstOpenTicketPrice <= 0) return 0
+    return calculateDiscountForSubtotal(firstOpenTicketPrice)
+  }
 
   if (normalizedCode && NON_CUMULABLE_WITH_TIER_CODES.has(normalizedCode)) {
     const tierDiscountAmount = Math.max(0, options?.tierDiscountAmount ?? 0)
