@@ -9,6 +9,7 @@ import * as QRCode from 'qrcode'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { captureException } from '@/lib/sentry'
 import {
+  OPEN_SAS_CONFIG,
   assignOpenWaveToRegistration,
   type OpenWaveAssignment,
   formatWaveStartTime,
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
       promoCode = null,
       promoCodes = [],
       ambassadorReferralCode = null,
+      groupId = null,
       signatureImage = null,
       signatureMetadata = {},
       disclaimer = { read: false, accepted: false },
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
       promoCode: string | null
       promoCodes?: string[]
       ambassadorReferralCode?: string | null
+      groupId?: string | null
       signatureImage: string | null
       signatureMetadata: Record<string, any>
       disclaimer: { read: boolean; accepted: boolean }
@@ -375,6 +378,41 @@ export async function POST(request: NextRequest) {
     const createdRegistrations: any[] = []
     let openGroupAnchor: OpenWaveAssignment | null = null
     let openGroupCount = 0
+    let groupAnchorPreSet = false
+
+    // If the user belongs to a group, pre-load the wave anchor for this event
+    if (groupId) {
+      const { data: groupRow } = await admin
+        .from('groups')
+        .select('id, anchor_event_id, anchor_wave_index, anchor_start_time')
+        .eq('id', groupId)
+        .maybeSingle()
+
+      if (
+        groupRow &&
+        groupRow.anchor_event_id === eventId &&
+        groupRow.anchor_wave_index !== null &&
+        groupRow.anchor_start_time !== null
+      ) {
+        const { count: existingInWave } = await admin
+          .from('registrations')
+          .select('id', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('wave_index', groupRow.anchor_wave_index)
+
+        openGroupAnchor = {
+          waveIndex: groupRow.anchor_wave_index as number,
+          startTime: groupRow.anchor_start_time as string,
+          waveCapacity: OPEN_SAS_CONFIG.waveCapacity,
+          wavePosition: (existingInWave ?? 0) + 1,
+          assignmentConstraintBreached: false,
+          preferredWindowStart: groupRow.anchor_start_time as string,
+          preferredWindowEnd: groupRow.anchor_start_time as string,
+          latestAllowedTime: groupRow.anchor_start_time as string,
+        }
+        groupAnchorPreSet = true
+      }
+    }
 
     for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
@@ -464,6 +502,18 @@ export async function POST(request: NextRequest) {
             if (assignment) {
               openGroupAnchor = assignment
               openGroupCount = 1
+              // Save wave anchor to group if this is the first group member for this event
+              if (groupId && !groupAnchorPreSet) {
+                await admin
+                  .from('groups')
+                  .update({
+                    anchor_event_id: eventId,
+                    anchor_wave_index: assignment.waveIndex,
+                    anchor_start_time: assignment.startTime,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', groupId)
+              }
               registration.start_time = assignment.startTime
               registration.wave_index = assignment.waveIndex
               registration.wave_capacity = assignment.waveCapacity
@@ -589,7 +639,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (openGroupAnchor && openGroupCount > 1) {
+    // When openGroupAnchor was pre-set from group (no RPC call), ALL participants are extra.
+    // When first participant called RPC, only subsequent ones (openGroupCount - 1) are extra.
+    const waveCountIncrement = groupAnchorPreSet ? openGroupCount : openGroupCount - 1
+    if (openGroupAnchor && waveCountIncrement > 0) {
       const { data: waveRow, error: waveFetchError } = await admin
         .from('event_waves')
         .select('id, assigned_count')
@@ -600,11 +653,10 @@ export async function POST(request: NextRequest) {
       if (waveFetchError) {
         console.error('Erreur récupération compteur SAS OPEN:', waveFetchError)
       } else if (waveRow?.id) {
-        const extraAssigned = openGroupCount - 1
         const { error: waveUpdateError } = await admin
           .from('event_waves')
           .update({
-            assigned_count: (waveRow.assigned_count ?? 0) + extraAssigned,
+            assigned_count: (waveRow.assigned_count ?? 0) + waveCountIncrement,
             updated_at: new Date().toISOString(),
           })
           .eq('id', waveRow.id)

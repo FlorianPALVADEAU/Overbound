@@ -19,6 +19,7 @@ interface DraftSyncConfig {
   selectedUpsells: SelectedUpsellState
   appliedPromos: AppliedPromo[]
   ambassadorReferralCode: string | null
+  groupId: string | null
   summaryPricing: PricingSummary
   clientSecret: string | null
   paymentIntentId: string | null
@@ -200,6 +201,7 @@ export function useRegistrationDraftSync(
       upsells: upsellsPayload,
       promoCodes: config.appliedPromos.map((promo) => promo.code),
       ambassadorReferralCode: config.ambassadorReferralCode ?? null,
+      groupId: config.groupId ?? null,
       summary: summaryPayload,
       signature: signaturePayload,
       disclaimer: {

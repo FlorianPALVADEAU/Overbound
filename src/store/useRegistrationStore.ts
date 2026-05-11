@@ -60,6 +60,7 @@ export type RegistrationDraft = {
   upsells: RegistrationUpsellSelection[]
   promoCodes: string[]
   ambassadorReferralCode: string | null
+  groupId: string | null
   summary: RegistrationSummary
   signature: RegistrationSignature
   disclaimer: RegistrationDisclaimer

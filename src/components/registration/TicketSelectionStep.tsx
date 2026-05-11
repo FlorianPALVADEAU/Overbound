@@ -1,5 +1,6 @@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle, UserX } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import type { EventTicket } from './types'
 import TicketCard from './TicketCard'
@@ -12,6 +13,7 @@ interface TicketSelectionStepProps {
   activeTier: EventPriceTier | null
   hasActiveDiscount: boolean
   availableSpots: number
+  groupBanner?: ReactNode
 }
 
 export default function TicketSelectionStep({
@@ -22,6 +24,7 @@ export default function TicketSelectionStep({
   activeTier,
   hasActiveDiscount,
   availableSpots,
+  groupBanner,
 }: TicketSelectionStepProps) {
   return (
     <div className="space-y-4">
@@ -33,6 +36,7 @@ export default function TicketSelectionStep({
           La prochaine édition sera ouverte aux mineurs accompagnés.
         </AlertDescription>
       </Alert>
+      {groupBanner}
 
       {tickets.map((ticket) => (
         <TicketCard

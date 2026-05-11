@@ -21,7 +21,8 @@ import {
   CreditCardIcon,
   MedalIcon,
   ChevronDownIcon,
-  MapPinIcon
+  MapPinIcon,
+  UsersIcon,
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -137,6 +138,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const userNavigation: NavigationItemType[] = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
+    { name: 'Mon groupe', href: '/account?tab=group', icon: UsersIcon },
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
     ...(hasDashboardAccess ? [
       { name: isVolunteer && !isAdmin ? 'Espace bénévole' : 'Administration', href: '/dashboard', icon: SettingsIcon },
