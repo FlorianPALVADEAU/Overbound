@@ -47,6 +47,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'promotions', label: 'Promotions', icon: Megaphone },
   { value: 'upsells', label: 'Upsells', icon: Package },
   { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal },
+  { value: 'groups', label: 'Groupes', icon: Users },
   { value: 'users', label: 'Utilisateurs', icon: UserCog },
   { value: 'members', label: 'Membres', icon: Users },
   { value: 'checkin', label: 'Check-in', icon: UserCheck },
@@ -84,6 +85,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     icon: Users,
     items: [
       { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal },
+      { value: 'groups', label: 'Groupes', icon: Users },
       { value: 'users', label: 'Utilisateurs', icon: UserCog },
       { value: 'members', label: 'Membres', icon: Users },
       { value: 'checkin', label: 'Check-in', icon: UserCheck },

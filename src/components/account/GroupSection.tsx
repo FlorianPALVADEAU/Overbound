@@ -278,8 +278,8 @@ export default function GroupSection({ currentUserId }: GroupSectionProps) {
 
         {/* Wave anchor info */}
         {group.anchor_wave_index && group.anchor_start_time && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 p-3 space-y-1">
-            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Vague de départ du groupe</p>
+          <div className="rounded-lg border border-blue-200 bg-blue-50/10 dark:bg-blue-950/30 dark:border-blue-800 p-3 space-y-1">
+            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Vague de départ du groupe pour les participants du format OPEN</p>
             <p className="text-sm font-semibold">
               Vague {group.anchor_wave_index} —{' '}
               {new Date(group.anchor_start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}

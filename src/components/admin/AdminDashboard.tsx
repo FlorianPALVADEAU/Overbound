@@ -24,6 +24,7 @@ import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlaygr
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
 import { UsersSection } from '@/components/admin/users/UsersSection'
 import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSection'
+import { GroupsSection } from '@/components/admin/groups/GroupsSection'
 import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 import { BarChart3, CreditCard, Database, Mail, NotebookPen, Sparkles } from 'lucide-react'
 
@@ -256,6 +257,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="users" className="space-y-6">
                 <UsersSection />
+              </TabsContent>
+
+              <TabsContent value="groups" className="space-y-6">
+                <GroupsSection />
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6">
