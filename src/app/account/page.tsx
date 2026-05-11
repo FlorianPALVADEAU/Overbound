@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -74,9 +75,11 @@ function UnauthorizedView() {
 }
 
 export default function AccountPage() {
+  const router = useRouter()
   const { data, isLoading, error, refetch } = useAccountRegistrations()
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [defaultTab, setDefaultTab] = useState('overview')
+  const isAuthError = Boolean(error?.message?.toLowerCase().includes('non authentifi'))
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -84,7 +87,17 @@ export default function AccountPage() {
     if (tab) setDefaultTab(tab)
   }, [])
 
+  useEffect(() => {
+    if (!isAuthError) return
+    const nextPath = `${window.location.pathname}${window.location.search || ''}`
+    router.replace(`/auth/login?next=${encodeURIComponent(nextPath)}`)
+  }, [isAuthError, router])
+
   if (isLoading) {
+    return <LoadingView />
+  }
+
+  if (isAuthError) {
     return <LoadingView />
   }
 
