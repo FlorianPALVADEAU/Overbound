@@ -75,6 +75,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           upsells: registrationDraft.upsells,
           promoCodes: registrationDraft.promoCodes || [],
           ambassadorReferralCode: registrationDraft.ambassadorReferralCode,
+          groupId: registrationDraft.groupId ?? null,
           signatureImage: registrationDraft.signature.imageDataUrl,
           signatureMetadata: {
             regulationVersion: registrationDraft.signature.regulationVersion,

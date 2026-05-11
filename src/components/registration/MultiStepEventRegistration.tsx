@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo, useRef, useState } from 'react'
+import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
@@ -26,6 +27,10 @@ import OptionsStep from './OptionsStep'
 import ConfirmationStep from './ConfirmationStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
 import ParticipantSummarySidebar from './ParticipantSummarySidebar'
+import GroupJoinInline from './GroupJoinInline'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Users } from 'lucide-react'
+import { formatWaveStartTime } from '@/lib/openSas'
 
 export default function MultiStepEventRegistration({
   event,
@@ -40,6 +45,7 @@ export default function MultiStepEventRegistration({
   const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
   const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
   const addToCartTrackedRef = useRef(false)
+  const { data: myGroup } = useMyGroup()
 
   // Local UI state
   const [disclaimerRead, setDisclaimerRead] = useState(false)
@@ -216,6 +222,7 @@ export default function MultiStepEventRegistration({
       selectedUpsells,
       appliedPromos,
       ambassadorReferralCode,
+      groupId: myGroup?.id ?? null,
       summaryPricing,
       clientSecret,
       paymentIntentId,
@@ -430,6 +437,7 @@ export default function MultiStepEventRegistration({
       })),
       promoCodes: appliedPromos.map((promo) => promo.code),
       ambassadorReferralCode: ambassadorReferralCode ?? null,
+      groupId: myGroup?.id ?? null,
       summary: localPricing ?? summaryPricing,
       signature: {
         imageDataUrl: signatureImage,
@@ -446,6 +454,29 @@ export default function MultiStepEventRegistration({
     router.push(`/events/${event.slug}/register/payment`)
   }
 
+  const groupBanner = !myGroup ? (
+    <GroupJoinInline />
+  ) : myGroup.anchor_event_id === event.id && myGroup.anchor_start_time ? (
+    <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
+      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <AlertDescription className="text-xs leading-relaxed">
+        <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
+        ta vague de départ est déjà fixée par ton groupe :{' '}
+        <span className="font-semibold">{formatWaveStartTime(myGroup.anchor_start_time)}</span>.
+        Tous les membres inscrits à cet événement partiront ensemble.
+      </AlertDescription>
+    </Alert>
+  ) : (
+    <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
+      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <AlertDescription className="text-xs leading-relaxed">
+        <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
+        tu es le premier membre à t&apos;inscrire à cet événement.
+        Ta vague de départ sera automatiquement réservée pour tout le groupe.
+      </AlertDescription>
+    </Alert>
+  )
+
   // Step content mapping
   const stepContent: Record<StepKey, React.ReactNode> = {
     tickets: (
@@ -457,6 +488,7 @@ export default function MultiStepEventRegistration({
         activeTier={activeTier}
         hasActiveDiscount={hasActiveDiscount}
         availableSpots={availableSpots}
+        groupBanner={groupBanner}
       />
     ),
     participants: (
@@ -465,6 +497,7 @@ export default function MultiStepEventRegistration({
         ticketMap={ticketMap}
         onFieldChange={handleParticipantChange}
         showErrors={showValidationErrors}
+        groupBanner={groupBanner}
       />
     ),
     options: (
