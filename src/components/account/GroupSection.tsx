@@ -16,8 +16,17 @@ import {
   useJoinGroup,
   useDelegateGroup,
   useLeaveGroup,
+  useGroupInvitePreview,
 } from '@/app/api/groups/groupQueries'
 import type { GroupMember } from '@/types/Group'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface GroupSectionProps {
   currentUserId: string
@@ -43,10 +52,25 @@ export default function GroupSection({ currentUserId }: GroupSectionProps) {
   const [copied, setCopied] = useState(false)
   const [delegatingTo, setDelegatingTo] = useState<string | null>(null)
   const [joinWaveReassigned, setJoinWaveReassigned] = useState(false)
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false)
 
   const USE_FAKE = process.env.NEXT_PUBLIC_FAKE_GROUPS === 'true'
   const resolvedUserId = USE_FAKE ? FAKE_MY_GROUP.captain_id : currentUserId
   const isCaptain = group?.captain_id === resolvedUserId
+  const { data: invitePreview, isLoading: invitePreviewLoading, error: invitePreviewError } =
+    useGroupInvitePreview(joinCode || null, { enabled: !group && Boolean(joinCode) })
+
+  useEffect(() => {
+    if (!group && joinCode) {
+      setJoinDialogOpen(true)
+    }
+  }, [group, joinCode])
+
+  useEffect(() => {
+    if (group) {
+      setJoinDialogOpen(false)
+    }
+  }, [group])
 
   const copyInviteCode = () => {
     if (!group) return
@@ -88,6 +112,11 @@ export default function GroupSection({ currentUserId }: GroupSectionProps) {
         setJoinWaveReassigned(true)
       }
     } catch {}
+  }
+
+  const getCaptainLabel = () => {
+    if (!invitePreview) return 'Capitaine'
+    return invitePreview.captain.full_name || invitePreview.captain.email || 'Capitaine'
   }
 
   const handleRename = async () => {
@@ -149,6 +178,42 @@ export default function GroupSection({ currentUserId }: GroupSectionProps) {
   if (!group) {
     return (
       <div className="space-y-4">
+        <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Rejoindre ce groupe ?</DialogTitle>
+              <DialogDescription>
+                {invitePreview
+                  ? 'Vérifie les informations puis confirme pour rejoindre.'
+                  : 'Chargement des informations du groupe...'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 text-sm">
+              {invitePreviewLoading ? (
+                <p className="text-muted-foreground">Chargement...</p>
+              ) : invitePreview ? (
+                <>
+                  <p><span className="font-medium">Groupe :</span> {invitePreview.name}</p>
+                  <p><span className="font-medium">Capitaine :</span> {getCaptainLabel()}</p>
+                  <p><span className="font-medium">Membres :</span> {invitePreview.members_count}</p>
+                  <p><span className="font-medium">Code :</span> <span className="font-mono">{invitePreview.invite_code}</span></p>
+                </>
+              ) : (
+                <p className="text-destructive">{(invitePreviewError as Error | null)?.message || 'Code invalide'}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setJoinDialogOpen(false)}>Plus tard</Button>
+              <Button
+                onClick={handleJoin}
+                disabled={!invitePreview || joinGroup.isPending}
+              >
+                {joinGroup.isPending ? 'Connexion...' : 'Rejoindre le groupe'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">

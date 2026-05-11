@@ -7,6 +7,7 @@ import { FAKE_MY_GROUP, FAKE_NO_GROUP } from '@/lib/groups/fakeData'
 const USE_FAKE = process.env.NEXT_PUBLIC_FAKE_GROUPS === 'true'
 
 const GROUP_QUERY_KEY = ['group', 'my'] as const
+const GROUP_PREVIEW_QUERY_KEY = (inviteCode: string) => ['group', 'preview', inviteCode] as const
 
 async function fetchMyGroup(): Promise<Group | null> {
   if (USE_FAKE) return FAKE_NO_GROUP
@@ -20,6 +21,32 @@ export function useMyGroup(options?: { enabled?: boolean }) {
     queryKey: GROUP_QUERY_KEY,
     queryFn: fetchMyGroup,
     enabled: options?.enabled ?? true,
+  })
+}
+
+export interface GroupInvitePreview {
+  id: string
+  name: string
+  invite_code: string
+  captain: {
+    id: string
+    full_name: string | null
+    email: string | null
+  }
+  members_count: number
+}
+
+export function useGroupInvitePreview(inviteCode: string | null, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: GROUP_PREVIEW_QUERY_KEY(inviteCode ?? ''),
+    queryFn: async (): Promise<GroupInvitePreview> => {
+      const code = (inviteCode ?? '').trim().toUpperCase()
+      const res = await fetch(`/api/groups/preview?invite_code=${encodeURIComponent(code)}`)
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Code invalide')
+      return json as GroupInvitePreview
+    },
+    enabled: Boolean(inviteCode) && (options?.enabled ?? true),
   })
 }
 
