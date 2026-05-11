@@ -519,6 +519,12 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                       <div className="flex flex-col">
                         <span className="font-medium">{getParticipantName(registration)}</span>
                         <span className="text-xs text-muted-foreground">{registration.email}</span>
+                        {registration.group?.name ? (
+                          <span className="text-xs text-muted-foreground">
+                            Groupe: {registration.group.name}
+                            {registration.group.invite_code ? ` (${registration.group.invite_code})` : ''}
+                          </span>
+                        ) : null}
                         <span className="text-xs text-muted-foreground">
                           Départ assigné: {formatStartTime(registration.start_time)}
                         </span>

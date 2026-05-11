@@ -82,6 +82,14 @@ export async function GET() {
         code_is_active: boolean | null
       }
     >()
+    const groupsMap = new Map<
+      string,
+      {
+        group_id: string
+        group_name: string | null
+        invite_code: string | null
+      }
+    >()
 
     if (userIds.length > 0) {
       const chunks = chunkArray(userIds, 1000)
@@ -115,11 +123,27 @@ export async function GET() {
           code_is_active: promo?.is_active ?? null,
         })
       })
+
+      const { data: membershipRows } = await admin
+        .from('group_members')
+        .select('profile_id, group:groups(id, name, invite_code)')
+        .in('profile_id', userIds)
+
+      membershipRows?.forEach((row: any) => {
+        const group = Array.isArray(row.group) ? row.group[0] : row.group
+        if (!group?.id) return
+        groupsMap.set(row.profile_id, {
+          group_id: group.id,
+          group_name: group.name ?? null,
+          invite_code: group.invite_code ?? null,
+        })
+      })
     }
 
     const usersWithProfiles = allUsers.map((authUser) => {
       const profileData = profilesMap.get(authUser.id)
       const ambassadorData = ambassadorsMap.get(authUser.id)
+      const groupData = groupsMap.get(authUser.id)
       return {
         id: authUser.id,
         email: authUser.email,
@@ -134,6 +158,9 @@ export async function GET() {
         ambassador_promotional_code_id: ambassadorData?.promotional_code_id ?? null,
         ambassador_code: ambassadorData?.code ?? null,
         ambassador_code_is_active: ambassadorData?.code_is_active ?? null,
+        group_id: groupData?.group_id ?? null,
+        group_name: groupData?.group_name ?? null,
+        group_invite_code: groupData?.invite_code ?? null,
       }
     })
 

@@ -13,6 +13,7 @@ export const ADMIN_TAB_VALUES = [
   'promotions',
   'upsells',
   'ambassadors',
+  'groups',
   'users',
   'members',
   'checkin',

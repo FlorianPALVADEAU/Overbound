@@ -136,6 +136,11 @@ export interface AdminRegistrationOrderSummary extends Pick<Order, 'id' | 'amoun
 }
 
 export interface AdminRegistration extends Registration {
+  group?: {
+    id: UUID
+    name: string | null
+    invite_code: string | null
+  } | null
   event: {
     id: UUID
     title: string

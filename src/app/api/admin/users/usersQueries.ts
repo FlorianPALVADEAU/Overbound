@@ -15,6 +15,9 @@ export interface AdminUser {
   ambassador_promotional_code_id?: string | null
   ambassador_code?: string | null
   ambassador_code_is_active?: boolean | null
+  group_id?: string | null
+  group_name?: string | null
+  group_invite_code?: string | null
 }
 
 interface AdminUsersResponse {

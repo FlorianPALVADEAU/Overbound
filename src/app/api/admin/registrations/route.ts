@@ -171,11 +171,33 @@ export async function GET(request: Request) {
     const orderPromotionalCodesMap = new Map<string, any[]>()
     const orderUpsellItemsMap = new Map<string, any[]>()
     const profileMap = new Map<string, { id: string; full_name: string | null }>()
+    const groupByProfileMap = new Map<string, { id: string; name: string | null; invite_code: string | null }>()
     for (const profile of profilesResult.data ?? []) {
       profileMap.set(profile.id, {
         id: profile.id,
         full_name: profile.full_name ?? null,
       })
+    }
+
+    if (profileIds.length > 0) {
+      const { data: membershipRows, error: membershipError } = await adminClient
+        .from('group_members')
+        .select('profile_id, group:groups(id, name, invite_code)')
+        .in('profile_id', profileIds)
+
+      if (membershipError) {
+        console.error('[admin registrations] group membership fetch error', membershipError)
+      } else {
+        for (const row of membershipRows ?? []) {
+          const group = Array.isArray((row as any).group) ? (row as any).group[0] : (row as any).group
+          if (!group?.id) continue
+          groupByProfileMap.set((row as any).profile_id, {
+            id: group.id,
+            name: group.name ?? null,
+            invite_code: group.invite_code ?? null,
+          })
+        }
+      }
     }
 
     if (orderIds.length > 0) {
@@ -507,6 +529,10 @@ export async function GET(request: Request) {
         participant_profile:
           row.user_id
             ? profileMap.get(row.user_id) ?? null
+            : null,
+        group:
+          row.user_id
+            ? groupByProfileMap.get(row.user_id) ?? null
             : null,
         approval_status: meta.approval_status ?? row.approval_status,
         document_url: meta.document_url ?? row.document_url ?? null,

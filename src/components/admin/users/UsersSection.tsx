@@ -94,6 +94,8 @@ export function UsersSection() {
         user.email,
         roleLabels[user.role],
         user.phone,
+        user.group_name,
+        user.group_invite_code,
       ]
         .filter(Boolean)
         .some((value) => value?.toLowerCase().includes(term)),
@@ -266,22 +268,23 @@ export function UsersSection() {
               <TableRow>
                 <TableHead>Utilisateur</TableHead>
                 <TableHead>Rôle</TableHead>
+                <TableHead>Groupe</TableHead>
                 <TableHead>Créé le</TableHead>
                 <TableHead>Dernière connexion</TableHead>
-              <TableHead className="w-[260px] text-right">Actions</TableHead>
+                <TableHead className="w-[260px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                     <Clock className="mx-auto mb-3 h-6 w-6 animate-spin" />
                     Chargement des utilisateurs…
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                     Aucun utilisateur ne correspond à cette recherche.
                   </TableCell>
                 </TableRow>
@@ -315,6 +318,14 @@ export function UsersSection() {
                             <SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm">{user.group_name || 'Aucun groupe'}</span>
+                        {user.group_invite_code ? (
+                          <span className="text-xs text-muted-foreground font-mono">{user.group_invite_code}</span>
+                        ) : null}
                       </div>
                     </TableCell>
                     <TableCell>
