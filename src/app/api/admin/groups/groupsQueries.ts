@@ -19,6 +19,10 @@ export interface AdminGroup {
   anchor_event_id: string | null
   anchor_wave_index: number | null
   anchor_start_time: string | null
+  anchor_initialized_by: 'creator' | 'member_join' | 'admin_manual' | null
+  anchor_initialized_from_profile_id: string | null
+  anchor_initialized_from_profile_name: string | null
+  anchor_initialized_at: string | null
   created_at: string
   members: AdminGroupMember[]
 }

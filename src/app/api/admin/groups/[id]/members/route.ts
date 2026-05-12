@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
+import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
 async function assertAdmin() {
   const supabase = await createSupabaseServer()
@@ -38,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const { data: group } = await admin
       .from('groups')
-      .select('id')
+      .select('id, anchor_event_id, anchor_wave_index, anchor_start_time')
       .eq('id', id)
       .maybeSingle()
 
@@ -75,7 +77,44 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Erreur ajout membre' }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true }, { status: 201 })
+    let anchorEventId = group.anchor_event_id as string | null
+    let anchorWaveIndex = group.anchor_wave_index as number | null
+    let anchorStartTime = group.anchor_start_time as string | null
+
+    if (!anchorEventId || anchorWaveIndex === null || !anchorStartTime) {
+      const memberAnchor = await resolveGroupAnchorFromProfile(admin, profile_id)
+      if (memberAnchor) {
+        anchorEventId = memberAnchor.eventId
+        anchorWaveIndex = memberAnchor.waveIndex
+        anchorStartTime = memberAnchor.startTime
+        await admin
+          .from('groups')
+          .update({
+            anchor_event_id: anchorEventId,
+            anchor_wave_index: anchorWaveIndex,
+            anchor_start_time: anchorStartTime,
+            anchor_initialized_by: 'member_join',
+            anchor_initialized_from_profile_id: profile_id,
+            anchor_initialized_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+      }
+    }
+
+    let movedToAnchor = 0
+    if (anchorEventId && anchorWaveIndex !== null && anchorStartTime) {
+      const sync = await syncOpenRegistrationsToWave({
+        admin,
+        eventId: anchorEventId,
+        waveIndex: anchorWaveIndex,
+        startTime: anchorStartTime,
+        profileIds: [profile_id],
+      })
+      movedToAnchor = sync.moved
+    }
+
+    return NextResponse.json({ ok: true, members_moved_to_group_wave: movedToAnchor }, { status: 201 })
   } catch (error) {
     console.error('[admin groups members] add unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

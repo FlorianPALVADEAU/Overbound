@@ -74,7 +74,23 @@ Tests pour les fonctions d'affichage et validation des prix :
 - Détection de chevauchements
 - Seuils d'urgence personnalisables
 
-## Total : 90 tests ✅
+### 4. Groupes - ancre et synchronisation SAS (unit + route-level)
+**Fichiers:**
+- `src/lib/groups/groupWaveSync.test.ts`
+- `src/app/api/groups/join/route.test.ts`
+- `src/app/api/admin/groups/[id]/route.test.ts`
+
+Tests ajoutés sur la logique groupes/SAS:
+- Résolution d'ancre depuis profil OPEN (`resolveGroupAnchorFromProfile`)
+- Synchronisation OPEN vers vague ancre (`syncOpenRegistrationsToWave`)
+- Endpoint `groups/join`:
+  - initialise ancre manquante depuis membre join,
+  - synchronise le membre vers l'ancre existante.
+- Endpoint `admin/groups/[id]` (PATCH):
+  - forçage ancre admin,
+  - synchronisation de tous les membres du groupe.
+
+## Total : 96 tests ✅
 
 ## CI/CD
 
@@ -143,7 +159,7 @@ Le rapport HTML sera généré dans `coverage/index.html`
 
 ## À tester ensuite
 
-- [ ] Tests d'intégration pour les endpoints API
+- [ ] Étendre les tests route-level sur `admin/groups/[id]/members` et `admin/groups/from-promocode`
 - [ ] Tests E2E avec Playwright (parcours utilisateur complet)
 - [ ] Tests de composants React critiques (formulaires, checkout)
 - [ ] Tests de validation des emails

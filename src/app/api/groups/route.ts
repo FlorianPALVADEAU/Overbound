@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,23 @@ export async function POST(request: Request) {
       // Roll back
       await admin.from('groups').delete().eq('id', group.id)
       return NextResponse.json({ error: 'Erreur création groupe' }, { status: 500 })
+    }
+
+    // If creator is already registered on an OPEN wave, use it as initial group anchor.
+    const initialAnchor = await resolveGroupAnchorFromProfile(admin, user.id)
+    if (initialAnchor) {
+      await admin
+        .from('groups')
+        .update({
+          anchor_event_id: initialAnchor.eventId,
+          anchor_wave_index: initialAnchor.waveIndex,
+          anchor_start_time: initialAnchor.startTime,
+          anchor_initialized_by: 'creator',
+          anchor_initialized_from_profile_id: user.id,
+          anchor_initialized_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', group.id)
     }
 
     return NextResponse.json({ id: group.id, invite_code: group.invite_code }, { status: 201 })
