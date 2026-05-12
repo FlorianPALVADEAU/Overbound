@@ -60,6 +60,19 @@ const formatAnchor = (group: AdminGroup) => {
   return `Vague ${group.anchor_wave_index} (${formatWaveStartTime(group.anchor_start_time)})`
 }
 
+const formatAnchorSource = (group: AdminGroup) => {
+  if (!group.anchor_initialized_by) return null
+  if (group.anchor_initialized_by === 'creator') {
+    const label = group.anchor_initialized_from_profile_name || 'créateur'
+    return `Ancre initialisée depuis ${label} (créateur)`
+  }
+  if (group.anchor_initialized_by === 'member_join') {
+    const label = group.anchor_initialized_from_profile_name || 'membre'
+    return `Ancre initialisée depuis ${label} (membre join)`
+  }
+  return 'Ancre définie manuellement (admin)'
+}
+
 const getUserLabel = (user: AdminUser) => user.full_name || user.email || `Utilisateur #${user.id.slice(0, 8)}`
 const getMemberLabel = (member: AdminGroupMember) =>
   member.full_name || member.email || `Utilisateur #${member.profile_id.slice(0, 8)}`
@@ -330,7 +343,14 @@ export function GroupsSection() {
                       <TableCell><div className="font-medium">{group.name}</div><div className="text-xs text-muted-foreground font-mono">{group.invite_code}</div></TableCell>
                       <TableCell><div className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" />{captain ? getMemberLabel(captain) : '—'}</div></TableCell>
                       <TableCell>{group.members.length}</TableCell>
-                      <TableCell>{formatAnchor(group)}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div>{formatAnchor(group)}</div>
+                          {formatAnchorSource(group) ? (
+                            <div className="text-xs text-muted-foreground">{formatAnchorSource(group)}</div>
+                          ) : null}
+                        </div>
+                      </TableCell>
                       <TableCell>{formatDate(group.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -411,6 +431,9 @@ export function GroupsSection() {
 
             <div className="rounded-md border p-3 space-y-3">
               <p className="text-sm font-medium">Forcer le SAS de départ</p>
+              {editingGroup && formatAnchorSource(editingGroup) ? (
+                <p className="text-xs text-muted-foreground">{formatAnchorSource(editingGroup)}</p>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Événement</Label>

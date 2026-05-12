@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { OPEN_SAS_CONFIG } from '@/lib/openSas'
+import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
+import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
 export async function POST(request: Request) {
   try {
@@ -48,88 +49,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Erreur lors de l\'adhésion' }, { status: 500 })
     }
 
-    // If the group already has a wave anchor, re-assign the new member's existing
-    // registrations for that event to the group wave.
-    let waveReassigned = false
-    if (
-      group.anchor_event_id &&
-      group.anchor_wave_index !== null &&
-      group.anchor_start_time !== null
-    ) {
-      const { data: registrations } = await admin
-        .from('registrations')
-        .select('id, wave_index')
-        .eq('user_id', user.id)
-        .eq('event_id', group.anchor_event_id)
-        // Only reassign paid registrations (via their order status)
-        .not('order_id', 'is', null)
+    let anchorEventId = group.anchor_event_id as string | null
+    let anchorWaveIndex = group.anchor_wave_index as number | null
+    let anchorStartTime = group.anchor_start_time as string | null
 
-      if (registrations && registrations.length > 0) {
-        // Count how many are already in the group wave to compute new positions
-        const { count: existingInWave } = await admin
-          .from('registrations')
-          .select('id', { count: 'exact', head: true })
-          .eq('event_id', group.anchor_event_id)
-          .eq('wave_index', group.anchor_wave_index)
-
-        const basePosition = (existingInWave ?? 0) + 1
-
-        for (let i = 0; i < registrations.length; i++) {
-          const reg = registrations[i] as { id: string; wave_index: number | null }
-          const oldWaveIndex = reg.wave_index
-
-          await admin
-            .from('registrations')
-            .update({
-              wave_index: group.anchor_wave_index,
-              start_time: group.anchor_start_time,
-              wave_capacity: OPEN_SAS_CONFIG.waveCapacity,
-              wave_position: basePosition + i,
-              auto_assigned: true,
-            })
-            .eq('id', reg.id)
-
-          // Decrement old wave count
-          if (oldWaveIndex !== null && oldWaveIndex !== group.anchor_wave_index) {
-            const { data: oldWaveRow } = await admin
-              .from('event_waves')
-              .select('id, assigned_count')
-              .eq('event_id', group.anchor_event_id)
-              .eq('wave_index', oldWaveIndex)
-              .maybeSingle()
-
-            if (oldWaveRow) {
-              await admin
-                .from('event_waves')
-                .update({
-                  assigned_count: Math.max(0, (oldWaveRow.assigned_count ?? 1) - 1),
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', oldWaveRow.id)
-            }
-          }
-        }
-
-        // Increment new wave assigned_count
-        const { data: newWaveRow } = await admin
-          .from('event_waves')
-          .select('id, assigned_count')
-          .eq('event_id', group.anchor_event_id)
-          .eq('wave_index', group.anchor_wave_index)
-          .maybeSingle()
-
-        if (newWaveRow) {
-          await admin
-            .from('event_waves')
-            .update({
-              assigned_count: (newWaveRow.assigned_count ?? 0) + registrations.length,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', newWaveRow.id)
-        }
-
-        waveReassigned = true
+    // If group has no anchor yet, try to initialize it from this new member's existing OPEN registration.
+    if (!anchorEventId || anchorWaveIndex === null || !anchorStartTime) {
+      const memberAnchor = await resolveGroupAnchorFromProfile(admin, user.id)
+      if (memberAnchor) {
+        anchorEventId = memberAnchor.eventId
+        anchorWaveIndex = memberAnchor.waveIndex
+        anchorStartTime = memberAnchor.startTime
+        await admin
+          .from('groups')
+          .update({
+            anchor_event_id: anchorEventId,
+            anchor_wave_index: anchorWaveIndex,
+            anchor_start_time: anchorStartTime,
+            anchor_initialized_by: 'member_join',
+            anchor_initialized_from_profile_id: user.id,
+            anchor_initialized_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', group.id)
       }
+    }
+
+    let waveReassigned = false
+    if (anchorEventId && anchorWaveIndex !== null && anchorStartTime) {
+      const syncResult = await syncOpenRegistrationsToWave({
+        admin,
+        eventId: anchorEventId,
+        waveIndex: anchorWaveIndex,
+        startTime: anchorStartTime,
+        profileIds: [user.id],
+      })
+      waveReassigned = syncResult.moved > 0
     }
 
     return NextResponse.json({ id: group.id, name: group.name, wave_reassigned: waveReassigned }, { status: 201 })

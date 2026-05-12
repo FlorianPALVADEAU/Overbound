@@ -460,19 +460,26 @@ export default function MultiStepEventRegistration({
     <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
       <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
       <AlertDescription className="text-xs leading-relaxed">
-        <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
-        ta vague de départ est déjà fixée par ton groupe :{' '}
-        <span className="font-semibold">{formatWaveStartTime(myGroup.anchor_start_time)}</span>.
-        Tous les membres inscrits à cet événement partiront ensemble.
+        <p>
+          <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
+          ta vague de départ est déjà fixée par ton groupe :{' '}
+          <span className="font-semibold">{formatWaveStartTime(myGroup.anchor_start_time)}</span>.{' '}
+          Tous les membres inscrits à cet événement partiront ensemble. Le départ groupé concerne le format{' '}
+          <span className="font-semibold">OPEN</span>. En format{' '}
+          <span className="font-semibold">RANKED</span>, le départ est unique pour tous.
+        </p>
       </AlertDescription>
     </Alert>
   ) : (
     <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
       <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
       <AlertDescription className="text-xs leading-relaxed">
-        <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
-        tu es le premier membre à t&apos;inscrire à cet événement.
-        Ta vague de départ sera automatiquement réservée pour tout le groupe.
+        <p>
+          <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
+          tu es le premier membre à t&apos;inscrire à cet événement. Ta vague de départ sera automatiquement réservée pour tout le groupe. Le départ groupé concerne le format{' '}
+          <span className="font-semibold">OPEN</span>. En format{' '}
+          <span className="font-semibold">RANKED</span>, le départ est unique pour tous.
+        </p>
       </AlertDescription>
     </Alert>
   )

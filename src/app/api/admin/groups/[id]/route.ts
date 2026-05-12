@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { getUserIdsFromPromoRegistrations, resolvePromoCode } from '@/app/api/admin/groups/promoGroupUtils'
+import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
 
 async function assertAdmin() {
   const supabase = await createSupabaseServer()
@@ -80,10 +81,34 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         }
       }
 
+      const { data: groupAnchor } = await admin
+        .from('groups')
+        .select('anchor_event_id, anchor_wave_index, anchor_start_time')
+        .eq('id', id)
+        .maybeSingle()
+
+      let movedToAnchor = 0
+      if (
+        toAdd.length > 0 &&
+        groupAnchor?.anchor_event_id &&
+        groupAnchor.anchor_wave_index !== null &&
+        groupAnchor.anchor_start_time
+      ) {
+        const sync = await syncOpenRegistrationsToWave({
+          admin,
+          eventId: groupAnchor.anchor_event_id,
+          waveIndex: groupAnchor.anchor_wave_index,
+          startTime: groupAnchor.anchor_start_time,
+          profileIds: toAdd,
+        })
+        movedToAnchor = sync.moved
+      }
+
       return NextResponse.json({
         ok: true,
         imported_from_promocode: true,
         members_added: toAdd.length,
+        members_moved_to_group_wave: movedToAnchor,
         members_skipped_already_in_other_group: Array.from(inAnotherGroup).length,
         members_skipped_already_in_this_group: Array.from(alreadyHere).length,
       })
@@ -131,6 +156,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       updates.anchor_event_id = null
       updates.anchor_wave_index = null
       updates.anchor_start_time = null
+      updates.anchor_initialized_by = null
+      updates.anchor_initialized_from_profile_id = null
+      updates.anchor_initialized_at = null
     } else if (
       typeof body.anchor_event_id === 'string' &&
       body.anchor_event_id.length > 0 &&
@@ -151,6 +179,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       updates.anchor_event_id = body.anchor_event_id
       updates.anchor_wave_index = waveIndex
       updates.anchor_start_time = waveRow.start_time
+      updates.anchor_initialized_by = 'admin_manual'
+      updates.anchor_initialized_from_profile_id = null
+      updates.anchor_initialized_at = new Date().toISOString()
     }
 
     const { error } = await admin
@@ -163,7 +194,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Erreur mise à jour groupe' }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true })
+    let movedToAnchor = 0
+    if (
+      typeof updates.anchor_event_id === 'string' &&
+      typeof updates.anchor_wave_index === 'number' &&
+      typeof updates.anchor_start_time === 'string'
+    ) {
+      const { data: members } = await admin
+        .from('group_members')
+        .select('profile_id')
+        .eq('group_id', id)
+
+      const memberIds = (members ?? []).map((row) => row.profile_id)
+      if (memberIds.length > 0) {
+        const sync = await syncOpenRegistrationsToWave({
+          admin,
+          eventId: updates.anchor_event_id,
+          waveIndex: updates.anchor_wave_index,
+          startTime: updates.anchor_start_time,
+          profileIds: memberIds,
+        })
+        movedToAnchor = sync.moved
+      }
+    }
+
+    return NextResponse.json({ ok: true, members_moved_to_group_wave: movedToAnchor })
   } catch (error) {
     console.error('[admin groups] patch unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

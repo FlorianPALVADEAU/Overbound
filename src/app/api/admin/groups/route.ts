@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
 export async function POST(request: Request) {
   try {
@@ -76,6 +77,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Erreur création groupe' }, { status: 500 })
     }
 
+    const initialAnchor = await resolveGroupAnchorFromProfile(admin, captain_profile_id)
+    if (initialAnchor) {
+      await admin
+        .from('groups')
+        .update({
+          anchor_event_id: initialAnchor.eventId,
+          anchor_wave_index: initialAnchor.waveIndex,
+          anchor_start_time: initialAnchor.startTime,
+          anchor_initialized_by: 'creator',
+          anchor_initialized_from_profile_id: captain_profile_id,
+          anchor_initialized_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', group.id)
+    }
+
     return NextResponse.json({ id: group.id, invite_code: group.invite_code, name: group.name }, { status: 201 })
   } catch (error) {
     console.error('[admin groups] create unexpected error', error)
@@ -106,7 +123,7 @@ export async function GET() {
 
     const { data: groupsRows, error: groupsError } = await admin
       .from('groups')
-      .select('id, name, captain_id, invite_code, anchor_event_id, anchor_wave_index, anchor_start_time, created_at')
+      .select('id, name, captain_id, invite_code, anchor_event_id, anchor_wave_index, anchor_start_time, anchor_initialized_by, anchor_initialized_from_profile_id, anchor_initialized_at, created_at')
       .order('created_at', { ascending: false })
 
     if (groupsError) {
@@ -168,10 +185,14 @@ export async function GET() {
       membersByGroup.set(member.group_id, groupList)
     }
 
-    const groups = (groupsRows ?? []).map((group) => ({
-      ...group,
-      members: membersByGroup.get(group.id) ?? [],
-    }))
+    const groups = (groupsRows ?? []).map((group) => {
+      const sourceProfileId = group.anchor_initialized_from_profile_id as string | null
+      return {
+        ...group,
+        anchor_initialized_from_profile_name: sourceProfileId ? profileMap.get(sourceProfileId) ?? null : null,
+        members: membersByGroup.get(group.id) ?? [],
+      }
+    })
 
     return NextResponse.json({ groups, total: groups.length })
   } catch (error) {

@@ -46,6 +46,8 @@ export default function GroupJoinInline() {
       {!mode && (
         <p className="text-xs text-green-700 dark:text-green-400 leading-relaxed">
           Rejoins ou crée un groupe pour être automatiquement assigné au même SAS que tes équipiers.
+          {' '}Le regroupement en SAS concerne le format <span className="font-semibold">OPEN</span>;
+          en <span className="font-semibold">RANKED</span>, le départ est déjà unique.
         </p>
       )}
 
