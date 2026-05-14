@@ -64,6 +64,26 @@ POST /api/admin/distribution-lists/send-email
      Params: subject, preheader, html, plaintext, list_ids[], is_test
 ```
 
+### Newsletter Popup + Resend Segments
+
+```
+POST /api/promotions/popup-subscribe
+     - Adds contact to marketing audiences
+     - Adds contact to "unregistered" segment (if configured)
+
+POST /api/registrations/create
+POST /api/webhooks/stripe
+     - Marks contact as registered
+     - Removes contact from "unregistered" segment
+     - Keeps contact in general marketing audience
+```
+
+Required env for unregistered segmentation:
+
+```
+RESEND_SEGMENT_UNREGISTERED_ID=...
+```
+
 ---
 
 ## Code Snippets
@@ -355,4 +375,3 @@ describe('Admin Campaign Send', () => {
 - [ ] Preferences in sync with list subscriptions (no orphans)
 - [ ] Tokens expire after 90 days
 - [ ] Admin can test emails before sending
-

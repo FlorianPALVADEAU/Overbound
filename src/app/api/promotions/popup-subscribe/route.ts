@@ -4,6 +4,7 @@ import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
 import {
+  markResendContactAsUnregistered,
   mapSlugsToAudienceIds,
   subscribeResendContactToAudiences,
 } from '@/lib/email/resendAudiences'
@@ -147,6 +148,14 @@ export async function POST(request: NextRequest) {
       email,
       fullName,
       audienceIds,
+      properties: {
+        source: `popup-${validatedData.promotion_id}`,
+      },
+    })
+
+    await markResendContactAsUnregistered({
+      email,
+      fullName,
       properties: {
         source: `popup-${validatedData.promotion_id}`,
       },

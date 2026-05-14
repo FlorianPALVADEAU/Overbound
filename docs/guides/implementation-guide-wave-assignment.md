@@ -52,8 +52,8 @@ src/
 // ✅ CORRECT
 import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 
-const isOpen = isOpenFormatTicket(ticket, race)
-const isRanked = isRankedFormatTicket(ticket, race)
+const isOpen = isOpenFormatTicket(ticket.name, race.name)
+const isRanked = isRankedFormatTicket(ticket.name, race.name)
 
 // ❌ WRONG - never do this
 if (ticket.id === HARDCODED_OPEN_TICKET_ID) { ... }
@@ -63,18 +63,18 @@ if (ticket.id === HARDCODED_OPEN_TICKET_ID) { ... }
 
 ```typescript
 export const isOpenFormatTicket = (
-  ticket?: Ticket | null,
-  race?: Race | null
+  ticketName?: string | null,
+  raceName?: string | null
 ): boolean => {
-  const combined = `${ticket?.name ?? ''} ${race?.name ?? ''}`.toLowerCase()
+  const combined = `${ticketName ?? ''} ${raceName ?? ''}`.toLowerCase()
   return combined.includes('open')
 }
 
 export const isRankedFormatTicket = (
-  ticket?: Ticket | null,
-  race?: Race | null
+  ticketName?: string | null,
+  raceName?: string | null
 ): boolean => {
-  const combined = `${ticket?.name ?? ''} ${race?.name ?? ''}`.toLowerCase()
+  const combined = `${ticketName ?? ''} ${raceName ?? ''}`.toLowerCase()
   return combined.includes('ranked')
 }
 ```
@@ -186,7 +186,7 @@ export async POST(req: Request) {
       const ticket = await getTicketById(item.ticket_id)
       const race = await getRaceById(ticket.race_id)
       
-      if (isOpenFormatTicket(ticket, race)) {
+      if (isOpenFormatTicket(ticket.name, race.name)) {
         // 4. Assign wave via RPC
         await assignOpenWaveToRegistration(registration)
       }
@@ -210,11 +210,8 @@ export const assignOpenWaveToRegistration = async (
     p_registration_id: registration.id,
     p_first_departure: new Date(eventDate.toDateString() + ' 08:00:00Z'),
     p_wave_count: OPEN_WAVE_CONFIG.WAVE_COUNT,
-    p_interval_minutes: OPEN_WAVE_CONFIG.INTERVAL_MINUTES,
-    p_default_capacity: OPEN_WAVE_CONFIG.DEFAULT_CAPACITY,
-    p_preferred_start: registration.preferred_window_start,
-    p_preferred_end: registration.preferred_window_end,
-    p_latest_allowed: registration.latest_allowed_time,
+    p_slots_per_wave: OPEN_WAVE_CONFIG.DEFAULT_CAPACITY,
+    p_group_anchor_wave_index: registration.group_anchor_wave_index ?? null,
   })
   
   if (result.error) {
@@ -497,7 +494,7 @@ if (ticket.id === 'uuid-open-ticket') { ... }
 
 ✅ **GOOD**:
 ```typescript
-if (isOpenFormatTicket(ticket, race)) { ... }
+if (isOpenFormatTicket(ticket.name, race.name)) { ... }
 ```
 
 **Why**: Ticket IDs change across environments. Format name is stable.

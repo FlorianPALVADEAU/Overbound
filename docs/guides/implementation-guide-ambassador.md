@@ -143,8 +143,6 @@ Called from Stripe webhook when order is paid:
 // In webhook handler
 const { error } = await supabase.rpc('award_ambassador_points_for_order', {
   p_order_id: order.id,
-  p_registration_id: registration.id,
-  p_race_format: isOpenFormatTicket(ticket, race) ? 'open' : 'ranked'
 })
 
 if (!error) {
@@ -156,8 +154,9 @@ if (!error) {
 **What RPC does**:
 1. Fetch order.promotional_code_id
 2. Check if code ∈ ambassador_promotional_codes
-3. If YES: INSERT ambassador_points_event + UPDATE ambassador_points
-4. If NO: skip (not ambassador referral)
+3. Detect format from the registrations/order items
+4. Award `+1` per OPEN registration or `+2` per RANKED registration
+5. Insert the points event and update `ambassador_points`
 
 ---
 

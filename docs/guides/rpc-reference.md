@@ -3,6 +3,17 @@
 **For**: Developers calling PostgreSQL functions from Next.js API routes  
 **Coverage**: All critical RPCs with signatures, side effects, and usage patterns
 
+**Repository note**: The codebase calls several RPCs from application code, but the SQL definitions were not found in the repository migrations at the time of this audit. Treat the signatures below as the contract used by the app and verify the deployed database or add migrations before changing callers.
+
+**Observed in code but not fully documented below**:
+- `admin_overview`
+- `get_registrations_with_filters`
+- `get_active_tier_promo_code`
+- `check_and_advance_tier_progression`
+- `increment_promo_code_usage`
+- `ambassador_reward_level_for_points`
+- `ambassador_ensure_rewards`
+
 ---
 
 ## assign_open_wave_to_registration
@@ -124,9 +135,7 @@ Awards ambassador points when their promotional code is used in an order (1pt OP
 ### Signature
 ```sql
 SELECT award_ambassador_points_for_order(
-  p_order_id             UUID,
-  p_promotional_code_id  UUID,
-  p_registration_count   INT
+  p_order_id UUID
 ) RETURNS JSON;
 ```
 
@@ -135,8 +144,6 @@ SELECT award_ambassador_points_for_order(
 | Param | Type | Description | Required |
 |-------|------|-------------|----------|
 | `p_order_id` | UUID | Order associated with promo code | Yes |
-| `p_promotional_code_id` | UUID | Promo code used | Yes |
-| `p_registration_count` | INT | Number of registrations (OPEN vs RANKED) | Yes |
 
 ### Returns
 
@@ -181,12 +188,10 @@ SELECT award_ambassador_points_for_order(
 ### Usage Pattern
 
 ```typescript
-// From src/app/api/orders/webhook/stripe/route.ts (Stripe webhook)
+// From src/app/api/webhooks/stripe/route.ts and src/app/api/registrations/create/route.ts
 
 const result = await supabase.rpc('award_ambassador_points_for_order', {
   p_order_id: order.id,
-  p_promotional_code_id: promo.id,
-  p_registration_count: registrations.length,
 });
 
 if (!result.data?.success) {
@@ -287,7 +292,7 @@ SELECT sync_open_group_wave(
 ### Usage Pattern
 
 ```typescript
-// From src/lib/groups/syncOpenGroupWave.ts
+// From src/lib/groups/syncOpenGroupWave.ts (app-level helper, not an RPC call in the repository)
 
 const result = await supabase.rpc('sync_open_group_wave', {
   p_group_id: group.id,

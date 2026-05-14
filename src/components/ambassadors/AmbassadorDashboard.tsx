@@ -888,8 +888,8 @@ export function AmbassadorDashboard({
 
           <div
             className={cn(
-              'overflow-hidden transition-all duration-200 ease-in-out',
-              recruitsOpen ? 'max-h-[700px]' : 'max-h-0',
+              'transition-all duration-200 ease-in-out',
+              recruitsOpen ? 'max-h-[700px] overflow-y-auto' : 'max-h-0 overflow-hidden',
             )}
           >
             <CardContent className="pt-4">

@@ -115,6 +115,22 @@ export async function GET(request: Request) {
         ? [currentCodeId]
         : []
 
+    const { data: allPromoRows, error: allPromoError } = allCodeIds.length > 0
+      ? await admin
+          .from('promotional_codes')
+          .select('id, code')
+          .in('id', allCodeIds)
+      : { data: [], error: null }
+
+    if (allPromoError) {
+      console.error('[ambassador dashboard] all promo codes error', allPromoError)
+      return NextResponse.json({ error: 'Erreur codes ambassadeur' }, { status: 500 })
+    }
+
+    const allPromoCodes = ((allPromoRows || []) as Array<{ id: string; code: string | null }>)
+      .map((row) => (row.code ?? '').trim())
+      .filter((code) => code.length > 0)
+
     const { data: promoData, error: promoError } = currentCodeId
       ? await admin
           .from('promotional_codes')
@@ -182,7 +198,7 @@ export async function GET(request: Request) {
       fulfilled_at: row.fulfilled_at,
     }))
 
-    const { data: registrationsData, error: registrationsError } = allCodeIds.length > 0
+    const { data: registrationsFromPromo, error: registrationsError } = allCodeIds.length > 0
       ? await admin
           .from('registrations')
           .select(
@@ -192,6 +208,7 @@ export async function GET(request: Request) {
             email,
             created_at,
             order_id,
+            affiliation_token,
             ticket:tickets(
               name,
               race_format,
@@ -207,12 +224,112 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Erreur inscriptions' }, { status: 500 })
     }
 
-    const registrationRows = (registrationsData || []) as unknown as Array<{
+    const { data: registrationsFromAffiliation, error: registrationsFromAffiliationError } = allPromoCodes.length > 0
+      ? await admin
+          .from('registrations')
+          .select(
+            `
+            id,
+            user_id,
+            email,
+            created_at,
+            order_id,
+            affiliation_token,
+            ticket:tickets(
+              name,
+              race_format,
+              race:races(name)
+            )
+          `,
+          )
+          .in('affiliation_token', allPromoCodes)
+          .eq('is_affiliated', true)
+      : { data: [], error: null }
+
+    if (registrationsFromAffiliationError) {
+      console.error('[ambassador dashboard] affiliation registrations error', registrationsFromAffiliationError)
+      return NextResponse.json({ error: 'Erreur affiliations' }, { status: 500 })
+    }
+
+    const { data: manualReferralRows, error: manualReferralsError } = await admin
+      .from('ambassador_manual_referrals')
+      .select('registration_id')
+      .eq('ambassador_id', ambassadorId)
+
+    if (manualReferralsError && manualReferralsError.code !== 'PGRST205') {
+      console.error('[ambassador dashboard] manual referrals error', manualReferralsError)
+      return NextResponse.json({ error: 'Erreur filleuls manuels' }, { status: 500 })
+    }
+
+    const manualReferralRegistrationIds = ((manualReferralRows || []) as Array<{ registration_id: string }>)
+      .map((row) => row.registration_id)
+
+    const { data: registrationsFromManualReferrals, error: registrationsFromManualReferralsError } =
+      manualReferralRegistrationIds.length > 0
+        ? await admin
+            .from('registrations')
+            .select(
+              `
+              id,
+              user_id,
+              email,
+              created_at,
+              order_id,
+              affiliation_token,
+              ticket:tickets(
+                name,
+                race_format,
+                race:races(name)
+              )
+            `,
+            )
+            .in('id', manualReferralRegistrationIds)
+        : { data: [], error: null }
+
+    if (registrationsFromManualReferralsError) {
+      console.error('[ambassador dashboard] manual referral registrations error', registrationsFromManualReferralsError)
+      return NextResponse.json({ error: 'Erreur inscriptions filleuls manuels' }, { status: 500 })
+    }
+
+    const mergedRegistrationRows = [
+      ...((registrationsFromPromo || []) as Array<{
+        id: string
+        user_id: string | null
+        email: string | null
+        created_at: string | null
+        order_id: string | null
+        affiliation_token: string | null
+        ticket: unknown
+      }>),
+      ...((registrationsFromAffiliation || []) as Array<{
+        id: string
+        user_id: string | null
+        email: string | null
+        created_at: string | null
+        order_id: string | null
+        affiliation_token: string | null
+        ticket: unknown
+      }>),
+      ...((registrationsFromManualReferrals || []) as Array<{
+        id: string
+        user_id: string | null
+        email: string | null
+        created_at: string | null
+        order_id: string | null
+        affiliation_token: string | null
+        ticket: unknown
+      }>),
+    ]
+
+    const registrationRows = Array.from(
+      new Map(mergedRegistrationRows.map((row) => [row.id, row])).values(),
+    ) as Array<{
       id: string
       user_id: string | null
       email: string | null
       created_at: string | null
       order_id: string | null
+      affiliation_token: string | null
       ticket: unknown
     }>
 

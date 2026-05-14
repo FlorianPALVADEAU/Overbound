@@ -8,6 +8,7 @@ import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifi
 import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
+import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import {
   assignOpenWaveToRegistration,
   formatWaveStartTime,
@@ -545,6 +546,19 @@ export async function POST(request: NextRequest) {
           console.log('Confirmation email sent to:', registration.email)
         } catch (emailError) {
           console.error('Error sending confirmation email:', emailError)
+        }
+
+        try {
+          await markResendContactAsRegistered({
+            email: registration.email,
+            fullName: participantName ?? null,
+            properties: {
+              source: 'stripe-webhook-registration',
+              event_id: String(event_id),
+            },
+          })
+        } catch (resendSyncError) {
+          console.error('[stripe webhook] resend segment sync failed', resendSyncError)
         }
 
         // Send receipt email

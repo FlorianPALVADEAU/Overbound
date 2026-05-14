@@ -15,14 +15,12 @@ CRM léger pour piloter les partenariats de l'événement **Overbound** (course 
 - Supabase (auth, DB, RLS, storage)
 - Resend (email), OpenAI (IA via port interchangeable)
 
-## Architecture hexagonale
+## Architecture
 
-- `domain/` — entités, value objects, règles métier pures
-- `application/` — use-cases, ports
-- `infrastructure/` — adapters (Supabase, Resend, IA)
-- `presentation/` — routes API, DTOs, Zod, UI
+- Réalité actuelle : organisation par `src/lib/{domain}` avec logique métier, helpers de requête et appels Supabase parfois colocalisés.
+- Cible théorique : séparation hexagonale stricte (`domain/`, `application/`, `infrastructure/`, `presentation/`) décrite dans [ADR-0004](docs/adr/ADR-0004-architecture-reality-vs-hexagonal-theory.md).
 
-Pas d'accès DB direct depuis l'UI ou les routes. Les use-cases dépendent uniquement de ports.
+Pas d'accès DB direct depuis l'UI ou les routes quand une alternative centralisée existe. Les use-cases et helpers de domaine restent dans `src/lib/` jusqu'à refactoring explicite.
 
 ## Conventions
 
@@ -44,8 +42,8 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 
 | Domaine | Summary | Fichiers clés |
 |---------|---------|--------------|
-| **Wave Assignment** | 24 vagues OPEN (08h-11h50) vs départ unique RANKED (15h). Format detection via regex. | src/lib/openSas.ts, slotAssignment.ts, webhooks/stripe |
-| **Group Membership** | Packs entreprise (captain + members) avec synchronisation d'ancre de vague. Anchor init via creator/member_join/admin. | src/lib/groups/*, migrations/groups.sql |
+| **Wave Assignment** | 24 vagues OPEN (08h-11h50) vs départ unique RANKED (15h). Format detection via noms ticket/race. | src/lib/openSas.ts, src/lib/slotAssignment.ts, src/app/api/registrations/create/route.ts |
+| **Group Membership** | Packs entreprise (captain + members) avec synchronisation d'ancre de vague. Anchor init via creator/member_join/admin. | src/lib/groups/*, migrations/20260416_groups.sql, migrations/20260512_groups_anchor_source.sql |
 | **Ambassador Program** | Points (1pt OPEN, 2pts RANKED), 10 reward levels, extra tickets. Multi-promo codes. | src/lib/ambassadors/program.ts, api/ambassadors/* |
 | **Email System** | 4 phases : unsubscribe → distribution lists → granular prefs → admin interface. RLS strict. | src/lib/email/*, api/admin/distribution-lists/* |
 | **Registration State** | État parallèles : claim_status + approval_status + checked_in. Workflow complexe d'approbation. | src/types/Registration.ts, api/checkin/* |
@@ -100,4 +98,5 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 | **Ambassadors** | @docs/fdr/FDR-0006-ambassador-program-points-and-rewards.md + @docs/guides/implementation-guide-ambassador.md |
 | **Email** | @docs/fdr/FDR-0007-email-distribution-and-preferences.md + @docs/guides/implementation-guide-email.md |
 | **Critical Ops** | @docs/guides/critical-operations.md, @docs/guides/rpc-reference.md |
+| **Legal / Juridique** | @docs/guides/legal.md |
 

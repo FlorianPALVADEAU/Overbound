@@ -113,7 +113,7 @@ interface Race {
 When a registration is created with an OPEN ticket:
 
 1. **Entry point**: Stripe webhook confirms payment → `POST /api/registrations/create`
-2. **Format check**: Call `isOpenFormatTicket(ticket, race)` → validates format
+2. **Format check**: Call `isOpenFormatTicket(ticket.name, race.name)` → validates format
 3. **RPC call**: `assign_open_wave_to_registration()`
    - Input: `event_id`, `registration_id`, `first_departure` (08:00), `wave_count` (24), `interval_minutes` (10), `default_capacity` (50)
    - Optional: `preferred_start`, `preferred_end`, `distance_ideal_km` (if provided by participant)
@@ -231,7 +231,7 @@ WHERE ew.event_id = sub.event_id AND ew.wave_index = sub.wave_index
 // Stripe webhook payload received
 const registration = await createRegistration(order);
 
-if (isOpenFormatTicket(ticket, race)) {
+if (isOpenFormatTicket(ticket.name, race.name)) {
   // Call RPC to assign wave
   const result = await supabase.rpc('assign_open_wave_to_registration', {
     p_event_id: registration.event_id,

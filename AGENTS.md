@@ -66,6 +66,7 @@ Ces règles s'appliquent **sans exception** à tout agent lisant ce fichier.
 | **Quality** | [docs/quality/testing-strategy.md](docs/quality/testing-strategy.md) | TDD, pyramide tests, critères validation |
 | **Security** | [docs/security/data-and-rls.md](docs/security/data-and-rls.md) | Multi-user, RLS Supabase, RGPD minimum |
 | **Operations** | [docs/operations/runbooks.md](docs/operations/runbooks.md) | Setup local, env vars, workflows |
+| **Legal / Juridique** | [docs/guides/legal.md](docs/guides/legal.md) | Guide pour rédactions sensibles, disclaimers et processus de revue |
 | **Product** | [docs/product/vision.md](docs/product/vision.md) | But métier, acteurs, périmètre V1/V2 |
 | **Roadmap** | [docs/roadmap/mvp-plan.md](docs/roadmap/mvp-plan.md) | Plan implémentation V1/V2 |
 
@@ -163,11 +164,11 @@ Ces règles s'appliquent **sans exception** à tout agent lisant ce fichier.
 | Implémenter l'assignement de vagues | AGENTS.md (warning zone) | [FDR-0004](docs/fdr/FDR-0004-wave-assignment-open-vs-ranked.md) | [guide-wave-assignment.md](docs/guides/implementation-guide-wave-assignment.md) |
 | Gérer une jointure de groupe | [FDR-0005](docs/fdr/FDR-0005-group-membership-and-wave-anchoring.md) | [guide-groups.md](docs/guides/implementation-guide-groups.md) | [critical-operations.md](docs/guides/critical-operations.md) (si transfer RANKED→OPEN) |
 | Ajouter une feature ambassadeur | [FDR-0006](docs/fdr/FDR-0006-ambassador-program-points-and-rewards.md) | [guide-ambassador.md](docs/guides/implementation-guide-ambassador.md) | [rpc-reference.md](docs/guides/rpc-reference.md) (RPCs) |
-| Envoyer un email marketing | [FDR-0007](docs/fdr/FDR-0007-email-distribution-and-preferences.md) | [guide-email.md](docs/guides/implementation-guide-email.md) | [email-system-guide.md](docs/operations/email-system-guide.md) (debug) |
+| Envoyer un email marketing | [FDR-0007](docs/fdr/FDR-0007-email-distribution-and-preferences.md) | [guide-email.md](docs/guides/implementation-guide-email.md) | [docs/guides/README.md](docs/guides/README.md) (debug) |
 | Créer une nouvelle feature métier | [vision.md](docs/product/vision.md) → [FDR appropriée](docs/fdr/README.md) | [engineering.md](docs/guidelines/engineering.md) | [testing-strategy.md](docs/quality/testing-strategy.md) |
 | Décider architecture | [overview.md](docs/architecture/overview.md) → [ADR-0004](docs/adr/ADR-0004-architecture-reality-vs-hexagonal-theory.md) | Écrire ADR | [guidelines.md](docs/guidelines/engineering.md) |
 | Debugger une opération critique | [critical-operations.md](docs/guides/critical-operations.md) | [rpc-reference.md](docs/guides/rpc-reference.md) | FDR pertinent + code |
-| Setup local ou opérationnel | [runbooks.md](docs/operations/runbooks.md) | [email-system-guide.md](docs/operations/email-system-guide.md) (si email) | — |
+| Setup local ou opérationnel | [runbooks.md](docs/operations/runbooks.md) | [docs/guides/README.md](docs/guides/README.md) (si email) | — |
 
 ---
 
