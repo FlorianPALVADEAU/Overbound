@@ -7,6 +7,7 @@ const RESEND_DEFAULT_AUDIENCE_ID =
   process.env.RESEND_DEFAULT_SEGMENT_ID ||
   process.env.RESEND_AUDIENCE_ID ||
   process.env.RESEND_DEFAULT_AUDIENCE_ID
+const RESEND_UNREGISTERED_SEGMENT_ID = process.env.RESEND_SEGMENT_UNREGISTERED_ID?.trim() || null
 
 export const DEFAULT_MARKETING_LIST_SLUGS = [
   'events-announcements',
@@ -117,6 +118,14 @@ export const getResendAudienceIdForSlug = (slug: string): string | null => {
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
 }
+
+export const getResendGeneralSegmentId = (): string | null => {
+  if (!RESEND_DEFAULT_AUDIENCE_ID) return null
+  const trimmed = RESEND_DEFAULT_AUDIENCE_ID.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+export const getResendUnregisteredSegmentId = (): string | null => RESEND_UNREGISTERED_SEGMENT_ID
 
 export const mapSlugsToAudienceIds = (slugs: string[]) => {
   if (RESEND_DEFAULT_AUDIENCE_ID?.trim()) {
@@ -538,4 +547,88 @@ export async function deleteResendContactByEmail(email: string) {
 
   const data = unwrapData(removed, 'delete contact')
   return { deleted: data.deleted }
+}
+
+export async function addResendContactToSegment(params: {
+  email: string
+  segmentId: string
+  fullName?: string | null
+  properties?: Record<string, string | number | null>
+}) {
+  await upsertResendContactInAudience({
+    email: params.email,
+    fullName: params.fullName,
+    audienceId: params.segmentId,
+    unsubscribed: false,
+    properties: params.properties,
+  })
+}
+
+export async function removeResendContactFromSegment(params: {
+  email: string
+  segmentId: string
+}) {
+  const resend = getResend()
+  const email = normalizeEmail(params.email)
+  const removed = await callResendWithRetry(() =>
+    resend.contacts.segments.remove({
+      email,
+      segmentId: params.segmentId,
+    }),
+  )
+  if (removed.error && removed.error.name !== 'not_found') {
+    throw new Error(
+      `[resend] remove contact from segment: ${removed.error.name} ${removed.error.message}`,
+    )
+  }
+}
+
+export async function markResendContactAsUnregistered(params: {
+  email: string
+  fullName?: string | null
+  properties?: Record<string, string | number | null>
+}) {
+  const generalSegmentId = getResendGeneralSegmentId()
+  if (generalSegmentId) {
+    await addResendContactToSegment({
+      email: params.email,
+      fullName: params.fullName,
+      segmentId: generalSegmentId,
+      properties: params.properties,
+    })
+  }
+
+  const unregisteredSegmentId = getResendUnregisteredSegmentId()
+  if (unregisteredSegmentId) {
+    await addResendContactToSegment({
+      email: params.email,
+      fullName: params.fullName,
+      segmentId: unregisteredSegmentId,
+      properties: params.properties,
+    })
+  }
+}
+
+export async function markResendContactAsRegistered(params: {
+  email: string
+  fullName?: string | null
+  properties?: Record<string, string | number | null>
+}) {
+  const generalSegmentId = getResendGeneralSegmentId()
+  if (generalSegmentId) {
+    await addResendContactToSegment({
+      email: params.email,
+      fullName: params.fullName,
+      segmentId: generalSegmentId,
+      properties: params.properties,
+    })
+  }
+
+  const unregisteredSegmentId = getResendUnregisteredSegmentId()
+  if (unregisteredSegmentId) {
+    await removeResendContactFromSegment({
+      email: params.email,
+      segmentId: unregisteredSegmentId,
+    })
+  }
 }

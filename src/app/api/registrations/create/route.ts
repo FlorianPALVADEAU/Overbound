@@ -19,6 +19,7 @@ import {
 } from '@/lib/openSas'
 import { sendAdminPushNotification } from '@/lib/push'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
+import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 
 export const runtime = 'nodejs'
 
@@ -927,6 +928,25 @@ export async function POST(request: NextRequest) {
         event_id: eventId,
       },
     })
+
+    try {
+      const seenEmails = new Set<string>()
+      for (const { registration, participantName } of createdRegistrations) {
+        const email = String(registration.email ?? '').trim().toLowerCase()
+        if (!email || seenEmails.has(email)) continue
+        seenEmails.add(email)
+        await markResendContactAsRegistered({
+          email,
+          fullName: participantName ?? null,
+          properties: {
+            source: 'registration-create',
+            event_id: eventId,
+          },
+        })
+      }
+    } catch (resendSyncError) {
+      console.error('[registration-create] resend segment sync failed', resendSyncError)
+    }
 
     return NextResponse.json({
       success: true,

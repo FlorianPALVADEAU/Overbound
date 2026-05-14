@@ -14,6 +14,7 @@ Each guide provides code patterns, API routes, SQL snippets, and edge cases for 
 | [FDR-0005](../fdr/FDR-0005-group-membership-and-wave-anchoring.md) | [implementation-guide-groups.md](./implementation-guide-groups.md) | Group creation, member join, anchor initialization & sync |
 | [FDR-0006](../fdr/FDR-0006-ambassador-program-points-and-rewards.md) | [implementation-guide-ambassador.md](./implementation-guide-ambassador.md) | Points calculation, 10 reward levels, dashboard data flow |
 | [FDR-0007](../fdr/FDR-0007-email-distribution-and-preferences.md) | [implementation-guide-email.md](./implementation-guide-email.md) | 4-phase email system, distribution lists, preferences UI, triggers |
+| — | [legal.md](./legal.md) | Guide légal pour rédactions sensibles, disclaimers et processus de revue |
 
 ---
 

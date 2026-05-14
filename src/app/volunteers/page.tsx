@@ -935,6 +935,11 @@ export default function VolunteersPage() {
 										{submitting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
 										Envoyer ma candidature bénévole
 									</Button>
+									{submitSuccess ? (
+										<p className='text-sm font-medium text-primary'>
+											Candidature envoyée avec succès. Tu vas recevoir un email de confirmation.
+										</p>
+									) : null}
 								</form>
 							</>
 						)}
