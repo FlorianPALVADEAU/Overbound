@@ -50,6 +50,7 @@ export default function MultiStepEventRegistration({
   // Local UI state
   const [disclaimerRead, setDisclaimerRead] = useState(false)
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
+  const [rulebookAccepted, setRulebookAccepted] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
 
@@ -195,7 +196,8 @@ export default function MultiStepEventRegistration({
       )
     })
 
-  const isConfirmationStepValid = disclaimerRead && disclaimerAccepted && Boolean(signatureImage)
+  const isConfirmationStepValid =
+    disclaimerRead && disclaimerAccepted && rulebookAccepted && Boolean(signatureImage)
 
   const {
     stepIndex,
@@ -229,6 +231,7 @@ export default function MultiStepEventRegistration({
       signatureImage,
       disclaimerRead,
       disclaimerAccepted,
+      rulebookAccepted,
     },
     {
       setTicketSelections,
@@ -239,6 +242,7 @@ export default function MultiStepEventRegistration({
       setPromoError,
       setDisclaimerRead,
       setDisclaimerAccepted,
+      setRulebookAccepted,
       setSignatureImage,
       setClientSecret,
       setPaymentIntentId,
@@ -309,12 +313,12 @@ export default function MultiStepEventRegistration({
       return
     }
 
-    if (!disclaimerRead || !disclaimerAccepted || !signatureImage) {
+    if (!disclaimerRead || !disclaimerAccepted || !rulebookAccepted || !signatureImage) {
       setShowValidationErrors(true)
       setSubmissionMessage({
         type: 'error',
-        text: !disclaimerRead || !disclaimerAccepted
-          ? 'Merci de lire et accepter la décharge de responsabilité.'
+        text: !disclaimerRead || !disclaimerAccepted || !rulebookAccepted
+          ? 'Merci de lire et accepter la décharge ainsi que le règlement officiel.'
           : 'Merci de dessiner votre signature pour valider.',
       })
       return
@@ -365,7 +369,11 @@ export default function MultiStepEventRegistration({
               regulationVersion: REGULATION_VERSION,
               signedAt: new Date().toISOString(),
             },
-            disclaimer: { read: disclaimerRead, accepted: disclaimerAccepted },
+            disclaimer: {
+              read: disclaimerRead,
+              accepted: disclaimerAccepted,
+              rulebookAccepted,
+            },
             freeOrderMetadata: 'freeOrderMetadata' in paymentData ? paymentData.freeOrderMetadata : {},
           }
 
@@ -447,6 +455,7 @@ export default function MultiStepEventRegistration({
       disclaimer: {
         read: disclaimerRead,
         accepted: disclaimerAccepted,
+        rulebookAccepted,
       },
     }
 
@@ -523,10 +532,12 @@ export default function MultiStepEventRegistration({
       <ConfirmationStep
         disclaimerRead={disclaimerRead}
         disclaimerAccepted={disclaimerAccepted}
+        rulebookAccepted={rulebookAccepted}
         signatureImage={signatureImage}
         showErrors={showValidationErrors}
         onDisclaimerReadChange={setDisclaimerRead}
         onDisclaimerAcceptedChange={setDisclaimerAccepted}
+        onRulebookAcceptedChange={setRulebookAccepted}
         onSignatureChange={setSignatureImage}
       />
     ),

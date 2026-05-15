@@ -6,29 +6,35 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { ShieldAlert } from 'lucide-react'
 import SignaturePad from '@/components/forms/SignaturePad'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 interface ConfirmationStepProps {
   disclaimerRead: boolean
   disclaimerAccepted: boolean
+  rulebookAccepted: boolean
   signatureImage: string | null
   showErrors: boolean
   onDisclaimerReadChange: (checked: boolean) => void
   onDisclaimerAcceptedChange: (checked: boolean) => void
+  onRulebookAcceptedChange: (checked: boolean) => void
   onSignatureChange: (image: string | null) => void
 }
 
 export default function ConfirmationStep({
   disclaimerRead,
   disclaimerAccepted,
+  rulebookAccepted,
   signatureImage,
   showErrors,
   onDisclaimerReadChange,
   onDisclaimerAcceptedChange,
+  onRulebookAcceptedChange,
   onSignatureChange,
 }: ConfirmationStepProps) {
   const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false)
   const showDisclaimerReadError = showErrors && !disclaimerRead
   const showDisclaimerAcceptedError = showErrors && !disclaimerAccepted
+  const showRulebookAcceptedError = showErrors && !rulebookAccepted
   const showSignatureError = showErrors && !signatureImage
 
   return (
@@ -37,7 +43,7 @@ export default function ConfirmationStep({
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ShieldAlert className="h-4 w-4" />
-            Décharge de responsabilité Overbound
+            Décharge de responsabilité & Acceptation du règlement Overbound
           </CardTitle>
           <CardDescription>
             Merci de lire attentivement ce texte avant de signer électroniquement.
@@ -57,6 +63,14 @@ export default function ConfirmationStep({
             >
               {isDisclaimerExpanded ? 'Masquer' : 'Lire la décharge complète'}
             </button>
+            <a
+              href={OFFICIAL_RULEBOOK_PDF_PATH}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 ml-2 inline-flex rounded-md border border-primary bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+            >
+              Lire le règlement complet (PDF)
+            </a>
 
             {isDisclaimerExpanded ? (
               <div className="mt-4 max-h-80 space-y-3 overflow-y-auto rounded-md border border-primary/20 bg-background/70 p-3 text-xs leading-relaxed">
@@ -138,14 +152,8 @@ export default function ConfirmationStep({
                 <p className="text-muted-foreground">
                   Documents utiles :
                   {' '}
-                  <a className="underline" href="/documents/OVERBOUND_rulebook_OPEN-2026.pdf" target="_blank" rel="noreferrer">
-                    OPEN 2026
-                  </a>
-                  {' '}
-                  •
-                  {' '}
-                  <a className="underline" href="/documents/OVERBOUND_rulebook_RANKED-2026.pdf" target="_blank" rel="noreferrer">
-                    RANKED 2026
+                  <a className="underline" href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" rel="noreferrer">
+                    Règlement officiel Overbound 2026 (PDF)
                   </a>
                 </p>
               </div>
@@ -171,6 +179,28 @@ export default function ConfirmationStep({
                   <span className="text-destructive">*</span>
                 </Label>
                 {showDisclaimerReadError && (
+                  <p className="text-xs text-destructive">Ce champ est obligatoire.</p>
+                )}
+              </div>
+            </div>
+            <div
+              className={`flex items-start gap-3 rounded-md p-2 -m-2 ${showRulebookAcceptedError ? 'bg-destructive/10' : ''}`}
+            >
+              <Checkbox
+                id="rulebook-accepted"
+                checked={rulebookAccepted}
+                onCheckedChange={(checked) => onRulebookAcceptedChange(checked === true)}
+                className={showRulebookAcceptedError ? 'border-destructive' : ''}
+              />
+              <div className="space-y-1">
+                <Label
+                  htmlFor="rulebook-accepted"
+                  className={`text-sm leading-relaxed ${showRulebookAcceptedError ? 'text-destructive' : ''}`}
+                >
+                  J&apos;ai lu et compris l&apos;intégralité du règlement officiel Overbound.{' '}
+                  <span className="text-destructive">*</span>
+                </Label>
+                {showRulebookAcceptedError && (
                   <p className="text-xs text-destructive">Ce champ est obligatoire.</p>
                 )}
               </div>

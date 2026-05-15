@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 export const metadata: Metadata = {
   title: "Conditions Générales d'Utilisation (CGU) | Overbound Race",
@@ -209,6 +210,12 @@ export default function CGUPage() {
                 contact@overbound-race.com
               </Link>{' '}
               en indiquant « Demande CGU ».
+              <br />
+              Règlement officiel Overbound 2026 :{' '}
+              <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="text-primary hover:underline">
+                consulter le PDF
+              </Link>
+              .
             </div>
           </div>
 

@@ -47,6 +47,7 @@ export type RegistrationSignature = {
 export type RegistrationDisclaimer = {
   read: boolean
   accepted: boolean
+  rulebookAccepted: boolean
 }
 
 export type RegistrationDraft = {

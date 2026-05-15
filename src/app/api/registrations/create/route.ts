@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       groupId = null,
       signatureImage = null,
       signatureMetadata = {},
-      disclaimer = { read: false, accepted: false },
+      disclaimer = { read: false, accepted: false, rulebookAccepted: false },
       freeOrderMetadata = null,
     } = await request.json() as {
       paymentIntentId: string
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       groupId?: string | null
       signatureImage: string | null
       signatureMetadata: Record<string, any>
-      disclaimer: { read: boolean; accepted: boolean }
+      disclaimer: { read: boolean; accepted: boolean; rulebookAccepted?: boolean }
       freeOrderMetadata?: Record<string, string> | null
     }
 
@@ -105,11 +105,13 @@ export async function POST(request: NextRequest) {
     const hasSignature =
       typeof signatureImage === 'string' && signatureImage.trim().length > 0
     const hasAcceptedDisclaimer =
-      Boolean(disclaimer?.read) && Boolean(disclaimer?.accepted)
+      Boolean(disclaimer?.read) &&
+      Boolean(disclaimer?.accepted) &&
+      Boolean(disclaimer?.rulebookAccepted)
 
     if (!hasSignature || !hasAcceptedDisclaimer) {
       return NextResponse.json(
-        { error: 'Signature et acceptation de la décharge obligatoires avant paiement.' },
+        { error: 'Signature, décharge et règlement officiel obligatoires avant paiement.' },
         { status: 422 },
       )
     }

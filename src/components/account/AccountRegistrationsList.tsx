@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
 import { formatClockTimeParis } from '@/lib/dateTime'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 export interface AccountRegistrationItem {
   registration_id: string
@@ -319,6 +320,11 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
+                  <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank">
+                    <Button variant="ghost" size="sm">
+                      Règlement officiel
+                    </Button>
+                  </Link>
                   {registration.requires_document && registration.approval_status !== 'approved' ? (
                     <Link href={`/account/registration/${registration.registration_id}/document`}>
                       <Button

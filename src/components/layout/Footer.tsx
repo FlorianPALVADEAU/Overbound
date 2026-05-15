@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Instagram, Youtube, Music2 } from 'lucide-react'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 const LINK_GROUPS = [
   {
@@ -25,7 +26,7 @@ const LINK_GROUPS = [
     links: [
       { label: 'Le concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
-      { label: "L'équipe", href: '/about/team' },
+      // { label: "L'équipe", href: '/about/team' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
     ],
@@ -38,6 +39,7 @@ const LINK_GROUPS = [
       { label: 'CGV', href: '/cgv' },
       { label: 'Confidentialité', href: '/privacy-policies' },
       { label: 'Cookies', href: '/cookies' },
+      { label: 'Règlement officiel', href: OFFICIAL_RULEBOOK_PDF_PATH },
       { label: 'Crédits', href: '/about/credits' },
     ],
   },
