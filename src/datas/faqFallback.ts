@@ -1,5 +1,6 @@
 import type { PortableTextBlock } from '@portabletext/types'
 import type { FAQDocument } from '@/app/about/faq/FAQPageContent'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 const block = (text: string): PortableTextBlock => ({
   _key: text.slice(0, 16).replace(/\s+/g, '-'),
@@ -144,6 +145,7 @@ export const faqFallback: FAQDocument[] = [
     category: 'logistique',
     relatedLinks: [
       { label: 'Guide du participant', href: '/documents/guide-participant.pdf' },
+      { label: 'Règlement officiel 2026', href: OFFICIAL_RULEBOOK_PDF_PATH },
       { label: 'Plan du village', href: '/about/faq#logistique' },
     ],
   },

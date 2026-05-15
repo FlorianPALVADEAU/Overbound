@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { AdminRegistration } from '@/types/Registration'
 import { formatClockTimeParis, formatDateTimeParis } from '@/lib/dateTime'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 interface RegistrationDetailsDialogProps {
   registration: AdminRegistration | null
@@ -338,6 +339,12 @@ export function RegistrationDetailsDialog({
 
           <section className="space-y-2">
             <h4 className="font-semibold">Validation & documents</h4>
+            <div className={rowClassName}>
+              <span className="text-muted-foreground">Règlement officiel</span>
+              <a href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" rel="noreferrer" className="underline">
+                Consulter le PDF
+              </a>
+            </div>
             <div className={rowClassName}>
               <span className="text-muted-foreground">Statut inscription</span>
               <span>{statusLabel(registration.approval_status)}</span>

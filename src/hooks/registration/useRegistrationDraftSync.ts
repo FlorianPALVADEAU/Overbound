@@ -26,6 +26,7 @@ interface DraftSyncConfig {
   signatureImage: string | null
   disclaimerRead: boolean
   disclaimerAccepted: boolean
+  rulebookAccepted: boolean
 }
 
 interface DraftSyncSetters {
@@ -37,6 +38,7 @@ interface DraftSyncSetters {
   setPromoError: (error: string | null) => void
   setDisclaimerRead: (read: boolean) => void
   setDisclaimerAccepted: (accepted: boolean) => void
+  setRulebookAccepted: (accepted: boolean) => void
   setSignatureImage: (image: string | null) => void
   setClientSecret: (secret: string | null) => void
   setPaymentIntentId: (id: string | null) => void
@@ -114,6 +116,7 @@ export function useRegistrationDraftSync(
         // L'utilisateur doit les confirmer à chaque session pour des raisons juridiques
         setters.setDisclaimerRead(false)
         setters.setDisclaimerAccepted(false)
+        setters.setRulebookAccepted(false)
         setters.setSignatureImage(null)
         setters.setClientSecret(registrationDraft.clientSecret)
         setters.setPaymentIntentId(registrationDraft.paymentIntentId)
@@ -141,6 +144,7 @@ export function useRegistrationDraftSync(
       setters.setPromoError(null)
       setters.setDisclaimerRead(false)
       setters.setDisclaimerAccepted(false)
+      setters.setRulebookAccepted(false)
       setters.setSignatureImage(null)
       setters.setClientSecret(null)
       setters.setPaymentIntentId(null)
@@ -207,6 +211,7 @@ export function useRegistrationDraftSync(
       disclaimer: {
         read: config.disclaimerRead,
         accepted: config.disclaimerAccepted,
+        rulebookAccepted: config.rulebookAccepted,
       },
     }
 
@@ -235,6 +240,7 @@ export function useRegistrationDraftSync(
     config.signatureImage,
     config.disclaimerRead,
     config.disclaimerAccepted,
+    config.rulebookAccepted,
     setRegistrationDraft,
     clearRegistrationDraft,
   ])

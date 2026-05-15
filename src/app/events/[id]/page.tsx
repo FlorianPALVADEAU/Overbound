@@ -24,6 +24,7 @@ import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -687,6 +688,13 @@ export default function EventDetailPage() {
               </CardContent>
             </Card>
           </div>
+          <p className="mt-5 text-sm text-muted-foreground">
+            Règlement officiel 2026 :{' '}
+            <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="underline">
+              consulter le PDF
+            </Link>
+            .
+          </p>
         </div>
       </section>
 

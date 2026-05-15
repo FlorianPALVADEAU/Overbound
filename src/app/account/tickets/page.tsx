@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 export default function AccountTicketsPage() {
   const router = useRouter()
@@ -114,6 +115,13 @@ export default function AccountTicketsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Billets disponibles</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Règlement officiel 2026 :{' '}
+              <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="underline">
+                consulter le PDF
+              </Link>
+              .
+            </p>
           </CardHeader>
           <CardContent>
             {sortedRegistrations.length === 0 ? (

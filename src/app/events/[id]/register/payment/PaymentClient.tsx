@@ -47,12 +47,13 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
       registrationDraft.signature.imageDataUrl.trim().length > 0
     const hasAcceptedDisclaimer =
       Boolean(registrationDraft.disclaimer?.read) &&
-      Boolean(registrationDraft.disclaimer?.accepted)
+      Boolean(registrationDraft.disclaimer?.accepted) &&
+      Boolean(registrationDraft.disclaimer?.rulebookAccepted)
 
     if (!hasSignature || !hasAcceptedDisclaimer) {
       setMessage({
         type: 'error',
-        text: 'Signature et acceptation de la décharge obligatoires. Merci de revenir à l’étape précédente.',
+        text: 'Signature, décharge et règlement officiel obligatoires. Merci de revenir à l’étape précédente.',
       })
       return
     }
@@ -177,7 +178,8 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
     registrationDraft.signature.imageDataUrl.trim().length > 0
   const hasAcceptedDisclaimer =
     Boolean(registrationDraft.disclaimer?.read) &&
-    Boolean(registrationDraft.disclaimer?.accepted)
+    Boolean(registrationDraft.disclaimer?.accepted) &&
+    Boolean(registrationDraft.disclaimer?.rulebookAccepted)
 
   if (!hasSignature || !hasAcceptedDisclaimer) {
     return (
@@ -185,7 +187,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            La signature et l’acceptation de la décharge sont obligatoires avant paiement.
+            La signature, la décharge et l’acceptation du règlement officiel sont obligatoires avant paiement.
           </AlertDescription>
         </Alert>
         <Button asChild variant="outline">

@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Preview, Section, Text, Hr, Link, Img, Button } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 export default function TicketEmail({
   participantName,
@@ -110,6 +111,13 @@ export default function TicketEmail({
             Merci de te présenter au minimum 1h avant ton départ.
           </Text>
         ) : null}
+        <Text style={styles.footerText}>
+          Règlement officiel Overbound 2026 :{' '}
+          <Link href={OFFICIAL_RULEBOOK_PDF_PATH} style={styles.link}>
+            consulter le PDF
+          </Link>
+          .
+        </Text>
       </Section>
     </EmailLayout>
   )
