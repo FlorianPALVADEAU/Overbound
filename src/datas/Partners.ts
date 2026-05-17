@@ -14,10 +14,10 @@ export const PARTNERS_DATA: PartnerType[] = [
     //     name: 'Decathlon',
     //     logo: '/images/partners_logo/decathlon_logo.webp',
     // },
-    {
-        name: 'Fiskars',
-        logo: '/images/partners_logo/fiskars_logo.webp',
-    },
+    // {
+    //     name: 'Fiskars',
+    //     logo: '/images/partners_logo/fiskars_logo.webp',
+    // },
     {
         name: 'Intersport Plaisir',
         logo: '/images/partners_logo/intersport_plaisir_logo.webp',

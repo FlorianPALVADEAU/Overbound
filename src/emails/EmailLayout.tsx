@@ -100,10 +100,10 @@ export function EmailLayout({
                     <td style={styles.navLink}>
                       <Link href={`${baseUrl}/courses`} style={styles.link}>Courses</Link>
                     </td>
-                    <td style={styles.navSeparator}>|</td>
+                    {/* <td style={styles.navSeparator}>|</td>
                     <td style={styles.navLink}>
                       <Link href={`${baseUrl}/obstacles`} style={styles.link}>Obstacles</Link>
-                    </td>
+                    </td> */}
                     <td style={styles.navSeparator}>|</td>
                     <td style={styles.navLink}>
                       <Link href={`${baseUrl}/blog`} style={styles.link}>Entraînements</Link>

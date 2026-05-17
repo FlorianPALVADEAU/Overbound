@@ -23,6 +23,8 @@ import {
 } from 'lucide-react'
 import { useGetObstacles } from '../api/obstacles/obstaclesQueries'
 import type { Obstacle } from '@/types/Obstacle'
+import AnimatedBanner from '@/components/homepage/AnimatedBanner'
+import { PARTNERS_DATA } from '@/datas/Partners'
 
 const OBSTACLE_TYPES: Record<string, string> = {
   climbing: 'Escalade',
@@ -179,6 +181,19 @@ export default function ObstaclesPage() {
                   <Link href='/events'>Trouver une course</Link>
                 </Button>
               </div>
+            </div>
+          </div>
+        </section>
+        <section className='relative z-20 -mt-10 px-4 sm:px-6 lg:px-8'>
+          <div className='mx-auto w-full max-w-7xl rounded-2xl border border-border/70 bg-background/85 p-3 shadow-xl backdrop-blur-md sm:p-4'>
+            <div className='mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground'>
+              Partenaires Officiels
+            </div>
+            <div className='overflow-hidden rounded-xl border border-border/60'>
+              <AnimatedBanner
+                images={PARTNERS_DATA.map((partner) => partner.logo)}
+                imageAltPrefix='Logo partenaire Overbound'
+              />
             </div>
           </div>
         </section>

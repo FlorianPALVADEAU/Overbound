@@ -20,6 +20,7 @@ import { UltraArenaReassurance } from '@/components/events/ultra-arena/UltraAren
 import { UltraArenaPricing } from '@/components/events/ultra-arena/UltraArenaPricing'
 import { UltraArenaFAQ } from '@/components/events/ultra-arena/UltraArenaFAQ'
 import { UltraArenaValidationStrip } from '@/components/events/ultra-arena/UltraArenaValidationStrip'
+import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { getCurrentTicketPrice } from '@/lib/pricing'
@@ -521,6 +522,14 @@ export default function EventDetailPage() {
             trackEvent('click_cta_midpage', { cta_location: 'formats' })
             trackEvent('click_cta_secondary', { cta_location: 'formats' })
           }}
+        />
+
+        {/* 7.5 OBSTACLES — reuse homepage slider component */}
+        <ObstaclesOverview
+          eventId={params.id}
+          embedded
+          title="Les obstacles de l'Ultra Arena"
+          description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
         />
 
         {/* 7. REASSURANCE — practical info + location */}

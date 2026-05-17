@@ -9,7 +9,7 @@ const LINK_GROUPS = [
     links: [
       { label: 'Tous les événements', href: '/events' },
       { label: 'Les formats', href: '/events/formats' },
-      { label: 'Les obstacles', href: '/obstacles' },
+      // { label: 'Les obstacles', href: '/obstacles' },
       { label: 'Devenir bénévole', href: '/volunteers' },
     ],
   },
