@@ -5,6 +5,8 @@ import { ArrowLeft, Mountain, Target, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import AnimatedBanner from '@/components/homepage/AnimatedBanner'
+import { PARTNERS_DATA } from '@/datas/Partners'
 
 interface Props {
   formattedDate: string
@@ -120,9 +122,14 @@ export function UltraArenaHero({
             )}
 
             {isOnSale ? (
-              <p className="text-xs font-medium text-foreground/80">
-                Les inscriptions sont ouvertes. Les premiers participants sont déjà inscrits.
-              </p>
+              <div className="max-w-2xl rounded-lg border border-border/25 bg-background/30 p-2">
+                <AnimatedBanner
+                  images={PARTNERS_DATA.map((partner) => partner.logo)}
+                  imageAltPrefix="Logo partenaire Overbound"
+                  compact
+                  subtle
+                />
+              </div>
             ) : null}
           </div>
 
