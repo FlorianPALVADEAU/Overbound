@@ -39,6 +39,7 @@ import {
   useAssignAmbassadorCode,
   useSetCurrentAmbassadorCode,
   useRemoveAmbassadorCode,
+  useAddManualReferralWithPoints,
 } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
 
@@ -95,6 +96,16 @@ export function AmbassadorsSection() {
   const assignCode = useAssignAmbassadorCode()
   const setCurrentCode = useSetCurrentAmbassadorCode()
   const removeCode = useRemoveAmbassadorCode()
+  const addManualReferral = useAddManualReferralWithPoints()
+  const [manualReferralDialog, setManualReferralDialog] = useState<{
+    ambassador_id: string
+    ambassador_name: string
+    ambassador_code: string | null
+  } | null>(null)
+  const [manualReferralEmail, setManualReferralEmail] = useState('')
+  const [manualReferralPoints, setManualReferralPoints] = useState(1)
+  const [manualReferralFormat, setManualReferralFormat] = useState<'auto' | 'open' | 'ranked'>('auto')
+  const [manualReferralMessage, setManualReferralMessage] = useState<string | null>(null)
 
   const assignedCodeIds = new Set(
     (ambassadorCodesData?.codes ?? []).map((c) => c.promotional_code_id),
@@ -236,6 +247,23 @@ export function AmbassadorsSection() {
                               }
                             >
                               Points
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setManualReferralDialog({
+                                  ambassador_id: row.ambassador_id,
+                                  ambassador_name: row.ambassador_name,
+                                  ambassador_code: row.ambassador_code,
+                                })
+                                setManualReferralEmail('')
+                                setManualReferralPoints(1)
+                                setManualReferralFormat('auto')
+                                setManualReferralMessage(null)
+                              }}
+                            >
+                              Filleul + point
                             </Button>
                           </div>
                         </TableCell>
@@ -527,6 +555,109 @@ export function AmbassadorsSection() {
               disabled={updatePoints.isPending}
             >
               {updatePoints.isPending ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(manualReferralDialog)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManualReferralDialog(null)
+            setManualReferralMessage(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-130">
+          <DialogHeader>
+            <DialogTitle>Ajouter un filleul manuel + crédit de points</DialogTitle>
+            <DialogDescription>
+              Ajoute un inscrit dans les filleuls et crédite des points sans doublon.
+            </DialogDescription>
+          </DialogHeader>
+          {manualReferralDialog ? (
+            <div className="grid gap-3">
+              <div className="rounded-lg border px-3 py-2 text-sm">
+                <div className="font-semibold">{manualReferralDialog.ambassador_name}</div>
+                <div className="text-xs text-muted-foreground">{manualReferralDialog.ambassador_code ?? '—'}</div>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-xs font-medium">Email du filleul</label>
+                <Input
+                  type="email"
+                  placeholder="exemple@mail.com"
+                  value={manualReferralEmail}
+                  onChange={(event) => setManualReferralEmail(event.target.value)}
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <label className="text-xs font-medium">Points à créditer</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={manualReferralPoints}
+                    onChange={(event) => setManualReferralPoints(Number(event.target.value || 1))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-xs font-medium">Format</label>
+                  <Select
+                    value={manualReferralFormat}
+                    onValueChange={(value) => setManualReferralFormat(value as 'auto' | 'open' | 'ranked')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Auto (détection ticket)</SelectItem>
+                      <SelectItem value="open">OPEN</SelectItem>
+                      <SelectItem value="ranked">RANKED</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {manualReferralMessage ? (
+                <div className="rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
+                  {manualReferralMessage}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManualReferralDialog(null)}>
+              Annuler
+            </Button>
+            <Button
+              disabled={
+                !manualReferralDialog ||
+                !manualReferralEmail.trim() ||
+                manualReferralPoints < 1 ||
+                addManualReferral.isPending
+              }
+              onClick={async () => {
+                if (!manualReferralDialog) return
+                setManualReferralMessage(null)
+                const result = await addManualReferral.mutateAsync({
+                  ambassador_id: manualReferralDialog.ambassador_id,
+                  referral_email: manualReferralEmail.trim(),
+                  points: manualReferralPoints,
+                  race_format: manualReferralFormat,
+                })
+                if (result.already_credited) {
+                  setManualReferralMessage(
+                    'Filleul ajouté (ou déjà présent). Aucun point ajouté car cette inscription était déjà créditée.',
+                  )
+                } else {
+                  setManualReferralMessage(
+                    `Filleul ajouté et ${result.points_credited} point(s) crédité(s).`,
+                  )
+                }
+              }}
+            >
+              {addManualReferral.isPending ? 'Traitement…' : 'Ajouter'}
             </Button>
           </DialogFooter>
         </DialogContent>
