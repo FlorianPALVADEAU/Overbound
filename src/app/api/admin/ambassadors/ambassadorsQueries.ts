@@ -226,3 +226,34 @@ export const useRemoveAmbassadorCode = () => {
     },
   })
 }
+
+export const useAddManualReferralWithPoints = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: {
+      ambassador_id: string
+      referral_email: string
+      points: number
+      race_format?: 'auto' | 'open' | 'ranked'
+    }) => {
+      const response = await axiosClient.post<{
+        success: boolean
+        registration_id: string
+        email: string
+        points_credited: number
+        already_credited: boolean
+      }>('/admin/ambassadors/manual-referrals', {
+        ...payload,
+        race_format: payload.race_format ?? 'auto',
+      })
+      if (response.status !== 200) {
+        throw new Error('Erreur lors de l’ajout du filleul manuel')
+      }
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADORS_QUERY_KEY })
+    },
+  })
+}
