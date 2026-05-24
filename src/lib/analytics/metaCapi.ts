@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import crypto from 'crypto';
 
 type MetaCustomData = Record<string, string | number | boolean | string[] | undefined>
 
@@ -33,7 +33,7 @@ const META_ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN || ''
 const META_TEST_EVENT_CODE = process.env.META_CAPI_TEST_EVENT_CODE || ''
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
-const sha256 = (value: string) => createHash('sha256').update(value).digest('hex')
+const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex')
 
 const toUnixSeconds = () => Math.floor(Date.now() / 1000)
 
