@@ -1,8 +1,8 @@
-import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { buildMetaUserData } from './metaCapi'
 
-const sha256 = (value: string) => createHash('sha256').update(value).digest('hex')
+const EMAIL_HASH = 'b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514'
+const EXTERNAL_ID_HASH = 'fcdec6df4d44dbc637c7c5b58efface52a7f8a88535423430255be0bb89bedd8'
 
 describe('buildMetaUserData', () => {
   it('hashes user identifiers and keeps transport fields intact', () => {
@@ -16,8 +16,8 @@ describe('buildMetaUserData', () => {
         fbc: 'fbc-token',
       }),
     ).toEqual({
-      em: [sha256('user@example.com')],
-      external_id: [sha256('user-123')],
+      em: [EMAIL_HASH],
+      external_id: [EXTERNAL_ID_HASH],
       client_ip_address: '127.0.0.1',
       client_user_agent: 'Mozilla/5.0',
       fbp: 'fbp-token',
