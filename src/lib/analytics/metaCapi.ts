@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 type MetaCustomData = Record<string, string | number | boolean | string[] | undefined>
 
 interface MetaUserDataInput {
@@ -31,15 +33,16 @@ const META_ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN || ''
 const META_TEST_EVENT_CODE = process.env.META_CAPI_TEST_EVENT_CODE || ''
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
+const sha256 = (value: string) => createHash('sha256').update(value).digest('hex')
 
 const toUnixSeconds = () => Math.floor(Date.now() / 1000)
 
-const buildUserData = (userData?: MetaUserDataInput) => {
+export const buildMetaUserData = (userData?: MetaUserDataInput) => {
   if (!userData) return undefined
 
   const payload: Record<string, string | string[]> = {}
-  if (userData.email) payload.em = [normalizeEmail(userData.email)]
-  if (userData.externalId) payload.external_id = [String(userData.externalId)]
+  if (userData.email) payload.em = [sha256(normalizeEmail(userData.email))]
+  if (userData.externalId) payload.external_id = [sha256(String(userData.externalId).trim())]
   if (userData.clientIpAddress) payload.client_ip_address = userData.clientIpAddress
   if (userData.clientUserAgent) payload.client_user_agent = userData.clientUserAgent
   if (userData.fbp) payload.fbp = userData.fbp
@@ -51,7 +54,7 @@ const buildUserData = (userData?: MetaUserDataInput) => {
 export const sendMetaCapiEvent = async (input: SendMetaCapiEventInput) => {
   if (!META_DATASET_ID || !META_ACCESS_TOKEN) return
 
-  const userData = buildUserData(input.userData)
+  const userData = buildMetaUserData(input.userData)
 
   const eventPayload: Record<string, unknown> = {
     event_name: input.eventName,

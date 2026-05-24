@@ -709,57 +709,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment promotional code usage count
-    for (const promotionalCodeId of promotionalCodeIds) {
-      const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
-        promo_code_id: promotionalCodeId,
-      })
+    await Promise.allSettled(
+      Array.from(promotionalCodeIds).map(async (promotionalCodeId) => {
+        const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
+          promo_code_id: promotionalCodeId,
+        })
 
-      if (promoIncrementError) {
-        console.error('Erreur incrémentation code promo:', promoIncrementError)
-      }
-    }
+        if (promoIncrementError) {
+          console.error('Erreur incrémentation code promo:', promoIncrementError)
+        }
+      }),
+    )
 
-    // Best effort: if the SQL migration is in place, this keeps points in sync immediately.
-    const { error: ambassadorPointsError } = await admin.rpc('award_ambassador_points_for_order', {
-      p_order_id: order.id,
-    })
-    if (ambassadorPointsError) {
-      console.error('Erreur attribution points ambassadeur:', ambassadorPointsError)
-    } else {
-      try {
-        await notifyAmbassadorRewardsForOrder(admin, order.id)
-      } catch (notificationError) {
-        console.error('Erreur notification récompense ambassadeur:', notificationError)
-      }
-    }
+    const firstRegistration = createdRegistrations[0]
+    const participantLabel = firstRegistration?.participantName
+      || firstRegistration?.registration?.email
+      || user.email
+      || null
+    const currency = (paymentIntent.currency || 'eur').toUpperCase()
+    const amountValue = typeof paymentIntent.amount === 'number' ? paymentIntent.amount / 100 : null
+    const amountLabel = amountValue !== null
+      ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amountValue)
+      : null
+    const details = [
+      participantLabel,
+      eventRow.title,
+      amountLabel,
+    ].filter(Boolean).join(' • ')
 
-    try {
-      const firstRegistration = createdRegistrations[0]
-      const participantLabel = firstRegistration?.participantName
-        || firstRegistration?.registration?.email
-        || user.email
-        || null
-      const currency = (paymentIntent.currency || 'eur').toUpperCase()
-      const amountValue = typeof paymentIntent.amount === 'number' ? paymentIntent.amount / 100 : null
-      const amountLabel = amountValue !== null
-        ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amountValue)
-        : null
-      const details = [
-        participantLabel,
-        eventRow.title,
-        amountLabel,
-      ].filter(Boolean).join(' • ')
-
-      await sendAdminPushNotification({
-        title: 'Nouvelle inscription payée',
-        body: details,
-        url: `${siteUrl}/dashboard?tab=members&event=${eventRow.id}`,
-      })
-    } catch (pushError) {
-      console.error('[push] notification error', pushError)
-    }
-
-    for (const { registration, ticket, participantName } of createdRegistrations) {
+    const ticketEmailTasks = createdRegistrations.map(async ({ registration, ticket, participantName }) => {
       try {
         const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
         const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', {
@@ -780,17 +758,20 @@ export async function POST(request: NextRequest) {
         })
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)
-        // Capture email send errors in Sentry
         captureException(emailError as Error, {
           context: 'ticket_email_send',
           registrationId: registration.id,
           email: registration.email,
         })
       }
-    }
+    })
 
-    try {
-      if (user.email) {
+    const receiptEmailTask = (async () => {
+      try {
+        if (!user.email) {
+          return
+        }
+
         const ticketItems = Array.from(ticketLineItems.values())
           .map((item) => {
             const ticket = ticketMap.get(item.ticketId)
@@ -857,15 +838,132 @@ export async function POST(request: NextRequest) {
           paymentMethod: formatPaymentMethod(paymentIntent.payment_method_types?.[0]),
           invoiceUrl: order.invoice_url ?? undefined,
         })
+      } catch (emailError) {
+        console.error('Erreur envoi reçu:', emailError)
+        captureException(emailError as Error, {
+          context: 'receipt_email_send',
+          orderId: order.id,
+          email: user.email,
+        })
       }
-    } catch (emailError) {
-      console.error('Erreur envoi reçu:', emailError)
-      captureException(emailError as Error, {
-        context: 'receipt_email_send',
-        orderId: order.id,
-        email: user.email,
+    })()
+
+    const pushNotificationTask = sendAdminPushNotification({
+      title: 'Nouvelle inscription payée',
+      body: details,
+      url: `${siteUrl}/dashboard?tab=members&event=${eventRow.id}`,
+    }).catch((pushError) => {
+      console.error('[push] notification error', pushError)
+    })
+
+    const ambassadorRewardsTask = (async () => {
+      const { error: ambassadorPointsError } = await admin.rpc('award_ambassador_points_for_order', {
+        p_order_id: order.id,
       })
-    }
+
+      if (ambassadorPointsError) {
+        console.error('Erreur attribution points ambassadeur:', ambassadorPointsError)
+        return
+      }
+
+      try {
+        await notifyAmbassadorRewardsForOrder(admin, order.id)
+      } catch (notificationError) {
+        console.error('Erreur notification récompense ambassadeur:', notificationError)
+      }
+    })()
+
+    const metaCapiTasks = [
+      sendMetaCapiEvent({
+        eventName: 'Purchase',
+        eventId: `purchase_${order.id}`,
+        eventSourceUrl:
+          (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
+          request.headers.get('referer') ||
+          `${siteUrl}/events/${eventId}/register`,
+        userData: {
+          email: user.email,
+          externalId: userId,
+          clientIpAddress,
+          clientUserAgent,
+          fbp:
+            (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
+            fbpCookie,
+          fbc:
+            (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
+            fbcCookie,
+        },
+        customData: {
+          currency: (paymentIntent.currency || 'eur').toUpperCase(),
+          value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+          content_type: 'product',
+          content_ids: createdRegistrations.map(({ ticket }) => String(ticket.id)),
+          content_name: eventRow.title,
+          order_id: order.id,
+          event_id: eventId,
+        },
+      }),
+      sendMetaCapiEvent({
+        eventName: 'PaymentConfirmed',
+        eventId: `payment_confirmed_${order.id}`,
+        eventSourceUrl:
+          (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
+          request.headers.get('referer') ||
+          `${siteUrl}/events/${eventId}/register`,
+        userData: {
+          email: user.email,
+          externalId: userId,
+          clientIpAddress,
+          clientUserAgent,
+          fbp:
+            (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
+            fbpCookie,
+          fbc:
+            (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
+            fbcCookie,
+        },
+        customData: {
+          transaction_id: order.id,
+          currency: (paymentIntent.currency || 'eur').toUpperCase(),
+          value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+          event_id: eventId,
+        },
+      }),
+    ]
+
+    const resendSyncTask = (async () => {
+      try {
+        const seenEmails = new Set<string>()
+
+        await Promise.allSettled(
+          createdRegistrations.map(async ({ registration, participantName }) => {
+            const email = String(registration.email ?? '').trim().toLowerCase()
+            if (!email || seenEmails.has(email)) return
+            seenEmails.add(email)
+
+            await markResendContactAsRegistered({
+              email,
+              fullName: participantName ?? null,
+              properties: {
+                source: 'registration-create',
+                event_id: eventId,
+              },
+            })
+          }),
+        )
+      } catch (resendSyncError) {
+        console.error('[registration-create] resend segment sync failed', resendSyncError)
+      }
+    })()
+
+    await Promise.allSettled([
+      ...ticketEmailTasks,
+      receiptEmailTask,
+      pushNotificationTask,
+      ambassadorRewardsTask,
+      ...metaCapiTasks,
+      resendSyncTask,
+    ])
 
     console.log('Inscriptions créées avec succès:', {
       order_id: order.id,
@@ -874,81 +972,6 @@ export async function POST(request: NextRequest) {
       event_id: eventId,
       amount: paymentIntent.amount,
     })
-
-    await sendMetaCapiEvent({
-      eventName: 'Purchase',
-      eventId: `purchase_${order.id}`,
-      eventSourceUrl:
-        (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
-        request.headers.get('referer') ||
-        `${siteUrl}/events/${eventId}/register`,
-      userData: {
-        email: user.email,
-        externalId: userId,
-        clientIpAddress,
-        clientUserAgent,
-        fbp:
-          (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
-          fbpCookie,
-        fbc:
-          (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
-          fbcCookie,
-      },
-      customData: {
-        currency: (paymentIntent.currency || 'eur').toUpperCase(),
-        value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
-        content_type: 'product',
-        content_ids: createdRegistrations.map(({ ticket }) => String(ticket.id)),
-        content_name: eventRow.title,
-        order_id: order.id,
-        event_id: eventId,
-      },
-    })
-    await sendMetaCapiEvent({
-      eventName: 'PaymentConfirmed',
-      eventId: `payment_confirmed_${order.id}`,
-      eventSourceUrl:
-        (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
-        request.headers.get('referer') ||
-        `${siteUrl}/events/${eventId}/register`,
-      userData: {
-        email: user.email,
-        externalId: userId,
-        clientIpAddress,
-        clientUserAgent,
-        fbp:
-          (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
-          fbpCookie,
-        fbc:
-          (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
-          fbcCookie,
-      },
-      customData: {
-        transaction_id: order.id,
-        currency: (paymentIntent.currency || 'eur').toUpperCase(),
-        value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
-        event_id: eventId,
-      },
-    })
-
-    try {
-      const seenEmails = new Set<string>()
-      for (const { registration, participantName } of createdRegistrations) {
-        const email = String(registration.email ?? '').trim().toLowerCase()
-        if (!email || seenEmails.has(email)) continue
-        seenEmails.add(email)
-        await markResendContactAsRegistered({
-          email,
-          fullName: participantName ?? null,
-          properties: {
-            source: 'registration-create',
-            event_id: eventId,
-          },
-        })
-      }
-    } catch (resendSyncError) {
-      console.error('[registration-create] resend segment sync failed', resendSyncError)
-    }
 
     return NextResponse.json({
       success: true,
