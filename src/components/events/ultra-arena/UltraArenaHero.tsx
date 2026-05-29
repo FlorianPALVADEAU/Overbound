@@ -73,9 +73,9 @@ export function UltraArenaHero({
           </Badge>
         </div>
 
-        <div className="grid items-start gap-10 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="grid min-w-0 items-start gap-10 lg:grid-cols-[1.3fr_0.7fr]">
           {/* Left: Headline + facts */}
-          <div className="space-y-7">
+          <div className="min-w-0 space-y-7">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
               Ultra Arena 2026
             </p>
@@ -94,24 +94,24 @@ export function UltraArenaHero({
             </p>
 
             {/* Quick facts strip */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-border/60 bg-card/80 p-4 backdrop-blur">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card/80 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                   Date
                 </p>
-                <p className="mt-1 text-sm font-bold leading-tight">{formattedDate}</p>
+                <p className="mt-1 text-xs font-bold leading-tight sm:text-sm">{formattedDate}</p>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-card/80 p-4 backdrop-blur">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card/80 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                   Lieu
                 </p>
-                <p className="mt-1 text-sm font-bold leading-tight">{location}</p>
+                <p className="mt-1 wrap-break-word text-xs font-bold leading-tight sm:text-sm">{location}</p>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-card/80 p-4 backdrop-blur">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card/80 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                   Formats
                 </p>
-                <p className="mt-1 text-sm font-bold">OPEN + RANKED</p>
+                <p className="mt-1 text-xs font-bold sm:text-sm">OPEN + RANKED</p>
               </div>
             </div>
 
@@ -122,7 +122,7 @@ export function UltraArenaHero({
             )}
 
             {isOnSale ? (
-              <div className="max-w-2xl rounded-lg border border-border/25 bg-background/30 p-2">
+              <div className="max-w-2xl overflow-hidden rounded-lg border border-border/25 bg-background/30 p-2">
                 <AnimatedBanner
                   images={PARTNERS_DATA.map((partner) => partner.logo)}
                   imageAltPrefix="Logo partenaire Overbound"
@@ -134,7 +134,7 @@ export function UltraArenaHero({
           </div>
 
           {/* Right: Experience preview card + CTA */}
-          <div className="space-y-3">
+          <div className="min-w-0 space-y-3">
             <Card className="border-primary/15 bg-card/85 shadow-2xl shadow-black/15 backdrop-blur">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold">Ce que tu vas vivre</CardTitle>
