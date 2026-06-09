@@ -31,16 +31,21 @@ export function isInAppBrowser(userAgent: string) {
 }
 
 export function buildExternalBrowserUrl(currentUrl: string, userAgent: string) {
-  // Android: ask to open in Chrome directly.
+  // Android: use intent without a package target so the OS picks the default
+  // browser. Targeting com.android.chrome specifically fails when Chrome is not
+  // the default or not installed.
   if (/android/i.test(userAgent)) {
     const url = new URL(currentUrl)
     const hostAndPath = `${url.host}${url.pathname}${url.search}${url.hash}`
-    return `intent://${hostAndPath}#Intent;scheme=${url.protocol.replace(':', '')};package=com.android.chrome;end`
+    return `intent://${hostAndPath}#Intent;scheme=${url.protocol.replace(':', '')};action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end`
   }
 
-  // iOS Safari deep-link.
+  // iOS: x-safari-https:// is deprecated since iOS 17. The only reliable
+  // mechanism is window.open with _blank which iOS Safari accepts even from
+  // webviews when triggered by a user gesture. We return the plain URL and let
+  // the caller do window.open so the gesture chain stays intact.
   if (/iphone|ipad|ipod/i.test(userAgent)) {
-    return `x-safari-${currentUrl}`
+    return currentUrl
   }
 
   return currentUrl
