@@ -30,8 +30,8 @@ export const PARTNERS_DATA: PartnerType[] = [
     },
     {
         name: 'Gossip Fit',
-        logo: '/images/partners_logo/gossipfit_logo.webp',
-        url: 'https://www.gossipfit.fr/'
+        logo: '/images/partners_logo/airtime_training_logo.png',
+        url: 'https://www.airtime-training.fr/'
     },
     {
         name: 'Saint Quentin en Yvelines',

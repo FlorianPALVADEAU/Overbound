@@ -14,6 +14,7 @@ export const ADMIN_TAB_VALUES = [
   'upsells',
   'ambassadors',
   'groups',
+  'bootcamps',
   'users',
   'members',
   'checkin',

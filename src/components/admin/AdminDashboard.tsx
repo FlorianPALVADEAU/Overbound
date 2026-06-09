@@ -25,6 +25,7 @@ import { DistributionListsSection } from '@/components/admin/distribution-lists/
 import { UsersSection } from '@/components/admin/users/UsersSection'
 import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSection'
 import { GroupsSection } from '@/components/admin/groups/GroupsSection'
+import { BootcampsSection } from '@/components/admin/bootcamps/BootcampsSection'
 import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 import { BarChart3, CreditCard, Database, Mail, NotebookPen, Sparkles } from 'lucide-react'
 
@@ -261,6 +262,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="groups" className="space-y-6">
                 <GroupsSection />
+              </TabsContent>
+
+              <TabsContent value="bootcamps" className="space-y-6">
+                <BootcampsSection />
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6">

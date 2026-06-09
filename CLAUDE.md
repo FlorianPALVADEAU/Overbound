@@ -7,6 +7,7 @@ CRM léger pour piloter les partenariats de l'événement **Overbound** (course 
 - Si le contexte est insuffisant, demande les informations manquantes plutôt que de fabriquer une réponse.
 - Ne valide pas une mauvaise approche pour faire plaisir — sois direct et donne les raisons.
 - Préfère un refus motivé à une action approximative.
+- **Génération d'email HTML** : lire `docs/guides/email-conventions.md` **avant** de produire le moindre code. Ce fichier est la source de vérité pour le design, la structure et le contenu. Les emails sont envoyés via **Resend**.
 
 ## Stack
 
@@ -96,7 +97,8 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 | **Wave Assignment** | @docs/fdr/FDR-0004-wave-assignment-open-vs-ranked.md + @docs/guides/implementation-guide-wave-assignment.md |
 | **Groups & Anchor** | @docs/fdr/FDR-0005-group-membership-and-wave-anchoring.md + @docs/guides/implementation-guide-groups.md |
 | **Ambassadors** | @docs/fdr/FDR-0006-ambassador-program-points-and-rewards.md + @docs/guides/implementation-guide-ambassador.md |
-| **Email** | @docs/fdr/FDR-0007-email-distribution-and-preferences.md + @docs/guides/implementation-guide-email.md |
+| **Email (système)** | @docs/fdr/FDR-0007-email-distribution-and-preferences.md + @docs/guides/implementation-guide-email.md |
+| **Email (génération HTML)** | @docs/guides/email-conventions.md — **obligatoire avant toute génération d'email** |
 | **Critical Ops** | @docs/guides/critical-operations.md, @docs/guides/rpc-reference.md |
 | **Legal / Juridique** | @docs/guides/legal.md |
 
