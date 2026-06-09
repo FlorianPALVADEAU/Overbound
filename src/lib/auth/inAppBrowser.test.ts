@@ -25,22 +25,22 @@ describe('detectInAppBrowser', () => {
 })
 
 describe('buildExternalBrowserUrl', () => {
-  it('builds an Android intent url for Chrome', () => {
+  it('builds an Android intent url targeting the default browser (no package)', () => {
     const url = buildExternalBrowserUrl(
       'https://www.overbound-race.com/auth/login?oauth=google',
       'Mozilla/5.0 (Linux; Android 14; Pixel 8)',
     )
     expect(url).toBe(
-      'intent://www.overbound-race.com/auth/login?oauth=google#Intent;scheme=https;package=com.android.chrome;end',
+      'intent://www.overbound-race.com/auth/login?oauth=google#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end',
     )
   })
 
-  it('builds an iOS Safari deep link', () => {
+  it('returns the plain url for iOS (caller uses window.open for the prompt)', () => {
     const url = buildExternalBrowserUrl(
       'https://www.overbound-race.com/auth/register?oauth=google',
       'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
     )
-    expect(url).toBe('x-safari-https://www.overbound-race.com/auth/register?oauth=google')
+    expect(url).toBe('https://www.overbound-race.com/auth/register?oauth=google')
   })
 
   it('falls back to current url for other platforms', () => {

@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
 export async function GET() {
   const supabase = await createSupabaseServer()
+  const admin = supabaseAdmin()
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: bootcamps, error } = await supabase
+  // Utilise le client admin pour lire les counts sans être bloqué par la RLS
+  const { data: bootcamps, error } = await admin
     .from('bootcamps')
     .select(`
       *,
@@ -31,7 +33,7 @@ export async function GET() {
 
   const result = (bootcamps ?? []).map((b) => ({
     ...b,
-    registration_count: (b.bootcamp_registrations as Array<{ count: number }>)[0]?.count ?? 0,
+    registration_count: Number((b.bootcamp_registrations as Array<{ count: number | string }>)[0]?.count ?? 0),
     is_registered: registeredIds.has(b.id),
     bootcamp_registrations: undefined,
   }))
