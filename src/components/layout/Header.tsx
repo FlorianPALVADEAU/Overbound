@@ -213,6 +213,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 Devenir bénévole
               </Link>
 
+              <Link
+                href="/bootcamps"
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+              >
+                Bootcamps
+              </Link>
+
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
                   <div
@@ -432,6 +439,15 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 onClick={closeMobileMenu}
               >
                 Devenir bénévole
+              </Link>
+
+              {/* Lien Bootcamps mobile */}
+              <Link
+                href="/bootcamps"
+                className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                onClick={closeMobileMenu}
+              >
+                Bootcamps
               </Link>
             </div>
 

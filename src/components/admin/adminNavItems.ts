@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   MessageSquare,
   Settings2,
+  Dumbbell,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AdminTabValue } from '@/store/useAdminDashboardStore'
@@ -48,6 +49,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'upsells', label: 'Upsells', icon: Package },
   { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal },
   { value: 'groups', label: 'Groupes', icon: Users },
+  { value: 'bootcamps', label: 'Bootcamps', icon: Dumbbell },
   { value: 'users', label: 'Utilisateurs', icon: UserCog },
   { value: 'members', label: 'Membres', icon: Users },
   { value: 'checkin', label: 'Check-in', icon: UserCheck },
@@ -86,6 +88,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal },
       { value: 'groups', label: 'Groupes', icon: Users },
+      { value: 'bootcamps', label: 'Bootcamps', icon: Dumbbell },
       { value: 'users', label: 'Utilisateurs', icon: UserCog },
       { value: 'members', label: 'Membres', icon: Users },
       { value: 'checkin', label: 'Check-in', icon: UserCheck },
