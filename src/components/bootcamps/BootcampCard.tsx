@@ -167,7 +167,7 @@ export function BootcampCard({ bootcamp, isAuthenticated, onRegister, onUnregist
             </Button>
           ) : (
             <Button asChild size="sm">
-              <a href="/auth/login?redirect=/bootcamps">
+              <a href="/auth/login?next=/bootcamps">
                 Se connecter pour s'inscrire
               </a>
             </Button>
