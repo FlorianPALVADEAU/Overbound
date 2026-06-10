@@ -181,7 +181,7 @@ export default function OurStoryPage() {
                         2km par tour
                       </Badge>
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                        15+ obstacles
+                        10+ obstacles
                       </Badge>
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
                         20min max par boucle
@@ -345,7 +345,7 @@ export default function OurStoryPage() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg" className="bg-red-600 hover:bg-red-700">
-                  <Link href="/events/ultra-arena-2026/register">S'inscrire maintenant</Link>
+                  <Link href="/events/ultra-arena-2026">S'inscrire maintenant</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
                   <Link href="/about/concept">Découvrir le concept</Link>

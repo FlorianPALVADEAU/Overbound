@@ -3,9 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendMarketingEmail } from '@/lib/email/marketing'
 import type { MarketingRecipient } from '@/lib/email/marketing'
-import { generateUnsubscribeUrl } from '@/lib/email/unsubscribe'
+import { generateUnsubscribeToken, generateUnsubscribeUrl } from '@/lib/email/unsubscribe'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { captureException } from '@/lib/sentry'
+import { listResendAudienceContacts, mapSlugsToAudienceIds } from '@/lib/email/resendAudiences'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -20,7 +22,7 @@ const sendEmailSchema = z.object({
  * POST /api/admin/distribution-lists/send-email
  * Send an email to distribution list subscribers (admin only)
  */
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const supabase = await createClient()
 
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
             })
 
             await resend.emails.send({
-              from: process.env.SEND_FROM_EMAIL || 'noreply@overbound-race.com',
+              from: process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com',
               to: recipient.email,
               subject: `[TEST] ${validatedData.subject}`,
               html: emailHtml,
@@ -116,54 +118,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Production mode: get all subscribers from selected lists
-    const { data: subscribers, error: subscribersError } = await supabase
-      .from('list_subscriptions')
-      .select(
-        `
-        user_id,
-        subscribed,
-        users:user_id (
-          email
-        )
-      `,
-      )
-      .in('list_id', validatedData.listIds)
-      .eq('subscribed', true)
+    // Production mode: resolve distribution list slugs to Resend audiences
+    const { data: selectedLists, error: selectedListsError } = await supabase
+      .from('distribution_lists')
+      .select('id, slug')
+      .in('id', validatedData.listIds)
 
-    if (subscribersError) {
-      console.error('Error fetching subscribers:', subscribersError)
+    if (selectedListsError) {
+      console.error('Error fetching distribution lists:', selectedListsError)
       return NextResponse.json(
-        { error: 'Failed to fetch subscribers' },
+        { error: 'Failed to resolve distribution lists' },
         { status: 500 },
       )
     }
 
-    // Remove duplicates (users subscribed to multiple lists)
-        const uniqueSubscribers = Array.from(
-          new Map(
-            subscribers
-              .filter((sub) => {
-                if (!sub.users) return false
-                const u = sub.users as any
-                if (Array.isArray(u)) {
-                  return u.length > 0 && !!u[0]?.email
-                }
-                return !!u.email
-              })
-              .map((sub) => {
-                const u = sub.users as any
-                const email = Array.isArray(u) ? u[0]?.email : u?.email
-                return [
-                  sub.user_id,
-                  {
-                    email: email as string,
-                    userId: sub.user_id,
-                  },
-                ]
-              }),
-          ).values(),
-        )
+    const { audienceIds, missingSlugs } = mapSlugsToAudienceIds((selectedLists || []).map((list) => list.slug))
+    if (audienceIds.length === 0) {
+      return NextResponse.json(
+        { error: 'No Resend audience configured for the selected lists' },
+        { status: 400 },
+      )
+    }
+
+    if (missingSlugs.length > 0) {
+      console.warn('[admin/distribution-lists/send-email] missing Resend audience mapping', missingSlugs)
+    }
+
+    const uniqueByEmail = new Map<string, MarketingRecipient>()
+    for (const audienceId of audienceIds) {
+      const contacts = await listResendAudienceContacts(audienceId)
+      for (const contact of contacts) {
+        if (contact.unsubscribed) {
+          continue
+        }
+
+        const email = contact.email.trim().toLowerCase()
+        if (!email) {
+          continue
+        }
+
+        if (!uniqueByEmail.has(email)) {
+          uniqueByEmail.set(email, {
+            email,
+            fullName: [contact.first_name, contact.last_name].filter(Boolean).join(' ') || null,
+          })
+        }
+      }
+    }
+
+    const uniqueSubscribers = Array.from(uniqueByEmail.values())
 
     if (uniqueSubscribers.length === 0) {
       return NextResponse.json(
@@ -184,7 +187,9 @@ export async function POST(request: NextRequest) {
           // Generate unsubscribe URL for each recipient
           const unsubscribeUrl = recipient.userId
             ? generateUnsubscribeUrl(recipient.userId, recipient.email)
-            : undefined
+            : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/unsubscribe/${generateUnsubscribeToken({
+                email: recipient.email,
+              })}`
 
           // Wrap content in EmailLayout with unsubscribe link
           const emailHtml = wrapHtmlWithLayout({
@@ -194,7 +199,7 @@ export async function POST(request: NextRequest) {
           })
 
           await resend.emails.send({
-            from: process.env.SEND_FROM_EMAIL || 'noreply@overbound-race.com',
+            from: process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com',
             to: recipient.email,
             subject: validatedData.subject,
             html: emailHtml,
@@ -209,6 +214,7 @@ export async function POST(request: NextRequest) {
           email_subject: validatedData.subject,
           preheader: validatedData.preheader,
           list_ids: validatedData.listIds,
+          resend_audience_ids: audienceIds,
         },
       )
 
@@ -248,3 +254,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Envoi campagne liste de distribution admin',
+})

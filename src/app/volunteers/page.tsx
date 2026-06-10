@@ -145,6 +145,11 @@ const initialFormState = {
 }
 
 type VolunteerFormState = typeof initialFormState
+type VolunteerSubmissionSnapshot = {
+  fullName: string
+  email: string
+  eventName: string
+}
 
 interface EventOption {
   id: string
@@ -165,6 +170,7 @@ export default function VolunteersPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submittedSnapshot, setSubmittedSnapshot] = useState<VolunteerSubmissionSnapshot | null>(null)
 
   const availabilityLabels = useMemo(() => {
     const map = new Map<string, string>()
@@ -223,6 +229,11 @@ export default function VolunteersPage() {
           .filter(Boolean) as EventOption[]
 
         const filtered = normalized.filter((event) => {
+          const validStatuses = ['announced', 'on_sale', 'sold_out']
+          if (!validStatuses.includes(event.status ?? '')) {
+            return false
+          }
+
           if (!event.date) return true
           const time = Date.parse(event.date)
           if (Number.isNaN(time)) {
@@ -262,6 +273,16 @@ export default function VolunteersPage() {
     }
   }, [sessionLoading, isAuthenticated])
 
+  // Auto-select event if only one is available
+  useEffect(() => {
+    if (events.length === 1 && !formValues.eventSelection) {
+      setFormValues((previous) => ({
+        ...previous,
+        eventSelection: events[0].id,
+      }))
+    }
+  }, [events, formValues.eventSelection])
+
   const clearFieldError = (field: string) => {
     setFieldErrors((previous) => {
       if (!(field in previous)) {
@@ -283,6 +304,7 @@ export default function VolunteersPage() {
     }
     if (submitSuccess) {
       setSubmitSuccess(false)
+      setSubmittedSnapshot(null)
     }
   }
 
@@ -425,6 +447,11 @@ export default function VolunteersPage() {
       }
 
       setSubmitSuccess(true)
+      setSubmittedSnapshot({
+        fullName: trimmedName,
+        email: trimmedEmail,
+        eventName: eventName ?? 'Disponible pour plusieurs événements',
+      })
       setFieldErrors({})
       setFormValues({
         ...initialFormState,
@@ -658,9 +685,14 @@ export default function VolunteersPage() {
 							<>
 								{submitSuccess ? (
 									<Alert className='border-primary/40 bg-primary/10'>
-										<AlertTitle>Merci !</AlertTitle>
+										<AlertTitle>Candidature bien enregistrée</AlertTitle>
 										<AlertDescription>
-											Ta candidature est bien envoyée. L’équipe tribu te contacte très vite pour te briefer.
+											Ta candidature a bien été prise en compte. L’équipe tribu te contacte très vite pour le brief.
+											{submittedSnapshot ? (
+												<span className='mt-2 block text-xs text-muted-foreground'>
+													Confirmation envoyée pour <strong>{submittedSnapshot.fullName}</strong> ({submittedSnapshot.email}) • {submittedSnapshot.eventName}
+												</span>
+											) : null}
 										</AlertDescription>
 									</Alert>
 								) : null}
@@ -903,6 +935,11 @@ export default function VolunteersPage() {
 										{submitting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
 										Envoyer ma candidature bénévole
 									</Button>
+									{submitSuccess ? (
+										<p className='text-sm font-medium text-primary'>
+											Candidature envoyée avec succès. Tu vas recevoir un email de confirmation.
+										</p>
+									) : null}
 								</form>
 							</>
 						)}

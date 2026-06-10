@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -54,12 +54,18 @@ const getStatusStyles = (status: number) => {
 }
 
 const buildInitialFilters = (): AdminLogsFilters => ({
-  limit: 150,
+  limit: 100,
+  page: 1,
 })
 
 export function AdminLogsSection() {
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState<AdminLogsFilters>(buildInitialFilters)
+  const [textInputs, setTextInputs] = useState({
+    userEmail: '',
+    actionType: '',
+    search: '',
+  })
   const [selectedLog, setSelectedLog] = useState<AdminRequestLog | null>(null)
   const { data, isLoading, isFetching, error } = useAdminLogs(filters)
 
@@ -70,20 +76,87 @@ export function AdminLogsSection() {
     setFilters((previous) => ({
       ...previous,
       [key]: value,
+      page: 1,
     }))
   }
 
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      setFilters((previous) => ({
+        ...previous,
+        userEmail: textInputs.userEmail.trim() ? textInputs.userEmail.trim() : undefined,
+        actionType: textInputs.actionType.trim() ? textInputs.actionType.trim() : undefined,
+        search: textInputs.search.trim() ? textInputs.search.trim() : undefined,
+        page: 1,
+      }))
+    }, 400)
+
+    return () => clearTimeout(debounce)
+  }, [textInputs.userEmail, textInputs.actionType, textInputs.search])
+
   const resetFilters = () => {
     setFilters(buildInitialFilters())
+    setTextInputs({
+      userEmail: '',
+      actionType: '',
+      search: '',
+    })
     queryClient.invalidateQueries({ queryKey: ['admin', 'logs'] })
   }
 
   const activeFiltersCount = useMemo(() => {
     return Object.entries(filters).filter(([key, value]) => {
-      if (key === 'limit') return false
+      if (key === 'limit' || key === 'page') return false
       return Boolean(value)
     }).length
   }, [filters])
+
+  const limit = filters.limit ?? 100
+  const currentPage = filters.page ?? 1
+  const totalPages = Math.max(1, Math.ceil(count / limit))
+  const startIndex = count === 0 ? 0 : (currentPage - 1) * limit + 1
+  const endIndex = Math.min(currentPage * limit, count)
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setFilters((previous) => ({
+        ...previous,
+        page: totalPages,
+      }))
+    }
+  }, [currentPage, totalPages])
+
+  const goToPage = (page: number) => {
+    setFilters((previous) => ({
+      ...previous,
+      page,
+    }))
+  }
+
+  const pageButtons = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1)
+    }
+
+    const pages: Array<number | 'ellipsis'> = [1]
+    const start = Math.max(2, currentPage - 2)
+    const end = Math.min(totalPages - 1, currentPage + 2)
+
+    if (start > 2) {
+      pages.push('ellipsis')
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page)
+    }
+
+    if (end < totalPages - 1) {
+      pages.push('ellipsis')
+    }
+
+    pages.push(totalPages)
+    return pages
+  }, [currentPage, totalPages])
 
   return (
     <section className="space-y-6">
@@ -142,16 +215,20 @@ export function AdminLogsSection() {
               <Label>Utilisateur</Label>
               <Input
                 placeholder="Email ou ID"
-                value={filters.userEmail ?? ''}
-                onChange={(event) => handleFilterChange('userEmail', event.target.value || undefined)}
+                value={textInputs.userEmail}
+                onChange={(event) =>
+                  setTextInputs((previous) => ({ ...previous, userEmail: event.target.value }))
+                }
               />
             </div>
             <div className="space-y-1">
               <Label>Action</Label>
               <Input
                 placeholder="Type d'action"
-                value={filters.actionType ?? ''}
-                onChange={(event) => handleFilterChange('actionType', event.target.value || undefined)}
+                value={textInputs.actionType}
+                onChange={(event) =>
+                  setTextInputs((previous) => ({ ...previous, actionType: event.target.value }))
+                }
               />
             </div>
           </div>
@@ -161,8 +238,10 @@ export function AdminLogsSection() {
               <Label>Recherche libre</Label>
               <Input
                 placeholder="Résumé, chemin, email…"
-                value={filters.search ?? ''}
-                onChange={(event) => handleFilterChange('search', event.target.value || undefined)}
+                value={textInputs.search}
+                onChange={(event) =>
+                  setTextInputs((previous) => ({ ...previous, search: event.target.value }))
+                }
               />
             </div>
             <div className="space-y-1">
@@ -182,22 +261,10 @@ export function AdminLogsSection() {
               />
             </div>
             <div className="space-y-1">
-              <Label>Limite</Label>
-              <Select
-                value={String(filters.limit ?? 150)}
-                onValueChange={(value) => handleFilterChange('limit', parseInt(value, 10))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[50, 100, 150, 250, 500].map((limitValue) => (
-                    <SelectItem key={limitValue} value={String(limitValue)}>
-                      {limitValue}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Résultats</Label>
+              <div className="flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm text-muted-foreground">
+                100 par page
+              </div>
             </div>
           </div>
 
@@ -294,6 +361,52 @@ export function AdminLogsSection() {
                 ) : null}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm text-muted-foreground">
+              {count === 0 ? 'Aucun résultat' : `Affichage ${startIndex}-${endIndex} sur ${count}`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1 || isFetching}
+              >
+                Précédent
+              </Button>
+              <div className="flex items-center gap-1">
+                {pageButtons.map((page, index) =>
+                  page === 'ellipsis' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-sm text-muted-foreground">
+                      …
+                    </span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? 'secondary' : 'outline'}
+                      size="sm"
+                      onClick={() => goToPage(page)}
+                      disabled={isFetching}
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} / {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage >= totalPages || isFetching}
+              >
+                Suivant
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

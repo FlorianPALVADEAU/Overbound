@@ -11,7 +11,10 @@ export interface RegistrationDocumentResponse {
 const registrationDocumentKey = (id: string) => ['account', 'registration', id, 'document'] as const
 
 const fetchRegistrationDocument = async (id: string) => {
-  const response = await fetch(`/api/account/registrations/${id}/document-data`, { cache: 'no-store' })
+  const response = await fetch(`/api/account/registrations/${id}/document-data`, { 
+    cache: 'no-store',
+    credentials: 'include', // Ensure cookies are sent with the request
+  })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Impossible de récupérer cette inscription')

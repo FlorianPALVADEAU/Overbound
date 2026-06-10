@@ -25,6 +25,7 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
           day: 'numeric',
           month: 'long',
           year: 'numeric',
+          timeZone: 'Europe/Paris',
         })
       : null
 
@@ -32,7 +33,7 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
     <EmailLayout preview="On a bien reçu ta candidature bénévole">
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/two-young-girls-climbing-a-wall-while-holding-each-others-hands.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.avif`}
         alt="Candidature bénévole reçue"
         width="400"
         style={styles.heroImage}
@@ -125,7 +126,7 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
 
         {/* CTA Button */}
         <Section style={styles.buttonContainer}>
-          <Button href="https://www.instagram.com/overbound_race" style={styles.button}>
+          <Button href="https://www.instagram.com/overbound.race" style={styles.button}>
             Voir la tribu sur Instagram
           </Button>
         </Section>

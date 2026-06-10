@@ -1,9 +1,10 @@
 'use client'
 import Link from 'next/link'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AdminStats } from '@/components/admin/AdminStats'
@@ -18,10 +19,14 @@ import { PromotionsSection } from '@/components/admin/promotions'
 import { UpsellsSection } from '@/components/admin/upsells'
 import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { ADMIN_NAV_ITEMS } from '@/components/admin/adminNavItems'
+import { ADMIN_NAV_ITEMS, ADMIN_NAV_GROUPS } from '@/components/admin/adminNavItems'
 import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
-import { useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
+import { UsersSection } from '@/components/admin/users/UsersSection'
+import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSection'
+import { GroupsSection } from '@/components/admin/groups/GroupsSection'
+import { BootcampsSection } from '@/components/admin/bootcamps/BootcampsSection'
+import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 import { BarChart3, CreditCard, Database, Mail, NotebookPen, Sparkles } from 'lucide-react'
 
 const externalLinks = [
@@ -80,6 +85,8 @@ interface AdminDashboardProps {
 export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
   const { activeTab, setActiveTab } = useAdminDashboardStore()
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
 
   const isAdmin = profile.role === 'admin'
   const isVolunteer = profile.role === 'volunteer'
@@ -88,6 +95,13 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
     () => ADMIN_NAV_ITEMS.find((item) => item.value === activeTab)?.label ?? 'Tableau de bord',
     [activeTab]
   )
+
+  useEffect(() => {
+    if (!tabParam) return
+    if (ADMIN_TAB_VALUES.includes(tabParam as AdminTabValue)) {
+      setActiveTab(tabParam as AdminTabValue)
+    }
+  }, [tabParam, setActiveTab])
 
   if (isVolunteer && !isAdmin) {
     return (
@@ -110,6 +124,25 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
             </div>
           </header>
           <VolunteerAccessControl />
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact responsable</CardTitle>
+              <CardDescription>Besoin d&apos;aide ? Voici les coordonnées du responsable.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">Florian PALVADEAU</p>
+              <p>
+                <a className="hover:underline" href="tel:0652266054">
+                  06 52 26 60 54
+                </a>
+              </p>
+              <p>
+                <a className="hover:underline" href="mailto:florian.plvd@gmail.com">
+                  florian.plvd@gmail.com
+                </a>
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     )
@@ -153,14 +186,24 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 value={activeTab}
                 onValueChange={(value) => setActiveTab(value as AdminTabValue)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionner une section" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ADMIN_NAV_ITEMS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
+                  <SelectItem value="overview">Tableau de bord</SelectItem>
+                  <SelectSeparator />
+                  {ADMIN_NAV_GROUPS.map((group, i) => (
+                    <React.Fragment key={group.id}>
+                      <SelectGroup>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.items.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {i < ADMIN_NAV_GROUPS.length - 1 && <SelectSeparator />}
+                    </React.Fragment>
                   ))}
                 </SelectContent>
               </Select>
@@ -207,6 +250,22 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="upsells" className="space-y-6">
                 <UpsellsSection />
+              </TabsContent>
+
+              <TabsContent value="ambassadors" className="space-y-6">
+                <AmbassadorsSection />
+              </TabsContent>
+
+              <TabsContent value="users" className="space-y-6">
+                <UsersSection />
+              </TabsContent>
+
+              <TabsContent value="groups" className="space-y-6">
+                <GroupsSection />
+              </TabsContent>
+
+              <TabsContent value="bootcamps" className="space-y-6">
+                <BootcampsSection />
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6">

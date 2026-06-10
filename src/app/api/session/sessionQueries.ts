@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 export interface SessionProfile {
   full_name?: string | null
@@ -29,13 +31,85 @@ export interface SessionResponse {
 
 export const SESSION_QUERY_KEY = ['session'] as const
 
+const mapSessionUser = (sessionUser: {
+  id: string
+  email?: string | null
+  created_at?: string | null
+  user_metadata?: Record<string, any> | null
+}): SessionUser => ({
+  id: sessionUser.id,
+  email: sessionUser.email ?? null,
+  created_at: sessionUser.created_at ?? null,
+  user_metadata: {
+    full_name: sessionUser.user_metadata?.full_name,
+    avatar_url: sessionUser.user_metadata?.avatar_url,
+  },
+})
+
+const buildFallbackFromLocalSession = (session: { user: any } | null): SessionResponse | null => {
+  if (!session?.user) return null
+  return {
+    user: mapSessionUser(session.user),
+    profile: {
+      full_name: session.user.user_metadata?.full_name ?? null,
+      avatar_url: session.user.user_metadata?.avatar_url ?? null,
+      phone: null,
+      date_of_birth: null,
+      marketing_opt_in: null,
+      role: null,
+    },
+    alerts: null,
+  }
+}
+
 const fetchSession = async (): Promise<SessionResponse> => {
-  const response = await fetch('/api/session', { cache: 'no-store' })
+  const supabase = createSupabaseBrowser()
+  let {
+    data: { session: localSession },
+  } = await supabase.auth.getSession()
+
+  const doRequest = async (forceRefresh = false) => {
+    const headers = await getClientAuthHeaders({ forceRefresh })
+    return fetch('/api/session', {
+      cache: 'no-store',
+      headers,
+      credentials: 'include', // Ensure cookies are sent with the request
+    })
+  }
+
+  let response = await doRequest()
+
+  if (response.status === 401) {
+    response = await doRequest(true)
+    ;({
+      data: { session: localSession },
+    } = await supabase.auth.getSession())
+  }
+
   if (!response.ok) {
+    if ([401, 429, 500, 502, 503, 504].includes(response.status)) {
+      const fallback = buildFallbackFromLocalSession(localSession)
+      if (fallback) {
+        return fallback
+      }
+    }
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Impossible de récupérer la session utilisateur')
   }
-  return (await response.json()) as SessionResponse
+
+  const payload = (await response.json()) as SessionResponse
+  if (!payload.user) {
+    const fallback = buildFallbackFromLocalSession(localSession)
+    if (fallback) {
+      return {
+        ...payload,
+        user: fallback.user,
+        profile: payload.profile ?? fallback.profile,
+      }
+    }
+  }
+
+  return payload
 }
 
 export const useSession = () =>
@@ -43,4 +117,14 @@ export const useSession = () =>
     queryKey: SESSION_QUERY_KEY,
     queryFn: fetchSession,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+    retry: (failureCount, error) => {
+      if (failureCount >= 2) return false
+      const message = error.message.toLowerCase()
+      if (message.includes('non authentifi')) return false
+      return true
+    },
   })

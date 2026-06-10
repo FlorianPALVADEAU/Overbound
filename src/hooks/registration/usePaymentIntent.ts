@@ -15,7 +15,8 @@ export function usePaymentIntent(
   ticketSelections: TicketSelections,
   participants: Participant[],
   selectedUpsells: SelectedUpsellState,
-  appliedPromo: AppliedPromo | null,
+  appliedPromos: AppliedPromo[],
+  ambassadorReferralCode: string | null,
   totalDue: number,
 ) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -36,21 +37,13 @@ export function usePaymentIntent(
   // Reset when promo or upsells change
   useEffect(() => {
     resetPaymentIntent()
-  }, [appliedPromo, selectedUpsells, resetPaymentIntent])
+  }, [appliedPromos, selectedUpsells, resetPaymentIntent])
 
   const ensurePaymentIntent = useCallback(async () => {
     if (!user) {
       setSubmissionMessage({
         type: 'error',
         text: 'Connectez-vous pour continuer votre inscription.',
-      })
-      return null
-    }
-
-    if (totalDue <= 0) {
-      setSubmissionMessage({
-        type: 'error',
-        text: 'Le montant total doit être supérieur à zéro.',
       })
       return null
     }
@@ -75,6 +68,8 @@ export function usePaymentIntent(
             email: p.email,
             firstName: p.firstName,
             lastName: p.lastName,
+            distanceIdealKm: p.distanceIdealKm,
+            distanceMinKm: p.distanceMinKm,
             difficultyLevel: p.difficultyLevel || null,
           })),
           upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
@@ -82,7 +77,8 @@ export function usePaymentIntent(
             quantity: config.quantity,
             meta: config.meta || {},
           })),
-          promoCode: appliedPromo?.code || null,
+          promoCodes: appliedPromos.map((promo) => promo.code),
+          ambassadorReferralCode,
         }),
       })
 
@@ -91,16 +87,65 @@ export function usePaymentIntent(
         throw new Error(error.error || 'Impossible de préparer le paiement')
       }
 
-      const data = (await response.json()) as {
+      const data = await response.json()
+
+      // Free order: 100% discount, no Stripe payment needed
+      if (data.freeOrder) {
+        setPaymentIntentId(data.freeOrderId)
+        setPricing(data.pricing)
+        return {
+          freeOrder: true as const,
+          freeOrderId: data.freeOrderId as string,
+          clientSecret: null,
+          paymentIntentId: data.freeOrderId as string,
+          pricing: data.pricing as PricingSummary,
+          freeOrderMetadata: data.freeOrderMetadata as Record<string, string>,
+          appliedPromo: data.appliedPromo,
+          appliedPromos: data.appliedPromos,
+        }
+      }
+
+      const typedData = data as {
         clientSecret: string
         paymentIntentId: string
         pricing: PricingSummary
       }
 
-      setClientSecret(data.clientSecret)
-      setPaymentIntentId(data.paymentIntentId)
-      setPricing(data.pricing)
-      return data
+      if (typeof window !== 'undefined') {
+        const eventId = `initiate_checkout_${typedData.paymentIntentId}`
+        const analyticsWindow = window as Window & {
+          dataLayer?: Array<Record<string, unknown>>
+          fbq?: (...args: unknown[]) => void
+        }
+        analyticsWindow.dataLayer?.push({
+          event: 'begin_checkout',
+          event_id: eventId,
+          event_slug: event.slug,
+          event_key: event.id,
+          value: Number((typedData.pricing.totalDue / 100).toFixed(2)),
+          currency: typedData.pricing.currency.toUpperCase(),
+        })
+        analyticsWindow.fbq?.(
+          'track',
+          'InitiateCheckout',
+          {
+            content_name: event.title || event.slug,
+            content_category: 'event',
+            content_ids: Object.entries(ticketSelections)
+              .filter(([, quantity]) => (quantity || 0) > 0)
+              .map(([ticketId]) => ticketId),
+            content_type: 'product',
+            value: Number((typedData.pricing.totalDue / 100).toFixed(2)),
+            currency: typedData.pricing.currency.toUpperCase(),
+          },
+          { eventID: eventId },
+        )
+      }
+
+      setClientSecret(typedData.clientSecret)
+      setPaymentIntentId(typedData.paymentIntentId)
+      setPricing(typedData.pricing)
+      return typedData
     } catch (error) {
       setSubmissionMessage({
         type: 'error',
@@ -110,7 +155,18 @@ export function usePaymentIntent(
     } finally {
       setIsCreatingPaymentIntent(false)
     }
-  }, [appliedPromo?.code, event.id, participants, selectedUpsells, ticketSelections, totalDue, user])
+  }, [
+    appliedPromos,
+    ambassadorReferralCode,
+    event.id,
+    event.slug,
+    event.title,
+    participants,
+    selectedUpsells,
+    ticketSelections,
+    totalDue,
+    user,
+  ])
 
   return {
     clientSecret,

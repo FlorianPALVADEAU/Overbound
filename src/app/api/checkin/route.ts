@@ -3,7 +3,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   try {
-    const { token } = await req.json()
+    const { token, action } = await req.json()
     
     if (!token) {
       return NextResponse.json(
@@ -48,6 +48,8 @@ export async function POST(req: Request) {
         id,
         email,
         checked_in,
+        start_time,
+        wave_index,
         tickets (
           name,
           events (
@@ -67,7 +69,9 @@ export async function POST(req: Request) {
       )
     }
 
-    if (registration.checked_in) {
+    const requestedAction = action === 'undo' ? 'undo' : 'checkin'
+
+    if (registration.checked_in && requestedAction === 'checkin') {
       return NextResponse.json(
         { 
           error: 'Cette personne est déjà enregistrée comme présente',
@@ -81,15 +85,26 @@ export async function POST(req: Request) {
       )
     }
 
-    // Effectuer le check-in
+    if (!registration.checked_in && requestedAction === 'undo') {
+      return NextResponse.json(
+        {
+          error: 'Cette personne n’est pas encore enregistrée comme présente',
+        },
+        { status: 409 }
+      )
+    }
+
+    // Effectuer le check-in / undo
     const { data: updatedRegistration, error } = await admin
       .from('registrations')
-      .update({ checked_in: true })
+      .update({ checked_in: requestedAction === 'checkin' })
       .eq('qr_code_token', token)
       .select(`
         id,
         email,
         checked_in,
+        start_time,
+        wave_index,
         tickets (
           name,
           events (
@@ -109,15 +124,44 @@ export async function POST(req: Request) {
       )
     }
 
+    try {
+      await admin.from('admin_request_logs').insert({
+        method: 'POST',
+        path: '/api/checkin',
+        query_params: null,
+        body: null,
+        user_id: user.id,
+        user_email: user.email ?? null,
+        status_code: 200,
+        duration_ms: null,
+        ip_address: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+        action_type: requestedAction === 'checkin' ? 'Check-in' : 'Annulation check-in',
+        summary: `${user.email ?? 'Utilisateur'} a ${requestedAction === 'checkin' ? 'check-in' : 'annulé le check-in'} ${updatedRegistration.email}`,
+        metadata: {
+          registration_id: updatedRegistration.id,
+          actor_role: profile.role ?? null,
+          action: requestedAction,
+        },
+        error_message: null,
+      })
+    } catch (auditError) {
+      console.error('[checkin] admin_request_logs error', auditError)
+    }
+
     return NextResponse.json({
       success: true,
-      message: `${updatedRegistration.email} enregistré avec succès !`,
+      message:
+        requestedAction === 'checkin'
+          ? `${updatedRegistration.email} enregistré avec succès !`
+          : `${updatedRegistration.email} retiré du check-in.`,
       registration: {
         id: updatedRegistration.id,
         email: updatedRegistration.email,
         ticket_name: updatedRegistration.tickets?.[0]?.name,
         event_title: updatedRegistration.tickets?.[0]?.events?.[0]?.title,
-        checked_in: updatedRegistration.checked_in
+        checked_in: updatedRegistration.checked_in,
+        start_time: updatedRegistration.start_time ?? null,
+        wave_index: updatedRegistration.wave_index ?? null,
       }
     })
 
@@ -170,6 +214,8 @@ export async function GET(req: Request) {
         checked_in,
         qr_code_token,
         created_at,
+        start_time,
+        wave_index,
         tickets (
           name,
           events (

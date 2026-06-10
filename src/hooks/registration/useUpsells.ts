@@ -62,7 +62,7 @@ export function useUpsells(
 
       return hasChanges ? nextState : previous
     })
-  }, [selectedTicketSlots.length, upsells])
+  }, [selectedTicketSlots, upsells])
 
   const handleUpsellChange = useCallback(
     (upsellId: string, quantity: number) => {

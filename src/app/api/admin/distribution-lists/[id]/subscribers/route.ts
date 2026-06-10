@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { EVENT_OPENING_FIRST_LIST_ID } from '@/lib/subscriptions/constants'
+import {
+  getResendAudienceIdForSlug,
+  listResendAudienceContacts,
+  subscribeResendContactToAudiences,
+  unsubscribeResendContactFromAudiences,
+} from '@/lib/email/resendAudiences'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 /**
  * GET /api/admin/distribution-lists/[id]/subscribers
@@ -43,114 +51,116 @@ export async function GET(
     const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
 
-    // Build query for subscriptions
-    let query = admin
-      .from('list_subscriptions')
-      .select('*')
-      .eq('list_id', id)
-      .range(offset, offset + limit - 1)
-      .order('subscribed_at', { ascending: false })
+    if (id === EVENT_OPENING_FIRST_LIST_ID) {
+      const { data: firstEvent, error: firstEventError } = await admin
+        .from('events')
+        .select('id')
+        .order('date', { ascending: true })
+        .limit(1)
+        .maybeSingle()
 
-    if (subscribedOnly) {
-      query = query.eq('subscribed', true)
-    }
+      if (firstEventError) {
+        console.error('Error fetching first event:', firstEventError)
+        return NextResponse.json(
+          { error: 'Failed to fetch first event' },
+          { status: 500 }
+        )
+      }
 
-    const { data: subscriptions, error: subscriptionsError } = await query
+      if (!firstEvent) {
+        return NextResponse.json(
+          { data: [], total: 0, limit, offset },
+          { status: 200 }
+        )
+      }
 
-    if (subscriptionsError) {
-      console.error('Error fetching subscriptions:', subscriptionsError)
+      const { data: notifications, error: notificationsError } = await admin
+        .from('event_opening_notifications')
+        .select('id, email, full_name, user_id, source, created_at')
+        .eq('event_id', firstEvent.id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (notificationsError) {
+        console.error('Error fetching event opening notifications:', notificationsError)
+        return NextResponse.json(
+          { error: 'Failed to fetch subscribers' },
+          { status: 500 }
+        )
+      }
+
+      const subscribersWithDetails = (notifications || []).map((row) => ({
+        id: row.id,
+        user_id: row.user_id,
+        list_id: EVENT_OPENING_FIRST_LIST_ID,
+        subscribed: true,
+        source: row.source ?? 'event-page',
+        subscribed_at: row.created_at ?? null,
+        user: {
+          id: row.user_id ?? null,
+          email: row.email || '',
+          full_name: row.full_name ?? null,
+        },
+      }))
+
+      const { count } = await admin
+        .from('event_opening_notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', firstEvent.id)
+
       return NextResponse.json(
-        { error: 'Failed to fetch subscribers' },
-        { status: 500 }
-      )
-    }
-
-    if (!subscriptions || subscriptions.length === 0) {
-      return NextResponse.json(
-        { data: [], total: 0, limit, offset },
+        {
+          data: subscribersWithDetails,
+          total: count || 0,
+          limit,
+          offset,
+        },
         { status: 200 }
       )
     }
 
-    // Separate subscriptions with user_id from those with email only
-    const userSubscriptions = subscriptions.filter((sub) => sub.user_id)
-    const emailSubscriptions = subscriptions.filter((sub) => !sub.user_id && sub.email)
+    const { data: list, error: listError } = await supabase
+      .from('distribution_lists')
+      .select('id, slug')
+      .eq('id', id)
+      .maybeSingle()
 
-    // For subscriptions with user_id, fetch emails from auth.users
-    const emailMap = new Map<string, string>()
-    const profilesMap = new Map<string, string | null>()
-
-    if (userSubscriptions.length > 0) {
-      const userIds = userSubscriptions.map((sub) => sub.user_id!)
-      const userIdsSet = new Set(userIds)
-      const perPage = 1000
-
-      // Fetch auth users
-      for (let page = 1; ; page++) {
-        const { data } = await admin.auth.admin.listUsers({ page, perPage })
-        const users = data.users || []
-
-        for (const user of users) {
-          if (userIdsSet.has(user.id)) {
-            emailMap.set(user.id, user.email || '')
-          }
-        }
-
-        if (users.length < perPage || emailMap.size >= userIds.length) {
-          break
-        }
-      }
-
-      // Fetch profiles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds)
-
-      profiles?.forEach((p) => profilesMap.set(p.id, p.full_name))
+    if (listError || !list) {
+      return NextResponse.json({ error: 'Distribution list not found' }, { status: 404 })
     }
 
-    // Map all subscriptions to detailed format
-    const subscribersWithDetails = subscriptions.map((sub) => {
-      if (sub.user_id) {
-        // Authenticated user
-        return {
-          ...sub,
-          user: {
-            id: sub.user_id,
-            email: emailMap.get(sub.user_id) || '',
-            full_name: profilesMap.get(sub.user_id) || null,
-          },
-        }
-      } else {
-        // Email-only subscriber
-        return {
-          ...sub,
-          user: {
-            id: null,
-            email: sub.email || '',
-            full_name: sub.full_name || null,
-          },
-        }
-      }
-    })
-
-    // Get total count (using admin client to see all subscriptions)
-    let countQuery = admin
-      .from('list_subscriptions')
-      .select('*', { count: 'exact', head: true })
-      .eq('list_id', id)
-
-    if (subscribedOnly) {
-      countQuery = countQuery.eq('subscribed', true)
+    const audienceId = getResendAudienceIdForSlug(list.slug)
+    if (!audienceId) {
+      return NextResponse.json(
+        { error: `No Resend audience configured for list slug "${list.slug}"` },
+        { status: 400 }
+      )
     }
 
-    const { count } = await countQuery
+    const contacts = await listResendAudienceContacts(audienceId)
+    const filteredContacts = subscribedOnly
+      ? contacts.filter((contact) => !contact.unsubscribed)
+      : contacts
+
+    const paginated = filteredContacts.slice(offset, offset + limit)
+    const subscribersWithDetails = paginated.map((contact) => ({
+      id: contact.email,
+      user_id: null,
+      list_id: id,
+      subscribed: !contact.unsubscribed,
+      source: 'resend',
+      subscribed_at: contact.created_at,
+      user: {
+        id: null,
+        email: contact.email,
+        full_name: [contact.first_name, contact.last_name].filter(Boolean).join(' ') || null,
+      },
+    }))
 
     return NextResponse.json(
       {
         data: subscribersWithDetails,
-        total: count || 0,
+        total: filteredContacts.length,
         limit,
         offset,
       },
@@ -169,7 +179,7 @@ export async function GET(
  * DELETE /api/admin/distribution-lists/[id]/subscribers
  * Remove a subscriber from a distribution list (admin only)
  */
-export async function DELETE(
+async function handleDelete(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -208,23 +218,51 @@ export async function DELETE(
       )
     }
 
-    // Use admin client to delete the subscription
     const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
 
-    const { error: deleteError } = await admin
-      .from('list_subscriptions')
-      .delete()
-      .eq('id', subscription_id)
-      .eq('list_id', listId)
+    if (listId === EVENT_OPENING_FIRST_LIST_ID) {
+      const { error: deleteError } = await admin
+        .from('event_opening_notifications')
+        .delete()
+        .eq('id', subscription_id)
 
-    if (deleteError) {
-      console.error('Error deleting subscriber:', deleteError)
+      if (deleteError) {
+        console.error('Error deleting event opening notification:', deleteError)
+        return NextResponse.json(
+          { error: 'Failed to remove subscriber' },
+          { status: 500 }
+        )
+      }
+
       return NextResponse.json(
-        { error: 'Failed to remove subscriber' },
-        { status: 500 }
+        { message: 'Subscriber removed successfully' },
+        { status: 200 }
       )
     }
+
+    const { data: list, error: listError } = await supabase
+      .from('distribution_lists')
+      .select('slug')
+      .eq('id', listId)
+      .maybeSingle()
+
+    if (listError || !list) {
+      return NextResponse.json({ error: 'Distribution list not found' }, { status: 404 })
+    }
+
+    const audienceId = getResendAudienceIdForSlug(list.slug)
+    if (!audienceId) {
+      return NextResponse.json(
+        { error: `No Resend audience configured for list slug "${list.slug}"` },
+        { status: 400 }
+      )
+    }
+
+    await unsubscribeResendContactFromAudiences({
+      email: subscription_id,
+      audienceIds: [audienceId],
+    })
 
     return NextResponse.json(
       { message: 'Subscriber removed successfully' },
@@ -243,7 +281,7 @@ export async function DELETE(
  * POST /api/admin/distribution-lists/[id]/subscribers
  * Add subscribers to a distribution list (admin only)
  */
-export async function POST(
+async function handlePost(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -282,35 +320,76 @@ export async function POST(
       )
     }
 
-    // Create subscriptions for each user
-    const subscriptions = user_ids.map((userId) => ({
-      user_id: userId,
-      list_id: id,
-      subscribed: true,
-      source: 'admin' as const,
-      subscribed_at: new Date().toISOString(),
-    }))
+    const { data: list, error: listError } = await supabase
+      .from('distribution_lists')
+      .select('slug')
+      .eq('id', id)
+      .maybeSingle()
 
-    const { data, error } = await supabase
-      .from('list_subscriptions')
-      .upsert(subscriptions, {
-        onConflict: 'user_id,list_id',
-        ignoreDuplicates: false,
-      })
-      .select()
+    if (listError || !list) {
+      return NextResponse.json({ error: 'Distribution list not found' }, { status: 404 })
+    }
 
-    if (error) {
-      console.error('Error adding subscribers:', error)
+    const audienceId = getResendAudienceIdForSlug(list.slug)
+    if (!audienceId) {
       return NextResponse.json(
-        { error: 'Failed to add subscribers' },
-        { status: 500 }
+        { error: `No Resend audience configured for list slug "${list.slug}"` },
+        { status: 400 }
       )
+    }
+
+    const { supabaseAdmin } = await import('@/lib/supabase/server')
+    const admin = supabaseAdmin()
+    const userIdsSet = new Set(user_ids)
+    const userEmails = new Map<string, string>()
+    const perPage = 1000
+
+    for (let page = 1; ; page++) {
+      const { data } = await admin.auth.admin.listUsers({ page, perPage })
+      const users = data.users || []
+
+      for (const authUser of users) {
+        if (userIdsSet.has(authUser.id) && authUser.email) {
+          userEmails.set(authUser.id, authUser.email)
+        }
+      }
+
+      if (users.length < perPage || userEmails.size >= user_ids.length) {
+        break
+      }
+    }
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', user_ids)
+
+    const profileNameMap = new Map((profiles || []).map((profile) => [profile.id, profile.full_name]))
+
+    const subscribed: string[] = []
+    for (const userId of user_ids) {
+      const email = userEmails.get(userId)
+      if (!email) {
+        continue
+      }
+
+      await subscribeResendContactToAudiences({
+        email,
+        fullName: profileNameMap.get(userId) ?? null,
+        audienceIds: [audienceId],
+        properties: {
+          user_id: userId,
+          source: 'admin',
+        },
+      })
+
+      subscribed.push(userId)
     }
 
     return NextResponse.json(
       {
-        data,
-        message: `${user_ids.length} utilisateur(s) abonné(s) avec succès`,
+        data: { subscribed_user_ids: subscribed },
+        message: `${subscribed.length} utilisateur(s) abonné(s) avec succès`,
       },
       { status: 201 }
     )
@@ -322,3 +401,11 @@ export async function POST(
     )
   }
 }
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Désabonnement liste de distribution admin',
+})
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Abonnement liste de distribution admin',
+})

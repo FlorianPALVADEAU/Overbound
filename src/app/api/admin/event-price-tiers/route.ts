@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const createEventPriceTierSchema = z.object({
   event_id: z.string().uuid(),
@@ -9,9 +10,10 @@ const createEventPriceTierSchema = z.object({
   available_from: z.string().nullable(),
   available_until: z.string().nullable(),
   display_order: z.number().int().min(0),
+  max_registrations: z.number().int().min(0).nullable().optional(),
 })
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const supabase = await createSupabaseServer()
     const {
@@ -43,6 +45,7 @@ export async function POST(request: NextRequest) {
         available_from: validated.available_from,
         available_until: validated.available_until,
         display_order: validated.display_order,
+        max_registrations: validated.max_registrations ?? null,
       })
       .select()
       .single()
@@ -60,3 +63,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Création palier tarifaire événement admin',
+})

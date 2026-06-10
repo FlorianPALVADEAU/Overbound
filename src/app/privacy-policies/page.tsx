@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '26/10/2025'
+const lastUpdated = '10/02/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet de la politique' },
@@ -49,7 +49,7 @@ const paragraphs = {
     'Données de compte : identifiant, mots de passe hashés, préférences linguistiques.',
     'Données d’inscription événementielle : format choisi, numéro de dossard, historique des participations, documents requis (certificat PPS, attestation parentale).',
     'Données financières : informations de paiement traitées par Stripe (quatre derniers chiffres de la carte, token de paiement), factures et historiques de transaction.',
-    'Données techniques : logs de connexion, adresse IP, device, navigateur, zones horodatées, cookies, identifiants publicitaires (avec consentement).',
+    'Données techniques : logs de connexion, adresse IP, device, navigateur, zones horodatées, cookies.',
     'Données de performance : chronométrage, classements, statistiques de course, notes et feedbacks.',
     'Données communautaires : messages envoyés via la Plateforme, participations aux forums, réponses aux enquêtes de satisfaction.',
   ],
@@ -65,7 +65,7 @@ const paragraphs = {
   destinataires: [
     'Personnel habilité d’Overbound (équipes opérationnelles, support, marketing, finance) soumis à une clause de confidentialité.',
     'Organisateurs partenaires et prestataires logistiques (sécurité, chronométrage, bénévoles) pour les besoins de l’événement.',
-    'Sous-traitants techniques : Vercel (hébergement), Supabase (base de données), Stripe (paiement), Mailgun (emails transactionnels), Segment (analyse), Sentry (monitoring), Metabase (BI).',
+    'Sous-traitants techniques : Vercel (hébergement), Supabase (base de données), Stripe (paiement), Resend (emails transactionnels), Sanity (CMS), Google Analytics (mesure d’audience), Sentry (monitoring).',
     'Autorités administratives ou judiciaires lorsqu’une obligation légale l’impose (réquisitions, enquêtes, lutte contre la fraude).',
     "Sponsors et partenaires commerciaux dans le cadre d'opérations marketing, uniquement si l’utilisateur a donné son consentement explicite.",
   ],
@@ -85,7 +85,7 @@ const paragraphs = {
     'Droit à la limitation : geler temporairement une partie des traitements en cas de contestation.',
     'Droit à la portabilité : recevoir les données fournies dans un format structuré, couramment utilisé et lisible par machine.',
     'Droit de retirer son consentement : retirer à tout moment son consentement aux traitements reposant sur celui-ci (newsletters, cookies marketing).',
-    'Modalités : envoyer un email à privacy@overbound-race.com ou un courrier à Overbound – DPO, 24 rue du Faubourg Saint-Martin, 75010 Paris. Réponse sous 30 jours.',
+    'Modalités : envoyer un email à contact@overbound-race.com ou un courrier à Overbound – DPO, 24 rue du Faubourg Saint-Martin, 75010 Paris. Réponse sous 30 jours.',
   ],
   securite: [
     'Infrastructure hébergée sur Vercel (UE) et Supabase (UE) avec chiffrement des données en transit (TLS 1.2+) et au repos (AES-256).',
@@ -95,7 +95,7 @@ const paragraphs = {
     'Plan de réponse aux incidents incluant notification à la CNIL dans les 72 heures et information des personnes concernées lorsque le risque est élevé.',
   ],
   transferts: [
-    "Certains sous-traitants (Stripe Payments Europe Limited, Vercel Inc., Mailgun Technologies, LLC) sont situés hors de l’UE (États-Unis). Les transferts sont encadrés par des clauses contractuelles types (CCT) approuvées par la Commission européenne et, le cas échéant, des mesures complémentaires (chiffrement, pseudonymisation).",
+    "Certains sous-traitants (Stripe Payments Europe Limited, Vercel Inc., Resend Technologies, LLC, Google) sont situés hors de l’UE (États-Unis). Les transferts sont encadrés par des clauses contractuelles types (CCT) approuvées par la Commission européenne et, le cas échéant, des mesures complémentaires (chiffrement, pseudonymisation).",
     'Overbound vérifie régulièrement les certifications et engagements de ses prestataires (Privacy Shield remplacé par le Data Privacy Framework).',
   ],
   mineurs: [
@@ -103,13 +103,13 @@ const paragraphs = {
     'Les données relatives aux mineurs sont traitées avec une vigilance renforcée : accès restreint, durée de conservation limitée à 3 ans, suppression sur simple demande du représentant légal.',
   ],
   cookies: [
-    'Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, maintien de session), ainsi que des cookies de mesure d’audience (Matomo, Google Analytics) et marketing (Facebook Pixel, TikTok Ads) soumis au consentement.',
-    'La gestion du consentement est opérée via la plateforme de gestion de consentement (CMP) Didomi : l’utilisateur peut modifier ses préférences à tout moment via le centre de confidentialité accessible en pied de page.',
+    'Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, maintien de session), ainsi que des cookies de mesure d’audience (Google Analytics) soumis au consentement.',
+    'Le consentement est géré via notre bandeau de cookies : l’utilisateur peut modifier ses préférences à tout moment via la page Politique Cookies.',
     'Pour plus de détails, consulter la Politique Cookies : https://overbound-race.com/cookies.',
   ],
   decisions: [
     'Overbound ne recourt pas à des décisions entièrement automatisées produisant des effets juridiques pour les utilisateurs.',
-    'Des traitements de profilage peuvent être utilisés pour recommander des événements ou proposer des offres personnalisées. Ils reposent sur l’historique de participation, le niveau déclaré et les préférences sportives. À tout moment, l’utilisateur peut s’y opposer via son espace personnel ou en écrivant à privacy@overbound-race.com.',
+    'Des traitements de profilage peuvent être utilisés pour recommander des événements ou proposer des offres personnalisées. Ils reposent sur l’historique de participation, le niveau déclaré et les préférences sportives. À tout moment, l’utilisateur peut s’y opposer via son espace personnel ou en écrivant à contact@overbound-race.com.',
   ],
   partenariats: [
     "Certaines courses peuvent être co-organisées avec des partenaires locaux (clubs sportifs, salles). Dans ce cadre, un accord de co-responsabilité est mis en place pour définir précisément les responsabilités respectives vis-à-vis des traitements de données. Les informations clés sont communiquées dans le règlement de chaque événement.",
@@ -159,8 +159,8 @@ export default function PrivacyPolicyPage() {
             </div>
             <div className="mt-4 rounded-2xl bg-card/80 p-4 text-xs text-muted-foreground">
               Pour toute question, écrivez à{' '}
-              <Link href="mailto:privacy@overbound-race.com" className="text-primary hover:underline">
-                privacy@overbound-race.com
+              <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
+                contact@overbound-race.com
               </Link>{' '}
               ou contactez notre DPO.
             </div>

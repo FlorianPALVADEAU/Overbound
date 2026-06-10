@@ -73,7 +73,11 @@ export default function VolunteerRecruitmentEmail({ fullName, headlineEvent, oth
               <tr>
                 <td style={styles.detailLabel}>📅 Date</td>
                 <td style={styles.detailValue}>
-                  {new Date(headlineEvent.date).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}
+                  {new Date(headlineEvent.date).toLocaleString('fr-FR', {
+                    dateStyle: 'full',
+                    timeStyle: 'short',
+                    timeZone: 'Europe/Paris',
+                  })}
                 </td>
               </tr>
               <tr>

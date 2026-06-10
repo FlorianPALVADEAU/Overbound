@@ -23,7 +23,13 @@ export interface VolunteerApplicationEmailProps {
 }
 
 export function VolunteerApplicationEmail({ applicantName, applicantEmail, phone, preferredMission, availability, experience, motivations, submittedAt, event = null }: VolunteerApplicationEmailProps) {
-  const formattedEventDate = event?.date && !Number.isNaN(Date.parse(event.date)) ? new Date(event.date).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : null
+  const formattedEventDate = event?.date && !Number.isNaN(Date.parse(event.date))
+    ? new Date(event.date).toLocaleString('fr-FR', {
+        dateStyle: 'full',
+        timeStyle: 'short',
+        timeZone: 'Europe/Paris',
+      })
+    : null
 
   return (
     <EmailLayout preview={`Nouvelle candidature bénévole — ${applicantName}`}>

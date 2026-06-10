@@ -54,6 +54,7 @@ export interface AdminEventPayload {
   subtitle?: string | null
   description?: string | null
   date: string
+  sales_start?: string | null
   location: string
   latitude?: number | null
   longitude?: number | null
@@ -62,6 +63,31 @@ export interface AdminEventPayload {
   external_provider?: string | null
   external_event_id?: string | null
   external_url?: string | null
+}
+
+export interface AdminEventWave {
+  wave_index: number
+  start_time: string
+  capacity: number
+  assigned_count: number
+  is_closed: boolean
+}
+
+interface AdminEventWavesResponse {
+  waves: AdminEventWave[]
+}
+
+export interface AdminWaveParticipant {
+  id: string
+  email: string
+  full_name: string
+  start_time: string | null
+  wave_position: number | null
+}
+
+interface AdminWaveParticipantsResponse {
+  wave_index: number
+  participants: AdminWaveParticipant[]
 }
 
 interface EventsResponse {
@@ -75,6 +101,9 @@ interface EventResponse {
 const ADMIN_EVENTS_QUERY_KEY = ['admin', 'events'] as const
 const ADMIN_EVENT_DETAIL_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId] as const
 const ADMIN_EVENT_VOLUNTEERS_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'volunteers'] as const
+const ADMIN_EVENT_WAVES_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'waves'] as const
+const ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY = (eventId: string, waveIndex: number) =>
+  ['admin', 'events', eventId, 'waves', waveIndex, 'participants'] as const
 
 const fetchAdminEvents = async (): Promise<AdminEventSummary[]> => {
   const response = await axiosClient.get<EventsResponse>('/admin/events')
@@ -143,6 +172,61 @@ export const useAdminEventVolunteers = (eventId?: string | null) =>
     enabled: Boolean(eventId),
   })
 
+const fetchAdminEventWaves = async (eventId: string): Promise<AdminEventWave[]> => {
+  const response = await axiosClient.get<AdminEventWavesResponse>(`/admin/events/${eventId}/waves`)
+  if (response.status !== 200) {
+    throw new Error('Erreur lors du chargement des SAS')
+  }
+  return response.data.waves ?? []
+}
+
+export const useAdminEventWaves = (eventId?: string | null) =>
+  useQuery<AdminEventWave[], Error>({
+    queryKey: eventId ? ADMIN_EVENT_WAVES_QUERY_KEY(eventId) : ['admin', 'events', 'waves'],
+    queryFn: () => fetchAdminEventWaves(eventId as string),
+    enabled: Boolean(eventId),
+  })
+
+const fetchAdminWaveParticipants = async (
+  eventId: string,
+  waveIndex: number,
+): Promise<AdminWaveParticipant[]> => {
+  const response = await axiosClient.get<AdminWaveParticipantsResponse>(
+    `/admin/events/${eventId}/waves?include_registrations=true&wave_index=${waveIndex}`,
+  )
+  if (response.status !== 200) {
+    throw new Error('Erreur lors du chargement des inscrits du SAS')
+  }
+  return response.data.participants ?? []
+}
+
+export const useAdminWaveParticipants = (
+  eventId?: string | null,
+  waveIndex?: number | null,
+) =>
+  useQuery<AdminWaveParticipant[], Error>({
+    queryKey:
+      eventId && waveIndex
+        ? ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY(eventId, waveIndex)
+        : ['admin', 'events', 'waves', 'participants'],
+    queryFn: () => fetchAdminWaveParticipants(eventId as string, waveIndex as number),
+    enabled: Boolean(eventId && waveIndex),
+  })
+
+export const updateAdminEventWave = async (
+  eventId: string,
+  payload: { wave_index?: number; capacity?: number; is_closed?: boolean; capacity_all?: number }
+): Promise<void> => {
+  await axiosClient.patch(`/admin/events/${eventId}/waves`, payload)
+}
+
+export const deleteAdminEventVolunteer = async (id: string): Promise<void> => {
+  const response = await axiosClient.delete(`/admin/volunteer-applications/${id}`)
+  if (response.status !== 200) {
+    throw new Error('Erreur lors de la suppression du bénévole')
+  }
+}
+
 export const createAdminEvent = async (payload: AdminEventPayload): Promise<AdminEventSummary> => {
   const response = await axiosClient.post<EventResponse>('/admin/events', payload)
   if (response.status !== 200) {
@@ -170,10 +254,25 @@ export const updateAdminEvent = async (
   }
 }
 
-export const deleteAdminEvent = async (id: string): Promise<void> => {
+export interface DeleteEventConflict {
+  registrationsCount: number
+  volunteersCount: number
+  ticketsCount: number
+  requiresConfirmation: boolean
+}
+
+export const deleteAdminEvent = async (id: string, force = false): Promise<void> => {
   try {
-    await axiosClient.delete(`/admin/events/${id}`)
+    await axiosClient.delete(`/admin/events/${id}${force ? '?force=true' : ''}`)
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data?.requiresConfirmation) {
+      const conflictError = new Error(error.response.data.error) as Error & DeleteEventConflict
+      conflictError.registrationsCount = error.response.data.registrationsCount ?? 0
+      conflictError.volunteersCount = error.response.data.volunteersCount ?? 0
+      conflictError.ticketsCount = error.response.data.ticketsCount ?? 0
+      conflictError.requiresConfirmation = true
+      throw conflictError
+    }
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.error || 'Erreur lors de la suppression')
     }

@@ -3,6 +3,8 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { notifyEventUpdate } from '@/lib/email/eventUpdates'
+import { notifyEventOpening } from '@/lib/email/eventOpenings'
+import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -86,7 +88,7 @@ const handleGet = async (
 
     const { data: registrationsOrders, error: registrationsOrdersError } = await admin
       .from('registrations')
-      .select('order:orders(amount_total, currency, status)')
+      .select('order_id')
       .eq('event_id', id)
 
     if (registrationsOrdersError) {
@@ -95,15 +97,27 @@ const handleGet = async (
 
     let totalRevenueCents = 0
     let revenueCurrency: string | null = null
-    if (registrationsOrders) {
-      for (const registration of registrationsOrders) {
-        const order = (registration as unknown as { order?: { amount_total: number | null; currency: string | null; status: string | null } }).order
+    const uniqueOrderIds = Array.from(
+      new Set(
+        (registrationsOrders ?? [])
+          .map((registration) => (registration as { order_id?: string | null }).order_id ?? null)
+          .filter((orderId): orderId is string => Boolean(orderId)),
+      ),
+    )
 
-        if (!order || order.amount_total == null || order.status !== 'paid') continue
-        totalRevenueCents += Number(order.amount_total)
-        if (!revenueCurrency && order.currency) {
-          revenueCurrency = order.currency
-        }
+    if (uniqueOrderIds.length > 0) {
+      const { data: paidOrders, error: paidOrdersError } = await admin
+        .from('orders')
+        .select('id, amount_total, currency, status')
+        .in('id', uniqueOrderIds)
+        .eq('status', 'paid')
+
+      if (paidOrdersError) {
+        console.error('[admin event detail] paid orders fetch error', paidOrdersError)
+      } else {
+        const revenue = computeUniquePaidRevenueCents(paidOrders ?? [])
+        totalRevenueCents = revenue.totalRevenueCents
+        revenueCurrency = revenue.revenueCurrency
       }
     }
 
@@ -166,6 +180,7 @@ const handlePut = async (
       title,
       subtitle,
       date,
+      sales_start,
       location,
       capacity,
       status,
@@ -183,6 +198,7 @@ const handlePut = async (
         title,
         subtitle: subtitle || null,
         date: new Date(date).toISOString(),
+        sales_start: sales_start ? new Date(sales_start).toISOString() : null,
         location,
         capacity: parseInt(capacity) || 0,
         status: status || 'draft',
@@ -223,6 +239,10 @@ const handlePut = async (
           : undefined,
     })
 
+    if (existingEvent?.status !== 'on_sale' && event.status === 'on_sale') {
+      await notifyEventOpening(event.id)
+    }
+
     return NextResponse.json({ event })
 
   } catch (error) {
@@ -239,6 +259,8 @@ const handleDelete = async (
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
     const { id } = await params
+    const url = new URL(request.url)
+    const forceDelete = url.searchParams.get('force') === 'true'
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -255,21 +277,92 @@ const handleDelete = async (
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
+    const admin = supabaseAdmin()
+
     // Vérifier s'il y a des inscriptions
-    const { count } = await supabase
+    const { count: registrationsCount } = await supabase
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', id)
 
-    if (count && count > 0) {
+    // Vérifier s'il y a des candidatures bénévoles
+    const { count: volunteersCount } = await supabase
+      .from('volunteer_applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', id)
+
+    // Vérifier s'il y a des tickets
+    const { count: ticketsCount } = await supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', id)
+
+    const hasRelatedData = (registrationsCount && registrationsCount > 0) ||
+      (volunteersCount && volunteersCount > 0) ||
+      (ticketsCount && ticketsCount > 0)
+
+    if (hasRelatedData && !forceDelete) {
       return NextResponse.json(
-        { error: 'Impossible de supprimer un événement avec des inscriptions' },
+        {
+          error: 'Cet événement a des données associées',
+          registrationsCount: registrationsCount ?? 0,
+          volunteersCount: volunteersCount ?? 0,
+          ticketsCount: ticketsCount ?? 0,
+          requiresConfirmation: true,
+        },
         { status: 409 }
       )
     }
 
-    // Utiliser supabaseAdmin pour supprimer
-    const admin = supabaseAdmin()
+    // Si force delete, supprimer les données associées
+    if (forceDelete && hasRelatedData) {
+      // Supprimer les inscriptions
+      if (registrationsCount && registrationsCount > 0) {
+        const { error: regError } = await admin
+          .from('registrations')
+          .delete()
+          .eq('event_id', id)
+        if (regError) {
+          console.error('Erreur suppression registrations:', regError)
+          throw regError
+        }
+      }
+
+      // Supprimer les candidatures bénévoles
+      if (volunteersCount && volunteersCount > 0) {
+        const { error: volError } = await admin
+          .from('volunteer_applications')
+          .delete()
+          .eq('event_id', id)
+        if (volError) {
+          console.error('Erreur suppression volunteer_applications:', volError)
+          throw volError
+        }
+      }
+
+      // Supprimer les tickets (et leurs inscriptions en cascade si nécessaire)
+      if (ticketsCount && ticketsCount > 0) {
+        const { error: ticketError } = await admin
+          .from('tickets')
+          .delete()
+          .eq('event_id', id)
+        if (ticketError) {
+          console.error('Erreur suppression tickets:', ticketError)
+          throw ticketError
+        }
+      }
+
+      // Supprimer les price tiers
+      const { error: priceTierError } = await admin
+        .from('event_price_tiers')
+        .delete()
+        .eq('event_id', id)
+      if (priceTierError) {
+        console.error('Erreur suppression event_price_tiers:', priceTierError)
+      }
+    }
+
+    // Supprimer l'événement
     const { error } = await admin
       .from('events')
       .delete()

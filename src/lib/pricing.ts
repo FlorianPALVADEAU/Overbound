@@ -4,6 +4,7 @@ import {
   getCurrentPriceTier,
   getNextPriceTier,
   calculateCurrentPrice,
+  parseTierDate,
 } from '@/types/EventPriceTier'
 
 /**
@@ -45,7 +46,7 @@ export function getNextPriceChange(
 
   return {
     price_cents: calculateCurrentPrice(ticket.final_price_cents, nextTier),
-    date: new Date(nextTier.available_from),
+    date: parseTierDate(nextTier.available_from) ?? new Date(nextTier.available_from),
   }
 }
 
@@ -80,15 +81,16 @@ export function isPriceChangeImminent(
  */
 export function formatPrice(priceCents: number, currency: string = 'EUR'): string {
   const priceInUnits = priceCents / 100
+  const hasDecimals = Math.abs(priceCents) % 100 !== 0
 
   // Format based on currency
   switch (currency.toUpperCase()) {
     case 'EUR':
-      return `${priceInUnits.toFixed(0)} €`
+      return `${priceInUnits.toFixed(hasDecimals ? 2 : 0).replace('.', ',')} €`
     case 'USD':
-      return `$${priceInUnits.toFixed(0)}`
+      return `$${priceInUnits.toFixed(hasDecimals ? 2 : 0)}`
     case 'GBP':
-      return `£${priceInUnits.toFixed(0)}`
+      return `£${priceInUnits.toFixed(hasDecimals ? 2 : 0)}`
     default:
       return `${priceInUnits.toFixed(2)} ${currency}`
   }
@@ -126,8 +128,8 @@ export function getPriceTiersForTimeline(eventPriceTiers: EventPriceTier[] = [])
   }
 
   return [...eventPriceTiers].sort((a, b) => {
-    const aTime = a.available_from ? new Date(a.available_from).getTime() : 0
-    const bTime = b.available_from ? new Date(b.available_from).getTime() : 0
+    const aTime = parseTierDate(a.available_from)?.getTime() ?? 0
+    const bTime = parseTierDate(b.available_from)?.getTime() ?? 0
     return aTime - bTime
   })
 }
@@ -146,8 +148,8 @@ export function validatePriceTiers(
 
   // Sort tiers by available_from
   const sortedTiers = [...tiers].sort((a, b) => {
-    const aTime = a.available_from ? new Date(a.available_from).getTime() : 0
-    const bTime = b.available_from ? new Date(b.available_from).getTime() : 0
+    const aTime = parseTierDate(a.available_from ?? null)?.getTime() ?? 0
+    const bTime = parseTierDate(b.available_from ?? null)?.getTime() ?? 0
     return aTime - bTime
   })
 
@@ -169,8 +171,14 @@ export function validatePriceTiers(
 
     // Validate date range
     if (tier.available_from && tier.available_until) {
-      const start = new Date(tier.available_from)
-      const end = new Date(tier.available_until)
+      const start = parseTierDate(tier.available_from)
+      const end = parseTierDate(tier.available_until)
+      if (!start || !end) {
+        return {
+          isValid: false,
+          error: `Palier ${i + 1}: Date invalide`,
+        }
+      }
       if (start >= end) {
         return {
           isValid: false,
@@ -183,8 +191,14 @@ export function validatePriceTiers(
     if (i < sortedTiers.length - 1) {
       const nextTier = sortedTiers[i + 1]
       if (tier.available_until && nextTier.available_from) {
-        const currentEnd = new Date(tier.available_until)
-        const nextStart = new Date(nextTier.available_from)
+        const currentEnd = parseTierDate(tier.available_until)
+        const nextStart = parseTierDate(nextTier.available_from)
+        if (!currentEnd || !nextStart) {
+          return {
+            isValid: false,
+            error: `Paliers ${i + 1} et ${i + 2}: Date invalide`,
+          }
+        }
         if (currentEnd > nextStart) {
           return {
             isValid: false,

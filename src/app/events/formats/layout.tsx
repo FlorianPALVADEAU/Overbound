@@ -1,14 +1,25 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Formats de course - Choisissez votre défi OCR | Overbound Race",
-  description: "Découvrez nos formats de course d'obstacles : Origin (6km), Horizon (12km), Ultra Arena (∞). Distances et difficultés personnalisables.",
+  title: "Formats Course à Obstacles | Origin, Horizon, Ultra Arena | Paris 2026",
+  description: "Choisis ton format de course à obstacles Overbound : Origin (6km), Horizon (12km), Ultra Arena (backyard à obstacles). Distances et difficultés personnalisables. Course obstacles Paris 2026.",
+  keywords: [
+    "formats course obstacles",
+    "origin course obstacles",
+    "horizon OCR",
+    "ultra arena backyard",
+    "backyard à obstacles",
+    "course obstacles débutant",
+    "course obstacles paris 2026",
+    "OCR personnalisable",
+    "niveaux difficulté OCR",
+  ],
   alternates: {
     canonical: 'https://overbound-race.com/events/formats'
   },
   openGraph: {
-    title: "Formats de course OCR - Overbound Race",
-    description: "Choisissez votre format et votre niveau de difficulté.",
+    title: "Formats Course à Obstacles | Origin, Horizon, Ultra Arena",
+    description: "Choisis ton format : Origin (6km), Horizon (12km), Ultra Arena (backyard à obstacles). Course obstacles Paris 2026.",
     url: 'https://overbound-race.com/events/formats',
     siteName: 'Overbound Race',
     images: [
@@ -16,7 +27,7 @@ export const metadata: Metadata = {
         url: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
         width: 1200,
         height: 630,
-        alt: 'Coureurs portant des troncs d\'arbres lors d\'une course Overbound Race'
+        alt: 'Formats Course à Obstacles - Overbound Race Paris 2026'
       }
     ],
     locale: 'fr_FR',
@@ -24,16 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Formats de course OCR - Overbound Race",
-    description: "Choisissez votre format et votre niveau de difficulté.",
-    images: [
-      {
-        url: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
-        width: 1200,
-        height: 630,
-        alt: 'Coureurs portant des troncs d\'arbres lors d\'une course Overbound Race'
-      }
-    ],
+    title: "Formats Course à Obstacles | Overbound Race Paris 2026",
+    description: "Origin, Horizon, Ultra Arena : choisis ton format et ta difficulté.",
+    images: ['/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif'],
   },
 };
 

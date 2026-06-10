@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { sendEventPrepEmail, sendPostEventThankYouEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
@@ -28,7 +28,11 @@ interface RegistrationWithEvent {
   } | null
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '')
+  if (!secret || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  }
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ ok: false, reason: 'resend_disabled' })
   }

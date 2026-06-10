@@ -20,7 +20,7 @@ export default async function PreferencesPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login?redirect=/preferences')
+    redirect('/auth/login?next=/preferences')
   }
 
   // Get user profile with marketing preferences

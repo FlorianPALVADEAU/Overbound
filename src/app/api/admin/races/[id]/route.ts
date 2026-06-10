@@ -125,6 +125,8 @@ const handleDelete = async (
     const supabase = await createSupabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
     const { id } = await params
+    const url = new URL(request.url)
+    const forceDelete = url.searchParams.get('force') === 'true'
 
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -141,36 +143,96 @@ const handleDelete = async (
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
+    const admin = supabaseAdmin()
+
     // Vérifier s'il y a des tickets utilisant cette course
-    const { count: ticketCount } = await supabase
+    const { count: ticketsCount } = await supabase
       .from('tickets')
       .select('*', { count: 'exact', head: true })
       .eq('race_id', id)
 
-    if (ticketCount && ticketCount > 0) {
-      return NextResponse.json(
-        { error: 'Impossible de supprimer une course utilisée par des tickets' },
-        { status: 409 }
-      )
-    }
-
     // Vérifier s'il y a des événements utilisant cette course
-    const { count: eventCount } = await supabase
+    const { count: eventsCount } = await supabase
       .from('event_races')
       .select('*', { count: 'exact', head: true })
       .eq('race_id', id)
 
-    if (eventCount && eventCount > 0) {
+    const hasRelatedData = (ticketsCount && ticketsCount > 0) ||
+      (eventsCount && eventsCount > 0)
+
+    if (hasRelatedData && !forceDelete) {
       return NextResponse.json(
-        { error: 'Impossible de supprimer une course utilisée par des événements' },
+        {
+          error: 'Cette course a des données associées',
+          ticketsCount: ticketsCount ?? 0,
+          eventsCount: eventsCount ?? 0,
+          requiresConfirmation: true,
+        },
         { status: 409 }
       )
     }
 
-    // Utiliser supabaseAdmin pour supprimer
-    const admin = supabaseAdmin()
-    
-    // Les associations race_obstacles seront supprimées automatiquement (CASCADE)
+    // Si force delete, supprimer les données associées
+    if (forceDelete && hasRelatedData) {
+      // D'abord supprimer les inscriptions des tickets de cette course
+      if (ticketsCount && ticketsCount > 0) {
+        // Récupérer les IDs des tickets
+        const { data: tickets } = await supabase
+          .from('tickets')
+          .select('id')
+          .eq('race_id', id)
+
+        if (tickets && tickets.length > 0) {
+          const ticketIds = tickets.map(t => t.id)
+
+          // Supprimer les inscriptions associées à ces tickets
+          const { error: regError } = await admin
+            .from('registrations')
+            .delete()
+            .in('ticket_id', ticketIds)
+
+          if (regError) {
+            console.error('Erreur suppression registrations:', regError)
+          }
+        }
+
+        // Supprimer les tickets
+        const { error: ticketError } = await admin
+          .from('tickets')
+          .delete()
+          .eq('race_id', id)
+
+        if (ticketError) {
+          console.error('Erreur suppression tickets:', ticketError)
+          throw ticketError
+        }
+      }
+
+      // Supprimer les associations event_races
+      if (eventsCount && eventsCount > 0) {
+        const { error: eventRaceError } = await admin
+          .from('event_races')
+          .delete()
+          .eq('race_id', id)
+
+        if (eventRaceError) {
+          console.error('Erreur suppression event_races:', eventRaceError)
+          throw eventRaceError
+        }
+      }
+    }
+
+    // Supprimer les associations race_obstacles
+    const { error: obstacleError } = await admin
+      .from('race_obstacles')
+      .delete()
+      .eq('race_id', id)
+
+    if (obstacleError) {
+      console.error('Erreur suppression race_obstacles:', obstacleError)
+    }
+
+    // Supprimer la course
     const { error } = await admin
       .from('races')
       .delete()

@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -14,8 +14,16 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+        setAll(
+          cookiesToSet: Array<{
+            name: string
+            value: string
+            options: CookieOptions
+          }>
+        ) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -32,14 +40,29 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser()
 
+  // Do not force-log users out on transient auth backend failures.
+  if (userError) {
+    console.warn('[auth middleware] getUser failed', {
+      path: request.nextUrl.pathname,
+      message: userError.message,
+    })
+    return supabaseResponse
+  }
+
   const url = request.nextUrl.clone()
+
+  // API routes must never redirect from middleware.
+  if (url.pathname.startsWith('/api')) {
+    return supabaseResponse
+  }
 
   // Protéger les routes admin
   if (url.pathname.startsWith('/admin')) {
     if (!user) {
-      url.pathname = '/login'
+      url.pathname = '/auth/login'
       url.searchParams.set('next', request.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
@@ -57,17 +80,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protéger les routes account
-  if (url.pathname.startsWith('/account')) {
-    if (!user) {
-      url.pathname = '/login'
-      url.searchParams.set('next', request.nextUrl.pathname)
-      return NextResponse.redirect(url)
-    }
-  }
+  // Do not hard-redirect /account from middleware.
+  // In production, right after OAuth/password sign-in, there can be a brief
+  // propagation window where edge middleware does not yet see the fresh
+  // session cookies, which causes false logout redirects.
+  // Account APIs/pages enforce auth themselves and remain the source of truth.
 
   // Rediriger les utilisateurs connectés depuis /login vers /account
-  if (url.pathname === '/login' && user) {
+  if ((url.pathname === '/login' || url.pathname === '/auth/login') && user) {
     url.pathname = '/account'
     return NextResponse.redirect(url)
   }

@@ -26,9 +26,11 @@ export interface Registration {
   checked_in: boolean
   claim_status: ClaimStatus
   created_at: Timestamp
+  event_price_tier_id?: UUID | null
   document_url: string | null
   document_filename: string | null
   document_size: number | null
+  documents?: RegistrationDocument[]
   approval_status: ApprovalStatus
   approved_by: UUID | null
   approved_at: Timestamp | null
@@ -38,6 +40,31 @@ export interface Registration {
   affiliation_deadline?: Timestamp | null
   is_affiliated: boolean
   difficulty_level?: FormatLevelId | null
+  distance_ideal_km?: number | null
+  distance_min_km?: number | null
+  start_time?: Timestamp | null
+  wave_index?: number | null
+  wave_capacity?: number | null
+  wave_position?: number | null
+  auto_assigned?: boolean | null
+  preferred_window_start?: Timestamp | null
+  preferred_window_end?: Timestamp | null
+  latest_allowed_time?: Timestamp | null
+  assignment_constraint_breached?: boolean | null
+}
+
+export interface RegistrationDocument {
+  id: UUID
+  registration_id: UUID
+  document_type: string
+  document_url: string
+  document_filename: string
+  document_size: number
+  status?: ApprovalStatus
+  rejection_reason?: string | null
+  approved_at?: Timestamp | null
+  approved_by?: UUID | null
+  uploaded_at: Timestamp
 }
 
 export interface MyRegistration {
@@ -79,19 +106,62 @@ export interface RegistrationProfileSummary {
   full_name: string | null
 }
 
+export interface AdminRegistrationPromoCode {
+  id: UUID
+  code: string
+  name?: string | null
+  discount_percent?: number | null
+  discount_amount?: number | null
+  currency?: Currency | null
+  is_active?: boolean | null
+}
+
+export interface AdminRegistrationUpsellItem {
+  registration_id: UUID
+  name: string
+  price_cents: number
+  quantity: number
+  currency: Currency | string
+  meta?: Record<string, any> | null
+}
+
+export interface AdminRegistrationOrderSummary extends Pick<Order, 'id' | 'amount_total' | 'currency' | 'status'> {
+  amount_per_registration?: number | null
+  registrations_count?: number | null
+  email?: string | null
+  provider?: Provider | null
+  provider_order_id?: string | null
+  created_at?: Timestamp | null
+  invoice_url?: string | null
+}
+
 export interface AdminRegistration extends Registration {
+  group?: {
+    id: UUID
+    name: string | null
+    invite_code: string | null
+  } | null
   event: {
     id: UUID
     title: string
     date: Timestamp
     location: string
   } | null
-  ticket: Pick<Ticket, 'id' | 'name' | 'distance_km'> | null
-  order: Pick<Order, 'id' | 'amount_total' | 'currency' | 'status'> | null
+  ticket: Pick<Ticket, 'id' | 'name' | 'distance_km' | 'requires_document' | 'document_types'> | null
+  order: AdminRegistrationOrderSummary | null
+  participant_profile?: RegistrationProfileSummary | null
   approved_by_profile?: RegistrationProfileSummary | null
   notification_preferences?: NotificationPreference | null
   upsells?: Upsell[] | null
+  upsell_items?: AdminRegistrationUpsellItem[] | null
+  promotional_codes?: AdminRegistrationPromoCode[] | null
+  has_tshirt?: boolean | null
+  tshirt_quantity?: number | null
+  tshirt_sizes?: string[] | null
   signatures?: RegistrationSignature[] | null
   requires_document: boolean,
+  documents_count?: number | null
+  required_documents_count?: number | null
+  uploaded_document_types?: string[] | null
   claim_status: ClaimStatus
 }

@@ -21,8 +21,10 @@ import {
   useAdminEvents,
   type AdminEventPayload,
   type AdminEventSummary,
+  type DeleteEventConflict,
 } from '@/app/api/admin/events/eventsQueries'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import axiosClient from '@/app/api/axiosClient'
 
 interface MessageState {
@@ -38,6 +40,7 @@ function buildFormValues(event?: Event): EventFormValues {
       subtitle: '',
       description: '',
       date: '',
+      sales_start: '',
       location: '',
       latitude: '',
       longitude: '',
@@ -55,6 +58,7 @@ function buildFormValues(event?: Event): EventFormValues {
     subtitle: event.subtitle || '',
     description: event.description || '',
     date: new Date(event.date).toISOString().slice(0, 16),
+    sales_start: event.sales_start ? new Date(event.sales_start).toISOString().slice(0, 16) : '',
     location: event.location,
     latitude: event.latitude?.toString() || '',
     longitude: event.longitude?.toString() || '',
@@ -72,6 +76,7 @@ function toPayload(values: EventFormValues): AdminEventPayload {
     title: values.title,
     subtitle: values.subtitle || null,
     date: new Date(values.date).toISOString(),
+    sales_start: values.sales_start ? new Date(values.sales_start).toISOString() : null,
     location: values.location,
     latitude: values.latitude ? parseFloat(values.latitude) : null,
     longitude: values.longitude ? parseFloat(values.longitude) : null,
@@ -88,6 +93,7 @@ const statusVariant = (status: Event['status']) => {
     case 'on_sale':
       return 'default' as const
     case 'draft':
+    case 'announced':
       return 'secondary' as const
     case 'sold_out':
     case 'closed':
@@ -98,6 +104,27 @@ const statusVariant = (status: Event['status']) => {
       return 'secondary' as const
     default:
       return 'secondary' as const
+  }
+}
+
+const statusLabel = (status: Event['status']) => {
+  switch (status) {
+    case 'draft':
+      return 'Brouillon'
+    case 'announced':
+      return 'Ouvert (inscriptions à venir)'
+    case 'on_sale':
+      return 'En vente'
+    case 'sold_out':
+      return 'Complet'
+    case 'closed':
+      return 'Clôturé'
+    case 'cancelled':
+      return 'Annulé'
+    case 'completed':
+      return 'Terminé'
+    default:
+      return status
   }
 }
 
@@ -125,6 +152,11 @@ export function EventsSection() {
   const [statusFilter, setStatusFilter] = useState<'all' | Event['status']>('all')
   const [priceTiers, setPriceTiers] = useState<EventPriceTier[]>([])
   const [loadingPriceTiers, setLoadingPriceTiers] = useState(false)
+
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [eventToDelete, setEventToDelete] = useState<AdminEventSummary | null>(null)
+  const [deleteConflict, setDeleteConflict] = useState<DeleteEventConflict | null>(null)
 
   const filteredEvents = useMemo(() => {
     let result = [...events]
@@ -178,24 +210,46 @@ export function EventsSection() {
     }
   }
 
-  const handleDelete = async (event: AdminEventSummary) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer "${event.title}" ?`)) {
-      return
-    }
+  const handleDeleteClick = (event: AdminEventSummary) => {
+    setEventToDelete(event)
+    setDeleteConflict(null)
+    setDeleteDialogOpen(true)
+  }
 
-    setDeleteLoadingId(event.id)
+  const handleDelete = async () => {
+    if (!eventToDelete) return
+
+    setDeleteLoadingId(eventToDelete.id)
     try {
-      await deleteAdminEvent(event.id)
+      // First attempt without force to check for conflicts
+      await deleteAdminEvent(eventToDelete.id, deleteConflict !== null)
       queryClient.setQueryData<AdminEventSummary[]>(adminEventsQueryKey, (previous) => {
         if (!previous) return []
-        return previous.filter((item) => item.id !== event.id)
+        return previous.filter((item) => item.id !== eventToDelete.id)
       })
       setMessage({ type: 'success', text: 'Événement supprimé avec succès' })
+      setDeleteDialogOpen(false)
+      setEventToDelete(null)
+      setDeleteConflict(null)
     } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.error || error.message
-        : (error as Error).message || 'Erreur lors de la suppression'
-      setMessage({ type: 'error', text })
+      const err = error as Error & DeleteEventConflict
+      if (err.requiresConfirmation && !deleteConflict) {
+        // Show conflict info but keep dialog open
+        setDeleteConflict({
+          registrationsCount: err.registrationsCount,
+          volunteersCount: err.volunteersCount,
+          ticketsCount: err.ticketsCount,
+          requiresConfirmation: true,
+        })
+      } else {
+        const text = axios.isAxiosError(error)
+          ? error.response?.data?.error || error.message
+          : (error as Error).message || 'Erreur lors de la suppression'
+        setMessage({ type: 'error', text })
+        setDeleteDialogOpen(false)
+        setEventToDelete(null)
+        setDeleteConflict(null)
+      }
     } finally {
       setDeleteLoadingId(null)
     }
@@ -204,6 +258,13 @@ export function EventsSection() {
   const handleSubmit = async (values: EventFormValues) => {
     if (!values.title || !values.date || !values.location) {
       setMessage({ type: 'error', text: 'Veuillez remplir tous les champs obligatoires' })
+      return
+    }
+    if (values.status === 'announced' && !values.sales_start) {
+      setMessage({
+        type: 'error',
+        text: 'Veuillez indiquer une date d’ouverture des inscriptions.',
+      })
       return
     }
 
@@ -272,7 +333,7 @@ export function EventsSection() {
         header: 'Statut',
         cell: (event) => (
           <Badge variant={statusVariant(event.status)} className="capitalize">
-            {event.status.replace('_', ' ')}
+            {statusLabel(event.status)}
           </Badge>
         ),
       },
@@ -314,7 +375,7 @@ export function EventsSection() {
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => handleDelete(event)}
+              onClick={() => handleDeleteClick(event)}
               disabled={deleteLoadingId === event.id}
             >
               {deleteLoadingId === event.id ? 'Suppression…' : 'Supprimer'}
@@ -323,7 +384,7 @@ export function EventsSection() {
         ),
       },
     ]
-  }, [deleteLoadingId, handleDelete, handleEdit])
+  }, [deleteLoadingId])
 
   return (
     <div className="space-y-6">
@@ -386,6 +447,7 @@ export function EventsSection() {
               <SelectContent>
                 <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="draft">Brouillon</SelectItem>
+                <SelectItem value="announced">Ouvert (inscriptions à venir)</SelectItem>
                 <SelectItem value="on_sale">En vente</SelectItem>
                 <SelectItem value="sold_out">Complet</SelectItem>
                 <SelectItem value="closed">Clôturé</SelectItem>
@@ -413,6 +475,42 @@ export function EventsSection() {
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
         onPriceTiersChange={setPriceTiers}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setEventToDelete(null)
+            setDeleteConflict(null)
+          }
+        }}
+        title="Supprimer l'événement"
+        entityName={eventToDelete?.title ?? ''}
+        entityType="l'événement"
+        warningMessage={
+          deleteConflict
+            ? `Attention : cet événement contient des données associées.`
+            : undefined
+        }
+        consequences={
+          deleteConflict
+            ? [
+                deleteConflict.registrationsCount > 0
+                  ? `${deleteConflict.registrationsCount} inscription(s)`
+                  : null,
+                deleteConflict.volunteersCount > 0
+                  ? `${deleteConflict.volunteersCount} candidature(s) bénévole(s)`
+                  : null,
+                deleteConflict.ticketsCount > 0
+                  ? `${deleteConflict.ticketsCount} ticket(s)`
+                  : null,
+              ].filter(Boolean) as string[]
+            : undefined
+        }
+        onConfirm={handleDelete}
+        loading={deleteLoadingId === eventToDelete?.id}
       />
     </div>
   )

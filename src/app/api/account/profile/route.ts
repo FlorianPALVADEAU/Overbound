@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
 
 export const runtime = 'nodejs'
 
@@ -26,13 +27,13 @@ const updateProfileSchema = z.object({
   full_name: preprocessOptionalString(
     z
       .string()
-      .min(2, { message: 'Le nom complet doit contenir au moins 2 caractères.' })
+      .min(1, { message: 'Le nom complet doit contenir au moins 1 caractère.' })
       .max(150, { message: 'Le nom complet est trop long.' }),
   ),
   phone: preprocessOptionalString(
     z
       .string()
-      .min(6, { message: 'Le numéro de téléphone doit contenir au moins 6 chiffres.' })
+      .min(1, { message: 'Le numéro de téléphone est invalide.' })
       .max(32, { message: 'Le numéro de téléphone est trop long.' }),
   ),
   date_of_birth: preprocessOptionalString(
@@ -75,12 +76,16 @@ const validateBirthdate = (date: string) => {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await resolveRequestUser(request)
 
     if (!user) {
+      console.warn('[account profile] unauthenticated patch attempt', {
+        hasAuthorizationHeader: Boolean(request.headers.get('authorization')),
+        cookieCount: request.cookies.getAll().length,
+        host: request.headers.get('host'),
+        origin: request.headers.get('origin'),
+        referer: request.headers.get('referer'),
+      })
       return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
     }
 
@@ -116,10 +121,17 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const { data: updatedProfile, error: updateError } = await supabase
+    const admin = supabaseAdmin()
+
+    const { data: updatedProfile, error: updateError } = await admin
       .from('profiles')
-      .update(updatePayload)
-      .eq('id', user.id)
+      .upsert(
+        {
+          id: user.id,
+          ...updatePayload,
+        },
+        { onConflict: 'id' },
+      )
       .select('full_name, phone, date_of_birth, marketing_opt_in, role')
       .single()
 

@@ -2,8 +2,45 @@ import { client } from '@/sanity/lib/client'
 import { authorsWithCountsQuery } from '@/sanity/lib/queries'
 import { urlFor } from '@/sanity/lib/image'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 
 export const revalidate = 300
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
+const heroImage = `${siteUrl}/images/hero_header_poster.jpg`
+
+export const metadata: Metadata = {
+  title: 'Auteurs Blog OCR | Course à Obstacles Paris 2026 - Overbound Race',
+  description:
+    'Découvre les auteurs du blog Overbound Race : conseils OCR, préparation backyard à obstacles et course à obstacles Paris 2026.',
+  alternates: {
+    canonical: `${siteUrl}/blog/auteurs`,
+  },
+  openGraph: {
+    title: 'Auteurs du Blog OCR | Overbound Race',
+    description:
+      'Les auteurs Overbound Race partagent leurs conseils OCR et préparation pour la course à obstacles Paris 2026.',
+    url: `${siteUrl}/blog/auteurs`,
+    siteName: 'Overbound Race',
+    locale: 'fr_FR',
+    type: 'website',
+    images: [
+      {
+        url: heroImage,
+        width: 1200,
+        height: 630,
+        alt: 'Auteurs du blog Overbound Race',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Auteurs du Blog OCR | Overbound Race',
+    description:
+      'Découvre les auteurs Overbound Race et leurs conseils OCR pour la course à obstacles Paris 2026.',
+    images: [heroImage],
+  },
+}
 
 export default async function BlogAuthorsIndex() {
   const authors = await client.fetch(authorsWithCountsQuery)
@@ -31,4 +68,3 @@ export default async function BlogAuthorsIndex() {
     </main>
   )
 }
-

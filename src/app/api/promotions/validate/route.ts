@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+
+const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
+const WELCOME_STACKABLE_CODE = 'WELCOME05'
+
+const hasAmbassadorLink = (value: unknown) => {
+  if (Array.isArray(value)) return value.length > 0
+  return Boolean(value && typeof value === 'object')
+}
+
+const isWelcomeStackableCode = (code: string | null | undefined) =>
+  (code || '').trim().toUpperCase() === WELCOME_STACKABLE_CODE
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, eventId } = await request.json()
+    const { code, eventId, existingCodes } = await request.json()
 
     if (!code || !eventId) {
       return NextResponse.json({ error: 'Code promo ou événement manquant.' }, { status: 400 })
@@ -11,9 +22,23 @@ export async function POST(request: NextRequest) {
 
     const normalizedCode = String(code).trim().toUpperCase()
 
-    const supabase = await createSupabaseServer()
+    const normalizedExistingCodes = Array.isArray(existingCodes)
+      ? existingCodes
+          .map((value) => String(value ?? '').trim().toUpperCase())
+          .filter((value) => value.length > 0)
+      : []
 
-    const { data: promotionalCode, error } = await supabase
+    const uniqueExistingCodes = [...new Set(normalizedExistingCodes)]
+    if (uniqueExistingCodes.length >= 2) {
+      return NextResponse.json({ error: 'Vous avez déjà atteint la limite de 2 codes promo.' }, { status: 409 })
+    }
+    if (uniqueExistingCodes.includes(normalizedCode)) {
+      return NextResponse.json({ error: 'Ce code promo est déjà appliqué.' }, { status: 409 })
+    }
+
+    const admin = supabaseAdmin()
+
+    const { data: promotionalCode, error } = await admin
       .from('promotional_codes')
       .select(
         `
@@ -28,7 +53,8 @@ export async function POST(request: NextRequest) {
         is_active,
         usage_limit,
         used_count,
-        events:promotional_code_events(event_id)
+        events:promotional_code_events(event_id),
+        ambassadors:ambassadors(id)
       `,
       )
       .ilike('code', normalizedCode)
@@ -67,6 +93,89 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ce code promo ne s’applique pas à cet événement.' }, { status: 403 })
     }
 
+    if (NON_CUMULABLE_WITH_TIER_CODES.has(normalizedCode)) {
+      const { data: eventPriceTiers, error: tierError } = await admin
+        .from('event_price_tiers')
+        .select('discount_percentage, available_from, available_until, display_order')
+        .eq('event_id', eventId)
+        .order('display_order', { ascending: true })
+
+      if (tierError) {
+        return NextResponse.json({ error: 'Impossible de vérifier le palier tarifaire actif.' }, { status: 500 })
+      }
+
+      const nowTime = Date.now()
+      const activeTier = (eventPriceTiers || []).find((tier) => {
+        const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
+        const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
+        return nowTime >= startTime && nowTime < endTime
+      })
+
+      const activeTierDiscount = Number(activeTier?.discount_percentage || 0)
+      const promoPercent = Number(promotionalCode.discount_percent || 0)
+
+      if (promoPercent > 0 && activeTierDiscount >= promoPercent) {
+        return NextResponse.json(
+          { error: 'Ce code promo ne peut pas être cumulé avec le palier actuel, déjà plus avantageux.' },
+          { status: 409 },
+        )
+      }
+    }
+
+    if (uniqueExistingCodes.length > 0) {
+      const { data: existingPromoRows, error: existingPromoError } = await admin
+        .from('promotional_codes')
+        .select('code, ambassadors:ambassadors(id)')
+        .in('code', uniqueExistingCodes)
+
+      if (existingPromoError) {
+        return NextResponse.json({ error: 'Impossible de vérifier les codes déjà appliqués.' }, { status: 500 })
+      }
+
+      let ambassadorCount = 0
+      let regularCount = 0
+      const regularCodes: string[] = []
+
+      for (const existingPromo of existingPromoRows || []) {
+        if (hasAmbassadorLink((existingPromo as { ambassadors?: unknown }).ambassadors)) {
+          ambassadorCount += 1
+        } else {
+          regularCount += 1
+          regularCodes.push(String((existingPromo as { code?: string }).code || '').trim().toUpperCase())
+        }
+      }
+
+      const isIncomingAmbassador = hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors)
+      if (isIncomingAmbassador && ambassadorCount >= 1) {
+        return NextResponse.json(
+          { error: 'Un seul code ambassadeur peut être appliqué par commande.' },
+          { status: 409 },
+        )
+      }
+      if (!isIncomingAmbassador && regularCount >= 1) {
+        const regularCodesWithIncoming = [...regularCodes, normalizedCode]
+        const welcomeExceptionApplies = regularCodesWithIncoming.some((code) => isWelcomeStackableCode(code))
+        if (welcomeExceptionApplies) {
+          // Allow stacking WELCOME05 with one other standard promo code.
+          return NextResponse.json({
+            promotionalCode: {
+              id: promotionalCode.id,
+              code: promotionalCode.code,
+              description: promotionalCode.description,
+              discount_percent: promotionalCode.discount_percent,
+              discount_amount: promotionalCode.discount_amount,
+              currency: promotionalCode.currency,
+              is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
+            },
+          })
+        }
+        return NextResponse.json(
+          { error: 'Un seul code promo standard peut être appliqué par commande.' },
+          { status: 409 },
+        )
+      }
+    }
+
     return NextResponse.json({
       promotionalCode: {
         id: promotionalCode.id,
@@ -75,6 +184,7 @@ export async function POST(request: NextRequest) {
         discount_percent: promotionalCode.discount_percent,
         discount_amount: promotionalCode.discount_amount,
         currency: promotionalCode.currency,
+        is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
       },
     })
   } catch (error) {

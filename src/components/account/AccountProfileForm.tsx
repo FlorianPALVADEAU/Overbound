@@ -7,12 +7,13 @@ import {
   ACCOUNT_REGISTRATIONS_QUERY_KEY,
   type AccountRegistrationsResponse,
 } from '@/app/api/account/registrations/accountRegistrationsQueries'
-import { SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
+import { SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
+import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
 interface AccountProfileFormProps {
   profile: SessionProfile | null
@@ -71,15 +72,30 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
 
   const mutation = useMutation<UpdateProfileResponse, Error, UpdatePayload>({
     mutationFn: async (payload) => {
-      const response = await fetch('/api/account/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const doRequest = async (forceRefresh = false) => {
+        const authHeaders = await getClientAuthHeaders({ forceRefresh })
+        return fetch('/api/account/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
+          body: JSON.stringify(payload),
+          credentials: 'include',
+        })
+      }
+
+      let response = await doRequest()
+      if (response.status === 401) {
+        response = await doRequest(true)
+      }
 
       const data = (await response.json().catch(() => ({}))) as UpdateProfileResponse
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Session expirée ou invalide. Recharge la page et reconnecte-toi.')
+        }
         throw new Error(data.error || 'Impossible de mettre à jour le profil.')
       }
 
@@ -93,7 +109,7 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
           full_name: updatedProfile.full_name ?? '',
           phone: updatedProfile.phone ?? '',
           date_of_birth: updatedProfile.date_of_birth ?? '',
-          marketing_opt_in: Boolean((updatedProfile as any).marketing_opt_in),
+          marketing_opt_in: Boolean(updatedProfile.marketing_opt_in),
         }
         setSavedValues(nextValues)
         setFormValues(nextValues)
@@ -143,10 +159,29 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             : prev,
       )
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ACCOUNT_REGISTRATIONS_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY }),
-      ])
+      queryClient.setQueryData<SessionResponse | undefined>(SESSION_QUERY_KEY, (prev) =>
+        prev
+          ? {
+              ...prev,
+              profile:
+                data.profile ??
+                {
+                  ...(prev.profile ?? {}),
+                  ...Object.fromEntries(
+                    Object.entries(sentPayload).map(([key, value]) => [key, value ?? null]),
+                  ),
+                  ...BOOLEAN_FIELDS.reduce<Record<string, boolean>>((accumulator, field) => {
+                    if (field in sentPayload) {
+                      accumulator[field] = Boolean(sentPayload[field as BooleanFieldKey])
+                    }
+                    return accumulator
+                  }, {}),
+                },
+            }
+          : prev,
+      )
+
+      await queryClient.invalidateQueries({ queryKey: ACCOUNT_REGISTRATIONS_QUERY_KEY })
 
       onSuccess?.()
     },
@@ -208,7 +243,6 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
   )
 
   const isSubmitting = mutation.isPending
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
@@ -233,6 +267,9 @@ export function AccountProfileForm({ profile, email, onSuccess }: AccountProfile
             disabled
             readOnly
           />
+          <p className="text-xs text-muted-foreground">
+            Pour des raisons de stabilité, la gestion des comptes liés (Google) est temporairement désactivée ici.
+          </p>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-phone">Téléphone</Label>

@@ -63,6 +63,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'on_sale': return 'default'
+      case 'announced': return 'secondary'
       case 'sold_out': return 'destructive'
       case 'closed': return 'secondary'
       default: return 'outline'
@@ -72,6 +73,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'on_sale': return 'Ouvert'
+      case 'announced': return 'Inscriptions à venir'
       case 'sold_out': return 'Complet'
       case 'closed': return 'Fermé'
       case 'draft': return 'Bientôt'
@@ -151,7 +153,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
 
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          <span>{availableSpots} places disponibles</span>
+                          <span>Places limitées</span>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -169,7 +171,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
                       <div className="space-y-1 mb-3">
                         <div className="flex justify-between text-xs">
                           <span>Inscriptions</span>
-                          <span>{event.registrations_count || 0} / {event.capacity}</span>
+                          <span>Mises à jour en temps réel</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-1.5">
                           <div 

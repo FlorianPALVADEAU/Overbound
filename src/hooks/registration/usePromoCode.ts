@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react'
 import type { AppliedPromo } from '@/components/registration/types'
 
+const MAX_PROMO_CODES = 2
+
 export function usePromoCode(eventId: string) {
-  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null)
+  const [appliedPromos, setAppliedPromos] = useState<AppliedPromo[]>([])
   const [promoInput, setPromoInput] = useState('')
   const [promoError, setPromoError] = useState<string | null>(null)
 
@@ -13,11 +15,25 @@ export function usePromoCode(eventId: string) {
       return
     }
 
+    if (appliedPromos.length >= MAX_PROMO_CODES) {
+      setPromoError('Vous pouvez appliquer au maximum 2 codes promo.')
+      return
+    }
+
+    if (appliedPromos.some((promo) => promo.code.toUpperCase() === normalized)) {
+      setPromoError('Ce code promo est déjà appliqué.')
+      return
+    }
+
     try {
       const response = await fetch('/api/promotions/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: normalized, eventId }),
+        body: JSON.stringify({
+          code: normalized,
+          eventId,
+          existingCodes: appliedPromos.map((promo) => promo.code),
+        }),
       })
 
       if (!response.ok) {
@@ -26,27 +42,27 @@ export function usePromoCode(eventId: string) {
       }
 
       const data = (await response.json()) as { promotionalCode: AppliedPromo }
-      setAppliedPromo(data.promotionalCode)
+      setAppliedPromos((previous) => [...previous, data.promotionalCode])
+      setPromoInput('')
       setPromoError(null)
     } catch (error) {
-      setAppliedPromo(null)
       setPromoError(error instanceof Error ? error.message : "Impossible d'appliquer ce code")
     }
-  }, [eventId, promoInput])
+  }, [appliedPromos, eventId, promoInput])
 
-  const removePromo = useCallback(() => {
-    setAppliedPromo(null)
-    setPromoInput('')
+  const removePromo = useCallback((code: string) => {
+    setAppliedPromos((previous) => previous.filter((promo) => promo.code !== code))
     setPromoError(null)
   }, [])
 
   return {
-    appliedPromo,
-    setAppliedPromo,
+    appliedPromos,
+    setAppliedPromos,
     promoInput,
     setPromoInput,
     promoError,
     setPromoError,
+    ambassadorReferralCode: appliedPromos.find((promo) => promo.is_ambassador)?.code ?? null,
     validatePromoCode,
     removePromo,
   }

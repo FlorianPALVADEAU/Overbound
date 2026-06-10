@@ -38,7 +38,7 @@ export async function sendVolunteerRecruitmentDigest(options: { lookaheadDays?: 
     .select('id, title, date, location, status')
     .gte('date', now.toISOString())
     .lte('date', end.toISOString())
-    .in('status', ['on_sale', 'sold_out'])
+    .in('status', ['announced', 'on_sale', 'sold_out'])
     .order('date', { ascending: true })
 
   if (error) {

@@ -8,12 +8,29 @@ export function markdownToHtml(md: string): string {
   // Escape angle brackets to avoid accidental HTML injection
   text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
+  const sanitizeHref = (href: string) => {
+    const trimmed = href.trim()
+    if (!trimmed) return '#'
+    if (trimmed.startsWith('/') || trimmed.startsWith('#') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+      return trimmed
+    }
+    try {
+      const url = new URL(trimmed)
+      return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? trimmed : '#'
+    } catch {
+      return '#'
+    }
+  }
+
   // Inline replacements: bold, italics, links
   const inline = (s: string) =>
     s
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, textValue, hrefValue) => {
+        const safeHref = sanitizeHref(String(hrefValue))
+        return `<a href="${safeHref}">${textValue}</a>`
+      })
 
   const lines = text.split('\n')
   const htmlParts: string[] = []

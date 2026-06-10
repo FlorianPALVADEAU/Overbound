@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import MultiStepEventRegistration from '@/components/registration'
 import { useSession } from '@/app/api/session/sessionQueries'
@@ -16,6 +16,7 @@ export default function EventRegisterPage() {
   const ticketQueryParam = searchParams?.get('ticket') ?? null
   const { data: session, isLoading: sessionLoading } = useSession()
   const { data: accountRegistrations, isLoading: accountRegistrationsLoading } = useAccountRegistrations()
+  const registerViewTrackedRef = useRef(false)
 
   useEffect(() => {
     if (!sessionLoading && !session?.user && !accountRegistrationsLoading) {
@@ -27,6 +28,44 @@ export default function EventRegisterPage() {
   const { data, isLoading, error, refetch } = useEventRegisterData(params.id, ticketQueryParam, {
     enabled: Boolean(session?.user),
   })
+
+  useEffect(() => {
+    if (!data?.event || registerViewTrackedRef.current) return
+    registerViewTrackedRef.current = true
+
+    const analyticsWindow = window as Window & {
+      dataLayer?: Array<Record<string, unknown>>
+      gtag?: (...args: unknown[]) => void
+      fbq?: (...args: unknown[]) => void
+    }
+
+    const payload = {
+      event_slug: data.event.slug,
+      event_id: data.event.id,
+      page_path: `/events/${params.id}/register`,
+    }
+
+    analyticsWindow.dataLayer?.push({
+      event: 'view_register',
+      ...payload,
+    })
+    analyticsWindow.gtag?.('event', 'view_register', {
+      event_category: 'event_register',
+      event_label: data.event.slug,
+      ...payload,
+    })
+    analyticsWindow.fbq?.('track', 'ViewContent', {
+      content_name: data.event.title || data.event.slug,
+      content_category: 'event_register',
+      content_type: 'product',
+      content_ids: [data.event.id],
+    })
+    analyticsWindow.fbq?.('trackCustom', 'view_register', {
+      event_slug: data.event.slug,
+      event_id: data.event.id,
+      page_path: `/events/${params.id}/register`,
+    })
+  }, [data?.event, params.id])
 
   if (sessionLoading || (session && !session.user) || accountRegistrationsLoading) {
     return (

@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import EventVolunteersTable from './EventVolunteersTable'
 import { EventPriceTierManager } from './EventPriceTierManager'
+import { EventOpenWavesSection } from './EventOpenWavesSection'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 
 type ViewMode = 'all' | 'runners' | 'volunteers'
@@ -29,6 +30,8 @@ const statusLabel = (status: string) => {
       return 'En vente'
     case 'draft':
       return 'Brouillon'
+    case 'announced':
+      return 'Ouvert (inscriptions à venir)'
     case 'sold_out':
       return 'Complet'
     case 'closed':
@@ -46,6 +49,8 @@ const statusVariant = (status: string) => {
   switch (status) {
     case 'on_sale':
       return 'default' as const
+    case 'announced':
+      return 'secondary' as const
     case 'sold_out':
     case 'closed':
       return 'outline' as const
@@ -260,6 +265,10 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
             accent="!bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-600"
             description="Commandes payées recensées pour cet événement"
           />
+
+        <section className="space-y-4">
+          <EventOpenWavesSection eventId={eventId} />
+        </section>
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-foreground">Paliers de prix</h2>

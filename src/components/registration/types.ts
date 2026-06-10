@@ -43,6 +43,8 @@ export type Participant = {
   emergencyContactPhone: string
   medicalInfo: string
   licenseNumber: string
+  distanceIdealKm: string
+  distanceMinKm: string
   difficultyLevel?: 'low' | 'mid' | 'hard' | null
 }
 
@@ -52,7 +54,7 @@ export type TicketSelections = Record<string, number>
 
 export type AppliedPromo = Pick<
   PromotionalCode,
-  'id' | 'code' | 'description' | 'discount_percent' | 'discount_amount' | 'currency'
+  'id' | 'code' | 'description' | 'discount_percent' | 'discount_amount' | 'currency' | 'is_ambassador'
 >
 
 export interface PricingSummary {

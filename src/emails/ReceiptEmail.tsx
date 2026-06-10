@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Section, Text, Link, Button, Hr } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { COMPANY_INFO } from '@/constants/companyInfo'
 
 interface ReceiptItem {
   description: string
@@ -173,15 +174,13 @@ export function ReceiptEmail({
         <Text style={styles.footerText}>
           Cette facture a été générée automatiquement. Pour toute question concernant cette
           facture, contacte-nous à{' '}
-          <Link href="mailto:billing@overbound-race.com" style={styles.link}>
-            billing@overbound-race.com
+          <Link href={`mailto:${COMPANY_INFO.emails.billing}`} style={styles.link}>
+            {COMPANY_INFO.emails.billing}
           </Link>
         </Text>
 
         <Text style={styles.smallText}>
-          Overbound SAS - SIRET: 123 456 789 00012 - TVA: FR12345678901
-          <br />
-          Paris, France
+          {COMPANY_INFO.legalName} — {COMPANY_INFO.rcs.full} — SIREN : {COMPANY_INFO.rcs.number} — TVA : {COMPANY_INFO.vat}
         </Text>
       </Section>
     </EmailLayout>

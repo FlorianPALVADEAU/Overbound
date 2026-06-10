@@ -42,6 +42,22 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
 
   const handlePaymentSuccess = async (paymentIntent: any) => {
     if (!registrationDraft) return
+    const hasSignature =
+      typeof registrationDraft.signature.imageDataUrl === 'string' &&
+      registrationDraft.signature.imageDataUrl.trim().length > 0
+    const hasAcceptedDisclaimer =
+      Boolean(registrationDraft.disclaimer?.read) &&
+      Boolean(registrationDraft.disclaimer?.accepted) &&
+      Boolean(registrationDraft.disclaimer?.rulebookAccepted)
+
+    if (!hasSignature || !hasAcceptedDisclaimer) {
+      setMessage({
+        type: 'error',
+        text: 'Signature, décharge et règlement officiel obligatoires. Merci de revenir à l’étape précédente.',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     setMessage(null)
 
@@ -58,7 +74,9 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           ticketSelections: registrationDraft.ticketSelections,
           participants: registrationDraft.participants.map(({ id: _id, ...participant }) => participant),
           upsells: registrationDraft.upsells,
-          promoCode: registrationDraft.promoCode,
+          promoCodes: registrationDraft.promoCodes || [],
+          ambassadorReferralCode: registrationDraft.ambassadorReferralCode,
+          groupId: registrationDraft.groupId ?? null,
           signatureImage: registrationDraft.signature.imageDataUrl,
           signatureMetadata: {
             regulationVersion: registrationDraft.signature.regulationVersion,
@@ -72,6 +90,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
         const errorBody = await response.json().catch(() => ({}))
         throw new Error(errorBody.error || 'Erreur lors de la finalisation de l\'inscription')
       }
+      const payload = await response.json().catch(() => ({}))
 
       setMessage({
         type: 'success',
@@ -80,7 +99,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
 
       setTimeout(() => {
         clearRegistrationDraft()
-        router.replace(`/events/${event.slug}/success?payment_intent=${paymentIntent.id}`)
+        router.replace('/account/tickets')
       }, 1200)
     } catch (err) {
       console.error('Erreur finalisation inscription:', err)
@@ -148,6 +167,33 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           <Link href={`/events/${event.slug}/register`}>
             <ChevronLeft className="mr-1 h-4 w-4" />
             Retour à l'inscription
+          </Link>
+        </Button>
+      </div>
+    )
+  }
+
+  const hasSignature =
+    typeof registrationDraft.signature.imageDataUrl === 'string' &&
+    registrationDraft.signature.imageDataUrl.trim().length > 0
+  const hasAcceptedDisclaimer =
+    Boolean(registrationDraft.disclaimer?.read) &&
+    Boolean(registrationDraft.disclaimer?.accepted) &&
+    Boolean(registrationDraft.disclaimer?.rulebookAccepted)
+
+  if (!hasSignature || !hasAcceptedDisclaimer) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            La signature, la décharge et l’acceptation du règlement officiel sont obligatoires avant paiement.
+          </AlertDescription>
+        </Alert>
+        <Button asChild variant="outline">
+          <Link href={`/events/${event.slug}/register`}>
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Retour à la confirmation
           </Link>
         </Button>
       </div>
@@ -281,9 +327,9 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
                     currency: registrationDraft.summary.currency.toUpperCase(),
                   })}</span>
                 </div>
-                {registrationDraft.promoCode ? (
+                {registrationDraft.promoCodes && registrationDraft.promoCodes.length > 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    Code promotionnel appliqué : <span className="font-medium">{registrationDraft.promoCode}</span>
+                    Codes promotionnels appliqués : <span className="font-medium">{registrationDraft.promoCodes.join(', ')}</span>
                   </p>
                 ) : null}
               </div>

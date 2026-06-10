@@ -4,22 +4,13 @@ import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search, AlertTriangle } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { Ticket } from '@/types/Ticket'
 import { TicketFormDialog, type TicketFormValues } from './TicketFormDialog'
 import {
@@ -152,19 +143,20 @@ export function TicketsSection() {
     setDeleteConfirmOpen(true)
   }
 
-  const handleDelete = async (force = false) => {
+  const handleDelete = async () => {
     if (!ticketToDelete) return
 
     setDeleteLoadingId(ticketToDelete.id)
     try {
-      await deleteAdminTicket(ticketToDelete.id, force)
+      // Use force=true if we already know there are registrations
+      await deleteAdminTicket(ticketToDelete.id, registrationCount > 0)
       queryClient.setQueryData<Ticket[]>(adminTicketsQueryKey, (previous) => {
         if (!previous) return []
         return previous.filter((item) => item.id !== ticketToDelete.id)
       })
       setMessage({
         type: 'success',
-        text: force
+        text: registrationCount > 0
           ? `Ticket et ${registrationCount} inscription(s) supprimés avec succès`
           : 'Ticket supprimé avec succès'
       })
@@ -173,7 +165,7 @@ export function TicketsSection() {
       setRegistrationCount(0)
     } catch (error) {
       const err = error as Error & { registrationCount?: number; requiresConfirmation?: boolean }
-      if (err.requiresConfirmation && err.registrationCount) {
+      if (err.requiresConfirmation && err.registrationCount && registrationCount === 0) {
         // Show the count and keep the dialog open for force confirmation
         setRegistrationCount(err.registrationCount)
       } else {
@@ -183,6 +175,7 @@ export function TicketsSection() {
         setMessage({ type: 'error', text })
         setDeleteConfirmOpen(false)
         setTicketToDelete(null)
+        setRegistrationCount(0)
       }
     } finally {
       setDeleteLoadingId(null)
@@ -437,66 +430,31 @@ export function TicketsSection() {
         onSubmit={handleSubmit}
       />
 
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {registrationCount > 0 && <AlertTriangle className="h-5 w-5 text-destructive" />}
-              Supprimer le ticket
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              {registrationCount > 0 ? (
-                <>
-                  <p className="text-destructive font-medium">
-                    Attention : ce ticket a {registrationCount} inscription{registrationCount > 1 ? 's' : ''} active{registrationCount > 1 ? 's' : ''}.
-                  </p>
-                  <p>
-                    En confirmant la suppression, vous allez supprimer définitivement le ticket
-                    <strong> &quot;{ticketToDelete?.name}&quot;</strong> ainsi que toutes les inscriptions associées.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Cette action est irréversible. Les participants concernés perdront leur inscription.
-                  </p>
-                </>
-              ) : (
-                <p>
-                  Êtes-vous sûr de vouloir supprimer le ticket <strong>&quot;{ticketToDelete?.name}&quot;</strong> ?
-                </p>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setTicketToDelete(null)
-                setRegistrationCount(0)
-              }}
-            >
-              Annuler
-            </AlertDialogCancel>
-            {registrationCount > 0 ? (
-              <AlertDialogAction
-                onClick={() => handleDelete(true)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={deleteLoadingId === ticketToDelete?.id}
-              >
-                {deleteLoadingId === ticketToDelete?.id
-                  ? 'Suppression…'
-                  : `Supprimer le ticket et ${registrationCount} inscription${registrationCount > 1 ? 's' : ''}`}
-              </AlertDialogAction>
-            ) : (
-              <AlertDialogAction
-                onClick={() => handleDelete(false)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={deleteLoadingId === ticketToDelete?.id}
-              >
-                {deleteLoadingId === ticketToDelete?.id ? 'Suppression…' : 'Supprimer'}
-              </AlertDialogAction>
-            )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => {
+          setDeleteConfirmOpen(open)
+          if (!open) {
+            setTicketToDelete(null)
+            setRegistrationCount(0)
+          }
+        }}
+        title="Supprimer le ticket"
+        entityName={ticketToDelete?.name ?? ''}
+        entityType="le ticket"
+        warningMessage={
+          registrationCount > 0
+            ? `Attention : ce ticket a ${registrationCount} inscription(s) active(s).`
+            : undefined
+        }
+        consequences={
+          registrationCount > 0
+            ? [`${registrationCount} inscription(s) seront supprimées`]
+            : undefined
+        }
+        onConfirm={handleDelete}
+        loading={deleteLoadingId === ticketToDelete?.id}
+      />
     </div>
   )
 }

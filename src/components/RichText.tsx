@@ -39,8 +39,27 @@ const components: PortableTextComponents = {
   marks: {
     link: ({ children, value }) => {
       const target = value?.blank ? '_blank' : undefined
+      const href = typeof value?.href === 'string' ? value.href : ''
+      const safeHref = (() => {
+        const trimmed = href.trim()
+        if (!trimmed) return '#'
+        if (
+          trimmed.startsWith('/') ||
+          trimmed.startsWith('#') ||
+          trimmed.startsWith('./') ||
+          trimmed.startsWith('../')
+        ) {
+          return trimmed
+        }
+        try {
+          const url = new URL(trimmed)
+          return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? trimmed : '#'
+        } catch {
+          return '#'
+        }
+      })()
       return (
-        <a href={value?.href} target={target} rel={target ? 'noopener noreferrer' : undefined} className="underline">
+        <a href={safeHref} target={target} rel={target ? 'noopener noreferrer' : undefined} className="underline">
           {children}
         </a>
       )
