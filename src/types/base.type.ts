@@ -11,6 +11,7 @@ export type Timestamp = string
 
 export type EventStatus =
   | 'draft'
+  | 'announced'
   | 'on_sale'
   | 'sold_out'
   | 'closed'
@@ -20,7 +21,7 @@ export type EventStatus =
 export type OrderStatus = 'paid' | 'pending' | 'cancelled' | 'refunded'
 export type ClaimStatus = 'pending' | 'approved' | 'rejected' | 'transferred'
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
-export type UserRole = 'user' | 'volunteer' | 'admin'
+export type UserRole = 'user' | 'volunteer' | 'admin' | 'ambassador'
 export type Provider = 'internal' | 'stripe' | 'paypal' | 'external'
 export type ObstacleType =
   | 'force'

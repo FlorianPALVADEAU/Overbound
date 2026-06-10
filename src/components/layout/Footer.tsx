@@ -1,18 +1,34 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Instagram, Youtube, Music2 } from 'lucide-react'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 const LINK_GROUPS = [
   {
+    title: 'Événements',
+    links: [
+      { label: 'Tous les événements', href: '/events' },
+      { label: 'Les formats', href: '/events/formats' },
+      // { label: 'Les obstacles', href: '/obstacles' },
+      { label: 'Devenir bénévole', href: '/volunteers' },
+    ],
+  },
+  {
+    title: 'Partenaires',
+    links: [
+      { label: 'Nos partenaires', href: '/about/partners' },
+      { label: 'Devenir sponsor', href: '/contact?subject=partenariat' },
+      { label: 'Presse', href: '/about/press' },
+    ],
+  },
+  {
     title: 'La tribu',
     links: [
-      { label: 'Accueil', href: '/' },
       { label: 'Le concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
-      { label: 'Devenir bénévole', href: '/volunteers' },
+      // { label: "L'équipe", href: '/about/team' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
-      { label: 'Presse', href: '/about/press' },
     ],
   },
   {
@@ -21,17 +37,18 @@ const LINK_GROUPS = [
       { label: 'Mentions légales', href: '/mentions-legales' },
       { label: 'CGU', href: '/cgu' },
       { label: 'CGV', href: '/cgv' },
-      { label: 'Politiques de Confidentialité', href: '/privacy-policies' },
+      { label: 'Confidentialité', href: '/privacy-policies' },
       { label: 'Cookies', href: '/cookies' },
+      { label: 'Règlement officiel', href: OFFICIAL_RULEBOOK_PDF_PATH },
       { label: 'Crédits', href: '/about/credits' },
     ],
   },
 ]
 
 const SOCIAL_LINKS = [
-  { label: 'Instagram', href: 'https://instagram.com/overbound', icon: Instagram },
-  { label: 'TikTok', href: 'https://www.tiktok.com/@overbound', icon: Music2 },
-  { label: 'YouTube', href: 'https://youtube.com/@overbound', icon: Youtube },
+  { label: 'Instagram', href: 'https://www.instagram.com/overbound.race/', icon: Instagram },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@overbound.race', icon: Music2 },
+  { label: 'YouTube', href: '#', icon: Youtube },
 ]
 
 export function Footer() {
@@ -62,12 +79,12 @@ export function Footer() {
           <p className='text-xs uppercase tracking-[0.6em] text-muted-foreground'>Tribu Overbound</p>
           <h2 className='text-3xl font-semibold sm:text-4xl md:text-5xl'>Plus qu’une course, une famille.</h2>
           <p className='text-base text-muted-foreground sm:max-w-2xl'>
-            Explore toutes nos pages pour vivre l’expérience Overbound, t’entraîner, rejoindre les volontaires ou
-            simplement nous poser tes questions. Tout est là, prêt pour toi.
+            Accède à ton compte, ouvre tes inscriptions Paris 2026, découvre le concept, la FAQ, notre histoire ou
+            deviens bénévole. L’essentiel pour vivre l’expérience Overbound.
           </p>
         </div>
 
-        <div className='relative z-10 flex justify-between border-y border-border/60 px-6 py-12 text-sm text-muted-foreground sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:gap-12 xl:px-32'>
+        <div className='relative z-10 grid grid-cols-2 gap-8 border-y border-border/60 px-6 py-12 text-sm text-muted-foreground sm:px-6 lg:grid-cols-4 lg:gap-12 xl:px-32'>
           {LINK_GROUPS.map((group) => (
             <div key={group.title} className='space-y-4'>
               <h3 className='text-sm font-semibold uppercase tracking-[0.35em] text-foreground/70'>{group.title}</h3>

@@ -2,20 +2,55 @@ import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
-import { sendTicketEmail } from '@/lib/email'
+import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyDocumentRequired } from '@/lib/email/documents'
+import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import * as QRCode from 'qrcode'
-import { REGULATION_VERSION } from '@/constants/registration'
+import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { captureException } from '@/lib/sentry'
+import {
+  OPEN_SAS_CONFIG,
+  assignOpenWaveToRegistration,
+  type OpenWaveAssignment,
+  formatWaveStartTime,
+  getRankedStartTime,
+  isOpenFormatTicket,
+  isRankedFormatTicket,
+} from '@/lib/openSas'
+import { sendAdminPushNotification } from '@/lib/push'
+import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
+import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 
 export const runtime = 'nodejs'
 
+const hasAmbassadorLink = (value: unknown) => {
+  if (Array.isArray(value)) return value.length > 0
+  return Boolean(value && typeof value === 'object')
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-07-30.basil',
+  apiVersion: '2025-08-27.basil',
 })
+
+const isPpsOnlyAndTooEarly = (eventDate: string | null | undefined, documentTypes: string[] | null | undefined) => {
+  if (!eventDate || !documentTypes || documentTypes.length === 0) return false
+  const isPpsOnly = documentTypes.every((type) => String(type || '').toLowerCase().includes('pps'))
+  if (!isPpsOnly) return false
+  const earliestAllowed = new Date(eventDate)
+  earliestAllowed.setMonth(earliestAllowed.getMonth() - 3)
+  return Date.now() < earliestAllowed.getTime()
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIpAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      null
+    const clientUserAgent = request.headers.get('user-agent')
+    const fbpCookie = request.cookies.get('_fbp')?.value ?? null
+    const fbcCookie = request.cookies.get('_fbc')?.value ?? null
+
     const {
       paymentIntentId,
       eventId,
@@ -24,9 +59,13 @@ export async function POST(request: NextRequest) {
       participants = [],
       upsells = [],
       promoCode = null,
+      promoCodes = [],
+      ambassadorReferralCode = null,
+      groupId = null,
       signatureImage = null,
       signatureMetadata = {},
-      disclaimer = { read: false, accepted: false },
+      disclaimer = { read: false, accepted: false, rulebookAccepted: false },
+      freeOrderMetadata = null,
     } = await request.json() as {
       paymentIntentId: string
       eventId: string
@@ -42,19 +81,39 @@ export async function POST(request: NextRequest) {
         emergencyContactPhone?: string
         medicalInfo?: string
         licenseNumber?: string
+        distanceIdealKm?: string | number
+        distanceMinKm?: string | number
         difficultyLevel?: 'low' | 'mid' | 'hard' | null
       }>
       upsells: Array<{ upsellId: string; quantity: number; meta?: Record<string, any> }>
       promoCode: string | null
+      promoCodes?: string[]
+      ambassadorReferralCode?: string | null
+      groupId?: string | null
       signatureImage: string | null
       signatureMetadata: Record<string, any>
-      disclaimer: { read: boolean; accepted: boolean }
+      disclaimer: { read: boolean; accepted: boolean; rulebookAccepted?: boolean }
+      freeOrderMetadata?: Record<string, string> | null
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
     if (!paymentIntentId || !eventId || !userId || ticketSelections.length === 0 || participants.length === 0) {
       return NextResponse.json({ error: 'Paramètres manquants.' }, { status: 400 })
+    }
+
+    const hasSignature =
+      typeof signatureImage === 'string' && signatureImage.trim().length > 0
+    const hasAcceptedDisclaimer =
+      Boolean(disclaimer?.read) &&
+      Boolean(disclaimer?.accepted) &&
+      Boolean(disclaimer?.rulebookAccepted)
+
+    if (!hasSignature || !hasAcceptedDisclaimer) {
+      return NextResponse.json(
+        { error: 'Signature, décharge et règlement officiel obligatoires avant paiement.' },
+        { status: 422 },
+      )
     }
 
     const supabase = await createSupabaseServer()
@@ -65,11 +124,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    // Verify PaymentIntent is successful
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
-    
-    if (paymentIntent.status !== 'succeeded') {
-      return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 400 })
+    const isFreeOrder = typeof paymentIntentId === 'string' && paymentIntentId.startsWith('free_')
+
+    // Verify PaymentIntent is successful (or synthesize for free orders)
+    let paymentIntent: {
+      id: string
+      status: string
+      amount: number
+      currency: string
+      metadata: Record<string, string>
+      payment_method_types: string[]
+    }
+
+    if (isFreeOrder) {
+      const meta = freeOrderMetadata || {}
+      paymentIntent = {
+        id: paymentIntentId,
+        status: 'succeeded',
+        amount: 0,
+        currency: meta.currency || 'eur',
+        metadata: {
+          tier_allocations: meta.tier_allocations || '[]',
+          discount_applied: meta.discount_applied || '0',
+          promo_code: meta.promo_code || '',
+          promo_codes: meta.promo_codes || '',
+          ambassador_referral_code: meta.ambassador_referral_code || '',
+        },
+        payment_method_types: ['free'],
+      }
+    } else {
+      const stripeIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+      if (stripeIntent.status !== 'succeeded') {
+        if (stripeIntent.status === 'processing' || stripeIntent.status === 'requires_capture') {
+          return NextResponse.json(
+            {
+              pending: true,
+              payment_intent_status: stripeIntent.status,
+              message: 'Paiement en cours de confirmation',
+            },
+            { status: 202 },
+          )
+        }
+        return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 400 })
+      }
+      paymentIntent = {
+        id: stripeIntent.id,
+        status: stripeIntent.status,
+        amount: stripeIntent.amount,
+        currency: stripeIntent.currency,
+        metadata: (stripeIntent.metadata || {}) as Record<string, string>,
+        payment_method_types: stripeIntent.payment_method_types as string[],
+      }
     }
 
     // Check if registration already exists for this PaymentIntent
@@ -124,34 +229,64 @@ export async function POST(request: NextRequest) {
     // Generate unique tokens
     const generateTokens = () => ({ qr: uuidv4(), transfer: uuidv4() })
 
-    // Calculate ticket subtotal with event price tiers
+    // Calculate ticket subtotal with event price tiers (including tier capacity splits)
     const eventPriceTiers = (eventRow as any).price_tiers || []
-    const ticketSubtotal = ticketSelections.reduce((accumulator: number, item: { ticketId: string; quantity: number }) => {
-      const ticket = ticketMap.get(item.ticketId)
-      if (!ticket || ticket.final_price_cents == null) return accumulator
+    const tiersById = new Map<string, any>(eventPriceTiers.map((tier: any) => [tier.id, tier]))
 
-      // Calculate current price based on event price tiers
-      const finalPrice = ticket.final_price_cents
-      let currentPrice = finalPrice
-
-      if (eventPriceTiers.length > 0) {
-        const now = new Date()
-        const currentTime = now.getTime()
-
-        const activeTier = eventPriceTiers.find((tier: any) => {
-          const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
-          const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
-          return currentTime >= startTime && currentTime < endTime
-        })
-
-        if (activeTier) {
-          const discountMultiplier = 1 - activeTier.discount_percentage / 100
-          currentPrice = Math.round(finalPrice * discountMultiplier)
+    let tierAllocations: Array<{ tier_id: string; quantity: number }> = []
+    try {
+      const rawAllocations = paymentIntent.metadata?.tier_allocations
+      if (rawAllocations) {
+        const parsed = JSON.parse(rawAllocations)
+        if (Array.isArray(parsed)) {
+          tierAllocations = parsed
+            .filter((item) => item && typeof item.tier_id === 'string' && typeof item.quantity === 'number')
+            .map((item) => ({ tier_id: item.tier_id, quantity: item.quantity }))
         }
       }
+    } catch {
+      tierAllocations = []
+    }
 
-      return accumulator + currentPrice * (item.quantity || 0)
-    }, 0)
+    const participantTierIds: Array<string | null> = []
+    for (const allocation of tierAllocations) {
+      for (let i = 0; i < allocation.quantity; i += 1) {
+        participantTierIds.push(allocation.tier_id)
+      }
+    }
+
+    if (participantTierIds.length < participants.length) {
+      participantTierIds.push(...Array.from({ length: participants.length - participantTierIds.length }, () => null))
+    } else if (participantTierIds.length > participants.length) {
+      participantTierIds.length = participants.length
+    }
+
+    const ticketLineItems = new Map<
+      string,
+      { ticketId: string; tierId: string | null; unitPrice: number; quantity: number }
+    >()
+    let ticketSubtotal = 0
+
+    participants.forEach((participant, index) => {
+      const ticket = ticketMap.get(participant.ticketId)
+      if (!ticket) return
+      const basePrice = ticket.final_price_cents ?? ticket.base_price_cents
+      if (basePrice == null || basePrice === 0) return
+
+      const tierId = participantTierIds[index] ?? null
+      const tier = tierId ? tiersById.get(tierId) : null
+      const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
+      const unitPrice = Math.round(basePrice * discountMultiplier)
+
+      const key = `${ticket.id}:${tierId ?? 'base'}`
+      const existing = ticketLineItems.get(key)
+      if (existing) {
+        existing.quantity += 1
+      } else {
+        ticketLineItems.set(key, { ticketId: ticket.id, tierId, unitPrice, quantity: 1 })
+      }
+      ticketSubtotal += unitPrice
+    })
 
     const { data: upsellRows } = await admin
       .from('upsells')
@@ -172,16 +307,56 @@ export async function POST(request: NextRequest) {
 
     const discountApplied = Number(paymentIntent.metadata?.discount_applied || 0) || 0
 
-    let promotionalCodeId: string | null = null
-    if (promoCode) {
+    const promoCodesFromMetadata = paymentIntent.metadata?.promo_codes || null
+    const promoCodeFromMetadata = paymentIntent.metadata?.promo_code || null
+    const fallbackPayloadCodes = Array.isArray(promoCodes) ? promoCodes : []
+    const normalizedPromoCodes = [...new Set([
+      ...(typeof promoCodesFromMetadata === 'string'
+        ? promoCodesFromMetadata.split(',').map((value) => value.trim().toUpperCase()).filter((value) => value.length > 0)
+        : []),
+      ...(typeof promoCodeFromMetadata === 'string' && promoCodeFromMetadata.trim().length > 0
+        ? [promoCodeFromMetadata.trim().toUpperCase()]
+        : []),
+      ...fallbackPayloadCodes
+        .map((value) => String(value ?? '').trim().toUpperCase())
+        .filter((value) => value.length > 0),
+      ...(typeof promoCode === 'string' && promoCode.trim().length > 0 ? [promoCode.trim().toUpperCase()] : []),
+    ])]
+
+    const promotionalCodeIds = new Set<string>()
+    for (const appliedCode of normalizedPromoCodes) {
       const { data: promoRecord } = await admin
         .from('promotional_codes')
         .select('id')
-        .ilike('code', promoCode)
+        .ilike('code', appliedCode)
         .maybeSingle()
 
-      promotionalCodeId = promoRecord?.id ?? null
+      if (promoRecord?.id) {
+        promotionalCodeIds.add(promoRecord.id)
+      }
     }
+
+    const ambassadorReferralFromMetadata = paymentIntent.metadata?.ambassador_referral_code || null
+    const ambassadorReferralCandidate = (
+      typeof ambassadorReferralCode === 'string' && ambassadorReferralCode.trim().length > 0
+        ? ambassadorReferralCode
+        : ambassadorReferralFromMetadata
+    )?.trim().toUpperCase() || null
+
+    let ambassadorReferralPromoId: string | null = null
+    if (ambassadorReferralCandidate) {
+      const { data: ambassadorPromo } = await admin
+        .from('promotional_codes')
+        .select('id, ambassadors:ambassadors(id)')
+        .ilike('code', ambassadorReferralCandidate)
+        .maybeSingle()
+
+      const isAmbassadorCode = hasAmbassadorLink((ambassadorPromo as any)?.ambassadors)
+
+      ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromo?.id ?? null : null
+    }
+
+    const registrationPromotionalCodeId = ambassadorReferralPromoId ?? Array.from(promotionalCodeIds)[0] ?? null
 
     // Create order record
     const { data: order, error: orderError } = await admin
@@ -192,7 +367,7 @@ export async function POST(request: NextRequest) {
         status: 'paid',
         amount_total: paymentIntent.amount,
         currency: paymentIntent.currency,
-        provider: 'stripe',
+        provider: isFreeOrder ? 'free' : 'stripe',
         provider_order_id: paymentIntent.id,
       })
       .select()
@@ -204,14 +379,78 @@ export async function POST(request: NextRequest) {
     }
 
     const createdRegistrations: any[] = []
+    let openGroupAnchor: OpenWaveAssignment | null = null
+    let openGroupCount = 0
+    let groupAnchorPreSet = false
 
-    for (const participant of participants) {
+    // If the user belongs to a group, pre-load the wave anchor for this event
+    if (groupId) {
+      const { data: groupRow } = await admin
+        .from('groups')
+        .select('id, anchor_event_id, anchor_wave_index, anchor_start_time')
+        .eq('id', groupId)
+        .maybeSingle()
+
+      if (
+        groupRow &&
+        groupRow.anchor_event_id === eventId &&
+        groupRow.anchor_wave_index !== null &&
+        groupRow.anchor_start_time !== null
+      ) {
+        const { count: existingInWave } = await admin
+          .from('registrations')
+          .select('id', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('wave_index', groupRow.anchor_wave_index)
+
+        openGroupAnchor = {
+          waveIndex: groupRow.anchor_wave_index as number,
+          startTime: groupRow.anchor_start_time as string,
+          waveCapacity: OPEN_SAS_CONFIG.waveCapacity,
+          wavePosition: (existingInWave ?? 0) + 1,
+          assignmentConstraintBreached: false,
+          preferredWindowStart: groupRow.anchor_start_time as string,
+          preferredWindowEnd: groupRow.anchor_start_time as string,
+          latestAllowedTime: groupRow.anchor_start_time as string,
+        }
+        groupAnchorPreSet = true
+      }
+    }
+
+    for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
       if (!ticket) {
         continue
       }
 
+      const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name ?? null)
+      const isRankedFormat = isRankedFormatTicket(ticket.name, ticket.race?.name ?? null)
+      const distanceIdealRaw = String(participant.distanceIdealKm ?? '').trim()
+      const distanceMinRaw = String(participant.distanceMinKm ?? '').trim()
+      const distanceIdeal = Number(distanceIdealRaw)
+      const distanceMin = Number(distanceMinRaw)
+
+      if (isOpenFormat) {
+        if (!distanceIdealRaw || !distanceMinRaw || !Number.isFinite(distanceIdeal) || !Number.isFinite(distanceMin)) {
+          return NextResponse.json({ error: 'Distances participant invalides.' }, { status: 422 })
+        }
+
+        if (distanceIdeal < distanceMin) {
+          return NextResponse.json({ error: 'Distance idéale inférieure à la distance minimale.' }, { status: 422 })
+        }
+
+        if (
+          distanceIdeal < DISTANCE_MIN_KM ||
+          distanceIdeal > DISTANCE_MAX_KM ||
+          distanceMin < DISTANCE_MIN_KM ||
+          distanceMin > DISTANCE_MAX_KM
+        ) {
+          return NextResponse.json({ error: 'Distances participant hors limite.' }, { status: 422 })
+        }
+      }
+
       const { qr, transfer } = generateTokens()
+      const eventPriceTierId = participantTierIds[index] ?? null
 
       const { data: registration, error: registrationError } = await admin
         .from('registrations')
@@ -219,6 +458,7 @@ export async function POST(request: NextRequest) {
           user_id: userId,
           event_id: eventId,
           ticket_id: participant.ticketId,
+          event_price_tier_id: eventPriceTierId,
           order_id: order.id,
           email: participant.email || user.email,
           provider: 'internal',
@@ -230,8 +470,12 @@ export async function POST(request: NextRequest) {
           claim_status: 'pending',
           approval_status: 'pending',
           race_id: ticket.race?.id || null,
-          promotional_code_id: promotionalCodeId,
+          promotional_code_id: registrationPromotionalCodeId,
           difficulty_level: participant.difficultyLevel || null,
+          // DB constraints require non-null positive distances; for non-OPEN formats
+          // we store a neutral placeholder and skip OPEN SAS logic.
+          distance_ideal_km: isOpenFormat ? distanceIdeal : 1,
+          distance_min_km: isOpenFormat ? distanceMin : 1,
         })
         .select()
         .single()
@@ -244,17 +488,120 @@ export async function POST(request: NextRequest) {
       const derivedName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim()
       const participantName = derivedName || participant.email || registration.email || null
 
+      try {
+        if (isOpenFormat) {
+          if (!openGroupAnchor) {
+            const assignment = await assignOpenWaveToRegistration({
+              admin,
+              eventId,
+              registrationId: registration.id,
+              eventDateIso: eventRow.date,
+              ticketName: ticket.name,
+              raceName: ticket.race?.name ?? null,
+              distanceIdealKm: distanceIdeal,
+              distanceMinKm: distanceMin,
+            })
+
+            if (assignment) {
+              openGroupAnchor = assignment
+              openGroupCount = 1
+              // Save wave anchor to group if this is the first group member for this event
+              if (groupId && !groupAnchorPreSet) {
+                await admin
+                  .from('groups')
+                  .update({
+                    anchor_event_id: eventId,
+                    anchor_wave_index: assignment.waveIndex,
+                    anchor_start_time: assignment.startTime,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', groupId)
+              }
+              registration.start_time = assignment.startTime
+              registration.wave_index = assignment.waveIndex
+              registration.wave_capacity = assignment.waveCapacity
+              registration.wave_position = assignment.wavePosition
+              registration.auto_assigned = true
+              registration.preferred_window_start = assignment.preferredWindowStart
+              registration.preferred_window_end = assignment.preferredWindowEnd
+              registration.latest_allowed_time = assignment.latestAllowedTime
+              registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
+            }
+          } else {
+            openGroupCount += 1
+            const copiedWavePosition = (openGroupAnchor.wavePosition ?? 1) + openGroupCount - 1
+            const { error: syncOpenError } = await admin
+              .from('registrations')
+              .update({
+                start_time: openGroupAnchor.startTime,
+                wave_index: openGroupAnchor.waveIndex,
+                wave_capacity: openGroupAnchor.waveCapacity,
+                wave_position: copiedWavePosition,
+                auto_assigned: true,
+                preferred_window_start: openGroupAnchor.preferredWindowStart,
+                preferred_window_end: openGroupAnchor.preferredWindowEnd,
+                latest_allowed_time: openGroupAnchor.latestAllowedTime,
+                assignment_constraint_breached: openGroupAnchor.assignmentConstraintBreached,
+              })
+              .eq('id', registration.id)
+
+            if (syncOpenError) {
+              throw syncOpenError
+            }
+
+            registration.start_time = openGroupAnchor.startTime
+            registration.wave_index = openGroupAnchor.waveIndex
+            registration.wave_capacity = openGroupAnchor.waveCapacity
+            registration.wave_position = copiedWavePosition
+            registration.auto_assigned = true
+            registration.preferred_window_start = openGroupAnchor.preferredWindowStart
+            registration.preferred_window_end = openGroupAnchor.preferredWindowEnd
+            registration.latest_allowed_time = openGroupAnchor.latestAllowedTime
+            registration.assignment_constraint_breached = openGroupAnchor.assignmentConstraintBreached
+          }
+        } else if (isRankedFormat) {
+          const rankedStart = getRankedStartTime(eventRow.date).toISOString()
+          const { error: rankedUpdateError } = await admin
+            .from('registrations')
+            .update({
+              start_time: rankedStart,
+              auto_assigned: true,
+              wave_index: null,
+              wave_capacity: null,
+              wave_position: null,
+              preferred_window_start: null,
+              preferred_window_end: null,
+              latest_allowed_time: null,
+              assignment_constraint_breached: false,
+            })
+            .eq('id', registration.id)
+
+          if (rankedUpdateError) {
+            throw rankedUpdateError
+          }
+
+          registration.start_time = rankedStart
+          registration.auto_assigned = true
+        }
+      } catch (assignmentError) {
+        console.error('Erreur attribution SAS OPEN:', assignmentError)
+        throw assignmentError
+      }
+
       createdRegistrations.push({ registration, ticket, participant, participantName })
 
       if (ticket.requires_document) {
-        await notifyDocumentRequired({
-          registrationId: registration.id,
-          userId: registration.user_id,
-          participantName,
-          eventTitle: eventRow.title,
-          email: registration.email,
-          requiredDocuments: ticket.document_types ?? [],
-        })
+        const tooEarlyForPpsOnly = isPpsOnlyAndTooEarly(eventRow.date, ticket.document_types ?? [])
+        if (!tooEarlyForPpsOnly) {
+          await notifyDocumentRequired({
+            registrationId: registration.id,
+            userId: registration.user_id,
+            participantName,
+            eventTitle: eventRow.title,
+            email: registration.email,
+            requiredDocuments: ticket.document_types ?? [],
+          })
+        }
       }
 
       if (signatureImage) {
@@ -270,15 +617,17 @@ export async function POST(request: NextRequest) {
           signature_data: JSON.stringify({
             imageDataUrl: signatureImage,
             participant: {
-              firstName: participant.firstName,
-              lastName: participant.lastName,
-              email: participant.email,
-              birthDate: participant.birthDate,
-              emergencyContactName: participant.emergencyContactName,
-              emergencyContactPhone: participant.emergencyContactPhone,
-              medicalInfo: participant.medicalInfo,
-              licenseNumber: participant.licenseNumber,
-            },
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        email: participant.email,
+        birthDate: participant.birthDate,
+        emergencyContactName: participant.emergencyContactName,
+        emergencyContactPhone: participant.emergencyContactPhone,
+        medicalInfo: participant.medicalInfo,
+        licenseNumber: participant.licenseNumber,
+        distanceIdealKm: participant.distanceIdealKm,
+        distanceMinKm: participant.distanceMinKm,
+      },
             disclaimer,
           }),
         }
@@ -293,17 +642,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // When openGroupAnchor was pre-set from group (no RPC call), ALL participants are extra.
+    // When first participant called RPC, only subsequent ones (openGroupCount - 1) are extra.
+    const waveCountIncrement = groupAnchorPreSet ? openGroupCount : openGroupCount - 1
+    if (openGroupAnchor && waveCountIncrement > 0) {
+      const { data: waveRow, error: waveFetchError } = await admin
+        .from('event_waves')
+        .select('id, assigned_count')
+        .eq('event_id', eventId)
+        .eq('wave_index', openGroupAnchor.waveIndex)
+        .maybeSingle()
+
+      if (waveFetchError) {
+        console.error('Erreur récupération compteur SAS OPEN:', waveFetchError)
+      } else if (waveRow?.id) {
+        const { error: waveUpdateError } = await admin
+          .from('event_waves')
+          .update({
+            assigned_count: (waveRow.assigned_count ?? 0) + waveCountIncrement,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', waveRow.id)
+
+        if (waveUpdateError) {
+          console.error('Erreur mise à jour compteur SAS OPEN:', waveUpdateError)
+        }
+      }
+    }
+
     if (upsells && upsells.length > 0 && createdRegistrations.length > 0) {
       const referenceRegistration = createdRegistrations[0].registration
       const upsellRecords = upsells
         .map((item: { upsellId: string; quantity: number; meta?: Record<string, any> }) => {
           const upsell = upsellMap.get(item.upsellId)
+          const quantity = Number(item.quantity || 0)
           if (!upsell) return null
+          if (!Number.isFinite(quantity) || quantity <= 0) return null
           return {
             registration_id: referenceRegistration.id,
             name: upsell.name,
             price_cents: upsell.price_cents,
+            quantity,
             currency: upsell.currency || paymentIntent.currency,
+            meta: item.meta ?? null,
           }
         })
         .filter(Boolean)
@@ -314,27 +695,55 @@ export async function POST(request: NextRequest) {
           .insert(upsellRecords)
 
         if (upsellError) {
-          console.error('Erreur création upsells:', upsellError)
+          if ((upsellError as any)?.code === 'PGRST205') {
+            console.warn('Table registration_upsells absente, upsells ignorés.')
+          } else {
+            console.error('Erreur création upsells:', upsellError)
+          }
         }
       }
     }
 
-    // Increment promotional code usage count
-    if (promotionalCodeId) {
-      const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
-        promo_code_id: promotionalCodeId,
-      })
-
-      if (promoIncrementError) {
-        console.error('Erreur incrémentation code promo:', promoIncrementError)
-        // Non-blocking error: registration is already created, just log it
-      }
+    if (ambassadorReferralPromoId) {
+      promotionalCodeIds.add(ambassadorReferralPromoId)
     }
 
-    for (const { registration, ticket, participantName } of createdRegistrations) {
+    // Increment promotional code usage count
+    await Promise.allSettled(
+      Array.from(promotionalCodeIds).map(async (promotionalCodeId) => {
+        const { error: promoIncrementError } = await admin.rpc('increment_promo_code_usage', {
+          promo_code_id: promotionalCodeId,
+        })
+
+        if (promoIncrementError) {
+          console.error('Erreur incrémentation code promo:', promoIncrementError)
+        }
+      }),
+    )
+
+    const firstRegistration = createdRegistrations[0]
+    const participantLabel = firstRegistration?.participantName
+      || firstRegistration?.registration?.email
+      || user.email
+      || null
+    const currency = (paymentIntent.currency || 'eur').toUpperCase()
+    const amountValue = typeof paymentIntent.amount === 'number' ? paymentIntent.amount / 100 : null
+    const amountLabel = amountValue !== null
+      ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amountValue)
+      : null
+    const details = [
+      participantLabel,
+      eventRow.title,
+      amountLabel,
+    ].filter(Boolean).join(' • ')
+
+    const ticketEmailTasks = createdRegistrations.map(async ({ registration, ticket, participantName }) => {
       try {
         const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
-        const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })
+        const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', {
+          dateStyle: 'full',
+          timeZone: 'Europe/Paris',
+        })
 
         await sendTicketEmail({
           to: registration.email,
@@ -343,19 +752,218 @@ export async function POST(request: NextRequest) {
           eventDate: eventDateLabel,
           eventLocation: eventRow.location,
           ticketName: ticket.name,
+          startTime: formatWaveStartTime(registration.start_time),
           qrUrl: `data:image/png;base64,${qrCodeBase64}`,
-          manageUrl: `${siteUrl}/account/ticket/${registration.id}`,
+          manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`,
         })
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)
-        // Capture email send errors in Sentry
         captureException(emailError as Error, {
           context: 'ticket_email_send',
           registrationId: registration.id,
           email: registration.email,
         })
       }
-    }
+    })
+
+    const receiptEmailTask = (async () => {
+      try {
+        if (!user.email) {
+          return
+        }
+
+        const ticketItems = Array.from(ticketLineItems.values())
+          .map((item) => {
+            const ticket = ticketMap.get(item.ticketId)
+            if (!ticket) return null
+            const tierLabel = item.tierId ? ` — ${tiersById.get(item.tierId)?.name ?? 'Palier'}` : ''
+            return {
+              description: `${eventRow.title} — ${ticket.name}${tierLabel}`,
+              quantity: item.quantity,
+              unitPrice: toMajor(item.unitPrice),
+              total: toMajor(item.unitPrice * item.quantity),
+            }
+          })
+          .filter(Boolean) as Array<{
+            description: string
+            quantity: number
+            unitPrice: number
+            total: number
+          }>
+
+        const upsellItems = upsells
+          .map((item: { upsellId: string; quantity: number }) => {
+            const upsell = upsellMap.get(item.upsellId)
+            if (!upsell) return null
+            const quantity = item.quantity || 0
+            const unitPriceCents = upsell.price_cents
+
+            return {
+              description: upsell.name,
+              quantity,
+              unitPrice: toMajor(unitPriceCents),
+              total: toMajor(unitPriceCents * quantity),
+            }
+          })
+          .filter(Boolean) as Array<{
+            description: string
+            quantity: number
+            unitPrice: number
+            total: number
+          }>
+
+        const receiptItems = [...ticketItems, ...upsellItems]
+        const subtotalCents = ticketSubtotal + upsellSubtotal
+        const discountCents = discountApplied > 0 ? discountApplied : 0
+        const totalCents = paymentIntent.amount ?? Math.max(subtotalCents - discountCents, 0)
+
+        await sendReceiptEmail({
+          to: user.email,
+          fullName:
+            typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null,
+          invoiceNumber: order.id,
+          invoiceDate: new Date(order.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
+          eventName: eventRow.title,
+          items: receiptItems,
+          subtotal: toMajor(subtotalCents),
+          discount: discountCents > 0 ? toMajor(discountCents) : undefined,
+          discountLabel:
+            discountCents > 0
+              ? normalizedPromoCodes.length > 0
+                ? `Codes promo ${normalizedPromoCodes.join(', ')}`
+                : 'Réduction'
+              : undefined,
+          total: toMajor(totalCents),
+          currency: (paymentIntent.currency || 'eur').toUpperCase(),
+          paymentMethod: formatPaymentMethod(paymentIntent.payment_method_types?.[0]),
+          invoiceUrl: order.invoice_url ?? undefined,
+        })
+      } catch (emailError) {
+        console.error('Erreur envoi reçu:', emailError)
+        captureException(emailError as Error, {
+          context: 'receipt_email_send',
+          orderId: order.id,
+          email: user.email,
+        })
+      }
+    })()
+
+    const pushNotificationTask = sendAdminPushNotification({
+      title: 'Nouvelle inscription payée',
+      body: details,
+      url: `${siteUrl}/dashboard?tab=members&event=${eventRow.id}`,
+    }).catch((pushError) => {
+      console.error('[push] notification error', pushError)
+    })
+
+    const ambassadorRewardsTask = (async () => {
+      const { error: ambassadorPointsError } = await admin.rpc('award_ambassador_points_for_order', {
+        p_order_id: order.id,
+      })
+
+      if (ambassadorPointsError) {
+        console.error('Erreur attribution points ambassadeur:', ambassadorPointsError)
+        return
+      }
+
+      try {
+        await notifyAmbassadorRewardsForOrder(admin, order.id)
+      } catch (notificationError) {
+        console.error('Erreur notification récompense ambassadeur:', notificationError)
+      }
+    })()
+
+    const metaCapiTasks = [
+      sendMetaCapiEvent({
+        eventName: 'Purchase',
+        eventId: `purchase_${order.id}`,
+        eventSourceUrl:
+          (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
+          request.headers.get('referer') ||
+          `${siteUrl}/events/${eventId}/register`,
+        userData: {
+          email: user.email,
+          externalId: userId,
+          clientIpAddress,
+          clientUserAgent,
+          fbp:
+            (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
+            fbpCookie,
+          fbc:
+            (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
+            fbcCookie,
+        },
+        customData: {
+          currency: (paymentIntent.currency || 'eur').toUpperCase(),
+          value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+          content_type: 'product',
+          content_ids: createdRegistrations.map(({ ticket }) => String(ticket.id)),
+          content_name: eventRow.title,
+          order_id: order.id,
+          event_id: eventId,
+        },
+      }),
+      sendMetaCapiEvent({
+        eventName: 'PaymentConfirmed',
+        eventId: `payment_confirmed_${order.id}`,
+        eventSourceUrl:
+          (typeof paymentIntent.metadata?.event_source_url === 'string' && paymentIntent.metadata.event_source_url) ||
+          request.headers.get('referer') ||
+          `${siteUrl}/events/${eventId}/register`,
+        userData: {
+          email: user.email,
+          externalId: userId,
+          clientIpAddress,
+          clientUserAgent,
+          fbp:
+            (typeof paymentIntent.metadata?.fbp === 'string' && paymentIntent.metadata.fbp) ||
+            fbpCookie,
+          fbc:
+            (typeof paymentIntent.metadata?.fbc === 'string' && paymentIntent.metadata.fbc) ||
+            fbcCookie,
+        },
+        customData: {
+          transaction_id: order.id,
+          currency: (paymentIntent.currency || 'eur').toUpperCase(),
+          value: Number(((paymentIntent.amount || 0) / 100).toFixed(2)),
+          event_id: eventId,
+        },
+      }),
+    ]
+
+    const resendSyncTask = (async () => {
+      try {
+        const seenEmails = new Set<string>()
+
+        await Promise.allSettled(
+          createdRegistrations.map(async ({ registration, participantName }) => {
+            const email = String(registration.email ?? '').trim().toLowerCase()
+            if (!email || seenEmails.has(email)) return
+            seenEmails.add(email)
+
+            await markResendContactAsRegistered({
+              email,
+              fullName: participantName ?? null,
+              properties: {
+                source: 'registration-create',
+                event_id: eventId,
+              },
+            })
+          }),
+        )
+      } catch (resendSyncError) {
+        console.error('[registration-create] resend segment sync failed', resendSyncError)
+      }
+    })()
+
+    await Promise.allSettled([
+      ...ticketEmailTasks,
+      receiptEmailTask,
+      pushNotificationTask,
+      ambassadorRewardsTask,
+      ...metaCapiTasks,
+      resendSyncTask,
+    ])
 
     console.log('Inscriptions créées avec succès:', {
       order_id: order.id,
@@ -373,6 +981,7 @@ export async function POST(request: NextRequest) {
         currency: order.currency,
         payment_status: order.payment_status,
       },
+      registrations: createdRegistrations.map(({ registration }) => registration.id),
     })
 
   } catch (error: any) {
@@ -388,5 +997,22 @@ export async function POST(request: NextRequest) {
       error: 'Erreur lors de la création de l\'inscription',
       details: error.message
     }, { status: 500 })
+  }
+}
+
+const toMajor = (amountCents: number) => amountCents / 100
+
+const formatPaymentMethod = (method?: string | null) => {
+  switch (method) {
+    case 'card':
+      return 'Carte bancaire'
+    case 'paypal':
+      return 'PayPal'
+    case 'link':
+      return 'Link'
+    case 'free':
+      return 'Code promotionnel'
+    default:
+      return method ? method.toUpperCase() : 'Paiement'
   }
 }

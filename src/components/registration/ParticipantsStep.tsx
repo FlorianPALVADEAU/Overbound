@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
 import type { EventTicket, Participant } from './types'
@@ -8,6 +9,7 @@ interface ParticipantsStepProps {
   ticketMap: Record<string, EventTicket>
   onFieldChange: (participantId: string, field: keyof Participant, value: string) => void
   showErrors: boolean
+  groupBanner?: ReactNode
 }
 
 export default function ParticipantsStep({
@@ -15,9 +17,11 @@ export default function ParticipantsStep({
   ticketMap,
   onFieldChange,
   showErrors,
+  groupBanner,
 }: ParticipantsStepProps) {
   return (
     <div className="space-y-4">
+      {groupBanner}
       {participants.length === 0 ? (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />

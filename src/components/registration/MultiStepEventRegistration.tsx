@@ -1,10 +1,12 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
+import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
-import { REGULATION_VERSION } from '@/constants/registration'
+import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
+import { isOpenFormatTicket } from '@/lib/openSas'
 
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useParticipants } from '@/hooks/registration/useParticipants'
@@ -25,6 +27,10 @@ import OptionsStep from './OptionsStep'
 import ConfirmationStep from './ConfirmationStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
 import ParticipantSummarySidebar from './ParticipantSummarySidebar'
+import GroupJoinInline from './GroupJoinInline'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Users } from 'lucide-react'
+import { formatWaveStartTime } from '@/lib/openSas'
 
 export default function MultiStepEventRegistration({
   event,
@@ -37,10 +43,14 @@ export default function MultiStepEventRegistration({
 }: MultiStepEventRegistrationProps) {
   const router = useRouter()
   const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
+  const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
+  const addToCartTrackedRef = useRef(false)
+  const { data: myGroup } = useMyGroup()
 
   // Local UI state
   const [disclaimerRead, setDisclaimerRead] = useState(false)
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
+  const [rulebookAccepted, setRulebookAccepted] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
 
@@ -75,8 +85,9 @@ export default function MultiStepEventRegistration({
   } = useUpsells(upsells, selectedTicketSlots, participants, defaultCurrency)
 
   const {
-    appliedPromo,
-    setAppliedPromo,
+    appliedPromos,
+    setAppliedPromos,
+    ambassadorReferralCode,
     promoInput,
     setPromoInput,
     promoError,
@@ -85,13 +96,19 @@ export default function MultiStepEventRegistration({
     removePromo,
   } = usePromoCode(event.id)
 
-  const { activeTier, hasActiveDiscount, totalDue, computedPricing } = useRegistrationPricing(
+  const {
+    activeTier,
+    hasActiveDiscount,
+    isTierDiscountOverriddenByPromo,
+    totalDue,
+    computedPricing,
+  } = useRegistrationPricing(
     tickets,
     selectedTicketSlots,
     ticketMap,
     selectedUpsells,
     upsells,
-    appliedPromo,
+    appliedPromos,
     eventPriceTiers,
     null,
   )
@@ -113,11 +130,36 @@ export default function MultiStepEventRegistration({
     ticketSelections,
     participants,
     selectedUpsells,
-    appliedPromo,
+    appliedPromos,
+    ambassadorReferralCode,
     totalDue,
   )
 
   const summaryPricing = serverPricing ?? computedPricing
+
+  const trackRegistrationEvent = (
+    eventName: string,
+    payload: Record<string, unknown> = {},
+  ) => {
+    if (typeof window === 'undefined') return
+    const analyticsWindow = window as Window & {
+      dataLayer?: Array<Record<string, unknown>>
+      gtag?: (...args: unknown[]) => void
+      fbq?: (...args: unknown[]) => void
+    }
+    const eventPayload = {
+      event: eventName,
+      event_slug: event.slug,
+      event_id: event.id,
+      ...payload,
+    }
+    analyticsWindow.dataLayer?.push(eventPayload)
+    analyticsWindow.gtag?.('event', eventName, {
+      event_category: 'event_register',
+      event_label: event.slug,
+      ...payload,
+    })
+  }
 
   // Step validation
   const isTicketsStepValid = totalParticipants > 0
@@ -128,6 +170,19 @@ export default function MultiStepEventRegistration({
       const ticket = ticketMap[participant.ticketId]
       const isUniversalRace = ticket?.race?.is_universal ?? true
       const hasDifficultyIfNeeded = isUniversalRace || participant.difficultyLevel
+      const isOpenFormat = isOpenFormatTicket(ticket?.name, ticket?.race?.name)
+      const distanceMin = Number(participant.distanceMinKm)
+      const distanceIdeal = Number(participant.distanceIdealKm)
+      const hasDistances =
+        participant.distanceMinKm.trim() &&
+        participant.distanceIdealKm.trim() &&
+        Number.isFinite(distanceMin) &&
+        Number.isFinite(distanceIdeal) &&
+        distanceMin >= DISTANCE_MIN_KM &&
+        distanceMin <= DISTANCE_MAX_KM &&
+        distanceIdeal >= DISTANCE_MIN_KM &&
+        distanceIdeal <= DISTANCE_MAX_KM &&
+        distanceIdeal >= distanceMin
 
       return (
         participant.firstName.trim() &&
@@ -136,11 +191,13 @@ export default function MultiStepEventRegistration({
         participant.birthDate.trim() &&
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
-        hasDifficultyIfNeeded
+        hasDifficultyIfNeeded &&
+        (isOpenFormat ? hasDistances : true)
       )
     })
 
-  const isConfirmationStepValid = disclaimerRead && disclaimerAccepted && Boolean(signatureImage)
+  const isConfirmationStepValid =
+    disclaimerRead && disclaimerAccepted && rulebookAccepted && Boolean(signatureImage)
 
   const {
     stepIndex,
@@ -151,10 +208,11 @@ export default function MultiStepEventRegistration({
     canContinue,
     proceedToNextStep,
     goToPreviousStep,
-  } = useStepNavigation(
-    { isTicketsStepValid, isParticipantsStepValid, isConfirmationStepValid },
-    ensurePaymentIntent,
-  )
+  } = useStepNavigation({
+    isTicketsStepValid,
+    isParticipantsStepValid,
+    isConfirmationStepValid,
+  })
 
   // Draft sync
   useRegistrationDraftSync(
@@ -164,23 +222,27 @@ export default function MultiStepEventRegistration({
       ticketSelections,
       participants,
       selectedUpsells,
-      appliedPromo,
+      appliedPromos,
+      ambassadorReferralCode,
+      groupId: myGroup?.id ?? null,
       summaryPricing,
       clientSecret,
       paymentIntentId,
       signatureImage,
       disclaimerRead,
       disclaimerAccepted,
+      rulebookAccepted,
     },
     {
       setTicketSelections,
       setParticipants,
       setSelectedUpsells,
-      setAppliedPromo,
+      setAppliedPromos,
       setPromoInput,
       setPromoError,
       setDisclaimerRead,
       setDisclaimerAccepted,
+      setRulebookAccepted,
       setSignatureImage,
       setClientSecret,
       setPaymentIntentId,
@@ -202,6 +264,34 @@ export default function MultiStepEventRegistration({
       })
       return
     }
+
+    if (currentStepId === 'tickets' && !addToCartTrackedRef.current && totalParticipants > 0) {
+      const selectedTicketIds = Object.entries(ticketSelections)
+        .filter(([, quantity]) => (quantity || 0) > 0)
+        .map(([ticketId]) => ticketId)
+
+      trackRegistrationEvent('add_to_cart', {
+        step: 'participants',
+        ticket_count: selectedTicketIds.length,
+        participant_count: totalParticipants,
+        ticket_ids: selectedTicketIds.join(','),
+      })
+
+      const analyticsWindow = window as Window & {
+        fbq?: (...args: unknown[]) => void
+      }
+      analyticsWindow.fbq?.('track', 'AddToCart', {
+        content_name: event.title || event.slug,
+        content_category: 'event_register',
+        content_type: 'product',
+        content_ids: selectedTicketIds,
+        value: Number((summaryPricing.totalDue / 100).toFixed(2)),
+        currency: summaryPricing.currency.toUpperCase(),
+      })
+
+      addToCartTrackedRef.current = true
+    }
+
     setShowValidationErrors(false)
     setSubmissionMessage(null)
     await proceedToNextStep()
@@ -223,12 +313,12 @@ export default function MultiStepEventRegistration({
       return
     }
 
-    if (!disclaimerRead || !disclaimerAccepted || !signatureImage) {
+    if (!disclaimerRead || !disclaimerAccepted || !rulebookAccepted || !signatureImage) {
       setShowValidationErrors(true)
       setSubmissionMessage({
         type: 'error',
-        text: !disclaimerRead || !disclaimerAccepted
-          ? 'Merci de lire et accepter la décharge de responsabilité.'
+        text: !disclaimerRead || !disclaimerAccepted || !rulebookAccepted
+          ? 'Merci de lire et accepter la décharge ainsi que le règlement officiel.'
           : 'Merci de dessiner votre signature pour valider.',
       })
       return
@@ -242,6 +332,71 @@ export default function MultiStepEventRegistration({
       if (!localClientSecret || !localPaymentIntentId) {
         const paymentData = await ensurePaymentIntent()
         if (!paymentData) return
+
+        // Free order: 100% discount, bypass Stripe entirely
+        if ('freeOrder' in paymentData && paymentData.freeOrder) {
+          const freePayload = {
+            paymentIntentId: paymentData.freeOrderId,
+            eventId: event.id,
+            userId: user.id,
+            ticketSelections: Object.entries(ticketSelections).map(([ticketId, quantity]) => ({
+              ticketId,
+              quantity,
+            })),
+            participants: participants.map((p) => ({
+              ticketId: p.ticketId,
+              firstName: p.firstName,
+              lastName: p.lastName,
+              email: p.email,
+              birthDate: p.birthDate,
+              emergencyContactName: p.emergencyContactName,
+              emergencyContactPhone: p.emergencyContactPhone,
+              medicalInfo: p.medicalInfo,
+              licenseNumber: p.licenseNumber,
+              distanceIdealKm: p.distanceIdealKm,
+              distanceMinKm: p.distanceMinKm,
+              difficultyLevel: p.difficultyLevel || null,
+            })),
+            upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+              upsellId,
+              quantity: config.quantity,
+              meta: config.meta || {},
+            })),
+            promoCodes: appliedPromos.map((promo) => promo.code),
+            ambassadorReferralCode: ambassadorReferralCode ?? null,
+            signatureImage,
+            signatureMetadata: {
+              regulationVersion: REGULATION_VERSION,
+              signedAt: new Date().toISOString(),
+            },
+            disclaimer: {
+              read: disclaimerRead,
+              accepted: disclaimerAccepted,
+              rulebookAccepted,
+            },
+            freeOrderMetadata: 'freeOrderMetadata' in paymentData ? paymentData.freeOrderMetadata : {},
+          }
+
+          const freeResponse = await fetch('/api/registrations/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(freePayload),
+          })
+
+          if (!freeResponse.ok) {
+            const errorBody = await freeResponse.json().catch(() => ({}))
+            setSubmissionMessage({
+              type: 'error',
+              text: errorBody.error || 'Erreur lors de la finalisation de l\'inscription.',
+            })
+            return
+          }
+
+          clearRegistrationDraft()
+          router.replace('/account/tickets')
+          return
+        }
+
         localClientSecret = paymentData.clientSecret
         localPaymentIntentId = paymentData.paymentIntentId
         localPricing = paymentData.pricing
@@ -279,6 +434,8 @@ export default function MultiStepEventRegistration({
         emergencyContactPhone: p.emergencyContactPhone,
         medicalInfo: p.medicalInfo,
         licenseNumber: p.licenseNumber,
+        distanceIdealKm: p.distanceIdealKm,
+        distanceMinKm: p.distanceMinKm,
         difficultyLevel: p.difficultyLevel || null,
       })),
       upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
@@ -286,7 +443,9 @@ export default function MultiStepEventRegistration({
         quantity: config.quantity,
         meta: config.meta || {},
       })),
-      promoCode: appliedPromo?.code || null,
+      promoCodes: appliedPromos.map((promo) => promo.code),
+      ambassadorReferralCode: ambassadorReferralCode ?? null,
+      groupId: myGroup?.id ?? null,
       summary: localPricing ?? summaryPricing,
       signature: {
         imageDataUrl: signatureImage,
@@ -296,12 +455,43 @@ export default function MultiStepEventRegistration({
       disclaimer: {
         read: disclaimerRead,
         accepted: disclaimerAccepted,
+        rulebookAccepted,
       },
     }
 
     setRegistrationDraft(payload)
     router.push(`/events/${event.slug}/register/payment`)
   }
+
+  const groupBanner = !myGroup ? (
+    <GroupJoinInline />
+  ) : myGroup.anchor_event_id === event.id && myGroup.anchor_start_time ? (
+    <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
+      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <AlertDescription className="text-xs leading-relaxed">
+        <p>
+          <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
+          ta vague de départ est déjà fixée par ton groupe :{' '}
+          <span className="font-semibold">{formatWaveStartTime(myGroup.anchor_start_time)}</span>.{' '}
+          Tous les membres inscrits à cet événement partiront ensemble. Le départ groupé concerne le format{' '}
+          <span className="font-semibold">OPEN</span>. En format{' '}
+          <span className="font-semibold">RANKED</span>, le départ est unique pour tous.
+        </p>
+      </AlertDescription>
+    </Alert>
+  ) : (
+    <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
+      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <AlertDescription className="text-xs leading-relaxed">
+        <p>
+          <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
+          tu es le premier membre à t&apos;inscrire à cet événement. Ta vague de départ sera automatiquement réservée pour tout le groupe. Le départ groupé concerne le format{' '}
+          <span className="font-semibold">OPEN</span>. En format{' '}
+          <span className="font-semibold">RANKED</span>, le départ est unique pour tous.
+        </p>
+      </AlertDescription>
+    </Alert>
+  )
 
   // Step content mapping
   const stepContent: Record<StepKey, React.ReactNode> = {
@@ -314,6 +504,7 @@ export default function MultiStepEventRegistration({
         activeTier={activeTier}
         hasActiveDiscount={hasActiveDiscount}
         availableSpots={availableSpots}
+        groupBanner={groupBanner}
       />
     ),
     participants: (
@@ -322,6 +513,7 @@ export default function MultiStepEventRegistration({
         ticketMap={ticketMap}
         onFieldChange={handleParticipantChange}
         showErrors={showValidationErrors}
+        groupBanner={groupBanner}
       />
     ),
     options: (
@@ -340,10 +532,12 @@ export default function MultiStepEventRegistration({
       <ConfirmationStep
         disclaimerRead={disclaimerRead}
         disclaimerAccepted={disclaimerAccepted}
+        rulebookAccepted={rulebookAccepted}
         signatureImage={signatureImage}
         showErrors={showValidationErrors}
         onDisclaimerReadChange={setDisclaimerRead}
         onDisclaimerAcceptedChange={setDisclaimerAccepted}
+        onRulebookAcceptedChange={setRulebookAccepted}
         onSignatureChange={setSignatureImage}
       />
     ),
@@ -396,9 +590,10 @@ export default function MultiStepEventRegistration({
                 defaultCurrency={defaultCurrency}
                 activeTier={activeTier}
                 hasActiveDiscount={hasActiveDiscount}
+                isTierDiscountOverriddenByPromo={isTierDiscountOverriddenByPromo}
                 upsellSummaryItems={upsellSummaryItems}
                 summaryPricing={summaryPricing}
-                appliedPromo={appliedPromo}
+                appliedPromos={appliedPromos}
                 promoInput={promoInput}
                 promoError={promoError}
                 onPromoInputChange={setPromoInput}

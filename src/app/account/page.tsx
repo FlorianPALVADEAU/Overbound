@@ -1,21 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AlertTriangle, TicketIcon, UserIcon, LogOutIcon, BellIcon, LayoutDashboard, Settings } from 'lucide-react'
+import { AlertTriangle, TicketIcon, UserIcon, LogOutIcon, BellIcon, LayoutDashboard, Settings, Users } from 'lucide-react'
 import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
 import { AccountProfileForm } from '@/components/account/AccountProfileForm'
 import PreferencesForm from '@/components/preferences/PreferencesForm'
+import GroupSection from '@/components/account/GroupSection'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useSession } from '../api/session/sessionQueries'
 
 function LoadingView() {
   return (
@@ -74,11 +75,29 @@ function UnauthorizedView() {
 }
 
 export default function AccountPage() {
+  const router = useRouter()
   const { data, isLoading, error, refetch } = useAccountRegistrations()
-  const { data: authUser, isLoading: isAuthLoading } = useSession()
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [defaultTab, setDefaultTab] = useState('overview')
+  const isAuthError = Boolean(error?.message?.toLowerCase().includes('non authentifi'))
 
-  if (isLoading || isAuthLoading) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tab = params.get('tab')
+    if (tab) setDefaultTab(tab)
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthError) return
+    const nextPath = `${window.location.pathname}${window.location.search || ''}`
+    router.replace(`/auth/login?next=${encodeURIComponent(nextPath)}`)
+  }, [isAuthError, router])
+
+  if (isLoading) {
+    return <LoadingView />
+  }
+
+  if (isAuthError) {
     return <LoadingView />
   }
 
@@ -96,7 +115,7 @@ export default function AccountPage() {
     )
   }
 
-  if (!data?.user || !authUser) {
+  if (!data?.user) {
     return <UnauthorizedView />
   }
 
@@ -124,7 +143,7 @@ export default function AccountPage() {
                     <AvatarImage
                       src={
                         profile?.avatar_url ||
-                        authUser?.user?.user_metadata?.avatar_url ||
+                        user?.user_metadata?.avatar_url ||
                         undefined
                       }
                       alt={profile?.full_name || user.email || undefined}
@@ -182,12 +201,12 @@ export default function AccountPage() {
                     </Button>
                   </Link>
                 ) : null}
-                <Link href="/logout">
-                  <Button variant="ghost" size="sm">
+                <form action="/logout" method="post">
+                  <Button variant="ghost" size="sm" type="submit">
                     <LogOutIcon className="h-4 w-4" />
                     <span className="sr-only sm:not-sr-only sm:ml-1.5">Déconnexion</span>
                   </Button>
-                </Link>
+                </form>
               </div>
             </div>
           </CardContent>
@@ -204,8 +223,8 @@ export default function AccountPage() {
         ) : null}
 
         {/* Tabs pour organiser le contenu */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="w-full justify-start bg-muted/50 p-1 h-auto flex-wrap">
+        <Tabs value={defaultTab} onValueChange={setDefaultTab} className="space-y-6">
+          <TabsList className="w-full justify-start bg-black/50 p-1 h-auto flex-wrap">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 data-[state=active]:bg-background">
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Vue d'ensemble</span>
@@ -220,6 +239,11 @@ export default function AccountPage() {
               {profileIncomplete ? (
                 <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-destructive" />
               ) : null}
+            </TabsTrigger>
+            <TabsTrigger value="group" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Mon groupe</span>
+              <span className="sm:hidden">Groupe</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-1.5 data-[state=active]:bg-background">
               <BellIcon className="h-4 w-4" />
@@ -345,6 +369,11 @@ export default function AccountPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tab: Mon groupe */}
+          <TabsContent value="group" className="mt-6">
+            <GroupSection currentUserId={user.id} />
           </TabsContent>
 
           {/* Tab: Notifications */}

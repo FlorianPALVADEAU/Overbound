@@ -10,6 +10,7 @@ export interface AdminLogsFilters {
   startDate?: string
   endDate?: string
   limit?: number
+  page?: number
 }
 
 interface LogsResponse {
@@ -29,6 +30,7 @@ const buildQueryString = (filters: AdminLogsFilters) => {
   if (filters.startDate) params.set('startDate', filters.startDate)
   if (filters.endDate) params.set('endDate', filters.endDate)
   if (filters.limit) params.set('limit', String(filters.limit))
+  if (filters.page) params.set('page', String(filters.page))
   return params.toString()
 }
 

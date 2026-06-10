@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 export const metadata: Metadata = {
   title: "Conditions Générales d'Utilisation (CGU) | Overbound Race",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '26/10/2025'
+const lastUpdated = '10/02/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et champ d’application' },
@@ -59,7 +60,7 @@ const paragraphs = {
     'Directeur de la publication : Florian Palvadeau, Président.',
     'Email de contact : contact@overbound-race.com – Téléphone : +33 (0)6 52 26 60 54.',
     'Hébergement : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis. Sauvegarde des données déportée sur les instances Supabase (Supabase Inc., 970 Toa Payoh North #07-04, Singapour).',
-    'Support client : support@overbound-race.com du lundi au vendredi, 9h00 – 18h00 (CET).',
+    'Support client : contact@overbound-race.com du lundi au vendredi, 9h00 – 18h00 (CET).',
   ],
   accesPlateforme: [
     "L’accès à la Plateforme est gratuit hors coûts de connexion (fournis par l’opérateur internet de l’Utilisateur). Certaines rubriques sont accessibles après authentification. Overbound se réserve le droit de restreindre l’accès à certaines sections ou fonctionnalités, notamment pour raisons de maintenance, de sécurité ou d’évolution des services.",
@@ -92,16 +93,16 @@ const paragraphs = {
     "Respecter la réglementation en matière de traitement des données personnelles des participants rapportées via la Plateforme.",
   ],
   tarifsPaiements: [
-    "Les prix affichés sont exprimés en euros TTC et comprennent, sauf mention contraire, les frais de dossier Overbound. Des frais de paiement peuvent être ajoutés selon la méthode utilisée (CB, Apple Pay, SEPA).",
+    "Les prix affichés sont exprimés en euros TTC et comprennent, sauf mention contraire, les frais de dossier Overbound. Des frais de paiement peuvent être ajoutés selon la méthode utilisée (CB, SEPA).",
     "Les transactions sont opérées via des prestataires sécurisés (Stripe Payments Europe, Redwood City, USA) et bénéficient du chiffrement SSL/TLS. Overbound ne conserve aucun numéro de carte bancaire.",
-    "Une facture électronique est délivrée à chaque Participant ; elle reste accessible depuis l’espace personnel. Les organisations peuvent obtenir une facture pro sur demande (billing@overbound-race.com).",
+    "Une facture électronique est délivrée à chaque Participant ; elle reste accessible depuis l’espace personnel. Les organisations peuvent obtenir une facture pro sur demande (contact@overbound-race.com).",
     "En cas de paiement échelonné, le défaut de paiement entraîne l’annulation de l’inscription après relance restée infructueuse sous 7 jours.",
   ],
   annulation: [
     "Conformément à l’article L221-28 12° du Code de la consommation, les inscriptions à une activité sportive datée sont exclues du droit de rétractation (service de loisirs à une date déterminée).",
     "Overbound propose cependant une option de transfert de dossard jusqu’à J-7 moyennant des frais de dossier (10 €) sous réserve de présentation des documents requis et validation de l’organisation.",
     "En cas d’annulation par l’Organisateur, les participants sont systématiquement remboursés du montant de leur inscription (hors frais bancaires irréversibles) dans un délai maximal de 14 jours ouvrés.",
-    "Les demandes particulières (pathologie, blessure, grossesse) sont étudiées au cas par cas ; un certificat PPS peut être requis. Ecrire à medical@overbound-race.com avant l’événement.",
+    "Les demandes particulières (pathologie, blessure, grossesse) sont étudiées au cas par cas ; un certificat PPS peut être requis. Ecrire à contact@overbound-race.com avant l’événement.",
   ],
   conditionsCourse: [
     "Chaque participant doit présenter, lors du retrait de dossard, soit un certificat PPS de non contre-indication à la pratique des courses d’endurance ou de fitness intense datant de moins d’un an, soit une attestation de santé conforme aux exigences fédérales en vigueur.",
@@ -125,20 +126,20 @@ const paragraphs = {
   proprieteIntellectuelle: [
     "Tous éléments composant la Plateforme (textes, graphismes, logos, vidéos, code source, base de données) sont la propriété exclusive d’Overbound ou de ses partenaires et sont protégés par le droit d’auteur et le Code de la propriété intellectuelle.",
     "Toute reproduction, représentation, modification ou exploitation non autorisée est strictement interdite. Une licence non exclusive, personnelle et non transférable est accordée à l’utilisateur pour l’usage de la Plateforme.",
-    "Les marques verbales et figuratives Overbound® sont déposées. Toute utilisation nécessite une autorisation écrite préalable (brand@overbound-race.com).",
+    "Les marques verbales et figuratives Overbound® sont déposées. Toute utilisation nécessite une autorisation écrite préalable (contact@overbound-race.com).",
   ],
   donneesPersonnelles: [
     "Overbound agit en qualité de responsable de traitement pour la collecte des données des utilisateurs (identité, coordonnées, informations sportives, statistiques).",
     "Les données sont traitées pour : gestion de compte, inscription aux événements, communication événementielle, personnalisation de contenus, statistiques internes et obligations légales.",
     "Les données sont hébergées au sein de l’UE et peuvent faire l’objet de transferts encadrés (clauses contractuelles types) vers des prestataires hors UE.",
     "La base légale principale est le contrat (inscriptions) et l’intérêt légitime (sécurisation, lutte contre la fraude). Le consentement est requis pour les communications marketing et cookies non essentiels.",
-    "Chaque utilisateur dispose des droits d’accès, rectification, effacement, limitation, opposition, portabilité (art. 15 à 22 RGPD). La demande se fait à privacy@overbound-race.com avec justificatif d’identité.",
+    "Chaque utilisateur dispose des droits d’accès, rectification, effacement, limitation, opposition, portabilité (art. 15 à 22 RGPD). La demande se fait à contact@overbound-race.com avec justificatif d’identité.",
     "En cas de violation de données, Overbound notifiera la CNIL sous 72h et informera les utilisateurs concernés si nécessaire.",
     "Délégué à la protection des données (DPO) : Cabinet LexData, 12 rue d’Uzès, 75002 Paris – dpo@overbound-race.com.",
   ],
   cookies: [
-    "Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, session) ainsi que des cookies de performance (Matomo, Google Analytics) et marketing (Facebook Pixel) soumis à consentement.",
-    "La bannière cookies permet d’accepter, refuser ou personnaliser les traceurs. Les choix sont conservés pendant 6 mois et peuvent être modifiés via le centre de préférences accessible en pied de page.",
+    "Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, session) ainsi que des cookies de performance (Google Analytics) soumis à consentement.",
+    "La bannière cookies permet d’accepter ou refuser les traceurs. Les choix sont conservés pendant 6 mois et peuvent être modifiés via la page Politique Cookies accessible en pied de page.",
     "Les navigateurs permettent également de paramétrer l’acceptation ou le refus des cookies. Le refus peut dégrader certaines fonctionnalités.",
   ],
   securite: [
@@ -161,8 +162,8 @@ const paragraphs = {
     "Médiation de la consommation : l’Utilisateur consommateur peut recourir gratuitement au service de médiation CM2C (Centre de médiation de la consommation des conciliateurs de justice) – 14 rue Saint Jean, 75017 Paris – cm2c.net.",
   ],
   contact: [
-    "Support général : support@overbound-race.com",
-    "Service inscriptions & billetterie : billetterie@overbound-race.com",
+    "Support général : contact@overbound-race.com",
+    "Service inscriptions & billetterie : support@overbound-race.com",
     "Partenariats & sponsoring : partners@overbound-race.com",
     "Presse : press@overbound-race.com",
     "Adresse postale : Overbound SAS – Service clients – 24 rue du Faubourg Saint-Martin, 75010 Paris",
@@ -205,10 +206,16 @@ export default function CGUPage() {
             </div>
             <div className="mt-4 rounded-2xl bg-card/80 p-4 text-xs text-muted-foreground">
               Besoin d’une version PDF ? Écrivez à{' '}
-              <Link href="mailto:legal@overbound-race.com" className="text-primary hover:underline">
-                legal@overbound-race.com
+              <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
+                contact@overbound-race.com
               </Link>{' '}
               en indiquant « Demande CGU ».
+              <br />
+              Règlement officiel Overbound 2026 :{' '}
+              <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="text-primary hover:underline">
+                consulter le PDF
+              </Link>
+              .
             </div>
           </div>
 

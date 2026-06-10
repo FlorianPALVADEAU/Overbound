@@ -20,6 +20,8 @@ export type RegistrationParticipant = {
   emergencyContactPhone: string
   medicalInfo: string
   licenseNumber: string
+  distanceIdealKm: string
+  distanceMinKm: string
 }
 
 export type RegistrationUpsellSelection = {
@@ -45,6 +47,7 @@ export type RegistrationSignature = {
 export type RegistrationDisclaimer = {
   read: boolean
   accepted: boolean
+  rulebookAccepted: boolean
 }
 
 export type RegistrationDraft = {
@@ -56,7 +59,9 @@ export type RegistrationDraft = {
   ticketSelections: RegistrationTicketSelection[]
   participants: RegistrationParticipant[]
   upsells: RegistrationUpsellSelection[]
-  promoCode: string | null
+  promoCodes: string[]
+  ambassadorReferralCode: string | null
+  groupId: string | null
   summary: RegistrationSummary
   signature: RegistrationSignature
   disclaimer: RegistrationDisclaimer

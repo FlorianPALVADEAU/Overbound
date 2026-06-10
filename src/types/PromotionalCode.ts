@@ -20,6 +20,7 @@ export interface PromotionalCode {
   tier_order?: number | null // Sequential order for tier progression (1, 2, 3...). NULL = not part of progression
   event_price_tier_id?: UUID | null // Optional link to EventPriceTier for display
   auto_activate?: boolean // Auto-activate when previous tier expires
+  is_ambassador?: boolean // Flag set when code is reserved for ambassador program
   created_at: Timestamp
   updated_at: Timestamp
   events?: PromotionalCodeEvent[]

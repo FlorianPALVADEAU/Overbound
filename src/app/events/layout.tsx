@@ -1,14 +1,25 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Événements et courses à obstacles - Inscriptions ouvertes | Overbound Race",
-  description: "Découvrez tous nos événements de course d'obstacles (OCR) disponibles. Consultez le calendrier, les lieux, les formats disponibles et inscrivez-vous dès maintenant.",
+  title: "Événements Course à Obstacles Paris 2026 | Inscriptions Overbound Race",
+  description: "Inscris-toi aux courses à obstacles Overbound Race Paris 2026 ! Ultra Arena (backyard OCR), formats Origin et Horizon. Calendrier des événements OCR en Île-de-France. Inscriptions ouvertes !",
+  keywords: [
+    "course à obstacles paris 2026",
+    "inscription course obstacles",
+    "événements OCR paris",
+    "calendrier course obstacles 2026",
+    "overbound race inscription",
+    "ultra arena inscription",
+    "backyard à obstacles inscription",
+    "course obstacles île-de-france",
+    "OCR france 2026",
+  ],
   alternates: {
     canonical: 'https://overbound-race.com/events'
   },
   openGraph: {
-    title: "Événements Overbound Race - Inscriptions aux courses signature",
-    description: "Visualisez nos événements sur la carte, trouvez les courses proches de chez vous et inscrivez-vous aux formats qui vous correspondent.",
+    title: "Événements Course à Obstacles Paris 2026 | Overbound Race",
+    description: "Calendrier et inscriptions courses à obstacles Overbound Race Paris 2026. Ultra Arena, Origin, Horizon. Backyard OCR. Inscriptions ouvertes !",
     url: 'https://overbound-race.com/events',
     siteName: 'Overbound Race',
     images: [
@@ -16,7 +27,7 @@ export const metadata: Metadata = {
         url: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
         width: 1200,
         height: 630,
-        alt: 'Coureurs portant des troncs d\'arbres lors d\'une course Overbound Race'
+        alt: 'Course à obstacles Paris 2026 - Overbound Race'
       }
     ],
     locale: 'fr_FR',
@@ -24,8 +35,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Événements Overbound Race - Courses OCR en Normandie",
-    description: "Consultez le calendrier des courses d'obstacles et inscrivez-vous.",
+    title: "Événements Course à Obstacles Paris 2026",
+    description: "Inscris-toi aux courses à obstacles Overbound Race. Calendrier 2026 et inscriptions ouvertes !",
     images: ['/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif'],
   }
 };

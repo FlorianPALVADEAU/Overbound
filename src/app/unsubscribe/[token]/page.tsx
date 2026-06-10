@@ -127,10 +127,10 @@ export default function UnsubscribePage() {
                 <span className="text-sm mt-1 block">
                   Si le problème persiste, contactez-nous à{' '}
                   <a
-                    href="mailto:support@overbound-race.com"
+                    href="mailto:contact@overbound-race.com"
                     className="underline"
                   >
-                    support@overbound-race.com
+                    contact@overbound-race.com
                   </a>
                 </span>
               </AlertDescription>

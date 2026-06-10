@@ -21,14 +21,15 @@ interface OrderSummarySidebarProps {
   defaultCurrency: string
   activeTier: EventPriceTier | null
   hasActiveDiscount: boolean
+  isTierDiscountOverriddenByPromo: boolean
   upsellSummaryItems: UpsellSummaryItem[]
   summaryPricing: PricingSummary
-  appliedPromo: AppliedPromo | null
+  appliedPromos: AppliedPromo[]
   promoInput: string
   promoError: string | null
   onPromoInputChange: (value: string) => void
   onValidatePromo: () => void
-  onRemovePromo: () => void
+  onRemovePromo: (code: string) => void
 }
 
 export default function OrderSummarySidebar({
@@ -38,15 +39,18 @@ export default function OrderSummarySidebar({
   defaultCurrency,
   activeTier,
   hasActiveDiscount,
+  isTierDiscountOverriddenByPromo,
   upsellSummaryItems,
   summaryPricing,
-  appliedPromo,
+  appliedPromos,
   promoInput,
   promoError,
   onPromoInputChange,
   onValidatePromo,
   onRemovePromo,
 }: OrderSummarySidebarProps) {
+  const showActiveTierDiscount = hasActiveDiscount && !isTierDiscountOverriddenByPromo
+
   return (
     <Card>
       <CardHeader>
@@ -55,7 +59,7 @@ export default function OrderSummarySidebar({
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <PromoCodeInput
-          appliedPromo={appliedPromo}
+          appliedPromos={appliedPromos}
           promoInput={promoInput}
           error={promoError}
           onInputChange={onPromoInputChange}
@@ -100,14 +104,14 @@ export default function OrderSummarySidebar({
                         </Badge>
                       </div>
                     )}
-                    {hasActiveDiscount && activeTier && ticket.final_price_cents && (
+                    {showActiveTierDiscount && activeTier && ticket.final_price_cents && (
                       <p className="text-xs text-green-600 font-semibold">
                         -{activeTier.discount_percentage}% ({activeTier.name})
                       </p>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-0.5">
-                    {hasActiveDiscount && ticket.final_price_cents && (
+                    {showActiveTierDiscount && ticket.final_price_cents && (
                       <span className="text-xs text-muted-foreground line-through">
                         {formatPrice(
                           ticket.final_price_cents,
@@ -165,7 +169,11 @@ export default function OrderSummarySidebar({
           </div>
           {summaryPricing.discountAmount > 0 ? (
             <div className="flex items-center justify-between text-sm text-emerald-600">
-              <span>Réduction</span>
+              <span className="font-mono font-medium">
+                {appliedPromos.length > 0
+                  ? appliedPromos.map((p) => p.code).join(' + ')
+                  : 'Réduction'}
+              </span>
               <span>- {formatPrice(summaryPricing.discountAmount, summaryPricing.currency)}</span>
             </div>
           ) : null}

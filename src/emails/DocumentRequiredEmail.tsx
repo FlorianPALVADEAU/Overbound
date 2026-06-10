@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Preview, Section, Text, Link, Button } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 interface DocumentRequiredEmailProps {
   participantName?: string | null
@@ -51,6 +52,13 @@ export function DocumentRequiredEmail({
 
         <Text style={styles.secondary}>
           Si tu as déjà envoyé ce document, considère ce message comme un rappel — il peut y avoir un léger délai de traitement.
+        </Text>
+        <Text style={styles.secondary}>
+          Règlement officiel Overbound 2026 :{' '}
+          <Link href={OFFICIAL_RULEBOOK_PDF_PATH} style={styles.link}>
+            consulter le PDF
+          </Link>
+          .
         </Text>
       </Section>
     </EmailLayout>

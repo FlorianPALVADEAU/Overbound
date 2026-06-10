@@ -36,7 +36,7 @@ const steps = [
 	},
 	{
 		title: "Le défi ultime",
-		text: "2km par tour, 15+ obstacles, 20min max pour boucler. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
+		text: "2km par tour, 10+ obstacles, 20min max pour boucler. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
 		image:
 			"/images/images/a-sporty-man-laughing-facing-forward-and-looking-to-the-left.avif",
 	},
@@ -115,22 +115,6 @@ useEffect(() => {
 	const target = steps.length > 1 ? activeStep / (steps.length - 1) : 1;
 	progress.set(target);
 }, [activeStep, progress]);
-
-useEffect(() => {
-	const preloadedImages = steps.map((step) => {
-		if (typeof window === "undefined") return null;
-		const img = new window.Image();
-		img.src = step.image;
-		return img;
-	});
-
-	return () => {
-		preloadedImages.forEach((img) => {
-			if (!img) return;
-			img.src = "";
-		});
-	};
-}, []);
 
 useEffect(() => {
 	const observers = stepRefs.current.map((ref, index) => {
@@ -221,7 +205,7 @@ useEffect(() => {
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										En format RANKED, chaque tour de 2km avec 15+ obstacles doit être complété en moins de 20 minutes pour continuer. Le défi ultime pour tester ton endurance et ta stratégie.
+										En format RANKED, chaque tour de 2km avec 10+ obstacles doit être complété en moins de 20 minutes pour continuer. Le défi ultime pour tester ton endurance et ta stratégie.
 										<br/>Le format OPEN te permet de courir sans limite de temps, pour le plaisir et le dépassement de soi.
 									</p>
 								</CardContent>
@@ -248,7 +232,7 @@ useEffect(() => {
 										<Mountain className="h-4 w-4 mr-1" />
 										Parcours technique
 									</Badge>
-									<CardTitle className="text-2xl">2km · 15+ obstacles</CardTitle>
+									<CardTitle className="text-2xl">2km · 10+ obstacles</CardTitle>
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
@@ -264,7 +248,7 @@ useEffect(() => {
 								size="lg"
 								className="bg-red-600 hover:bg-red-700 text-white px-8 rounded-full"
 							>
-								<Link href="/events/ultra-arena-2026/register">
+								<Link href="/events/ultra-arena-2026">
 									S'inscrire à la Ultra Arena
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Link>
@@ -463,7 +447,7 @@ useEffect(() => {
 													{index === 3 ? (
 														<div className="mt-4 gap-2 flex flex-wrap">
 															<Link
-																href="/events/ultra-arena-2026/register"
+																href="/events/ultra-arena-2026"
 																className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-amber-600 text-sm underline-offset-4 hover:bg-amber-500/20 hover:underline"
 															>
 																↗ S'inscrire maintenant

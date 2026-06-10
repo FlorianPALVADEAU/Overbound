@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
+import { computeDocumentAction } from '@/lib/documents/documentAction'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await resolveRequestUser(request)
 
     if (!user) {
-      return NextResponse.json({ user: null, profile: null })
+      return NextResponse.json(
+        {
+          error: 'Non authentifié',
+          code: 'UNAUTHENTICATED',
+          user: null,
+          profile: null,
+        },
+        { status: 401 },
+      )
     }
 
-    const { data: profileData } = await supabase
+    const admin = supabaseAdmin()
+
+    const { data: profileData } = await admin
       .from('profiles')
       .select('full_name, phone, date_of_birth, marketing_opt_in, role')
       .eq('id', user.id)
@@ -27,7 +36,6 @@ export async function GET() {
 
     let needsDocumentAction = false
     try {
-      const admin = supabaseAdmin()
       const { data: registrationMeta } = await admin
         .from('registrations')
         .select(
@@ -37,7 +45,8 @@ export async function GET() {
           document_url,
           ticket:tickets(
             requires_document,
-            events (
+            document_types,
+            event:events (
               date
             )
           )
@@ -46,36 +55,78 @@ export async function GET() {
         .eq('user_id', user.id)
 
       type RegistrationAlertRow = {
+        id: string
         approval_status: 'pending' | 'approved' | 'rejected' | null
         document_url: string | null
         ticket:
           | {
               requires_document: boolean | null
-              events?: Array<{ date: string | null }> | null
+              document_types?: string[] | null
+              event?: { date: string | null } | null
             }
           | null
       }
 
       const now = new Date()
-      needsDocumentAction = ((registrationMeta as RegistrationAlertRow[] | null) ?? []).some(
-        ({ ticket, approval_status, document_url }) => {
+      const registrationRows = (registrationMeta as RegistrationAlertRow[] | null) ?? []
+      const registrationIds = registrationRows.map((row) => row.id)
+
+      const documentTypeMap = new Map<string, Set<string>>()
+      if (registrationIds.length > 0) {
+        const { data: documentRows, error: documentError } = await admin
+          .from('registration_documents')
+          .select('registration_id, document_type')
+          .in('registration_id', registrationIds)
+
+        if (documentError) {
+          console.warn('[session] registration documents error', documentError)
+        } else if (documentRows) {
+          for (const row of documentRows as any[]) {
+            if (!documentTypeMap.has(row.registration_id)) {
+              documentTypeMap.set(row.registration_id, new Set())
+            }
+            if (row.document_type) {
+              documentTypeMap.get(row.registration_id)!.add(row.document_type)
+            }
+          }
+        }
+      }
+
+      needsDocumentAction = registrationRows.some(
+        ({ id, ticket, approval_status, document_url }) => {
           const requiresDocument = Boolean(ticket?.requires_document)
           if (!requiresDocument) {
             return false
           }
 
-          const eventDateRaw = ticket?.events?.[0]?.date ?? null
+          const eventDateRaw = ticket?.event?.date ?? null
           const eventDate = eventDateRaw ? new Date(eventDateRaw) : null
           const isUpcoming = eventDate ? eventDate >= now : false
           if (!isUpcoming) {
             return false
           }
 
-          if (!document_url) {
-            return true
-          }
+          const uploadedCount = documentTypeMap.get(id)?.size ?? (document_url ? 1 : 0)
+          const requiredCount =
+            ticket?.document_types && ticket.document_types.length > 0
+              ? ticket.document_types.length
+              : 1
 
-          return approval_status !== 'approved'
+          const uploadedTypes = documentTypeMap.get(id)
+            ? Array.from(documentTypeMap.get(id)!)
+            : []
+
+          return computeDocumentAction({
+            requiresDocument,
+            eventDate,
+            approvalStatus: approval_status,
+            requiredTypes: Array.isArray(ticket?.document_types) ? ticket.document_types : [],
+            uploadedTypes,
+            uploadedCount,
+            requiredCount,
+            hasLegacyDocumentUrl: Boolean(document_url),
+            now,
+          }).requiresAttention
         },
       )
     } catch (sessionAlertError) {

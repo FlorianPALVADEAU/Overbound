@@ -20,8 +20,10 @@ import {
   updateAdminRace,
   useAdminRaces,
   type AdminRacePayload,
+  type DeleteRaceConflict,
 } from '@/app/api/admin/races/racesQueries'
 import { useAdminObstacles } from '@/app/api/admin/obstacles/obstaclesQueries'
+import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -84,6 +86,11 @@ export function RacesSection() {
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | Race['type']>('all')
 
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [raceToDelete, setRaceToDelete] = useState<Race | null>(null)
+  const [deleteConflict, setDeleteConflict] = useState<DeleteRaceConflict | null>(null)
+
   const combinedLoading = racesLoading || obstaclesLoading
   const combinedError = racesError || obstaclesError
 
@@ -122,24 +129,43 @@ export function RacesSection() {
     setDialogOpen(true)
   }
 
-  const handleDelete = async (race: Race) => {
-    if (!confirm(`Supprimer la course "${race.name}" ?`)) {
-      return
-    }
+  const handleDeleteClick = (race: Race) => {
+    setRaceToDelete(race)
+    setDeleteConflict(null)
+    setDeleteDialogOpen(true)
+  }
 
-    setDeleteLoadingId(race.id)
+  const handleDelete = async () => {
+    if (!raceToDelete) return
+
+    setDeleteLoadingId(raceToDelete.id)
     try {
-      await deleteAdminRace(race.id)
+      await deleteAdminRace(raceToDelete.id, deleteConflict !== null)
       queryClient.setQueryData<Race[]>(adminRacesQueryKey, (previous) => {
         if (!previous) return []
-        return previous.filter((item) => item.id !== race.id)
+        return previous.filter((item) => item.id !== raceToDelete.id)
       })
       setMessage({ type: 'success', text: 'Course supprimée avec succès' })
+      setDeleteDialogOpen(false)
+      setRaceToDelete(null)
+      setDeleteConflict(null)
     } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.error || error.message
-        : (error as Error).message || 'Erreur lors de la suppression'
-      setMessage({ type: 'error', text })
+      const err = error as Error & DeleteRaceConflict
+      if (err.requiresConfirmation && !deleteConflict) {
+        setDeleteConflict({
+          ticketsCount: err.ticketsCount,
+          eventsCount: err.eventsCount,
+          requiresConfirmation: true,
+        })
+      } else {
+        const text = axios.isAxiosError(error)
+          ? error.response?.data?.error || error.message
+          : (error as Error).message || 'Erreur lors de la suppression'
+        setMessage({ type: 'error', text })
+        setDeleteDialogOpen(false)
+        setRaceToDelete(null)
+        setDeleteConflict(null)
+      }
     } finally {
       setDeleteLoadingId(null)
     }
@@ -271,7 +297,7 @@ export function RacesSection() {
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => handleDelete(race)}
+              onClick={() => handleDeleteClick(race)}
               disabled={deleteLoadingId === race.id}
             >
               {deleteLoadingId === race.id ? 'Suppression…' : 'Supprimer'}
@@ -369,6 +395,39 @@ export function RacesSection() {
         obstacles={obstacles as Obstacle[]}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setRaceToDelete(null)
+            setDeleteConflict(null)
+          }
+        }}
+        title="Supprimer la course"
+        entityName={raceToDelete?.name ?? ''}
+        entityType="la course"
+        warningMessage={
+          deleteConflict
+            ? `Attention : cette course est utilisée par d'autres éléments.`
+            : undefined
+        }
+        consequences={
+          deleteConflict
+            ? [
+                deleteConflict.ticketsCount > 0
+                  ? `${deleteConflict.ticketsCount} ticket(s) (et leurs inscriptions)`
+                  : null,
+                deleteConflict.eventsCount > 0
+                  ? `${deleteConflict.eventsCount} association(s) événement-course`
+                  : null,
+              ].filter(Boolean) as string[]
+            : undefined
+        }
+        onConfirm={handleDelete}
+        loading={deleteLoadingId === raceToDelete?.id}
       />
     </div>
   )

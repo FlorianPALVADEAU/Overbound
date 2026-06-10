@@ -46,12 +46,15 @@ export function PricingExplainer() {
   return (
     <section className="w-full h-auto">
       {/* En-tête léger */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold">
+      <div className="mb-8">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+          Tarification progressive
+        </p>
+        <h3 className="text-2xl font-bold sm:text-3xl">
           Plus tôt tu réserves, plus tu économises
         </h3>
-        <p className="text-sm text-muted-foreground">
-          Paliers simples, prix qui montent à l’approche de l’événement.{" "}
+        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+          Paliers simples, prix qui montent à l'approche de l'événement.{" "}
           <strong>*</strong>
         </p>
       </div>

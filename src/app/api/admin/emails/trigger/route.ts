@@ -11,6 +11,7 @@ import {
   sendDocumentRejectedEmail,
   sendTicketEmail,
   sendNewEventAnnouncementEmail,
+  sendEventOpeningEmail,
   sendPriceChangeReminderEmail,
   sendPromoCampaignEmail,
   sendInactiveUserEmail,
@@ -20,6 +21,7 @@ import {
   sendVolunteerRecruitmentEmail,
   sendVolunteerAssignmentEmail,
 } from '@/lib/email'
+import { sendAmbassadorRewardEarnedEmail, sendAmbassadorRewardStatusEmail } from '@/lib/ambassadors/email'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 export const runtime = 'nodejs'
@@ -29,6 +31,8 @@ const ACCOUNT_URL = `${SITE_URL}/account`
 const EVENTS_URL = `${SITE_URL}/events`
 const BLOG_URL = `${SITE_URL}/blog`
 const ADMIN_LOGS_URL = `${SITE_URL}/admin?tab=logs`
+const CAMPAIGN_HERO_IMAGE_PATH =
+  '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.jpg'
 
 const SAMPLE_QR =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAYAAAB1PADUAAAAAklEQVR4AewaftIAAATiSURBVO3BQY4bSRAEwfAC//9lXx3zVECjkzNaIczwj1QtOaladFK16KRq0UnVopOqRSdVi06qFp1ULTqpWnRSteikatFJ1aKTqkUnVYtOqhZ98hKQn6TmBsgTaiYgk5oJyKTmm4D8JDVvnFQtOqladFK16JNlajYB2aTmCSBPALlR84aaTUA2nVQtOqladFK16JMvA/KEmieATGomIBOQSc2NmgnIG0Bu1DwB5Ak133RSteikatFJ1aJP/nFqboBMaiYgN0AmNU8A+ZecVC06qVp0UrXok38MkE1qJiCTmieATGr+JSdVi06qFp1ULfrky9T8JjUTkEnNG0Bu1ExqNqn5m5xULTqpWnRSteiTZUB+k5oJyKRmAjKpmYBMaiYgk5oJyKRmAjKpuQHyNzupWnRSteikatEnL6n5mwCZ1HyTmieAPKHm/+SkatFJ1aKTqkWfvARkUjMB2aRmUvMEkCfUTEBu1NyoeQLIJjXfdFK16KRq0UnVok+WAZnUTECeUDMBmdRsAnKj5gk1TwC5UTMBuVEzAZnUbDqpWnRSteikatEnP0zNBOQGyKRmAvKEmgnIE0CeUHMD5EbNBGRScwPkJ51ULTqpWnRStQj/yAtAJjVvAJnUPAFkUjMBmdRMQCY1bwC5UTMBuVEzAblRMwG5UfPGSdWik6pFJ1WLPvllQCY1E5AbNZOaCcgNkEnNBORGzQRkUnMDZFIzAblR84aaTSdVi06qFp1ULfrky4BMaiY1E5BJzQTkCTU3QG7U3ACZ1ExAJjWTmhs1E5An1Pykk6pFJ1WLTqoWffKSmhs1E5BJzaRmAjKpeQPIpOYJIJOaCcgbQCY1N2pugExqvumkatFJ1aKTqkX4R14AcqNmE5AbNTdAbtRMQCY1E5BJzQ2QGzUTkEnNBORGzU86qVp0UrXopGrRJ8vU3ACZ1ExA3gAyqZnUPKFmAjKpmYDcqJmA3Kh5Qs1vOqladFK16KRqEf6RF4DcqPlNQCY1N0Bu1DwBZFIzAblR839yUrXopGrRSdWiT5apuQFyo2YC8oSaGyBvAJnUTEBugExqngAyqZmAPKFm00nVopOqRSdViz75y6m5ATIBmdTcALlRcwNkUnMD5AbIjZoJyI2aGyCTmjdOqhadVC06qVr0yQ9T8wSQGzUTkBsgN2omIE8AuVEzAXkCyBtAJjWbTqoWnVQtOqlahH/kfwzIpOYGyI2aGyCTmieA3Kh5Asik5gkgk5o3TqoWnVQtOqla9MlLQH6SmknNBOQJNW8AuVEzqZmA3ACZ1NwAeULNppOqRSdVi06qFn2yTM0mIDdAJjUTkEnNBGRSMwGZ1DwBZFLzhJon1Pymk6pFJ1WLTqoWffJlQJ5Qs0nNG2omIJOaTUC+CcikZtNJ1aKTqkUnVYs+qSsgN0AmNZOaJ9TcAPmbnVQtOqladFK16JN/DJBJzY2aGzUTkEnNBOQJNROQGzUTkBsgP+mkatFJ1aKTqkWffJmab1JzA2RSMwGZ1NyomYBMam6ATEBu1NyomYDcqPmmk6pFJ1WLTqoWfbIMyE8C8gSQGyCTmgnIDZBJzY2aGyBvqJmATGo2nVQtOqladFK1CP9I1ZKTqkUnVYtOqhadVC06qVp0UrXopGrRSdWik6pFJ1WLTqoWnVQtOqladFK16KRq0X9aSko0AxfyTgAAAABJRU5ErkJggg=='
@@ -166,6 +170,21 @@ const handlePost = async (request: NextRequest) => {
           highlight: 'Format nocturne inédit + obstacles lumineux.',
         })
         return 'Annonce nouvel événement envoyée.'
+      },
+      event_opening: async () => {
+        await sendEventOpeningEmail({
+          to: user.email!,
+          fullName,
+          userId: user.id,
+          eventTitle: 'Ultra Arena 2026',
+          eventDate: 'Samedi 12 septembre 2026',
+          eventLocation: 'Base de loisirs de Saint-Quentin-en-Yvelines',
+          eventUrl: `${EVENTS_URL}/ultra-arena-2026`,
+          heroImageUrl: `${SITE_URL}${CAMPAIGN_HERO_IMAGE_PATH}`,
+          offerTitle: '-25% sur les 35 premiers inscrits',
+          offerDescription: "Aucun code requis : la réduction s'applique automatiquement au checkout.",
+        })
+        return 'Email ouverture inscriptions envoyé.'
       },
       marketing_price_change: async () => {
         await sendPriceChangeReminderEmail({
@@ -319,6 +338,27 @@ const handlePost = async (request: NextRequest) => {
           checkinUrl: `${SITE_URL}/admin/checkin?event=demo`,
         })
         return 'Brief bénévole envoyé.'
+      },
+      ambassador_reward_earned: async () => {
+        await sendAmbassadorRewardEarnedEmail({
+          to: user.email!,
+          fullName,
+          ambassadorCode: 'OB-AMBASSADOR',
+          rewards: [
+            { reward_level: 1, reward_name: 'Badge ambassadeur + accès classement' },
+          ],
+        })
+        return 'Mock palier ambassadeur envoyé.'
+      },
+      ambassador_reward_status: async () => {
+        await sendAmbassadorRewardStatusEmail({
+          to: user.email!,
+          fullName,
+          ambassadorCode: 'OB-AMBASSADOR',
+          reward: { reward_level: 4, reward_name: 'Dossard Open offert' },
+          statusLabel: 'Réclamée',
+        })
+        return 'Mock statut récompense envoyé.'
       },
     }
 

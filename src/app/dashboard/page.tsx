@@ -10,9 +10,12 @@ import Link from 'next/link'
 
 export default function DashboardPage() {
   const { data: session, isLoading: sessionLoading } = useSession()
-  const { data, isLoading, error, refetch } = useAdminOverview()
+  const role = session?.profile?.role ?? null
+  const isAdmin = role === 'admin'
+  const isVolunteer = role === 'volunteer'
+  const { data, isLoading, error, refetch } = useAdminOverview({ enabled: isAdmin })
 
-  if (sessionLoading || isLoading) {
+  if (sessionLoading || (isAdmin && isLoading)) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-sm text-muted-foreground">Chargement…</div>
@@ -24,7 +27,7 @@ export default function DashboardPage() {
     redirect('/auth/login?next=/dashboard')
   }
 
-  if (error) {
+  if (isAdmin && error) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
         <Card className="max-w-md">
@@ -38,7 +41,17 @@ export default function DashboardPage() {
     )
   }
 
-  if (!data || !['admin', 'volunteer'].includes(data.profile.role || '')) {
+  if (isVolunteer && session?.user) {
+    return (
+      <AdminDashboard
+        user={session.user as any}
+        profile={{ role: 'volunteer', full_name: session.profile?.full_name ?? undefined }}
+        stats={null}
+      />
+    )
+  }
+
+  if (!isAdmin || !data) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
         <Card className="max-w-md">

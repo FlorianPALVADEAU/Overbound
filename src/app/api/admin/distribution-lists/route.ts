@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import type {
   CreateDistributionListData,
   DistributionListType,
 } from '@/types/DistributionList'
+import {
+  EVENT_OPENING_FIRST_LIST_ID,
+  EVENT_OPENING_FIRST_LIST_SLUG,
+} from '@/lib/subscriptions/constants'
+import {
+  getResendAudienceIdForSlug,
+  listResendAudienceContacts,
+} from '@/lib/email/resendAudiences'
 
 // Validation schema
 const distributionListSchema = z.object({
@@ -37,6 +46,7 @@ const distributionListSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const admin = supabaseAdmin()
 
     // Check if user is authenticated and admin
     const {
@@ -67,7 +77,7 @@ export async function GET(request: NextRequest) {
     // Build query
     if (includeStats) {
       // Use the stats view
-      let query = supabase.from('distribution_lists_stats').select('*')
+      let query = admin.from('distribution_lists_stats').select('*')
 
       if (type) {
         query = query.eq('type', type)
@@ -89,7 +99,43 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      return NextResponse.json({ data }, { status: 200 })
+      const enhancedData = await addEventOpeningVirtualList({
+        lists: data ?? [],
+        admin,
+      })
+
+      const listsWithResendStats = await Promise.all(
+        enhancedData.map(async (list) => {
+          if (list.id === EVENT_OPENING_FIRST_LIST_ID) {
+            return list
+          }
+
+          const audienceId = getResendAudienceIdForSlug(list.slug)
+          if (!audienceId) {
+            return list
+          }
+
+          try {
+            const contacts = await listResendAudienceContacts(audienceId)
+            const subscriberCount = contacts.filter((contact) => !contact.unsubscribed).length
+            const unsubscriberCount = contacts.filter((contact) => contact.unsubscribed).length
+            return {
+              ...list,
+              subscriber_count: subscriberCount,
+              unsubscriber_count: unsubscriberCount,
+              total_interactions: subscriberCount + unsubscriberCount,
+            }
+          } catch (error) {
+            console.warn('[distribution-lists] resend stats lookup failed', {
+              slug: list.slug,
+              error: error instanceof Error ? error.message : String(error),
+            })
+            return list
+          }
+        }),
+      )
+
+      return NextResponse.json({ data: listsWithResendStats }, { status: 200 })
     } else {
       // Regular query
       let query = supabase.from('distribution_lists').select('*')
@@ -125,11 +171,67 @@ export async function GET(request: NextRequest) {
   }
 }
 
+async function addEventOpeningVirtualList({
+  lists,
+  admin,
+}: {
+  lists: any[]
+  admin: ReturnType<typeof supabaseAdmin>
+}) {
+  const { data: firstEvent, error: firstEventError } = await admin
+    .from('events')
+    .select('id, title, date, created_at')
+    .order('date', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (firstEventError) {
+    console.error('Error fetching first event:', firstEventError)
+    return lists
+  }
+
+  if (!firstEvent) {
+    return lists
+  }
+
+  const { count: notificationsCount, error: notificationsError } = await admin
+    .from('event_opening_notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', firstEvent.id)
+
+  if (notificationsError) {
+    console.error('Error fetching event opening notifications:', notificationsError)
+  }
+
+  const virtualList = {
+    id: EVENT_OPENING_FIRST_LIST_ID,
+    name: `Ouverture inscriptions — ${firstEvent.title ?? 'Premier événement'}`,
+    description:
+      firstEvent.title
+        ? `Demandes pour être prévenu de l'ouverture de ${firstEvent.title}.`
+        : `Demandes pour être prévenu de l'ouverture du premier événement.`,
+    slug: EVENT_OPENING_FIRST_LIST_SLUG,
+    type: 'events',
+    default_subscribed: false,
+    active: true,
+    created_at: firstEvent.created_at ?? new Date().toISOString(),
+    updated_at: firstEvent.created_at ?? new Date().toISOString(),
+    subscriber_count: notificationsCount ?? 0,
+    unsubscriber_count: 0,
+    total_interactions: 0,
+  }
+
+  const merged = [...lists, virtualList]
+  merged.sort((a, b) => (b.subscriber_count || 0) - (a.subscriber_count || 0))
+
+  return merged
+}
+
 /**
  * POST /api/admin/distribution-lists
  * Create a new distribution list (admin only)
  */
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const supabase = await createClient()
 
@@ -205,3 +307,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withRequestLogging(handlePost, {
+  actionType: 'Création liste de distribution admin',
+})

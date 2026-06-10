@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { getEffectiveEventStatus } from '@/lib/events/registrationStatus'
 
 export const runtime = 'nodejs'
 
@@ -10,6 +11,7 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createSupabaseServer()
+    const admin = supabaseAdmin()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -55,7 +57,7 @@ export async function GET(
       return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
     }
 
-    const { count: totalRegistrations } = await supabase
+    const { count: totalRegistrations } = await admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', event.id)
@@ -75,8 +77,13 @@ export async function GET(
       existingRegistration = registration ?? null
     }
 
+    const effectiveEvent = {
+      ...event,
+      status: getEffectiveEventStatus(event),
+    }
+
     return NextResponse.json({
-      event,
+      event: effectiveEvent,
       availableSpots,
       existingRegistration,
       user: user

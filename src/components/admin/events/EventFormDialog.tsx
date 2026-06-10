@@ -25,6 +25,7 @@ export interface EventFormValues {
   subtitle: string
   description: string
   date: string
+  sales_start: string
   location: string
   latitude: string
   longitude: string
@@ -53,6 +54,7 @@ const DEFAULT_VALUES: EventFormValues = {
   subtitle: '',
   description: '',
   date: '',
+  sales_start: '',
   location: '',
   latitude: '',
   longitude: '',
@@ -186,6 +188,22 @@ export function EventFormDialog({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="sales_start">
+              Ouverture des inscriptions {values.status === 'announced' ? '*' : ''}
+            </Label>
+            <Input
+              id="sales_start"
+              type="datetime-local"
+              value={values.sales_start}
+              onChange={(event) => handleChange('sales_start', event.target.value)}
+              placeholder="2026-03-01 10:00"
+            />
+            <p className="text-xs text-muted-foreground">
+              Si l’événement est “Ouvert (inscriptions à venir)”, cette date déclenchera l’ouverture automatique.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="location">Lieu *</Label>
             <Input
               id="location"
@@ -240,6 +258,7 @@ export function EventFormDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="announced">Ouvert (inscriptions à venir)</SelectItem>
                   <SelectItem value="on_sale">En vente</SelectItem>
                   <SelectItem value="sold_out">Complet</SelectItem>
                   <SelectItem value="closed">Fermé</SelectItem>

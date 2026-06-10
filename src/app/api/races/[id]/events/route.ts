@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { getEffectiveEventStatus } from '@/lib/events/registrationStatus'
 
 const isValidUuid = (value: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value)
 
@@ -29,7 +30,7 @@ export async function GET(
         )
       `)
       .eq('tickets.race_id', id)
-      .in('status', ['on_sale', 'sold_out'])
+      .in('status', ['announced', 'on_sale', 'sold_out'])
       .gte('date', new Date().toISOString())
       .order('date', { ascending: true })
 
@@ -47,6 +48,7 @@ export async function GET(
 
         return {
           ...event,
+          status: getEffectiveEventStatus(event),
           registrations_count: count || 0
         }
       })

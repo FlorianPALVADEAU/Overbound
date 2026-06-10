@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Mail, Phone, Search, RefreshCw, Clock, Users } from 'lucide-react'
-import { useAdminEventVolunteers } from '@/app/api/admin/events/eventsQueries'
+import { Mail, Phone, Search, RefreshCw, Clock, Users, Trash2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAdminEventVolunteers, deleteAdminEventVolunteer } from '@/app/api/admin/events/eventsQueries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,6 +32,8 @@ const formatDate = (value: string | null) =>
 
 export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
+  const queryClient = useQueryClient()
   const {
     data: volunteers = [],
     isLoading,
@@ -38,6 +41,28 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
     error,
     refetch,
   } = useAdminEventVolunteers(eventId)
+
+  const handleDelete = async (volunteerId: string, volunteerName: string | null) => {
+    const label = volunteerName ? `le bénévole "${volunteerName}"` : 'ce bénévole'
+    if (!confirm(`Supprimer ${label} de cet événement ?`)) {
+      return
+    }
+
+    setDeleteLoadingId(volunteerId)
+    try {
+      await deleteAdminEventVolunteer(volunteerId)
+      queryClient.setQueryData(
+        ['admin', 'events', eventId, 'volunteers'],
+        (previous: typeof volunteers | undefined) =>
+          (previous || []).filter((volunteer) => volunteer.id !== volunteerId),
+      )
+    } catch (err) {
+      console.error('Erreur suppression bénévole:', err)
+      alert('Erreur lors de la suppression du bénévole.')
+    } finally {
+      setDeleteLoadingId(null)
+    }
+  }
 
   const filteredVolunteers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
@@ -116,7 +141,7 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
                 <TableHead>Bénévole</TableHead>
                 <TableHead>Mission &amp; disponibilité</TableHead>
                 <TableHead>Soumis le</TableHead>
-                <TableHead className="w-[140px] text-right">Contact</TableHead>
+              <TableHead className="w-[220px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -179,6 +204,15 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
                             </a>
                           </Button>
                         ) : null}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(volunteer.id, volunteer.full_name)}
+                          disabled={deleteLoadingId === volunteer.id}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deleteLoadingId === volunteer.id ? 'Suppression…' : 'Supprimer'}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

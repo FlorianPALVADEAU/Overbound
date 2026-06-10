@@ -1,6 +1,7 @@
 import { fetchSinglePost } from '@/app/api/blog/blogQueries'
 import RichText from '@/components/RichText'
 import { markdownToHtml } from '@/lib/markdown'
+import { safeJsonStringify } from '@/lib/safeJson'
 import { client } from '@/sanity/lib/client'
 import { urlFor } from '@/sanity/lib/image'
 import { relatedPostsQuery, settingsQuery } from '@/sanity/lib/queries'
@@ -53,6 +54,15 @@ export async function generateMetadata(
       title,
       description,
       url: canonical,
+      siteName: 'Overbound Race',
+      locale: 'fr_FR',
+      type: 'article',
+      images: ogImageUrl ? [ogImageUrl] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
       images: ogImageUrl ? [ogImageUrl] : undefined,
     },
   }
@@ -94,7 +104,7 @@ export default async function BlogPostPage(
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonStringify({
               '@context': 'https://schema.org',
               '@type': 'BlogPosting',
               headline: post.title,
@@ -110,7 +120,7 @@ export default async function BlogPostPage(
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonStringify({
               '@context': 'https://schema.org',
               '@type': 'BreadcrumbList',
               itemListElement: [

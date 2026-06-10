@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { AdminRegistration } from '@/types/Registration'
 import { Calendar, CheckCircle, Clock, DollarSign, Eye, Filter, Ticket, XCircle } from 'lucide-react'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 interface RegistrationCardProps {
   registration: AdminRegistration
@@ -47,6 +48,8 @@ function formatAmount(amount: number | null | undefined, currency: string | null
 }
 
 export function RegistrationCard({ registration, loadingId, onViewDocument, onOpenApproval }: RegistrationCardProps) {
+  const startTimeLabel = formatClockTimeParis(registration.start_time)
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -100,6 +103,21 @@ export function RegistrationCard({ registration, loadingId, onViewDocument, onOp
                   {new Date(registration.created_at).toLocaleDateString('fr-FR')}
                 </span>
               </div>
+              {startTimeLabel ? (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span>Départ {startTimeLabel}</span>
+                  {registration.assignment_constraint_breached ? (
+                    <Badge variant="destructive" className="text-xs">Hors préférence</Badge>
+                  ) : null}
+                </div>
+              ) : null}
+              {typeof registration.distance_min_km === 'number' && typeof registration.distance_ideal_km === 'number' ? (
+                <div className="flex items-center gap-2">
+                  <Ticket className="h-4 w-4 text-muted-foreground" />
+                  <span>DM {registration.distance_min_km} km / DI {registration.distance_ideal_km} km</span>
+                </div>
+              ) : null}
             </div>
 
             {registration.rejection_reason && (
@@ -110,7 +128,7 @@ export function RegistrationCard({ registration, loadingId, onViewDocument, onOp
           </div>
 
           <div className="flex flex-col gap-2">
-            {registration.document_url && (
+            {(registration.documents_count ?? (registration.document_url ? 1 : 0)) > 0 && (
               <Button variant="outline" size="sm" onClick={() => onViewDocument(registration)}>
                 <Eye className="h-4 w-4" />
               </Button>

@@ -4,6 +4,13 @@ export interface TicketDetailResponse {
   registration: {
     id: string
     qr_code_token: string | null
+    start_time?: string | null
+    wave_index?: number | null
+    wave_position?: number | null
+    wave_capacity?: number | null
+    distance_ideal_km?: number | null
+    distance_min_km?: number | null
+    assignment_constraint_breached?: boolean | null
     tickets: Array<{
       name: string | null
       events: Array<{
@@ -19,7 +26,10 @@ export interface TicketDetailResponse {
 export const TICKET_DETAIL_QUERY_KEY = (id: string) => ['account', 'ticket', id] as const
 
 const fetchTicketDetail = async (id: string): Promise<TicketDetailResponse> => {
-  const response = await fetch(`/api/account/tickets/${id}`, { cache: 'no-store' })
+  const response = await fetch(`/api/account/tickets/${id}`, { 
+    cache: 'no-store',
+    credentials: 'include', // Ensure cookies are sent with the request
+  })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}))
     throw new Error(payload.error || 'Billet introuvable')

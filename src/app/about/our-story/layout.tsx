@@ -1,14 +1,23 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Notre Histoire - L'aventure Overbound Race | À propos",
-  description: "Découvrez l'histoire d'Overbound, la première organisation 100% française qui révolutionne la course d'obstacles. De la création en 2025 aux innovations mondiales : difficulté modulaire et Ultra Arena backyard format.",
+  title: "Notre Histoire - Overbound Race | Créateurs du Backyard à Obstacles",
+  description: "Découvre l'histoire d'Overbound Race, créateur du premier backyard OCR au monde. De la vision à la Ultra Arena : comment nous révolutionnons la course à obstacles en France. Paris 2026.",
+  keywords: [
+    "overbound histoire",
+    "overbound race",
+    "création backyard OCR",
+    "backyard à obstacles origine",
+    "course obstacles paris",
+    "ultra arena histoire",
+    "OCR innovant france",
+  ],
   alternates: {
     canonical: 'https://overbound-race.com/about/our-story'
   },
   openGraph: {
-    title: "Notre Histoire - Overbound Race",
-    description: "L'histoire d'une organisation OCR qui révolutionne la course d'obstacles en Europe.",
+    title: "Notre Histoire | Overbound Race - Créateurs du Backyard à Obstacles",
+    description: "L'histoire d'Overbound : de la vision au premier backyard OCR au monde. Course à obstacles Paris 2026.",
     url: 'https://overbound-race.com/about/our-story',
     siteName: 'Overbound Race',
     images: [
@@ -16,7 +25,7 @@ export const metadata: Metadata = {
         url: '/images/images/overbound-headband-on-chains-with-grass-in-background.avif',
         width: 1200,
         height: 630,
-        alt: 'Bandeau Overbound sur chaînes'
+        alt: 'Overbound Race - Créateurs du Backyard à Obstacles'
       }
     ],
     locale: 'fr_FR',
@@ -24,8 +33,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Notre Histoire - Overbound Race",
-    description: "Comment Overbound est devenue la référence OCR en Europe.",
+    title: "Notre Histoire | Overbound Race",
+    description: "Découvre comment Overbound a créé le premier backyard OCR au monde.",
     images: ['/images/images/overbound-headband-on-chains-with-grass-in-background.avif'],
   }
 };

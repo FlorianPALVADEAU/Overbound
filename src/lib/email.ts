@@ -8,10 +8,12 @@ import DocumentRequiredEmail from '@/emails/DocumentRequiredEmail'
 import DocumentApprovedEmail from '@/emails/DocumentApprovedEmail'
 import DocumentRejectedEmail from '@/emails/DocumentRejectedEmail'
 import NewEventAnnouncementEmail from '@/emails/NewEventAnnouncementEmail'
+import EventOpeningEmail from '@/emails/EventOpeningEmail'
 import PriceChangeReminderEmail from '@/emails/PriceChangeReminderEmail'
 import PromoCampaignEmail from '@/emails/PromoCampaignEmail'
 import InactiveUserEmail from '@/emails/InactiveUserEmail'
 import AbandonedCheckoutEmail from '@/emails/AbandonedCheckoutEmail'
+import ReceiptEmail from '@/emails/ReceiptEmail'
 import { EventUpdateEmail } from '@/emails/EventUpdateEmail'
 import AdminDigestEmail from '@/emails/AdminDigestEmail'
 import VolunteerRecruitmentEmail from '@/emails/VolunteerRecruitmentEmail'
@@ -35,6 +37,7 @@ export async function sendTicketEmail(params: {
   eventDate: string
   eventLocation: string
   ticketName: string
+  startTime?: string | null
   qrUrl: string
   manageUrl: string
 }) {
@@ -44,6 +47,38 @@ export async function sendTicketEmail(params: {
     from: UNFORMAL_FROM,
     to: params.to,
     subject: `Ton billet — ${params.eventTitle}`,
+    html,
+  })
+}
+
+export async function sendReceiptEmail(params: {
+  to: string
+  fullName?: string | null
+  invoiceNumber: string
+  invoiceDate: string
+  eventName: string
+  items: Array<{
+    description: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }>
+  subtotal: number
+  discount?: number
+  discountLabel?: string
+  tax?: number
+  total: number
+  currency?: string
+  paymentMethod: string
+  billingAddress?: string
+  invoiceUrl?: string
+}) {
+  const html = await renderEmail(ReceiptEmail(params))
+
+  return resend.emails.send({
+    from: FORMAL_FROM,
+    to: params.to,
+    subject: `Reçu de paiement — ${params.eventName}`,
     html,
   })
 }
@@ -139,6 +174,23 @@ export async function sendDocumentRequiredEmail(params: {
     from: FORMAL_FROM,
     to: params.to,
     subject: `Document requis pour ${params.eventTitle}`,
+    html,
+  })
+}
+
+export async function sendDocumentUploadReminderEmail(params: {
+  to: string
+  participantName?: string | null
+  eventTitle: string
+  uploadUrl: string
+  requiredDocuments: string[]
+}) {
+  const html = await renderEmail(DocumentRequiredEmail(params))
+
+  return resend.emails.send({
+    from: FORMAL_FROM,
+    to: params.to,
+    subject: `C’est le moment d’envoyer tes documents — ${params.eventTitle}`,
     html,
   })
 }
@@ -264,6 +316,39 @@ export async function sendNewEventAnnouncementEmail(params: {
     from: UNFORMAL_FROM,
     to: params.to,
     subject: `Nouveau : ${params.eventTitle}`,
+    html,
+    headers: unsubscribeUrl
+      ? {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        }
+      : undefined,
+  })
+}
+
+export async function sendEventOpeningEmail(params: {
+  to: string
+  fullName?: string | null
+  userId?: string
+  eventTitle: string
+  eventDate: string
+  eventLocation: string
+  eventUrl: string
+  heroImageUrl?: string
+  offerTitle?: string
+  offerDescription?: string
+}) {
+  const { generateUnsubscribeUrl } = await import('@/lib/email/unsubscribe')
+  const unsubscribeUrl = params.userId
+    ? generateUnsubscribeUrl(params.userId, params.to)
+    : undefined
+
+  const html = await renderEmail(EventOpeningEmail(params))
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    subject: `Inscriptions ouvertes — ${params.eventTitle}`,
     html,
     headers: unsubscribeUrl
       ? {

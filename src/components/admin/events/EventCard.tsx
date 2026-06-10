@@ -21,6 +21,8 @@ function getStatusBadgeVariant(status: Event['status']) {
   switch (status) {
     case 'draft':
       return 'secondary' as const
+    case 'announced':
+      return 'secondary' as const
     case 'on_sale':
       return 'default' as const
     case 'sold_out':
@@ -36,6 +38,8 @@ function getStatusLabel(status: Event['status']) {
   switch (status) {
     case 'draft':
       return 'Brouillon'
+    case 'announced':
+      return 'Ouvert (inscriptions à venir)'
     case 'on_sale':
       return 'En vente'
     case 'sold_out':

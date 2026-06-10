@@ -24,6 +24,8 @@ const getStatusColor = (status: string) => {
       return 'secondary'
     case 'draft':
       return 'outline'
+    case 'announced':
+      return 'secondary'
     default:
       return 'outline'
   }
@@ -39,6 +41,8 @@ const getStatusLabel = (status: string) => {
       return 'Inscriptions fermées'
     case 'draft':
       return 'Bientôt disponible'
+    case 'announced':
+      return 'Inscriptions à venir'
     default:
       return status
   }
@@ -157,10 +161,6 @@ export default function RaceDetailPage() {
 
   const race = data
   const nextEvent = upcomingEvents[0]
-  const remainingSpots =
-    nextEvent && typeof nextEvent.capacity === 'number'
-      ? Math.max(nextEvent.capacity - (nextEvent.registrations_count ?? 0), 0)
-      : null
   const obstacleCount = race.obstacles?.length ?? 0
   const difficultyLabel =
     race.difficulty <= 3
@@ -350,13 +350,10 @@ export default function RaceDetailPage() {
                   <MapPin className="h-4 w-4 text-primary" />
                   <span>{nextEvent.location}</span>
                 </div>
-                {remainingSpots !== null ? (
-                  <div className="mt-6 rounded-2xl bg-background/70 p-4 ring-1 ring-border backdrop-blur">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Places disponibles</p>
-                    <p className="mt-1 text-3xl font-bold text-primary">{remainingSpots}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">sur {nextEvent.capacity} places</p>
-                  </div>
-                ) : null}
+                <div className="mt-6 rounded-2xl bg-background/70 p-4 ring-1 ring-border backdrop-blur">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Inscriptions</p>
+                  <p className="mt-1 text-base font-semibold text-primary">Places limitées</p>
+                </div>
                 <Button className="mt-6 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90" asChild>
                   <Link href={`/events/${nextEvent.id}`}>S&apos;inscrire maintenant</Link>
                 </Button>
@@ -412,7 +409,7 @@ export default function RaceDetailPage() {
                       </p>
                       <p>
                         <span className="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 2km
-                        avec 15+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé.
+                        avec 10+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé.
                         Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu'à ce qu'il ne reste
                         qu'un seul concurrent.
                       </p>
@@ -1061,11 +1058,6 @@ export default function RaceDetailPage() {
             ) : upcomingEvents.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {upcomingEvents.map((event) => {
-                  const eventRemaining =
-                    typeof event.capacity === 'number'
-                      ? Math.max(event.capacity - (event.registrations_count ?? 0), 0)
-                      : null
-
                   return (
                     <div
                       key={event.id}
@@ -1085,8 +1077,8 @@ export default function RaceDetailPage() {
                         </div>
                       </div>
                       <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
-                        <span>Capacité {event.capacity}</span>
-                        <span>{eventRemaining !== null ? `${eventRemaining} places restantes` : 'Places limitées'}</span>
+                        <span>Capacité limitée</span>
+                        <span>Places limitées</span>
                       </div>
                       <Button className="mt-6 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90" asChild>
                         <Link href={`/events/${event.id}`}>Voir l&apos;événement</Link>

@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import Headings from '../globals/Headings'

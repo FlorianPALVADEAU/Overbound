@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield, CheckCircle2, Settings } from 'lucide-react'
 import { COMPANY_INFO } from '@/constants/companyInfo'
+import { ConsentReset } from '@/components/consent/ConsentReset'
 
-const lastUpdated = '27/11/2024'
+const lastUpdated = '10/02/2026'
 
 const COOKIE_CATEGORIES = [
   {
@@ -46,6 +47,13 @@ const COOKIE_CATEGORIES = [
         duration: '1 an',
         type: 'Cookie HTTP + LocalStorage',
       },
+      {
+        name: '_ga, _ga_*',
+        purpose: 'Mesure d’audience et statistiques d’usage du site',
+        provider: 'Google Analytics',
+        duration: '13 mois',
+        type: 'Cookie HTTP',
+      },
     ],
   },
 ]
@@ -61,7 +69,7 @@ export default function CookiesPage() {
             Comment nous utilisons les cookies et technologies similaires sur Overbound
           </p>
           <p className="text-sm text-muted-foreground">
-            Dernière mise à jour : <time dateTime="2024-11-27">{lastUpdated}</time>
+            Dernière mise à jour : <time dateTime="2026-02-10">{lastUpdated}</time>
           </p>
         </div>
 
@@ -158,6 +166,10 @@ export default function CookiesPage() {
           })}
         </div>
 
+        <div className="mb-12">
+          <ConsentReset />
+        </div>
+
         {/* Cookie management */}
         <div className="prose prose-sm mb-12 max-w-none dark:prose-invert sm:prose lg:prose-lg">
           <section className="mb-12">
@@ -218,6 +230,7 @@ export default function CookiesPage() {
               <li>Conserver vos préférences d'affichage (thème sombre/clair)</li>
               <li>Améliorer les performances en mettant en cache certaines données</li>
               <li>Détecter et diagnostiquer les erreurs techniques (Sentry)</li>
+              <li>Enregistrer votre choix de consentement aux cookies d’audience</li>
             </ul>
             <p>
               Ces données sont stockées localement sur votre appareil et ne sont pas transmises à des tiers, sauf pour

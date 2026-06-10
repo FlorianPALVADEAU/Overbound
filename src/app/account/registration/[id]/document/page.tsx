@@ -62,17 +62,38 @@ export default function RegistrationDocumentPage() {
   const registration = data.registration
 
   if (!registration.ticket.requires_document) {
-    router.replace(`/account/ticket/${registration.id}`)
+    router.replace(`/account/tickets?ticket=${registration.id}`)
     return null
   }
 
-  const currentDocument = registration.document_url
-    ? {
-        url: registration.document_url,
-        filename: registration.document_filename || 'Document',
-        size: registration.document_size || 0,
-      }
-    : undefined
+  const existingDocuments = Array.isArray((registration as any).documents)
+    ? (registration as any).documents.map((doc: any) => ({
+        id: doc.id,
+        url: doc.document_url,
+        filename: doc.document_filename,
+        size: doc.document_size,
+        documentType: doc.document_type,
+        status: doc.status,
+        rejectionReason: doc.rejection_reason ?? null,
+      }))
+    : []
+
+  const requiredDocumentTypes = registration.ticket.document_types || []
+  const requiredCount = requiredDocumentTypes.length > 0 ? requiredDocumentTypes.length : 1
+  const uploadedCount = existingDocuments.length
+  const isPpsType = (value: string) => value.toLowerCase().includes('pps')
+  const ppsAvailableDate = (() => {
+    if (!registration.event?.date) return null
+    const eventDate = new Date(registration.event.date)
+    if (Number.isNaN(eventDate.getTime())) return null
+    const available = new Date(eventDate)
+    available.setMonth(available.getMonth() - 3)
+    return available
+  })()
+  const ppsBlocked = Boolean(ppsAvailableDate && Date.now() < ppsAvailableDate.getTime())
+  const isPpsOnlyRequirement =
+    requiredDocumentTypes.length > 0 && requiredDocumentTypes.every((docType: string) => isPpsType(docType))
+  const showPpsNotOpenYet = uploadedCount === 0 && isPpsOnlyRequirement && ppsBlocked
 
   return (
     <main className="min-h-screen bg-muted/30">
@@ -86,8 +107,8 @@ export default function RegistrationDocumentPage() {
           </Link>
           <div className="text-right text-xs text-muted-foreground md:text-sm">
             Besoin d’aide ? Écris-nous à{' '}
-            <a href="mailto:support@overbound-race.fr" className="font-medium text-foreground underline">
-              support@overbound-race.fr
+            <a href="mailto:contact@overbound-race.com" className="font-medium text-foreground underline">
+              contact@overbound-race.com
             </a>
           </div>
         </div>
@@ -102,6 +123,9 @@ export default function RegistrationDocumentPage() {
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground md:text-base">
             Nous avons besoin d’un document valide pour confirmer ta participation. Téléverse-le en
             quelques secondes, puis laisse notre équipe le valider.
+          </p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Documents reçus : {Math.min(uploadedCount, requiredCount)}/{requiredCount}
           </p>
         </div>
 
@@ -166,6 +190,22 @@ export default function RegistrationDocumentPage() {
                       <AlertCircle className="h-3 w-3" />
                       Document rejeté — merci de déposer un nouveau fichier.
                     </span>
+                  ) : showPpsNotOpenYet ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <AlertCircle className="h-3 w-3" />
+                      PPS à déposer à partir du{' '}
+                      {ppsAvailableDate?.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                      .
+                    </span>
+                  ) : uploadedCount === 0 ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <AlertCircle className="h-3 w-3" />
+                      Document à déposer.
+                    </span>
                   ) : (
                     <span className="flex items-center gap-1 text-amber-600">
                       <AlertCircle className="h-3 w-3" />
@@ -186,10 +226,11 @@ export default function RegistrationDocumentPage() {
             <CardContent className="p-6">
               <DocumentUpload
                 registrationId={registration.id}
-                existingDocument={currentDocument}
+                existingDocuments={existingDocuments}
                 status={registration.approval_status as 'pending' | 'approved' | 'rejected'}
                 rejectionReason={registration.rejection_reason}
-                requiredTypes={registration.ticket.document_types || []}
+                requiredTypes={requiredDocumentTypes}
+                eventDate={registration.event?.date ?? null}
                 onUploaded={() => refetch()}
               />
             </CardContent>

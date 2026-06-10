@@ -1,27 +1,33 @@
 'use client'
 
+import { safeJsonStringify } from '@/lib/safeJson'
+
 export function OrganizationStructuredData() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SportsOrganization",
     "name": "Overbound Race",
+    "alternateName": ["Overbound", "Overbound OCR", "Backyard à Obstacles"],
     "url": process.env.NEXT_PUBLIC_SITE_URL || "https://overbound-race.com",
     "logo": `${process.env.NEXT_PUBLIC_SITE_URL || "https://overbound-race.com"}/images/LOGO_FULL.webp`,
-    "description": "Première course d'obstacles (OCR) à parcours personnalisables en France. Événements sportifs en Normandie.",
+    "description": "Overbound Race : première course à obstacles format backyard en France. Course obstacles Paris 2026, OCR personnalisable. Choisis ta distance et ta difficulté.",
     "email": "contact@overbound-race.com",
+    "areaServed": {
+      "@type": "Place",
+      "name": "Paris et Île-de-France"
+    },
     "sameAs": [
-      // Ajoutez vos réseaux sociaux ici
       "https://www.facebook.com/overbound.race/",
       "https://www.instagram.com/overbound.race/",
-      // "https://www.youtube.com/@overbound"
     ],
-    "sport": "Obstacle Course Racing"
+    "sport": "Obstacle Course Racing",
+    "keywords": "course à obstacles paris, backyard à obstacles, OCR france 2026, overbound race"
   }
 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -60,7 +66,7 @@ export function EventStructuredData({ event }: { event: any }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -95,7 +101,7 @@ export function BlogPostStructuredData({ post }: { post: any }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }
@@ -115,29 +121,53 @@ export function BreadcrumbStructuredData({ items }: { items: Array<{ name: strin
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
+}
+
+function extractTextFromPortableText(blocks: any[]): string {
+  if (!blocks || !Array.isArray(blocks)) return ''
+
+  return blocks
+    .filter((block) => block._type === 'block')
+    .map((block) => {
+      if (block.children && Array.isArray(block.children)) {
+        return block.children
+          .filter((child: any) => child._type === 'span')
+          .map((child: any) => child.text || '')
+          .join('')
+      }
+      return ''
+    })
+    .filter(Boolean)
+    .join(' ')
 }
 
 export function FAQPageStructuredData({ faqs }: { faqs: Array<{ title: string; shortAnswer?: string; answer?: any }> }) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqs.map((faq) => ({
-      "@type": "Question",
-      "name": faq.title,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.shortAnswer || (faq.answer ? "Voir la réponse complète sur notre site." : "")
+    "mainEntity": faqs.map((faq) => {
+      const answerText = faq.answer
+        ? extractTextFromPortableText(faq.answer)
+        : faq.shortAnswer || ''
+
+      return {
+        "@type": "Question",
+        "name": faq.title,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": answerText || faq.shortAnswer || ''
+        }
       }
-    }))
+    })
   }
 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(structuredData) }}
     />
   )
 }

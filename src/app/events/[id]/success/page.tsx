@@ -1,12 +1,11 @@
 'use client'
-
-/* eslint-disable react/no-unescaped-entities */
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSearchParams, useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   CheckCircle,
   Calendar,
+  Clock,
   MapPin,
   Mail,
   Download,
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventSuccess } from '@/app/api/events/[id]/success/successQueries'
+import { formatClockTimeParis } from '@/lib/dateTime'
 
 const formatPrice = (priceInCents: number, currency: string) =>
   (priceInCents / 100).toLocaleString('fr-FR', {
@@ -37,19 +37,78 @@ export default function EventSuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const sessionId = searchParams?.get('session_id') ?? ''
-  const hasSessionId = Boolean(sessionId)
+  const paymentIntentId = searchParams?.get('payment_intent') ?? ''
+  const registrationId = searchParams?.get('registration_id') ?? ''
+  const hasReference = Boolean(sessionId || paymentIntentId || registrationId)
   const { data: session, isLoading: sessionLoading } = useSession()
-  const { data, isLoading, error, refetch } = useEventSuccess(params.id, sessionId, {
-    enabled: Boolean(session?.user) && hasSessionId,
+  const purchaseTrackedRef = useRef(false)
+  const { data, isLoading, error, refetch } = useEventSuccess(params.id, {
+    sessionId,
+    paymentIntentId,
+    registrationId,
+  }, {
+    enabled: Boolean(session?.user) && hasReference,
   })
 
   useEffect(() => {
-    if (!hasSessionId) {
+    const registration = data?.registration
+    if (!registration || purchaseTrackedRef.current) return
+    purchaseTrackedRef.current = true
+
+    const analyticsWindow = window as Window & {
+      dataLayer?: Array<Record<string, unknown>>
+      gtag?: (...args: unknown[]) => void
+      fbq?: (...args: unknown[]) => void
+    }
+
+    const value = Number((registration.order.amount_total / 100).toFixed(2))
+    const currency = registration.order.currency.toUpperCase()
+    const transactionId = registration.order.id
+    const eventId = `purchase_${transactionId}`
+
+    analyticsWindow.dataLayer?.push({
+      event: 'purchase',
+      transaction_id: transactionId,
+      value,
+      currency,
+      event_slug: registration.event.slug,
+      event_id: registration.event.id,
+    })
+
+    analyticsWindow.gtag?.('event', 'purchase', {
+      transaction_id: transactionId,
+      value,
+      currency,
+      items: [
+        {
+          item_id: registration.ticket.id,
+          item_name: registration.ticket.name,
+          item_category: 'event_ticket',
+        },
+      ],
+    })
+
+    analyticsWindow.fbq?.(
+      'track',
+      'Purchase',
+      {
+        value,
+        currency,
+        content_name: registration.event.title,
+        content_ids: [registration.ticket.id],
+        content_type: 'product',
+      },
+      { eventID: eventId },
+    )
+  }, [data?.registration])
+
+  useEffect(() => {
+    if (!hasReference) {
       router.replace(`/events/${params.id}`)
     }
-  }, [hasSessionId, params.id, router])
+  }, [hasReference, params.id, router])
 
-  if (!hasSessionId) {
+  if (!hasReference) {
     return null
   }
 
@@ -80,6 +139,8 @@ export default function EventSuccessPage() {
   }
 
   const { registration } = data
+  const startTimeLabel = formatClockTimeParis(registration.start_time)
+  const assignmentBreached = Boolean(registration.assignment_constraint_breached)
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-green-50 via-background to-green-50/30 dark:from-green-950/20 dark:via-background dark:to-green-950/10">
@@ -145,6 +206,12 @@ export default function EventSuccessPage() {
                     <MapPin className="h-4 w-4 text-primary" />
                     <span>{registration.event.location}</span>
                   </div>
+                  {startTimeLabel ? (
+                    <div className="flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-primary" />
+                      <span>Départ prévu : {startTimeLabel}</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -216,8 +283,18 @@ export default function EventSuccessPage() {
                   Pensez à télécharger votre billet, préparer vos documents si nécessaires et arriver en
                   avance le jour J.
                 </p>
+                {startTimeLabel ? (
+                  <p>
+                    Votre départ est prévu à {startTimeLabel}. Présentez-vous au minimum 1h avant.
+                  </p>
+                ) : null}
+                {assignmentBreached ? (
+                  <p className="text-amber-700">
+                    Ce créneau a été attribué en dehors de votre préférence pour garantir une place.
+                  </p>
+                ) : null}
                 <div className="flex gap-2">
-                  <Link href={`/account/ticket/${registration.id}`}>
+                  <Link href={`/account/tickets?ticket=${registration.id}`}>
                     <Button size="sm">
                       <QrCode className="mr-2 h-4 w-4" /> Voir mon billet
                     </Button>

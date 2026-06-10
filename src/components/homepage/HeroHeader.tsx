@@ -1,27 +1,74 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import AnimatedBanner from "./AnimatedBanner";
 import { PARTNERS_DATA } from "@/datas/Partners";
 
 export const HeroHeader = () => {
+    const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+
+    useEffect(() => {
+        const isMobileViewport = window.matchMedia("(max-width: 768px)").matches;
+        const connection = (navigator as Navigator & {
+            connection?: { saveData?: boolean; effectiveType?: string };
+        }).connection;
+
+        const isConstrainedNetwork = Boolean(
+            connection?.saveData ||
+            connection?.effectiveType === "slow-2g" ||
+            connection?.effectiveType === "2g" ||
+            connection?.effectiveType === "3g"
+        );
+
+        if (isMobileViewport || isConstrainedNetwork) {
+            setShouldLoadVideo(false);
+            return;
+        }
+
+        const requestIdle = globalThis.requestIdleCallback;
+        const cancelIdle = globalThis.cancelIdleCallback;
+
+        if (typeof requestIdle === "function" && typeof cancelIdle === "function") {
+            const idleHandle = requestIdle(
+                () => setShouldLoadVideo(true),
+                { timeout: 2500 }
+            );
+
+            return () => {
+                cancelIdle(idleHandle);
+            };
+        }
+
+        const timeoutHandle = globalThis.setTimeout(() => setShouldLoadVideo(true), 1800);
+        return () => {
+            globalThis.clearTimeout(timeoutHandle);
+        };
+    }, []);
+
     return (
         <>
             <section className="relative w-full h-[75vh] overflow-hidden">
-                <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
-                    poster="/images/hero_header_poster.avif"
-                    className="absolute top-0 left-0 w-full h-full object-cover"
-                >
-                    <source src="/videos/hero_header_video.webm" type="video/webm" />
-                    <source src="/videos/hero_header_video.mp4" type="video/mp4" />
-                    Ton navigateur ne supporte pas les vidéos HTML5.
-                </video>
+                {shouldLoadVideo ? (
+                    <video
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        poster="/images/hero_header_poster.avif"
+                        className="absolute top-0 left-0 w-full h-full object-cover"
+                    >
+                        <source src="/videos/hero_header_video.webm" type="video/webm" />
+                        <source src="/videos/hero_header_video.mp4" type="video/mp4" />
+                        Ton navigateur ne supporte pas les vidéos HTML5.
+                    </video>
+                ) : (
+                    <div
+                        className="absolute top-0 left-0 w-full h-full bg-cover bg-center"
+                        style={{ backgroundImage: "url('/images/hero_header_poster.avif')" }}
+                    />
+                )}
 
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-black/40" />
@@ -33,12 +80,12 @@ export const HeroHeader = () => {
                             Relève le défi ultime.
                         </h1>
                         <p className="text-lg md:text-2xl max-w-2xl mb-6 text-left">
-                            La première course d'obstacles au monde où tu peux choisir ton propre parcours.
+                            La première course d'obstacles format backyard au monde. La limite, c'est toi. 
                         </p>
                     </div>
                     <div className="flex flex-col items-start gap-2">
                         <Button className="w-full sm:w-48 md:w-48 lg:w-64 h-12 sm:h-12 md:h-12 lg:h-16 bg-red-600 hover:bg-red-700 text-lg sm:text-xl font-semibold">
-                            <Link href="/events" className="w-full h-full flex items-center justify-center">Je m'inscris maintenant</Link>
+                            <Link href="/events/ultra-arena-2026" className="w-full h-full flex items-center justify-center">Je m'inscris maintenant</Link>
                         </Button>
                         <p className="text-sm text-gray-300 italic">Déjà 50+ avis positifs récoltés !</p>
                     </div>

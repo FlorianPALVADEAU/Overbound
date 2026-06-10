@@ -8,6 +8,7 @@ export interface Event {
   title: string
   subtitle?: string | null
   date: Timestamp
+  sales_start?: Timestamp | null
   location: string
   latitude?: number | null
   longitude?: number | null

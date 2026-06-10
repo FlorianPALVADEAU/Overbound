@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
 
 interface EmailItem {
   type: string
@@ -38,6 +41,7 @@ const EMAIL_GROUPS: Array<{
     description: 'Emails envoyés pour animer la communauté et booster les conversions.',
     items: [
       { type: 'marketing_new_event', label: 'Annonce nouvel événement', description: 'Annonce d’un événement ouvrant ses inscriptions.', tone: 'marketing' },
+      { type: 'event_opening', label: 'Ouverture inscriptions', description: 'Prévenir qu’un événement vient d’ouvrir.', tone: 'marketing' },
       { type: 'marketing_price_change', label: 'Rappel changement de prix', description: 'Dernier rappel avant hausse tarifaire.', tone: 'marketing' },
       { type: 'marketing_promo', label: 'Campagne promo', description: 'Mise en avant d’une offre spéciale.', tone: 'marketing' },
       { type: 'reactivation_inactive', label: 'Réactivation inactifs', description: 'Relance d’un utilisateur inactif.', tone: 'marketing' },
@@ -59,12 +63,247 @@ const EMAIL_GROUPS: Array<{
       { type: 'admin_digest', label: 'Digest admin', description: 'Résumé des actions/récentes erreurs.', tone: 'admin' },
     ],
   },
+  {
+    title: 'Ambassadeurs (mock)',
+    description: 'Simulations des emails ambassadeur (récompense débloquée / statut).',
+    items: [
+      { type: 'ambassador_reward_earned', label: 'Palier débloqué', description: 'Simulation email palier atteint.', tone: 'transactional' },
+      { type: 'ambassador_reward_status', label: 'Statut récompense', description: 'Simulation email mise à jour statut.', tone: 'transactional' },
+    ],
+  },
 ]
 
 type TriggerStatus = 'idle' | 'loading' | 'success' | 'error'
 
+interface OpeningAudienceRecipient {
+  email: string
+  fullName?: string | null
+  sources: string[]
+}
+
+interface OpeningAudienceStats {
+  totalUnique: number
+  totalEntries: number
+  duplicatesCollapsed: number
+  invalidEmailSkipped: number
+  sourceCounts: {
+    auth: number
+    list_subscriptions: number
+    resend_audience?: number
+  }
+}
+
+interface DryRunPayload {
+  message?: string
+  total?: number
+  estimatedBatches?: number
+  batchSize?: number
+  dryRunToken?: string
+}
+
 export function AdminEmailPlayground() {
   const [statusMap, setStatusMap] = useState<Record<string, { state: TriggerStatus; message?: string }>>({})
+  const [receiptPaymentIntentId, setReceiptPaymentIntentId] = useState('')
+  const [receiptStatus, setReceiptStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [pushStatus, setPushStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [audienceStatus, setAudienceStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [campaignStatus, setCampaignStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [dryRunStatus, setDryRunStatus] = useState<{ state: TriggerStatus; message?: string }>({
+    state: 'idle',
+  })
+  const [dryRunToken, setDryRunToken] = useState<string | null>(null)
+  const [campaignReport, setCampaignReport] = useState<{
+    total?: number
+    sent?: number
+    failed?: number
+    failures?: Array<{ email: string; error: string }>
+  } | null>(null)
+  const [openingAudience, setOpeningAudience] = useState<{
+    total: number
+    recipients: OpeningAudienceRecipient[]
+    stats?: OpeningAudienceStats
+  } | null>(null)
+
+  const fetchOpeningAudience = async () => {
+    setAudienceStatus({ state: 'loading' })
+    try {
+      const response = await fetch('/api/admin/emails/registration-opening', { cache: 'no-store' })
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        total?: number
+        recipients?: OpeningAudienceRecipient[]
+        audienceStats?: OpeningAudienceStats
+      }
+      if (!response.ok) {
+        throw new Error(payload.error || 'Impossible de charger les destinataires.')
+      }
+      setOpeningAudience({
+        total: payload.total ?? 0,
+        recipients: payload.recipients ?? [],
+        stats: payload.audienceStats,
+      })
+      setDryRunToken(null)
+      setDryRunStatus({ state: 'idle' })
+      setAudienceStatus({ state: 'success', message: `${payload.total ?? 0} adresse(s) unique(s).` })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setAudienceStatus({ state: 'error', message })
+    }
+  }
+
+  const sendOpeningCampaign = async (mode: 'self' | 'all') => {
+    if (mode === 'all') {
+      if (!dryRunToken) {
+        setCampaignStatus({
+          state: 'error',
+          message: "Validation requise: clique d'abord sur 'Valider la campagne (sans envoi)'.",
+        })
+        return
+      }
+      const confirmed = window.confirm(
+        "Confirmer l'envoi à toute l'audience unique (comptes + listes de diffusion) ?",
+      )
+      if (!confirmed) {
+        return
+      }
+    }
+
+    setCampaignStatus({ state: 'loading' })
+    setCampaignReport(null)
+    try {
+      const response = await fetch('/api/admin/emails/registration-opening', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, ...(mode === 'all' ? { dryRunToken } : {}) }),
+      })
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        message?: string
+        total?: number
+        sent?: number
+        failed?: number
+        failures?: Array<{ email: string; error: string }>
+      }
+      if (!response.ok) {
+        setCampaignReport({
+          total: payload.total,
+          sent: payload.sent,
+          failed: payload.failed,
+          failures: payload.failures,
+        })
+        throw new Error(payload.error || 'Envoi impossible.')
+      }
+      setCampaignReport({
+        total: payload.total,
+        sent: payload.sent,
+        failed: payload.failed,
+        failures: payload.failures,
+      })
+      setCampaignStatus({ state: 'success', message: payload.message || 'Envoi terminé.' })
+      if (mode === 'all') {
+        setDryRunToken(null)
+        setDryRunStatus({ state: 'idle' })
+      }
+      if (!openingAudience) {
+        void fetchOpeningAudience()
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setCampaignStatus({ state: 'error', message })
+    }
+  }
+
+  const runOpeningDryRun = async () => {
+    setDryRunStatus({ state: 'loading' })
+    setCampaignStatus({ state: 'idle' })
+    setCampaignReport(null)
+    try {
+      const response = await fetch('/api/admin/emails/registration-opening', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'dry_run' }),
+      })
+      const payload = (await response.json().catch(() => ({}))) as DryRunPayload & { error?: string }
+      if (!response.ok) {
+        throw new Error(payload.error || 'Validation dry-run impossible.')
+      }
+      const token = payload.dryRunToken ?? null
+      setDryRunToken(token)
+      setDryRunStatus({
+        state: 'success',
+        message:
+          payload.message ||
+          `Dry-run OK: ${payload.total ?? 0} destinataire(s), ${payload.estimatedBatches ?? 0} batch(es).`,
+      })
+    } catch (error) {
+      setDryRunToken(null)
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setDryRunStatus({ state: 'error', message })
+    }
+  }
+
+  const registerPush = async () => {
+    setPushStatus({ state: 'loading' })
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        throw new Error('Web Push n’est pas supporté sur ce navigateur.')
+      }
+      if (!VAPID_PUBLIC_KEY) {
+        throw new Error('Clé VAPID publique manquante.')
+      }
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        throw new Error('Permission refusée.')
+      }
+
+      await navigator.serviceWorker.register('/sw.js')
+      const registration = await navigator.serviceWorker.ready
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+
+      const response = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Impossible de sauvegarder l’abonnement.')
+      }
+
+      setPushStatus({ state: 'success', message: 'Notifications activées.' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue'
+      setPushStatus({ state: 'error', message })
+    }
+  }
+
+  const testPush = async () => {
+    setPushStatus({ state: 'loading' })
+    try {
+      const response = await fetch('/api/push/test', { method: 'POST' })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error || 'Envoi impossible')
+      }
+      setPushStatus({ state: 'success', message: 'Notification envoyée.' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue'
+      setPushStatus({ state: 'error', message })
+    }
+  }
 
   const triggerEmail = async (type: string) => {
     setStatusMap((prev) => ({ ...prev, [type]: { state: 'loading' } }))
@@ -92,6 +331,34 @@ export function AdminEmailPlayground() {
     }
   }
 
+  const triggerReceipt = async () => {
+    if (!receiptPaymentIntentId) {
+      setReceiptStatus({ state: 'error', message: 'PaymentIntent manquant (ex: pi_...)' })
+      return
+    }
+
+    setReceiptStatus({ state: 'loading' })
+
+    try {
+      const response = await fetch('/api/admin/emails/receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: receiptPaymentIntentId }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string }
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Envoi impossible')
+      }
+
+      setReceiptStatus({ state: 'success', message: 'Reçu renvoyé.' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue'
+      setReceiptStatus({ state: 'error', message })
+    }
+  }
+
   const getBadgeVariant = (tone: EmailItem['tone']) => {
     switch (tone) {
       case 'marketing':
@@ -107,6 +374,60 @@ export function AdminEmailPlayground() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications téléphone (Web Push)</CardTitle>
+          <CardDescription>Active les notifications pour recevoir une alerte à chaque paiement validé.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button onClick={registerPush} disabled={pushStatus.state === 'loading'}>
+              {pushStatus.state === 'loading' ? 'Activation…' : 'Activer'}
+            </Button>
+            <Button variant="outline" onClick={testPush} disabled={pushStatus.state === 'loading'}>
+              Tester
+            </Button>
+          </div>
+          {pushStatus.state === 'error' && pushStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{pushStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {pushStatus.state === 'success' && pushStatus.message ? (
+            <Alert>
+              <AlertDescription>{pushStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Reçu de paiement</CardTitle>
+          <CardDescription>Renvoyer un reçu à partir d’un PaymentIntent Stripe.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <Input
+              value={receiptPaymentIntentId}
+              onChange={(event) => setReceiptPaymentIntentId(event.target.value)}
+              placeholder="PaymentIntent (ex: pi_...)"
+            />
+            <Button onClick={triggerReceipt} disabled={receiptStatus.state === 'loading'}>
+              {receiptStatus.state === 'loading' ? 'Envoi…' : 'Renvoyer'}
+            </Button>
+          </div>
+          {receiptStatus.state === 'error' && receiptStatus.message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{receiptStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+          {receiptStatus.state === 'success' && receiptStatus.message ? (
+            <Alert>
+              <AlertDescription>{receiptStatus.message}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
       {EMAIL_GROUPS.map((group) => (
         <Card key={group.title}>
           <CardHeader>
@@ -154,6 +475,17 @@ export function AdminEmailPlayground() {
       ))}
     </div>
   )
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
 }
 
 export default AdminEmailPlayground

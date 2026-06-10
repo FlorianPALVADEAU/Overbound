@@ -188,7 +188,10 @@ export function VolunteerCheckin() {
   }
 
   // Check-in manuel (utilise la même API)
-  const handleManualCheckin = async (registration: Registration) => {
+  const handleManualCheckin = async (
+    registration: Registration,
+    action: 'checkin' | 'undo' = 'checkin',
+  ) => {
     try {
       const response = await fetch('/api/checkin', {
         method: 'POST',
@@ -196,7 +199,8 @@ export function VolunteerCheckin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token: registration.qr_code_token
+          token: registration.qr_code_token,
+          action,
         })
       })
 
@@ -207,24 +211,29 @@ export function VolunteerCheckin() {
         return
       }
 
+      const nextCheckedIn = action === 'checkin'
       // Mettre à jour l'état local
       const updatedRegistrations = registrations.map(r =>
-        r.id === registration.id ? { ...r, checked_in: true } : r
+        r.id === registration.id ? { ...r, checked_in: nextCheckedIn } : r
       )
       
       setRegistrations(updatedRegistrations)
       setFilteredRegistrations(prev => 
-        prev.map(r => r.id === registration.id ? { ...r, checked_in: true } : r)
+        prev.map(r => r.id === registration.id ? { ...r, checked_in: nextCheckedIn } : r)
       )
       
       setStats(prev => (
-        registration.checked_in
-          ? prev
-          : {
+        action === 'checkin'
+          ? (registration.checked_in ? prev : {
               ...prev,
               checkedIn: prev.checkedIn + 1,
               pending: prev.pending > 0 ? prev.pending - 1 : 0,
-            }
+            })
+          : (!registration.checked_in ? prev : {
+              ...prev,
+              checkedIn: prev.checkedIn > 0 ? prev.checkedIn - 1 : 0,
+              pending: prev.pending + 1,
+            })
       ))
 
       setMessage({ type: 'success', text: data.message })
@@ -606,14 +615,22 @@ export function VolunteerCheckin() {
                         ) : null}
                         {!registration.checked_in ? (
                           <Button
-                            onClick={() => handleManualCheckin(registration)}
+                            onClick={() => handleManualCheckin(registration, 'checkin')}
                             variant="outline"
                             size="sm"
                           >
                             <UserCheck className="mr-1 h-4 w-4" />
                             Check-in
                           </Button>
-                        ) : null}
+                        ) : (
+                          <Button
+                            onClick={() => handleManualCheckin(registration, 'undo')}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Annuler check-in
+                          </Button>
+                        )}
                       </div>
                     </div>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { getEffectiveEventStatus } from '@/lib/events/registrationStatus'
 
 export async function GET() {
   const supabase = await createSupabaseServer()
@@ -35,5 +36,10 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  const eventsWithEffectiveStatus = (data ?? []).map((event) => ({
+    ...event,
+    status: getEffectiveEventStatus(event),
+  }))
+
+  return NextResponse.json(eventsWithEffectiveStatus)
 }

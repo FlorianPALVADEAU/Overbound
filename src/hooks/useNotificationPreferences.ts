@@ -42,7 +42,10 @@ export function useNotificationPreferences() {
         })
 
         if (!response.ok) {
-          throw new Error('Failed to update notification preferences')
+          const payload = await response.json().catch(() => ({}))
+          throw new Error(
+            payload?.error || payload?.message || 'Failed to update notification preferences'
+          )
         }
 
         const data = await response.json()

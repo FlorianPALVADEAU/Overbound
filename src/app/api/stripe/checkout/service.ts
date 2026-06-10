@@ -1,5 +1,7 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { stripeClient, respondJson } from '@/app/api/stripe/create-payment-intent/utils'
+import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
+import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 
 interface CheckoutPayload {
   ticketId: string
@@ -7,6 +9,14 @@ interface CheckoutPayload {
   userId: string
   userEmail: string
   participantName?: string
+}
+
+interface CheckoutTrackingContext {
+  clientIpAddress?: string | null
+  clientUserAgent?: string | null
+  fbp?: string | null
+  fbc?: string | null
+  eventSourceUrl?: string | null
 }
 
 const ensureAvailability = async (supabase: Awaited<ReturnType<typeof createSupabaseServer>>, eventId: string) => {
@@ -18,7 +28,10 @@ const ensureAvailability = async (supabase: Awaited<ReturnType<typeof createSupa
   return registrationCount || 0
 }
 
-export const createCheckoutSession = async (payload: CheckoutPayload) => {
+export const createCheckoutSession = async (
+  payload: CheckoutPayload,
+  trackingContext?: CheckoutTrackingContext,
+) => {
   const { ticketId, eventId, userId, userEmail, participantName } = payload
 
   if (!ticketId || !eventId || !userId) {
@@ -35,6 +48,7 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
         id,
         title,
         date,
+        sales_start,
         location,
         status,
         capacity
@@ -60,15 +74,32 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
     throw respondJson({ error: 'Événement complet' }, 409)
   }
 
-  if (ticket.event.status !== 'on_sale') {
+  if (!isEventOpenForRegistration(ticket.event)) {
     throw respondJson({ error: 'Inscriptions fermées' }, 409)
   }
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const fallbackEventUrl = `${base.replace(/\/$/, '')}/events/${eventId}`
+  const eventSourceUrl = trackingContext?.eventSourceUrl ?? fallbackEventUrl
 
   const session = await stripeClient.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
+    payment_intent_data: {
+      metadata: {
+        user_id: userId,
+        event_id: eventId,
+        ticket_id: ticketId,
+        participant_name: participantName || userEmail,
+        participant_email: userEmail,
+        event_title: ticket.event.title,
+        ticket_name: ticket.name,
+        race_id: ticket.race?.id || '',
+        fbp: trackingContext?.fbp || '',
+        fbc: trackingContext?.fbc || '',
+        event_source_url: eventSourceUrl,
+      },
+    },
     line_items: [
       {
         price_data: {
@@ -93,7 +124,38 @@ export const createCheckoutSession = async (payload: CheckoutPayload) => {
       event_id: eventId,
       ticket_id: ticketId,
       participant_name: participantName || userEmail,
+      participant_email: userEmail,
+      event_title: ticket.event.title,
+      ticket_name: ticket.name,
       race_id: ticket.race?.id || '',
+      fbp: trackingContext?.fbp || '',
+      fbc: trackingContext?.fbc || '',
+      event_source_url: eventSourceUrl,
+    },
+  })
+
+  const eventIdForMeta = `initiate_checkout_${session.id}`
+  const value = Number(((ticket.base_price_cents ?? 0) / 100).toFixed(2))
+  await sendMetaCapiEvent({
+    eventName: 'InitiateCheckout',
+    eventId: eventIdForMeta,
+    eventSourceUrl,
+    userData: {
+      email: userEmail,
+      externalId: userId,
+      clientIpAddress: trackingContext?.clientIpAddress ?? null,
+      clientUserAgent: trackingContext?.clientUserAgent ?? null,
+      fbp: trackingContext?.fbp ?? null,
+      fbc: trackingContext?.fbc ?? null,
+    },
+    customData: {
+      currency: ticket.currency?.toUpperCase() || 'EUR',
+      value,
+      content_name: `${ticket.event.title} - ${ticket.name}`,
+      content_ids: [ticketId],
+      content_type: 'product',
+      event_id: eventId,
+      ticket_id: ticketId,
     },
   })
 

@@ -1,7 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { randomUUID } from 'crypto'
 import type { NotificationPreferences, UpdateNotificationPreferencesData } from '@/types/NotificationPreferences'
+import {
+  getResendTopicPreferences,
+  mapSlugsToAudienceIds,
+  syncResendContactTopics,
+  subscribeResendContactToAudiences,
+  unsubscribeResendContactFromAudiences,
+} from '@/lib/email/resendAudiences'
 
 const updatePreferencesSchema = z.object({
   events_announcements: z.boolean().optional(),
@@ -12,6 +20,59 @@ const updatePreferencesSchema = z.object({
   digest_frequency: z.enum(['immediate', 'daily', 'weekly', 'never']).optional(),
 })
 
+const DEFAULT_NOTIFICATION_PREFERENCES: Omit<
+  NotificationPreferences,
+  'id' | 'user_id' | 'created_at' | 'updated_at'
+> = {
+  events_announcements: true,
+  price_alerts: true,
+  news_blog: false,
+  volunteers_opportunities: false,
+  partner_offers: false,
+  digest_frequency: 'immediate',
+  registration_confirmations: true,
+  ticket_updates: true,
+  account_security: true,
+}
+
+async function ensureNotificationPreferences(
+  supabase: ReturnType<typeof supabaseAdmin>,
+  userId: string
+): Promise<NotificationPreferences> {
+  const { data: existing, error: fetchError } = await supabase
+    .from('notification_preferences')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (fetchError) {
+    throw fetchError
+  }
+
+  if (existing) {
+    return existing as NotificationPreferences
+  }
+
+  const now = new Date().toISOString()
+  const { data: created, error: createError } = await supabase
+    .from('notification_preferences')
+    .insert({
+      id: randomUUID(),
+      user_id: userId,
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      created_at: now,
+      updated_at: now,
+    })
+    .select()
+    .single()
+
+  if (createError || !created) {
+    throw createError ?? new Error('Failed to create notification preferences')
+  }
+
+  return created as NotificationPreferences
+}
+
 /**
  * GET /api/notification-preferences
  * Get the authenticated user's notification preferences
@@ -19,6 +80,7 @@ const updatePreferencesSchema = z.object({
 export async function GET() {
   try {
     const supabase = await createClient()
+    const admin = supabaseAdmin()
 
     const {
       data: { user },
@@ -29,34 +91,46 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get or create preferences using the database function
-    const { data, error } = await supabase.rpc('get_or_create_notification_preferences', {
-      p_user_id: user.id,
-    })
+    let preferences = await ensureNotificationPreferences(admin, user.id)
 
-    if (error) {
-      console.error('Error fetching notification preferences:', error)
-      return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 })
-    }
+    // Source of truth for marketing toggles is Resend topics.
+    if (user.email) {
+      const resendTopicPrefs = await getResendTopicPreferences(user.email)
+      if (resendTopicPrefs) {
+        const nextValues = {
+          events_announcements: resendTopicPrefs.events_announcements ?? preferences.events_announcements,
+          price_alerts: resendTopicPrefs.price_alerts ?? preferences.price_alerts,
+          news_blog: resendTopicPrefs.news_blog ?? preferences.news_blog,
+          volunteers_opportunities:
+            resendTopicPrefs.volunteers_opportunities ?? preferences.volunteers_opportunities,
+          partner_offers: resendTopicPrefs.partner_offers ?? preferences.partner_offers,
+        }
 
-    // The RPC returns an array, get the first element
-    const rawPrefs = Array.isArray(data) ? data[0] : data
+        const changed =
+          nextValues.events_announcements !== preferences.events_announcements ||
+          nextValues.price_alerts !== preferences.price_alerts ||
+          nextValues.news_blog !== preferences.news_blog ||
+          nextValues.volunteers_opportunities !== preferences.volunteers_opportunities ||
+          nextValues.partner_offers !== preferences.partner_offers
 
-    // Map the renamed columns back to expected names
-    const preferences = {
-      id: rawPrefs.pref_id,
-      user_id: rawPrefs.pref_user_id,
-      events_announcements: rawPrefs.events_announcements,
-      price_alerts: rawPrefs.price_alerts,
-      news_blog: rawPrefs.news_blog,
-      volunteers_opportunities: rawPrefs.volunteers_opportunities,
-      partner_offers: rawPrefs.partner_offers,
-      digest_frequency: rawPrefs.digest_frequency,
-      registration_confirmations: rawPrefs.registration_confirmations,
-      ticket_updates: rawPrefs.ticket_updates,
-      account_security: rawPrefs.account_security,
-      created_at: rawPrefs.created_at,
-      updated_at: rawPrefs.updated_at,
+        if (changed) {
+          const { data: synced } = await admin
+            .from('notification_preferences')
+            .update(nextValues)
+            .eq('user_id', user.id)
+            .select()
+            .single()
+
+          if (synced) {
+            preferences = synced as NotificationPreferences
+          } else {
+            preferences = {
+              ...preferences,
+              ...nextValues,
+            }
+          }
+        }
+      }
     }
 
     return NextResponse.json(preferences)
@@ -73,6 +147,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient()
+    const admin = supabaseAdmin()
 
     const {
       data: { user },
@@ -87,12 +162,10 @@ export async function PATCH(request: Request) {
     const validatedData = updatePreferencesSchema.parse(body)
 
     // First, ensure preferences exist for this user
-    await supabase.rpc('get_or_create_notification_preferences', {
-      p_user_id: user.id,
-    })
+    await ensureNotificationPreferences(admin, user.id)
 
     // Update the preferences
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('notification_preferences')
       .update(validatedData as UpdateNotificationPreferencesData)
       .eq('user_id', user.id)
@@ -104,7 +177,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 })
     }
 
-    // Sync with list_subscriptions
+    // Sync with Resend
     // Map notification preference fields to list slugs
     const preferenceToListMapping: Record<string, string> = {
       events_announcements: 'events-announcements',
@@ -113,38 +186,49 @@ export async function PATCH(request: Request) {
       volunteers_opportunities: 'volunteers-opportunities',
       partner_offers: 'partner-offers',
     }
+    const allMarketingSlugs = Object.values(preferenceToListMapping)
 
-    // Update list_subscriptions for each changed preference
-    for (const [prefKey, listSlug] of Object.entries(preferenceToListMapping)) {
-      if (prefKey in validatedData) {
-        const isSubscribed = validatedData[prefKey as keyof UpdateNotificationPreferencesData]
+    if (user.email) {
+      const anyMarketingEnabled =
+        data.events_announcements ||
+        data.price_alerts ||
+        data.news_blog ||
+        data.volunteers_opportunities ||
+        data.partner_offers
 
-        // Get the list ID
-        const { data: list } = await supabase
-          .from('distribution_lists')
-          .select('id')
-          .eq('slug', listSlug)
-          .single()
+      const mapping = mapSlugsToAudienceIds(allMarketingSlugs)
+      if (mapping.missingSlugs.length > 0) {
+        console.warn('[notification-preferences] missing Resend audience mapping', mapping.missingSlugs)
+      }
 
-        if (list) {
-          // Upsert the subscription
-          await supabase
-            .from('list_subscriptions')
-            .upsert(
-              {
-                user_id: user.id,
-                list_id: list.id,
-                subscribed: isSubscribed,
-                subscribed_at: isSubscribed ? new Date().toISOString() : null,
-                unsubscribed_at: !isSubscribed ? new Date().toISOString() : null,
-                source: 'preferences',
-              },
-              {
-                onConflict: 'user_id,list_id',
-              }
-            )
+      if (mapping.audienceIds.length > 0) {
+        if (anyMarketingEnabled) {
+          await subscribeResendContactToAudiences({
+            email: user.email,
+            audienceIds: mapping.audienceIds,
+            properties: {
+              user_id: user.id,
+              source: 'notification_preferences',
+            },
+          })
+        } else {
+          await unsubscribeResendContactFromAudiences({
+            email: user.email,
+            audienceIds: mapping.audienceIds,
+          })
         }
       }
+
+      await syncResendContactTopics({
+        email: user.email,
+        preferences: {
+          events_announcements: data.events_announcements,
+          price_alerts: data.price_alerts,
+          news_blog: data.news_blog,
+          volunteers_opportunities: data.volunteers_opportunities,
+          partner_offers: data.partner_offers,
+        },
+      })
     }
 
     return NextResponse.json(data)
