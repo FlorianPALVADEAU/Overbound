@@ -285,7 +285,7 @@ export default function ParticipantForm({
         {isRankedFormat ? (
           <div className="space-y-2 md:col-span-2">
             <p className="text-xs text-muted-foreground">
-              Format RANKED : départ unique automatique à 15:00.
+              Format RANKED : départ unique automatique à 08:00.
             </p>
           </div>
         ) : null}

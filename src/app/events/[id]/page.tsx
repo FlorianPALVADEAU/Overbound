@@ -26,6 +26,7 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -63,6 +64,9 @@ const getStatusLabel = (status: string) => {
       return status
   }
 }
+
+const formatConfigTime = (time: { hour: number; minute: number }) =>
+  `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
 
 const getCountdownParts = (target: Date, now: Date) => {
   const diff = Math.max(target.getTime() - now.getTime(), 0)
@@ -423,6 +427,16 @@ export default function EventDetailPage() {
 
   const openTicket = findTicketByFormat('open')
   const rankedTicket = findTicketByFormat('ranked')
+  const openFirstDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.firstDeparture)
+  const openLastDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.lastDeparture)
+  const rankedStartLabel = formatConfigTime(RANKED_START_CONFIG)
+  const departureSummary = openTicket && rankedTicket
+    ? `RANKED ${rankedStartLabel} · OPEN ${openFirstDepartureLabel}-${openLastDepartureLabel}`
+    : openTicket
+      ? `OPEN ${openFirstDepartureLabel}-${openLastDepartureLabel}`
+      : rankedTicket
+        ? `RANKED ${rankedStartLabel}`
+        : `Départ à ${formattedTime}`
 
   const registerHref = (ticketId?: string) =>
     ticketId
@@ -535,7 +549,6 @@ export default function EventDetailPage() {
         {/* 7. REASSURANCE — practical info + location */}
         <UltraArenaReassurance
           location={event.location}
-          formattedTime={formattedTime}
           locationMapUrl={locationMapUrl}
         />
 
@@ -678,7 +691,7 @@ export default function EventDetailPage() {
                   <Calendar className="mt-0.5 h-5 w-5 text-primary" />
                   <div>
                     <p className="font-semibold">{formattedDate}</p>
-                    <p className="text-sm text-muted-foreground">Départ à {formattedTime}</p>
+                    <p className="text-sm text-muted-foreground">{departureSummary}</p>
                   </div>
                 </div>
               </CardContent>

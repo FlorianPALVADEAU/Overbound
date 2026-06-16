@@ -10,14 +10,15 @@
 
 Overbound offers two distinct wave assignment strategies based on ticket format:
 
-1. **OPEN Format**: Distributed slots across 24 waves from 08:00 to 11:50 (10-minute intervals, 50 spots per wave).
+1. **OPEN Format**: Distributed slots across 24 waves from 12:00 to 15:50 (10-minute intervals, 50 spots per wave).
    - Participants get an assigned start time within their preferred window.
    - Smart bin-packing algorithm balances load across waves.
    - Respects group anchors when user is member of an anchored group.
 
-2. **RANKED Format**: Single unified departure at 15:00.
+2. **RANKED Format**: Single unified departure at 08:00.
    - All participants start together.
    - No wave assignment (`wave_index`, `wave_position`, `wave_capacity` remain NULL).
+   - `start_time` is set to the event-day 08:00 departure for ticket display and emails.
    - No preferred window logic.
 
 ---
@@ -26,7 +27,7 @@ Overbound offers two distinct wave assignment strategies based on ticket format:
 
 ### Scalability & UX
 
-- **OPEN**: Allows organizing thousands of participants without congestion. Early starters (08:00) have less crowding; late starters (11:50) have less wait time.
+- **OPEN**: Allows organizing thousands of participants without congestion. Early starters (12:00) have less crowding; late starters (15:50) have less wait time.
 - **RANKED**: Competitive format where all participants race simultaneously. Simpler, no slot management overhead.
 
 ### Format Detection
@@ -57,10 +58,10 @@ interface Registration {
   user_id: UUID
   
   // Wave assignment fields (OPEN only; NULL for RANKED)
-  wave_index: number | null        // 0-23 for OPEN, NULL for RANKED
+  wave_index: number | null        // 1-24 for OPEN in current implementation, NULL for RANKED
   wave_position: number | null     // Position within wave (1-50)
   wave_capacity: number | null     // Capacity of wave (typically 50)
-  start_time: Timestamp | null     // Actual start time 08:00-11:50
+  start_time: Timestamp | null     // Actual start time 12:00-15:50 for OPEN, 08:00 for RANKED
   
   // Preference fields (used during assignment)
   preferred_window_start: Timestamp | null
@@ -80,8 +81,8 @@ Tracks capacity and occupancy per wave:
 ```typescript
 interface EventWave {
   event_id: UUID
-  wave_index: number              // 0-23
-  start_time: Timestamp           // 08:00, 08:10, 08:20, ...
+  wave_index: number              // 1-24 in current implementation
+  start_time: Timestamp           // 12:00, 12:10, 12:20, ...
   capacity: number                // Typically 50
   assigned_count: number          // Current registrations in this wave
 }
@@ -115,7 +116,7 @@ When a registration is created with an OPEN ticket:
 1. **Entry point**: Stripe webhook confirms payment → `POST /api/registrations/create`
 2. **Format check**: Call `isOpenFormatTicket(ticket.name, race.name)` → validates format
 3. **RPC call**: `assign_open_wave_to_registration()`
-   - Input: `event_id`, `registration_id`, `first_departure` (08:00), `wave_count` (24), `interval_minutes` (10), `default_capacity` (50)
+   - Input: `event_id`, `registration_id`, `first_departure` (12:00), `wave_count` (24), `interval_minutes` (10), `default_capacity` (50)
    - Optional: `preferred_start`, `preferred_end`, `distance_ideal_km` (if provided by participant)
    - Output: assigns `wave_index`, `start_time`, `wave_position`
 4. **Wave counter update**: `UPDATE event_waves SET assigned_count = COUNT(...)` for affected wave
@@ -125,27 +126,27 @@ When a registration is created with an OPEN ticket:
 
 ```
 Waves: 24 total
-First departure: 08:00 (8am)
+First departure: 12:00
 Interval: 10 minutes
-Last departure: 11:50 (11:50am)
+Last departure: 15:50
 Capacity per wave: 50 (default)
 ```
 
 Timeline:
 ```
-Wave 0:  08:00
-Wave 1:  08:10
-Wave 2:  08:20
+Wave 1:  12:00
+Wave 2:  12:10
+Wave 3:  12:20
 ...
-Wave 23: 11:50
+Wave 24: 15:50
 ```
 
 ### Preferred Window Logic
 
-If participant specifies preferred window (e.g., 08:00-10:00):
+If participant specifies preferred window (e.g., 12:00-14:00):
 
 - Algorithm picks **best-fit wave** within that window
-- If no slot available in window → retry with default window 08:00-11:50 (via `allowOutsideWindow` flag)
+- If no slot available in window → retry with default window 12:00-15:50 (via `allowOutsideWindow` flag)
 - Tiebreaker: prefer **earlier** slot if tie in allocation score
 
 ### Group Anchor Sync
@@ -160,8 +161,9 @@ If participant specifies preferred window (e.g., 08:00-10:00):
 
 ### RANKED (No Assignment)
 
-- Leave `wave_index`, `wave_position`, `wave_capacity`, `start_time` as **NULL**
-- Participant appears in single race at 15:00
+- Leave `wave_index`, `wave_position`, `wave_capacity` as **NULL**
+- Set `start_time` to the single 08:00 race departure
+- Participant appears in single race at 08:00
 - No slot management required
 
 ### Wave Counter Maintenance
@@ -236,7 +238,7 @@ if (isOpenFormatTicket(ticket.name, race.name)) {
   const result = await supabase.rpc('assign_open_wave_to_registration', {
     p_event_id: registration.event_id,
     p_registration_id: registration.id,
-    p_first_departure: '2026-09-20T08:00:00Z',
+    p_first_departure: '2026-09-12T10:00:00Z', // 12:00 Europe/Paris
     p_wave_count: 24,
     p_interval_minutes: 10,
     p_default_capacity: 50,
@@ -286,10 +288,10 @@ Covered in [src/lib/slotAssignment.test.ts](../../../src/lib/slotAssignment.test
 ### Manual QA Checklist
 
 ```
-[ ] Create OPEN registration via UI → verify start_time in 08:00-11:50 range
+[ ] Create OPEN registration via UI → verify start_time in 12:00-15:50 range
 [ ] Create OPEN registration with preferred window 09:00-10:00 → verify wave within window
 [ ] Join group (with anchor) as OPEN member → verify registration syncs to anchor wave
-[ ] Transfer RANKED→OPEN for group member → verify respects anchor (not 08:00-11:50 random)
+[ ] Transfer RANKED→OPEN for group member → verify respects anchor (not 12:00-15:50 random)
 [ ] Query event_waves.assigned_count → verify matches registration count per wave
 [ ] Bulk transfer 100 RANKED→OPEN → verify wave counters refresh correctly
 ```
@@ -353,4 +355,3 @@ HAVING COUNT(DISTINCT reg.wave_index) > 1;
 - 🔴 **Critical**: Wave counter mismatch detected
 - 🟡 **Warning**: Group members with different waves (anchor not synced)
 - 🟢 **Info**: Wave distribution (e.g., 60% in first 8 waves)
-
