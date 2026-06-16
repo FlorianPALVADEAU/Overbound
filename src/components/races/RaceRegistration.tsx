@@ -18,8 +18,7 @@ import {
   AlertTriangle,
   Clock,
   Trophy,
-  CreditCard,
-  FileText
+  CreditCard
 } from 'lucide-react'
 
 // Interfaces pour typer les données
@@ -216,12 +215,6 @@ export default function RaceRegistration({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-semibold">{ticket.name}</h4>
-                          {ticket.requires_document && (
-                            <Badge variant="secondary" className="text-xs">
-                              <FileText className="h-3 w-3 mr-1" />
-                              Document requis
-                            </Badge>
-                          )}
                         </div>
                         
                         {ticket.race && (
@@ -248,11 +241,6 @@ export default function RaceRegistration({
                           </p>
                         )}
                         
-                        {ticket.requires_document && ticket.document_types && ticket.document_types.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            Documents requis : {ticket.document_types.join(', ')}
-                          </div>
-                        )}
                       </div>
                       
                       <div className="text-right ml-4">
@@ -350,17 +338,6 @@ export default function RaceRegistration({
                   </div>
                 </div>
               </div>
-
-              {/* Avertissements */}
-              {selectedTicket.requires_document && (
-                <Alert>
-                  <FileText className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Document requis :</strong> Vous devrez télécharger un document 
-                    justificatif après votre inscription pour valider votre participation.
-                  </AlertDescription>
-                </Alert>
-              )}
 
               {/* Messages d'erreur */}
               {message && message.type === 'error' && (

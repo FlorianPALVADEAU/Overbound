@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
-import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
@@ -31,15 +30,6 @@ const hasAmbassadorLink = (value: unknown) => {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-08-27.basil',
 })
-
-const isPpsOnlyAndTooEarly = (eventDate: string | null | undefined, documentTypes: string[] | null | undefined) => {
-  if (!eventDate || !documentTypes || documentTypes.length === 0) return false
-  const isPpsOnly = documentTypes.every((type) => String(type || '').toLowerCase().includes('pps'))
-  if (!isPpsOnly) return false
-  const earliestAllowed = new Date(eventDate)
-  earliestAllowed.setMonth(earliestAllowed.getMonth() - 3)
-  return Date.now() < earliestAllowed.getTime()
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -468,7 +458,7 @@ export async function POST(request: NextRequest) {
           transfer_token: transfer,
           checked_in: false,
           claim_status: 'pending',
-          approval_status: 'pending',
+          approval_status: 'approved',
           race_id: ticket.race?.id || null,
           promotional_code_id: registrationPromotionalCodeId,
           difficulty_level: participant.difficultyLevel || null,
@@ -589,20 +579,6 @@ export async function POST(request: NextRequest) {
       }
 
       createdRegistrations.push({ registration, ticket, participant, participantName })
-
-      if (ticket.requires_document) {
-        const tooEarlyForPpsOnly = isPpsOnlyAndTooEarly(eventRow.date, ticket.document_types ?? [])
-        if (!tooEarlyForPpsOnly) {
-          await notifyDocumentRequired({
-            registrationId: registration.id,
-            userId: registration.user_id,
-            participantName,
-            eventTitle: eventRow.title,
-            email: registration.email,
-            requiredDocuments: ticket.document_types ?? [],
-          })
-        }
-      }
 
       if (signatureImage) {
         const signatureRecord = {

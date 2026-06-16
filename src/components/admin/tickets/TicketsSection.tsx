@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -52,8 +51,8 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
     price: ticket.final_price_cents.toString(),
     currency: ticket.currency || 'eur',
     max_participants: ticket.max_participants.toString(),
-    requires_document: ticket.requires_document,
-    document_types: ticket.document_types || [],
+    requires_document: false,
+    document_types: [],
   }
 }
 
@@ -204,8 +203,8 @@ export function TicketsSection() {
       price: parseInt(values.price, 10) || 0,
       currency: values.currency || 'eur',
       max_participants: parseInt(values.max_participants, 10) || 0,
-      requires_document: values.requires_document,
-      document_types: values.requires_document ? values.document_types : [],
+      requires_document: false,
+      document_types: [],
     }
 
     try {
@@ -303,24 +302,6 @@ export function TicketsSection() {
         ),
       },
       {
-        key: 'documents',
-        header: 'Documents',
-        cell: (ticket) => (
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant={ticket.requires_document ? 'default' : 'secondary'}>
-              {ticket.requires_document ? 'Document requis' : 'Aucun document'}
-            </Badge>
-            {ticket.document_types && ticket.document_types.length > 0
-              ? ticket.document_types.map((type) => (
-                  <Badge key={type} variant="outline" className="text-xs capitalize">
-                    {type.replace('_', ' ')}
-                  </Badge>
-                ))
-              : null}
-          </div>
-        ),
-      },
-      {
         key: 'actions',
         header: '',
         className: 'w-[180px]',
@@ -351,7 +332,7 @@ export function TicketsSection() {
         <div>
           <h2 className="text-2xl font-bold">Gestion des billets</h2>
           <p className="text-muted-foreground">
-            Paramètre les billets, leurs tarifs et les documents nécessaires.
+            Paramètre les billets, leurs tarifs et leurs quotas.
           </p>
         </div>
         <Button onClick={handleCreateClick}>
@@ -458,4 +439,3 @@ export function TicketsSection() {
     </div>
   )
 }
-

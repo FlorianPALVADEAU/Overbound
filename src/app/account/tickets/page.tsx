@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AccountRegistrationsList } from '@/components/account/AccountRegistrationsList'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 export default function AccountTicketsPage() {
@@ -80,10 +79,6 @@ export default function AccountTicketsPage() {
     const bDate = b.event_date ? new Date(b.event_date).getTime() : 0
     return bDate - aDate
   })
-  const needsDocumentAction = data.registrations.some(
-    (registration) => registration.document_requires_attention,
-  )
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto max-w-5xl space-y-6 px-6 py-8">
@@ -103,14 +98,6 @@ export default function AccountTicketsPage() {
             </Link>
           </div>
         </div>
-
-        {needsDocumentAction ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Tes billets nécessitent toujours un document validé. Fourni ou mets à jour tes pièces justificatives pour obtenir un accès complet.
-            </AlertDescription>
-          </Alert>
-        ) : null}
 
         <Card>
           <CardHeader>

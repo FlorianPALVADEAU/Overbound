@@ -181,11 +181,6 @@ export default function EventRegistration({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium">{ticket.name}</h4>
-                          {ticket.requires_document && (
-                            <Badge variant="secondary" className="text-xs">
-                              Document requis
-                            </Badge>
-                          )}
                         </div>
                         {ticket.race && (
                           <div className="flex items-center gap-2 mb-2">
@@ -277,18 +272,6 @@ export default function EventRegistration({
                   </span>
                 </div>
               </div>
-
-              {/* Avertissements */}
-              {selectedTicket.requires_document && (
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Document requis :</strong> Vous devrez télécharger un document 
-                    justificatif après votre inscription. Votre participation sera validée 
-                    une fois le document approuvé.
-                  </AlertDescription>
-                </Alert>
-              )}
 
               {/* Messages d'erreur */}
               {message && (

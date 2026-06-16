@@ -120,12 +120,9 @@ export default function AccountPage() {
   }
 
   const { user, profile, stats, registrations } = data
-  const needsDocumentAction = registrations.some(
-    (registration) => registration.document_requires_attention,
-  )
   const profileIncomplete =
     !profile?.full_name || !profile?.phone || !profile?.date_of_birth
-  const avatarNeedsAttention = needsDocumentAction || profileIncomplete
+  const avatarNeedsAttention = profileIncomplete
   const formattedBirthdate = profile?.date_of_birth
     ? new Date(profile.date_of_birth).toLocaleDateString('fr-FR', { dateStyle: 'long' })
     : null
@@ -175,20 +172,7 @@ export default function AccountPage() {
               </div>
               <div className="flex gap-2 flex-wrap">
                 <Link href="/account/tickets">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={
-                      needsDocumentAction
-                        ? 'relative border-destructive text-destructive hover:bg-destructive/10'
-                        : undefined
-                    }
-                  >
-                    {needsDocumentAction ? (
-                      <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[10px] font-bold leading-none text-white">
-                        !
-                      </span>
-                    ) : null}
+                  <Button variant="outline" size="sm">
                     <TicketIcon className="h-4 w-4 mr-1.5" />
                     Billets
                   </Button>
@@ -211,16 +195,6 @@ export default function AccountPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Alerte si action requise */}
-        {needsDocumentAction ? (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Action requise : complète ou mets à jour tes documents pour valider tes inscriptions.
-            </AlertDescription>
-          </Alert>
-        ) : null}
 
         {/* Tabs pour organiser le contenu */}
         <Tabs value={defaultTab} onValueChange={setDefaultTab} className="space-y-6">

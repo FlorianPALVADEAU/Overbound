@@ -47,7 +47,7 @@ const paragraphs = {
     'Données d’identification : nom, prénom, date de naissance, nationalité, sexe, photo, identifiant interne.',
     'Coordonnées : adresse postale, adresse email, numéro de téléphone.',
     'Données de compte : identifiant, mots de passe hashés, préférences linguistiques.',
-    'Données d’inscription événementielle : format choisi, numéro de dossard, historique des participations, documents requis (certificat PPS, attestation parentale).',
+    'Données d’inscription événementielle : format choisi, numéro de dossard, historique des participations.',
     'Données financières : informations de paiement traitées par Stripe (quatre derniers chiffres de la carte, token de paiement), factures et historiques de transaction.',
     'Données techniques : logs de connexion, adresse IP, device, navigateur, zones horodatées, cookies.',
     'Données de performance : chronométrage, classements, statistiques de course, notes et feedbacks.',
@@ -55,7 +55,7 @@ const paragraphs = {
   ],
   finalites: [
     'Gestion des comptes utilisateurs et authentification – Base légale : exécution du contrat (art. 6(1)(b) RGPD).',
-    'Inscription aux événements, gestion des dossards et suivi des obligations réglementaires (certificat PPS) – Base légale : exécution du contrat / obligation légale (Code du sport).',
+    'Inscription aux événements, gestion des dossards et suivi opérationnel – Base légale : exécution du contrat.',
     'Gestion de la billetterie, paiement, facturation – Base légale : exécution du contrat et obligation légale (obligation comptable).',
     'Communication d’informations relatives aux événements, newsletters partenaires, offres commerciales – Base légale : consentement explicite ou intérêt légitime (relation clients).',
     'Analyse statistique et amélioration des services (fréquentation, performances, satisfaction) – Base légale : intérêt légitime.',

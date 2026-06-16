@@ -73,8 +73,6 @@ const handlePost = async (request: NextRequest) => {
       price,
       currency,
       max_participants,
-      requires_document,
-      document_types
     } = body
 
     // Validation
@@ -96,8 +94,8 @@ const handlePost = async (request: NextRequest) => {
         description: description || null,
         final_price_cents: parseInt(price),
         max_participants: parseInt(max_participants) || 0,
-        requires_document: requires_document || false,
-        document_types: document_types || [],
+        requires_document: false,
+        document_types: [],
         currency: currency || 'eur'
       })
       .select(`

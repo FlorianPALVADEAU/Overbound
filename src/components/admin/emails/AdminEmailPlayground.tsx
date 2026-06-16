@@ -23,15 +23,12 @@ const EMAIL_GROUPS: Array<{
 }> = [
   {
     title: 'Cycle de vie & transactionnel',
-    description: 'Emails envoyés pendant la vie du compte utilisateur (onboarding, documents, événements…).',
+    description: 'Emails envoyés pendant la vie du compte utilisateur (onboarding, billets, événements…).',
     items: [
       { type: 'onboarding', label: 'Onboarding', description: 'Bienvenue sur OverBound.' },
       { type: 'profile_nudge', label: 'Profil incomplet', description: 'Rappel pour compléter les informations.' },
       { type: 'event_prep', label: 'Préparation événement', description: 'Checklist pré-course à J-7.' },
       { type: 'post_event', label: 'Merci post-événement', description: 'Remerciements + feedback après la course.' },
-      { type: 'document_required', label: 'Document requis', description: 'Demande de dépôt de document manquant.' },
-      { type: 'document_approved', label: 'Document validé', description: 'Confirmation de validation.' },
-      { type: 'document_rejected', label: 'Document rejeté', description: 'Document refusé avec instructions.' },
       { type: 'ticket_confirmation', label: 'Confirmation billet', description: 'Envoi du QR code billet.' },
       { type: 'event_update', label: 'Mise à jour événement', description: 'Changement de date/lieu.' },
     ],
