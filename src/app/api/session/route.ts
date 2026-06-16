@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
-import { computeDocumentAction } from '@/lib/documents/documentAction'
 
 export async function GET(request: Request) {
   try {
@@ -34,105 +33,6 @@ export async function GET(request: Request) {
           }
         : null
 
-    let needsDocumentAction = false
-    try {
-      const { data: registrationMeta } = await admin
-        .from('registrations')
-        .select(
-          `
-          id,
-          approval_status,
-          document_url,
-          ticket:tickets(
-            requires_document,
-            document_types,
-            event:events (
-              date
-            )
-          )
-        `,
-        )
-        .eq('user_id', user.id)
-
-      type RegistrationAlertRow = {
-        id: string
-        approval_status: 'pending' | 'approved' | 'rejected' | null
-        document_url: string | null
-        ticket:
-          | {
-              requires_document: boolean | null
-              document_types?: string[] | null
-              event?: { date: string | null } | null
-            }
-          | null
-      }
-
-      const now = new Date()
-      const registrationRows = (registrationMeta as RegistrationAlertRow[] | null) ?? []
-      const registrationIds = registrationRows.map((row) => row.id)
-
-      const documentTypeMap = new Map<string, Set<string>>()
-      if (registrationIds.length > 0) {
-        const { data: documentRows, error: documentError } = await admin
-          .from('registration_documents')
-          .select('registration_id, document_type')
-          .in('registration_id', registrationIds)
-
-        if (documentError) {
-          console.warn('[session] registration documents error', documentError)
-        } else if (documentRows) {
-          for (const row of documentRows as any[]) {
-            if (!documentTypeMap.has(row.registration_id)) {
-              documentTypeMap.set(row.registration_id, new Set())
-            }
-            if (row.document_type) {
-              documentTypeMap.get(row.registration_id)!.add(row.document_type)
-            }
-          }
-        }
-      }
-
-      needsDocumentAction = registrationRows.some(
-        ({ id, ticket, approval_status, document_url }) => {
-          const requiresDocument = Boolean(ticket?.requires_document)
-          if (!requiresDocument) {
-            return false
-          }
-
-          const eventDateRaw = ticket?.event?.date ?? null
-          const eventDate = eventDateRaw ? new Date(eventDateRaw) : null
-          const isUpcoming = eventDate ? eventDate >= now : false
-          if (!isUpcoming) {
-            return false
-          }
-
-          const uploadedCount = documentTypeMap.get(id)?.size ?? (document_url ? 1 : 0)
-          const requiredCount =
-            ticket?.document_types && ticket.document_types.length > 0
-              ? ticket.document_types.length
-              : 1
-
-          const uploadedTypes = documentTypeMap.get(id)
-            ? Array.from(documentTypeMap.get(id)!)
-            : []
-
-          return computeDocumentAction({
-            requiresDocument,
-            eventDate,
-            approvalStatus: approval_status,
-            requiredTypes: Array.isArray(ticket?.document_types) ? ticket.document_types : [],
-            uploadedTypes,
-            uploadedCount,
-            requiredCount,
-            hasLegacyDocumentUrl: Boolean(document_url),
-            now,
-          }).requiresAttention
-        },
-      )
-    } catch (sessionAlertError) {
-      console.warn('[session] unable to compute document alerts', sessionAlertError)
-    }
-
     return NextResponse.json({
       user: {
         id: user.id,
@@ -142,7 +42,7 @@ export async function GET(request: Request) {
       },
       profile: profile ?? null,
       alerts: {
-        needs_document_action: needsDocumentAction,
+        needs_document_action: false,
       },
     })
   } catch (error) {

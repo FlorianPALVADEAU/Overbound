@@ -79,6 +79,7 @@ Ces règles s'appliquent **sans exception** à tout agent lisant ce fichier.
 ### Scripts SQL "dangereux"
 
 - **[transfer_ranked_to_open.sql](scripts/sql/transfer_ranked_to_open.sql)** : Déplace une registration RANKED → OPEN. **Respecte l'anchor du groupe** si le user est member. Voir [critical-operations.md](docs/guides/critical-operations.md) pour workflow complet + dry-run checklist.
+- **[reschedule_2026_09_12_departures.sql](scripts/sql/reschedule_2026_09_12_departures.sql)** : Reprogramme l'événement du 12 septembre 2026 (**RANKED 08:00**, **OPEN 12:00→15:50**) sur `events`, `event_waves`, `registrations` et `groups`. **Dry-run obligatoire avant application**.
 - **Manual ambassador points override** : Modification directe via `/admin/ambassadors/points/[id]` PATCH — peut impacter rewards claiming, leaderboard. Voir [critical-operations.md](docs/guides/critical-operations.md).
 
 ### APIs complexes (>300 lignes)

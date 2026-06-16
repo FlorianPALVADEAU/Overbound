@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
-  FileText,
   LifeBuoy,
   MapPin,
   MessageCircle,
@@ -50,13 +49,6 @@ const CATEGORY_META: CategoryMeta[] = [
     anchor: 'inscriptions',
   },
   {
-    value: 'documents',
-    title: 'Documents & validation',
-    description: 'Certificat médical, contrôle des pièces et sécurité.',
-    icon: FileText,
-    anchor: 'documents',
-  },
-  {
     value: 'preparation',
     title: 'Préparation & entraînement',
     description: 'Comment arriver prêt le jour J et progresser.',
@@ -94,10 +86,10 @@ const highlightTopics = [
     icon: Ticket,
   },
   {
-    title: 'Envoyer mes documents',
-    description: 'Certificats médicaux, autorisations parentales, validations.',
-    href: '#documents',
-    icon: FileText,
+    title: 'Préparer le jour J',
+    description: 'Horaires, retrait dossard, consignes et accès au village.',
+    href: '#logistique',
+    icon: MapPin,
   },
   {
     title: 'Préparer mon équipement',
@@ -137,21 +129,25 @@ const categoryMetaMap = CATEGORY_META.reduce<Record<string, CategoryMeta>>((acc,
 
 const FAQPageContent = ({ faqs }: FAQPageContentProps) => {
   const [searchTerm, setSearchTerm] = useState('')
+  const activeFaqs = useMemo(
+    () => faqs.filter((faq) => faq.category !== 'documents'),
+    [faqs],
+  )
 
   const grouped = useMemo(() => {
-    const grouping = groupByCategory(faqs)
+    const grouping = groupByCategory(activeFaqs)
     Object.values(grouping).forEach((list) => {
       list.sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title))
     })
     return grouping
-  }, [faqs])
+  }, [activeFaqs])
 
   const searchResults = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
     if (!term) {
       return []
     }
-    return faqs.filter((faq) => {
+    return activeFaqs.filter((faq) => {
       const content = [faq.title, faq.shortAnswer, faq.subCategory, ...(faq.keywords || [])]
         .filter(Boolean)
         .join(' ')
@@ -163,7 +159,7 @@ const FAQPageContent = ({ faqs }: FAQPageContentProps) => {
       }
       return false
     })
-  }, [faqs, searchTerm])
+  }, [activeFaqs, searchTerm])
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7f9f6] to-white">
@@ -222,7 +218,7 @@ const Header = ({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               type="search"
-              placeholder="Rechercher une question (ex. certificat PPS, transfert de billet…)"
+              placeholder="Rechercher une question (ex. transfert de billet, horaires…)"
               className="w-full rounded-full border border-gray-200 bg-white px-12 py-3 text-sm text-gray-700 shadow-sm outline-none transition focus:border-[#26AA26] focus:ring-2 focus:ring-[#26AA26]/40"
             />
           </div>

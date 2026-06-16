@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import {
   MapPin,
   Users,
@@ -185,39 +184,21 @@ const sections: InfoSection[] = [
     title: 'Conditions de participation & sécurité',
     content: (
       <div className="space-y-4">
-        <p>Pour participer, chaque participant devra obligatoirement présenter le jour de l'événement :</p>
+        <p>Pour participer, chaque participant devra :</p>
         <ul className="space-y-2 pl-1">
           <li className="flex items-start gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-            <span>
-              un <strong>PPS (Parcours Prévention Santé)</strong> valide{' '}
-              <Link
-                href="https://pps.athle.fr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                pps.athle.fr
-              </Link>
-            </span>
+            accepter le règlement officiel pendant l'inscription
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-            ou un <strong>certificat médical</strong> en cours de validité attestant l'absence de contre-indication à
-            la pratique du sport
+            respecter les consignes de sécurité transmises par l'équipe le jour J
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-            ou une <strong>licence sportive</strong> valide pour l'année de l'événement
+            se présenter suffisamment en avance pour le retrait du dossard et le briefing
           </li>
         </ul>
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-          <p className="font-semibold text-destructive">Important</p>
-          <p className="mt-1 text-destructive/80">
-            En l'absence de l'un de ces documents, l'accès à la course sera refusé. Aucun remboursement ne pourra
-            être effectué.
-          </p>
-        </div>
       </div>
     ),
   },

@@ -130,11 +130,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     role: isAmbassadorRole ? 'ambassador' : null,
     email: user?.email ?? null,
   })
-  const needsDocumentAttention = Boolean(alerts?.needs_document_action)
   const needsProfileCompletion = Boolean(
     user && (!profile?.full_name || !profile?.phone || !profile?.date_of_birth),
   )
-  const attentionNeeded = needsDocumentAttention || needsProfileCompletion
+  const attentionNeeded = needsProfileCompletion
 
   const userNavigation: NavigationItemType[] = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
@@ -312,10 +311,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     </div>
                     <DropdownMenuSeparator />
                     {userNavigation.map((item) => {
-                      const showIndicator =
-                        (needsDocumentAttention &&
-                          (item.href === '/account' || item.href === '/account/tickets')) ||
-                        (needsProfileCompletion && item.href === '/account')
+                      const showIndicator = needsProfileCompletion && item.href === '/account'
 
                       return (
                         <DropdownMenuItem key={item.name} asChild>

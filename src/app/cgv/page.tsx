@@ -151,11 +151,6 @@ export default function CGVPage() {
                 <strong>Création de compte :</strong> L'inscription nécessite la création d'un compte personnel avec
                 des informations exactes et à jour. L'acheteur s'engage à fournir des informations véridiques.
               </p>
-              <p>
-                <strong>Documents requis :</strong> Selon l'événement, des documents peuvent être exigés (certificat
-                PPS, attestation de santé, autorisation parentale, licence sportive). Ces documents doivent être
-                présentés lors du retrait du dossard.
-              </p>
             </section>
 
             {/* 5. Tarifs */}
@@ -241,8 +236,7 @@ export default function CGVPage() {
                   <strong>Délai :</strong> Le transfert doit être demandé au plus tard 7 jours avant l'événement (J-7)
                 </li>
                 <li>
-                  <strong>Conditions :</strong> Le bénéficiaire doit remplir les conditions de participation et
-                  fournir les documents requis
+                  <strong>Conditions :</strong> Le bénéficiaire doit remplir les conditions de participation
                 </li>
                 <li>
                   <strong>Validation :</strong> Le transfert est soumis à validation par l'organisation
@@ -290,7 +284,6 @@ export default function CGVPage() {
                 maladie, grossesse) sont étudiées au cas par cas.
               </p>
               <ul>
-                <li>Un certificat PPS peut être requis</li>
                 <li>
                   Les demandes doivent être envoyées avant l'événement à{' '}
                   <Link href={`mailto:${COMPANY_INFO.emails.medical}`} className="text-primary hover:underline">
@@ -305,15 +298,9 @@ export default function CGVPage() {
             <section id="conditions-participation" className="mb-12">
               <h2 className="text-2xl font-bold">11. Conditions de participation</h2>
               <p>
-                <strong>Certificat PPS :</strong> Chaque participant doit présenter lors du retrait du dossard :
+                <strong>Aptitude physique :</strong> Chaque participant certifie disposer d'une condition physique
+                compatible avec une course à obstacles et s'engage à respecter les consignes de sécurité.
               </p>
-              <ul>
-                <li>
-                  Un certificat PPS de non contre-indication à la pratique des courses d'endurance ou de fitness
-                  intense, datant de moins d'un an
-                </li>
-                <li>OU une attestation de santé conforme aux exigences fédérales en vigueur</li>
-              </ul>
               <p>
                 <strong>Équipements obligatoires :</strong> Le port d'équipements adaptés (chaussures de trail ou
                 running, protections) peut être vérifié. Le non-respect entraîne une mise hors course sans
@@ -344,7 +331,6 @@ export default function CGVPage() {
                 <li>Des dommages indirects (perte de chance, préjudice commercial, frais de déplacement)</li>
                 <li>Toute blessure ni dommage corporel qui ne résulterait pas d'une erreur de la part d'Overbound, incluant un défaut de conception d'un obstacle</li>
                 <li>Des erreurs de saisie commises par l'acheteur</li>
-                <li>De l'absence de présentation des documents requis</li>
                 <li>Des prestations fournies par des partenaires tiers</li>
                 <li>Des dommages résultant d'un cas de force majeure</li>
               </ul>

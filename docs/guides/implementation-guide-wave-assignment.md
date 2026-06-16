@@ -13,7 +13,7 @@
 2. Registration created in database
 3. **Format detection** : Is ticket OPEN or RANKED?
    - **OPEN** → Call RPC `assign_open_wave_to_registration()` → get wave slot
-   - **RANKED** → Leave wave fields NULL → single 15:00 start
+   - **RANKED** → Leave wave fields NULL and set `start_time` → single 08:00 start
 4. Return registration to user with assigned slot (or NULL for RANKED)
 
 ---
@@ -85,10 +85,10 @@ export const isRankedFormatTicket = (
 
 ```typescript
 export const OPEN_WAVE_CONFIG = {
-  FIRST_DEPARTURE: '08:00',        // 8am
-  WAVE_COUNT: 24,                  // 0-23
+  FIRST_DEPARTURE: '12:00',
+  WAVE_COUNT: 24,                  // current app uses wave_index 1-24
   INTERVAL_MINUTES: 10,            // 10min between waves
-  LAST_DEPARTURE: '11:50',         // Last wave at 11:50am
+  LAST_DEPARTURE: '15:50',
   DEFAULT_CAPACITY: 50,            // Spots per wave
 }
 
@@ -129,16 +129,16 @@ Located in [src/lib/slotAssignment.ts](../../../src/lib/slotAssignment.ts). It's
 import { assignSlots } from '@/lib/slotAssignment'
 
 const slots: SlotInput[] = [
-  { slotId: 'wave_0', startTime: '08:00', capacity: 50, assignedCount: 30 },
-  { slotId: 'wave_1', startTime: '08:10', capacity: 50, assignedCount: 45 },
-  { slotId: 'wave_2', startTime: '08:20', capacity: 50, assignedCount: 20 },
+  { slotId: 'wave_1', startTime: '12:00', capacity: 50, assignedCount: 30 },
+  { slotId: 'wave_2', startTime: '12:10', capacity: 50, assignedCount: 45 },
+  { slotId: 'wave_3', startTime: '12:20', capacity: 50, assignedCount: 20 },
 ]
 
 const registrations: RegistrationInput[] = [
   { 
     registrationId: 'reg_1', 
     orderId: 'order_1',
-    preferredWindow: { from: '08:00', to: '08:30' },  // preferred 08:00-08:30
+    preferredWindow: { from: '12:00', to: '12:30' },  // preferred 12:00-12:30
     priority: 10 
   },
 ]
@@ -208,7 +208,7 @@ export const assignOpenWaveToRegistration = async (
   const result = await supabase.rpc('assign_open_wave_to_registration', {
     p_event_id: registration.event_id,
     p_registration_id: registration.id,
-    p_first_departure: new Date(eventDate.toDateString() + ' 08:00:00Z'),
+    p_first_departure: buildOpenWaveSchedule(eventDate.toISOString()).firstDeparture.toISOString(),
     p_wave_count: OPEN_WAVE_CONFIG.WAVE_COUNT,
     p_slots_per_wave: OPEN_WAVE_CONFIG.DEFAULT_CAPACITY,
     p_group_anchor_wave_index: registration.group_anchor_wave_index ?? null,
@@ -463,7 +463,7 @@ describe('Wave Assignment Workflow', () => {
   it('should assign OPEN registration to a wave', async () => {
     // 1. Create order
     // 2. Simulate Stripe webhook
-    // 3. Verify registration.wave_index is 0-23
+    // 3. Verify registration.wave_index is 1-24
     // 4. Verify event_waves.assigned_count incremented
   })
   
@@ -533,5 +533,4 @@ const prefEnd = new Date('2026-09-20T11:00:00+02:00')
 - [ ] No registrations with non-NULL wave_index for RANKED tickets
 - [ ] Group members all on same wave (if group has anchor)
 - [ ] No wave_position > wave_capacity
-- [ ] start_time always between 08:00-11:50 for OPEN
-
+- [ ] start_time always between 12:00-15:50 for OPEN

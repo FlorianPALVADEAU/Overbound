@@ -9,7 +9,7 @@
 
 ### What It Does
 
-Moves one registration from RANKED ticket (15:00 start) to OPEN ticket (08:00-11:50 waves), respecting group anchors if applicable.
+Moves one registration from RANKED ticket (08:00 start) to OPEN ticket (12:00-15:50 waves), respecting group anchors if applicable.
 
 ### When to Use
 
@@ -60,7 +60,7 @@ v_dry_run := TRUE;  -- Keep TRUE for simulation first
 NOTICE: Registration=abc... user=def... event=ghi...
 NOTICE: Current ticket=RANKED_TICKET_ID (Fury RANKED / Fury)
 NOTICE: Target ticket=OPEN_TICKET_ID (Fury OPEN / Fury)
-NOTICE: Group anchor found: group=xyz wave_index=5 start_time=08:50:00
+NOTICE: Group anchor found: group=xyz wave_index=5 start_time=12:50:00
 NOTICE: DRY-RUN enabled: no data was modified.
 ```
 
@@ -79,8 +79,8 @@ ERROR: No OPEN ticket found for event %
 ### What Changes
 
 1. **registration.ticket_id** : RANKED_ID → OPEN_ID
-2. **registration.wave_index** : NULL → 0-23 (assigned by RPC or anchor)
-3. **registration.start_time** : NULL → 08:00-11:50 or anchor time
+2. **registration.wave_index** : NULL → 1-24 in current implementation (assigned by RPC or anchor)
+3. **registration.start_time** : 08:00 → 12:00-15:50 or anchor time
 4. **registration.wave_position** : NULL → position within wave
 5. **event_waves[X].assigned_count** : refreshed for affected waves
 
@@ -110,7 +110,43 @@ UPDATE event_waves SET assigned_count = COUNT(...) ...
 
 ---
 
-## Operation 2: Manual Ambassador Points Override
+## Operation 2: Event Departure Reschedule (2026-09-12)
+
+### What It Does
+
+Reprograms the 2026-09-12 event schedule after the business decision to move RANKED to 08:00 and OPEN to 12:00-15:50.
+
+### Script
+
+**File**: [scripts/sql/reschedule_2026_09_12_departures.sql](../../../scripts/sql/reschedule_2026_09_12_departures.sql)
+
+### What Changes
+
+1. **events.date**: set to the event-day 08:00 Europe/Paris start.
+2. **event_waves.start_time**: same 24 OPEN waves, shifted to 12:00-15:50.
+3. **OPEN registrations**: keep `wave_index` and `wave_position`, update `start_time`, `wave_capacity`, preferred windows, and latest allowed time.
+4. **RANKED registrations**: set `start_time` to 08:00 and clear wave fields.
+5. **groups.anchor_start_time**: updated from the preserved anchor `wave_index`.
+6. **event_waves.assigned_count**: refreshed from actual OPEN registrations.
+
+### Dry-Run Checklist
+
+```
+[ ] Keep v_dry_run := TRUE
+[ ] Run script and verify exactly one event is resolved
+[ ] Verify current OPEN wave count is 24
+[ ] Verify affected OPEN/RANKED/group counts match expectations
+[ ] Verify no OPEN registration or group anchor is blocked by missing wave data
+[ ] Only then set v_dry_run := FALSE
+```
+
+### Rollback
+
+When applied with `v_dry_run := FALSE`, the script writes snapshots into `event_departure_reschedule_backups` under the emitted `operation_id`. Use that backup table to restore `events`, `event_waves`, `registrations`, and `groups` if needed.
+
+---
+
+## Operation 3: Manual Ambassador Points Override
 
 ### What It Does
 
@@ -171,7 +207,7 @@ WHERE ambassador_id = 'AMB_ID';
 
 ---
 
-## Operation 3: Group Anchor Force Reset
+## Operation 4: Group Anchor Force Reset
 
 ### What It Does
 
@@ -187,7 +223,7 @@ Admin forcibly changes group anchor (event + wave), auto-syncing all OPEN member
 
 - Group exists
 - Target event has OPEN format
-- Target wave exists (0-23)
+- Target wave exists (1-24 in current implementation)
 
 ### API Endpoint
 
@@ -198,7 +234,7 @@ Body:
 {
   "anchor_event_id": "event-id",
   "anchor_wave_index": 7,
-  "anchor_start_time": "2026-09-20T08:50:00Z"
+  "anchor_start_time": "2026-09-12T10:50:00Z"
 }
 ```
 
@@ -253,7 +289,7 @@ CALL sync_open_group_wave(group_id, old_wave, old_time);
 
 ---
 
-## Operation 4: Bulk Wave Reassignment
+## Operation 5: Bulk Wave Reassignment
 
 ### What It Does
 
@@ -293,7 +329,7 @@ Re-assign all OPEN registrations on an event to new waves (e.g., capacity adjust
    SELECT assign_open_wave_to_registration(
      p_event_id := 'EVENT_ID',
      p_registration_id := reg.id,
-     p_first_departure := '2026-09-20T08:00:00Z',
+     p_first_departure := '2026-09-12T10:00:00Z',
      p_wave_count := 24,
      ...
    )
@@ -367,4 +403,3 @@ If something goes wrong:
 3. **Alert**: Notify team leads
 4. **Investigate**: Check transaction logs, audit trail
 5. **Communicate**: Inform affected users (if applicable)
-

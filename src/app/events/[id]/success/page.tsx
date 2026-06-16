@@ -15,7 +15,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventSuccess } from '@/app/api/events/[id]/success/successQueries'
 import { formatClockTimeParis } from '@/lib/dateTime'
@@ -279,10 +278,7 @@ export default function EventSuccessPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <p>
-                  Pensez à télécharger votre billet, préparer vos documents si nécessaires et arriver en
-                  avance le jour J.
-                </p>
+                <p>Pensez à télécharger votre billet et arriver en avance le jour J.</p>
                 {startTimeLabel ? (
                   <p>
                     Votre départ est prévu à {startTimeLabel}. Présentez-vous au minimum 1h avant.
@@ -322,13 +318,6 @@ export default function EventSuccessPage() {
                     {formatPrice(registration.order.amount_total, registration.order.currency)}
                   </span>
                 </div>
-                {registration.ticket.requires_document ? (
-                  <Alert>
-                    <AlertDescription>
-                      Votre ticket nécessite un document justificatif. Déposez-le depuis votre compte au plus vite.
-                    </AlertDescription>
-                  </Alert>
-                ) : null}
               </CardContent>
             </Card>
           </div>

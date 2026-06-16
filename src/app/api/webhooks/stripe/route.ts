@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
-import { notifyDocumentRequired } from '@/lib/email/documents'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
@@ -27,15 +26,6 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 const hasAmbassadorLink = (value: unknown) => {
   if (Array.isArray(value)) return value.length > 0
   return Boolean(value && typeof value === 'object')
-}
-
-const isPpsOnlyAndTooEarly = (eventDate: string | null | undefined, documentTypes: string[] | null | undefined) => {
-  if (!eventDate || !documentTypes || documentTypes.length === 0) return false
-  const isPpsOnly = documentTypes.every((type) => String(type || '').toLowerCase().includes('pps'))
-  if (!isPpsOnly) return false
-  const earliestAllowed = new Date(eventDate)
-  earliestAllowed.setMonth(earliestAllowed.getMonth() - 3)
-  return Date.now() < earliestAllowed.getTime()
 }
 
 export async function POST(request: NextRequest) {
@@ -290,7 +280,7 @@ export async function POST(request: NextRequest) {
             qr_code_token: qrToken,
             transfer_token: transferToken,
             stripe_payment_intent_id: paymentIntent.id,
-            approval_status: 'pending',
+            approval_status: 'approved',
             race_id: race_id || null,
             promotional_code_id: registrationPromotionalCodeId,
             // DB constraints require non-null positive distances; for non-OPEN formats
@@ -469,25 +459,6 @@ export async function POST(request: NextRequest) {
             event_id: String(event_id),
           },
         })
-
-        if (ticket.requires_document) {
-          try {
-            const eventDate = event?.date ?? null
-            const tooEarlyForPpsOnly = isPpsOnlyAndTooEarly(eventDate, ticket.document_types ?? [])
-            if (!tooEarlyForPpsOnly) {
-              await notifyDocumentRequired({
-                registrationId: registration.id,
-                userId: registration.user_id,
-                participantName,
-                eventTitle: event_title || event.title,
-                email: registration.email,
-                requiredDocuments: ticket.document_types ?? [],
-              })
-            }
-          } catch (documentEmailError) {
-            console.error('Error sending document required email:', documentEmailError)
-          }
-        }
 
         try {
           let eventTitle: string | null = null

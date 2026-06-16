@@ -106,8 +106,7 @@ export default function ConfirmationStep({
                 </p>
                 <p>
                   5. J&apos;atteste être apte physiquement à participer, ne pas présenter de contre-indication
-                  médicale connue, et disposer des documents obligatoires demandés (PPS, certificat,
-                  autorisation parentale, etc.).
+                  médicale connue, et avoir pris connaissance des exigences physiques de l&apos;événement.
                 </p>
                 <p>
                   5bis. <span className="font-semibold">Je certifie être majeur(e) (18 ans révolus).</span>{' '}

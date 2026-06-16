@@ -93,6 +93,8 @@ export async function GET(
     // Enrich tickets with registration counts
     const ticketsWithCounts = (event.tickets || []).map((ticket: { id: string; max_participants: number }) => ({
       ...ticket,
+      requires_document: false,
+      document_types: [],
       current_registrations: registrationCountsByTicket[ticket.id] || 0,
     }))
 

@@ -198,7 +198,7 @@ describe('syncOpenRegistrationsToWave', () => {
         user_id: 'u1',
         event_id: 'event-1',
         wave_index: 3,
-        start_time: '2026-06-01T15:00:00.000Z',
+        start_time: '2026-06-01T08:00:00.000Z',
         ticket: { name: 'RANKED Elite', race: { name: 'RANKED' } },
       },
     ]

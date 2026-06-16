@@ -58,7 +58,7 @@ export default async function PreferencesPage() {
         <AlertDescription>
           Ces préférences ne concernent que les emails marketing. Vous
           continuerez à recevoir les emails transactionnels importants
-          (confirmations, billets, documents requis).
+          (confirmations, billets, informations pratiques).
         </AlertDescription>
       </Alert>
 

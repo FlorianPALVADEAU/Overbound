@@ -4,9 +4,6 @@ import OnboardingEmail from '@/emails/OnboardingEmail'
 import ProfileCompletionReminderEmail from '@/emails/ProfileCompletionReminderEmail'
 import EventPrepEmail from '@/emails/EventPrepEmail'
 import PostEventThankYouEmail from '@/emails/PostEventThankYouEmail'
-import DocumentRequiredEmail from '@/emails/DocumentRequiredEmail'
-import DocumentApprovedEmail from '@/emails/DocumentApprovedEmail'
-import DocumentRejectedEmail from '@/emails/DocumentRejectedEmail'
 import NewEventAnnouncementEmail from '@/emails/NewEventAnnouncementEmail'
 import EventOpeningEmail from '@/emails/EventOpeningEmail'
 import PriceChangeReminderEmail from '@/emails/PriceChangeReminderEmail'
@@ -157,72 +154,6 @@ export async function sendPostEventThankYouEmail(params: {
     from: FORMAL_FROM,
     to: params.to,
     subject: `Merci pour ${params.eventTitle}`,
-    html,
-  })
-}
-
-export async function sendDocumentRequiredEmail(params: {
-  to: string
-  participantName?: string | null
-  eventTitle: string
-  uploadUrl: string
-  requiredDocuments: string[]
-}) {
-  const html = await renderEmail(DocumentRequiredEmail(params))
-
-  return resend.emails.send({
-    from: FORMAL_FROM,
-    to: params.to,
-    subject: `Document requis pour ${params.eventTitle}`,
-    html,
-  })
-}
-
-export async function sendDocumentUploadReminderEmail(params: {
-  to: string
-  participantName?: string | null
-  eventTitle: string
-  uploadUrl: string
-  requiredDocuments: string[]
-}) {
-  const html = await renderEmail(DocumentRequiredEmail(params))
-
-  return resend.emails.send({
-    from: FORMAL_FROM,
-    to: params.to,
-    subject: `C’est le moment d’envoyer tes documents — ${params.eventTitle}`,
-    html,
-  })
-}
-
-export async function sendDocumentApprovedEmail(params: {
-  to: string
-  participantName?: string | null
-  eventTitle: string
-}) {
-  const html = await renderEmail(DocumentApprovedEmail(params))
-
-  return resend.emails.send({
-    from: UNFORMAL_FROM,
-    to: params.to,
-    subject: `Document validé — ${params.eventTitle}`,
-    html,
-  })
-}
-
-export async function sendDocumentRejectedEmail(params: {
-  to: string
-  participantName?: string | null
-  eventTitle: string
-  reason?: string | null
-  uploadUrl: string
-}) {
-  const html = await renderEmail(DocumentRejectedEmail(params))
-
-  return resend.emails.send({
-    from: FORMAL_FROM,
-    to: params.to,
-    subject: `Action requise — document à mettre à jour pour ${params.eventTitle}`,
     html,
   })
 }

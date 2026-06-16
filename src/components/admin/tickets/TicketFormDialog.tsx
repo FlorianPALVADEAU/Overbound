@@ -14,8 +14,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Switch } from '@/components/ui/switch'
 import { Clock } from 'lucide-react'
 import type { Event } from '@/types/Event'
 import type { Race } from '@/types/Race'
@@ -43,14 +41,6 @@ interface TicketFormDialogProps {
   onOpenChange: (open: boolean) => void
   onSubmit: (values: TicketFormValues) => void
 }
-
-const DOCUMENT_TYPES = [
-  { value: 'pps_certificate', label: 'Certificat PPS' },
-  { value: 'sports_license', label: 'Licence sportive' },
-  { value: 'insurance', label: "Attestation d'assurance" },
-  { value: 'id_document', label: "Pièce d'identité" },
-  { value: 'parental_authorization', label: 'Autorisation parentale' },
-]
 
 const DEFAULT_VALUES: TicketFormValues = {
   event_id: '',
@@ -94,17 +84,12 @@ export function TicketFormDialog({
     setValues((prev) => ({ ...prev, [field]: value as any }))
   }
 
-  const toggleDocumentType = (docType: string) => {
-    setValues((prev) => ({
-      ...prev,
-      document_types: prev.document_types.includes(docType)
-        ? prev.document_types.filter((entry) => entry !== docType)
-        : [...prev.document_types, docType],
-    }))
-  }
-
   const handleSubmit = () => {
-    onSubmit(values)
+    onSubmit({
+      ...values,
+      requires_document: false,
+      document_types: [],
+    })
   }
 
   return (
@@ -215,40 +200,6 @@ export function TicketFormDialog({
               placeholder="10000 = 100€"
             />
           </div>
-
-          <div className="space-y-3 rounded-lg border p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="font-medium">Documents requis</h4>
-                <p className="text-sm text-muted-foreground">
-                  Activez si des documents doivent être fournis pour ce billet.
-                </p>
-              </div>
-              <Switch
-                checked={values.requires_document}
-                onCheckedChange={(checked) => handleChange('requires_document', Boolean(checked))}
-              />
-            </div>
-
-            {values.requires_document && (
-              <div className="grid md:grid-cols-2 gap-3">
-                {DOCUMENT_TYPES.map((docType) => (
-                  <label
-                    key={docType.value}
-                    htmlFor={`doc-${docType.value}`}
-                    className="flex items-center space-x-2 rounded border p-3 hover:bg-muted/50"
-                  >
-                    <Checkbox
-                      id={`doc-${docType.value}`}
-                      checked={values.document_types.includes(docType.value)}
-                      onCheckedChange={() => toggleDocumentType(docType.value)}
-                    />
-                    <span className="text-sm">{docType.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         <DialogFooter>
@@ -257,10 +208,7 @@ export function TicketFormDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={
-              loading ||
-              (values.requires_document && values.document_types.length === 0)
-            }
+            disabled={loading}
           >
             {loading ? (
               <>
