@@ -27,15 +27,12 @@ import {
 import { Clock, Download, Filter, Package, RotateCcw, Trash2 } from 'lucide-react'
 import type { UpsellSummaryRow } from '@/app/api/admin/registrations/upsells-summary/route'
 import { RegistrationStats } from './RegistrationStats'
-import { RegistrationDocumentDialog } from './RegistrationDocumentDialog'
-import { RegistrationApprovalDialog } from './RegistrationApprovalDialog'
 import { RegistrationDetailsDialog } from './RegistrationDetailsDialog'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
-import type { AdminRegistration, RegistrationApprovalStatus } from '@/types/Registration'
+import type { AdminRegistration } from '@/types/Registration'
 import {
   adminRegistrationsBuildKey,
   deleteAdminRegistration,
-  updateAdminRegistrationApproval,
   useAdminRegistrations,
 } from '@/app/api/admin/registrations/registrationsQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
@@ -53,9 +50,6 @@ interface MessageState {
 
 interface RegistrationStatsState {
   total: number
-  approved: number
-  pending: number
-  rejected: number
   checked_in: number
 }
 
@@ -95,43 +89,6 @@ const formatPromoDiscount = (promo: {
   return null
 }
 
-const approvalBadgeVariant = (status: RegistrationApprovalStatus) => {
-  switch (status) {
-    case 'approved':
-      return 'default' as const
-    case 'rejected':
-      return 'destructive' as const
-    case 'pending':
-    default:
-      return 'secondary' as const
-  }
-}
-
-const approvalBadgeLabel = (status: RegistrationApprovalStatus) => {
-  switch (status) {
-    case 'approved':
-      return 'Approuvé'
-    case 'rejected':
-      return 'Rejeté'
-    case 'pending':
-    default:
-      return 'En attente'
-  }
-}
-
-const formatRequiredType = (value: string) => {
-  const lookup: Record<string, string> = {
-    pps_certificate: 'PPS',
-    pps_certificate_2025: 'PPS',
-    sports_license: 'Licence sportive',
-    insurance_certificate: "Attestation d'assurance",
-    parental_authorization: 'Autorisation parentale',
-    id_document: 'Pièce d’identité',
-  }
-
-  return lookup[value] || value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
 const getParticipantName = (registration: AdminRegistration) => {
   const emailLocalPart = registration.email.split('@')[0]?.trim()
   const emailDerivedName = emailLocalPart
@@ -159,16 +116,10 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const { data: events = [] } = useAdminEvents()
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<RegistrationApprovalStatus | 'all'>('all')
   const [eventFilter, setEventFilter] = useState<string>(ALL_EVENTS_VALUE)
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [selectedRegistration, setSelectedRegistration] = useState<AdminRegistration | null>(null)
   const [detailsRegistration, setDetailsRegistration] = useState<AdminRegistration | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
-  const [documentDialogOpen, setDocumentDialogOpen] = useState(false)
-  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false)
-  const [rejectionReason, setRejectionReason] = useState('')
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -188,19 +139,15 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const params = useMemo(
     () => ({
       eventId: effectiveEventFilter !== ALL_EVENTS_VALUE ? effectiveEventFilter : undefined,
-      approvalFilter: statusFilter,
       searchTerm: searchTerm.trim() || undefined,
       limit: DEFAULT_LIMIT,
     }),
-    [effectiveEventFilter, statusFilter, searchTerm]
+    [effectiveEventFilter, searchTerm]
   )
 
   const exportUrl = useMemo(() => {
     const search = new URLSearchParams()
     if (params.eventId) search.set('event_id', params.eventId)
-    if (params.approvalFilter && params.approvalFilter !== 'all') {
-      search.set('approval_filter', params.approvalFilter)
-    }
     if (params.searchTerm) search.set('search_term', params.searchTerm)
     search.set('format', 'csv')
     search.set('limit', '10000')
@@ -221,16 +168,10 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const stats = useMemo<RegistrationStatsState>(() => {
     const snapshot = {
       total: registrations.length,
-      approved: 0,
-      pending: 0,
-      rejected: 0,
       checked_in: 0,
     }
 
     registrations.forEach((registration) => {
-      if (registration.approval_status === 'approved') snapshot.approved += 1
-      if (registration.approval_status === 'pending') snapshot.pending += 1
-      if (registration.approval_status === 'rejected') snapshot.rejected += 1
       if (registration.checked_in) snapshot.checked_in += 1
     })
 
@@ -240,25 +181,13 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const activeFiltersCount = useMemo(() => {
     let count = 0
     if (!lockEventFilter && eventFilter !== ALL_EVENTS_VALUE) count += 1
-    if (statusFilter !== 'all') count += 1
     if (searchTerm.trim()) count += 1
     return count
-  }, [eventFilter, lockEventFilter, statusFilter, searchTerm])
-
-  const handleViewDocument = (registration: AdminRegistration) => {
-    setSelectedRegistration(registration)
-    setDocumentDialogOpen(true)
-  }
+  }, [eventFilter, lockEventFilter, searchTerm])
 
   const handleViewDetails = (registration: AdminRegistration) => {
     setDetailsRegistration(registration)
     setDetailsDialogOpen(true)
-  }
-
-  const handleOpenApproval = (registration: AdminRegistration) => {
-    setSelectedRegistration(registration)
-    setRejectionReason('')
-    setApprovalDialogOpen(true)
   }
 
   const handleDeleteClick = (registration: AdminRegistration) => {
@@ -295,58 +224,12 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     }
   }
 
-  const handleDocumentStatusChange = () => {
-    queryClient.invalidateQueries({ queryKey })
-  }
-
-  const handleApproval = async (
-    registration: AdminRegistration,
-    status: Exclude<RegistrationApprovalStatus, 'pending'>,
-    reason?: string
-  ) => {
-    setActionLoadingId(registration.id)
-    try {
-      await updateAdminRegistrationApproval(registration.id, status, reason)
-      queryClient.setQueryData<typeof data>(queryKey, (previous) => {
-        if (!previous) return previous
-        return {
-          ...previous,
-          registrations: previous.registrations.map((item) =>
-            item.id === registration.id
-              ? {
-                  ...item,
-                  approval_status: status,
-                  rejection_reason: status === 'rejected' ? reason || null : null,
-                  approved_at: status === 'approved' ? new Date().toISOString() : item.approved_at,
-                }
-              : item
-          ),
-        }
-      })
-      setMessage({
-        type: 'success',
-        text: `Inscription ${status === 'approved' ? 'approuvée' : 'rejetée'} avec succès`,
-      })
-      setApprovalDialogOpen(false)
-      setSelectedRegistration(null)
-      setRejectionReason('')
-    } catch (error) {
-      const text = axios.isAxiosError(error)
-        ? error.response?.data?.error || error.message
-        : (error as Error).message || 'Erreur lors de la mise à jour du statut'
-      setMessage({ type: 'error', text })
-    } finally {
-      setActionLoadingId(null)
-    }
-  }
-
   const resetFilters = () => {
     if (lockEventFilter && eventId) {
       setEventFilter(eventId)
     } else {
       setEventFilter(ALL_EVENTS_VALUE)
     }
-    setStatusFilter('all')
     setSearchTerm('')
   }
 
@@ -385,7 +268,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
       <Card>
         <CardContent className="space-y-4 p-4 md:p-6">
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-1 md:col-span-2">
           <Label>Recherche</Label>
           <Input
@@ -421,23 +304,6 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
           </div>
         )}
 
-            <div className="space-y-1">
-              <Label>Statut</Label>
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as RegistrationApprovalStatus | 'all')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous les statuts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="approved">Approuvés</SelectItem>
-                  <SelectItem value="rejected">Rejetés</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -493,7 +359,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                 <TableHead>Participant</TableHead>
                 <TableHead>Événement</TableHead>
                 <TableHead>Billet &amp; montant</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead>Présence</TableHead>
                 <TableHead>Créé le</TableHead>
                 <TableHead className="w-[220px] text-right">Actions</TableHead>
               </TableRow>
@@ -603,86 +469,16 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1.5">
-                        <Badge variant={approvalBadgeVariant(registration.approval_status)}>
-                          {approvalBadgeLabel(registration.approval_status)}
-                        </Badge>
                         {registration.checked_in ? (
                           <Badge variant="outline" className="border-emerald-200 text-emerald-600">
                             Check-in
                           </Badge>
-                        ) : null}
-                        {registration.requires_document ? (
-                          (() => {
-                            const requiredCount =
-                              registration.required_documents_count ??
-                              (registration.requires_document ? 1 : 0)
-                            const uploadedCount =
-                              registration.documents_count ??
-                              (registration.document_url?.trim() ? 1 : 0)
-                            const documentsComplete =
-                              requiredCount === 0 ? true : uploadedCount >= requiredCount
-                            const requiredTypes = Array.isArray(registration.ticket?.document_types)
-                              ? registration.ticket.document_types
-                              : []
-                            const uploadedTypes = Array.isArray(registration.uploaded_document_types)
-                              ? registration.uploaded_document_types
-                              : []
-                            const missingTypes =
-                              requiredTypes.length > 0
-                                ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
-                                : []
-
-                            if (!documentsComplete) {
-                              return (
-                                <Badge variant="outline" className="border-amber-200 text-amber-600">
-                                  Documents manquants
-                                </Badge>
-                              )
-                            }
-
-                            if (registration.approval_status === 'approved') {
-                              return (
-                                <Badge variant="outline" className="border-emerald-200 text-emerald-600">
-                                  Document validé
-                                </Badge>
-                              )
-                            }
-
-                            if (registration.approval_status === 'rejected') {
-                              return (
-                                <Badge variant="outline" className="border-red-200 text-red-600">
-                                  Document rejeté
-                                </Badge>
-                              )
-                            }
-
-                            return (
-                              <Badge variant="outline" className="border-sky-200 text-sky-600">
-                                Validation en cours
-                              </Badge>
-                            )
-                          })()
-                        ) : null}
+                        ) : (
+                          <Badge variant="secondary">
+                            Non check-in
+                          </Badge>
+                        )}
                       </div>
-                      {registration.requires_document &&
-                      (() => {
-                        const requiredTypes = Array.isArray(registration.ticket?.document_types)
-                          ? registration.ticket.document_types
-                          : []
-                        const uploadedTypes = Array.isArray(registration.uploaded_document_types)
-                          ? registration.uploaded_document_types
-                          : []
-                        const missingTypes =
-                          requiredTypes.length > 0
-                            ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
-                            : []
-                        if (missingTypes.length === 0) return null
-                        return (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            Manquants : {missingTypes.map(formatRequiredType).join(', ')}
-                          </div>
-                        )
-                      })()}
                     </TableCell>
                     <TableCell>{formatDateTime(registration.created_at)}</TableCell>
                     <TableCell className="text-right">
@@ -693,26 +489,6 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                           onClick={() => handleViewDetails(registration)}
                         >
                           Détails
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDocument(registration)}
-                          disabled={(registration.documents_count ?? (registration.document_url?.trim() ? 1 : 0)) === 0}
-                        >
-                          Voir doc
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleOpenApproval(registration)}
-                          disabled={actionLoadingId === registration.id}
-                        >
-                          {actionLoadingId === registration.id ? (
-                            <Clock className="h-4 w-4 animate-spin" />
-                          ) : (
-                            'Statut'
-                          )}
                         </Button>
                         <Button
                           variant="destructive"
@@ -736,18 +512,6 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
         </div>
       </div>
 
-      <RegistrationDocumentDialog
-        registration={selectedRegistration}
-        open={documentDialogOpen}
-        onOpenChange={(open) => {
-          setDocumentDialogOpen(open)
-          if (!open) {
-            setSelectedRegistration(null)
-          }
-        }}
-        onStatusChange={handleDocumentStatusChange}
-      />
-
       <RegistrationDetailsDialog
         registration={detailsRegistration}
         open={detailsDialogOpen}
@@ -757,26 +521,6 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
             setDetailsRegistration(null)
           }
         }}
-      />
-
-      <RegistrationApprovalDialog
-        registration={selectedRegistration}
-        open={approvalDialogOpen}
-        loadingId={actionLoadingId}
-        rejectionReason={rejectionReason}
-        onOpenChange={(open) => {
-          setApprovalDialogOpen(open)
-          if (!open) {
-            setSelectedRegistration(null)
-            setRejectionReason('')
-          }
-        }}
-        onRejectionReasonChange={setRejectionReason}
-        onApprove={() => selectedRegistration && handleApproval(selectedRegistration, 'approved')}
-        onReject={() =>
-          selectedRegistration &&
-          handleApproval(selectedRegistration, 'rejected', rejectionReason)
-        }
       />
 
       <DeleteConfirmationDialog

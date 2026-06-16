@@ -38,6 +38,11 @@ export async function GET() {
 
   const eventsWithEffectiveStatus = (data ?? []).map((event) => ({
     ...event,
+    tickets: (event.tickets || []).map((ticket: any) => ({
+      ...ticket,
+      requires_document: false,
+      document_types: [],
+    })),
     status: getEffectiveEventStatus(event),
   }))
 

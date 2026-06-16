@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, Ticket as TicketIcon, Users } from 'lucide-react'
+import { Ticket as TicketIcon, Users } from 'lucide-react'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { calculateCurrentPrice } from '@/types/EventPriceTier'
 import { formatPrice } from '@/lib/registration'
@@ -65,12 +65,6 @@ export default function TicketCard({
               <Badge variant="outline" className="gap-1">
                 <Users className="h-3 w-3" />
                 {ticket.race.distance_km} km
-              </Badge>
-            ) : null}
-            {ticket.requires_document ? (
-              <Badge variant="secondary" className="gap-1">
-                <FileText className="h-3 w-3" />
-                Document requis
               </Badge>
             ) : null}
           </div>

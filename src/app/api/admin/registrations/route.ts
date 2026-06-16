@@ -35,7 +35,6 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('event_id')
-    const approvalFilter = searchParams.get('approval_filter')
     const searchTerm = searchParams.get('search_term')
     const limitParam = searchParams.get('limit')
     const format = searchParams.get('format')
@@ -62,7 +61,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase.rpc('get_registrations_with_filters', {
       args: {
-        approval: approvalFilter === 'all' ? null : approvalFilter,
+        approval: null,
         event_id: eventId || null,
         search: searchTerm || null,
         limit: Number.isFinite(limitCount) ? limitCount : 50,
@@ -329,30 +328,8 @@ export async function GET(request: Request) {
       }
     }
 
-    const documentCountMap = new Map<string, number>()
-    const documentTypeMap = new Map<string, Set<string>>()
     const signaturesMap = new Map<string, Array<{ registration_id: string; regulation_version: string; signed_at: string }>>()
     if (registrationIds.length > 0) {
-      const { data: documentRows, error: documentRowsError } = await adminClient
-        .from('registration_documents')
-        .select('registration_id, document_type')
-        .in('registration_id', registrationIds)
-
-      if (documentRowsError) {
-        console.error('[admin registrations] registration documents error', documentRowsError)
-      } else if (documentRows) {
-        for (const row of documentRows as any[]) {
-          const current = documentCountMap.get(row.registration_id) ?? 0
-          documentCountMap.set(row.registration_id, current + 1)
-          if (!documentTypeMap.has(row.registration_id)) {
-            documentTypeMap.set(row.registration_id, new Set())
-          }
-          if (row.document_type) {
-            documentTypeMap.get(row.registration_id)!.add(row.document_type)
-          }
-        }
-      }
-
       const { data: signatureRows, error: signatureRowsError } = await adminClient
         .from('registration_signatures')
         .select('registration_id, regulation_version, signed_at')
@@ -383,10 +360,6 @@ export async function GET(request: Request) {
       .select(
         `
           id,
-          document_url,
-          document_filename,
-          document_size,
-          approval_status,
           start_time,
           wave_index,
           wave_capacity,
@@ -398,7 +371,7 @@ export async function GET(request: Request) {
           preferred_window_end,
           latest_allowed_time,
           assignment_constraint_breached,
-          ticket:tickets(id, name, distance_km, requires_document, document_types),
+          ticket:tickets(id, name, distance_km),
           event:events(id, title, date, location),
           order:orders(id, amount_total, currency, status)
         `,
@@ -413,23 +386,12 @@ export async function GET(request: Request) {
           const eventRecord = Array.isArray((row as any)?.event) ? (row as any).event[0] : (row as any)?.event
           const orderRecord = Array.isArray((row as any)?.order) ? (row as any).order[0] : (row as any)?.order
 
-          const requiresDocument = Boolean(ticketRecord?.requires_document)
-          const approvalStatus = (row as any)?.approval_status ?? 'pending'
-          const documentUrl = (row as any)?.document_url ?? null
-          const requiredCount =
-            Array.isArray(ticketRecord?.document_types) && ticketRecord.document_types.length > 0
-              ? ticketRecord.document_types.length
-              : (requiresDocument ? 1 : 0)
-          const uploadedCount = documentCountMap.get(row.id) ?? (documentUrl ? 1 : 0)
-          const documentsComplete = requiredCount === 0 ? true : uploadedCount >= requiredCount
-          const uploadedTypes = Array.from(documentTypeMap.get(row.id) ?? [])
-
           documentMetaMap.set(row.id, {
-          document_url: documentUrl,
-          document_filename: row.document_filename ?? null,
-          document_size: row.document_size ?? null,
-          requires_document: requiresDocument,
-          approval_status: approvalStatus,
+          document_url: null,
+          document_filename: null,
+          document_size: null,
+          requires_document: false,
+          approval_status: 'approved',
           start_time: row.start_time ?? null,
           wave_index: row.wave_index ?? null,
           wave_capacity: row.wave_capacity ?? null,
@@ -441,11 +403,10 @@ export async function GET(request: Request) {
           preferred_window_end: row.preferred_window_end ?? null,
           latest_allowed_time: row.latest_allowed_time ?? null,
           assignment_constraint_breached: row.assignment_constraint_breached ?? null,
-          documents_count: uploadedCount,
-          required_documents_count: requiredCount,
-          uploaded_document_types: uploadedTypes,
-          document_requires_attention:
-            requiresDocument && (approvalStatus !== 'approved' || !documentsComplete),
+          documents_count: 0,
+          required_documents_count: 0,
+          uploaded_document_types: [],
+          document_requires_attention: false,
             event: eventRecord
               ? {
                   id: eventRecord.id ?? null,
@@ -459,10 +420,8 @@ export async function GET(request: Request) {
                   id: ticketRecord.id ?? null,
                   name: ticketRecord.name ?? null,
                   distance_km: ticketRecord.distance_km ?? null,
-                  requires_document: requiresDocument,
-                  document_types: Array.isArray(ticketRecord.document_types)
-                    ? ticketRecord.document_types
-                    : [],
+                  requires_document: false,
+                  document_types: [],
                 }
               : null,
             order: orderRecord
@@ -534,11 +493,11 @@ export async function GET(request: Request) {
           row.user_id
             ? groupByProfileMap.get(row.user_id) ?? null
             : null,
-        approval_status: meta.approval_status ?? row.approval_status,
-        document_url: meta.document_url ?? row.document_url ?? null,
-        document_filename: meta.document_filename ?? row.document_filename ?? null,
-        document_size: meta.document_size ?? row.document_size ?? null,
-        requires_document: meta.requires_document ?? row.requires_document ?? false,
+        approval_status: 'approved',
+        document_url: null,
+        document_filename: null,
+        document_size: null,
+        requires_document: false,
         start_time: meta.start_time ?? row.start_time ?? null,
         wave_index: meta.wave_index ?? row.wave_index ?? null,
         wave_capacity: meta.wave_capacity ?? row.wave_capacity ?? null,
@@ -550,12 +509,10 @@ export async function GET(request: Request) {
         preferred_window_end: meta.preferred_window_end ?? row.preferred_window_end ?? null,
         latest_allowed_time: meta.latest_allowed_time ?? row.latest_allowed_time ?? null,
         assignment_constraint_breached: meta.assignment_constraint_breached ?? row.assignment_constraint_breached ?? null,
-        documents_count: meta.documents_count ?? null,
-        required_documents_count: meta.required_documents_count ?? null,
-        uploaded_document_types: meta.uploaded_document_types ?? null,
-        document_requires_attention:
-          meta.document_requires_attention ??
-          (meta.requires_document && (!meta.document_url || meta.approval_status !== 'approved')),
+        documents_count: 0,
+        required_documents_count: 0,
+        uploaded_document_types: [],
+        document_requires_attention: false,
         signatures: signaturesMap.get(row.id) ?? [],
       }
     })

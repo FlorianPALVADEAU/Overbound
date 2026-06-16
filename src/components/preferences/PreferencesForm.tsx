@@ -170,7 +170,7 @@ export default function PreferencesForm({
         </p>
         <ul className="text-sm text-muted-foreground mt-2 ml-6 list-disc space-y-1">
           <li>Confirmations d'inscription aux événements</li>
-          <li>Billets et documents requis</li>
+          <li>Billets et informations pratiques</li>
           <li>Notifications de sécurité du compte</li>
         </ul>
       </div>

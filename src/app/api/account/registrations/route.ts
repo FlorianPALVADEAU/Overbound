@@ -3,7 +3,6 @@ import QRCode from 'qrcode'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
 import { processAccountEngagementEmails } from '@/lib/email/engagement'
-import { computeDocumentAction } from '@/lib/documents/documentAction'
 
 export const runtime = 'nodejs'
 
@@ -166,22 +165,6 @@ export async function GET(request: Request) {
     )
 
     const registrationIds = (registrations ?? []).map((registration) => registration.registration_id)
-    type RegistrationMetaRow = {
-      id: string
-      transfer_token: string | null
-      approval_status: 'pending' | 'approved' | 'rejected' | null
-      document_url: string | null
-      start_time: string | null
-      wave_index: number | null
-      wave_capacity: number | null
-      wave_position: number | null
-      auto_assigned: boolean | null
-      distance_ideal_km: number | null
-      distance_min_km: number | null
-      assignment_constraint_breached: boolean | null
-      ticket: { requires_document: boolean | null; document_types?: string[] | null } | null
-    }
-
     const registrationMetaMap = new Map<
       string,
       {
@@ -208,8 +191,6 @@ export async function GET(request: Request) {
           `
           id,
           transfer_token,
-          approval_status,
-          document_url,
           start_time,
           wave_index,
           wave_capacity,
@@ -217,8 +198,7 @@ export async function GET(request: Request) {
           auto_assigned,
           distance_ideal_km,
           distance_min_km,
-          assignment_constraint_breached,
-          ticket:tickets(requires_document, document_types)
+          assignment_constraint_breached
         `,
         )
         .in('id', registrationIds)
@@ -227,11 +207,10 @@ export async function GET(request: Request) {
         console.error('[account api] registration meta error', metaError)
       } else if (metaRows) {
         for (const row of metaRows as any[]) {
-          const requiresDocument = Boolean(row.ticket?.requires_document)
           registrationMetaMap.set(row.id, {
             transfer_token: row.transfer_token ?? null,
-            approval_status: (row.approval_status ?? 'pending') as 'pending' | 'approved' | 'rejected',
-            document_url: row.document_url ?? null,
+            approval_status: 'approved',
+            document_url: null,
             start_time: row.start_time ?? null,
             wave_index: typeof row.wave_index === 'number' ? row.wave_index : null,
             wave_capacity: typeof row.wave_capacity === 'number' ? row.wave_capacity : null,
@@ -242,30 +221,9 @@ export async function GET(request: Request) {
             assignment_constraint_breached: typeof row.assignment_constraint_breached === 'boolean'
               ? row.assignment_constraint_breached
               : null,
-            requires_document: requiresDocument,
-            document_types: Array.isArray(row.ticket?.document_types) ? row.ticket.document_types : [],
+            requires_document: false,
+            document_types: [],
           })
-        }
-      }
-    }
-
-    const documentTypeMap = new Map<string, Set<string>>()
-    if (registrationIds.length > 0) {
-      const { data: documentRows, error: documentError } = await admin
-        .from('registration_documents')
-        .select('registration_id, document_type')
-        .in('registration_id', registrationIds)
-
-      if (documentError) {
-        console.error('[account api] registration documents error', documentError)
-      } else if (documentRows) {
-        for (const row of documentRows as any[]) {
-          if (!documentTypeMap.has(row.registration_id)) {
-            documentTypeMap.set(row.registration_id, new Set())
-          }
-          if (row.document_type) {
-            documentTypeMap.get(row.registration_id)!.add(row.document_type)
-          }
         }
       }
     }
@@ -276,7 +234,7 @@ export async function GET(request: Request) {
       (registrations ?? []).map(async (registration) => {
         const meta = registrationMetaMap.get(registration.registration_id) ?? {
           transfer_token: null,
-          approval_status: 'pending' as const,
+          approval_status: 'approved' as const,
           document_url: null,
           start_time: null,
           wave_index: null,
@@ -295,25 +253,6 @@ export async function GET(request: Request) {
             ? await QRCode.toDataURL(registration.qr_code_token)
             : null
 
-        const uploadedTypes = documentTypeMap.get(registration.registration_id)
-        const uploadedCount = uploadedTypes?.size ?? (meta.document_url ? 1 : 0)
-        const requiredCount = meta.requires_document
-          ? (meta.document_types.length > 0 ? meta.document_types.length : 1)
-          : 0
-        const documentsComplete = requiredCount === 0 ? true : uploadedCount >= requiredCount
-
-        const { requiresAttention: documentRequiresAttention } = computeDocumentAction({
-          requiresDocument: meta.requires_document,
-          eventDate: registration.event_date,
-          approvalStatus: meta.approval_status,
-          requiredTypes: meta.document_types,
-          uploadedTypes: Array.from(uploadedTypes ?? []),
-          uploadedCount,
-          requiredCount,
-          hasLegacyDocumentUrl: Boolean(meta.document_url),
-          now,
-        })
-
         return {
           ...registration,
           transfer_token: meta.transfer_token,
@@ -327,13 +266,13 @@ export async function GET(request: Request) {
           distance_ideal_km: meta.distance_ideal_km,
           distance_min_km: meta.distance_min_km,
           assignment_constraint_breached: meta.assignment_constraint_breached,
-          requires_document: meta.requires_document,
-          required_document_types: meta.document_types,
-          uploaded_document_types: Array.from(uploadedTypes ?? []),
-          documents_count: uploadedCount,
-          required_documents_count: requiredCount,
-          documents_complete: documentsComplete,
-          document_requires_attention: documentRequiresAttention,
+          requires_document: false,
+          required_document_types: [],
+          uploaded_document_types: [],
+          documents_count: 0,
+          required_documents_count: 0,
+          documents_complete: true,
+          document_requires_attention: false,
           qr_code_data_url: qrCodeDataUrl,
         }
       }),

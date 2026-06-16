@@ -217,7 +217,17 @@ export async function GET(
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    return NextResponse.json({ registration })
+    return NextResponse.json({
+      registration: {
+        ...registration,
+        ticket: registration.ticket
+          ? {
+              ...registration.ticket,
+              requires_document: false,
+            }
+          : null,
+      },
+    })
   } catch (error) {
     console.error('[success-data] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

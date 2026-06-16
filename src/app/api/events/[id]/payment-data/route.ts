@@ -72,7 +72,11 @@ export async function GET(
 
     return NextResponse.json({
       event: eventWithEffectiveStatus,
-      tickets: event.tickets || [],
+      tickets: (event.tickets || []).map((ticket: any) => ({
+        ...ticket,
+        requires_document: false,
+        document_types: [],
+      })),
       upsells: upsellsData || [],
       userEmail: user.email ?? '',
     })

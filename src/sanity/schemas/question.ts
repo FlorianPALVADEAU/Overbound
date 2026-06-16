@@ -3,7 +3,6 @@ import { defineArrayMember, defineField, defineType } from 'sanity'
 const categoryOptions = [
   { title: 'Général', value: 'general' },
   { title: 'Inscriptions & billetterie', value: 'inscriptions' },
-  { title: 'Documents & validation', value: 'documents' },
   { title: 'Préparation & entraînement', value: 'preparation' },
   { title: 'Logistique & jour J', value: 'logistique' },
   { title: 'Après course & communauté', value: 'apres-course' },
