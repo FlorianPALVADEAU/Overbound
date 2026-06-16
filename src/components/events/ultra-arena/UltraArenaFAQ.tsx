@@ -29,10 +29,10 @@ const FAQS = [
       "Oui. Beaucoup de participants viennent en solo. L'ambiance village est conçue pour rendre ça agréable. Tu peux aussi venir en groupe et réserver en une seule commande pour rester dans le même SAS de départ.",
   },
   {
-    id: 'faq-documents',
-    question: 'Quels documents sont obligatoires le jour J ?',
+    id: 'faq-jour-j',
+    question: 'Que faut-il prévoir le jour J ?',
     answer:
-      "PPS valide, ou certificat médical valide (moins de 12 mois), ou licence sportive valide. Sans document conforme, l'accès course est refusé sur place.",
+      "Arrive en avance, avec une tenue adaptée, de l'eau, ton billet accessible depuis ton compte et une pièce d'identité si l'équipe en a besoin au retrait.",
   },
   {
     id: 'faq-niveau-physique',

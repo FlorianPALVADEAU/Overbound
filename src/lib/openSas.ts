@@ -1,14 +1,14 @@
 import { formatClockTimeParis, formatDateTimeParis } from '@/lib/dateTime'
 
 export const OPEN_SAS_CONFIG = {
-  firstDeparture: { hour: 8, minute: 0 },
-  lastDeparture: { hour: 11, minute: 50 },
+  firstDeparture: { hour: 12, minute: 0 },
+  lastDeparture: { hour: 15, minute: 50 },
   intervalMinutes: 10,
   waveCapacity: 50,
 } as const
 
 export const RANKED_START_CONFIG = {
-  hour: 15,
+  hour: 8,
   minute: 0,
 } as const
 
@@ -80,6 +80,26 @@ const buildParisDateTime = (eventDateIso: string, hour: number, minute: number) 
   return new Date(utcGuessMs - offsetMinutes * 60 * 1000)
 }
 
+const addMinutes = (date: Date, minutes: number) => {
+  return new Date(date.getTime() + minutes * 60 * 1000)
+}
+
+const getOpenFirstDeparture = (eventDateIso: string) => {
+  return buildParisDateTime(
+    eventDateIso,
+    OPEN_SAS_CONFIG.firstDeparture.hour,
+    OPEN_SAS_CONFIG.firstDeparture.minute,
+  )
+}
+
+const getOpenLastDeparture = (eventDateIso: string) => {
+  return buildParisDateTime(
+    eventDateIso,
+    OPEN_SAS_CONFIG.lastDeparture.hour,
+    OPEN_SAS_CONFIG.lastDeparture.minute,
+  )
+}
+
 export const isOpenFormatTicket = (ticketName?: string | null, raceName?: string | null) => {
   const name = `${ticketName ?? ''} ${raceName ?? ''}`.toLowerCase()
   return name.includes('open')
@@ -95,17 +115,8 @@ export const getRankedStartTime = (eventDateIso: string) => {
 }
 
 export const buildOpenWaveSchedule = (eventDateIso: string): OpenWaveSchedule => {
-  const firstDeparture = buildParisDateTime(
-    eventDateIso,
-    OPEN_SAS_CONFIG.firstDeparture.hour,
-    OPEN_SAS_CONFIG.firstDeparture.minute,
-  )
-
-  const lastDeparture = buildParisDateTime(
-    eventDateIso,
-    OPEN_SAS_CONFIG.lastDeparture.hour,
-    OPEN_SAS_CONFIG.lastDeparture.minute,
-  )
+  const firstDeparture = getOpenFirstDeparture(eventDateIso)
+  const lastDeparture = getOpenLastDeparture(eventDateIso)
 
   const intervalMs = OPEN_SAS_CONFIG.intervalMinutes * 60 * 1000
   const waveCount = Math.floor((lastDeparture.getTime() - firstDeparture.getTime()) / intervalMs) + 1
@@ -125,40 +136,34 @@ const normalizeDistanceValue = (value: unknown) => {
 }
 
 const getPreferredWindow = (eventDateIso: string, distanceIdeal: number) => {
-  let startHour = 10
-  let startMinute = 0
-  let endHour = 11
-  let endMinute = 50
+  let startOffsetMinutes = 120
+  let endOffsetMinutes: number | null = null
 
   if (distanceIdeal >= 20) {
-    startHour = 8
-    startMinute = 0
-    endHour = 9
-    endMinute = 30
+    startOffsetMinutes = 0
+    endOffsetMinutes = 90
   } else if (distanceIdeal >= 10) {
-    startHour = 9
-    startMinute = 0
-    endHour = 10
-    endMinute = 30
+    startOffsetMinutes = 60
+    endOffsetMinutes = 150
   }
 
-  const start = buildParisDateTime(eventDateIso, startHour, startMinute)
-  const end = buildParisDateTime(eventDateIso, endHour, endMinute)
+  const firstDeparture = getOpenFirstDeparture(eventDateIso)
+  const start = addMinutes(firstDeparture, startOffsetMinutes)
+  const end = endOffsetMinutes === null
+    ? getOpenLastDeparture(eventDateIso)
+    : addMinutes(firstDeparture, endOffsetMinutes)
 
   return { start, end }
 }
 
 const getLatestAllowed = (eventDateIso: string, distanceMin: number) => {
-  let hour = 11
-  let minute = 50
   if (distanceMin >= 20) {
-    hour = 9
-    minute = 30
-  } else if (distanceMin >= 10) {
-    hour = 10
-    minute = 30
+    return addMinutes(getOpenFirstDeparture(eventDateIso), 90)
   }
-  return buildParisDateTime(eventDateIso, hour, minute)
+  if (distanceMin >= 10) {
+    return addMinutes(getOpenFirstDeparture(eventDateIso), 150)
+  }
+  return getOpenLastDeparture(eventDateIso)
 }
 
 export const formatWaveStartTime = (startTime: string | null | undefined) => {
@@ -214,16 +219,15 @@ export const assignOpenWaveToRegistration = async ({
   const preferred = normalizedIdeal !== null
     ? getPreferredWindow(eventDateIso, normalizedIdeal)
     : (() => {
-        const start = buildParisDateTime(eventDateIso, 8, 0)
-        const end = buildParisDateTime(eventDateIso, 11, 50)
+        const start = getOpenFirstDeparture(eventDateIso)
+        const end = getOpenLastDeparture(eventDateIso)
         return { start, end }
       })()
 
   const latestAllowed = normalizedMin !== null
     ? getLatestAllowed(eventDateIso, normalizedMin)
     : (() => {
-        const latest = buildParisDateTime(eventDateIso, 11, 50)
-        return latest
+        return getOpenLastDeparture(eventDateIso)
       })()
 
   const schedule = buildOpenWaveSchedule(eventDateIso)

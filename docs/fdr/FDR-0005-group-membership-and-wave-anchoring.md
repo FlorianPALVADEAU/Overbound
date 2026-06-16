@@ -19,7 +19,7 @@ Groups (Pack Entreprise) are collections of users (1 captain + N members) that c
    - Enables audit trail + prevents accidental overwrites
    - Each initialization captured with timestamp + source profile
 
-3. **RANKED Unaffected**: RANKED (15:00) registrations are never affected by group anchor
+3. **RANKED Unaffected**: RANKED (08:00) registrations are never affected by group anchor
 
 ---
 
@@ -34,7 +34,7 @@ Groups (Pack Entreprise) are collections of users (1 captain + N members) that c
 ### Format Isolation
 
 - **Only affects OPEN**: Group anchor is event-specific and format-agnostic (only OPEN has waves)
-- **RANKED unaffected**: 15:00 departure is singleton, no groups needed
+- **RANKED unaffected**: 08:00 departure is singleton, no groups needed
 
 ---
 
@@ -51,8 +51,8 @@ interface Group {
   
   // Wave anchor (NULL if not initialized)
   anchor_event_id: UUID | null
-  anchor_wave_index: number | null    // 0-23 for OPEN waves
-  anchor_start_time: Timestamp | null // e.g., 08:30:00
+  anchor_wave_index: number | null    // 1-24 for OPEN waves in current implementation
+  anchor_start_time: Timestamp | null // e.g., 12:30:00
   
   // Anchor initialization tracking
   anchor_initialized_by: 'creator' | 'member_join' | 'admin_manual' | null
@@ -138,7 +138,7 @@ PATCH /api/admin/groups/:id
 {
   anchor_event_id: event_id,
   anchor_wave_index: 5,
-  anchor_start_time: '2026-09-20T08:50:00Z'
+  anchor_start_time: '2026-09-12T10:50:00Z'
 }
 
 // → group.anchor_initialized_by = 'admin_manual'
@@ -171,7 +171,7 @@ Critical: When user's RANKED registration is transferred to OPEN on an event whe
 ```sql
 1. Check if user ∈ group with anchor on this event
 2. If YES:
-   → Assign to anchor wave (NOT random 08:00-11:50 assignment)
+   → Assign to anchor wave (NOT random 12:00-15:50 assignment)
    → Preserve group coherence
 3. If NO:
    → Standard RPC assign_open_wave_to_registration()
@@ -387,4 +387,3 @@ ORDER BY g.id;
 - 🔴 **Critical**: Group members on different waves (should be synced)
 - 🟡 **Warning**: Anchor_initialized_by null but anchor_event_id not null (data integrity issue)
 - 🟢 **Info**: Group creation rate, members per group (metrics)
-

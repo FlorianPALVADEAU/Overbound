@@ -11,7 +11,7 @@
 
 - **Captain** (creator) + **Members** (invited users)
 - Optional **Wave Anchor**: forces all OPEN members to start at same time on a specific event
-- **RANKED members unaffected** (15:00 is single start time anyway)
+- **RANKED members unaffected** (08:00 is single start time anyway)
 
 ### Anchor Initialization
 
@@ -509,4 +509,3 @@ If user in 2 groups with different anchors, which one wins?
 - [ ] Wave counter matches actual registration count (query in Wave Assignment guide)
 - [ ] No group members on different waves (anomaly detection)
 - [ ] Invite codes are unique
-

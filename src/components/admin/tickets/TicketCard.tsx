@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Ticket } from '@/types/Ticket'
-import { Calendar, FileText, Ticket as TicketIcon, Users } from 'lucide-react'
+import { Calendar, Ticket as TicketIcon, Users } from 'lucide-react'
 import { Clock, Edit, Trash2 } from 'lucide-react'
 
 interface TicketCardProps {
@@ -21,8 +21,6 @@ function formatCurrency(value: number | null | undefined, currency: Ticket['curr
 }
 
 export function TicketCard({ ticket, onEdit, onDelete, isDeleting }: TicketCardProps) {
-  const requiresDoc = ticket.requires_document && ticket.document_types && ticket.document_types.length > 0
-
   return (
     <Card>
       <CardContent className="p-6">

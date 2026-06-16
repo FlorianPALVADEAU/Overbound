@@ -60,18 +60,18 @@ export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-general-overview',
     title: 'Comment finaliser mon inscription à une course Overbound ?',
-    shortAnswer: 'Crée ton compte, choisis ta course et valide ton dossier en trois étapes simples.',
+    shortAnswer: 'Crée ton compte, choisis ta course et valide ton paiement en quelques étapes.',
     answer: [
       block(
         'Pour finaliser ton inscription, connecte-toi à ton espace Overbound, choisis la course à laquelle tu veux participer et suis les étapes guidées.',
       ),
       block(
-        'Une fois ton billet sélectionné, nous te demandons de compléter ton profil (coordonnées, niveau, objectifs) puis de téléverser les documents obligatoires.',
+        'Une fois ton billet sélectionné, complète les informations participants, signe le règlement et valide ton paiement.',
       ),
       ...bulletList([
         '1. Sélectionne la date et le format de course qui te correspond.',
         '2. Renseigne les informations participants et ajoute les options (assurance, pack photos).',
-        '3. Upload ton certificat PPS ou ton attestation de non contre-indication.',
+        '3. Valide le paiement pour recevoir ton billet et ton QR code.',
       ]),
       block(
         'Dès que tout est validé, tu reçois un e-mail de confirmation avec ton QR code d’accès et les informations logistiques pour préparer ton défi.',
@@ -81,27 +81,6 @@ export const faqFallback: FAQDocument[] = [
     relatedLinks: [
       { label: 'Créer mon compte', href: '/account' },
       { label: 'Consulter les formats', href: '/trainings/what-race-for-me' },
-    ],
-  },
-  {
-    _id: 'fallback-documents-certificate',
-    title: 'Quels documents sont obligatoires avant le jour J ?',
-    shortAnswer: 'Un certificat PPS récent ou une attestation spécifique selon ton profil.',
-    answer: [
-      block(
-        'Pour garantir ta sécurité, nous te demandons un certificat PPS (Parcours Prévention Santé) daté de moins de 6 mois mentionnant « course à obstacles » ou « pratique du sport en compétition ».',
-      ),
-      block(
-        'Si tu es mineur, une autorisation parentale signée est également nécessaire. Les documents sont vérifiés automatiquement via notre application lors du check-in.',
-      ),
-      block(
-        'Dès qu’ils sont validés, tu reçois un e-mail confirmant la conformité, et l’icône « documents manquants » disparaît de ton profil.',
-      ),
-    ],
-    category: 'documents',
-    relatedLinks: [
-      { label: 'Gabarit certificat PPS', href: '/documents/certificat.pdf' },
-      { label: 'Voir la procédure de validation', href: '/about/faq#documents' },
     ],
   },
   {
@@ -130,13 +109,13 @@ export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-logistique-arrivee',
     title: 'Quels sont les horaires et consignes le jour de la course ?',
-    shortAnswer: 'Arrive 60 minutes avant ton créneau, passe au contrôle des documents, puis échauffement obligatoire.',
+    shortAnswer: 'Arrive 60 minutes avant ton créneau pour le retrait du dossard, le briefing et l’échauffement.',
     answer: [
       block(
         'Nous t’invitons à arriver au moins 1 heure avant ton horaire de vague. Dirige-toi directement vers le village départ où nos bénévoles t’accueilleront.',
       ),
       block(
-        'Documents, bracelet et dossard sont vérifiés sur place. Une consigne sécurisée est à ta disposition pour tes effets personnels (2 € par sac).',
+        'Le bracelet et le dossard sont remis sur place. Une consigne sécurisée est à ta disposition pour tes effets personnels (2 € par sac).',
       ),
       block(
         'Un échauffement collectif est animé 20 minutes avant chaque départ. Les briefing sécurité et parcours sont obligatoires pour accéder à la ligne de départ.',

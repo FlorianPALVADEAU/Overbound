@@ -39,10 +39,10 @@ SELECT assign_open_wave_to_registration(
 |-------|------|-------------|----------|
 | `p_event_id` | UUID | Event identifier | Yes |
 | `p_registration_id` | UUID | Registration to assign | Yes |
-| `p_first_departure` | TIMESTAMPTZ | Wave 0 departure time (08:00) | Yes |
+| `p_first_departure` | TIMESTAMPTZ | First OPEN wave departure time (12:00 Europe/Paris) | Yes |
 | `p_wave_count` | INT | Total waves (typically 24) | Yes |
 | `p_slots_per_wave` | INT | Capacity per wave (typically 10-15) | Yes |
-| `p_group_anchor_wave_index` | INT | If user in group, anchor wave (0-23) | No |
+| `p_group_anchor_wave_index` | INT | If user in group, anchor wave (1-24 in current implementation) | No |
 
 ### Returns
 
@@ -51,7 +51,7 @@ SELECT assign_open_wave_to_registration(
   "success": true,
   "wave_index": 5,
   "wave_position": 3,
-  "start_time": "2026-09-20T08:50:00Z",
+  "start_time": "2026-09-12T10:50:00Z",
   "full_waves": false
 }
 ```
@@ -106,7 +106,7 @@ const { wave_index, start_time } = result.data;
 it('assigns registration to available wave', async () => {
   const result = await rpc('assign_open_wave_to_registration', {...});
   expect(result.data.wave_index).toBeDefined();
-  expect(result.data.start_time).toMatch(/2026-09-20T08:/);
+  expect(result.data.start_time).toMatch(/2026-09-12T1[0-3]:/);
 });
 
 // Edge case: group anchor forces specific wave
@@ -249,7 +249,7 @@ SELECT sync_open_group_wave(
 | Param | Type | Description | Required |
 |-------|------|-------------|----------|
 | `p_group_id` | UUID | Group to sync | Yes |
-| `p_anchor_wave_index` | INT | Target wave (0-23) | Yes |
+| `p_anchor_wave_index` | INT | Target wave (1-24 in current implementation) | Yes |
 | `p_anchor_start_time` | TIMESTAMPTZ | Target departure time | Yes |
 
 ### Returns
@@ -355,7 +355,7 @@ SELECT resolve_group_anchor(
 ```
 anchor_wave_index | anchor_start_time      | anchor_source
 ------------------+------------------------+--------------
-              5   | 2026-09-20T08:50:00Z   | member_join
+              5   | 2026-09-12T10:50:00Z   | member_join
 ```
 
 ### Usage Pattern
@@ -523,4 +523,3 @@ For each RPC being called:
 [ ] Check RLS policies allow operation
 [ ] Test with different user roles (if applicable)
 ```
-

@@ -81,10 +81,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    // À ajouter après inscription à Google Search Console
-    // google: 'votre-code-verification',
-  },
+  // verification: {
+  //   google: 'AJOUTE_TON_CODE_GSC_ICI', // Code de Google Search Console
+  // },
 };
 
 

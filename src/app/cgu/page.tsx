@@ -69,7 +69,7 @@ const paragraphs = {
   compte: [
     "L’inscription est réservée aux personnes physiques âgées d’au moins 16 ans (18 ans pour les inscriptions payantes). Un contrôle de majorité peut être requis. L’Utilisateur s’engage à fournir des informations exactes et à les mettre à jour. Overbound peut suspendre ou supprimer tout compte contenant des informations fausses, incomplètes, obsolètes ou usurpées.",
     "Chaque identifiant est strictement personnel. Tout usage non autorisé doit être signalé immédiatement à contact@overbound-race.com. Overbound décline toute responsabilité en cas d'utilisation frauduleuse du compte due à une négligence (partage d’identifiants, absence de mot de passe robuste).",
-    "L’inscription à un événement suppose l’acceptation des règles spécifiques de l’événement, du règlement sportif correspondant et, le cas échéant, de conditions particulières (certificat PPS, attestation de santé, autorisation parentale).",
+    "L’inscription à un événement suppose l’acceptation des règles spécifiques de l’événement, du règlement sportif correspondant et, le cas échéant, de conditions particulières de participation.",
   ],
   services: [
     "Publication du calendrier d’événements Overbound (courses hybrides, entraînements, workshops) avec fiches détaillées : description des formats, niveaux requis, logistique, tarifs.",
@@ -100,20 +100,20 @@ const paragraphs = {
   ],
   annulation: [
     "Conformément à l’article L221-28 12° du Code de la consommation, les inscriptions à une activité sportive datée sont exclues du droit de rétractation (service de loisirs à une date déterminée).",
-    "Overbound propose cependant une option de transfert de dossard jusqu’à J-7 moyennant des frais de dossier (10 €) sous réserve de présentation des documents requis et validation de l’organisation.",
+    "Overbound propose cependant une option de transfert de dossard jusqu’à J-7 moyennant des frais de dossier (10 €), sous réserve de validation de l’organisation.",
     "En cas d’annulation par l’Organisateur, les participants sont systématiquement remboursés du montant de leur inscription (hors frais bancaires irréversibles) dans un délai maximal de 14 jours ouvrés.",
-    "Les demandes particulières (pathologie, blessure, grossesse) sont étudiées au cas par cas ; un certificat PPS peut être requis. Ecrire à contact@overbound-race.com avant l’événement.",
+    "Les demandes particulières (pathologie, blessure, grossesse) sont étudiées au cas par cas. Ecrire à contact@overbound-race.com avant l’événement.",
   ],
   conditionsCourse: [
-    "Chaque participant doit présenter, lors du retrait de dossard, soit un certificat PPS de non contre-indication à la pratique des courses d’endurance ou de fitness intense datant de moins d’un an, soit une attestation de santé conforme aux exigences fédérales en vigueur.",
+    "Chaque participant certifie disposer d’une condition physique adaptée à la pratique d’une course à obstacles et s’engage à respecter les consignes de sécurité transmises par l’organisation.",
     "Le port des équipements obligatoires (chaussures adaptées, protections, tenue) peut être vérifié à l’entrée de la zone de départ. Le non-respect entraîne une mise hors course sans remboursement.",
-    "Les mineurs sont acceptés uniquement sur les formats autorisés et avec autorisation parentale + accompagnant sur site.",
+    "Les mineurs sont acceptés uniquement sur les formats autorisés et avec un accompagnant sur site.",
     "L’accès aux zones techniques est réservé aux participants et staff. Toute introduction de matériel non autorisé est interdite.",
     "La consommation d’alcool ou de substances dopantes est strictement prohibée. Un contrôle antidopage peut être diligenté (Code mondial antidopage).",
   ],
   responsabilite: [
     "Overbound agit comme éditeur de la Plateforme et, dans certains cas, comme organisateur. Sa responsabilité ne peut être engagée qu’en cas de faute prouvée. Les partenaires restent responsables de leurs prestations (sécurité, restauration, hébergement).",
-    "Overbound ne peut être tenue responsable des dommages indirects (perte de chance, préjudice commercial, perte de données) ni des manquements imputables à l’utilisateur (erreur de saisie, défaut de certificat, matériel inadapté).",
+    "Overbound ne peut être tenue responsable des dommages indirects (perte de chance, préjudice commercial, perte de données) ni des manquements imputables à l’utilisateur (erreur de saisie, matériel inadapté).",
     "Overbound se réserve le droit de suspendre l’accès d’un utilisateur en cas de violation grave des CGU, sans indemnité. Les sommes dues restent exigibles.",
     "Les contenus fournis à titre informatif (programmes d’entraînement, conseils) ne remplacent pas l’avis d’un professionnel de santé. L’utilisateur demeure responsable de sa condition physique.",
   ],

@@ -6,9 +6,6 @@ import {
   sendProfileCompletionReminderEmail,
   sendEventPrepEmail,
   sendPostEventThankYouEmail,
-  sendDocumentRequiredEmail,
-  sendDocumentApprovedEmail,
-  sendDocumentRejectedEmail,
   sendTicketEmail,
   sendNewEventAnnouncementEmail,
   sendEventOpeningEmail,
@@ -116,34 +113,6 @@ const handlePost = async (request: NextRequest) => {
           photosUrl: `${SITE_URL}/blog/photos`,
         })
         return 'Email de remerciement envoyé.'
-      },
-      document_required: async () => {
-        await sendDocumentRequiredEmail({
-          to: user.email!,
-          participantName: fullName ?? 'Athlète',
-          eventTitle: 'OverBound Lyon 2026',
-          uploadUrl: `${ACCOUNT_URL}/registration/sample/document`,
-          requiredDocuments: ['Certificat médical de moins de 1 an'],
-        })
-        return 'Demande de document envoyée.'
-      },
-      document_approved: async () => {
-        await sendDocumentApprovedEmail({
-          to: user.email!,
-          participantName: fullName ?? null,
-          eventTitle: 'OverBound Lyon 2026',
-        })
-        return 'Confirmation document validé envoyée.'
-      },
-      document_rejected: async () => {
-        await sendDocumentRejectedEmail({
-          to: user.email!,
-          participantName: fullName ?? null,
-          eventTitle: 'OverBound Lyon 2026',
-          reason: 'Le document fourni est illisible. Merci de renvoyer une version scannée.',
-          uploadUrl: `${ACCOUNT_URL}/registration/sample/document`,
-        })
-        return 'Notification document rejeté envoyée.'
       },
       ticket_confirmation: async () => {
         await sendTicketEmail({

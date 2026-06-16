@@ -147,67 +147,6 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
         const isShareDialogOpen =
           activeDialog?.type === 'share' && activeDialog.id === registration.registration_id
 
-        const isPpsType = (value: string) => value.toLowerCase().includes('pps')
-        const ppsAvailableDate = eventDate ? (() => {
-          const available = new Date(eventDate)
-          available.setMonth(available.getMonth() - 3)
-          return available
-        })() : null
-        const ppsUploadAllowed = !ppsAvailableDate || Date.now() >= ppsAvailableDate.getTime()
-
-        const requiredTypes = Array.isArray(registration.required_document_types)
-          ? registration.required_document_types
-          : []
-        const uploadedTypes = Array.isArray(registration.uploaded_document_types)
-          ? registration.uploaded_document_types
-          : []
-        const uploadedCount = registration.documents_count ?? (registration.document_url ? 1 : 0)
-        const requiredCount = registration.required_documents_count ?? (registration.requires_document ? 1 : 0)
-        const documentsComplete =
-          registration.documents_complete ?? (requiredCount === 0 ? true : uploadedCount >= requiredCount)
-
-        const missingTypes =
-          requiredTypes.length > 0
-            ? requiredTypes.filter((type) => !uploadedTypes.includes(type))
-            : []
-
-        const missingOnlyPps =
-          !documentsComplete &&
-          missingTypes.length > 0 &&
-          missingTypes.every((type) => isPpsType(type)) &&
-          !ppsUploadAllowed
-
-        const documentStatusBadge = (() => {
-          if (isPast) {
-            return null
-          }
-
-          if (!registration.requires_document) {
-            return null
-          }
-
-          if (missingOnlyPps) {
-            return null
-          }
-
-          if (!documentsComplete) {
-            return { label: 'Documents manquants', variant: 'destructive' as const }
-          }
-
-          if (registration.approval_status === 'rejected') {
-            return { label: 'Document rejeté', variant: 'destructive' as const }
-          }
-
-          if (registration.approval_status !== 'approved') {
-            return { label: 'Validation en attente', variant: 'secondary' as const }
-          }
-
-          return null
-        })()
-
-        const showDocumentIndicator =
-          registration.document_requires_attention && !missingOnlyPps
-
         return (
           <div key={registration.registration_id}>
             <div className="flex flex-col gap-6 rounded-lg border bg-card p-6 lg:flex-row">
@@ -246,12 +185,6 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                       <Badge variant="secondary">À venir</Badge>
                     ) : isPast ? (
                       <Badge variant="outline">Terminé</Badge>
-                    ) : null}
-                    {documentStatusBadge ? (
-                      <Badge variant={documentStatusBadge.variant} className="flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {documentStatusBadge.label}
-                      </Badge>
                     ) : null}
                   </div>
                 </div>
@@ -325,34 +258,6 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                       Règlement officiel
                     </Button>
                   </Link>
-                  {registration.requires_document && registration.approval_status !== 'approved' ? (
-                    <Link href={`/account/registration/${registration.registration_id}/document`}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={
-                          showDocumentIndicator
-                            ? 'relative border-destructive text-destructive hover:bg-destructive/10'
-                            : undefined
-                        }
-                      >
-                        {showDocumentIndicator ? (
-                          <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-destructive text-[10px] font-bold leading-none text-white">
-                            !
-                          </span>
-                        ) : null}
-                        {/* HERE */}
-                        {
-                          registration.approval_status === 'rejected' ? (
-                            'Mettre à jour mon document'
-                          ) : (
-                            'Envoyer mon document'
-                          )
-                        }
-                      </Button>
-                    </Link>
-                  ) : null}
-
                   <Dialog
                     open={isQrDialogOpen}
                     onOpenChange={(open) =>
@@ -365,14 +270,9 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                       !registration.checked_in && (
                         <DialogTrigger asChild>
                           <Button
-                            variant={showDocumentIndicator ? 'outline' : 'default'}
+                            variant="default"
                             size="sm"
-                            className={
-                              showDocumentIndicator
-                                ? 'relative border-destructive text-destructive hover:bg-destructive/10'
-                                : undefined
-                            }
-                            disabled={!registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || showDocumentIndicator}
+                            disabled={!registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming}
                           >
                             <QrCodeIcon className="mr-2 h-4 w-4" />
                             Voir le billet
@@ -451,7 +351,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled={!registration.transfer_token || !registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || showDocumentIndicator}
+                            disabled={!registration.transfer_token || !registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming}
                           >
                             <Share2 className="mr-2 h-4 w-4" />
                             Transférer
