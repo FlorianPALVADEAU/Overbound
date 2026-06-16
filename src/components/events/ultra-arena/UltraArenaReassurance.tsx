@@ -13,6 +13,7 @@ import {
   Car,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
 
 const BADGES = [
   { icon: Shield, title: 'Sécurité encadrée', text: 'Règles terrain, staff et process de contrôle sur tout le parcours.' },
@@ -31,11 +32,17 @@ const EXTRA_INFOS = [
 
 interface Props {
   location: string
-  formattedTime: string
   locationMapUrl: string
 }
 
-export function UltraArenaReassurance({ location, formattedTime, locationMapUrl }: Props) {
+const formatConfigTime = (time: { hour: number; minute: number }) =>
+  `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
+
+export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
+  const rankedStartLabel = formatConfigTime(RANKED_START_CONFIG)
+  const openFirstDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.firstDeparture)
+  const openLastDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.lastDeparture)
+
   return (
     <section id="infos-pratiques" className="bg-muted/20 py-16 sm:py-20">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -72,7 +79,7 @@ export function UltraArenaReassurance({ location, formattedTime, locationMapUrl 
               <div className="rounded-xl bg-primary/5 p-3 text-sm">
                 <p className="font-semibold">{location}</p>
                 <p className="text-muted-foreground">
-                  Départs OPEN entre {formattedTime} et 14:30. RANKED à 15:00.
+                  RANKED à {rankedStartLabel}. Départs OPEN entre {openFirstDepartureLabel} et {openLastDepartureLabel}.
                 </p>
               </div>
               <div className="h-64 overflow-hidden rounded-xl border border-border/60">

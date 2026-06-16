@@ -15,7 +15,7 @@ interface FakeState {
 
 function makeSupabase(state: FakeState) {
   const builder = (table: TableName) => {
-    let _filters: Array<{ key: string; value: unknown }> = []
+    const _filters: Array<{ key: string; value: unknown }> = []
 
     const q: Record<string, unknown> = {
       select: () => q,

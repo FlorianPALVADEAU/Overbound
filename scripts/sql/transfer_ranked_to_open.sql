@@ -192,22 +192,22 @@ BEGIN
       p_registration_id := r.id,
       p_first_departure := (
         date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '8 hour'
+        + interval '12 hour'
       ) AT TIME ZONE 'Europe/Paris',
       p_wave_count := 24,
       p_interval_minutes := 10,
       p_default_capacity := 50,
       p_preferred_start := (
         date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '8 hour'
+        + interval '12 hour'
       ) AT TIME ZONE 'Europe/Paris',
       p_preferred_end := (
         date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '11 hour 50 minute'
+        + interval '15 hour 50 minute'
       ) AT TIME ZONE 'Europe/Paris',
       p_latest_allowed := (
         date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '11 hour 50 minute'
+        + interval '15 hour 50 minute'
       ) AT TIME ZONE 'Europe/Paris'
     );
   END IF;
@@ -245,6 +245,7 @@ BEGIN
 
   RAISE NOTICE 'DONE: registration % moved to OPEN ticket % with start_time=% wave_index=%',
     r.id, t_open.id, v_new_start_time, v_new_wave_index;
-END $$;
+END;
+$$;
 
 COMMIT;
