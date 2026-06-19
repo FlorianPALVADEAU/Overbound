@@ -1,10 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, MapPin, Calendar, Clock, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { MapPin, Calendar, Clock, ChevronDown, ChevronUp, Loader2, Flame, TrendingUp, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Bootcamp } from '@/types/Bootcamp'
+
+function SocialProof({ count }: { count: number }) {
+  if (count === 0) {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Zap className="h-3 w-3 text-amber-500" />
+        Sois le·la premier·e à te lancer !
+      </span>
+    )
+  }
+
+  const isPopular = count > 12
+
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {isPopular
+        ? <Flame className="h-3 w-3 text-red-500" />
+        : <TrendingUp className="h-3 w-3 text-emerald-500" />}
+      {isPopular ? 'Très prisé — rejoins le groupe !' : 'Le groupe se forme — rejoins-les !'}
+    </span>
+  )
+}
 
 interface BootcampCardProps {
   bootcamp: Bootcamp
@@ -83,14 +105,9 @@ export function BootcampCard({ bootcamp, isAuthenticated, onRegister, onUnregist
 
       {/* Content */}
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1.5">
           <h2 className="text-lg font-semibold leading-tight text-foreground sm:text-xl">{bootcamp.title}</h2>
-
-          {/* Compteur inscrits */}
-          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-medium">
-            <Users className="h-3.5 w-3.5 text-primary" />
-            {bootcamp.registration_count ?? 0}
-          </span>
+          <SocialProof count={bootcamp.registration_count ?? 0} />
         </div>
 
         {/* Description */}
