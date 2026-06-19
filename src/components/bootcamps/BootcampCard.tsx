@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, Calendar, Clock, ChevronDown, ChevronUp, Loader2, Flame, TrendingUp, Zap } from 'lucide-react'
+import { Users, MapPin, Calendar, Clock, ChevronDown, ChevronUp, Loader2, Flame, TrendingUp, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Bootcamp } from '@/types/Bootcamp'
