@@ -34,7 +34,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 
-  const { data, error } = await supabase
+  const admin = supabaseAdmin()
+
+  const { data, error } = await admin
     .from('bootcamps')
     .select(`
       *,
@@ -48,7 +50,6 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Fetch profiles separately for registrants
   const allUserIds = (data ?? []).flatMap((b) =>
     (b.bootcamp_registrations as { user_id: string }[]).map((r) => r.user_id)
   )
@@ -57,10 +58,8 @@ export async function GET() {
   const profileMap: Record<string, { full_name: string | null; email: string | null }> = {}
 
   if (uniqueUserIds.length > 0) {
-    const admin = supabaseAdmin()
-
     const [{ data: profiles }, { data: authUsers }] = await Promise.all([
-      supabase.from('profiles').select('id, full_name').in('id', uniqueUserIds),
+      admin.from('profiles').select('id, full_name').in('id', uniqueUserIds),
       admin.auth.admin.listUsers({ perPage: 1000 }),
     ])
 
