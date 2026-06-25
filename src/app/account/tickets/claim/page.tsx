@@ -117,7 +117,7 @@ function ClaimTicketPageInner() {
               <Link href="/account/tickets">
                 <Button variant="outline">Retour à mes billets</Button>
               </Link>
-              <Link href="/events">
+              <Link href="/events/ultra-arena-2026">
                 <Button variant="ghost">Parcourir les événements</Button>
               </Link>
             </div>

@@ -10,10 +10,11 @@ export const PARTNERS_DATA: PartnerType[] = [
         logo: '/images/partners_logo/avc_logo.webp',
         url: 'https://www.auvieuxcampeur.fr/'
     },
-    // {
-    //     name: 'Decathlon',
-    //     logo: '/images/partners_logo/decathlon_logo.webp',
-    // },
+    {
+        name: 'Rossignol',
+        logo: '/images/partners_logo/rossignol_logo.webp',
+        url: 'https://www.rossignol.com/'
+    },
     // {
     //     name: 'Fiskars',
     //     logo: '/images/partners_logo/fiskars_logo.webp',
@@ -29,7 +30,7 @@ export const PARTNERS_DATA: PartnerType[] = [
         url: 'https://www.onenation.fr/fr/brand/columbia/'
     },
     {
-        name: 'Gossip Fit',
+        name: 'Airtime Training',
         logo: '/images/partners_logo/airtime_training_logo.png',
         url: 'https://www.airtime-training.fr/'
     },

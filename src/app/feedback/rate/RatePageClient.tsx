@@ -88,7 +88,7 @@ export function RatePageClient() {
             </p>
             <div className="space-y-3">
               <Link
-                href="/events"
+                href="/events/ultra-arena-2026"
                 className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Découvrir les prochains événements

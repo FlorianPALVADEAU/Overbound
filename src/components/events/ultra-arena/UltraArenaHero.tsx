@@ -55,7 +55,7 @@ export function UltraArenaHero({
       <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Nav row */}
         <div className="mb-8 flex items-center justify-between">
-          <Link href="/events">
+          <Link href="/">
             <Button
               variant="ghost"
               size="sm"
