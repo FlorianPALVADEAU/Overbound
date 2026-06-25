@@ -86,7 +86,7 @@ const FormatCard: React.FC<FormatCardProps> = ({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex justify-end z-1">
-				<Link href="/events">
+				<Link href="/events/ultra-arena-2026">
 					<Button className="w-58 h-14 bg-gradient-to-r from-[#26AA26] to-[#1e8a1e] text-white border-0">
 						{buttonText}
 					</Button>
@@ -248,7 +248,7 @@ useEffect(() => {
 								size="lg"
 								className="bg-red-600 hover:bg-red-700 text-white px-8 rounded-full"
 							>
-								<Link href="/events/ultra-arena-2026">
+								<Link href="/events/ultra-arena-2026/register">
 									S'inscrire à la Ultra Arena
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Link>
@@ -447,7 +447,7 @@ useEffect(() => {
 													{index === 3 ? (
 														<div className="mt-4 gap-2 flex flex-wrap">
 															<Link
-																href="/events/ultra-arena-2026"
+																href="/events/ultra-arena-2026/register"
 																className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-amber-600 text-sm underline-offset-4 hover:bg-amber-500/20 hover:underline"
 															>
 																↗ S'inscrire maintenant

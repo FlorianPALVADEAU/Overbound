@@ -14,7 +14,7 @@ interface ObstaclesOverviewProps {
 
 const ObstaclesOverview = ({
     eventId = 'ultra-arena-2026',
-    title = "Quelques obstacles",
+    title = "Les obstacles Overbound",
     description = "Découvre une sélection d'obstacles emblématiques qui te mettront au défi lors de l'Overbound.",
     embedded = false,
 }: ObstaclesOverviewProps) => {

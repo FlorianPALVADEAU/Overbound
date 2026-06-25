@@ -15,7 +15,7 @@ const CTA = () => {
                     Les premiers guerriers écriront l'histoire d'Overbound. Seras-tu l'un d'eux ?
                 </p>
             </div>
-            <Link href="/events">
+            <Link href="/events/ultra-arena-2026/register">
                 <Button 
                     className='w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
                     variant='default'

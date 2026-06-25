@@ -252,7 +252,7 @@ export default function RaceDetailPage() {
             className="mb-6 rounded-full border border-border/50 bg-background/60 px-6 text-muted-foreground backdrop-blur transition hover:bg-background/80 hover:text-foreground"
             asChild
           >
-            <Link href="/events">
+            <Link href="/events/ultra-arena-2026">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Retour aux événements
             </Link>
@@ -945,9 +945,6 @@ export default function RaceDetailPage() {
               <p className="mt-2 text-muted-foreground">
                 Explore notre galerie d'obstacles pour visualiser ce qui t'attend sur le parcours
               </p>
-              <Button className="mt-6" variant="outline" asChild>
-                <Link href="/obstacles">Voir la galerie des obstacles</Link>
-              </Button>
             </div>
           </div>
         </section>
