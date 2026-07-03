@@ -585,7 +585,6 @@ function RegisterInner() {
                       inputMode="numeric"
                       autoComplete={index === 0 ? 'one-time-code' : 'off'}
                       pattern="[0-9]*"
-                      maxLength={1}
                       value={digit}
                       onChange={(event) => handleVerificationDigitChange(index, event.target.value)}
                       onKeyDown={(event) => handleVerificationKeyDown(event, index)}
