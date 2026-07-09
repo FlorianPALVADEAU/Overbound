@@ -20,6 +20,7 @@ import {
   Zap,
   ExternalLink,
   Eye,
+  HeartHandshake,
 } from 'lucide-react'
 import { useGetObstacles } from '../api/obstacles/obstaclesQueries'
 import type { Obstacle } from '@/types/Obstacle'
@@ -469,6 +470,14 @@ export default function ObstaclesPage() {
                     </p>
                   </div>
                 ) : null}
+
+                <div className='flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4'>
+                  <HeartHandshake className='mt-0.5 h-5 w-5 flex-none text-primary' />
+                  <p className='text-sm leading-relaxed text-primary/80'>
+                    <strong className='text-foreground'>Adapté aux femmes :</strong> une version ajustée (hauteur, prise,
+                    charge) est proposée sur cet obstacle pour permettre à chacune de le franchir en confiance.
+                  </p>
+                </div>
 
                 <div className='space-y-3'>
                   <h3 className='text-lg font-semibold'>Conseils pour réussir</h3>
