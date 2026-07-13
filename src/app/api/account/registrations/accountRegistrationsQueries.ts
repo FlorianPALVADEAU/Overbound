@@ -39,11 +39,12 @@ const fetchAccountRegistrations = async (): Promise<AccountRegistrationsResponse
   return (await response.json()) as AccountRegistrationsResponse
 }
 
-export const useAccountRegistrations = () =>
+export const useAccountRegistrations = (options?: { enabled?: boolean }) =>
   useQuery<AccountRegistrationsResponse, Error>({
     queryKey: ACCOUNT_REGISTRATIONS_QUERY_KEY,
     queryFn: fetchAccountRegistrations,
     staleTime: 2 * 60 * 1000,
+    enabled: options?.enabled ?? true,
     retry: (failureCount, error) => {
       if (failureCount >= 2) return false
       const message = error.message.toLowerCase()

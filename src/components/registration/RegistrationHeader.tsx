@@ -1,20 +1,17 @@
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { AlertTriangle, CalendarDays, MapPin, Users } from 'lucide-react'
+import { CalendarDays, MapPin, Users } from 'lucide-react'
 import Link from 'next/link'
 import type { Event } from '@/types/Event'
 
 interface RegistrationHeaderProps {
   event: Event
   availableSpots: number
-  isAuthenticated: boolean
 }
 
 export default function RegistrationHeader({
   event,
   availableSpots,
-  isAuthenticated,
 }: RegistrationHeaderProps) {
   return (
     <>
@@ -46,18 +43,6 @@ export default function RegistrationHeader({
           <Link href={`/events/${event.id}`}>Retour à l&apos;événement</Link>
         </Button>
       </div>
-
-      {!isAuthenticated && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Vous devez être connecté pour poursuivre votre inscription.{' '}
-            <a href={`/auth/login?next=/events/${event.id}`} className="underline">
-              Se connecter
-            </a>
-          </AlertDescription>
-        </Alert>
-      )}
     </>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
@@ -28,6 +29,7 @@ import ConfirmationStep from './ConfirmationStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
 import ParticipantSummarySidebar from './ParticipantSummarySidebar'
 import GroupJoinInline from './GroupJoinInline'
+import InlineAuthStep from './InlineAuthStep'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Users } from 'lucide-react'
 import { formatWaveStartTime } from '@/lib/openSas'
@@ -42,10 +44,12 @@ export default function MultiStepEventRegistration({
   initialTicketId = null,
 }: MultiStepEventRegistrationProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
   const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
   const addToCartTrackedRef = useRef(false)
-  const { data: myGroup } = useMyGroup()
+  const suppressEmptyParticipantsSyncRef = useRef(false)
+  const { data: myGroup } = useMyGroup({ enabled: Boolean(user) })
 
   // Local UI state
   const [disclaimerRead, setDisclaimerRead] = useState(false)
@@ -53,6 +57,8 @@ export default function MultiStepEventRegistration({
   const [rulebookAccepted, setRulebookAccepted] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
+  const [showInlineAuth, setShowInlineAuth] = useState(false)
+  const pendingPaymentAfterAuthRef = useRef(false)
 
   // Default currency (needed before pricing hook)
   const defaultCurrency = useMemo(() => {
@@ -73,6 +79,7 @@ export default function MultiStepEventRegistration({
   const { participants, setParticipants, handleParticipantChange } = useParticipants(
     selectedTicketSlots,
     user,
+    suppressEmptyParticipantsSyncRef,
   )
 
   const {
@@ -232,6 +239,7 @@ export default function MultiStepEventRegistration({
       disclaimerRead,
       disclaimerAccepted,
       rulebookAccepted,
+      stepIndex,
     },
     {
       setTicketSelections,
@@ -252,6 +260,7 @@ export default function MultiStepEventRegistration({
     },
     initialTicketId,
     tickets,
+    suppressEmptyParticipantsSyncRef,
   )
 
   // Navigation wrappers
@@ -306,10 +315,7 @@ export default function MultiStepEventRegistration({
   // Payment handler
   const handleProceedToPayment = async () => {
     if (!user) {
-      setSubmissionMessage({
-        type: 'error',
-        text: 'Connectez-vous pour continuer votre inscription.',
-      })
+      setShowInlineAuth(true)
       return
     }
 
@@ -463,7 +469,28 @@ export default function MultiStepEventRegistration({
     router.push(`/events/${event.slug}/register/payment`)
   }
 
-  const groupBanner = !myGroup ? (
+  // Once the guest authenticates inline, retry the payment step automatically
+  useEffect(() => {
+    if (user && pendingPaymentAfterAuthRef.current) {
+      pendingPaymentAfterAuthRef.current = false
+      setShowInlineAuth(false)
+      void handleProceedToPayment()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  const handleInlineAuthenticated = () => {
+    pendingPaymentAfterAuthRef.current = true
+    // The page mounts this query keyed by whatever route param it received
+    // (event slug or id), which this component doesn't know — match broadly
+    // on the 'register-data' marker instead of reconstructing the exact key.
+    void queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey[0] === 'events' && query.queryKey[2] === 'register-data',
+    })
+  }
+
+  const groupBanner = !user ? null : !myGroup ? (
     <GroupJoinInline />
   ) : myGroup.anchor_event_id === event.id && myGroup.anchor_start_time ? (
     <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
@@ -548,7 +575,6 @@ export default function MultiStepEventRegistration({
       <RegistrationHeader
         event={event}
         availableSpots={availableSpots}
-        isAuthenticated={Boolean(user)}
       />
 
       <Card className="relative">
@@ -570,11 +596,15 @@ export default function MultiStepEventRegistration({
             <div className="space-y-6">
               <div>{stepContent[currentStepId]}</div>
 
+              {showInlineAuth ? (
+                <InlineAuthStep onAuthenticated={handleInlineAuthenticated} />
+              ) : null}
+
               <StepNavigation
                 stepIndex={stepIndex}
                 eventId={event.id}
-                isAuthenticated={Boolean(user)}
                 isCreatingPaymentIntent={isCreatingPaymentIntent}
+                isAuthPending={showInlineAuth}
                 submissionMessage={submissionMessage}
                 onNext={handleNext}
                 onPrevious={handlePrevious}

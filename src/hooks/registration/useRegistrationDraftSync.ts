@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
 import type { RegistrationDraft, RegistrationSummary } from '@/store/useRegistrationStore'
@@ -27,6 +27,7 @@ interface DraftSyncConfig {
   disclaimerRead: boolean
   disclaimerAccepted: boolean
   rulebookAccepted: boolean
+  stepIndex: number
 }
 
 interface DraftSyncSetters {
@@ -52,10 +53,10 @@ export function useRegistrationDraftSync(
   setters: DraftSyncSetters,
   initialTicketId: string | null,
   tickets: Array<{ id: string }>,
+  suppressEmptySyncRef?: RefObject<boolean>,
 ) {
   const registrationDraft = useRegistrationStore((state) => state.draft)
   const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
-  const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
   const registrationHasHydrated = useRegistrationStore((state) => state.hasHydrated)
 
   const initializationKeyRef = useRef<string | null>(null)
@@ -77,6 +78,9 @@ export function useRegistrationDraftSync(
             selectionRecord[selection.ticketId] = selection.quantity
           }
         })
+        if (suppressEmptySyncRef && Object.keys(selectionRecord).length > 0) {
+          suppressEmptySyncRef.current = true
+        }
         setters.setTicketSelections(selectionRecord)
         setters.setParticipants(registrationDraft.participants.map((p) => ({ ...p })))
 
@@ -121,7 +125,7 @@ export function useRegistrationDraftSync(
         setters.setClientSecret(registrationDraft.clientSecret)
         setters.setPaymentIntentId(registrationDraft.paymentIntentId)
         setters.setPricing(registrationDraft.summary)
-        setters.setStepIndex(0)
+        setters.setStepIndex(registrationDraft.stepIndex ?? 0)
         setters.setSubmissionMessage(null)
         return
       }
@@ -153,15 +157,18 @@ export function useRegistrationDraftSync(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registrationHasHydrated, config.eventId, initialTicketId])
 
+  // Once ticket selections reflect the restored draft, participants are safe to
+  // auto-sync again (see suppressEmptySyncRef in useParticipants).
+  useEffect(() => {
+    if (!suppressEmptySyncRef?.current) return
+    if (Object.keys(config.ticketSelections).length > 0) {
+      suppressEmptySyncRef.current = false
+    }
+  }, [config.ticketSelections, suppressEmptySyncRef])
+
   // Auto-save to store on state changes
   useEffect(() => {
     if (!registrationHasHydrated) return
-
-    if (!config.user) {
-      clearRegistrationDraft()
-      lastSavedDraftRef.current = null
-      return
-    }
 
     const ticketSelectionArray = Object.entries(config.ticketSelections).map(
       ([ticketId, quantity]) => ({ ticketId, quantity }),
@@ -196,8 +203,8 @@ export function useRegistrationDraftSync(
 
     const draftPayload: RegistrationDraft = {
       eventId: config.eventId,
-      userId: config.user.id,
-      userEmail: config.user.email || '',
+      userId: config.user?.id ?? null,
+      userEmail: config.user?.email || null,
       paymentIntentId: config.paymentIntentId ?? null,
       clientSecret: config.clientSecret ?? null,
       ticketSelections: ticketSelectionArray,
@@ -213,6 +220,7 @@ export function useRegistrationDraftSync(
         accepted: config.disclaimerAccepted,
         rulebookAccepted: config.rulebookAccepted,
       },
+      stepIndex: config.stepIndex,
     }
 
     const serialized = JSON.stringify(draftPayload)
@@ -241,8 +249,8 @@ export function useRegistrationDraftSync(
     config.disclaimerRead,
     config.disclaimerAccepted,
     config.rulebookAccepted,
+    config.stepIndex,
     setRegistrationDraft,
-    clearRegistrationDraft,
   ])
 
   return { registrationHasHydrated }

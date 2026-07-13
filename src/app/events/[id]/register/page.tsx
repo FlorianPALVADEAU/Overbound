@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useParams, useSearchParams, useRouter } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import MultiStepEventRegistration from '@/components/registration'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventRegisterData } from '@/app/api/events/[id]/register-data/registerDataQueries'
@@ -12,21 +12,16 @@ import { useAccountRegistrations } from '@/app/api/account/registrations/account
 export default function EventRegisterPage() {
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
-  const router = useRouter()
   const ticketQueryParam = searchParams?.get('ticket') ?? null
   const { data: session, isLoading: sessionLoading } = useSession()
-  const { data: accountRegistrations, isLoading: accountRegistrationsLoading } = useAccountRegistrations()
+  const { data: accountRegistrations, isLoading: accountRegistrationsLoading } = useAccountRegistrations({
+    enabled: !sessionLoading && Boolean(session?.user),
+  })
   const registerViewTrackedRef = useRef(false)
-
-  useEffect(() => {
-    if (!sessionLoading && !session?.user && !accountRegistrationsLoading) {
-      const nextUrl = `/events/${params.id}/register${ticketQueryParam ? `?ticket=${ticketQueryParam}` : ''}`
-      router.replace(`/auth/login?next=${encodeURIComponent(nextUrl)}`)
-    }
-  }, [session?.user, sessionLoading, accountRegistrationsLoading, router, params.id, ticketQueryParam])
+  const hasRenderedFormRef = useRef(false)
 
   const { data, isLoading, error, refetch } = useEventRegisterData(params.id, ticketQueryParam, {
-    enabled: Boolean(session?.user),
+    enabled: !sessionLoading,
   })
 
   useEffect(() => {
@@ -67,20 +62,26 @@ export default function EventRegisterPage() {
     })
   }, [data?.event, params.id])
 
-  if (sessionLoading || (session && !session.user) || accountRegistrationsLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <div className="text-sm text-muted-foreground">Chargement…</div>
-      </main>
-    )
-  }
+  // Once the registration form has rendered, never fall back to a full-page
+  // loading screen again for this mount — background refetches (session,
+  // account registrations after an inline login) would otherwise unmount the
+  // form and wipe all in-progress local state (tickets, participants, step).
+  if (!hasRenderedFormRef.current) {
+    if (sessionLoading || (Boolean(session?.user) && accountRegistrationsLoading)) {
+      return (
+        <main className="flex min-h-screen items-center justify-center">
+          <div className="text-sm text-muted-foreground">Chargement…</div>
+        </main>
+      )
+    }
 
-  if (isLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
-        <div className="text-sm text-muted-foreground">Chargement des informations d'inscription…</div>
-      </main>
-    )
+    if (isLoading) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+          <div className="text-sm text-muted-foreground">Chargement des informations d'inscription…</div>
+        </main>
+      )
+    }
   }
 
   if (error) {
@@ -105,6 +106,8 @@ export default function EventRegisterPage() {
     return null
   }
 
+  hasRenderedFormRef.current = true
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto w-full px-4 pb-12 pt-8">
@@ -115,12 +118,16 @@ export default function EventRegisterPage() {
             race: ticket.race === null ? undefined : ticket.race,
           }))}
           upsells={data.upsells}
-          user={{
-            id: data.user.id,
-            email: data.user.email,
-            fullName: data.user.fullName,
-            date_of_birth: accountRegistrations?.profile?.date_of_birth || null,
-          }}
+          user={
+            data.user
+              ? {
+                  id: data.user.id,
+                  email: data.user.email,
+                  fullName: data.user.fullName,
+                  date_of_birth: accountRegistrations?.profile?.date_of_birth || null,
+                }
+              : null
+          }
           availableSpots={data.availableSpots}
           initialTicketId={ticketQueryParam}
           eventPriceTiers={data.event.price_tiers || []}

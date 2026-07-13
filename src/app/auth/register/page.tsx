@@ -2,9 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -16,63 +15,61 @@ import {
   LoaderIcon,
   UserIcon,
 } from 'lucide-react'
-import {
-  AUTH_CONFIG_ERROR_MESSAGE,
-  buildAuthCallbackUrl,
-  mapRegisterAuthErrorMessage,
-  mapResendConfirmationErrorMessage,
-  resolveAuthBaseUrl,
-  resolveSafeNextPath,
-  registerValidationErrorMessage,
-  validateRegisterInput,
-} from '@/lib/auth/clientValidation'
-import {
-  buildExternalBrowserUrl,
-  detectInAppBrowser,
-  isInAppBrowser,
-} from '@/lib/auth/inAppBrowser'
-import { buildExternalOAuthUrl, shouldAutoStartGoogleOAuth } from '@/lib/auth/oauthFlow'
+import { resolveSafeNextPath } from '@/lib/auth/clientValidation'
 import { AUTH_VISUALS, pickRandomAuthVisual } from '@/lib/auth/authVisuals'
+import { useAuthFlow } from '@/hooks/auth/useAuthFlow'
 
-type MessageState = { type: 'success' | 'error'; text: string }
 const VERIFICATION_CODE_LENGTH = 6
 
 function RegisterInner() {
-  const supabase = createSupabaseBrowser()
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [resendingConfirmation, setResendingConfirmation] = useState(false)
-  const [resendCooldown, setResendCooldown] = useState(0)
-  const [verifyingCode, setVerifyingCode] = useState(false)
-  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null)
   const [verificationDigits, setVerificationDigits] = useState<string[]>(
     () => Array.from({ length: VERIFICATION_CODE_LENGTH }, () => ''),
   )
-  const [message, setMessage] = useState<MessageState | null>(null)
-  const [inAppBrowserName, setInAppBrowserName] = useState<string | null>(null)
   const [authVisual, setAuthVisual] = useState<string | null>(null)
   const verificationInputRefs = useRef<Array<HTMLInputElement | null>>([])
-  const autoOauthTriggeredRef = useRef(false)
+
+  const nextPath = resolveSafeNextPath(searchParams.get('next'))
+
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    loading,
+    message,
+    setMessage,
+    inAppBrowserName,
+    pendingVerificationEmail,
+    resendingConfirmation,
+    resendCooldown,
+    verifyingCode,
+    signup,
+    resendConfirmationEmail,
+    verifySignupCode,
+    resetVerificationStep,
+    signInWithGoogle,
+    maybeAutoStartGoogleOAuth,
+    openInExternalBrowser,
+  } = useAuthFlow({
+    nextPath,
+    emailConfirmRedirectPath: '/account',
+    onAuthenticated: () => {
+      router.push(nextPath)
+      router.refresh()
+    },
+  })
+
   const isVerificationStep = Boolean(pendingVerificationEmail)
   const verificationCode = verificationDigits.join('')
   const canSubmitRegister =
-    email.trim().length > 0 &&
-    password.trim().length > 0 &&
-    confirmPassword.trim().length > 0
-
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return
-    const userAgent = navigator.userAgent || ''
-    if (!isInAppBrowser(userAgent)) return
-    setInAppBrowserName(detectInAppBrowser(userAgent))
-  }, [])
+    email.trim().length > 0 && password.trim().length > 0 && confirmPassword.trim().length > 0
 
   useEffect(() => {
     const popupNotice = searchParams.get('popup_notice')
@@ -82,6 +79,7 @@ function RegisterInner() {
         text: 'Cette adresse e-mail existe déjà dans notre base. Prochaine étape: crée ton compte.',
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   useEffect(() => {
@@ -97,127 +95,22 @@ function RegisterInner() {
     setAuthVisual(randomVisual)
   }, [])
 
-  const resolveNextPath = () => resolveSafeNextPath(searchParams.get('next'))
+  useEffect(() => {
+    maybeAutoStartGoogleOAuth(searchParams.get('oauth'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
-  const resolveAuthRedirectUrl = () => {
-    const base = resolveAuthBaseUrl(
-      typeof window !== 'undefined' ? window.location.origin : undefined,
-      process.env.NEXT_PUBLIC_SITE_URL,
-    )
-    if (!base) {
-      return null
-    }
-    return buildAuthCallbackUrl(base, '/account')
-  }
+  useEffect(() => {
+    if (!isVerificationStep) return
+    verificationInputRefs.current[0]?.focus()
+  }, [isVerificationStep])
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
-    const validationError = validateRegisterInput({ email, password, confirmPassword })
-    if (validationError) {
-      setMessage({ type: 'error', text: registerValidationErrorMessage(validationError) })
-      return
-    }
-
-    setLoading(true)
-    setMessage(null)
-    setPendingVerificationEmail(null)
-
-    try {
-      const emailRedirectTo = resolveAuthRedirectUrl()
-
-      if (!emailRedirectTo) {
-        setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
-        return
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName || null,
-          },
-          emailRedirectTo,
-        },
-      })
-
-      if (error) {
-        setMessage({ type: 'error', text: mapRegisterAuthErrorMessage(error.message) })
-        return
-      }
-
-      if (data.session) {
-        void fetch('/api/auth/post-auth-sync', { method: 'POST' }).catch((syncError) => {
-          console.warn('[register] post-auth sync failed', syncError)
-        })
-
-        setMessage({ type: 'success', text: 'Compte créé ! Redirection vers votre espace…' })
-        setPendingVerificationEmail(null)
-
-        router.push(resolveNextPath())
-        router.refresh()
-        return
-      }
-
-      setMessage({
-        type: 'success',
-        text: "Compte créé ! Entre le code reçu par email pour confirmer ton inscription. Si tu ne reçois rien, utilise 'Renvoyer l’email'.",
-      })
-      setPendingVerificationEmail(email)
-      setResendCooldown(60)
+    const wentToVerification = await signup(fullName)
+    if (!wentToVerification) {
       setVerificationDigits(Array.from({ length: VERIFICATION_CODE_LENGTH }, () => ''))
       setFullName('')
-      setEmail('')
-      setPassword('')
-      setConfirmPassword('')
-    } catch (err) {
-      console.error('[register] signUp failed', err)
-      setMessage({ type: 'error', text: 'Inscription impossible pour le moment.' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const resendConfirmationEmail = async () => {
-    if (!pendingVerificationEmail) {
-      return
-    }
-    if (resendCooldown > 0) {
-      return
-    }
-
-    const emailRedirectTo = resolveAuthRedirectUrl()
-    if (!emailRedirectTo) {
-      setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
-      return
-    }
-
-    setResendingConfirmation(true)
-    setMessage(null)
-
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: pendingVerificationEmail,
-        options: { emailRedirectTo },
-      })
-
-      if (error) {
-        setMessage({ type: 'error', text: mapResendConfirmationErrorMessage(error.message) })
-        return
-      }
-
-      setMessage({
-        type: 'success',
-        text: `Code de confirmation renvoyé à ${pendingVerificationEmail}. Vérifie aussi les spams/indésirables.`,
-      })
-      setResendCooldown(60)
-    } catch (err) {
-      console.error('[register] resend confirmation failed', err)
-      setMessage({ type: 'error', text: "Impossible de renvoyer l'email de confirmation pour le moment." })
-    } finally {
-      setResendingConfirmation(false)
     }
   }
 
@@ -293,124 +186,17 @@ function RegisterInner() {
     }
   }
 
-  const verifySignupCode = async () => {
-    if (!pendingVerificationEmail) return
-    const token = verificationCode.trim()
-    if (!token) {
-      setMessage({ type: 'error', text: 'Saisis le code de confirmation reçu par email.' })
-      return
-    }
-
-    setVerifyingCode(true)
-    setMessage(null)
-
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: pendingVerificationEmail,
-        token,
-        type: 'signup',
-      })
-
-      if (error) {
-        setMessage({ type: 'error', text: error.message })
-        return
-      }
-
-      void fetch('/api/auth/post-auth-sync', { method: 'POST' }).catch((syncError) => {
-        console.warn('[register] post-auth sync failed', syncError)
-      })
-
-      setMessage({ type: 'success', text: 'Compte confirmé. Redirection vers votre espace…' })
-      setPendingVerificationEmail(null)
+  const handleVerifyCode = async () => {
+    const verified = await verifySignupCode(verificationCode)
+    if (verified) {
       setVerificationDigits(Array.from({ length: VERIFICATION_CODE_LENGTH }, () => ''))
-      router.push(resolveNextPath())
-      router.refresh()
-    } catch (err) {
-      console.error('[register] verifyOtp failed', err)
-      setMessage({ type: 'error', text: 'Impossible de vérifier le code pour le moment.' })
-    } finally {
-      setVerifyingCode(false)
     }
   }
 
-  const signInWithGoogle = useCallback(async () => {
-    setLoading(true)
-    setMessage(null)
-
-    try {
-      const base = resolveAuthBaseUrl(
-        typeof window !== 'undefined' ? window.location.origin : undefined,
-        process.env.NEXT_PUBLIC_SITE_URL,
-      )
-
-      if (!base) {
-        setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
-        setLoading(false)
-        return
-      }
-
-      const target = resolveSafeNextPath(searchParams.get('next'))
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: buildAuthCallbackUrl(base, target),
-        },
-      })
-
-      if (error) {
-        setMessage({ type: 'error', text: error.message })
-        setLoading(false)
-      }
-    } catch (err) {
-      console.error('[register] signInWithOAuth failed', err)
-      setMessage({ type: 'error', text: 'Connexion Google indisponible pour le moment.' })
-      setLoading(false)
-    }
-  }, [searchParams, supabase])
-
-  useEffect(() => {
-    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
-    const shouldStart = shouldAutoStartGoogleOAuth({
-      oauthParam: searchParams.get('oauth'),
-      userAgent,
-      alreadyTriggered: autoOauthTriggeredRef.current,
-    })
-    if (!shouldStart) {
-      return
-    }
-
-    autoOauthTriggeredRef.current = true
-    void signInWithGoogle()
-  }, [searchParams, signInWithGoogle])
-
-  const openInExternalBrowser = (oauthProvider?: 'google') => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return
-    const currentUrl = oauthProvider
-      ? buildExternalOAuthUrl(window.location.href, oauthProvider)
-      : window.location.href
-    const url = buildExternalBrowserUrl(currentUrl, navigator.userAgent || '')
-    window.location.href = url
-  }
-
-  const resetVerificationStep = () => {
-    setPendingVerificationEmail(null)
-    setResendCooldown(0)
+  const handleResetVerificationStep = () => {
+    resetVerificationStep()
     setVerificationDigits(Array.from({ length: VERIFICATION_CODE_LENGTH }, () => ''))
-    setMessage(null)
   }
-
-  useEffect(() => {
-    if (!isVerificationStep) return
-    verificationInputRefs.current[0]?.focus()
-  }, [isVerificationStep])
-
-  useEffect(() => {
-    if (!isVerificationStep || resendCooldown <= 0) return
-    const timer = window.setInterval(() => {
-      setResendCooldown((previous) => (previous > 0 ? previous - 1 : 0))
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [isVerificationStep, resendCooldown])
 
   return (
     <main className="bg-[#0b0c0e] text-white">
@@ -600,7 +386,7 @@ function RegisterInner() {
                   <Button
                     type="button"
                     className="h-12 w-full rounded-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-                    onClick={verifySignupCode}
+                    onClick={handleVerifyCode}
                     disabled={verifyingCode || verificationCode.trim().length !== VERIFICATION_CODE_LENGTH}
                   >
                     {verifyingCode ? (
@@ -633,7 +419,7 @@ function RegisterInner() {
                       )}
                     </Button>
                   </div>
-                  <Button type="button" variant="ghost" className="w-full text-zinc-300" onClick={resetVerificationStep}>
+                  <Button type="button" variant="ghost" className="w-full text-zinc-300" onClick={handleResetVerificationStep}>
                     Modifier mon email
                   </Button>
                 </div>
@@ -677,7 +463,7 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-[60vh] items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
+        <main className="flex min-h-[60vh] items-center justify-center bg-linear-to-b from-background to-muted/20 p-6">
           <div className="text-sm text-muted-foreground">Chargement de la page d’inscription…</div>
         </main>
       }

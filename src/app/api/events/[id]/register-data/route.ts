@@ -16,10 +16,6 @@ export async function GET(
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
     // Détecte si c'est un UUID ou un slug
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
@@ -114,11 +110,13 @@ export async function GET(
       tickets: ticketsWithCounts,
       upsells: upsellsData || [],
       availableSpots,
-      user: {
-        id: user.id,
-        email: user.email ?? '',
-        fullName: user.user_metadata?.full_name || null,
-      },
+      user: user
+        ? {
+            id: user.id,
+            email: user.email ?? '',
+            fullName: user.user_metadata?.full_name || null,
+          }
+        : null,
     })
   } catch (error) {
     console.error('[register-data] unexpected error', error)
