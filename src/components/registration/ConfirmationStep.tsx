@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { ShieldAlert } from 'lucide-react'
@@ -38,18 +37,16 @@ export default function ConfirmationStep({
   const showSignatureError = showErrors && !signatureImage
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4" />
-            Décharge de responsabilité & Acceptation du règlement Overbound
-          </CardTitle>
-          <CardDescription>
-            Merci de lire attentivement ce texte avant de signer électroniquement.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+    <div className="space-y-6">
+      <div className="rounded-lg border p-4">
+        <div className="mb-1 flex items-center gap-2 text-base font-semibold">
+          <ShieldAlert className="h-4 w-4" />
+          Décharge de responsabilité & Acceptation du règlement Overbound
+        </div>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Merci de lire attentivement ce texte avant de signer électroniquement.
+        </p>
+        <div className="space-y-3">
           <div className="rounded-xl border border-primary/35 bg-primary/5 p-4 text-sm leading-relaxed shadow-sm">
             <p className="font-medium text-foreground">
               En vous inscrivant, vous reconnaissez les risques d&apos;une course d&apos;obstacles, vous
@@ -227,19 +224,17 @@ export default function ConfirmationStep({
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card className={showSignatureError ? 'border-destructive' : ''}>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            Signature manuscrite <span className="text-destructive">*</span>
-          </CardTitle>
-          <CardDescription>
-            Dessinez votre signature comme sur un document officiel. Elle sera jointe à votre dossier.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <div className={`rounded-lg border p-4 ${showSignatureError ? 'border-destructive' : ''}`}>
+        <div className="mb-1 flex items-center gap-2 text-base font-semibold">
+          Signature manuscrite <span className="text-destructive">*</span>
+        </div>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Dessinez votre signature comme sur un document officiel. Elle sera jointe à votre dossier.
+        </p>
+        <div className="space-y-3">
           <div
             className={`rounded-lg ${showSignatureError ? 'ring-2 ring-red-500 ring-offset-2' : ''}`}
           >
@@ -257,8 +252,8 @@ export default function ConfirmationStep({
           <p className="text-xs text-muted-foreground">
             Une fois cette étape validée, vous serez redirigé vers la page de paiement sécurisé Stripe.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

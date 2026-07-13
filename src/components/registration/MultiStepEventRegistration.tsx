@@ -1,11 +1,10 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
+import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM, REGISTRATION_STEPS } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
 import { isOpenFormatTicket } from '@/lib/openSas'
 
@@ -15,22 +14,22 @@ import { useUpsells } from '@/hooks/registration/useUpsells'
 import { usePromoCode } from '@/hooks/registration/usePromoCode'
 import { useRegistrationPricing } from '@/hooks/registration/useRegistrationPricing'
 import { usePaymentIntent } from '@/hooks/registration/usePaymentIntent'
-import { useStepNavigation } from '@/hooks/registration/useStepNavigation'
 import { useRegistrationDraftSync } from '@/hooks/registration/useRegistrationDraftSync'
 
-import type { MultiStepEventRegistrationProps, StepKey } from './types'
+import type { MultiStepEventRegistrationProps } from './types'
 import RegistrationHeader from './RegistrationHeader'
-import StepProgressBar from './StepProgressBar'
-import StepNavigation from './StepNavigation'
+import RegistrationSection from './RegistrationSection'
 import TicketSelectionStep from './TicketSelectionStep'
 import ParticipantsStep from './ParticipantsStep'
 import OptionsStep from './OptionsStep'
 import ConfirmationStep from './ConfirmationStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
+import RegistrationPaymentBar from './RegistrationPaymentBar'
 import ParticipantSummarySidebar from './ParticipantSummarySidebar'
 import GroupJoinInline from './GroupJoinInline'
 import InlineAuthStep from './InlineAuthStep'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Users } from 'lucide-react'
 import { formatWaveStartTime } from '@/lib/openSas'
 
@@ -49,6 +48,8 @@ export default function MultiStepEventRegistration({
   const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
   const addToCartTrackedRef = useRef(false)
   const suppressEmptyParticipantsSyncRef = useRef(false)
+  const participantsSectionRef = useRef<HTMLDivElement>(null)
+  const hasAutoScrolledToParticipantsRef = useRef(false)
   const { data: myGroup } = useMyGroup({ enabled: Boolean(user) })
 
   // Local UI state
@@ -206,20 +207,10 @@ export default function MultiStepEventRegistration({
   const isConfirmationStepValid =
     disclaimerRead && disclaimerAccepted && rulebookAccepted && Boolean(signatureImage)
 
-  const {
-    stepIndex,
-    setStepIndex,
-    currentStepId,
-    stepProgress,
-    isTransitioning,
-    canContinue,
-    proceedToNextStep,
-    goToPreviousStep,
-  } = useStepNavigation({
-    isTicketsStepValid,
-    isParticipantsStepValid,
-    isConfirmationStepValid,
-  })
+  // Draft sync still persists a step index for restore purposes even though
+  // the UI no longer gates on it; keep it stable at 0.
+  const stepIndex = 0
+  const setStepIndex = () => {}
 
   // Draft sync
   useRegistrationDraftSync(
@@ -263,9 +254,47 @@ export default function MultiStepEventRegistration({
     suppressEmptyParticipantsSyncRef,
   )
 
-  // Navigation wrappers
-  const handleNext = async () => {
-    if (!canContinue) {
+  // Fire add-to-cart tracking once, as soon as at least one participant slot exists
+  useEffect(() => {
+    if (addToCartTrackedRef.current || totalParticipants === 0) return
+
+    const selectedTicketIds = Object.entries(ticketSelections)
+      .filter(([, quantity]) => (quantity || 0) > 0)
+      .map(([ticketId]) => ticketId)
+
+    trackRegistrationEvent('add_to_cart', {
+      step: 'participants',
+      ticket_count: selectedTicketIds.length,
+      participant_count: totalParticipants,
+      ticket_ids: selectedTicketIds.join(','),
+    })
+
+    const analyticsWindow = window as Window & {
+      fbq?: (...args: unknown[]) => void
+    }
+    analyticsWindow.fbq?.('track', 'AddToCart', {
+      content_name: event.title || event.slug,
+      content_category: 'event_register',
+      content_type: 'product',
+      content_ids: selectedTicketIds,
+      value: Number((summaryPricing.totalDue / 100).toFixed(2)),
+      currency: summaryPricing.currency.toUpperCase(),
+    })
+
+    addToCartTrackedRef.current = true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalParticipants])
+
+  // Guide the user to the participants section the first time a ticket is selected
+  useEffect(() => {
+    if (hasAutoScrolledToParticipantsRef.current || totalParticipants === 0) return
+    hasAutoScrolledToParticipantsRef.current = true
+    participantsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [totalParticipants])
+
+  // Payment handler
+  const handleProceedToPayment = async () => {
+    if (!isTicketsStepValid || !isParticipantsStepValid) {
       setShowValidationErrors(true)
       setSubmissionMessage({
         type: 'error',
@@ -274,46 +303,6 @@ export default function MultiStepEventRegistration({
       return
     }
 
-    if (currentStepId === 'tickets' && !addToCartTrackedRef.current && totalParticipants > 0) {
-      const selectedTicketIds = Object.entries(ticketSelections)
-        .filter(([, quantity]) => (quantity || 0) > 0)
-        .map(([ticketId]) => ticketId)
-
-      trackRegistrationEvent('add_to_cart', {
-        step: 'participants',
-        ticket_count: selectedTicketIds.length,
-        participant_count: totalParticipants,
-        ticket_ids: selectedTicketIds.join(','),
-      })
-
-      const analyticsWindow = window as Window & {
-        fbq?: (...args: unknown[]) => void
-      }
-      analyticsWindow.fbq?.('track', 'AddToCart', {
-        content_name: event.title || event.slug,
-        content_category: 'event_register',
-        content_type: 'product',
-        content_ids: selectedTicketIds,
-        value: Number((summaryPricing.totalDue / 100).toFixed(2)),
-        currency: summaryPricing.currency.toUpperCase(),
-      })
-
-      addToCartTrackedRef.current = true
-    }
-
-    setShowValidationErrors(false)
-    setSubmissionMessage(null)
-    await proceedToNextStep()
-  }
-
-  const handlePrevious = () => {
-    goToPreviousStep()
-    setSubmissionMessage(null)
-    setShowValidationErrors(false)
-  }
-
-  // Payment handler
-  const handleProceedToPayment = async () => {
     if (!user) {
       setShowInlineAuth(true)
       return
@@ -520,125 +509,131 @@ export default function MultiStepEventRegistration({
     </Alert>
   )
 
-  // Step content mapping
-  const stepContent: Record<StepKey, React.ReactNode> = {
-    tickets: (
-      <TicketSelectionStep
-        tickets={tickets}
-        ticketSelections={ticketSelections}
-        onTicketQuantityChange={handleTicketQuantityChange}
-        defaultCurrency={defaultCurrency}
-        activeTier={activeTier}
-        hasActiveDiscount={hasActiveDiscount}
-        availableSpots={availableSpots}
-        groupBanner={groupBanner}
-      />
-    ),
-    participants: (
-      <ParticipantsStep
-        participants={participants}
-        ticketMap={ticketMap}
-        onFieldChange={handleParticipantChange}
-        showErrors={showValidationErrors}
-        groupBanner={groupBanner}
-      />
-    ),
-    options: (
-      <OptionsStep
-        upsells={upsells}
-        selectedUpsells={selectedUpsells}
-        selectedTicketSlots={selectedTicketSlots}
-        participants={participants}
-        defaultCurrency={defaultCurrency}
-        onQuantityChange={handleUpsellChange}
-        onSizeChange={handleUpsellSizeChange}
-        onAssignmentToggle={handleUpsellAssignmentToggle}
-      />
-    ),
-    confirmation: (
-      <ConfirmationStep
-        disclaimerRead={disclaimerRead}
-        disclaimerAccepted={disclaimerAccepted}
-        rulebookAccepted={rulebookAccepted}
-        signatureImage={signatureImage}
-        showErrors={showValidationErrors}
-        onDisclaimerReadChange={setDisclaimerRead}
-        onDisclaimerAcceptedChange={setDisclaimerAccepted}
-        onRulebookAcceptedChange={setRulebookAccepted}
-        onSignatureChange={setSignatureImage}
-      />
-    ),
-  }
-
   return (
-    <section className="mx-auto w-full space-y-6 py-6">
+    <section className="mx-auto w-full space-y-6 py-6 pb-24">
       <RegistrationHeader
         event={event}
         availableSpots={availableSpots}
       />
 
-      <Card className="relative">
-        {isTransitioning && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/90 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-4">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="text-sm font-medium text-muted-foreground">
-                Préparation de l&apos;étape suivante...
-              </p>
-            </div>
-          </div>
-        )}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(320px,1fr)] lg:items-start">
+        <div className="space-y-6">
+          <RegistrationSection
+            index={1}
+            title={REGISTRATION_STEPS[0].title}
+            description={REGISTRATION_STEPS[0].description}
+            isComplete={isTicketsStepValid}
+          >
+            <TicketSelectionStep
+              tickets={tickets}
+              ticketSelections={ticketSelections}
+              onTicketQuantityChange={handleTicketQuantityChange}
+              defaultCurrency={defaultCurrency}
+              activeTier={activeTier}
+              hasActiveDiscount={hasActiveDiscount}
+              availableSpots={availableSpots}
+              groupBanner={groupBanner}
+            />
+          </RegistrationSection>
 
-        <CardContent className="space-y-6 pt-6">
-          <StepProgressBar stepIndex={stepIndex} stepProgress={stepProgress} />
+          <RegistrationSection
+            index={2}
+            title={REGISTRATION_STEPS[1].title}
+            description={REGISTRATION_STEPS[1].description}
+            isComplete={totalParticipants > 0 && isParticipantsStepValid}
+            sectionRef={participantsSectionRef}
+          >
+            <ParticipantsStep
+              participants={participants}
+              ticketMap={ticketMap}
+              onFieldChange={handleParticipantChange}
+              showErrors={showValidationErrors}
+              groupBanner={groupBanner}
+            />
+          </RegistrationSection>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(320px,1fr)]">
-            <div className="space-y-6">
-              <div>{stepContent[currentStepId]}</div>
+          <RegistrationSection
+            index={3}
+            title={REGISTRATION_STEPS[2].title}
+            description={REGISTRATION_STEPS[2].description}
+            optional
+          >
+            <OptionsStep
+              upsells={upsells}
+              selectedUpsells={selectedUpsells}
+              selectedTicketSlots={selectedTicketSlots}
+              participants={participants}
+              defaultCurrency={defaultCurrency}
+              onQuantityChange={handleUpsellChange}
+              onSizeChange={handleUpsellSizeChange}
+              onAssignmentToggle={handleUpsellAssignmentToggle}
+            />
+          </RegistrationSection>
 
-              {showInlineAuth ? (
-                <InlineAuthStep onAuthenticated={handleInlineAuthenticated} />
-              ) : null}
+          <RegistrationSection
+            index={4}
+            title={REGISTRATION_STEPS[3].title}
+            description={REGISTRATION_STEPS[3].description}
+            isComplete={isConfirmationStepValid}
+          >
+            <ConfirmationStep
+              disclaimerRead={disclaimerRead}
+              disclaimerAccepted={disclaimerAccepted}
+              rulebookAccepted={rulebookAccepted}
+              signatureImage={signatureImage}
+              showErrors={showValidationErrors}
+              onDisclaimerReadChange={setDisclaimerRead}
+              onDisclaimerAcceptedChange={setDisclaimerAccepted}
+              onRulebookAcceptedChange={setRulebookAccepted}
+              onSignatureChange={setSignatureImage}
+            />
+          </RegistrationSection>
+        </div>
 
-              <StepNavigation
-                stepIndex={stepIndex}
-                eventId={event.id}
-                isCreatingPaymentIntent={isCreatingPaymentIntent}
-                isAuthPending={showInlineAuth}
-                submissionMessage={submissionMessage}
-                onNext={handleNext}
-                onPrevious={handlePrevious}
-                onPayment={handleProceedToPayment}
-              />
-            </div>
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+          <OrderSummarySidebar
+            selectedTicketSlots={selectedTicketSlots}
+            ticketMap={ticketMap}
+            participants={participants}
+            defaultCurrency={defaultCurrency}
+            activeTier={activeTier}
+            hasActiveDiscount={hasActiveDiscount}
+            isTierDiscountOverriddenByPromo={isTierDiscountOverriddenByPromo}
+            upsellSummaryItems={upsellSummaryItems}
+            summaryPricing={summaryPricing}
+            appliedPromos={appliedPromos}
+            promoInput={promoInput}
+            promoError={promoError}
+            onPromoInputChange={setPromoInput}
+            onValidatePromo={validatePromoCode}
+            onRemovePromo={removePromo}
+            submissionMessage={submissionMessage}
+          />
 
-            <aside className="space-y-4">
-              <OrderSummarySidebar
-                selectedTicketSlots={selectedTicketSlots}
-                ticketMap={ticketMap}
-                participants={participants}
-                defaultCurrency={defaultCurrency}
-                activeTier={activeTier}
-                hasActiveDiscount={hasActiveDiscount}
-                isTierDiscountOverriddenByPromo={isTierDiscountOverriddenByPromo}
-                upsellSummaryItems={upsellSummaryItems}
-                summaryPricing={summaryPricing}
-                appliedPromos={appliedPromos}
-                promoInput={promoInput}
-                promoError={promoError}
-                onPromoInputChange={setPromoInput}
-                onValidatePromo={validatePromoCode}
-                onRemovePromo={removePromo}
-              />
+          <ParticipantSummarySidebar
+            participants={participants}
+            ticketMap={ticketMap}
+          />
+        </aside>
+      </div>
 
-              <ParticipantSummarySidebar
-                participants={participants}
-                ticketMap={ticketMap}
-              />
-            </aside>
-          </div>
-        </CardContent>
-      </Card>
+      <RegistrationPaymentBar
+        summaryPricing={summaryPricing}
+        ticketCount={totalParticipants}
+        upsellCount={upsellSummaryItems.reduce((sum, item) => sum + item.quantity, 0)}
+        isCreatingPaymentIntent={isCreatingPaymentIntent}
+        isAuthPending={showInlineAuth}
+        isFormComplete={isTicketsStepValid && isParticipantsStepValid && isConfirmationStepValid}
+        submissionMessage={submissionMessage}
+        onPayment={handleProceedToPayment}
+      />
+
+      <Dialog open={showInlineAuth} onOpenChange={setShowInlineAuth}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle className="sr-only">Connexion requise</DialogTitle>
+          <InlineAuthStep onAuthenticated={handleInlineAuthenticated} />
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

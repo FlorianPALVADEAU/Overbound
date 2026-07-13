@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -44,19 +43,17 @@ export default function ParticipantForm({
   const requiredMessage = 'Ce champ est obligatoire.'
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between text-base">
-          <span>Participant {index + 1}</span>
-          {ticket ? (
-            <Badge variant="outline" className="gap-1 text-xs">
-              <TicketIcon className="h-3 w-3" />
-              {ticket.name}
-            </Badge>
-          ) : null}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
+    <div className="rounded-lg border p-4">
+      <div className="mb-4 flex items-center justify-between text-base font-semibold">
+        <span>Participant {index + 1}</span>
+        {ticket ? (
+          <Badge variant="outline" className="gap-1 text-xs font-normal">
+            <TicketIcon className="h-3 w-3" />
+            {ticket.name}
+          </Badge>
+        ) : null}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
         {!isUniversalRace && (
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor={`${participant.id}-difficulty`} className="flex items-center gap-2">
@@ -299,7 +296,7 @@ export default function ParticipantForm({
             placeholder="Allergies, traitement en cours, etc."
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

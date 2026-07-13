@@ -1,10 +1,12 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { calculateCurrentPrice } from '@/types/EventPriceTier'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
 import { formatPrice, joinName } from '@/lib/registration'
+import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type {
   AppliedPromo,
   EventTicket,
@@ -30,6 +32,7 @@ interface OrderSummarySidebarProps {
   onPromoInputChange: (value: string) => void
   onValidatePromo: () => void
   onRemovePromo: (code: string) => void
+  submissionMessage: { type: 'error' | 'success'; text: string } | null
 }
 
 export default function OrderSummarySidebar({
@@ -48,6 +51,7 @@ export default function OrderSummarySidebar({
   onPromoInputChange,
   onValidatePromo,
   onRemovePromo,
+  submissionMessage,
 }: OrderSummarySidebarProps) {
   const showActiveTierDiscount = hasActiveDiscount && !isTierDiscountOverriddenByPromo
 
@@ -183,6 +187,20 @@ export default function OrderSummarySidebar({
             <span>{formatPrice(summaryPricing.totalDue, summaryPricing.currency)}</span>
           </div>
         </div>
+
+        {/* Payment CTA lives in the sticky bottom bar (see RegistrationPaymentBar),
+            visible on both mobile and desktop instead of scrolling away in the sidebar. */}
+
+        {submissionMessage ? (
+          <Alert variant={submissionMessage.type === 'success' ? 'default' : 'destructive'}>
+            {submissionMessage.type === 'success' ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+            <AlertDescription>{submissionMessage.text}</AlertDescription>
+          </Alert>
+        ) : null}
       </CardContent>
     </Card>
   )
