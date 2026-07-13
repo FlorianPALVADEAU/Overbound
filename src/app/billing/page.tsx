@@ -44,7 +44,7 @@ export default async function BillingPage({ searchParams }: Props) {
           <p>Paiement annulé.</p>
           <p className="text-sm opacity-70">Tu peux réessayer depuis la page de l’événement.</p>
           <div className="mt-3">
-            <Link className="underline" href="/events">← Retour aux événements</Link>
+            <Link className="underline" href="/events/ultra-arena-2026">← Retour aux événements</Link>
           </div>
         </div>
       )}

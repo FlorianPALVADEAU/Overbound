@@ -266,7 +266,7 @@ export default function AccountPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       Tu n&apos;as pas encore d&apos;inscription à un événement.
                     </p>
-                    <Link href="/events">
+                    <Link href="/events/ultra-arena-2026">
                       <Button>Découvrir les événements</Button>
                     </Link>
                   </div>

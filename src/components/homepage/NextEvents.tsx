@@ -69,7 +69,7 @@ const NextEvents = () => {
 							</div>
 							
 							<div className='pt-2 xl:pt-0'>
-								<Link href="/events">
+								<Link href="/events/ultra-arena-2026/register">
 									<Button 
 									variant={'default'} 
 									className="

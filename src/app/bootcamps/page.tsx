@@ -191,7 +191,7 @@ export default function BootcampsPage() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button asChild size="lg" className="h-12 w-full sm:w-auto">
-                <Link href="/events">Voir les prochains événements</Link>
+                <Link href="/events/ultra-arena-2026">Voir les prochains événements</Link>
               </Button>
               <Button
                 asChild

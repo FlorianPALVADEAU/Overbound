@@ -93,7 +93,7 @@ export default function AccountTicketsPage() {
             <Link href="/account">
               <Button variant="outline">Retour au compte</Button>
             </Link>
-            <Link href="/events">
+            <Link href="/events/ultra-arena-2026">
               <Button>Explorer de nouveaux événements</Button>
             </Link>
           </div>

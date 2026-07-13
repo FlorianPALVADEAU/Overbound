@@ -54,7 +54,7 @@ export const faqFallback: FAQDocument[] = [
     category: 'general',
     relatedLinks: [
       { label: 'Découvrir Overbound', href: '/about' },
-      { label: 'Voir les prochaines courses', href: '/events' },
+      { label: 'Voir les prochaines courses', href: '/events/ultra-arena-2026' },
     ],
   },
   {

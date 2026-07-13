@@ -7,8 +7,8 @@ const LINK_GROUPS = [
   {
     title: 'Événements',
     links: [
-      { label: 'Tous les événements', href: '/events' },
-      { label: 'Les formats', href: '/events/formats' },
+      { label: 'Ultra Arena 2026', href: '/events/ultra-arena-2026' },
+      // { label: 'Les formats', href: '/events/formats' },
       // { label: 'Les obstacles', href: '/obstacles' },
       { label: 'Devenir bénévole', href: '/volunteers' },
     ],
