@@ -62,12 +62,12 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
   }
 
   return (
-    <div className="space-y-4 rounded-lg border p-4">
+    <div className="space-y-5">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold">
+        <h3 className="text-lg font-semibold">
           {isVerificationStep ? 'Vérifie ton email' : 'Connecte-toi pour finaliser ton inscription'}
         </h3>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {isVerificationStep
             ? `Saisis le code envoyé à ${pendingVerificationEmail}.`
             : "Tes informations saisies sont conservées, tu n'as rien à ressaisir."}
@@ -75,15 +75,17 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
       </div>
 
       {!isVerificationStep && (
-        <div className="flex gap-1 text-xs">
+        <div className="flex gap-1 rounded-lg bg-black/30 p-1 text-sm">
           <button
             type="button"
             onClick={() => {
               setMode('login')
               setMessage(null)
             }}
-            className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
-              mode === 'login' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+            className={`flex-1 rounded-md px-3 py-1.5 font-medium transition-colors ${
+              mode === 'login'
+                ? 'bg-primary/50 text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Se connecter
@@ -94,8 +96,10 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
               setMode('signup')
               setMessage(null)
             }}
-            className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
-              mode === 'signup' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+            className={`flex-1 rounded-md px-3 py-1.5 font-medium transition-colors ${
+              mode === 'signup'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             Créer un compte

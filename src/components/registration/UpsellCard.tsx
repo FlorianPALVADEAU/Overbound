@@ -1,7 +1,7 @@
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Gift } from 'lucide-react'
 import { formatPrice, resolveUpsellSizes, normalizeTshirtSizes } from '@/lib/registration'
+import { cn } from '@/lib/utils'
 import type { EventUpsell, Participant } from './types'
 import QuantityPicker from './QuantityPicker'
 
@@ -39,14 +39,21 @@ export default function UpsellCard({
       : false
 
   return (
-    <Card className={`transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}>
-      <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-2">
-          <CardTitle className="text-base md:text-lg flex items-center gap-2">
+    <div
+      className={cn(
+        'rounded-lg border p-4 transition-colors',
+        isSelected ? 'border-primary bg-primary/5' : 'border-border',
+      )}
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-base font-semibold">
             <Gift className="h-4 w-4 text-primary" />
             {upsell.name}
-          </CardTitle>
-          {upsell.description && <CardDescription>{upsell.description}</CardDescription>}
+          </div>
+          {upsell.description && (
+            <p className="text-sm text-muted-foreground">{upsell.description}</p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-3">
           <div className="text-lg font-semibold text-primary">
@@ -133,7 +140,7 @@ export default function UpsellCard({
             </div>
           ) : null}
         </div>
-      </CardHeader>
-    </Card>
+      </div>
+    </div>
   )
 }
