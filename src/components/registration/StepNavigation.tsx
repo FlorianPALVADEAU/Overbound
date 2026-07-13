@@ -7,8 +7,8 @@ import { REGISTRATION_STEPS } from '@/constants/registration'
 interface StepNavigationProps {
   stepIndex: number
   eventId: string
-  isAuthenticated: boolean
   isCreatingPaymentIntent: boolean
+  isAuthPending?: boolean
   submissionMessage: { type: 'error' | 'success'; text: string } | null
   onNext: () => void
   onPrevious: () => void
@@ -18,8 +18,8 @@ interface StepNavigationProps {
 export default function StepNavigation({
   stepIndex,
   eventId,
-  isAuthenticated,
   isCreatingPaymentIntent,
+  isAuthPending = false,
   submissionMessage,
   onNext,
   onPrevious,
@@ -43,14 +43,14 @@ export default function StepNavigation({
         )}
 
         {stepIndex < REGISTRATION_STEPS.length - 1 ? (
-          <Button onClick={onNext} disabled={!isAuthenticated}>
+          <Button onClick={onNext}>
             Suivant
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         ) : (
           <Button
             onClick={onPayment}
-            disabled={!isAuthenticated || isCreatingPaymentIntent}
+            disabled={isCreatingPaymentIntent || isAuthPending}
           >
             {isCreatingPaymentIntent ? (
               <>

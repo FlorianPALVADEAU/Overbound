@@ -2,29 +2,14 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useQueryClient } from '@tanstack/react-query'
-import { SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
-import {
-  AUTH_CONFIG_ERROR_MESSAGE,
-  buildAuthCallbackUrl,
-  isValidEmail,
-  mapOAuthCallbackErrorMessage,
-  resolveAuthBaseUrl,
-  resolveSafeNextPath,
-} from '@/lib/auth/clientValidation'
-import {
-  buildExternalBrowserUrl,
-  detectInAppBrowser,
-  isInAppBrowser,
-} from '@/lib/auth/inAppBrowser'
-import { buildExternalOAuthUrl, shouldAutoStartGoogleOAuth } from '@/lib/auth/oauthFlow'
+import { mapOAuthCallbackErrorMessage, resolveSafeNextPath } from '@/lib/auth/clientValidation'
 import { AUTH_VISUALS, pickRandomAuthVisual } from '@/lib/auth/authVisuals'
+import { useAuthFlow } from '@/hooks/auth/useAuthFlow'
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -34,22 +19,36 @@ import {
   LoaderIcon,
 } from 'lucide-react'
 
-type MessageState = { type: 'success' | 'error'; text: string }
-
 function LoginInner() {
-  const supabase = createSupabaseBrowser()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const queryClient = useQueryClient()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<MessageState | null>(null)
-  const [inAppBrowserName, setInAppBrowserName] = useState<string | null>(null)
   const [authVisual, setAuthVisual] = useState<string | null>(null)
-  const autoOauthTriggeredRef = useRef(false)
+
+  const nextPath = resolveSafeNextPath(searchParams.get('next'))
+
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    loading,
+    message,
+    setMessage,
+    inAppBrowserName,
+    login,
+    signInWithGoogle,
+    maybeAutoStartGoogleOAuth,
+    openInExternalBrowser,
+  } = useAuthFlow({
+    nextPath,
+    onAuthenticated: () => {
+      router.push(nextPath)
+      router.refresh()
+    },
+  })
+
   const canSubmitPassword = email.trim().length > 0 && password.trim().length > 0
 
   useEffect(() => {
@@ -72,14 +71,8 @@ function LoginInner() {
         text: 'Cette adresse e-mail existe déjà. Prochaine étape: connecte-toi.',
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
-
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return
-    const userAgent = navigator.userAgent || ''
-    if (!isInAppBrowser(userAgent)) return
-    setInAppBrowserName(detectInAppBrowser(userAgent))
-  }, [])
 
   useEffect(() => {
     const storageKey = 'overbound-auth-visual'
@@ -94,129 +87,14 @@ function LoginInner() {
     setAuthVisual(randomVisual)
   }, [])
 
-  const resolveNextPath = () => resolveSafeNextPath(searchParams.get('next'))
+  useEffect(() => {
+    maybeAutoStartGoogleOAuth(searchParams.get('oauth'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
-    if (!email || !password) {
-      setMessage({ type: 'error', text: 'Veuillez saisir votre email et votre mot de passe.' })
-      return
-    }
-
-    if (!isValidEmail(email)) {
-      setMessage({ type: 'error', text: 'Adresse email invalide.' })
-      return
-    }
-
-    setLoading(true)
-    setMessage(null)
-
-    try {
-      const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
-
-      if (error) {
-        setMessage({
-          type: 'error',
-          text: 'Email ou mot de passe incorrect. Si ton compte vient de Google, connecte-toi avec Google ou utilise "Mot de passe oublié".',
-        })
-        return
-      }
-
-      void fetch('/api/auth/post-auth-sync', { method: 'POST' }).catch((syncError) => {
-        console.warn('[login] post-auth sync failed', syncError)
-      })
-
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser()
-
-      if (currentUser) {
-        queryClient.setQueryData<SessionResponse>(SESSION_QUERY_KEY, (previous) => ({
-          user: {
-            id: currentUser.id,
-            email: currentUser.email,
-            created_at: currentUser.created_at,
-            user_metadata: currentUser.user_metadata,
-          },
-          profile: previous?.profile ?? null,
-          alerts: previous?.alerts ?? null,
-        }))
-      }
-
-      await queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY })
-
-      setMessage({ type: 'success', text: 'Connexion réussie ! Redirection…' })
-      router.push(resolveNextPath())
-      router.refresh()
-    } catch (err) {
-      console.error('[login] signInWithPassword failed', err)
-      setMessage({ type: 'error', text: 'Impossible de vous connecter pour le moment.' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const signInWithGoogle = useCallback(async () => {
-    setLoading(true)
-    setMessage(null)
-
-    try {
-      const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : undefined
-      const siteUrlFromEnv = process.env.NEXT_PUBLIC_SITE_URL
-      const base = resolveAuthBaseUrl(runtimeOrigin, siteUrlFromEnv)
-
-      if (!base) {
-        setMessage({ type: 'error', text: AUTH_CONFIG_ERROR_MESSAGE })
-        setLoading(false)
-        return
-      }
-
-      const redirectTo = buildAuthCallbackUrl(base, resolveSafeNextPath(searchParams.get('next')))
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
-
-      if (error) {
-        setMessage({ type: 'error', text: error.message })
-        setLoading(false)
-      }
-    } catch (err) {
-      console.error('[login] signInWithOAuth failed', err)
-      setMessage({ type: 'error', text: 'Connexion Google indisponible pour le moment.' })
-      setLoading(false)
-    }
-  }, [searchParams, supabase])
-
-  useEffect(() => {
-    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
-    const shouldStart = shouldAutoStartGoogleOAuth({
-      oauthParam: searchParams.get('oauth'),
-      userAgent,
-      alreadyTriggered: autoOauthTriggeredRef.current,
-    })
-
-    if (!shouldStart) return
-
-    autoOauthTriggeredRef.current = true
-    void signInWithGoogle()
-  }, [searchParams, signInWithGoogle])
-
-  const openInExternalBrowser = (oauthProvider?: 'google') => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return
-    const currentUrl = oauthProvider
-      ? buildExternalOAuthUrl(window.location.href, oauthProvider)
-      : window.location.href
-    const ua = navigator.userAgent || ''
-    const url = buildExternalBrowserUrl(currentUrl, ua)
-
-    // On iOS, window.open with _blank triggers the native "Open in Safari"
-    // prompt inside Meta webviews, which is the only reliable mechanism since
-    // x-safari-https:// was deprecated. On Android the intent URL handles it.
-    if (/iphone|ipad|ipod/i.test(ua)) {
-      window.open(url, '_blank', 'noopener,noreferrer')
-      return
-    }
-
-    window.location.href = url
+    await login()
   }
 
   return (

@@ -52,8 +52,8 @@ export type RegistrationDisclaimer = {
 
 export type RegistrationDraft = {
   eventId: string
-  userId: string
-  userEmail: string
+  userId: string | null
+  userEmail: string | null
   paymentIntentId: string | null
   clientSecret: string | null
   ticketSelections: RegistrationTicketSelection[]
@@ -65,6 +65,7 @@ export type RegistrationDraft = {
   summary: RegistrationSummary
   signature: RegistrationSignature
   disclaimer: RegistrationDisclaimer
+  stepIndex?: number
 }
 
 interface RegistrationStore {

@@ -13,7 +13,7 @@ export interface EventRegisterDataResponse {
     id: string
     email: string
     fullName: string | null
-  }
+  } | null
 }
 
 export const eventRegisterDataKey = (eventId: string, ticketId?: string | null) =>
