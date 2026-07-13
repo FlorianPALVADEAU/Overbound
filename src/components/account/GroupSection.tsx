@@ -58,10 +58,10 @@ export default function GroupSection({ currentUserId }: GroupSectionProps) {
   const resolvedUserId = USE_FAKE ? FAKE_MY_GROUP.captain_id : currentUserId
   const isCaptain = group?.captain_id === resolvedUserId
   const { data: invitePreview, isLoading: invitePreviewLoading, error: invitePreviewError } =
-    useGroupInvitePreview(joinCode || null, { enabled: !group && Boolean(joinCode) })
+    useGroupInvitePreview(joinCode || null, { enabled: !group && joinCode.trim().length === 8 })
 
   useEffect(() => {
-    if (!group && joinCode) {
+    if (!group && joinCode.trim().length === 8) {
       setJoinDialogOpen(true)
     }
   }, [group, joinCode])

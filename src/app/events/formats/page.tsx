@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -85,6 +86,7 @@ const difficulties = [
 ]
 
 export default function FormatsPage() {
+  notFound()
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
       <section className="relative isolate overflow-hidden py-20 sm:py-24">

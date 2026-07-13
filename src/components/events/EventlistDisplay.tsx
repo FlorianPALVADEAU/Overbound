@@ -122,7 +122,7 @@ const EmptyState = () => (
       <p className='text-base font-medium text-foreground'>Aucune course à venir pour le moment</p>
       <p>Reviens bientôt ou inscris-toi à notre newsletter pour être prévenu en avant-première.</p>
       <Button asChild variant='outline' size='sm' className='mx-auto w-fit border-primary text-primary hover:bg-primary/10'>
-        <Link href='/events'>Voir toutes les courses</Link>
+        <Link href='/events/ultra-arena-2026'>Voir toutes les courses</Link>
       </Button>
     </CardContent>
   </Card>

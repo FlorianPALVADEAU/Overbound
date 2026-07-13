@@ -667,7 +667,7 @@ export default function EventDetailPage() {
         </div>
 
         <div className="container relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <Link href="/events">
+          <Link href="/events/ultra-arena-2026">
             <Button
               variant="ghost"
               size="sm"

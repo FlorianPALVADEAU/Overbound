@@ -4,6 +4,7 @@ import Headings from '@/components/globals/Headings'
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { isPublicObstacleVisible } from '@/lib/obstaclesVisibility'
+import { HeartHandshake } from 'lucide-react'
 
 interface ObstaclesOverviewProps {
     eventId?: string
@@ -14,7 +15,7 @@ interface ObstaclesOverviewProps {
 
 const ObstaclesOverview = ({
     eventId = 'ultra-arena-2026',
-    title = "Quelques obstacles",
+    title = "Les obstacles Overbound",
     description = "Découvre une sélection d'obstacles emblématiques qui te mettront au défi lors de l'Overbound.",
     embedded = false,
 }: ObstaclesOverviewProps) => {
@@ -66,6 +67,14 @@ const ObstaclesOverview = ({
                     description={description}
                     sx='mb-4 sm:mb-6 md:mb-8'
                 />
+
+                <div className='flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 sm:px-5 sm:py-4 max-w-2xl w-full mb-6 sm:mb-8'>
+                    <HeartHandshake className='mt-0.5 h-5 w-5 flex-none text-[#26AA26]' />
+                    <p className='text-sm leading-relaxed text-neutral-300'>
+                        <strong className='text-white'>Adapté aux femmes :</strong> chaque obstacle propose une
+                        variante ajustée (hauteur, prise, charge) pour progresser en confiance, à son rythme.
+                    </p>
+                </div>
 
                 {(isLoading || isFetching) ? (
                     <div className="w-full">

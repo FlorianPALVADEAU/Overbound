@@ -706,7 +706,7 @@ const ContactPage = () => {
               <Link href="mailto:contact@overbound-race.com">Écrire au support</Link>
             </Button>
             <Button asChild className="h-12 rounded-full bg-[#26AA26] text-white hover:bg-[#1e8a1e]">
-              <Link href="/events">Voir les prochains événements</Link>
+              <Link href="/events/ultra-arena-2026">Voir les prochains événements</Link>
             </Button>
           </div>
         </div>

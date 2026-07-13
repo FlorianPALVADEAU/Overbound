@@ -510,7 +510,7 @@ export default function VolunteersPage() {
 							size='lg'
 							className='h-12 w-full border-primary text-primary hover:bg-primary/10 sm:w-auto'
 						>
-							<Link href='/events'>Voir les événements</Link>
+							<Link href='/events/ultra-arena-2026'>Voir les événements</Link>
 						</Button>
 					</div>
 				</div>
