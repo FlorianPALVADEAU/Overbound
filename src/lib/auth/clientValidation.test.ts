@@ -39,13 +39,17 @@ describe('resolveSafeNextPath', () => {
 })
 
 describe('resolveAuthBaseUrl and buildAuthCallbackUrl', () => {
-  it('prefers runtime origin and trims trailing slash', () => {
-    const base = resolveAuthBaseUrl('https://overbound-race.com/', 'https://fallback.com')
-    expect(base).toBe('https://overbound-race.com')
+  it('prefers the canonical env site URL over the runtime origin, and trims trailing slash', () => {
+    // OAuth must start and finish on the same host: middleware redirects any
+    // non-canonical host to NEXT_PUBLIC_SITE_URL before the callback route
+    // can exchange the PKCE code, so the runtime origin (e.g. apex domain,
+    // preview domain) must never win over the canonical env URL here.
+    const base = resolveAuthBaseUrl('https://overbound-race.com/', 'https://www.overbound-race.com')
+    expect(base).toBe('https://www.overbound-race.com')
   })
 
-  it('falls back to env url', () => {
-    const base = resolveAuthBaseUrl(undefined, 'https://overbound-race.com/')
+  it('falls back to runtime origin when no env url is configured', () => {
+    const base = resolveAuthBaseUrl('https://overbound-race.com/', undefined)
     expect(base).toBe('https://overbound-race.com')
   })
 

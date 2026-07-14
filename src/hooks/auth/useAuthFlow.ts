@@ -351,7 +351,12 @@ export function useAuthFlow({
         }
 
         const onMessage = (event: MessageEvent) => {
-          if (event.origin !== window.location.origin) return
+          // Compare against the canonical base (not window.location.origin):
+          // the popup always completes on the canonical host (middleware
+          // redirects it there), which can differ from the opener's own
+          // origin if the user loaded this page from a non-canonical host
+          // (apex vs www, preview domain, etc.).
+          if (event.origin !== base) return
           const payload = event.data as { type?: string; error?: string } | undefined
           if (payload?.type === 'oauth-success') {
             settled = true
