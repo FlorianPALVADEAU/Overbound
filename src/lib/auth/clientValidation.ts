@@ -24,9 +24,13 @@ export function resolveSafeNextPath(next: string | null | undefined) {
 }
 
 export function resolveAuthBaseUrl(runtimeOrigin?: string | null, envSiteUrl?: string | null) {
-  // Prefer the current runtime origin so OAuth callbacks stay on the same host
-  // the user is currently using (preview/custom domains, www/apex variants).
-  const base = runtimeOrigin || envSiteUrl || null
+  // Prefer the canonical site URL so the OAuth flow starts and ends on the
+  // same host. middleware.ts force-redirects any non-canonical host to
+  // envSiteUrl before the callback route can exchange the PKCE code, so
+  // anchoring on runtimeOrigin here would strand the code verifier cookie
+  // on the host the user happened to load the page from (apex vs www,
+  // preview domain, etc.) — see PKCE "code verifier not found" bug.
+  const base = envSiteUrl || runtimeOrigin || null
   if (!base) return null
   return base.replace(/\/$/, '')
 }
