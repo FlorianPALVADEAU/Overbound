@@ -300,7 +300,13 @@ RANKED conserve la logique backyard : un tour après l’autre, un chrono, une v
 - élimination en cas de dépassement du temps limite ou de non-respect des règles
 
 ### Départs et mécanique backyard
-Le format RANKED fonctionne avec un départ initial unique, puis un nouveau départ toutes les 20 minutes.
+Le format RANKED fonctionne avec un départ initial unique, puis des départs successifs dont l’intervalle diminue à mesure que la course avance :
+
+| Tour | Temps limite pour boucler |
+|------|----------------------------|
+| Tour 1 | 30 minutes |
+| Tours 2 à 5 | 25 minutes |
+| Tour 6 et suivants | 20 minutes |
 
 Pour rester en course, le participant doit :
 - terminer sa boucle ;
@@ -309,7 +315,7 @@ Pour rester en course, le participant doit :
 
 Tout participant absent du sas au moment du signal de départ suivant est déclaré DNF. Aucun rattrapage n’est accordé.
 
-Le dépassement du temps limite de 20 minutes entraîne un DNF immédiat : le participant peut finir son tour s’il le souhaite ou si le staff l’y autorise pour des raisons de circulation, mais il ne peut pas repartir sur le tour suivant.
+Le dépassement du temps limite applicable au tour en cours (30 minutes pour le tour 1, 25 minutes pour les tours 2 à 5, 20 minutes à partir du tour 6) entraîne un DNF immédiat : le participant peut finir son tour s’il le souhaite ou si le staff l’y autorise pour des raisons de circulation, mais il ne peut pas repartir sur le tour suivant.
 
 ### Principes clés
 - pas de rattrapage automatique
@@ -1321,7 +1327,7 @@ Cette section centralise les points restant à confirmer avant publication final
 | Tyre flip : autorisé à plusieurs en OPEN, solo en RANKED | validé |
 | Départs OPEN | sas toutes les 10 minutes |
 | Capacité OPEN par vague | 50 participants maximum |
-| Départs RANKED | départ initial puis nouveau départ toutes les 20 minutes |
+| Départs RANKED | départ initial puis départs successifs à temps décroissant : 30 min (tour 1), 25 min (tours 2-5), 20 min (tour 6+) |
 | Validation juridique finale | à confirmer |
 
 ---

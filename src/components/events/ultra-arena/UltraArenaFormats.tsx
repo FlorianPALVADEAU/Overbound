@@ -120,8 +120,8 @@ export function UltraArenaFormats({
               </div>
               <CardTitle className="text-2xl font-black">RANKED</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Élimination progressive. Un départ toutes les 20 minutes. Tu termines dans les temps — ou tu
-                sors.
+                Élimination progressive. Le temps par tour diminue : 30 min pour le 1er, 25 min pour les tours 2 à 5,
+                puis 20 min à partir du 6e. Tu termines dans les temps, ou tu es éliminé.
               </p>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-5">

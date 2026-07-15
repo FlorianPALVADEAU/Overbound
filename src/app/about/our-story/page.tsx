@@ -184,7 +184,7 @@ export default function OurStoryPage() {
                         10+ obstacles
                       </Badge>
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/40">
-                        20min max par boucle
+                        30 → 25 → 20min par boucle
                       </Badge>
                     </div>
                   </div>
@@ -197,7 +197,7 @@ export default function OurStoryPage() {
                         <div>
                           <p className="font-semibold">Élimination progressive</p>
                           <p className="text-sm text-muted-foreground">
-                            Chaque tour dure 1h. Pas de retour à temps = élimination.
+                            30min pour le 1er tour, 25min pour les tours 2 à 5, puis 20min à partir du 6e. Pas de retour à temps = élimination.
                           </p>
                         </div>
                       </div>

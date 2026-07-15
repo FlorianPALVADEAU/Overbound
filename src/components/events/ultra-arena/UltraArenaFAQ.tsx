@@ -20,7 +20,7 @@ const FAQS = [
     id: 'faq-format',
     question: 'Quelle différence entre OPEN et RANKED ?',
     answer:
-      "OPEN = dépassement personnel sans élimination. Tu gères ton rythme et recommences autant de boucles que tu veux. RANKED = format compétitif avec élimination progressive toutes les 20 minutes. Plus de pression, plus d'enjeu.",
+      "OPEN = dépassement personnel sans élimination. Tu gères ton rythme et recommences autant de boucles que tu veux. RANKED = format compétitif avec élimination progressive : 30 minutes pour boucler le 1er tour, 25 minutes pour les tours 2 à 5, puis 20 minutes à partir du 6e tour. Plus de pression, plus d'enjeu.",
   },
   {
     id: 'faq-seul',

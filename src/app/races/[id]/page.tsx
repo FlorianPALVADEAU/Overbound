@@ -285,7 +285,7 @@ export default function RaceDetailPage() {
                       Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Ultra Arena n'a pas de distance fixe.
                     </p>
                     <p className="text-lg leading-relaxed text-muted-foreground">
-                      <span className="text-amber-600 font-semibold">Élimination progressive.</span> Chaque tour dure 1h maximum.
+                      <span className="text-amber-600 font-semibold">Élimination progressive.</span> Le temps pour boucler un tour diminue à chaque étape : 30 min pour le 1er tour, 25 min pour les tours 2 à 5, puis 20 min à partir du 6e tour.
                       Si tu ne reviens pas à temps, tu es éliminé. Le dernier debout gagne.
                       C'est un test mental et physique extrême réservé aux athlètes d'élite.
                     </p>
