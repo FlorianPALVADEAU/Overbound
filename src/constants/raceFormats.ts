@@ -80,7 +80,7 @@ export const RACE_FORMATS: Record<FormatTemplate, FormatConfig> = {
 
     heroDescription: [
       '<span class="text-foreground font-semibold">Du jamais vu dans l\'OCR :</span> Le premier format backyard appliqué aux courses d\'obstacles. Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target="_blank" class="underline">Barkley Marathons</a>, la Ultra Arena n\'a pas de distance fixe.',
-      '<span class="text-amber-600 font-semibold">Élimination progressive.</span> Chaque tour dure 1h maximum. Si tu ne reviens pas à temps, tu es éliminé. Le dernier debout gagne. C\'est un test mental et physique extrême réservé aux athlètes d\'élite.',
+      '<span class="text-amber-600 font-semibold">Élimination progressive.</span> Le temps pour boucler un tour diminue à chaque étape : 30 min pour le 1er tour, 25 min pour les tours 2 à 5, puis 20 min à partir du 6e tour. Si tu ne reviens pas à temps, tu es éliminé. Le dernier debout gagne. C\'est un test mental et physique extrême réservé aux athlètes d\'élite.',
     ],
 
     statsCards: [
@@ -114,16 +114,16 @@ export const RACE_FORMATS: Record<FormatTemplate, FormatConfig> = {
 
     conceptParagraphs: [
       '<span class="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target="_blank" class="underline">Barkley Marathons</a></span>, la Ultra Arena introduit pour la première fois au monde le concept de backyard ultra à l\'obstacle course racing.',
-      '<span class="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 2km avec 10+ obstacles extrêmes. Tu as 1h pour revenir. Si tu ne reviens pas à temps, tu es éliminé. Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu\'à ce qu\'il ne reste qu\'un seul concurrent.',
+      '<span class="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 2km avec 10+ obstacles extrêmes. Le temps pour revenir se réduit à chaque tour : 30 min pour le 1er tour, 25 min pour les tours 2 à 5, puis 20 min à partir du 6e tour. Si tu ne reviens pas à temps, tu es éliminé. Tous ceux qui reviennent à temps repartent pour un nouveau tour, et ainsi de suite jusqu\'à ce qu\'il ne reste qu\'un seul concurrent.',
       'Ce n\'est pas une course de distance, <span class="text-foreground font-semibold">c\'est un test de limites absolues</span>. Mental, physique, stratégie de récupération : tout est mis à l\'épreuve. Le dernier debout gagne.',
     ],
 
     featureCards: [
       {
         category: 'Format élimination',
-        title: '1h par tour maximum',
+        title: '30 → 25 → 20 min par tour',
         description:
-          "Pas d'arrivée en avance. Chaque tour démarre toutes les heures, peu importe quand tu reviens. Gère ta récupération.",
+          "Le temps imparti se réduit à chaque tour : 30 min pour le 1er, 25 min pour les tours 2 à 5, puis 20 min à partir du 6e. Gère ta récupération en conséquence.",
         colorClass: 'bg-amber-500/5 ring-amber-500/20 text-amber-600',
       },
       {

@@ -36,7 +36,7 @@ const steps = [
 	},
 	{
 		title: "Le défi ultime",
-		text: "2km par tour, 10+ obstacles, 20min max pour boucler. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
+		text: "2km par tour, 10+ obstacles, 30min pour boucler le 1er tour, 25min pour les tours 2 à 5, puis 20min à partir du 6e. La course continue jusqu'à ce qu'il ne reste qu'un seul concurrent. Un test mental et physique qui te transformera.",
 		image:
 			"/images/images/a-sporty-man-laughing-facing-forward-and-looking-to-the-left.avif",
 	},
@@ -201,11 +201,11 @@ useEffect(() => {
 										<Crown className="h-4 w-4 mr-1" />
 										Format inédit
 									</Badge>
-									<CardTitle className="text-2xl">Tours de 20min</CardTitle>
+									<CardTitle className="text-2xl">Tours de 30 → 25 → 20min</CardTitle>
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between space-y-4">
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										En format RANKED, chaque tour de 2km avec 10+ obstacles doit être complété en moins de 20 minutes pour continuer. Le défi ultime pour tester ton endurance et ta stratégie.
+										En format RANKED, chaque tour de 2km avec 10+ obstacles doit être complété dans un temps qui diminue à chaque étape : 30 minutes pour le 1er tour, 25 minutes pour les tours 2 à 5, puis 20 minutes à partir du 6e tour. Le défi ultime pour tester ton endurance et ta stratégie.
 										<br/>Le format OPEN te permet de courir sans limite de temps, pour le plaisir et le dépassement de soi.
 									</p>
 								</CardContent>

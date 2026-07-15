@@ -112,9 +112,10 @@ const sections: InfoSection[] = [
               <h4 className="text-lg font-bold text-foreground">RANKED</h4>
             </div>
             <p className="text-sm leading-relaxed">
-              Format compétitif à <strong>élimination progressive</strong>. Un départ est donné toutes les 20
-              minutes. Les participants doivent terminer chaque boucle dans le temps imparti sous peine
-              d'élimination.
+              Format compétitif à <strong>élimination progressive</strong>. Le temps pour boucler chaque tour
+              diminue progressivement : 30 minutes pour le 1er tour, 25 minutes pour les tours 2 à 5, puis 20
+              minutes à partir du 6e tour. Les participants doivent terminer chaque boucle dans le temps imparti
+              sous peine d'élimination.
             </p>
             <p className="mt-3 text-sm font-medium text-orange-600 dark:text-orange-400">
               La course s'arrête lorsqu'il ne reste plus qu'un seul participant en compétition.

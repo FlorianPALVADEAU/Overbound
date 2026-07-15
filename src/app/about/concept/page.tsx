@@ -116,10 +116,10 @@ export default function ConceptPage() {
                 <div className="rounded-xl bg-amber-500/20 p-3 w-fit mb-2">
                   <Clock className="h-6 w-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-lg">Tours de 20min</CardTitle>
+                <CardTitle className="text-lg">Tours de 30 → 25 → 20min</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Chaque boucle doit être complétée en moins de 20min. Pas de retour à temps = élimination.
+                30min pour le 1er tour, 25min pour les tours 2 à 5, puis 20min à partir du 6e tour. Pas de retour à temps = élimination.
               </CardContent>
             </Card>
 
@@ -352,9 +352,19 @@ export default function ConceptPage() {
                     </div>
                   </div>
                   <div className="h-px bg-border" />
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">20min max</p>
-                    <p className="text-xs text-muted-foreground">pour boucler chaque tour</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-xl font-bold text-primary">30min</p>
+                      <p className="text-xs text-muted-foreground">tour 1</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-primary">25min</p>
+                      <p className="text-xs text-muted-foreground">tours 2-5</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-primary">20min</p>
+                      <p className="text-xs text-muted-foreground">tours 6+</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
