@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/sport-coach-warming-up-participant.avif',
+        url: '/images/images/og-coach-warmup.jpg',
         width: 1200,
         height: 630,
         alt: "Coureurs lors d'un échauffement avant une course Overbound Race"
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Plans d'entraînement OCR gratuits - Overbound Race",
     description: "Programmes d'entraînement professionnels pour courses d'obstacles.",
-    images: ['/images/images/sport-coach-warming-up-participant.avif'],
+    images: ['/images/images/og-coach-warmup.jpg'],
   }
 };
 

@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
+        url: '/images/images/og-runners-wave.jpg',
         width: 1200,
         height: 630,
         alt: 'Course à obstacles Paris 2026 - Overbound Race'
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Événements Course à Obstacles Paris 2026",
     description: "Inscris-toi aux courses à obstacles Overbound Race. Calendrier 2026 et inscriptions ouvertes !",
-    images: ['/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif'],
+    images: ['/images/images/og-runners-wave.jpg'],
   }
 };
 

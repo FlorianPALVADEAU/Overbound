@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/overbound-headband-on-chains-with-grass-in-background.avif',
+        url: '/images/images/og-headband-chains.jpg',
         width: 1200,
         height: 630,
         alt: 'Crédits Overbound Race',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Crédits Overbound Race",
     description: "L'équipe créative derrière la course à obstacles Paris 2026.",
-    images: ['/images/images/overbound-headband-on-chains-with-grass-in-background.avif'],
+    images: ['/images/images/og-headband-chains.jpg'],
   },
 };
 

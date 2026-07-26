@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
+        url: '/images/images/og-runners-wave.jpg',
         width: 1200,
         height: 630,
         alt: 'Formats Course à Obstacles - Overbound Race Paris 2026'
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Formats Course à Obstacles | Overbound Race Paris 2026",
     description: "Origin, Horizon, Ultra Arena : choisis ton format et ta difficulté.",
-    images: ['/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif'],
+    images: ['/images/images/og-runners-wave.jpg'],
   },
 };
 

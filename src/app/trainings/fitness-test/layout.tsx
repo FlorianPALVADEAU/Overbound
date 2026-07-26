@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/warm-up-of-many-participants-in-the-grass.avif',
+        url: '/images/images/og-group-warmup.jpg',
         width: 1200,
         height: 630,
         alt: 'Coureurs lors d\'un échauffement dans l\'herbe avant une course Overbound Race'
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Test de condition physique OCR - Overbound Race",
     description: "Évaluez votre niveau et recevez des recommandations d'entraînement.",
-    images: ['/images/images/warm-up-of-many-participants-in-the-grass.avif'],
+    images: ['/images/images/og-group-warmup.jpg'],
   },
 };
 

@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     description: "Première course à obstacles format backyard en France ! OCR personnalisable à Paris 2026. Choisis ta distance et difficulté. Inscriptions ouvertes !",
     images: [
       {
-        url: "/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif",
+        url: "/images/images/overbound-og-cover.jpg",
         width: 1200,
         height: 630,
         alt: "Overbound Race - Course à Obstacles Paris 2026 - Backyard à Obstacles",
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Overbound Race - Course à Obstacles Paris 2026 | Backyard à Obstacles",
     description: "Première course à obstacles format backyard en France ! OCR personnalisable à Paris 2026. Inscriptions ouvertes !",
-    images: ["/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"],
+    images: ["/images/images/overbound-og-cover.jpg"],
   },
   robots: {
     index: true,

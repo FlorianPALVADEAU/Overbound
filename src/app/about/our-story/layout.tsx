@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/overbound-headband-on-chains-with-grass-in-background.avif',
+        url: '/images/images/og-headband-chains.jpg',
         width: 1200,
         height: 630,
         alt: 'Overbound Race - Créateurs du Backyard à Obstacles'
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Notre Histoire | Overbound Race",
     description: "Découvre comment Overbound a créé le premier backyard OCR au monde.",
-    images: ['/images/images/overbound-headband-on-chains-with-grass-in-background.avif'],
+    images: ['/images/images/og-headband-chains.jpg'],
   }
 };
 

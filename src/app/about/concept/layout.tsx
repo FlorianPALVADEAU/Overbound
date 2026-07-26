@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif',
+        url: '/images/images/overbound-og-cover.jpg',
         width: 1200,
         height: 630,
         alt: 'Ultra Arena - Premier Backyard à Obstacles - Course Paris 2026'
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Ultra Arena - Premier Backyard à Obstacles au Monde",
     description: "Découvre le format révolutionnaire d'Overbound : le backyard à obstacles. Course Paris 2026.",
-    images: ['/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif'],
+    images: ['/images/images/overbound-og-cover.jpg'],
   }
 };
 

@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { EventStructuredDataServer } from '@/components/seo/EventStructuredDataServer'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
-const fallbackImage = `${siteUrl}/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif`
+const fallbackImage = `${siteUrl}/images/images/og-runners-wave.jpg`
 
 type EventMeta = Record<string, any> & {
   title: string

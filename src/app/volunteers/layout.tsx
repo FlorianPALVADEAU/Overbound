@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/two-sporty-mens-staring-at-the-camera-with-pride.avif',
+        url: '/images/images/og-two-men-pride.jpg',
         width: 1200,
         height: 630,
         alt: 'Bénévoles Overbound Race - Course à obstacles Paris 2026'
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Devenir Bénévole | Overbound Race Paris 2026",
     description: "Rejoins la tribu bénévole ! Place offerte sur l'événement de ton choix.",
-    images: ['/images/images/two-sporty-mens-staring-at-the-camera-with-pride.avif'],
+    images: ['/images/images/og-two-men-pride.jpg'],
   }
 };
 

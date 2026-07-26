@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/old-lady-ramping-below-barbed-wires.avif',
+        url: '/images/images/og-barbed-wires.jpg',
         width: 1200,
         height: 630,
         alt: 'Quelle course à obstacles choisir - Overbound Race Paris 2026'
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Quelle Course à Obstacles Choisir ? | Overbound Race",
     description: "Trouve ton format idéal avec notre questionnaire. Course obstacles Paris 2026.",
-    images: ['/images/images/old-lady-ramping-below-barbed-wires.avif'],
+    images: ['/images/images/og-barbed-wires.jpg'],
   },
 };
 
