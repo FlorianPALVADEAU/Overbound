@@ -65,7 +65,7 @@ const AnimatedBanner = ({
                 }
 
                 .animate-marquee {
-                    animation: marquee 5s linear infinite;
+                    animation: marquee 8s linear infinite;
                 }
             `}</style>
         </div>
