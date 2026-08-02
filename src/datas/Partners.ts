@@ -15,10 +15,11 @@ export const PARTNERS_DATA: PartnerType[] = [
         logo: '/images/partners_logo/rossignol_logo.webp',
         url: 'https://www.rossignol.com/'
     },
-    // {
-    //     name: 'Fiskars',
-    //     logo: '/images/partners_logo/fiskars_logo.webp',
-    // },
+    {
+        name: 'Endurance Shop Bois d\'Arcy',
+        logo: '/images/partners_logo/endurance_shop_bda_logo.webp',
+        url: 'https://www.enduranceshopbda.com/'
+    },
     {
         name: 'Intersport Plaisir',
         logo: '/images/partners_logo/intersport_plaisir_logo.webp',
@@ -48,6 +49,11 @@ export const PARTNERS_DATA: PartnerType[] = [
         name: 'Département des Yvelines',
         logo: '/images/partners_logo/yvelines_logo.webp',
         url: 'https://www.yvelines.fr/'
+    },
+    {
+        name: 'Wellness Squad',
+        logo: '/images/partners_logo/wellness_squad_logo.webp',
+        url: 'https://wellness-squad.fr/'
     },
     {
         name: 'Ïle de Loisirs de SQY',

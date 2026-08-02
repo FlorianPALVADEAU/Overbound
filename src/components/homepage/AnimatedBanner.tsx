@@ -16,14 +16,14 @@ const AnimatedBanner = ({
 }) => {
     const wrapperClass = compact
         ? 'py-2 lg:py-3 max-h-20'
-        : 'py-[15px] lg:py-[30px] max-h-32'
+        : 'py-[15px] lg:py-[24px] max-h-32'
     const backgroundClass = subtle ? 'bg-transparent text-muted-foreground' : 'bg-neutral-200 text-black'
     const gradientFromLeft = subtle ? 'from-transparent' : 'from-white'
     const gradientFromRight = subtle ? 'from-transparent' : 'from-white'
     const titleClass = compact ? 'text-sm mx-10 font-medium tracking-wide' : 'text-2xl my-0 mx-[125px] font-semibold'
     const logoBoxClass = compact
-        ? 'mx-3 md:mx-5 w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14'
-        : 'mx-[25px] md:mx-[50px] w-16 h-16 md:w-20 md:h-20 lg:w-28 lg:h-28'
+        ? 'mx-3 md:mx-5 h-10 md:h-12 lg:h-14 w-16 md:w-20 lg:w-24'
+        : 'mx-[25px] md:mx-[50px] h-16 md:h-20 lg:h-24 w-28 md:w-32 lg:w-40'
     const logoImageClass = subtle ? 'object-contain opacity-55' : 'object-contain'
 
     return (
@@ -39,11 +39,12 @@ const AnimatedBanner = ({
                         )}
                         {images && (
                             images.map((src, imgIndex) => (
-                                <div key={imgIndex} className={`${logoBoxClass} relative`}>
+                                <div key={imgIndex} className={`${logoBoxClass} relative shrink-0`}>
                                     <Image
                                         src={src}
                                         alt={`${imageAltPrefix} ${imgIndex + 1}`}
                                         fill
+                                        sizes="(max-width: 768px) 10rem, 16rem"
                                         className={logoImageClass}
                                     />
                                 </div>
