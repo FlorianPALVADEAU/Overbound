@@ -121,8 +121,11 @@ export default function ConfirmationStep({
                 </p>
                 <p>
                   8. Je reconnais que les frais d&apos;inscription sont soumis aux conditions tarifaires et
-                  de remboursement indiquées sur la plateforme Overbound. Sauf mention contraire
-                  explicite, l&apos;inscription est nominative et non transférable.
+                  de remboursement indiquées sur la plateforme Overbound. Je reconnais que
+                  l&apos;inscription à une activité sportive datée est exclue du droit de rétractation,
+                  qu&apos;elle devient non remboursable à moins de 30 jours de l&apos;événement, et que le
+                  transfert de dossard est possible uniquement dans les délais autorisés, notamment
+                  jusqu&apos;à J-7 sauf décision exceptionnelle de l&apos;organisation.
                 </p>
                 <p>
                   9. Overbound peut reporter, modifier ou annuler un événement pour des raisons de

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '10/02/2026'
+const lastUpdated = '13/08/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et champ d’application' },
@@ -100,9 +100,11 @@ const paragraphs = {
   ],
   annulation: [
     "Conformément à l’article L221-28 12° du Code de la consommation, les inscriptions à une activité sportive datée sont exclues du droit de rétractation (service de loisirs à une date déterminée).",
-    "Overbound propose cependant une option de transfert de dossard jusqu’à J-7 moyennant des frais de dossier (10 €), sous réserve de validation de l’organisation.",
-    "En cas d’annulation par l’Organisateur, les participants sont systématiquement remboursés du montant de leur inscription (hors frais bancaires irréversibles) dans un délai maximal de 14 jours ouvrés.",
-    "Les demandes particulières (pathologie, blessure, grossesse) sont étudiées au cas par cas. Ecrire à contact@overbound-race.com avant l’événement.",
+    "Sauf décision commerciale expresse d’Overbound, les inscriptions sont non remboursables à moins de 30 jours de l’événement. Jusqu’à J-30, une demande peut être étudiée hors frais bancaires ou frais de plateforme irréversibles.",
+    "Overbound propose cependant une option de transfert de dossard gratuite jusqu’à J-7, sous réserve que le bénéficiaire remplisse les conditions de participation et accepte le règlement applicable.",
+    "Après J-7, aucun transfert n’est garanti et aucun remboursement n’est dû, sauf décision exceptionnelle de l’organisation.",
+    "Les situations graves et dûment justifiées (blessure grave, pathologie incompatible, grossesse, décès d’un proche, mobilisation obligatoire par une autorité publique ou un service de secours) peuvent être étudiées au cas par cas, sans droit automatique au remboursement.",
+    "En cas d’annulation définitive par l’Organisateur, les participants sont remboursés du montant de leur inscription (hors frais bancaires irréversibles) selon les modalités communiquées par Overbound.",
   ],
   conditionsCourse: [
     "Chaque participant certifie disposer d’une condition physique adaptée à la pratique d’une course à obstacles et s’engage à respecter les consignes de sécurité transmises par l’organisation.",

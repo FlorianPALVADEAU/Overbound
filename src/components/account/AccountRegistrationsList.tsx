@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label'
 import { FORMAT_LEVELS } from '@/constants/formatLevels'
 import { formatClockTimeParis } from '@/lib/dateTime'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { getTransferDeadline, isTicketTransferAllowed } from '@/lib/tickets/transferPolicy'
 
 export interface AccountRegistrationItem {
   registration_id: string
@@ -124,6 +125,11 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
         const eventDate = registration.event_date ? new Date(registration.event_date) : null
         const isUpcoming = eventDate ? eventDate > now : false
         const isPast = eventDate ? eventDate < now : false
+        const transferDeadline = getTransferDeadline(registration.event_date)
+        const isTransferAllowed = isTicketTransferAllowed(registration.event_date, now)
+        const formattedTransferDeadline = transferDeadline
+          ? transferDeadline.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+          : null
         const formattedEventDate = eventDate
           ? eventDate.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
           : null
@@ -351,7 +357,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled={!registration.transfer_token || !registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming}
+                            disabled={!registration.transfer_token || !registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming || !isTransferAllowed}
                           >
                             <Share2 className="mr-2 h-4 w-4" />
                             Transférer
@@ -396,7 +402,8 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Toute personne disposant de ce lien pourra réclamer le billet.
+                            Toute personne disposant de ce lien pourra réclamer le billet jusqu'à J-7.
+                            {formattedTransferDeadline ? ` Date limite : ${formattedTransferDeadline}.` : ''}
                           </p>
                           {copiedLinkId === registration.registration_id ? (
                             <p className="text-xs font-medium text-emerald-600">Lien copié !</p>

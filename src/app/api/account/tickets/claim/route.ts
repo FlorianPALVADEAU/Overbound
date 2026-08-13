@@ -1,8 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { isTicketTransferAllowed } from '@/lib/tickets/transferPolicy'
 
 export const runtime = 'nodejs'
+
+const firstRelation = <T,>(value: T | T[] | null | undefined): T | null => {
+  if (!value) return null
+  return Array.isArray(value) ? value[0] ?? null : value
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,7 +52,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Ce billet n’existe plus ou a été réclamé.' }, { status: 404 })
     }
 
-    return NextResponse.json({ registration })
+    const event = firstRelation(registration.event)
+    const ticket = firstRelation(registration.ticket)
+
+    if (!isTicketTransferAllowed(event?.date)) {
+      return NextResponse.json(
+        { error: 'Le délai de transfert de ce billet est dépassé.' },
+        { status: 410 },
+      )
+    }
+
+    return NextResponse.json({ registration: { ...registration, event, ticket } })
   } catch (error) {
     console.error('[claim] detail unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
@@ -83,7 +99,8 @@ const handlePost = async (request: NextRequest) => {
           claim_status,
           is_affiliated,
           event_id,
-          ticket_id
+          ticket_id,
+          event:events(date)
         `,
       )
       .eq('transfer_token', token)
@@ -104,6 +121,15 @@ const handlePost = async (request: NextRequest) => {
 
     if (registration.user_id === user.id) {
       return NextResponse.json({ error: 'Ce billet est déjà associé à votre compte.' }, { status: 409 })
+    }
+
+    const event = firstRelation(registration.event)
+
+    if (!isTicketTransferAllowed(event?.date)) {
+      return NextResponse.json(
+        { error: 'Le délai de transfert de ce billet est dépassé.' },
+        { status: 410 },
+      )
     }
 
     const { error: updateError } = await admin

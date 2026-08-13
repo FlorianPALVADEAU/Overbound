@@ -272,14 +272,16 @@ const sections: InfoSection[] = [
   {
     id: 'transfert',
     icon: ArrowRightLeft,
-    title: 'Transfert de billet',
+    title: 'Annulation & transfert',
     content: (
       <div className="space-y-3">
         <p>
-          Les modalités de modification ou de transfert de billet seront précisées dans le Guide du Coureur.
+          Les inscriptions sont non remboursables à moins de 30 jours de l'événement. Le transfert
+          de dossard reste possible gratuitement jusqu'à J-7 depuis l'espace billets.
         </p>
         <p className="text-sm text-muted-foreground">
-          Certaines modifications pourront être effectuées directement en ligne.
+          Les situations graves et justifiées peuvent être étudiées au cas par cas, sans droit
+          automatique au remboursement.
         </p>
       </div>
     ),

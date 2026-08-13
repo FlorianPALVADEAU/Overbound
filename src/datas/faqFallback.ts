@@ -84,6 +84,50 @@ export const faqFallback: FAQDocument[] = [
     ],
   },
   {
+    _id: 'fallback-inscriptions-annulation',
+    title: 'Puis-je annuler ou me faire rembourser ?',
+    shortAnswer: 'À moins de 30 jours de l’événement, les billets ne sont pas remboursables.',
+    answer: [
+      block(
+        'Les inscriptions Overbound concernent une activité sportive datée et ne bénéficient pas du droit de rétractation de 14 jours.',
+      ),
+      ...bulletList([
+        'Jusqu’à 30 jours avant l’événement, une demande peut être étudiée à titre commercial, hors frais irréversibles.',
+        'À moins de 30 jours, aucun remboursement n’est dû : utilise plutôt le transfert de dossard jusqu’à J-7.',
+        'Après J-7, aucun remboursement n’est dû et le transfert n’est plus garanti.',
+      ]),
+      block(
+        'Les situations graves et justifiées, comme une blessure grave, une grossesse, un décès proche ou une mobilisation obligatoire par une autorité publique ou un service de secours, peuvent être étudiées au cas par cas sans droit automatique au remboursement.',
+      ),
+    ],
+    category: 'inscriptions',
+    relatedLinks: [
+      { label: 'Lire les CGV', href: '/cgv#annulation-participant' },
+      { label: 'Gérer mes billets', href: '/account/tickets' },
+    ],
+  },
+  {
+    _id: 'fallback-inscriptions-transfert',
+    title: 'Puis-je transférer mon billet à quelqu’un ?',
+    shortAnswer: 'Oui, gratuitement jusqu’à J-7 depuis ton espace billets.',
+    answer: [
+      block(
+        'Depuis ton espace billets, copie le lien de transfert et envoie-le à la personne qui récupère ta place.',
+      ),
+      block(
+        'Le bénéficiaire doit se connecter, compléter ses informations et accepter le règlement de l’événement avant que le billet soit associé à son compte.',
+      ),
+      block(
+        'Le transfert est possible jusqu’à 7 jours avant l’événement. Après cette date, il n’est plus garanti pour des raisons d’organisation.',
+      ),
+    ],
+    category: 'inscriptions',
+    relatedLinks: [
+      { label: 'Gérer mes billets', href: '/account/tickets' },
+      { label: 'Lire les CGV', href: '/cgv#transfert' },
+    ],
+  },
+  {
     _id: 'fallback-preparation-training',
     title: 'Comment me préparer physiquement pour Overbound ?',
     shortAnswer: 'Travaille ton cardio, ta force fonctionnelle et ta technique d’obstacle grâce à nos programmes.',

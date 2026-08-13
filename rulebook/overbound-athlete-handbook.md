@@ -360,7 +360,7 @@ R : Le classement est publié selon les validations officielles et les éventuel
 R : Non, sauf zones spécifiques et sous conditions de sécurité.
 
 18) Puis‑je transférer mon inscription ?
-R : Voir politique de transfert publiée au moment de l'achat (souvent restriction proche de la date).
+R : Oui, gratuitement jusqu’à J-7 via l’espace billets, sous réserve que le bénéficiaire remplisse les conditions de participation et accepte le règlement.
 
 19) Que faire si je me blesse après la course ?
 R : Contacte le point médical pour consignation et suis les instructions de suivi.
@@ -369,10 +369,10 @@ R : Contacte le point médical pour consignation et suis les instructions de sui
 R : Informations publiées sur la page événement ; privilégie le covoiturage.
 
 21) Puis‑je récupérer un dossard pour un ami ?
-R : Suivre la procédure d'autorisation (pièce d'identité et confirmation) ; politique variable.
+R : Non, sauf autorisation expresse de l’organisation avant l’événement avec pièce d’identité et confirmation écrite.
 
 22) Que se passe-t-il si l'événement est annulé ?
-R : Politique d'annulation et report décrite dans les conditions d'achat (remboursement / report).
+R : En cas d’annulation définitive par l’organisation, les modalités de remboursement ou de report sont communiquées par email et encadrées par les CGV.
 
 23) Puis‑je filmer l'événement en amateur ?
 R : Oui dans les zones publiques ; respect du droit à l'image des autres et des zones restricted.
