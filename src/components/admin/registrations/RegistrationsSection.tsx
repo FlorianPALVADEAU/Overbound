@@ -167,7 +167,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   const stats = useMemo<RegistrationStatsState>(() => {
     const snapshot = {
-      total: registrations.length,
+      total: totalCount,
       checked_in: 0,
     }
 
@@ -176,7 +176,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     })
 
     return snapshot
-  }, [registrations])
+  }, [registrations, totalCount])
 
   const activeFiltersCount = useMemo(() => {
     let count = 0

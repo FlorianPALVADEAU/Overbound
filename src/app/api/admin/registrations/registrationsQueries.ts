@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import axiosClient from '../../axiosClient'
 import type {
@@ -62,6 +62,7 @@ export const useAdminRegistrations = (params: AdminRegistrationsParams) =>
   useQuery<RegistrationsResponse, Error>({
     queryKey: buildQueryKey(params),
     queryFn: () => fetchAdminRegistrations(params),
+    placeholderData: keepPreviousData,
   })
 
 export const updateAdminRegistrationApproval = async (
