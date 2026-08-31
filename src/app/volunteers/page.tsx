@@ -681,22 +681,37 @@ export default function VolunteersPage() {
 									</Button>
 								</div>
 							</div>
+						) : submitSuccess ? (
+							<div className='flex flex-col items-center gap-4 rounded-xl border border-primary/40 bg-primary/10 p-8 text-center'>
+								<span className='flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary'>
+									<CheckCircle2 className='h-7 w-7' />
+								</span>
+								<div className='space-y-2'>
+									<p className='text-lg font-semibold text-foreground'>Candidature bien enregistrée !</p>
+									<p className='text-sm text-muted-foreground'>
+										Ta candidature a bien été prise en compte. L’équipe tribu te contacte très vite pour le brief.
+									</p>
+									{submittedSnapshot ? (
+										<p className='text-xs text-muted-foreground'>
+											Confirmation envoyée pour <strong>{submittedSnapshot.fullName}</strong> ({submittedSnapshot.email}) • {submittedSnapshot.eventName}
+										</p>
+									) : null}
+									<p className='text-xs text-muted-foreground'>
+										Tu vas aussi recevoir un email de confirmation. Vérifie tes spams si tu ne le vois pas rapidement.
+									</p>
+								</div>
+								<Button
+									variant='outline'
+									onClick={() => {
+										setSubmitSuccess(false)
+										setSubmittedSnapshot(null)
+									}}
+								>
+									Envoyer une autre candidature
+								</Button>
+							</div>
 						) : (
 							<>
-								{submitSuccess ? (
-									<Alert className='border-primary/40 bg-primary/10'>
-										<AlertTitle>Candidature bien enregistrée</AlertTitle>
-										<AlertDescription>
-											Ta candidature a bien été prise en compte. L’équipe tribu te contacte très vite pour le brief.
-											{submittedSnapshot ? (
-												<span className='mt-2 block text-xs text-muted-foreground'>
-													Confirmation envoyée pour <strong>{submittedSnapshot.fullName}</strong> ({submittedSnapshot.email}) • {submittedSnapshot.eventName}
-												</span>
-											) : null}
-										</AlertDescription>
-									</Alert>
-								) : null}
-
 								{submitError ? (
 									<Alert variant='destructive'>
 										<AlertTitle>Oups</AlertTitle>
@@ -935,11 +950,6 @@ export default function VolunteersPage() {
 										{submitting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
 										Envoyer ma candidature bénévole
 									</Button>
-									{submitSuccess ? (
-										<p className='text-sm font-medium text-primary'>
-											Candidature envoyée avec succès. Tu vas recevoir un email de confirmation.
-										</p>
-									) : null}
 								</form>
 							</>
 						)}
