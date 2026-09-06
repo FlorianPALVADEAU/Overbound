@@ -24,7 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Clock, Download, Filter, Package, RotateCcw, Trash2 } from 'lucide-react'
+import {
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Download,
+  Filter,
+  Package,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react'
 import type { UpsellSummaryRow } from '@/app/api/admin/registrations/upsells-summary/route'
 import { RegistrationStats } from './RegistrationStats'
 import { RegistrationDetailsDialog } from './RegistrationDetailsDialog'
@@ -54,7 +65,8 @@ interface RegistrationStatsState {
 }
 
 const ALL_EVENTS_VALUE = '__all__'
-const DEFAULT_LIMIT = 250
+const PAGE_SIZE_OPTIONS = [50, 100, 250, 500]
+const DEFAULT_LIMIT = 100
 
 const formatDateTime = (value?: string | null) =>
   value
@@ -117,6 +129,8 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   const [searchTerm, setSearchTerm] = useState('')
   const [eventFilter, setEventFilter] = useState<string>(ALL_EVENTS_VALUE)
+  const [pageSize, setPageSize] = useState(DEFAULT_LIMIT)
+  const [pageIndex, setPageIndex] = useState(0)
   const [message, setMessage] = useState<MessageState | null>(null)
   const [detailsRegistration, setDetailsRegistration] = useState<AdminRegistration | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
@@ -136,13 +150,19 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   const effectiveEventFilter = lockEventFilter && eventId ? eventId : eventFilter
 
+  // Revenir à la première page dès qu'un filtre ou la taille de page change.
+  useEffect(() => {
+    setPageIndex(0)
+  }, [effectiveEventFilter, searchTerm, pageSize])
+
   const params = useMemo(
     () => ({
       eventId: effectiveEventFilter !== ALL_EVENTS_VALUE ? effectiveEventFilter : undefined,
       searchTerm: searchTerm.trim() || undefined,
-      limit: DEFAULT_LIMIT,
+      limit: pageSize,
+      offset: pageIndex * pageSize,
     }),
-    [effectiveEventFilter, searchTerm]
+    [effectiveEventFilter, searchTerm, pageSize, pageIndex]
   )
 
   const exportUrl = useMemo(() => {
@@ -164,6 +184,19 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const registrations = useMemo(() => data?.registrations ?? [], [data])
   const totalCount = data?.totalCount ?? registrations.length
   const queryKey = adminRegistrationsBuildKey(params)
+
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize))
+  const rangeStart = totalCount === 0 ? 0 : pageIndex * pageSize + 1
+  const rangeEnd = Math.min(pageIndex * pageSize + registrations.length, totalCount)
+  const canPrev = pageIndex > 0
+  const canNext = pageIndex + 1 < pageCount
+
+  // Si le nombre total baisse (suppression, changement de filtre), recaler la page.
+  useEffect(() => {
+    if (pageIndex > 0 && pageIndex >= pageCount) {
+      setPageIndex(pageCount - 1)
+    }
+  }, [pageIndex, pageCount])
 
   const stats = useMemo<RegistrationStatsState>(() => {
     const snapshot = {
@@ -231,6 +264,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
       setEventFilter(ALL_EVENTS_VALUE)
     }
     setSearchTerm('')
+    setPageIndex(0)
   }
 
   if (registrationsError) {
@@ -342,7 +376,9 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
       <div className="space-y-3 rounded-xl border bg-card p-4 shadow-sm md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
           <span>
-            {totalCount} inscription{totalCount > 1 ? 's' : ''} au total
+            {totalCount > 0
+              ? `${rangeStart}–${rangeEnd} sur ${totalCount} inscription${totalCount > 1 ? 's' : ''}`
+              : '0 inscription'}
           </span>
           {isFetching && (
             <span className="flex items-center gap-1">
@@ -509,6 +545,73 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Lignes par page</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(value) => setPageSize(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Page {pageIndex + 1} / {pageCount}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPageIndex(0)}
+              disabled={!canPrev}
+              aria-label="Première page (premier inscrit)"
+            >
+              <ChevronFirst className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPageIndex((index) => Math.max(0, index - 1))}
+              disabled={!canPrev}
+              aria-label="Page précédente"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPageIndex((index) => Math.min(pageCount - 1, index + 1))}
+              disabled={!canNext}
+              aria-label="Page suivante"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPageIndex(pageCount - 1)}
+              disabled={!canNext}
+              aria-label="Dernière page"
+            >
+              <ChevronLast className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
