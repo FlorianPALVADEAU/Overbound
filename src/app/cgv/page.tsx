@@ -234,8 +234,8 @@ export default function CGVPage() {
               </p>
               <ul>
                 <li>
-                  <strong>Délai :</strong> le transfert est possible gratuitement jusqu'à 7 jours avant l'événement
-                  (J-7)
+                  <strong>Délai :</strong> le transfert est possible gratuitement jusqu'à la veille de l'événement
+                  (J-1)
                 </li>
                 <li>
                   <strong>Conditions :</strong> le bénéficiaire doit remplir les conditions de participation,
@@ -247,7 +247,7 @@ export default function CGVPage() {
                 </li>
               </ul>
               <p>
-                Après J-7, le transfert n'est plus garanti et ne peut être accepté qu'à titre exceptionnel, selon les
+                Après J-1, le transfert n'est plus garanti et ne peut être accepté qu'à titre exceptionnel, selon les
                 contraintes d'organisation. Pour toute difficulté, contactez{' '}
                 <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary hover:underline">
                   {COMPANY_INFO.emails.support}
@@ -296,10 +296,10 @@ export default function CGVPage() {
                 </li>
                 <li>
                   <strong>À moins de 30 jours de l'événement :</strong> aucun remboursement n'est dû par Overbound.
-                  Le participant est invité à utiliser le transfert de dossard jusqu'à J-7.
+                  Le participant est invité à utiliser le transfert de dossard jusqu'à la veille de l'événement.
                 </li>
                 <li>
-                  <strong>Après J-7 :</strong> aucun remboursement n'est dû et le transfert n'est plus garanti.
+                  <strong>Après J-1 :</strong> aucun remboursement n'est dû et le transfert n'est plus garanti.
                 </li>
               </ul>
               <p>

@@ -1,4 +1,4 @@
-export const TRANSFER_DEADLINE_DAYS_BEFORE_EVENT = 7
+export const TRANSFER_DEADLINE_DAYS_BEFORE_EVENT = 1
 
 export const getTransferDeadline = (eventDateIso: string | null | undefined) => {
   if (!eventDateIso) return null

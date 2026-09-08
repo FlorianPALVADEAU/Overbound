@@ -27,8 +27,8 @@ Fichier concerné : [src/app/cgv/page.tsx](../../src/app/cgv/page.tsx#L227-L324)
 | Délai avant l'événement | Remboursement | Transfert de dossard |
 |---|---|---|
 | Jusqu'à J-30 | Possible, étudié à titre commercial (hors frais bancaires/plateforme irréversibles) | — |
-| J-30 à J-7 | Non dû | Autorisé gratuitement |
-| Après J-7 | Non dû | Non garanti, exceptionnel uniquement |
+| J-30 à J-1 | Non dû | Autorisé gratuitement |
+| Après J-1 | Non dû | Non garanti, exceptionnel uniquement |
 | Annulation par l'organisateur | Remboursement selon modalités communiquées (14 jours ouvrés max) | — |
 | Cas exceptionnels dûment justifiés (blessure grave, pathologie, grossesse, décès d'un proche, mobilisation autorité) | Étudiés au cas par cas, **sans droit automatique** — réponse possible : refus, report, avoir, remboursement partiel/total | — |
 
@@ -43,10 +43,10 @@ La version actuelle de la CGV liste explicitement ces cas (plus transparente pou
 Le principe DGCCRF impose que la règle soit visible **avant achat**, pas seulement dans la CGV. À vérifier/aligner :
 
 - [ ] CGV (`src/app/cgv/page.tsx`) — fait, en attente de revue
-- [ ] FAQ publique (`src/datas/faqFallback.ts`, `src/sanity/seed/faq-questions.ndjson` — déjà modifiés dans cette session, à vérifier que le contenu correspond à la même politique J-30/J-7)
+- [ ] FAQ publique (`src/datas/faqFallback.ts`, `src/sanity/seed/faq-questions.ndjson` — déjà modifiés dans cette session, à vérifier que le contenu correspond à la même politique J-30/J-1)
 - [ ] Emails transactionnels de confirmation d'inscription (rappel du délai de transfert/remboursement)
 - [ ] Étape de checkout / `ConfirmationStep.tsx` (déjà modifié dans cette session — vérifier cohérence)
-- [ ] Aucune règle codée automatiquement pour le remboursement J-30 aujourd'hui (contrairement au transfert J-7, voir `src/lib/tickets/transferPolicy.ts`) — la fenêtre de remboursement reste 100% manuelle/discrétionnaire côté support. À date, rien n'empêche un participant de demander un remboursement après J-30 ; la CGV sert de base pour refuser, mais aucun système ne bloque ou n'alerte automatiquement.
+- [ ] Aucune règle codée automatiquement pour le remboursement J-30 aujourd'hui (contrairement au transfert J-1, voir `src/lib/tickets/transferPolicy.ts`) — la fenêtre de remboursement reste 100% manuelle/discrétionnaire côté support. À date, rien n'empêche un participant de demander un remboursement après J-30 ; la CGV sert de base pour refuser, mais aucun système ne bloque ou n'alerte automatiquement.
 
 ## Checklist avant publication (voir docs/guides/legal.md §7)
 

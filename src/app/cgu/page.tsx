@@ -101,8 +101,8 @@ const paragraphs = {
   annulation: [
     "Conformément à l’article L221-28 12° du Code de la consommation, les inscriptions à une activité sportive datée sont exclues du droit de rétractation (service de loisirs à une date déterminée).",
     "Sauf décision commerciale expresse d’Overbound, les inscriptions sont non remboursables à moins de 30 jours de l’événement. Jusqu’à J-30, une demande peut être étudiée hors frais bancaires ou frais de plateforme irréversibles.",
-    "Overbound propose cependant une option de transfert de dossard gratuite jusqu’à J-7, sous réserve que le bénéficiaire remplisse les conditions de participation et accepte le règlement applicable.",
-    "Après J-7, aucun transfert n’est garanti et aucun remboursement n’est dû, sauf décision exceptionnelle de l’organisation.",
+    "Overbound propose cependant une option de transfert de dossard gratuite jusqu’à la veille de l’événement (J-1), sous réserve que le bénéficiaire remplisse les conditions de participation et accepte le règlement applicable.",
+    "Après J-1, aucun transfert n’est garanti et aucun remboursement n’est dû, sauf décision exceptionnelle de l’organisation.",
     "Les situations graves et dûment justifiées (blessure grave, pathologie incompatible, grossesse, décès d’un proche, mobilisation obligatoire par une autorité publique ou un service de secours) peuvent être étudiées au cas par cas, sans droit automatique au remboursement.",
     "En cas d’annulation définitive par l’Organisateur, les participants sont remboursés du montant de leur inscription (hors frais bancaires irréversibles) selon les modalités communiquées par Overbound.",
   ],

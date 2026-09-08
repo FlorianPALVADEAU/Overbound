@@ -402,7 +402,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Toute personne disposant de ce lien pourra réclamer le billet jusqu'à J-7.
+                            Toute personne disposant de ce lien pourra réclamer le billet jusqu'à la veille de l'événement.
                             {formattedTransferDeadline ? ` Date limite : ${formattedTransferDeadline}.` : ''}
                           </p>
                           {copiedLinkId === registration.registration_id ? (

@@ -125,7 +125,7 @@ export default function ConfirmationStep({
                   l&apos;inscription à une activité sportive datée est exclue du droit de rétractation,
                   qu&apos;elle devient non remboursable à moins de 30 jours de l&apos;événement, et que le
                   transfert de dossard est possible uniquement dans les délais autorisés, notamment
-                  jusqu&apos;à J-7 sauf décision exceptionnelle de l&apos;organisation.
+                  jusqu&apos;à la veille de l&apos;événement sauf décision exceptionnelle de l&apos;organisation.
                 </p>
                 <p>
                   9. Overbound peut reporter, modifier ou annuler un événement pour des raisons de
