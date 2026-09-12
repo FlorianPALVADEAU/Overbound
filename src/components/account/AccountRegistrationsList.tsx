@@ -32,6 +32,8 @@ import { formatClockTimeParis } from '@/lib/dateTime'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 import { getTransferDeadline, isTicketTransferAllowed } from '@/lib/tickets/transferPolicy'
 
+const QR_ACCESS_OVERRIDE_END = new Date('2026-09-12T22:00:00.000Z') // 2026-09-13 00:00 Europe/Paris
+
 export interface AccountRegistrationItem {
   registration_id: string
   user_id: string
@@ -114,6 +116,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
   }, [copiedLinkId])
 
   const now = useMemo(() => new Date(), [])
+  const isQrAccessOverrideActive = now < QR_ACCESS_OVERRIDE_END
 
   if (!registrations || registrations.length === 0) {
     return null
@@ -152,6 +155,11 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
           activeDialog?.type === 'qr' && activeDialog.id === registration.registration_id
         const isShareDialogOpen =
           activeDialog?.type === 'share' && activeDialog.id === registration.registration_id
+        const canViewTicket =
+          Boolean(registration.qr_code_data_url) &&
+          !registration.checked_in &&
+          registration.claim_status !== 'claimed' &&
+          (isUpcoming || isQrAccessOverrideActive)
 
         return (
           <div key={registration.registration_id}>
@@ -278,7 +286,7 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                           <Button
                             variant="default"
                             size="sm"
-                            disabled={!registration.qr_code_data_url || registration.checked_in || registration.claim_status === 'claimed' || !isUpcoming}
+                            disabled={!canViewTicket}
                           >
                             <QrCodeIcon className="mr-2 h-4 w-4" />
                             Voir le billet
