@@ -6,18 +6,24 @@
     <meta name="x-apple-disable-message-reformatting" />
     <meta content="IE=edge" http-equiv="X-UA-Compatible" />
     <meta content="telephone=no,address=no,email=no,date=no,url=no" name="format-detection" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light only" />
     <title>Overbound — Rejoins l'équipe bénévole du 12 septembre</title>
 
-    <link rel="preload" as="image" href="https://www.overbound-race.com/images/emails/benevoles-hero.jpg" />
+    <link
+      rel="preload"
+      as="image"
+      href="https://www.overbound-race.com/images/images/a-sunny-mood-with-runners-ready-to-go.jpg"
+    />
 
     <style>
+      :root { color-scheme: light only; supported-color-schemes: light only; }
       @media only screen and (max-width:620px){
         .container{width:100%!important;border-radius:0!important;}
         .pad{padding:24px!important;}
-        .h1{font-size:36px!important;line-height:40px!important;}
-        .h2{font-size:24px!important;line-height:28px!important;}
+        .h1{font-size:28px!important;line-height:34px!important;}
+        .h2{font-size:23px!important;line-height:27px!important;}
         .cta{display:block!important;width:100%!important;box-sizing:border-box!important;}
-        .perk{display:block!important;width:100%!important;}
       }
     </style>
   </head>
@@ -48,47 +54,72 @@
               </td>
             </tr>
 
-            <!-- HERO -->
+            <!-- HERO (titre superposé sur l'image) -->
             <tr>
               <td
                 align="center"
                 valign="middle"
-                background="https://www.overbound-race.com/images/emails/benevoles-hero.jpg"
-                style="background-color:#0f172a;background-image:url('https://www.overbound-race.com/images/emails/benevoles-hero.jpg');background-size:cover;background-position:center;padding:56px 34px;"
+                background="https://www.overbound-race.com/images/images/a-sunny-mood-with-runners-ready-to-go.jpg"
+                style="background-color:#0b1220;background-image:linear-gradient(180deg, rgba(9,13,23,.62) 0%, rgba(9,13,23,.82) 100%), url('https://www.overbound-race.com/images/images/a-sunny-mood-with-runners-ready-to-go.jpg');background-repeat:no-repeat;background-size:cover;background-position:center;"
               >
-                <img
-                  src="https://www.overbound-race.com/images/brand/totem_logo_white.png"
-                  width="84"
-                  height="84"
-                  alt="Overbound"
-                  style="display:block;margin:0 auto 16px auto;"
-                />
-                <div
-                  class="h1"
-                  style="font-size:44px;line-height:48px;font-weight:900;color:#ffffff;text-align:center;margin-bottom:14px;"
-                >
-                  Fais partie de l'aventure,<br />de l'autre côté du parcours.
-                </div>
-                <div style="font-size:17px;line-height:26px;color:#e2e8f0;text-align:center;max-width:440px;margin:0 auto 26px auto;">
-                  Overbound ne serait rien sans son équipe bénévole. Le 12 septembre,
-                  viens vivre la course de l'intérieur et faire vivre à des milliers
-                  d'athlètes le plus beau jour de leur année.
-                </div>
-                <a
-                  href="https://www.overbound-race.com/volunteers#rejoindre"
-                  class="cta"
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:900;font-size:17px;padding:16px 34px;border-radius:12px;text-align:center;"
-                >
-                  Je deviens bénévole
-                </a>
+                <!--[if mso]>
+                <v:image xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" src="https://www.overbound-race.com/images/images/a-sunny-mood-with-runners-ready-to-go.jpg" style="border:0;display:inline-block;width:620px;height:440px;" />
+                <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="position:absolute;width:620px;height:440px;">
+                  <v:fill opacity="72%" color="#0b1220" />
+                  <v:textbox inset="0,0,0,0">
+                <![endif]-->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                  <tr>
+                    <td align="center" valign="middle" style="padding:64px 34px;">
+                      <img
+                        src="https://www.overbound-race.com/images/brand/totem_logo_white.png"
+                        width="70"
+                        height="70"
+                        alt="Overbound"
+                        style="display:block;margin:0 auto 18px auto;"
+                      />
+                      <div
+                        class="h1"
+                        style="font-size:34px;line-height:40px;font-weight:900;color:#ffffff;text-align:center;margin:0 auto 14px auto;max-width:440px;text-shadow:0 2px 12px rgba(0,0,0,.8), 0 0 4px rgba(0,0,0,.6);"
+                      >
+                        Vis Overbound de l'autre côté du parcours
+                      </div>
+                      <div
+                        style="font-size:16px;line-height:25px;color:#f1f5f9;text-align:center;max-width:420px;margin:0 auto 28px auto;text-shadow:0 1px 8px rgba(0,0,0,.85);"
+                      >
+                        La course ne serait rien sans son équipe bénévole. Le 12 septembre,
+                        viens la vivre de l'intérieur et faire du plus beau jour de milliers
+                        d'athlètes une réussite.
+                      </div>
+                      <a
+                        href="https://www.overbound-race.com/volunteers#rejoindre"
+                        class="cta"
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:900;font-size:17px;padding:16px 34px;border-radius:12px;text-align:center;"
+                      >
+                        Je deviens bénévole
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <!--[if mso]>
+                  </v:textbox>
+                </v:rect>
+                <![endif]-->
+              </td>
+            </tr>
+
+            <!-- DIVIDER -->
+            <tr>
+              <td align="center" style="padding:24px 0 0 0;background:#ffffff;">
+                <div style="height:1px;background:#e2e8f0;width:88%;margin:0 auto;"></div>
               </td>
             </tr>
 
             <!-- POURQUOI -->
             <tr>
-              <td class="pad" align="center" style="padding:38px 44px 8px 44px;background:#ffffff;">
+              <td class="pad" align="center" style="padding:32px 44px 8px 44px;background:#ffffff;">
                 <div
                   class="h2"
                   style="font-size:26px;line-height:30px;font-weight:900;color:#0f172a;text-align:center;margin-bottom:14px;"
@@ -151,7 +182,7 @@
 
             <!-- INFOS PRATIQUES -->
             <tr>
-              <td class="pad" align="center" style="padding:26px 44px 10px 44px;">
+              <td class="pad" align="center" style="padding:26px 44px 10px 44px;background:#ffffff;">
                 <table
                   width="100%"
                   cellpadding="0"
