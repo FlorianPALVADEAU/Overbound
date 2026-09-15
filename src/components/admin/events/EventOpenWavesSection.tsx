@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   useAdminEventWaves,
   useAdminWaveParticipants,
+  provisionAdminEventWaves,
   updateAdminEventWave,
   type AdminEventWave,
 } from '@/app/api/admin/events/eventsQueries'
+import { getOpenWaveProvisioningState } from '@/lib/openSas'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,6 +46,8 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
   const [globalCapacity, setGlobalCapacity] = useState('50')
   const [savingWave, setSavingWave] = useState<number | null>(null)
   const [savingGlobal, setSavingGlobal] = useState(false)
+  const [provisioning, setProvisioning] = useState(false)
+  const [provisioningError, setProvisioningError] = useState<string | null>(null)
   const [selectedWaveIndex, setSelectedWaveIndex] = useState<number | null>(null)
   const {
     data: selectedWaveParticipants = [],
@@ -70,6 +74,27 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
     const totalAssigned = waves.reduce((sum, wave) => sum + (wave.assigned_count ?? 0), 0)
     return { totalCapacity, totalAssigned }
   }, [data])
+
+  const provisioningState = useMemo(
+    () => getOpenWaveProvisioningState((data ?? []).map((wave) => wave.wave_index)),
+    [data],
+  )
+
+  const handleProvision = async () => {
+    setProvisioning(true)
+    setProvisioningError(null)
+
+    try {
+      await provisionAdminEventWaves(eventId)
+      await refetch()
+    } catch (error) {
+      setProvisioningError(
+        error instanceof Error ? error.message : 'Impossible d’initialiser les SAS OPEN.',
+      )
+    } finally {
+      setProvisioning(false)
+    }
+  }
 
   const handleRowChange = (wave: AdminEventWave, patch: Partial<EditRow>) => {
     setEditRows((prev) => {
@@ -150,6 +175,31 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
             </Button>
           </div>
         </div>
+
+        {provisioningState === 'unprovisioned' ? (
+          <Alert>
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>Les 24 SAS OPEN ne sont pas encore initialisés pour cet événement.</span>
+              <Button size="sm" onClick={handleProvision} disabled={provisioning}>
+                {provisioning ? 'Initialisation…' : 'Initialiser les SAS OPEN'}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {provisioningState === 'inconsistent' ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Configuration SAS incomplète. Aucune correction automatique n’est appliquée : vérifie les données avant toute opération.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {provisioningError ? (
+          <Alert variant="destructive">
+            <AlertDescription>{provisioningError}</AlertDescription>
+          </Alert>
+        ) : null}
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">

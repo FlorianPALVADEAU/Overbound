@@ -7,6 +7,12 @@ export const OPEN_SAS_CONFIG = {
   waveCapacity: 50,
 } as const
 
+export const OPEN_WAVE_COUNT = (
+  ((OPEN_SAS_CONFIG.lastDeparture.hour * 60 + OPEN_SAS_CONFIG.lastDeparture.minute) -
+    (OPEN_SAS_CONFIG.firstDeparture.hour * 60 + OPEN_SAS_CONFIG.firstDeparture.minute)) /
+  OPEN_SAS_CONFIG.intervalMinutes
+) + 1
+
 export const RANKED_START_CONFIG = {
   hour: 8,
   minute: 0,
@@ -20,6 +26,8 @@ export type OpenWaveSchedule = {
   waveCount: number
   intervalMinutes: number
 }
+
+export type OpenWaveProvisioningState = 'unprovisioned' | 'provisioned' | 'inconsistent'
 
 export type OpenWaveAssignment = {
   waveIndex: number
@@ -190,6 +198,26 @@ export const buildOpenWaveRows = (eventId: string, eventDateIso: string) => {
   })
 
   return { schedule, rows }
+}
+
+/**
+ * Provisioning must never silently repair a partially configured event. A
+ * complete configuration can safely be treated as an idempotent no-op; every
+ * other non-empty shape needs an operator to investigate before writing.
+ */
+export const getOpenWaveProvisioningState = (waveIndexes: readonly number[]): OpenWaveProvisioningState => {
+  if (waveIndexes.length === 0) return 'unprovisioned'
+
+  if (waveIndexes.length !== OPEN_WAVE_COUNT) return 'inconsistent'
+
+  const indexes = new Set(waveIndexes)
+  if (indexes.size !== OPEN_WAVE_COUNT) return 'inconsistent'
+
+  for (let waveIndex = 1; waveIndex <= OPEN_WAVE_COUNT; waveIndex += 1) {
+    if (!indexes.has(waveIndex)) return 'inconsistent'
+  }
+
+  return 'provisioned'
 }
 
 export const assignOpenWaveToRegistration = async ({

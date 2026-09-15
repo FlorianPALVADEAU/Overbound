@@ -3,6 +3,7 @@ import {
   assignOpenWaveToRegistration,
   buildOpenWaveRows,
   buildOpenWaveSchedule,
+  getOpenWaveProvisioningState,
   getRankedStartTime,
 } from './openSas'
 
@@ -32,6 +33,13 @@ describe('openSas schedule', () => {
       wave_index: 24,
       start_time: '2026-09-12T13:50:00.000Z',
     })
+  })
+
+  it('identifies an absent, complete, or unsafe partial OPEN wave configuration', () => {
+    expect(getOpenWaveProvisioningState([])).toBe('unprovisioned')
+    expect(getOpenWaveProvisioningState(Array.from({ length: 24 }, (_, index) => index + 1))).toBe('provisioned')
+    expect(getOpenWaveProvisioningState([1, 2, 3])).toBe('inconsistent')
+    expect(getOpenWaveProvisioningState(Array.from({ length: 24 }, (_, index) => index + 2))).toBe('inconsistent')
   })
 
   it('sets the RANKED single start at 08:00 Paris time', () => {

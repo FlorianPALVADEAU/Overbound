@@ -14,7 +14,7 @@ vi.mock('@/lib/logging/adminRequestLogger', () => ({
   withRequestLogging: <T>(handler: T) => handler,
 }))
 
-import { GET } from './route'
+import { GET, POST } from './route'
 
 function createAdmin({ wavesError = null }: { wavesError?: { message: string } | null } = {}) {
   const upsert = vi.fn(() => {
@@ -56,6 +56,58 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
                     }),
                   }
                 },
+              }
+            },
+            upsert,
+          }
+        }
+
+        throw new Error(`Unexpected table: ${table}`)
+      },
+    },
+    upsert,
+  }
+}
+
+function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
+  const waveIndexes = [...initialWaveIndexes]
+  const upsert = vi.fn(async (rows: Array<{ wave_index: number }>) => {
+    for (const row of rows) {
+      if (!waveIndexes.includes(row.wave_index)) {
+        waveIndexes.push(row.wave_index)
+      }
+    }
+    return { error: null }
+  })
+
+  return {
+    admin: {
+      from(table: string) {
+        if (table === 'events') {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    single: async () => ({
+                      data: { id: 'event-1', date: '2026-09-12T08:00:00.000Z' },
+                      error: null,
+                    }),
+                  }
+                },
+              }
+            },
+          }
+        }
+
+        if (table === 'event_waves') {
+          return {
+            select() {
+              return {
+                eq: async () => ({
+                  data: waveIndexes.map((wave_index) => ({ wave_index })),
+                  error: null,
+                }),
               }
             },
             upsert,
@@ -120,5 +172,90 @@ describe('GET /api/admin/events/[id]/waves', () => {
     expect(response.status).toBe(500)
     await expect(response.json()).resolves.toEqual({ error: 'Impossible de récupérer les SAS' })
     expect(upsert).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /api/admin/events/[id]/waves', () => {
+  it('explicitly provisions all OPEN waves once and verifies the resulting configuration', async () => {
+    const { admin, upsert } = createProvisioningAdmin()
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await POST(
+      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      state: 'provisioned',
+      created: true,
+      wave_count: 24,
+    })
+    expect(upsert).toHaveBeenCalledOnce()
+    expect(upsert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ event_id: 'event-1', wave_index: 1 })]),
+      { onConflict: 'event_id,wave_index', ignoreDuplicates: true },
+    )
+  })
+
+  it('is an idempotent no-op for a complete configuration', async () => {
+    const { admin, upsert } = createProvisioningAdmin(
+      Array.from({ length: 24 }, (_, index) => index + 1),
+    )
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await POST(
+      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ state: 'provisioned', created: false })
+    expect(upsert).not.toHaveBeenCalled()
+  })
+
+  it('refuses a partial configuration instead of silently repairing it', async () => {
+    const { admin, upsert } = createProvisioningAdmin([1, 2, 3])
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await POST(
+      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Configuration SAS incomplète : aucune correction automatique n’a été appliquée.',
+    })
+    expect(upsert).not.toHaveBeenCalled()
+  })
+
+  it('rejects an authenticated user without admin permissions', async () => {
+    createSupabaseServerMock.mockResolvedValueOnce({
+      auth: {
+        getUser: async () => ({ data: { user: { id: 'volunteer-1' } } }),
+      },
+      from() {
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  single: async () => ({ data: { role: 'volunteer' } }),
+                }
+              },
+            }
+          },
+        }
+      },
+    })
+
+    const response = await POST(
+      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({ error: 'Accès refusé' })
   })
 })

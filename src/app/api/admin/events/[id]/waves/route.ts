@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import {
+  buildOpenWaveRows,
+  getOpenWaveProvisioningState,
+} from '@/lib/openSas'
 
 const ensureAdmin = async () => {
   const supabase = await createSupabaseServer()
@@ -144,6 +148,89 @@ export async function GET(
 
   return NextResponse.json({ waves: waves ?? [] })
 }
+
+async function handleProvision(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await ensureAdmin()
+  if (auth.error) return auth.error
+
+  const { id } = await params
+  const admin = supabaseAdmin()
+
+  const { data: event, error: eventError } = await admin
+    .from('events')
+    .select('id, date')
+    .eq('id', id)
+    .single()
+
+  if (eventError || !event) {
+    return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
+  }
+
+  const { data: existingWaves, error: existingWavesError } = await admin
+    .from('event_waves')
+    .select('wave_index')
+    .eq('event_id', event.id)
+
+  if (existingWavesError) {
+    console.error('[admin waves] provisioning state fetch error', existingWavesError)
+    return NextResponse.json({ error: 'Impossible de vérifier la configuration des SAS' }, { status: 500 })
+  }
+
+  const state = getOpenWaveProvisioningState(
+    (existingWaves ?? []).map((wave) => wave.wave_index),
+  )
+
+  if (state === 'provisioned') {
+    return NextResponse.json({ state, created: false })
+  }
+
+  if (state === 'inconsistent') {
+    return NextResponse.json(
+      { error: 'Configuration SAS incomplète : aucune correction automatique n’a été appliquée.' },
+      { status: 409 },
+    )
+  }
+
+  const { rows } = buildOpenWaveRows(event.id, event.date)
+  const { error: provisionError } = await admin
+    .from('event_waves')
+    .upsert(rows, { onConflict: 'event_id,wave_index', ignoreDuplicates: true })
+
+  if (provisionError) {
+    console.error('[admin waves] provision error', provisionError)
+    return NextResponse.json({ error: 'Impossible d’initialiser les SAS' }, { status: 500 })
+  }
+
+  const { data: provisionedWaves, error: verificationError } = await admin
+    .from('event_waves')
+    .select('wave_index')
+    .eq('event_id', event.id)
+
+  if (verificationError) {
+    console.error('[admin waves] provision verification error', verificationError)
+    return NextResponse.json({ error: 'Impossible de vérifier les SAS initialisés' }, { status: 500 })
+  }
+
+  const provisionedState = getOpenWaveProvisioningState(
+    (provisionedWaves ?? []).map((wave) => wave.wave_index),
+  )
+
+  if (provisionedState !== 'provisioned') {
+    return NextResponse.json(
+      { error: 'Initialisation SAS incomplète : vérification manuelle requise.' },
+      { status: 409 },
+    )
+  }
+
+  return NextResponse.json({ state: provisionedState, created: true, wave_count: rows.length })
+}
+
+export const POST = withRequestLogging(handleProvision, {
+  actionType: 'Initialisation SAS OPEN événement admin',
+})
 
 async function handlePatch(
   request: Request,

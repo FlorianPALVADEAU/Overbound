@@ -220,6 +220,26 @@ export const updateAdminEventWave = async (
   await axiosClient.patch(`/admin/events/${eventId}/waves`, payload)
 }
 
+export interface AdminEventWaveProvisioningResult {
+  state: 'provisioned'
+  created: boolean
+  wave_count?: number
+}
+
+export const provisionAdminEventWaves = async (
+  eventId: string,
+): Promise<AdminEventWaveProvisioningResult> => {
+  const response = await axiosClient.post<AdminEventWaveProvisioningResult>(
+    `/admin/events/${eventId}/waves`,
+  )
+
+  if (response.status !== 200) {
+    throw new Error('Impossible d’initialiser les SAS OPEN')
+  }
+
+  return response.data
+}
+
 export const deleteAdminEventVolunteer = async (id: string): Promise<void> => {
   const response = await axiosClient.delete(`/admin/volunteer-applications/${id}`)
   if (response.status !== 200) {
