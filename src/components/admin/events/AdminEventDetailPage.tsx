@@ -9,7 +9,7 @@ import {
   useAdminEventDetail,
   type AdminEventDetailResponse,
 } from '@/app/api/admin/events/eventsQueries'
-import { RegistrationsSection } from '@/components/admin/registrations'
+import { EventParticipantsList } from './EventParticipantsList'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,7 +18,7 @@ import { EventPriceTierManager } from './EventPriceTierManager'
 import { EventOpenWavesSection } from './EventOpenWavesSection'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 
-type ViewMode = 'all' | 'runners' | 'volunteers'
+type ViewMode = 'all' | 'participants' | 'volunteers'
 
 interface AdminEventDetailPageProps {
   eventId: string
@@ -145,7 +145,7 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
   const viewOptions: { label: string; value: ViewMode }[] = useMemo(
     () => [
       { label: 'Tout', value: 'all' },
-      { label: 'Coureurs', value: 'runners' },
+      { label: 'Participants', value: 'participants' },
       { label: 'Bénévoles', value: 'volunteers' },
     ],
     [],
@@ -306,8 +306,8 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
           </Card>
         ) : null}
 
-        {(viewMode === 'all' || viewMode === 'runners') && (
-          <RegistrationsSection eventId={eventId} lockEventFilter />
+        {(viewMode === 'all' || viewMode === 'participants') && (
+          <EventParticipantsList eventId={eventId} />
         )}
 
         {(viewMode === 'all' || viewMode === 'volunteers') && <EventVolunteersTable eventId={eventId} />}

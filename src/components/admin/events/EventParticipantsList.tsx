@@ -1,0 +1,186 @@
+'use client'
+
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, Clock, Search } from 'lucide-react'
+import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort } from '@/app/api/admin/events/participantsQueries'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+
+interface EventParticipantsListProps {
+  eventId: string
+}
+
+const formatDate = (value: string | null) =>
+  value
+    ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+    : '—'
+
+const formatAmount = (amount: number | null, currency: string | null) => {
+  if (amount === null) return '—'
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: currency?.toUpperCase() ?? 'EUR',
+  }).format(amount / 100)
+}
+
+export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
+  const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search.trim())
+  const [checkIn, setCheckIn] = useState<EventParticipantCheckInFilter>('all')
+  const [sort, setSort] = useState<EventParticipantSort>('created_at')
+  const [direction, setDirection] = useState<'asc' | 'desc'>('desc')
+  const [limit, setLimit] = useState(50)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+
+  useEffect(() => {
+    setCursor(null)
+    setPreviousCursors([])
+  }, [deferredSearch, checkIn, sort, direction, limit])
+
+  const params = useMemo(
+    () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, sort }),
+    [checkIn, cursor, deferredSearch, direction, eventId, limit, sort],
+  )
+  const { data, error, isLoading, isFetching } = useEventParticipants(params)
+  const participants = data?.participants ?? []
+  const page = data?.page
+
+  const pageLabel = previousCursors.length + 1
+  const canGoNext = Boolean(page?.nextCursor)
+  const canGoPrevious = previousCursors.length > 0
+
+  const goNext = () => {
+    if (!page?.nextCursor) return
+    setPreviousCursors((current) => [...current, cursor ?? ''])
+    setCursor(page.nextCursor)
+  }
+
+  const goPrevious = () => {
+    const previous = previousCursors.at(-1)
+    if (previous === undefined) return
+    setPreviousCursors((current) => current.slice(0, -1))
+    setCursor(previous || null)
+  }
+
+  if (error) {
+    return <p className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">{error.message}</p>
+  }
+
+  return (
+    <section className="space-y-4" aria-label="Liste des participants">
+      <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 md:flex-row md:items-end md:justify-between">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <div className="space-y-1.5 sm:col-span-2 md:col-span-1">
+            <Label htmlFor="participant-search">Rechercher</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="participant-search"
+                className="pl-9"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Email ou identifiant"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Check-in</Label>
+            <Select value={checkIn} onValueChange={(value) => setCheckIn(value as EventParticipantCheckInFilter)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="checked_in">Effectué</SelectItem>
+                <SelectItem value="not_checked_in">À faire</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Trier par</Label>
+            <Select value={sort} onValueChange={(value) => setSort(value as EventParticipantSort)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Date d’inscription</SelectItem>
+                <SelectItem value="email">Email</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex items-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => setDirection((value) => value === 'asc' ? 'desc' : 'asc')}>
+            {direction === 'asc' ? 'Croissant' : 'Décroissant'}
+          </Button>
+          <Select value={String(limit)} onValueChange={(value) => setLimit(Number(value))}>
+            <SelectTrigger className="w-20" aria-label="Lignes par page"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[25, 50, 100].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="flex items-center justify-between border-b px-4 py-3 text-sm text-muted-foreground">
+          <span>{page?.totalCount ?? 0} participant{(page?.totalCount ?? 0) > 1 ? 's' : ''}</span>
+          {isFetching ? <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 animate-spin" />Actualisation…</span> : null}
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Participant</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead>Billet</TableHead>
+                <TableHead>Départ</TableHead>
+                <TableHead>Groupe</TableHead>
+                <TableHead>Paiement</TableHead>
+                <TableHead>Inscrit le</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && !data ? (
+                <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground"><Clock className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement…</TableCell></TableRow>
+              ) : participants.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucun participant ne correspond à ces critères.</TableCell></TableRow>
+              ) : participants.map((participant) => (
+                <TableRow key={participant.id}>
+                  <TableCell><div className="font-medium">{participant.participant.name ?? 'Nom non renseigné'}</div><div className="text-xs text-muted-foreground">{participant.participant.email}</div></TableCell>
+                  <TableCell><div className="flex flex-wrap gap-1"><Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge><Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div></TableCell>
+                  <TableCell><div>{participant.ticket.name ?? '—'}</div><div className="text-xs text-muted-foreground">{participant.ticket.format}</div></TableCell>
+                  <TableCell>{participant.departure.startTime ? <><div>{formatDate(participant.departure.startTime)}</div><div className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</div></> : '—'}</TableCell>
+                  <TableCell>{participant.group ?? '—'}</TableCell>
+                  <TableCell>{participant.payment ? <><div>{participant.payment.status ?? '—'}</div><div className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</div></> : '—'}</TableCell>
+                  <TableCell>{formatDate(participant.registration.createdAt)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between border-t px-4 py-3">
+          <span className="text-sm text-muted-foreground">Page {pageLabel}</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={goPrevious} disabled={!canGoPrevious}><ChevronLeft className="mr-1 h-4 w-4" />Précédente</Button>
+            <Button variant="outline" size="sm" onClick={goNext} disabled={!canGoNext}>Suivante<ChevronRight className="ml-1 h-4 w-4" /></Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
