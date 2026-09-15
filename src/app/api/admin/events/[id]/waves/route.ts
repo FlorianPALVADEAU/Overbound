@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { buildOpenWaveRows } from '@/lib/openSas'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 const ensureAdmin = async () => {
@@ -24,13 +23,6 @@ const ensureAdmin = async () => {
   }
 
   return { supabase, user }
-}
-
-const ensureWaves = async (admin: ReturnType<typeof supabaseAdmin>, eventId: string, eventDateIso: string) => {
-  const { rows } = buildOpenWaveRows(eventId, eventDateIso)
-  await admin
-    .from('event_waves')
-    .upsert(rows, { onConflict: 'event_id,wave_index', ignoreDuplicates: true })
 }
 
 const toCsv = (waves: any[]) => {
@@ -63,7 +55,7 @@ export async function GET(
 
   const { data: event, error: eventError } = await admin
     .from('events')
-    .select('id, date')
+    .select('id')
     .eq('id', id)
     .single()
 
@@ -71,7 +63,6 @@ export async function GET(
     return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
   }
 
-  await ensureWaves(admin, event.id, event.date)
   const url = new URL(request.url)
   const includeRegistrations = url.searchParams.get('include_registrations') === 'true'
   const waveIndexParam = Number.parseInt(url.searchParams.get('wave_index') ?? '', 10)
@@ -166,15 +157,13 @@ async function handlePatch(
 
   const { data: event, error: eventError } = await admin
     .from('events')
-    .select('id, date')
+    .select('id')
     .eq('id', id)
     .single()
 
   if (eventError || !event) {
     return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
   }
-
-  await ensureWaves(admin, event.id, event.date)
 
   const payload = await request.json().catch(() => ({}))
   const capacityAll = Number.isFinite(Number(payload.capacity_all)) ? Number(payload.capacity_all) : null
