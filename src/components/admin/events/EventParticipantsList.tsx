@@ -1,8 +1,13 @@
 'use client'
 
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock, Search } from 'lucide-react'
 import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort, type EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
+import {
+  parseParticipantUrlState,
+  writeParticipantUrlState,
+} from './participantUrlState'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,20 +53,73 @@ const formatAmount = (amount: number | null, currency: string | null) => {
 }
 
 export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialUrlState = useMemo(() => parseParticipantUrlState(searchParams, eventId), [eventId, searchParams])
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search.trim())
-  const [checkIn, setCheckIn] = useState<EventParticipantCheckInFilter>('all')
-  const [sort, setSort] = useState<EventParticipantSort>('created_at')
-  const [direction, setDirection] = useState<'asc' | 'desc'>('desc')
-  const [limit, setLimit] = useState(50)
-  const [cursor, setCursor] = useState<string | null>(null)
+  const [checkIn, setCheckIn] = useState<EventParticipantCheckInFilter>(initialUrlState.checkIn)
+  const [sort, setSort] = useState<EventParticipantSort>(initialUrlState.sort)
+  const [direction, setDirection] = useState<'asc' | 'desc'>(initialUrlState.direction)
+  const [limit, setLimit] = useState(initialUrlState.limit)
+  const [cursor, setCursor] = useState<string | null>(initialUrlState.cursor)
   const [previousCursors, setPreviousCursors] = useState<string[]>([])
   const [selectedParticipant, setSelectedParticipant] = useState<EventParticipantRow | null>(null)
+  const hasInitializedSearch = useRef(false)
 
   useEffect(() => {
+    if (!hasInitializedSearch.current) {
+      hasInitializedSearch.current = true
+      return
+    }
     setCursor(null)
     setPreviousCursors([])
-  }, [deferredSearch, checkIn, sort, direction, limit])
+  }, [deferredSearch])
+
+  const resetPagination = () => {
+    setCursor(null)
+    setPreviousCursors([])
+  }
+
+  const changeCheckIn = (value: string) => {
+    resetPagination()
+    setCheckIn(value as EventParticipantCheckInFilter)
+  }
+
+  const changeSort = (value: string) => {
+    resetPagination()
+    setSort(value as EventParticipantSort)
+  }
+
+  const changeDirection = () => {
+    resetPagination()
+    setDirection((value) => value === 'asc' ? 'desc' : 'asc')
+  }
+
+  const changeLimit = (value: string) => {
+    resetPagination()
+    setLimit(Number(value))
+  }
+
+  // Keep browser back/forward and copied links authoritative without putting
+  // the free-text search (which may contain PII) into the URL.
+  useEffect(() => {
+    const next = parseParticipantUrlState(searchParams, eventId)
+    setCheckIn((current) => current === next.checkIn ? current : next.checkIn)
+    setSort((current) => current === next.sort ? current : next.sort)
+    setDirection((current) => current === next.direction ? current : next.direction)
+    setLimit((current) => current === next.limit ? current : next.limit)
+    setCursor((current) => current === next.cursor ? current : next.cursor)
+    setPreviousCursors([])
+  }, [eventId, searchParams])
+
+  useEffect(() => {
+    const next = writeParticipantUrlState(searchParams, { checkIn, sort, direction, cursor, limit })
+    const current = searchParams.toString()
+    if (next === current) return
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, sort])
 
   const params = useMemo(
     () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, sort }),
@@ -111,7 +169,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           </div>
           <div className="space-y-1.5">
             <Label>Check-in</Label>
-            <Select value={checkIn} onValueChange={(value) => setCheckIn(value as EventParticipantCheckInFilter)}>
+            <Select value={checkIn} onValueChange={changeCheckIn}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous</SelectItem>
@@ -122,7 +180,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           </div>
           <div className="space-y-1.5">
             <Label>Trier par</Label>
-            <Select value={sort} onValueChange={(value) => setSort(value as EventParticipantSort)}>
+            <Select value={sort} onValueChange={changeSort}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="created_at">Date d’inscription</SelectItem>
@@ -132,10 +190,10 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           </div>
         </div>
         <div className="flex items-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setDirection((value) => value === 'asc' ? 'desc' : 'asc')}>
+          <Button variant="outline" size="sm" onClick={changeDirection}>
             {direction === 'asc' ? 'Croissant' : 'Décroissant'}
           </Button>
-          <Select value={String(limit)} onValueChange={(value) => setLimit(Number(value))}>
+          <Select value={String(limit)} onValueChange={changeLimit}>
             <SelectTrigger className="w-20" aria-label="Lignes par page"><SelectValue /></SelectTrigger>
             <SelectContent>
               {[25, 50, 100].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
