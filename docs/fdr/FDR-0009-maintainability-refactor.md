@@ -177,12 +177,21 @@ sur un échantillon représentatif de ces routes.
 la prod soit reproductible depuis git (actuellement décalage entre prod réelle et historique
 versionné).
 
-### 2.6 Renforcer le consentement cookies
+### 2.6 Renforcer le consentement cookies — partiellement fait (2026-09-16)
 
-Ajouter une expiration/re-consentement périodique (6-13 mois), une preuve de consentement
-horodatée côté serveur (au minimum un log applicatif), et évaluer si une granularité par finalité
-(analytics / marketing / réseaux sociaux) est nécessaire plutôt qu'un seul toggle "analytics"
-regroupant GA4 + GTM + Meta Pixel.
+**Fait** : expiration à 12 mois (`src/components/consent/consent.ts`, `CONSENT_MAX_AGE_MS`) —
+`readConsent()` purge le consentement expiré et rouvre automatiquement la bannière (aucun
+changement UI nécessaire). Preuve serveur horodatée via une nouvelle table
+`cookie_consent_logs` (migration `supabase/migrations/20260916_cookie_consent_logs.sql`,
+**non appliquée en prod — à appliquer manuellement**, `supabase db push` ou dashboard SQL editor)
+et un endpoint `POST /api/consent/log` appelé en fire-and-forget (`keepalive: true`, jamais
+bloquant) depuis `writeConsent()`.
+
+**Non fait, hors scope de cette itération** : granularité par finalité (analytics / marketing /
+réseaux sociaux séparés au lieu du toggle unique "analytics" qui regroupe GA4 + GTM + Meta Pixel).
+Décision explicite : ce point change l'UI vue par l'utilisateur (nouvelles cases à cocher) et
+mérite un arbitrage produit séparé plutôt qu'un durcissement silencieux — cf. audit §2.3 pour le
+détail du problème (biais de mesure publicitaire quand le refus groupe les 3 traceurs).
 
 ---
 
