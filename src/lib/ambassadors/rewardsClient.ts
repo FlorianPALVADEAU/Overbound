@@ -2,6 +2,12 @@
 
 import type { AmbassadorReward } from '@/types/Ambassador'
 
+/**
+ * Claims an ambassador reward via the API route. This is a thin client-side
+ * fetch wrapper — it intentionally lives in `src/lib/ambassadors/` (not under
+ * `src/app/api/`) so UI components depend on the domain library layer rather
+ * than reaching into the route-handler tree.
+ */
 export const claimAmbassadorReward = async (rewardLevel: number): Promise<AmbassadorReward> => {
   const response = await fetch('/api/ambassadors/rewards/claim', {
     method: 'POST',
