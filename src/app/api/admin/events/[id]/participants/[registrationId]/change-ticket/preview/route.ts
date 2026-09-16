@@ -7,6 +7,22 @@ import { buildTicketChangePreview } from '@/lib/admin/ticketChangePreview'
 const paramsSchema = z.object({ id: z.string().uuid(), registrationId: z.string().uuid() })
 const bodySchema = z.object({ ticketId: z.string().uuid() }).strict()
 
+type TicketRow = {
+  id: string
+  event_id: string
+  name: string
+  final_price_cents: number | null
+  currency: string | null
+  race: { name?: string | null } | Array<{ name?: string | null }> | null
+}
+
+type GroupRow = {
+  name: string
+  anchor_event_id: string | null
+  anchor_wave_index: number | null
+  anchor_start_time: string | null
+}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string; registrationId: string }> }) {
   const parsedParams = paramsSchema.safeParse(await params)
   if (!parsedParams.success) return NextResponse.json({ error: 'Identifiants événement ou inscription invalides' }, { status: 400 })
@@ -27,19 +43,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!registration.ticket_id) return NextResponse.json({ error: 'L’inscription ne possède pas de billet actuel' }, { status: 422 })
 
   const ticketIds = [registration.ticket_id, parsedBody.data.ticketId]
-  const { data: tickets, error: ticketsError } = await admin.from('tickets').select('id, event_id, name, final_price_cents, currency, race:races(name)').in('id', ticketIds)
+  const { data: tickets, error: ticketsError } = await admin.from('tickets').select('id, event_id, name, final_price_cents, currency, race:races(name)').in('id', ticketIds).eq('event_id', eventId)
   if (ticketsError) { console.error('[admin ticket preview] ticket lookup error', ticketsError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
-  const ticketById = new Map((tickets ?? []).map((ticket: any) => [ticket.id, ticket]))
+  const ticketById = new Map((tickets ?? []).map((ticket) => [ticket.id, ticket as unknown as TicketRow]))
   const current = ticketById.get(registration.ticket_id)
   const target = ticketById.get(parsedBody.data.ticketId)
   if (!current || !target) return NextResponse.json({ error: 'Billet actuel ou cible introuvable' }, { status: 404 })
 
-  let group: any = null
+  let group: GroupRow | null = null
   if (registration.user_id) {
-    const { data: membership, error: groupError } = await admin.from('group_members').select('group:groups(name, anchor_event_id, anchor_wave_index, anchor_start_time)').eq('profile_id', registration.user_id).maybeSingle()
+    const { data: memberships, error: groupError } = await admin.from('group_members').select('group:groups!inner(name, anchor_event_id, anchor_wave_index, anchor_start_time)').eq('profile_id', registration.user_id).eq('groups.anchor_event_id', eventId).limit(2)
     if (groupError) { console.error('[admin ticket preview] group lookup error', groupError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
+    if ((memberships ?? []).length > 1) return NextResponse.json({ error: 'Plusieurs groupes actifs sont associés à cette inscription' }, { status: 409 })
+    const membership = memberships?.[0]
     const rawGroup = Array.isArray(membership?.group) ? membership.group[0] : membership?.group
-    group = rawGroup ?? null
+    group = (rawGroup as GroupRow | null) ?? null
   }
 
   const preview = buildTicketChangePreview({

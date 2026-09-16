@@ -15,6 +15,9 @@ describe('buildTicketChangePreview', () => {
     expect(preview.target.format).toBe('RANKED')
     expect(preview.impacts.sas).toBe('cleared')
     expect(preview.impacts.financial.status).toBe('no_change')
+    expect(preview.previewId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/)
+    expect(new Date(preview.expiresAt).getTime()).toBeGreaterThan(Date.now())
+    expect(preview.sourceVersion).toHaveLength(16)
   })
 
   it('blocks a ticket from another event and flags a price difference', () => {
@@ -25,7 +28,18 @@ describe('buildTicketChangePreview', () => {
     expect(preview.allowed).toBe(false)
     expect(preview.blockers).toContain('Le billet actuel et le billet cible doivent appartenir au même événement.')
     expect(preview.impacts.financial.status).toBe('potential_change')
-    expect(preview.warnings.some((warning) => warning.includes('Impact financier potentiel'))).toBe(true)
+    expect(preview.allowed).toBe(false)
+    expect(preview.blockers.some((blocker) => blocker.includes('Impact financier différent'))).toBe(true)
+  })
+
+  it('blocks previews when the financial impact cannot be calculated', () => {
+    const preview = buildTicketChangePreview({
+      ...base,
+      targetTicket: { ...base.targetTicket, priceCents: null },
+    })
+    expect(preview.allowed).toBe(false)
+    expect(preview.impacts.financial.status).toBe('unknown')
+    expect(preview.blockers).toContain('Impact financier non calculable : la politique financière doit être validée avant toute mutation.')
   })
 
   it('uses the group anchor when moving to OPEN', () => {

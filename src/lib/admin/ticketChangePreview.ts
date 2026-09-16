@@ -1,4 +1,7 @@
 import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
+import { createHash } from 'node:crypto'
+
+const PREVIEW_TTL_SECONDS = 300
 
 export type TicketFormat = 'OPEN' | 'RANKED' | 'UNKNOWN'
 
@@ -11,6 +14,9 @@ export type TicketPreviewInput = {
 }
 
 export type TicketChangePreview = {
+  previewId: string
+  expiresAt: string
+  sourceVersion: string
   allowed: boolean
   current: { ticketId: string; name: string; format: TicketFormat; waveIndex: number | null; startTime: string | null }
   target: { ticketId: string; name: string; format: TicketFormat; waveIndex: number | null; startTime: string | null }
@@ -81,9 +87,26 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
   const pricesKnown = input.currentTicket.priceCents != null && input.targetTicket.priceCents != null
   const pricesEqual = pricesKnown && input.currentTicket.priceCents === input.targetTicket.priceCents && input.currentTicket.currency === input.targetTicket.currency
   const financialStatus = pricesEqual ? 'no_change' : pricesKnown ? 'potential_change' : 'unknown'
-  if (financialStatus !== 'no_change') warnings.push('Impact financier potentiel : le changement doit être confirmé par la politique financière avant toute mutation.')
+  if (financialStatus !== 'no_change') {
+    const reason = financialStatus === 'unknown' ? 'non calculable' : 'différent'
+    blockers.push(`Impact financier ${reason} : la politique financière doit être validée avant toute mutation.`)
+  }
+
+  const sourceDigest = createHash('sha256').update(JSON.stringify({
+    currentTicket: input.currentTicket,
+    targetTicket: input.targetTicket,
+    registration: input.registration,
+    group: input.group ?? null,
+    targetWave: input.targetWave ?? null,
+  })).digest('hex')
+  const sourceVersion = sourceDigest.slice(0, 16)
+  const previewId = `${sourceDigest.slice(0, 8)}-${sourceDigest.slice(8, 12)}-5${sourceDigest.slice(13, 16)}-8${sourceDigest.slice(17, 20)}-${sourceDigest.slice(20, 32)}`
+  const expiresAt = new Date(Date.now() + PREVIEW_TTL_SECONDS * 1000).toISOString()
 
   return {
+    previewId,
+    expiresAt,
+    sourceVersion,
     allowed: blockers.length === 0,
     current: { ticketId: input.currentTicket.id, name: input.currentTicket.name, format: currentFormat, waveIndex: currentWave, startTime: currentStart },
     target: { ticketId: input.targetTicket.id, name: input.targetTicket.name, format: targetFormat, waveIndex: targetWave, startTime: targetStart },
