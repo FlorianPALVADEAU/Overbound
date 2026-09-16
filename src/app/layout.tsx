@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import ClientProviders from '@/components/ClientProviders'
 import { OrganizationStructuredDataServer } from '@/components/seo/OrganizationStructuredDataServer'
 import { AnalyticsScripts } from '@/components/consent/AnalyticsScripts'
+import { UtmCapture } from '@/components/attribution/UtmCapture'
 import { SanityLive } from '@/sanity/lib/live'
 
 const geistSans = Geist({
@@ -101,6 +102,7 @@ export default function RootLayout({
         <OrganizationStructuredDataServer />
 
         <AnalyticsScripts />
+        <UtmCapture />
 
         <ClientProviders>
           <Layout>{children}</Layout>

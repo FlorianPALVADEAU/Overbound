@@ -8,6 +8,7 @@ import type {
   SelectedUpsellState,
   TicketSelections,
 } from '@/components/registration/types'
+import { readUtmParams } from '@/lib/attribution/utm'
 
 export function usePaymentIntent(
   event: Event,
@@ -79,6 +80,7 @@ export function usePaymentIntent(
           })),
           promoCodes: appliedPromos.map((promo) => promo.code),
           ambassadorReferralCode,
+          utmParams: readUtmParams(),
         }),
       })
 

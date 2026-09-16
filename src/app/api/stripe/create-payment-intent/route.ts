@@ -16,6 +16,7 @@ import { captureException } from '@/lib/sentry'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { isOpenFormatTicket } from '@/lib/openSas'
+import { serializeUtmParams } from '@/lib/attribution/utm'
 
 export const runtime = 'nodejs'
 
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
         ? [legacyPromoCode]
         : []
     const inputAmbassadorReferralCode = normalizePromoCode(requestBody.ambassadorReferralCode)
+    const utmMetadata = serializeUtmParams(requestBody.utmParams)
 
     promoCodes = [...new Set(inputPromoCodes)]
     if (promoCodes.length > MAX_PROMO_CODES) {
@@ -345,6 +347,7 @@ export async function POST(request: NextRequest) {
           ambassador_referral_code: validatedAmbassadorReferralCode || '',
           promo_codes: promoCodesMetadata,
           promo_code: primaryPromo?.code || '',
+          utm_params: utmMetadata,
         },
       })
     }
@@ -367,6 +370,7 @@ export async function POST(request: NextRequest) {
         participant_count: String(participantEntries.length),
         fbp: fbp || '',
         fbc: fbc || '',
+        utm_params: utmMetadata,
         event_source_url:
           request.headers.get('referer') ??
           request.headers.get('origin') ??
