@@ -256,6 +256,12 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (orderError) {
+          if (orderError.code === '23505') {
+            // Concurrent webhook retry raced us: another request already created
+            // the order (and registration) for this PaymentIntent. Idempotent no-op.
+            console.log('Order already exists for PaymentIntent (race):', paymentIntent.id)
+            return new Response('ok', { status: 200 })
+          }
           console.error('Error creating order:', orderError)
           throw orderError
         }

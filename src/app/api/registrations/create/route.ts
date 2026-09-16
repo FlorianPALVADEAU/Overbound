@@ -363,6 +363,12 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
+    if (orderError?.code === '23505') {
+      // Concurrent request raced us: another request already created the order
+      // for this PaymentIntent. Same idempotent response as the pre-check above.
+      return NextResponse.json({ error: 'Inscription déjà créée pour ce paiement' }, { status: 409 })
+    }
+
     if (orderError || !order) {
       console.error('Erreur création commande:', orderError)
       throw orderError

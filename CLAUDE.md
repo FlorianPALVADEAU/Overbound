@@ -1,6 +1,10 @@
 # CLAUDE.md
 
-CRM léger pour piloter les partenariats de l'événement **Overbound** (course à obstacles, septembre 2026). Single-user au démarrage, multi-utilisateur dès V1.
+Site événementiel public complet pour **Overbound** (course à obstacles, 12 septembre 2026) : catalogue d'événements/courses, inscription multi-étapes avec paiement Stripe, gestion de groupes entreprise avec ancrage de vague, programme ambassadeur, back-office admin, check-in bénévoles le jour J, système d'emails RGPD à 4 phases, blog, bootcamps, volontariat.
+
+Il n'y a pas de module CRM partenariats fonctionnel dans le code — seulement une page marketing statique de logos sponsors (`src/datas/Partners.ts`). Les documents `docs/product/vision.md` et `docs/architecture/overview.md` décrivent encore une cible "CRM léger partenariats" avec architecture hexagonale stricte qui n'a jamais été implémentée : ne t'y fie pas pour comprendre le produit réel, réfère-toi à ce fichier et à [ADR-0004](docs/adr/ADR-0004-architecture-reality-vs-hexagonal-theory.md).
+
+Un audit complet du code (architecture, sécurité, RGPD, logique métier, tests, funnel) a été fait le 2026-09-15 : voir [docs/audit/AUDIT-2026-09-15-full-codebase-review.md](docs/audit/AUDIT-2026-09-15-full-codebase-review.md) pour le détail et [FDR-0009](docs/fdr/FDR-0009-maintainability-refactor.md) pour le plan de refactoring priorisé qui en découle. Lire FDR-0009 avant toute tâche de refactoring transverse.
 
 ## Comportement attendu
 
@@ -101,4 +105,6 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 | **Email (génération HTML)** | @docs/guides/email-conventions.md — **obligatoire avant toute génération d'email** |
 | **Critical Ops** | @docs/guides/critical-operations.md, @docs/guides/rpc-reference.md |
 | **Legal / Juridique** | @docs/guides/legal.md |
+| **Rate limiting** | @docs/security/rate-limiting.md (config Vercel Firewall, pas de code) |
+| **Refactoring / dette technique** | @docs/fdr/FDR-0009-maintainability-refactor.md + @docs/audit/AUDIT-2026-09-15-full-codebase-review.md |
 
