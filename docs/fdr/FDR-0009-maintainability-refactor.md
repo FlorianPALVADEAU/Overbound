@@ -123,15 +123,17 @@ son mode d'emploi sûr, et refuse explicitement de modifier une registration dé
 
 ## 2. Priorité 1 — sécurité et conformité (post-événement, avant nouvelle feature)
 
-### 2.1 Rate limiting sur les routes sensibles
+### 2.1 Rate limiting sur les routes sensibles — DONE (2026-09-16)
 
-Aucun rate limiting détecté sur `/api/unsubscribe`, `/api/promotions/validate`,
-`/api/registrations/create`, `/api/auth/account-exists`, `/api/checkin`. Ajouter un rate limiter
-(Upstash Ratelimit ou équivalent compatible Vercel Edge) au minimum sur les routes d'énumération
-(`account-exists`, `promotions/validate`).
+**Fait** : 1 règle Vercel Firewall (dashboard, hors code — voir
+`docs/security/rate-limiting.md`) couvrant `/api/auth/account-exists`,
+`/api/promotions/validate`, `/api/registrations/create`, `/api/unsubscribe`
+(conditions `OR`, 10 req/60s par IP, 429). Plan Hobby limite à 1 règle active,
+donc seuils regroupés au plus bas commun plutôt que différenciés par route.
 
-**Critère d'acceptation** : un test envoyant N+1 requêtes en séquence rapide sur une route protégée
-reçoit un 429 à partir du seuil configuré.
+`/api/checkin` **explicitement exclu** — pas de protection possible sans 2e
+règle (plan payant requis), et ne doit de toute façon jamais bloquer un
+bénévole en plein scan le jour J. Risque accepté, documenté.
 
 ### 2.2 Idempotence commande — ~~DONE (correction du diagnostic initial)~~
 
