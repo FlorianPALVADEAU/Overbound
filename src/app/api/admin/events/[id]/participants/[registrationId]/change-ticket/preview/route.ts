@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!registration.ticket_id) return NextResponse.json({ error: 'L’inscription ne possède pas de billet actuel' }, { status: 422 })
 
   const ticketIds = [registration.ticket_id, parsedBody.data.ticketId]
-  const { data: tickets, error: ticketsError } = await admin.from('tickets').select('id, event_id, name, final_price_cents, currency, race:races(name)').in('id', ticketIds).eq('event_id', eventId)
+  const { data: tickets, error: ticketsError } = await admin.from('tickets').select('id, event_id, name, final_price_cents, currency, race:races(name)').eq('event_id', eventId).in('id', ticketIds)
   if (ticketsError) { console.error('[admin ticket preview] ticket lookup error', ticketsError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
   const ticketById = new Map((tickets ?? []).map((ticket) => [ticket.id, ticket as unknown as TicketRow]))
   const current = ticketById.get(registration.ticket_id)
