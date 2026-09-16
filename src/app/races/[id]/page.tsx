@@ -13,40 +13,7 @@ import { getFormatConfig, FORMAT_TEMPLATES } from '@/constants/raceFormats'
 import Image from 'next/image'
 import Headings from '@/components/globals/Headings'
 import SubHeadings from '@/components/globals/SubHeadings'
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'on_sale':
-      return 'default'
-    case 'sold_out':
-      return 'destructive'
-    case 'closed':
-      return 'secondary'
-    case 'draft':
-      return 'outline'
-    case 'announced':
-      return 'secondary'
-    default:
-      return 'outline'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'on_sale':
-      return 'Inscriptions ouvertes'
-    case 'sold_out':
-      return 'Complet'
-    case 'closed':
-      return 'Inscriptions fermées'
-    case 'draft':
-      return 'Bientôt disponible'
-    case 'announced':
-      return 'Inscriptions à venir'
-    default:
-      return status
-  }
-}
+import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
 
 interface RaceEvent {
   id: string
@@ -342,7 +309,7 @@ export default function RaceDetailPage() {
               <div className="rounded-3xl border border-border/60 bg-background/75 p-8 backdrop-blur shadow-xl shadow-primary/10">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-xs uppercase tracking-wider text-muted-foreground">Prochaine édition</span>
-                  <Badge variant={getStatusColor(nextEvent.status)}>{getStatusLabel(nextEvent.status)}</Badge>
+                  <Badge variant={getEventStatusVariant(nextEvent.status)}>{getEventStatusLabel(nextEvent.status)}</Badge>
                 </div>
                 <h3 className="text-lg font-bold text-foreground">{nextEvent.title}</h3>
                 <p className="mt-2 text-2xl font-bold text-primary">{formatDateLong(nextEvent.date)}</p>
@@ -1065,7 +1032,7 @@ export default function RaceDetailPage() {
                           <span className="text-sm uppercase tracking-wide text-muted-foreground">
                             {formatDateShort(event.date)} • {formatTime(event.date)}
                           </span>
-                          <Badge variant={getStatusColor(event.status)}>{getStatusLabel(event.status)}</Badge>
+                          <Badge variant={getEventStatusVariant(event.status)}>{getEventStatusLabel(event.status)}</Badge>
                         </div>
                         <h3 className="text-xl font-semibold text-card-foreground">{event.title}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
