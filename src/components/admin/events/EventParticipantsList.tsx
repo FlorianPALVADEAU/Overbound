@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Clock, Search } from 'lucide-react'
-import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort } from '@/app/api/admin/events/participantsQueries'
+import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort, type EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,6 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface EventParticipantsListProps {
   eventId: string
@@ -49,6 +56,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const [limit, setLimit] = useState(50)
   const [cursor, setCursor] = useState<string | null>(null)
   const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const [selectedParticipant, setSelectedParticipant] = useState<EventParticipantRow | null>(null)
 
   useEffect(() => {
     setCursor(null)
@@ -161,7 +169,16 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                 <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucun participant ne correspond à ces critères.</TableCell></TableRow>
               ) : participants.map((participant) => (
                 <TableRow key={participant.id}>
-                  <TableCell><div className="font-medium">{participant.participant.name ?? 'Nom non renseigné'}</div><div className="text-xs text-muted-foreground">{participant.participant.email}</div></TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 font-medium"
+                      onClick={() => setSelectedParticipant(participant)}
+                    >
+                      {participant.participant.name ?? 'Nom non renseigné'}
+                    </Button>
+                    <div className="text-xs text-muted-foreground">{participant.participant.email}</div>
+                  </TableCell>
                   <TableCell><div className="flex flex-wrap gap-1"><Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge><Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div></TableCell>
                   <TableCell><div>{participant.ticket.name ?? '—'}</div><div className="text-xs text-muted-foreground">{participant.ticket.format}</div></TableCell>
                   <TableCell>{participant.departure.startTime ? <><div>{formatDate(participant.departure.startTime)}</div><div className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</div></> : '—'}</TableCell>
@@ -181,6 +198,36 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(selectedParticipant)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedParticipant(null)
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Détail participant</DialogTitle>
+            <DialogDescription>
+              Consultation en lecture seule. Les changements de billet et de SAS seront ajoutés dans un parcours séparé.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedParticipant ? (
+            <div className="grid gap-4 text-sm sm:grid-cols-2">
+              <div><p className="text-muted-foreground">Nom</p><p className="font-medium">{selectedParticipant.participant.name ?? 'Non renseigné'}</p></div>
+              <div><p className="text-muted-foreground">Compte</p><p>{selectedParticipant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</p></div>
+              <div><p className="text-muted-foreground">Email</p><p className="break-all">{selectedParticipant.participant.email}</p></div>
+              <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{selectedParticipant.id}</p></div>
+              <div><p className="text-muted-foreground">Billet / format</p><p>{selectedParticipant.ticket.name ?? '—'} · {selectedParticipant.ticket.format}</p></div>
+              <div><p className="text-muted-foreground">Départ</p><p>{selectedParticipant.departure.startTime ? `${formatDate(selectedParticipant.departure.startTime)} · SAS ${selectedParticipant.departure.waveIndex ?? '—'}` : '—'}</p></div>
+              <div><p className="text-muted-foreground">Groupe</p><p>{selectedParticipant.group ?? 'Aucun'}</p></div>
+              <div><p className="text-muted-foreground">Paiement</p><p>{selectedParticipant.payment ? `${selectedParticipant.payment.status ?? '—'} · ${formatAmount(selectedParticipant.payment.amountCents, selectedParticipant.payment.currency)}` : '—'}</p></div>
+              <div><p className="text-muted-foreground">Check-in</p><p>{selectedParticipant.registration.checkedIn ? 'Effectué' : 'À faire'}</p></div>
+              <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(selectedParticipant.registration.createdAt)}</p></div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
