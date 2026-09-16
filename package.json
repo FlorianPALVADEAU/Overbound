@@ -7,7 +7,7 @@
     "build": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest",
+    "test": "NODE_ENV=test vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "optimize:images": "node scripts/images/optimize-images.mjs"
