@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getMarketingPreferencesProfile } from '@/lib/preferences/profile'
 import PreferencesForm from '@/components/preferences/PreferencesForm'
 import {
   Card,
@@ -24,13 +25,9 @@ export default async function PreferencesPage() {
   }
 
   // Get user profile with marketing preferences
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id, full_name, marketing_opt_in')
-    .eq('id', user.id)
-    .single()
+  const profile = await getMarketingPreferencesProfile(supabase, user.id)
 
-  if (error || !profile) {
+  if (!profile) {
     return (
       <div className="container max-w-4xl mx-auto py-10">
         <Alert variant="destructive">

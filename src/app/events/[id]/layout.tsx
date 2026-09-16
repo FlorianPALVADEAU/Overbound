@@ -1,25 +1,9 @@
 import type { Metadata } from 'next'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { fetchEventMeta } from '@/lib/events/eventMeta'
 import { EventStructuredDataServer } from '@/components/seo/EventStructuredDataServer'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
 const fallbackImage = `${siteUrl}/images/images/og-runners-wave.jpg`
-
-type EventMeta = Record<string, any> & {
-  title: string
-  date: string
-  location: string
-  status: string
-  slug: string | null
-  tickets?: Array<{
-    name: string | null
-    final_price_cents: number | null
-    currency: string | null
-  }> | null
-}
-
-const isUUID = (value: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 
 const normalizeText = (value?: string | null) =>
   value ? value.replace(/\s+/g, ' ').trim() : ''
@@ -31,31 +15,6 @@ const toAbsoluteUrl = (value?: string | null) => {
   if (!value) return fallbackImage
   if (value.startsWith('http')) return value
   return `${siteUrl}${value}`
-}
-
-const fetchEventMeta = async (id: string): Promise<EventMeta | null> => {
-  const supabase = supabaseAdmin()
-  const { data, error } = await supabase
-    .from('events')
-    .select(
-      `
-        *,
-        tickets (
-          name,
-          final_price_cents,
-          currency
-        )
-      `
-    )
-    .eq(isUUID(id) ? 'id' : 'slug', id)
-    .maybeSingle()
-
-  if (error || !data) {
-    if (error) console.error('[event meta]', id, error.message)
-    return null
-  }
-
-  return data as EventMeta
 }
 
 export async function generateMetadata(
