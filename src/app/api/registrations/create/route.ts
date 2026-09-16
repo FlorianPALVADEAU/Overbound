@@ -20,6 +20,7 @@ import {
 import { sendAdminPushNotification } from '@/lib/push'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
+import type { EventPriceTier } from '@/types/EventPriceTier'
 
 export const runtime = 'nodejs'
 
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Événement introuvable.' }, { status: 404 })
     }
 
-    const ticketIds = ticketSelections.map((item: any) => item.ticketId)
+    const ticketIds = ticketSelections.map((item) => item.ticketId)
 
     const { data: tickets, error: ticketsError } = await admin
       .from('tickets')
@@ -225,7 +226,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Billets introuvables.' }, { status: 404 })
     }
 
-    const ticketMap = new Map<string, any>()
+    const ticketMap = new Map<string, (typeof tickets)[number]>()
     tickets.forEach((ticket) => {
       ticketMap.set(ticket.id, ticket)
     })
@@ -234,8 +235,8 @@ export async function POST(request: NextRequest) {
     const generateTokens = () => ({ qr: uuidv4(), transfer: uuidv4() })
 
     // Calculate ticket subtotal with event price tiers (including tier capacity splits)
-    const eventPriceTiers = (eventRow as any).price_tiers || []
-    const tiersById = new Map<string, any>(eventPriceTiers.map((tier: any) => [tier.id, tier]))
+    const eventPriceTiers = (eventRow.price_tiers as EventPriceTier[] | null) || []
+    const tiersById = new Map<string, EventPriceTier>(eventPriceTiers.map((tier) => [tier.id, tier]))
 
     let tierAllocations: Array<{ tier_id: string; quantity: number }> = []
     try {
@@ -355,7 +356,7 @@ export async function POST(request: NextRequest) {
         .ilike('code', ambassadorReferralCandidate)
         .maybeSingle()
 
-      const isAmbassadorCode = hasAmbassadorLink((ambassadorPromo as any)?.ambassadors)
+      const isAmbassadorCode = hasAmbassadorLink(ambassadorPromo?.ambassadors)
 
       ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromo?.id ?? null : null
     }
@@ -388,7 +389,27 @@ export async function POST(request: NextRequest) {
       throw orderError
     }
 
-    const createdRegistrations: any[] = []
+    interface CreatedRegistrationRecord {
+      id: string
+      email: string | null
+      qr_code_token: string
+      start_time: string | null
+      wave_index: number | null
+      wave_capacity: number | null
+      wave_position: number | null
+      auto_assigned: boolean | null
+      preferred_window_start: string | null
+      preferred_window_end: string | null
+      latest_allowed_time: string | null
+      assignment_constraint_breached: boolean
+    }
+
+    const createdRegistrations: Array<{
+      registration: CreatedRegistrationRecord
+      ticket: (typeof tickets)[number]
+      participant: (typeof participants)[number]
+      participantName: string | null
+    }> = []
     let openGroupAnchor: OpenWaveAssignment | null = null
     let openGroupCount = 0
     let groupAnchorPreSet = false
@@ -669,7 +690,7 @@ export async function POST(request: NextRequest) {
     if (upsells && upsells.length > 0 && createdRegistrations.length > 0) {
       const referenceRegistration = createdRegistrations[0].registration
       const upsellRecords = upsells
-        .map((item: { upsellId: string; quantity: number; meta?: Record<string, any> }) => {
+        .map((item) => {
           const upsell = upsellMap.get(item.upsellId)
           const quantity = Number(item.quantity || 0)
           if (!upsell) return null
@@ -691,7 +712,7 @@ export async function POST(request: NextRequest) {
           .insert(upsellRecords)
 
         if (upsellError) {
-          if ((upsellError as any)?.code === 'PGRST205') {
+          if (upsellError.code === 'PGRST205') {
             console.warn('Table registration_upsells absente, upsells ignorés.')
           } else {
             console.error('Erreur création upsells:', upsellError)
@@ -742,8 +763,8 @@ export async function POST(request: NextRequest) {
         })
 
         await sendTicketEmail({
-          to: registration.email,
-          participantName: participantName || registration.email,
+          to: registration.email ?? '',
+          participantName: participantName || registration.email || '',
           eventTitle: eventRow.title,
           eventDate: eventDateLabel,
           eventLocation: eventRow.location,
@@ -980,18 +1001,20 @@ export async function POST(request: NextRequest) {
       registrations: createdRegistrations.map(({ registration }) => registration.id),
     })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erreur création inscription:', error)
 
     // Capture error in Sentry with context
-    captureException(error, {
-      route: '/api/registrations/create',
-      method: 'POST',
-    })
+    if (error instanceof Error) {
+      captureException(error, {
+        route: '/api/registrations/create',
+        method: 'POST',
+      })
+    }
 
     return NextResponse.json({
       error: 'Erreur lors de la création de l\'inscription',
-      details: error.message
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }
 }
