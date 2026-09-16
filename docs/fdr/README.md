@@ -18,3 +18,5 @@ Template: `docs/templates/fdr-template.md`
 - [FDR-0006 - Ambassador Program (Points & Rewards)](./FDR-0006-ambassador-program-points-and-rewards.md)
 - [FDR-0007 - Email Distribution & Preferences (4 phases)](./FDR-0007-email-distribution-and-preferences.md)
 - [FDR-0008 - Espace opérations admin orienté événement](./FDR-0008-admin-operations-workspace.md) — Proposed
+- [FDR-0009 - Maintainability refactor](./FDR-0009-maintainability-refactor.md) — Proposed
+- [FDR-0010 - Politique financière des corrections de billet et de SAS](./FDR-0010-ticket-financial-correction-policy.md) — Proposed
