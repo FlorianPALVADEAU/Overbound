@@ -95,5 +95,33 @@ export const deleteAdminRegistration = async (id: string): Promise<void> => {
   }
 }
 
+export const changeAdminRegistrationTicket = async (
+  registrationId: string,
+  ticketId: string,
+): Promise<void> => {
+  try {
+    await axiosClient.patch(`/admin/registrations/${registrationId}`, { ticket_id: ticketId })
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Impossible de changer le billet')
+    }
+    throw error
+  }
+}
+
+export const moveAdminRegistrationWave = async (
+  registrationId: string,
+  waveIndex: number,
+): Promise<void> => {
+  try {
+    await axiosClient.patch(`/admin/registrations/${registrationId}`, { wave_index: waveIndex })
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Impossible de déplacer ce SAS')
+    }
+    throw error
+  }
+}
+
 export const adminRegistrationsQueryKeyBase = ADMIN_REGISTRATIONS_QUERY_BASE_KEY
 export const adminRegistrationsBuildKey = buildQueryKey
