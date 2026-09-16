@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
@@ -31,6 +32,42 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-08-27.basil',
 })
 
+const participantSchema = z.object({
+  ticketId: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
+  birthDate: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  medicalInfo: z.string().optional(),
+  licenseNumber: z.string().optional(),
+  distanceIdealKm: z.union([z.string(), z.number()]).optional(),
+  distanceMinKm: z.union([z.string(), z.number()]).optional(),
+  difficultyLevel: z.enum(['low', 'mid', 'hard']).nullable().optional(),
+})
+
+const createRegistrationBodySchema = z.object({
+  paymentIntentId: z.string(),
+  eventId: z.string(),
+  userId: z.string(),
+  ticketSelections: z.array(z.object({ ticketId: z.string(), quantity: z.number() })).default([]),
+  participants: z.array(participantSchema).default([]),
+  upsells: z
+    .array(z.object({ upsellId: z.string(), quantity: z.number(), meta: z.record(z.string(), z.any()).optional() }))
+    .default([]),
+  promoCode: z.string().nullable().default(null),
+  promoCodes: z.array(z.string()).default([]),
+  ambassadorReferralCode: z.string().nullable().optional(),
+  groupId: z.string().nullable().optional(),
+  signatureImage: z.string().nullable().default(null),
+  signatureMetadata: z.record(z.string(), z.any()).default({}),
+  disclaimer: z
+    .object({ read: z.boolean(), accepted: z.boolean(), rulebookAccepted: z.boolean().optional() })
+    .default({ read: false, accepted: false, rulebookAccepted: false }),
+  freeOrderMetadata: z.record(z.string(), z.string()).nullable().optional(),
+})
+
 export async function POST(request: NextRequest) {
   try {
     const clientIpAddress =
@@ -41,50 +78,27 @@ export async function POST(request: NextRequest) {
     const fbpCookie = request.cookies.get('_fbp')?.value ?? null
     const fbcCookie = request.cookies.get('_fbc')?.value ?? null
 
+    const parsedBody = createRegistrationBodySchema.safeParse(await request.json())
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: 'Paramètres manquants.' }, { status: 400 })
+    }
+
     const {
       paymentIntentId,
       eventId,
       userId,
-      ticketSelections = [],
-      participants = [],
-      upsells = [],
-      promoCode = null,
-      promoCodes = [],
+      ticketSelections,
+      participants,
+      upsells,
+      promoCode,
+      promoCodes,
       ambassadorReferralCode = null,
       groupId = null,
-      signatureImage = null,
-      signatureMetadata = {},
-      disclaimer = { read: false, accepted: false, rulebookAccepted: false },
+      signatureImage,
+      signatureMetadata,
+      disclaimer,
       freeOrderMetadata = null,
-    } = await request.json() as {
-      paymentIntentId: string
-      eventId: string
-      userId: string
-      ticketSelections: Array<{ ticketId: string; quantity: number }>
-      participants: Array<{
-        ticketId: string
-        firstName: string
-        lastName: string
-        email: string
-        birthDate?: string
-        emergencyContactName?: string
-        emergencyContactPhone?: string
-        medicalInfo?: string
-        licenseNumber?: string
-        distanceIdealKm?: string | number
-        distanceMinKm?: string | number
-        difficultyLevel?: 'low' | 'mid' | 'hard' | null
-      }>
-      upsells: Array<{ upsellId: string; quantity: number; meta?: Record<string, any> }>
-      promoCode: string | null
-      promoCodes?: string[]
-      ambassadorReferralCode?: string | null
-      groupId?: string | null
-      signatureImage: string | null
-      signatureMetadata: Record<string, any>
-      disclaimer: { read: boolean; accepted: boolean; rulebookAccepted?: boolean }
-      freeOrderMetadata?: Record<string, string> | null
-    }
+    } = parsedBody.data
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 

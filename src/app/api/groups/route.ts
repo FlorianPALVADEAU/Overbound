@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
+
+const createGroupBodySchema = z.object({
+  name: z.string().trim().min(1, 'Nom de groupe requis'),
+})
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +16,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { name } = await request.json() as { name?: string }
-
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    const parsed = createGroupBodySchema.safeParse(await request.json())
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Nom de groupe requis' }, { status: 400 })
     }
+    const { name } = parsed.data
 
     const admin = supabaseAdmin()
 

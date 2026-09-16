@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
+
+const joinBodySchema = z.object({
+  invite_code: z.string().min(1, "Code d'invitation requis"),
+})
 
 export async function POST(request: Request) {
   try {
@@ -12,11 +17,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { invite_code } = await request.json() as { invite_code?: string }
-
-    if (!invite_code || typeof invite_code !== 'string') {
-      return NextResponse.json({ error: 'Code d\'invitation requis' }, { status: 400 })
+    const parsed = joinBodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Code d'invitation requis" }, { status: 400 })
     }
+    const { invite_code } = parsed.data
 
     const admin = supabaseAdmin()
 

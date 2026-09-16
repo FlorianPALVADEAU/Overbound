@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { Resend } from 'resend'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 import type { AmbassadorReward, AmbassadorRewardStatus } from '@/types/Ambassador'
+
+const claimBodySchema = z.object({
+  reward_level: z.number().int().positive(),
+})
 
 export const runtime = 'nodejs'
 const resend = new Resend(process.env.RESEND_API_KEY!)
@@ -20,12 +25,12 @@ const resolveRewardStatus = (value: string | null | undefined): AmbassadorReward
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = (await request.json().catch(() => null)) as { reward_level?: number } | null
-    const rewardLevel = Number(payload?.reward_level)
-
-    if (!Number.isInteger(rewardLevel) || rewardLevel <= 0) {
+    const payload = await request.json().catch(() => null)
+    const parsed = claimBodySchema.safeParse(payload)
+    if (!parsed.success) {
       return NextResponse.json({ error: 'reward_level invalide.' }, { status: 400 })
     }
+    const { reward_level: rewardLevel } = parsed.data
 
     const supabase = await createSupabaseServer()
     const {

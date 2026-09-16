@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
 const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
 const WELCOME_STACKABLE_CODE = 'WELCOME05'
+
+const validateBodySchema = z.object({
+  code: z.string().min(1),
+  eventId: z.string().uuid(),
+  existingCodes: z.array(z.unknown()).optional(),
+})
 
 const hasAmbassadorLink = (value: unknown) => {
   if (Array.isArray(value)) return value.length > 0
@@ -14,11 +21,11 @@ const isWelcomeStackableCode = (code: string | null | undefined) =>
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, eventId, existingCodes } = await request.json()
-
-    if (!code || !eventId) {
+    const parsed = validateBodySchema.safeParse(await request.json())
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Code promo ou événement manquant.' }, { status: 400 })
     }
+    const { code, eventId, existingCodes } = parsed.data
 
     const normalizedCode = String(code).trim().toUpperCase()
 

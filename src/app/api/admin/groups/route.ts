@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
+
+const createAdminGroupBodySchema = z.object({
+  name: z.string().trim().min(1, 'Nom de groupe requis'),
+  captain_profile_id: z.string().uuid('Capitaine requis'),
+})
 
 export async function POST(request: Request) {
   try {
@@ -10,18 +16,11 @@ export async function POST(request: Request) {
       return auth.response
     }
 
-    const { name, captain_profile_id } = await request.json() as {
-      name?: string
-      captain_profile_id?: string
+    const parsed = createAdminGroupBodySchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }
-
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ error: 'Nom de groupe requis' }, { status: 400 })
-    }
-
-    if (!captain_profile_id || typeof captain_profile_id !== 'string') {
-      return NextResponse.json({ error: 'Capitaine requis' }, { status: 400 })
-    }
+    const { name, captain_profile_id } = parsed.data
 
     const admin = supabaseAdmin()
 

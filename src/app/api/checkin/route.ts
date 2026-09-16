@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+
+const checkinBodySchema = z.object({
+  token: z.string().min(1, 'Token QR manquant'),
+  action: z.enum(['checkin', 'undo']).optional(),
+})
 
 export async function POST(req: Request) {
   try {
-    const { token, action } = await req.json()
-    
-    if (!token) {
+    const parsed = checkinBodySchema.safeParse(await req.json())
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Token QR manquant' },
+        { error: parsed.error.issues[0]?.message ?? 'Requête invalide' },
         { status: 400 }
       )
     }
+    const { token, action } = parsed.data
 
     const supabase = await createSupabaseServer()
     const {
