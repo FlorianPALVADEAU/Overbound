@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -32,17 +32,19 @@ import {
   Clock,
   Download,
   Filter,
-  Package,
   RotateCcw,
+  SlidersHorizontal,
   Trash2,
 } from 'lucide-react'
-import type { UpsellSummaryRow } from '@/app/api/admin/registrations/upsells-summary/route'
 import { RegistrationStats } from './RegistrationStats'
 import { RegistrationDetailsDialog } from './RegistrationDetailsDialog'
+import { RegistrationOperationsDialog } from './RegistrationOperationsDialog'
+import { UpsellSummaryPanel } from './UpsellSummaryPanel'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { AdminRegistration } from '@/types/Registration'
 import {
   adminRegistrationsBuildKey,
+  adminRegistrationsQueryKeyBase,
   deleteAdminRegistration,
   useAdminRegistrations,
 } from '@/app/api/admin/registrations/registrationsQueries'
@@ -134,6 +136,8 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const [message, setMessage] = useState<MessageState | null>(null)
   const [detailsRegistration, setDetailsRegistration] = useState<AdminRegistration | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
+  const [operationsRegistration, setOperationsRegistration] = useState<AdminRegistration | null>(null)
+  const [operationsDialogOpen, setOperationsDialogOpen] = useState(false)
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -179,6 +183,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     isLoading,
     isFetching,
     error: registrationsError,
+    refetch,
   } = useAdminRegistrations(params)
 
   const registrations = useMemo(() => data?.registrations ?? [], [data])
@@ -226,6 +231,17 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const handleDeleteClick = (registration: AdminRegistration) => {
     setRegistrationToDelete(registration)
     setDeleteDialogOpen(true)
+  }
+
+  const handleOperations = (registration: AdminRegistration) => {
+    setOperationsRegistration(registration)
+    setOperationsDialogOpen(true)
+  }
+
+  const handleOperationsUpdated = async () => {
+    await queryClient.invalidateQueries({ queryKey: adminRegistrationsQueryKeyBase })
+    await refetch()
+    setMessage({ type: 'success', text: 'Inscription mise à jour.' })
   }
 
   const handleDelete = async () => {
@@ -397,7 +413,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                 <TableHead>Billet &amp; montant</TableHead>
                 <TableHead>Présence</TableHead>
                 <TableHead>Créé le</TableHead>
-                <TableHead className="w-[220px] text-right">Actions</TableHead>
+                <TableHead className="w-[260px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -520,6 +536,13 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
+                          size="sm"
+                          onClick={() => handleOperations(registration)}
+                        >
+                          <SlidersHorizontal className="mr-2 h-4 w-4" />
+                          Gérer
+                        </Button>
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewDetails(registration)}
@@ -626,6 +649,16 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
         }}
       />
 
+      <RegistrationOperationsDialog
+        registration={operationsRegistration}
+        open={operationsDialogOpen}
+        onOpenChange={(open) => {
+          setOperationsDialogOpen(open)
+          if (!open) setOperationsRegistration(null)
+        }}
+        onUpdated={handleOperationsUpdated}
+      />
+
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={(open) => {
@@ -649,92 +682,3 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   )
 }
 
-// ─── Upsell Summary Panel ─────────────────────────────────────────────────────
-
-function UpsellSummaryPanel({ eventId }: { eventId?: string }) {
-  const { data, isLoading } = useQuery<{ summary: UpsellSummaryRow[] }>({
-    queryKey: ['admin-upsells-summary', eventId ?? 'all'],
-    queryFn: async () => {
-      const url = eventId
-        ? `/api/admin/registrations/upsells-summary?event_id=${eventId}`
-        : '/api/admin/registrations/upsells-summary'
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Erreur chargement upsells')
-      return res.json()
-    },
-    staleTime: 60_000,
-  })
-
-  const summary = data?.summary ?? []
-
-  if (!isLoading && summary.length === 0) return null
-
-  const formatAmount = (cents: number, currency: string) =>
-    (cents / 100).toLocaleString('fr-FR', {
-      style: 'currency',
-      currency: currency.toUpperCase(),
-    })
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Package className="h-4 w-4 text-primary" />
-          Options vendues (upsells)
-          {eventId ? null : (
-            <span className="text-xs font-normal text-muted-foreground ml-1">— tous événements</span>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {isLoading ? (
-          <div className="flex items-center gap-2 px-6 py-4 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4 animate-spin" />
-            Chargement…
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Option</TableHead>
-                <TableHead>Détails</TableHead>
-                <TableHead className="text-center w-24">Qté vendue</TableHead>
-                <TableHead className="text-right w-36">CA total</TableHead>
-                <TableHead className="text-right w-36">Prix unitaire moy.</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {summary.map((row) => (
-                <TableRow key={`${row.name}-${row.currency}`}>
-                  <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {Array.isArray((row as any).specs_breakdown) && (row as any).specs_breakdown.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {(row as any).specs_breakdown.map((item: any) => (
-                          <Badge key={`${row.name}-${item.label}`} variant="outline" className="text-xs">
-                            {item.label} x{item.quantity}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <span>-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center tabular-nums">
-                    <Badge variant="secondary">{row.quantity}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums font-medium text-green-600">
-                    {formatAmount(row.total_cents, row.currency)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
-                    {formatAmount(Math.round(row.total_cents / row.quantity), row.currency)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
