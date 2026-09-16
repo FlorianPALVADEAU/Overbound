@@ -6,19 +6,119 @@ import {
 } from '@/lib/admin/orderRevenue'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
-const isTshirtUpsell = (item: { name?: string | null; meta?: Record<string, any> | null }) => {
+type UpsellMeta = { sizes?: unknown; size?: unknown } | null | undefined
+
+interface RawRegistrationRow {
+  id: string
+  total_count?: number
+  event_id: string | null
+  ticket_id: string | null
+  order_id: string | null
+  user_id: string | null
+  email: string | null
+  start_time: string | null
+  wave_index: number | null
+  wave_capacity: number | null
+  wave_position: number | null
+  auto_assigned: boolean | null
+  distance_ideal_km: number | null
+  distance_min_km: number | null
+  preferred_window_start: string | null
+  preferred_window_end: string | null
+  latest_allowed_time: string | null
+  assignment_constraint_breached: boolean | null
+  event?: EventSummary | null
+  ticket?: TicketSummary | null
+  order?: OrderSummary | null
+}
+
+interface EventSummary {
+  id: string
+  title: string | null
+  date: string | null
+  location: string | null
+}
+
+interface TicketSummary {
+  id: string
+  name: string | null
+  distance_km: number | null
+}
+
+interface OrderSummary {
+  id: string
+  amount_total: number | null
+  currency: string | null
+  status: string | null
+  amount_per_registration?: number | null
+  registrations_count?: number | null
+  email?: string | null
+  provider?: string | null
+  provider_order_id?: string | null
+  created_at?: string | null
+  invoice_url?: string | null
+  promotional_codes?: PromotionalCodeSummary[]
+  upsell_items?: UpsellItem[]
+}
+
+interface PromotionalCodeSummary {
+  id: string
+  code: string | null
+  name: string | null
+  discount_percent: number | null
+  discount_amount: number | null
+  currency: string | null
+  is_active: boolean | null
+}
+
+interface UpsellItem {
+  registration_id: string
+  name: string | null
+  price_cents: number | null
+  quantity: number | null
+  currency: string | null
+  meta: UpsellMeta
+}
+
+interface DocumentMeta {
+  document_url: null
+  document_filename: null
+  document_size: null
+  requires_document: false
+  approval_status: 'approved'
+  start_time: string | null
+  wave_index: number | null
+  wave_capacity: number | null
+  wave_position: number | null
+  auto_assigned: boolean | null
+  distance_ideal_km: number | null
+  distance_min_km: number | null
+  preferred_window_start: string | null
+  preferred_window_end: string | null
+  latest_allowed_time: string | null
+  assignment_constraint_breached: boolean | null
+  documents_count: 0
+  required_documents_count: 0
+  uploaded_document_types: never[]
+  document_requires_attention: false
+  event: EventSummary | null
+  ticket: (TicketSummary & { requires_document: false; document_types: never[] }) | null
+  order: OrderSummary | null
+}
+
+const isTshirtUpsell = (item: { name?: string | null; meta?: UpsellMeta }) => {
   const name = String(item.name ?? '').toLowerCase()
   if (/t\s*-?\s*shirt|maillot/.test(name)) return true
-  const sizes = (item.meta as any)?.sizes
-  const size = (item.meta as any)?.size
+  const sizes = item.meta?.sizes
+  const size = item.meta?.size
   return Array.isArray(sizes) || typeof size === 'string'
 }
 
-const extractTshirtSizes = (items: Array<{ meta?: Record<string, any> | null }>) => {
+const extractTshirtSizes = (items: Array<{ meta?: UpsellMeta }>) => {
   const values: string[] = []
   for (const item of items) {
-    const sizes = (item.meta as any)?.sizes
-    const size = (item.meta as any)?.size
+    const sizes = item.meta?.sizes
+    const size = item.meta?.size
     if (Array.isArray(sizes)) {
       for (const raw of sizes) {
         if (typeof raw === 'string' && raw.trim().length > 0) values.push(raw.trim())
@@ -61,38 +161,38 @@ export async function GET(request: Request) {
 
     if (error) throw error
 
-    const rows = data ?? []
+    const rows: RawRegistrationRow[] = data ?? []
     const totalCount = rows[0]?.total_count ?? 0
 
-    const registrationIds = rows.map((row: any) => row.id).filter(Boolean)
+    const registrationIds = rows.map((row) => row.id).filter(Boolean)
     const eventIds = Array.from(
       new Set(
         rows
-          .map((row: any) => row.event_id)
-          .filter((value: string | null) => Boolean(value)),
+          .map((row) => row.event_id)
+          .filter((value): value is string => Boolean(value)),
       ),
-    ) as string[]
+    )
     const ticketIds = Array.from(
       new Set(
         rows
-          .map((row: any) => row.ticket_id)
-          .filter((value: string | null) => Boolean(value)),
+          .map((row) => row.ticket_id)
+          .filter((value): value is string => Boolean(value)),
       ),
-    ) as string[]
+    )
     const orderIds = Array.from(
       new Set(
         rows
-          .map((row: any) => row.order_id)
-          .filter((value: string | null) => Boolean(value)),
+          .map((row) => row.order_id)
+          .filter((value): value is string => Boolean(value)),
       ),
-    ) as string[]
+    )
     const profileIds = Array.from(
       new Set(
         rows
-          .map((row: any) => row.user_id)
-          .filter((value: string | null) => Boolean(value)),
+          .map((row) => row.user_id)
+          .filter((value): value is string => Boolean(value)),
       ),
-    ) as string[]
+    )
 
     const adminClient = supabaseAdmin()
 
@@ -102,25 +202,25 @@ export async function GET(request: Request) {
             .from('events')
             .select('id, title, date, location')
             .in('id', eventIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as EventSummary[], error: null }),
       ticketIds.length
         ? adminClient
             .from('tickets')
             .select('id, name, distance_km')
             .in('id', ticketIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as TicketSummary[], error: null }),
       orderIds.length
         ? adminClient
             .from('orders')
             .select('id, amount_total, currency, status, email, provider, provider_order_id, created_at, invoice_url')
             .in('id', orderIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as OrderSummary[], error: null }),
       profileIds.length
         ? adminClient
             .from('profiles')
             .select('id, full_name')
             .in('id', profileIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }>, error: null }),
     ])
 
     if (eventsResult.error) {
@@ -153,12 +253,12 @@ export async function GET(request: Request) {
         distance_km: ticket.distance_km ?? null,
       })
     }
-    const orderMap = new Map<string, any>()
+    const orderMap = new Map<string, OrderSummary>()
     const orderRegistrationIdsMap = new Map<string, string[]>()
     const registrationOrderMap = new Map<string, string>()
     const orderPromoIdsMap = new Map<string, Set<string>>()
-    const orderPromotionalCodesMap = new Map<string, any[]>()
-    const orderUpsellItemsMap = new Map<string, any[]>()
+    const orderPromotionalCodesMap = new Map<string, PromotionalCodeSummary[]>()
+    const orderUpsellItemsMap = new Map<string, UpsellItem[]>()
     const profileMap = new Map<string, { id: string; full_name: string | null }>()
     const groupByProfileMap = new Map<string, { id: string; name: string | null; invite_code: string | null }>()
     for (const profile of profilesResult.data ?? []) {
@@ -174,13 +274,16 @@ export async function GET(request: Request) {
         .select('profile_id, group:groups(id, name, invite_code)')
         .in('profile_id', profileIds)
 
+      type GroupRef = { id: string; name: string | null; invite_code: string | null }
+      type MembershipRow = { profile_id: string; group: GroupRef | GroupRef[] | null }
+
       if (membershipError) {
         console.error('[admin registrations] group membership fetch error', membershipError)
       } else {
-        for (const row of membershipRows ?? []) {
-          const group = Array.isArray((row as any).group) ? (row as any).group[0] : (row as any).group
+        for (const row of (membershipRows ?? []) as MembershipRow[]) {
+          const group = Array.isArray(row.group) ? row.group[0] : row.group
           if (!group?.id) continue
-          groupByProfileMap.set((row as any).profile_id, {
+          groupByProfileMap.set(row.profile_id, {
             id: group.id,
             name: group.name ?? null,
             invite_code: group.invite_code ?? null,
@@ -195,11 +298,13 @@ export async function GET(request: Request) {
         .select('id, order_id, promotional_code_id')
         .in('order_id', orderIds)
 
+      type OrderRegistrationRow = { id: string; order_id: string | null; promotional_code_id: string | null }
+
       if (orderRegistrationRows) {
-        for (const row of orderRegistrationRows as any[]) {
-          const registrationId = row.id as string | null
-          const orderId = row.order_id as string | null
-          const promotionalCodeId = row.promotional_code_id as string | null
+        for (const row of orderRegistrationRows as OrderRegistrationRow[]) {
+          const registrationId = row.id
+          const orderId = row.order_id
+          const promotionalCodeId = row.promotional_code_id
           if (!registrationId || !orderId) continue
 
           registrationOrderMap.set(registrationId, orderId)
@@ -225,29 +330,38 @@ export async function GET(request: Request) {
         ),
       )
 
+      type RawUpsellRow = {
+        registration_id: string | null
+        name: string | null
+        price_cents: number | null
+        quantity: number | null
+        currency: string | null
+        meta: UpsellMeta
+      }
+
       const [promoRowsResult, upsellRowsResult] = await Promise.all([
         promoIds.length
           ? adminClient
               .from('promotional_codes')
               .select('id, code, name, discount_percent, discount_amount, currency, is_active')
               .in('id', promoIds)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: [] as PromotionalCodeSummary[], error: null }),
         registrationOrderMap.size
           ? adminClient
               .from('registration_upsells')
               .select('registration_id, name, price_cents, quantity, currency, meta')
               .in('registration_id', Array.from(registrationOrderMap.keys()))
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: [] as RawUpsellRow[], error: null }),
       ])
 
       if (promoRowsResult.error) {
         console.error('[admin registrations] promotional codes fetch error', promoRowsResult.error)
       }
-      if (upsellRowsResult.error && (upsellRowsResult.error as any)?.code !== 'PGRST205') {
+      if (upsellRowsResult.error && (upsellRowsResult.error as { code?: string })?.code !== 'PGRST205') {
         console.error('[admin registrations] registration upsells fetch error', upsellRowsResult.error)
       }
 
-      const promoMap = new Map<string, any>()
+      const promoMap = new Map<string, PromotionalCodeSummary>()
       for (const promo of promoRowsResult.data ?? []) {
         promoMap.set(promo.id, {
           id: promo.id,
@@ -263,7 +377,7 @@ export async function GET(request: Request) {
       for (const [orderId, promoIdSet] of orderPromoIdsMap.entries()) {
         const promoCodes = Array.from(promoIdSet)
           .map((promoId) => promoMap.get(promoId))
-          .filter(Boolean)
+          .filter((promo): promo is PromotionalCodeSummary => Boolean(promo))
         orderPromotionalCodesMap.set(orderId, promoCodes)
       }
 
@@ -298,7 +412,7 @@ export async function GET(request: Request) {
         console.error('[admin registrations] order registrations count error', orderRegistrationRowsError)
       }
 
-      const ordersDataById = new Map<string, any>()
+      const ordersDataById = new Map<string, OrderSummary>()
       for (const order of ordersResult.data ?? []) {
         ordersDataById.set(order.id, order)
       }
@@ -326,11 +440,13 @@ export async function GET(request: Request) {
         .in('registration_id', registrationIds)
         .order('signed_at', { ascending: false })
 
+      type SignatureRow = { registration_id: string; regulation_version: string | null; signed_at: string | null }
+
       if (signatureRowsError) {
         console.error('[admin registrations] signatures fetch error', signatureRowsError)
       } else if (signatureRows) {
-        for (const row of signatureRows as any[]) {
-          const registrationId = row.registration_id as string
+        for (const row of signatureRows as SignatureRow[]) {
+          const registrationId = row.registration_id
           if (!signaturesMap.has(registrationId)) {
             signaturesMap.set(registrationId, [])
           }
@@ -343,7 +459,25 @@ export async function GET(request: Request) {
       }
     }
 
-    const documentMetaMap = new Map<string, any>()
+    type DocumentRow = {
+      id: string
+      start_time: string | null
+      wave_index: number | null
+      wave_capacity: number | null
+      wave_position: number | null
+      auto_assigned: boolean | null
+      distance_ideal_km: number | null
+      distance_min_km: number | null
+      preferred_window_start: string | null
+      preferred_window_end: string | null
+      latest_allowed_time: string | null
+      assignment_constraint_breached: boolean | null
+      ticket: TicketSummary | TicketSummary[] | null
+      event: EventSummary | EventSummary[] | null
+      order: Pick<OrderSummary, 'id' | 'amount_total' | 'currency' | 'status'> | Pick<OrderSummary, 'id' | 'amount_total' | 'currency' | 'status'>[] | null
+    }
+
+    const documentMetaMap = new Map<string, DocumentMeta>()
     if (registrationIds.length > 0) {
     const { data: documentRows, error: documentError } = await adminClient
       .from('registrations')
@@ -371,10 +505,10 @@ export async function GET(request: Request) {
       if (documentError) {
         console.error('[admin registrations] document fetch error', documentError)
       } else {
-        for (const row of documentRows ?? []) {
-          const ticketRecord = Array.isArray((row as any)?.ticket) ? (row as any).ticket[0] : (row as any)?.ticket
-          const eventRecord = Array.isArray((row as any)?.event) ? (row as any).event[0] : (row as any)?.event
-          const orderRecord = Array.isArray((row as any)?.order) ? (row as any).order[0] : (row as any)?.order
+        for (const row of (documentRows ?? []) as unknown as DocumentRow[]) {
+          const ticketRecord = Array.isArray(row.ticket) ? row.ticket[0] : row.ticket
+          const eventRecord = Array.isArray(row.event) ? row.event[0] : row.event
+          const orderRecord = Array.isArray(row.order) ? row.order[0] : row.order
 
           documentMetaMap.set(row.id, {
           document_url: null,
@@ -436,19 +570,15 @@ export async function GET(request: Request) {
       }
     }
 
-    const enrichedRows = rows.map((row: any) => {
-      const meta = documentMetaMap.get(row.id) || {}
-      const orderId = row.order_id ?? meta.order?.id ?? null
-      const orderDetails = orderId ? (orderMap.get(orderId) ?? {}) : {}
-      const promotionalCodes = Array.isArray(orderDetails.promotional_codes)
-        ? orderDetails.promotional_codes
-        : []
-      const upsellItems = Array.isArray(orderDetails.upsell_items)
-        ? orderDetails.upsell_items
-        : []
-      const tshirtItems = upsellItems.filter((item: any) => isTshirtUpsell(item))
+    const enrichedRows = rows.map((row) => {
+      const meta: DocumentMeta | undefined = documentMetaMap.get(row.id)
+      const orderId = row.order_id ?? meta?.order?.id ?? null
+      const orderDetails = orderId ? orderMap.get(orderId) : undefined
+      const promotionalCodes = orderDetails?.promotional_codes ?? []
+      const upsellItems = orderDetails?.upsell_items ?? []
+      const tshirtItems = upsellItems.filter((item) => isTshirtUpsell(item))
       const tshirtQuantity = tshirtItems.reduce(
-        (acc: number, item: any) => acc + Math.max(0, Number(item.quantity || 0)),
+        (acc, item) => acc + Math.max(0, Number(item.quantity || 0)),
         0,
       )
       const tshirtSizes = extractTshirtSizes(tshirtItems)
@@ -456,17 +586,17 @@ export async function GET(request: Request) {
       return {
         ...row,
         event:
-          meta.event ??
+          meta?.event ??
           row.event ??
           eventMap.get(row.event_id ?? '') ??
           null,
         ticket:
-          meta.ticket ??
+          meta?.ticket ??
           row.ticket ??
           ticketMap.get(row.ticket_id ?? '') ??
           null,
         order:
-          meta.order ??
+          meta?.order ??
           row.order ??
           orderMap.get(row.order_id ?? '') ??
           null,
@@ -488,17 +618,17 @@ export async function GET(request: Request) {
         document_filename: null,
         document_size: null,
         requires_document: false,
-        start_time: meta.start_time ?? row.start_time ?? null,
-        wave_index: meta.wave_index ?? row.wave_index ?? null,
-        wave_capacity: meta.wave_capacity ?? row.wave_capacity ?? null,
-        wave_position: meta.wave_position ?? row.wave_position ?? null,
-        auto_assigned: meta.auto_assigned ?? row.auto_assigned ?? null,
-        distance_ideal_km: meta.distance_ideal_km ?? row.distance_ideal_km ?? null,
-        distance_min_km: meta.distance_min_km ?? row.distance_min_km ?? null,
-        preferred_window_start: meta.preferred_window_start ?? row.preferred_window_start ?? null,
-        preferred_window_end: meta.preferred_window_end ?? row.preferred_window_end ?? null,
-        latest_allowed_time: meta.latest_allowed_time ?? row.latest_allowed_time ?? null,
-        assignment_constraint_breached: meta.assignment_constraint_breached ?? row.assignment_constraint_breached ?? null,
+        start_time: meta?.start_time ?? row.start_time ?? null,
+        wave_index: meta?.wave_index ?? row.wave_index ?? null,
+        wave_capacity: meta?.wave_capacity ?? row.wave_capacity ?? null,
+        wave_position: meta?.wave_position ?? row.wave_position ?? null,
+        auto_assigned: meta?.auto_assigned ?? row.auto_assigned ?? null,
+        distance_ideal_km: meta?.distance_ideal_km ?? row.distance_ideal_km ?? null,
+        distance_min_km: meta?.distance_min_km ?? row.distance_min_km ?? null,
+        preferred_window_start: meta?.preferred_window_start ?? row.preferred_window_start ?? null,
+        preferred_window_end: meta?.preferred_window_end ?? row.preferred_window_end ?? null,
+        latest_allowed_time: meta?.latest_allowed_time ?? row.latest_allowed_time ?? null,
+        assignment_constraint_breached: meta?.assignment_constraint_breached ?? row.assignment_constraint_breached ?? null,
         documents_count: 0,
         required_documents_count: 0,
         uploaded_document_types: [],
@@ -534,7 +664,7 @@ export async function GET(request: Request) {
           row.distance_ideal_km ?? '',
           row.assignment_constraint_breached ?? '',
         ]
-        lines.push(values.map((value: any) => JSON.stringify(value ?? '')).join(','))
+        lines.push(values.map((value) => JSON.stringify(value ?? '')).join(','))
       }
       return new NextResponse(lines.join('\n'), {
         status: 200,
