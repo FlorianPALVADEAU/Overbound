@@ -4,6 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock, Search } from 'lucide-react'
 import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort, type EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
+import { TicketChangePreviewPanel } from './TicketChangePreviewPanel'
 import {
   parseParticipantUrlState,
   writeParticipantUrlState,
@@ -271,18 +272,21 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
             </DialogDescription>
           </DialogHeader>
           {selectedParticipant ? (
-            <div className="grid gap-4 text-sm sm:grid-cols-2">
-              <div><p className="text-muted-foreground">Nom</p><p className="font-medium">{selectedParticipant.participant.name ?? 'Non renseigné'}</p></div>
-              <div><p className="text-muted-foreground">Compte</p><p>{selectedParticipant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</p></div>
-              <div><p className="text-muted-foreground">Email</p><p className="break-all">{selectedParticipant.participant.email}</p></div>
-              <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{selectedParticipant.id}</p></div>
-              <div><p className="text-muted-foreground">Billet / format</p><p>{selectedParticipant.ticket.name ?? '—'} · {selectedParticipant.ticket.format}</p></div>
-              <div><p className="text-muted-foreground">Départ</p><p>{selectedParticipant.departure.startTime ? `${formatDate(selectedParticipant.departure.startTime)} · SAS ${selectedParticipant.departure.waveIndex ?? '—'}` : '—'}</p></div>
-              <div><p className="text-muted-foreground">Groupe</p><p>{selectedParticipant.group ?? 'Aucun'}</p></div>
-              <div><p className="text-muted-foreground">Paiement</p><p>{selectedParticipant.payment ? `${selectedParticipant.payment.status ?? '—'} · ${formatAmount(selectedParticipant.payment.amountCents, selectedParticipant.payment.currency)}` : '—'}</p></div>
-              <div><p className="text-muted-foreground">Check-in</p><p>{selectedParticipant.registration.checkedIn ? 'Effectué' : 'À faire'}</p></div>
-              <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(selectedParticipant.registration.createdAt)}</p></div>
-            </div>
+            <>
+              <div className="grid gap-4 text-sm sm:grid-cols-2">
+                <div><p className="text-muted-foreground">Nom</p><p className="font-medium">{selectedParticipant.participant.name ?? 'Non renseigné'}</p></div>
+                <div><p className="text-muted-foreground">Compte</p><p>{selectedParticipant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</p></div>
+                <div><p className="text-muted-foreground">Email</p><p className="break-all">{selectedParticipant.participant.email}</p></div>
+                <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{selectedParticipant.id}</p></div>
+                <div><p className="text-muted-foreground">Billet / format</p><p>{selectedParticipant.ticket.name ?? '—'} · {selectedParticipant.ticket.format}</p></div>
+                <div><p className="text-muted-foreground">Départ</p><p>{selectedParticipant.departure.startTime ? `${formatDate(selectedParticipant.departure.startTime)} · SAS ${selectedParticipant.departure.waveIndex ?? '—'}` : '—'}</p></div>
+                <div><p className="text-muted-foreground">Groupe</p><p>{selectedParticipant.group ?? 'Aucun'}</p></div>
+                <div><p className="text-muted-foreground">Paiement</p><p>{selectedParticipant.payment ? `${selectedParticipant.payment.status ?? '—'} · ${formatAmount(selectedParticipant.payment.amountCents, selectedParticipant.payment.currency)}` : '—'}</p></div>
+                <div><p className="text-muted-foreground">Check-in</p><p>{selectedParticipant.registration.checkedIn ? 'Effectué' : 'À faire'}</p></div>
+                <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(selectedParticipant.registration.createdAt)}</p></div>
+              </div>
+              <TicketChangePreviewPanel eventId={eventId} participant={selectedParticipant} />
+            </>
           ) : null}
         </DialogContent>
       </Dialog>

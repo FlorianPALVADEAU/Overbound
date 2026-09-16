@@ -195,6 +195,7 @@ export async function GET(
           createdAt: registration.created_at,
         },
         ticket: {
+          id: registration.ticket_id,
           name: ticket?.name ?? null,
           format: getParticipantFormat(ticket?.name, ticket?.raceName),
         },

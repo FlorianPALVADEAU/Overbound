@@ -18,6 +18,7 @@ export interface EventParticipantRow {
     createdAt: string
   }
   ticket: {
+    id: string | null
     name: string | null
     format: 'OPEN' | 'RANKED' | '—'
   }
