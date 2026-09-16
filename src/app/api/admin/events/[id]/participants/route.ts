@@ -5,6 +5,7 @@ import {
   decodeParticipantsCursor,
   encodeParticipantsCursor,
   getParticipantFormat,
+  type ParticipantDirection,
   participantSortSchema,
 } from '@/lib/admin/eventParticipants'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -57,7 +58,7 @@ export async function GET(
   let decodedCursor: ReturnType<typeof decodeParticipantsCursor> | null = null
   if (cursor) {
     try {
-      decodedCursor = decodeParticipantsCursor(cursor, sort)
+      decodedCursor = decodeParticipantsCursor(cursor, eventId, sort, direction)
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Cursor de pagination invalide' },
@@ -203,16 +204,20 @@ export async function GET(
         },
         group: registration.user_id ? groups.get(registration.user_id) ?? null : null,
         payment: order ?? null,
-        cursor: encodeParticipantsCursor({ sort, id: registration.id }),
       }
     })
+
+    const lastRegistration = registrations.at(-1)
+    const nextCursor = hasNextPage && lastRegistration
+      ? encodeParticipantsCursor({ eventId, sort, direction: direction as ParticipantDirection, id: lastRegistration.id })
+      : null
 
     return NextResponse.json({
       participants,
       page: {
         limit,
         totalCount: count ?? 0,
-        nextCursor: hasNextPage ? participants.at(-1)?.cursor ?? null : null,
+        nextCursor,
       },
     })
   } catch (error) {

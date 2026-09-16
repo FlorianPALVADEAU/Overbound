@@ -31,7 +31,6 @@ export interface EventParticipantRow {
     amountCents: number | null
     currency: string | null
   } | null
-  cursor: string
 }
 
 export interface EventParticipantsParams {

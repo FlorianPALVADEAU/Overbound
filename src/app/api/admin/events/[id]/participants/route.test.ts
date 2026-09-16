@@ -102,6 +102,31 @@ describe('GET /api/admin/events/[id]/participants', () => {
       ],
       page: { limit: 25, totalCount: 1, nextCursor: null },
     })
+    expect(body.participants[0]).not.toHaveProperty('cursor')
+  })
+
+  it('rejects an invalid event id before authentication or data access', async () => {
+    const response = await GET(
+      new Request('http://localhost/api/admin/events/not-an-uuid/participants') as any,
+      { params: Promise.resolve({ id: 'not-an-uuid' }) },
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({ error: 'Identifiant événement invalide' })
+    expect(createSupabaseServerMock).not.toHaveBeenCalled()
+    expect(supabaseAdminMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects an invalid cursor without querying the database', async () => {
+    const response = await GET(
+      new Request(`http://localhost/api/admin/events/${EVENT_ID}/participants?cursor=not-a-cursor`) as any,
+      { params: Promise.resolve({ id: EVENT_ID }) },
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({ error: 'Cursor de pagination invalide' })
+    expect(createSupabaseServerMock).not.toHaveBeenCalled()
+    expect(supabaseAdminMock).not.toHaveBeenCalled()
   })
 
   it('rejects a non-administrator before querying registration data', async () => {
