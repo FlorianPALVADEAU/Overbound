@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock, Search } from 'lucide-react'
 import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort, type EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
 import { TicketChangePreviewPanel } from './TicketChangePreviewPanel'
+import { WaveChangePreviewPanel } from './WaveChangePreviewPanel'
 import {
   parseParticipantUrlState,
   writeParticipantUrlState,
@@ -286,6 +287,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                 <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(selectedParticipant.registration.createdAt)}</p></div>
               </div>
               <TicketChangePreviewPanel eventId={eventId} participant={selectedParticipant} />
+              <WaveChangePreviewPanel eventId={eventId} participant={selectedParticipant} />
             </>
           ) : null}
         </DialogContent>
