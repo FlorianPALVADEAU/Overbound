@@ -246,19 +246,37 @@ array-ou-objet), et les maps intermédiaires, au lieu de `any`. Comportement ide
 
 ---
 
-## 4. Priorité 3 — tests
+## 4. Priorité 3 — tests — DONE (2026-09-16)
 
-Suivre `docs/quality/testing-strategy.md` (TDD, un test succès + un test échec par use-case). Modules
-sans aucun test actuellement, par ordre de criticité :
+Suivre `docs/quality/testing-strategy.md` (TDD, un test succès + un test échec par use-case). Les 5
+sous-sections ci-dessous sont toutes traitées :
 
-1. `src/lib/groups/resolveGroupAnchor.ts` — signalé comme piège explicite dans `CLAUDE.md`, aucun test.
-2. `src/lib/email.ts` (573 lignes, `sendTicketEmail`, `sendReceiptEmail`) — chemin critique de chaque
-   inscription payée.
-3. Tests d'intégration pour `registrations/create`, `webhooks/stripe`, `checkin` — les 3 points
-   d'entrée les plus critiques du jour J n'en ont aucun.
-4. `src/lib/ambassadors/rewardsNotifications.ts`, `src/lib/ambassadors/email.ts`.
-5. Couche email phase 3/4 : `eventUpdates.ts`, `eventOpenings.ts`, `engagement.ts`, `reactivation.ts`,
-   `emailLogs.ts`, `marketing.ts`, `adminDigest.ts`.
+1. **`src/lib/groups/resolveGroupAnchor.ts`** — fait. `resolveGroupAnchor.test.ts` (4 tests) :
+   sélection du premier OPEN (skip RANKED), retour null si aucun OPEN, relation ticket/race en array
+   vs objet, propagation d'erreur DB.
+2. **`src/lib/email.ts`** (`sendTicketEmail`, `sendReceiptEmail`) — fait. `email.test.ts` (9 tests).
+   Gap réel identifié (non corrigé, hors scope tests) : ni l'une ni l'autre fonction ne vérifie
+   `result.error` après l'appel Resend — un échec Resend (destinataire invalide, rate limit) est
+   silencieusement absorbé si l'appelant ne le vérifie pas lui-même.
+3. **Tests d'intégration `registrations/create`, `webhooks/stripe`, `checkin`** — fait, les 3.
+   `checkin` (9 tests) : auth/rôle, 404/409 selon état, succès checkin/undo, échec update.
+   `webhooks/stripe` (8 tests) : signature invalide, création complète (RANKED), idempotence
+   (registration existante + race 23505 sur orders), métadonnées manquantes, flow multi, event type
+   non géré, échec insert registration.
+   `registrations/create` (8 tests) : validation, signature/décharge manquante, mismatch auth,
+   idempotence 409, PaymentIntent non confirmé/pending, succès (commande gratuite + Stripe payé).
+4. **`src/lib/ambassadors/rewardsNotifications.ts`, `email.ts`** — fait (14 tests à eux deux).
+   Gap identifié (non corrigé) : `rewardsNotifications.ts` caste `(ambassador as any)?.promo` —
+   `any` non couvert par la passe §3.5 (qui ciblait spécifiquement les 2 routes au plus fort taux).
+5. **Couche email phase 3/4** — fait : `emailLogs.ts`, `engagement.ts`, `eventOpenings.ts`,
+   `eventUpdates.ts`, `marketing.ts`, `reactivation.ts`, `adminDigest.ts` (54 tests à eux sept).
+   Gap identifié (non corrigé) : `marketing.ts::filterRecipientsByDigestFrequency` envoie à
+   **tout le monde** par défaut si la lecture de `notification_preferences` échoue ("backward
+   compatibility"), donc une panne de cette table désactive silencieusement le filtrage plutôt que
+   de bloquer l'envoi.
+
+**Total** : ~100 tests ajoutés cette session, suite complète passant à 475 tests (0 régression),
+`tsc --noEmit` clean.
 
 ---
 
