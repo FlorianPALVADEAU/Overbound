@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -35,11 +36,12 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
     <section className="relative overflow-hidden py-16 sm:py-20">
       {/* Atmospheric background */}
       <div className="absolute inset-0">
-        <img
+        <Image
           src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
           alt="Ambiance Ultra Arena"
-          className="h-full w-full object-cover opacity-70"
-          loading="lazy"
+          fill
+          sizes="100vw"
+          className="object-cover opacity-70"
         />
         <div className="absolute inset-0 bg-linear-to-b from-background/80 via-background/92 to-background" />
       </div>

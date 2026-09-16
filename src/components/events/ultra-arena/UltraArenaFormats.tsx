@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Heart, Swords, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,11 +47,12 @@ export function UltraArenaFormats({
   return (
     <section id="formats" className="relative isolate overflow-hidden py-16 sm:py-20">
       <div className="absolute inset-0">
-        <img
+        <Image
           src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
           alt=""
-          className="h-full w-full object-cover opacity-14"
-          loading="lazy"
+          fill
+          sizes="100vw"
+          className="object-cover opacity-14"
         />
         <div className="absolute inset-0 bg-linear-to-br from-background/92 via-background/95 to-background" />
       </div>

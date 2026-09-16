@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Users, Heart, User } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,11 +34,12 @@ export function UltraArenaComeTogether({ isOnSale, registerHref, onCtaClick }: P
   return (
     <section className="relative isolate overflow-hidden py-16 sm:py-20">
       <div className="absolute inset-0">
-        <img
+        <Image
           src="/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.avif"
           alt=""
-          className="h-full w-full object-cover object-[center_40%] opacity-20"
-          loading="lazy"
+          fill
+          sizes="100vw"
+          className="object-cover object-[center_40%] opacity-20"
         />
       </div>
       <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

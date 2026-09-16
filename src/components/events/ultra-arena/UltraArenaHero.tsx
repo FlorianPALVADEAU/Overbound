@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, Mountain, Target, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,18 +38,22 @@ export function UltraArenaHero({
     <section className="relative isolate overflow-hidden py-20 sm:py-24 lg:py-28">
       {/* Background images */}
       <div className="absolute inset-0">
-        <img
+        <Image
           src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
           alt="Ultra Arena — intensité Overbound"
-          className="hidden h-full w-full object-cover object-center opacity-35 lg:block"
-          fetchPriority="high"
+          fill
+          sizes="100vw"
+          priority
+          className="hidden object-cover object-center opacity-35 lg:block"
         />
-        <img
+        <Image
           src="/images/images/a-smiling-running-man-black-weared-sport.avif"
           alt="Ultra Arena — runner Overbound"
-          className="h-full w-full object-cover object-[50%_8%] opacity-25 lg:hidden"
-          fetchPriority="high"
-        />  
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover object-[50%_8%] opacity-25 lg:hidden"
+        />
         <div className="absolute inset-0 bg-linear-to-b from-background/20 via-background/82 to-background" />
       </div>
 
