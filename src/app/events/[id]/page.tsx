@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Calendar, MapPin } from 'lucide-react'
 import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
 import { PricingTimeline } from '@/components/events/PricingTimeline'
+import { UltraArenaEventOver } from '@/components/events/ultra-arena/UltraArenaEventOver'
 import { UltraArenaHero } from '@/components/events/ultra-arena/UltraArenaHero'
 import { UltraArenaWhyDifferent } from '@/components/events/ultra-arena/UltraArenaWhyDifferent'
 import { UltraArenaProjection } from '@/components/events/ultra-arena/UltraArenaProjection'
@@ -27,43 +28,12 @@ import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
+import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
+import { useEventAnalytics } from '@/hooks/events/useEventAnalytics'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-const getStatusColor = (status: string): 'default' | 'destructive' | 'secondary' | 'outline' => {
-  switch (status) {
-    case 'on_sale':
-      return 'default'
-    case 'sold_out':
-      return 'destructive'
-    case 'closed':
-    case 'announced':
-      return 'secondary'
-    case 'draft':
-      return 'outline'
-    default:
-      return 'outline'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'on_sale':
-      return 'Inscriptions ouvertes'
-    case 'sold_out':
-      return 'Complet'
-    case 'closed':
-      return 'Inscriptions fermées'
-    case 'draft':
-      return 'Bientôt disponible'
-    case 'announced':
-      return 'Inscriptions à venir'
-    default:
-      return status
-  }
-}
 
 const formatConfigTime = (time: { hour: number; minute: number }) =>
   `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
@@ -78,8 +48,6 @@ const getCountdownParts = (target: Date, now: Date) => {
     seconds: totalSeconds % 60,
   }
 }
-
-type AnalyticsPayload = Record<string, string | number | boolean | null | undefined>
 
 // ---------------------------------------------------------------------------
 // Page component
@@ -105,7 +73,6 @@ export default function EventDetailPage() {
   const [notifyStatus, setNotifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null)
   const [openedFaqs, setOpenedFaqs] = useState<string[]>([])
-  const [showDesktopCta, setShowDesktopCta] = useState(false)
 
   useEffect(() => {
     if (!salesStartDate || !isAnnounced) return
@@ -128,149 +95,11 @@ export default function EventDetailPage() {
   // Analytics
   // -------------------------------------------------------------------------
 
-  const trackedEvent = data?.event
-  const trackedLowestPrice = useMemo(() => {
-    if (!trackedEvent) return null
-    const trackedTickets =
-      (trackedEvent.tickets as any[] | undefined)?.map((t) => ({
-        ...t,
-        race: t.race ?? undefined,
-      })) ?? []
-    const trackedTiers = (trackedEvent as any).price_tiers || []
-    const prices = trackedTickets
-      .map((t) => getCurrentTicketPrice(t, trackedTiers))
-      .filter((p): p is number => typeof p === 'number')
-    return prices.length > 0 ? Math.min(...prices) : null
-  }, [trackedEvent])
-
-  const trackEvent = useCallback(
-    (eventName: string, payload: AnalyticsPayload = {}) => {
-      if (typeof window === 'undefined' || !trackedEvent) return
-
-      const analyticsWindow = window as Window & {
-        dataLayer?: Array<Record<string, unknown>>
-        gtag?: (...args: unknown[]) => void
-        fbq?: (...args: unknown[]) => void
-      }
-
-      const basePayload: Record<string, unknown> = {
-        event: eventName,
-        event_slug: trackedEvent.slug,
-        event_id: trackedEvent.id,
-        event_status: trackedEvent.status,
-        ...payload,
-      }
-
-      analyticsWindow.dataLayer?.push(basePayload)
-      analyticsWindow.gtag?.('event', eventName, {
-        event_category: 'event_landing',
-        event_label: trackedEvent.slug,
-        ...payload,
-      })
-
-      // Meta Pixel mirror for retargeting/optimization
-      if (analyticsWindow.fbq) {
-        if (eventName === 'view_content' || eventName === 'page_view_event_landing') {
-          analyticsWindow.fbq('track', 'ViewContent', {
-            content_name: trackedEvent.title ?? trackedEvent.slug,
-            content_category: 'event',
-            content_ids: [trackedEvent.id],
-          })
-        }
-        if (eventName === 'add_to_cart') {
-          analyticsWindow.fbq('track', 'AddToCart', {
-            content_name: trackedEvent.title ?? trackedEvent.slug,
-            content_category: 'event',
-            content_ids: [trackedEvent.id],
-          })
-        }
-        if (eventName === 'begin_checkout' || eventName === 'begin_checkout_event') {
-          analyticsWindow.fbq('track', 'InitiateCheckout', {
-            content_name: trackedEvent.title ?? trackedEvent.slug,
-            content_category: 'event',
-            content_ids: [trackedEvent.id],
-          })
-        }
-      }
-    },
-    [trackedEvent],
+  const { trackEvent, showDesktopCta } = useEventAnalytics(
+    data?.event,
+    isUltraArena,
+    `/events/${params.id}`,
   )
-
-  // Page view
-  useEffect(() => {
-    if (!isUltraArena || !trackedEvent) return
-    trackEvent('page_view_event_landing', {
-      page_path: `/events/${params.id}`,
-      has_price: trackedLowestPrice !== null,
-    })
-    trackEvent('view_content', {
-      page_path: `/events/${params.id}`,
-      content_type: 'event',
-    })
-  }, [isUltraArena, trackedEvent, trackedLowestPrice, params.id, trackEvent])
-
-  // Scroll depth
-  useEffect(() => {
-    if (!isUltraArena) return
-
-    let tracked25 = false
-    let tracked50 = false
-    let tracked90 = false
-
-    const onScroll = () => {
-      const doc = document.documentElement
-      const max = doc.scrollHeight - window.innerHeight
-      if (max <= 0) return
-      const pct = (window.scrollY / max) * 100
-
-      if (!tracked25 && pct >= 25) {
-        tracked25 = true
-        trackEvent('scroll_25_event_page', { depth_percent: 25 })
-      }
-      if (!tracked50 && pct >= 50) {
-        tracked50 = true
-        trackEvent('scroll_50_event_page', { depth_percent: 50 })
-        trackEvent('scroll_50', { depth_percent: 50 })
-      }
-      if (!tracked90 && pct >= 90) {
-        tracked90 = true
-        trackEvent('scroll_90_event_page', { depth_percent: 90 })
-        trackEvent('scroll_90', { depth_percent: 90 })
-      }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [isUltraArena, trackEvent])
-
-  // Desktop sticky CTA — show after scrolling past the hero (~400px)
-  useEffect(() => {
-    if (!isUltraArena) return
-    const onScroll = () => setShowDesktopCta(window.scrollY > 400)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [isUltraArena])
-
-  // Pricing section visibility (decision zone)
-  useEffect(() => {
-    if (!isUltraArena) return
-    const target = document.getElementById('tarifs-inscription')
-    if (!target) return
-    let fired = false
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (fired || !entry?.isIntersecting) return
-        fired = true
-        trackEvent('view_pricing', { section: 'pricing' })
-        observer.disconnect()
-      },
-      { threshold: 0.25 },
-    )
-    observer.observe(target)
-    return () => observer.disconnect()
-  }, [isUltraArena, trackEvent])
 
   // -------------------------------------------------------------------------
   // Form handlers
@@ -278,6 +107,7 @@ export default function EventDetailPage() {
 
   const handleNotifySubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    const trackedEvent = data?.event
     if (!trackedEvent) return
 
     if (!notifyEmail) {
@@ -444,6 +274,26 @@ export default function EventDetailPage() {
       : `/events/${params.id}/register`
 
   // =========================================================================
+  // Event is over — inscriptions closed, show "see you next time" screen
+  // =========================================================================
+
+  const isEventOver = ['completed', 'closed', 'cancelled'].includes(event.status)
+
+  if (isEventOver) {
+    return (
+      <UltraArenaEventOver
+        formattedDate={formattedDate}
+        location={event.location}
+        notifyEmail={notifyEmail}
+        notifyStatus={notifyStatus}
+        notifyMessage={notifyMessage}
+        onNotifyEmailChange={setNotifyEmail}
+        onNotifySubmit={handleNotifySubmit}
+      />
+    )
+  }
+
+  // =========================================================================
   // Ultra Arena 2026 — optimised conversion landing page
   // =========================================================================
 
@@ -454,8 +304,8 @@ export default function EventDetailPage() {
         <UltraArenaHero
           formattedDate={formattedDate}
           location={event.location}
-          statusLabel={getStatusLabel(event.status)}
-          statusVariant={getStatusColor(event.status)}
+          statusLabel={getEventStatusLabel(event.status)}
+          statusVariant={getEventStatusVariant(event.status)}
           isOnSale={isOnSale}
           isAnnounced={isAnnounced}
           formattedSalesStart={formattedSalesStart}
@@ -678,7 +528,7 @@ export default function EventDetailPage() {
             </Button>
           </Link>
 
-          <Badge variant={getStatusColor(event.status)}>{getStatusLabel(event.status)}</Badge>
+          <Badge variant={getEventStatusVariant(event.status)}>{getEventStatusLabel(event.status)}</Badge>
           <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl">{event.title}</h1>
           <p className="mt-4 text-muted-foreground">
             {event.description || 'Découvre toutes les infos de cet événement Overbound.'}

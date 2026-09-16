@@ -1,9 +1,6 @@
-import type { VariantProps } from 'class-variance-authority'
-import type { badgeVariants } from '@/components/ui/badge'
+export type EventStatusBadgeVariant = 'default' | 'destructive' | 'secondary' | 'outline'
 
-type BadgeVariant = VariantProps<typeof badgeVariants>['variant']
-
-export const getEventStatusVariant = (status: string): BadgeVariant => {
+export const getEventStatusVariant = (status: string): EventStatusBadgeVariant => {
   switch (status) {
     case 'on_sale':
       return 'default'
