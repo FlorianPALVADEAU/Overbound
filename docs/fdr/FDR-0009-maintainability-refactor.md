@@ -282,34 +282,38 @@ sous-sections ci-dessous sont toutes traitées :
 
 ## 5. Priorité 4 — funnel d'acquisition (impact business, pas urgence technique)
 
-### 5.1 Découpler le tracking analytics du chargement des pixels
+### 5.1 Découpler le tracking analytics du chargement des pixels — hors scope (arbitrage produit)
 
 **Problème** : `AnalyticsScripts.tsx` ne charge Meta Pixel/GA4/GTM qu'après consentement explicite —
 conforme RGPD, mais signifie qu'un visiteur qui n'accepte pas ne génère aucun signal de conversion
 pour l'optimisation publicitaire.
 
-**Action possible** (à valider avec le responsable marketing avant implémentation — c'est un
-arbitrage produit, pas juste technique) : évaluer un "consent mode" dégradé (Google/Meta supportent
-des modes où des signaux anonymisés/agrégés sont envoyés même sans consentement individuel complet),
-ou a minima s'assurer que le taux d'acceptation de la bannière est mesuré pour quantifier l'ampleur
-réelle du biais.
+**Non traité par une IA en autonomie** : explicitement marqué dans ce FDR comme nécessitant une
+validation du responsable marketing avant implémentation (choix d'un "consent mode" dégradé
+Google/Meta). Reste à faire par un humain avec ce mandat.
 
-### 5.2 Ajouter la capture et propagation UTM
+### 5.2 Ajouter la capture et propagation UTM — fait (2026-09-16)
 
-Aucune capture UTM trouvée dans le funnel ni dans le système d'emails. Ajouter la capture des
-paramètres UTM à l'entrée du funnel (query params sur la landing), les persister dans le
-`RegistrationDraft` (store Zustand existant) ou en cookie de courte durée, et les propager jusqu'à
-l'order Stripe (metadata) pour permettre l'attribution par campagne.
+`src/lib/attribution/utm.ts` capture `utm_source/medium/campaign/term/content` depuis l'URL
+d'entrée dans `localStorage` (last-touch, expiration 30 jours), monté sans dépendre du consentement
+analytics (donnée first-party, aucun cookie tiers). Propagé jusqu'au PaymentIntent Stripe (`metadata.utm_params`)
+et au `freeOrderMetadata` pour les commandes gratuites, même mécanisme que `fbp`/`fbc` déjà en place.
 
-### 5.3 Remplacer `<img>` par `next/image` dans le funnel critique
+### 5.3 Remplacer `<img>` par `next/image` dans le funnel critique — fait (2026-09-16)
 
-Pages concernées : `events/[id]/page.tsx`, tout `src/components/events/ultra-arena/*.tsx`.
+Converti les 4 images de fond/hero de la landing Ultra Arena (assets statiques locaux) :
+`UltraArenaHero.tsx`, `UltraArenaComeTogether.tsx`, `UltraArenaFormats.tsx`, `UltraArenaProjection.tsx`
+(background uniquement). Laissés en `<img>` : `event.image_url` (`events/[id]/page.tsx`) et la
+galerie de `UltraArenaProjection.tsx`, qui peuvent porter des URLs externes hors de l'allowlist
+`images.remotePatterns` de `next.config.ts` (actuellement seulement `images.unsplash.com`) —
+convertir ces deux-là planterait au runtime pour toute autre source d'image.
 
-### 5.4 Vérifier le processus opérationnel de bascule de statut événement
+### 5.4 Vérifier le processus opérationnel de bascule de statut événement — hors scope (process humain)
 
 S'assurer qu'il existe une checklist ou une alerte pour basculer `event.status` vers
 `completed`/`closed` en cohérence avec l'arrêt des campagnes publicitaires actives — actuellement
-un processus manuel sans garde-fou technique.
+un processus manuel sans garde-fou technique. Ce n'est pas une tâche de code, mais une procédure
+opérationnelle à mettre en place par l'utilisateur.
 
 ---
 
