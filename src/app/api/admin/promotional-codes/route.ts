@@ -1,29 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-
-async function ensureAdmin() {
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { error: NextResponse.json({ error: 'Non authentifié' }, { status: 401 }) }
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) }
-  }
-
-  return { supabase }
-}
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 function validateDiscount(payload: any) {
   const { discount_percent, discount_amount } = payload
@@ -71,10 +49,12 @@ async function fetchPromotionalCode(id: string) {
   return data
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { error } = await ensureAdmin()
-    if (error) return error
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
 
     const supabase = await createSupabaseServer()
     const { data: promotionalCodes, error: fetchError } = await supabase
@@ -96,8 +76,10 @@ export async function GET() {
 
 const handlePost = async (request: NextRequest) => {
   try {
-    const { error } = await ensureAdmin()
-    if (error) return error
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
 
     const payload = await request.json()
     const validationError = validateDiscount(payload)

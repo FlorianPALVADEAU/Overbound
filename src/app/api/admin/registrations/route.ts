@@ -4,6 +4,7 @@ import {
   buildOrderSummaries,
   countRegistrationsByOrder,
 } from '@/lib/admin/orderRevenue'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const isTshirtUpsell = (item: { name?: string | null; meta?: Record<string, any> | null }) => {
   const name = String(item.name ?? '').toLowerCase()
@@ -41,23 +42,12 @@ export async function GET(request: Request) {
     const limitCount = parseInt(limitParam || (format === 'csv' ? '10000' : '50'))
     const offsetCount = parseInt(searchParams.get('offset') || '0')
 
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
 
     const { data, error } = await supabase.rpc('get_registrations_with_filters', {
       args: {

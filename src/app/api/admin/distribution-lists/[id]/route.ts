@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { UpdateDistributionListData } from '@/types/DistributionList'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // Validation schema for update
 const updateDistributionListSchema = z.object({
@@ -37,28 +38,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createClient()
     const { id } = await params
-
-    // Check if user is authenticated and admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Get the distribution list
     const { data, error } = await supabase
@@ -93,28 +79,13 @@ async function handlePatch(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createClient()
     const { id } = await params
-
-    // Check if user is authenticated and admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Parse and validate request body
     const body = await request.json()
@@ -196,28 +167,13 @@ async function handleDelete(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createClient()
     const { id } = await params
-
-    // Check if user is authenticated and admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Delete the distribution list (cascades to subscriptions)
     const { error } = await supabase

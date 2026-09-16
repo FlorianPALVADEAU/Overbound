@@ -8,6 +8,7 @@ import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { captureException } from '@/lib/sentry'
 import { listResendAudienceContacts, mapSlugsToAudienceIds } from '@/lib/email/resendAudiences'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -24,27 +25,13 @@ const sendEmailSchema = z.object({
  */
 async function handlePost(request: NextRequest) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+    const user = auth.user
+
     const supabase = await createClient()
-
-    // Check if user is authenticated and is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
-    }
 
     // Parse and validate request body
     const body = await request.json()

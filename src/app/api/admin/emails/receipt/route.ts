@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { sendReceiptEmail } from '@/lib/email'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const runtime = 'nodejs'
 
@@ -12,24 +13,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 async function handlePost(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
+    const user = auth.user
 
+    const supabase = await createSupabaseServer()
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, full_name')
+      .select('full_name')
       .eq('id', user.id)
       .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
 
     const payload = await request.json().catch(() => ({}))
     const paymentIntentId = typeof payload?.paymentIntentId === 'string' ? payload.paymentIntentId : ''
@@ -117,7 +112,7 @@ async function handlePost(request: NextRequest) {
 
     await sendReceiptEmail({
       to: resolvedEmail,
-      fullName: profile.full_name ?? user.user_metadata?.full_name ?? null,
+      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
       invoiceNumber: order?.id ?? paymentIntentId,
       invoiceDate: new Date(order?.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
       eventName,

@@ -1,27 +1,14 @@
-import { NextResponse } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
 
     const admin = supabaseAdmin()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import {
   sendOnboardingEmail,
   sendProfileCompletionReminderEmail,
@@ -36,22 +37,24 @@ const SAMPLE_QR =
 
 const handlePost = async (request: NextRequest) => {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+    const user = auth.user
 
-    if (!user || !user.email) {
+    if (!user.email) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
+    const supabase = await createSupabaseServer()
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, full_name, phone, date_of_birth, marketing_opt_in')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 

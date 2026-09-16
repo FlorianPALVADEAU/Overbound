@@ -1,26 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
 
     // Récupérer toutes les courses avec leurs obstacles
     const { data: races, error } = await supabase
@@ -49,22 +39,9 @@ export async function GET() {
 
 const handlePost = async (request: NextRequest) => {
   try {
-    const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
 
     const body = await request.json()

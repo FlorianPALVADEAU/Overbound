@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { getExtraTicketsEarned, EXTRA_TICKET_BASE_LEVEL } from '@/lib/ambassadors/program'
 
 export const runtime = 'nodejs'
@@ -17,23 +18,9 @@ async function handlePatch(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
 
     const { id } = await params

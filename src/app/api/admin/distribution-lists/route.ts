@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import type {
   CreateDistributionListData,
   DistributionListType,
@@ -45,28 +46,13 @@ const distributionListSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createClient()
     const admin = supabaseAdmin()
-
-    // Check if user is authenticated and admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Get query params
     const searchParams = request.nextUrl.searchParams
@@ -233,27 +219,12 @@ async function addEventOpeningVirtualList({
  */
 async function handlePost(request: NextRequest) {
   try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
     const supabase = await createClient()
-
-    // Check if user is authenticated and admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Parse and validate request body
     const body = await request.json()

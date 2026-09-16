@@ -1,36 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    const adminAuth = await requireAdmin(request)
+    if (!adminAuth.ok) {
+      return adminAuth.response
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
+    const user = adminAuth.user
 
     const payload = await request.json().catch(() => null)
     const endpoint = payload?.endpoint
     const keys = payload?.keys
     const p256dh = keys?.p256dh
-    const auth = keys?.auth
+    const pushAuth = keys?.auth
 
-    if (!endpoint || !p256dh || !auth) {
+    if (!endpoint || !p256dh || !pushAuth) {
       return NextResponse.json({ error: 'Subscription invalide' }, { status: 400 })
     }
 
@@ -42,7 +30,7 @@ export async function POST(request: NextRequest) {
         email: user.email ?? null,
         endpoint,
         p256dh,
-        auth,
+        auth: pushAuth,
       }, { onConflict: 'endpoint' })
 
     if (error) {

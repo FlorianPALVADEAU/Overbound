@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { Resend } from 'resend'
 import { createHash } from 'node:crypto'
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 import EventOpeningEmail from '@/emails/EventOpeningEmail'
 import { renderEmail } from '@/lib/email/render'
@@ -33,31 +34,29 @@ const sendSchema = z.object({
   dryRunToken: z.string().optional(),
 })
 
-const ensureAdmin = async () => {
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+const ensureAdmin = async (request?: NextRequest) => {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) {
+    return { error: auth.response }
+  }
 
-  if (!user || !user.email) {
+  const { user } = auth
+  if (!user.email) {
     return { error: NextResponse.json({ error: 'Non authentifié' }, { status: 401 }) }
   }
 
+  const supabase = await createSupabaseServer()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('full_name')
     .eq('id', user.id)
     .single()
-
-  if (!profile || profile.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) }
-  }
 
   return {
     user: {
       id: user.id,
       email: user.email,
-      fullName: profile.full_name ?? user.user_metadata?.full_name ?? null,
+      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
     },
   }
 }
@@ -85,9 +84,9 @@ const buildAudienceToken = (recipients: CampaignAudienceRecipient[]) => {
   return hash.digest('hex')
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const adminCheck = await ensureAdmin()
+    const adminCheck = await ensureAdmin(request)
     if ('error' in adminCheck) {
       return adminCheck.error
     }
@@ -114,7 +113,7 @@ export async function GET() {
 
 async function handlePost(request: NextRequest) {
   try {
-    const adminCheck = await ensureAdmin()
+    const adminCheck = await ensureAdmin(request)
     if ('error' in adminCheck) {
       return adminCheck.error
     }

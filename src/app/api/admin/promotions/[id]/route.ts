@@ -1,31 +1,9 @@
 'use server'
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-
-async function ensureAdmin() {
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { error: NextResponse.json({ error: 'Non authentifié' }, { status: 401 }) }
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) }
-  }
-
-  return { supabase }
-}
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 function sanitizePayload(body: any) {
   const linkText = typeof body.link_text === 'string' && body.link_text.trim().length > 0
@@ -59,8 +37,10 @@ async function fetchPromotion(id: string) {
 
 const handlePut = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { error } = await ensureAdmin()
-    if (error) return error
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
 
     const { id } = await params
     const payload = await request.json()
@@ -103,8 +83,10 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
 
 const handleDelete = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { error } = await ensureAdmin()
-    if (error) return error
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
 
     const { id } = await params
     const admin = supabaseAdmin()

@@ -1,39 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const runtime = 'nodejs'
-
-async function ensureAdmin(request: NextRequest) {
-  const supabase = await createSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { error: NextResponse.json({ error: 'Non authentifié' }, { status: 401 }) }
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) }
-  }
-
-  return { user }
-}
 
 async function handleDelete(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; codeId: string }> },
 ) {
   try {
-    const { error: authError } = await ensureAdmin(request)
-    if (authError) return authError
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
 
     const { id: ambassadorId, codeId } = await params
     const admin = supabaseAdmin()
@@ -77,8 +57,10 @@ async function handlePatch(
   { params }: { params: Promise<{ id: string; codeId: string }> },
 ) {
   try {
-    const { error: authError } = await ensureAdmin(request)
-    if (authError) return authError
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
 
     const { id: ambassadorId, codeId } = await params
     const admin = supabaseAdmin()

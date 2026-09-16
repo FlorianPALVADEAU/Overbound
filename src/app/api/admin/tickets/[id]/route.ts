@@ -1,30 +1,18 @@
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const handlePut = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
     const { id } = await params
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
 
     const body = await request.json()
     const {
@@ -78,31 +66,19 @@ const handleDelete = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
     const { id } = await params
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
 
     // Vérifier le paramètre force dans l'URL
     const url = new URL(request.url)
     const forceDelete = url.searchParams.get('force') === 'true'
 
     // Vérifier s'il y a des inscriptions utilisant ce ticket
-    const { count } = await supabase
+    const admin = supabaseAdmin()
+    const { count } = await admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('ticket_id', id)
@@ -117,8 +93,6 @@ const handleDelete = async (
         { status: 409 }
       )
     }
-
-    const admin = supabaseAdmin()
 
     // Si force delete et il y a des inscriptions, les supprimer d'abord
     if (count && count > 0 && forceDelete) {

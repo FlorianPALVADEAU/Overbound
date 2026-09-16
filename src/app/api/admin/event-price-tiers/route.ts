@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const createEventPriceTierSchema = z.object({
   event_id: z.string().uuid(),
@@ -15,20 +16,9 @@ const createEventPriceTierSchema = z.object({
 
 async function handlePost(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
 
     const body = await request.json()

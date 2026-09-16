@@ -1,28 +1,14 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
 import { sendAdminPushNotification } from '@/lib/push'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const runtime = 'nodejs'
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
 
     await sendAdminPushNotification({

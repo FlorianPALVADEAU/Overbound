@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
-import { supabaseAdmin, createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import {
   decodeParticipantsCursor,
   encodeParticipantsCursor,
   getParticipantFormat,
   participantSortSchema,
 } from '@/lib/admin/eventParticipants'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const routeParamsSchema = z.object({ id: z.string().uuid() })
 const querySchema = z.object({
@@ -66,23 +67,9 @@ export async function GET(
   }
 
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
     }
 
     const admin = supabaseAdmin()

@@ -231,7 +231,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
   })
 
   it('rejects an authenticated user without admin permissions', async () => {
-    createSupabaseServerMock.mockResolvedValueOnce({
+    const volunteerServer = {
       auth: {
         getUser: async () => ({ data: { user: { id: 'volunteer-1' } } }),
       },
@@ -248,7 +248,12 @@ describe('POST /api/admin/events/[id]/waves', () => {
           },
         }
       },
-    })
+    }
+    // requireAdmin resolves the user via resolveRequestUser (1st createSupabaseServer call)
+    // and then fetches the profile role directly (2nd call) — both must return the
+    // non-admin user for this test to exercise the 403 path.
+    createSupabaseServerMock.mockResolvedValueOnce(volunteerServer)
+    createSupabaseServerMock.mockResolvedValueOnce(volunteerServer)
 
     const response = await POST(
       new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),

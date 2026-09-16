@@ -5,6 +5,7 @@ import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib
 import { notifyEventUpdate } from '@/lib/email/eventUpdates'
 import { notifyEventOpening } from '@/lib/email/eventOpenings'
 import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -13,25 +14,11 @@ const handleGet = async (
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> => {
   try {
-    const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
     const { id } = await params
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
 
     const admin = supabaseAdmin()
     const { data: event, error: eventError } = await admin
@@ -150,24 +137,13 @@ const handlePut = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
     const { id } = await params
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
 
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
-
+    const supabase = await createSupabaseServer()
     const { data: existingEvent } = await supabase
       .from('events')
       .select('id, status, title, date, location, subtitle, slug')
@@ -256,27 +232,15 @@ const handleDelete = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const supabase = await createSupabaseServer()
-    const { data: { user } } = await supabase.auth.getUser()
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
     const { id } = await params
     const url = new URL(request.url)
     const forceDelete = url.searchParams.get('force') === 'true'
 
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
-    }
-
-    // Vérifier le rôle admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
-
+    const supabase = await createSupabaseServer()
     const admin = supabaseAdmin()
 
     // Vérifier s'il y a des inscriptions
