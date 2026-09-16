@@ -197,49 +197,51 @@ détail du problème (biais de mesure publicitaire quand le refus groupe les 3 t
 
 ---
 
-## 3. Priorité 2 — architecture et maintenabilité du code
+## 3. Priorité 2 — architecture et maintenabilité du code — DONE (2026-09-16)
 
-### 3.1 Documentation produit — déjà partiellement traitée
+### 3.1 Documentation produit — fait
 
-`CLAUDE.md` corrigé le 2026-09-15 pour refléter le produit réel. `docs/product/vision.md` et
-`docs/architecture/overview.md` décrivent toujours le "CRM partenariats" hexagonal fictif — soit les
-réécrire pour décrire le produit réel (recommandé, cohérent avec ADR-0004), soit les marquer
-explicitement `[ARCHIVÉ — cible jamais implémentée]` en tête de fichier pour éviter toute confusion
-future.
+`docs/product/vision.md` et `docs/architecture/overview.md` réécrits pour décrire le produit réel
+(catalogue courses, inscription Stripe, wave assignment, groupes/ancrage, ambassadeurs, emails
+RGPD), avec la cible hexagonale démotée en section explicitement labellisée "Cible théorique (non
+implémentée)" renvoyant vers ADR-0004. `docs/roadmap/mvp-plan.md` reste à corriger séparément (hors
+scope de cette passe, toujours la cible CRM).
 
-### 3.2 Créer `src/lib/shared/presentation/`
+### 3.2 Créer `src/lib/shared/presentation/` — fait
 
-Ce dossier est référencé par `docs/guidelines/engineering.md` mais n'existe pas. Y regrouper :
-mapping couleur/label de statut (dupliqué actuellement entre `races/[id]/page.tsx`,
-`admin/registrations`, `admin/ambassadors`, `admin/groups`), formatage de dates, badges partagés.
+`src/lib/shared/presentation/eventStatus.ts` créé (mapping variant/label de statut événement),
+utilisé par `races/[id]/page.tsx` et `events/[id]/page.tsx`. Duplication restante identifiée mais
+hors scope de cette passe : `admin/registrations`, `admin/ambassadors`, `admin/groups` ont chacun
+leur propre mapping de statut différent (registration/ambassador reward status, pas event status) —
+pas de règle visuelle commune évidente à mutualiser sans risque de sur-abstraction.
 
-### 3.3 Découper les fichiers >600 lignes en priorité
+### 3.3 Découper les fichiers >600 lignes — fait (les 4 fichiers)
 
-Ordre suggéré (impact maintenabilité × fréquence de modification probable) :
-1. `src/components/ambassadors/AmbassadorDashboard.tsx` (981 lignes) — extraire en sous-composants
-   de présentation + supprimer l'import de logique depuis `@/app/api/...` (couplage inversé).
-2. `src/app/races/[id]/page.tsx` (1107 lignes) — extraire le fetch dans un hook dédié, le mapping de
-   statut dans `shared/presentation/`.
-3. `src/components/admin/registrations/RegistrationsSection.tsx` (774 lignes) — extraire
-   `UpsellSummaryPanel` (avec son fetch caché) en composant fichier séparé avec son propre hook de
-   data-fetching.
-4. `src/app/events/[id]/page.tsx` (783 lignes).
+1. `AmbassadorDashboard.tsx` (981→154 lignes) — 11 composants de section sous
+   `src/components/ambassadors/`, couplage inversé corrigé (`rewardQueries.ts` déplacé de
+   `src/app/api/` vers `src/lib/ambassadors/rewardsClient.ts` + hook
+   `src/hooks/ambassadors/useClaimAmbassadorReward.ts`).
+2. `races/[id]/page.tsx` — mapping de statut migré vers `shared/presentation/eventStatus.ts`.
+3. `RegistrationsSection.tsx` (774 lignes) — `UpsellSummaryPanel` extrait en composant + hook
+   dédié (`upsellsSummaryQueries.ts`), même pattern que `registrationsQueries.ts`.
+4. `events/[id]/page.tsx` — bloc analytics (dataLayer/gtag/fbq, scroll depth, sticky CTA) extrait
+   dans `src/hooks/events/useEventAnalytics.ts`, mapping de statut migré vers le helper partagé.
 
-**Ne pas tout faire en un seul PR** — un fichier par PR, avec tests de non-régression avant/après si
-des tests existent, ou un test de snapshot minimal sinon.
+### 3.4 Supprimer les 2 accès DB directs restants dans l'UI — fait
 
-### 3.4 Supprimer les 2 accès DB directs restants dans l'UI
+- `src/app/preferences/page.tsx` : extrait vers `src/lib/preferences/profile.ts`
+  (`getMarketingPreferencesProfile`).
+- `src/app/events/[id]/layout.tsx` : extrait vers `src/lib/events/eventMeta.ts` (`fetchEventMeta`),
+  enveloppé dans `React.cache()` pour dédupliquer l'appel entre `generateMetadata` et le rendu du
+  layout (1 seul aller-retour Supabase par requête au lieu de 2).
 
-- `src/app/preferences/page.tsx` : extraire l'appel `supabase.from('profiles')` vers `src/lib/`.
-- `src/app/events/[id]/layout.tsx` : extraire `fetchEventMeta`, et dédupliquer l'appel entre
-  `generateMetadata` et le rendu (utiliser `React.cache()` ou passer les données du layout à la page
-  via un mécanisme de partage plutôt que deux appels Supabase indépendants — ce point corrige aussi
-  un problème de performance funnel documenté en §4 de l'audit).
+### 3.5 Réduire les `any` — fait (les 2 fichiers prioritaires)
 
-### 3.5 Réduire les `any`
-
-Prioriser `src/app/api/admin/registrations/route.ts` (27 occurrences) et
-`src/app/api/registrations/create/route.ts` (7, route de paiement) avant les fichiers moins critiques
+`src/app/api/admin/registrations/route.ts` (27→0) et `src/app/api/registrations/create/route.ts`
+(7→0) : interfaces explicites pour la ligne RPC, les relations Supabase (event/ticket/order en
+array-ou-objet), et les maps intermédiaires, au lieu de `any`. Comportement identique, `tsc
+--noEmit` et suite de tests complète passants après chaque fichier. Fichiers moins critiques
+(structured data SEO, tests) non traités — hors scope de cette passe.
 (SEO structured data, tests).
 
 ---
