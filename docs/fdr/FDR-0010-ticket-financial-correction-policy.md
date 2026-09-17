@@ -1,13 +1,23 @@
 # FDR-0010 — Politique financière des corrections de billet et de SAS
 
-- **Statut** : Proposed
-- **Date** : 2026-09-16
+- **Statut** : Accepted — V1 sans mouvement financier
+- **Date** : 2026-09-17
 - **Owner produit** : à désigner (responsable opérations / finance)
 - **Owner technique** : à désigner
 - **Périmètre** : changements administratifs d’inscription, de billet, de format et de SAS
 - **Dépendances** : [FDR-0004](./FDR-0004-wave-assignment-open-vs-ranked.md), [FDR-0005](./FDR-0005-group-membership-and-wave-anchoring.md), [FDR-0008](./FDR-0008-admin-operations-workspace.md), [critical operations](../guides/critical-operations.md)
 
 > Cette FDR est un contrat de décision, pas une autorisation de modifier la base ou de rembourser un participant. Aucun flux de confirmation ne doit être activé tant que les owners n’ont pas accepté la politique et que les contrats de paiement live n’ont pas été vérifiés.
+
+## Décisions produit validées pour la V1
+
+- Le **prix historique payé est conservé** lors d’un changement de billet.
+- Tout **écart financier est bloquant** ; il n’est ni collecté, ni remboursé, ni transformé en avoir.
+- La V1 ne permet que les corrections **sans mouvement financier**.
+- Une exception gratuite (`NO_MOVEMENT_EXCEPTION`) peut être validée par un **admin habilité ou un responsable finance**.
+- Toute exception financière exige un **motif obligatoire**, un approbateur identifiable et une trace d’audit.
+- Les **taxes, frais de paiement et promotions ne sont pas recalculés** en V1. Si leur impact ne peut pas être prouvé comme nul, l’aperçu est bloqué.
+- Les avoirs et remboursements sont **hors périmètre** et non applicables à cette version.
 
 ## 0. Guide de reprise autonome
 
@@ -64,20 +74,20 @@ Les libellés UI doivent utiliser ces termes. “Ajuster le prix”, “Forcer�
 | Code | Cas | Autorisation par défaut | Effet financier |
 |---|---|---|---|
 | `NO_MOVEMENT` | Billet de même prix, changement de format approuvé, ou changement de SAS | Admin opérations | Aucun mouvement ; le montant payé reste inchangé |
-| `NO_MOVEMENT_EXCEPTION` | Billet plus cher ou moins cher mais décision commerciale de ne pas recalculer | Owner finance requis | Aucun mouvement ; motif obligatoire |
+| `NO_MOVEMENT_EXCEPTION` | Billet plus cher ou moins cher mais décision explicite de conserver le prix historique | Admin habilité ou responsable finance | Aucun mouvement ; motif obligatoire et approbation tracée |
 | `COLLECT_DIFFERENCE` | Billet cible plus cher | Owner finance + paiement réussi | Collecter l’écart avant de finaliser, ou laisser l’inscription en attente |
 | `ISSUE_CREDIT` | Billet cible moins cher | Owner finance requis | Émettre un avoir selon durée, usage et éligibilité définis |
 | `REFUND_DIFFERENCE` | Billet cible moins cher | Owner finance requis | Remboursement explicite via prestataire, asynchrone et réconcilié |
 | `REJECT` | Écart non calculable, commande non payée, conflit de remise/taxe, ou cas non supporté | Tout admin | Aucune mutation |
 
-**PROPOSAL** — V1 n’active que `NO_MOVEMENT` pour les changements opérationnels et `REJECT` pour tout cas impliquant une différence. `COLLECT_DIFFERENCE`, `ISSUE_CREDIT` et `REFUND_DIFFERENCE` nécessitent une décision produit/finance et un lot séparé.
+**DECISION** — V1 n’active que `NO_MOVEMENT` pour les changements sans écart et `NO_MOVEMENT_EXCEPTION` pour une exception explicitement approuvée. Tout autre cas retourne `REJECT`. `COLLECT_DIFFERENCE`, `ISSUE_CREDIT` et `REFUND_DIFFERENCE` sont hors périmètre et ne doivent générer aucun mouvement.
 
 ### 3.2 Choix à valider
 
-- **OPEN QUESTION Q-10** — La règle de prix est-elle “prix historique conservé”, “prix cible au moment de la correction”, ou une grille par événement ?
-- **OPEN QUESTION Q-11** — Un admin opérations peut-il choisir `NO_MOVEMENT_EXCEPTION`, ou seul l’owner finance ?
-- **OPEN QUESTION Q-12** — Les frais de paiement, taxes et codes promotionnels sont-ils remboursables/recouvrables ?
-- **OPEN QUESTION Q-13** — Un avoir est-il un solde Overbound ou une note de crédit externe ? Quelle expiration et quel périmètre d’usage ?
+- **DECISION Q-10** — Le prix historique payé est conservé en V1.
+- **DECISION Q-11** — `NO_MOVEMENT_EXCEPTION` est accessible à un admin habilité ou à un responsable finance, avec motif et approbation tracée.
+- **DECISION Q-12** — Les frais de paiement, taxes et promotions ne sont pas recalculés en V1 ; toute incertitude bloque l’opération.
+- **DECISION Q-13** — Aucun avoir ni remboursement n’est applicable en V1 ; ces scénarios sont hors périmètre.
 - **OPEN QUESTION Q-14** — Une correction est-elle autorisée après check-in, départ, transfert, annulation ou remboursement partiel ?
 - **OPEN QUESTION Q-15** — Faut-il gérer une approbation à deux personnes au-delà d’un seuil ? Définir devise, seuil, timezone et délégation.
 
