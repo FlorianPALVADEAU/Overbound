@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { isOpenFormatTicket } from '@/lib/openSas'
+import { getEventCorrectionCutoff } from '@/lib/admin/eventCorrectionCutoff'
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
@@ -65,6 +66,18 @@ export async function POST(
   const { id: eventId, registrationId } = parsedParams.data
   const targetWaveIndex = parsedBody.data.waveIndex
   const admin = supabaseAdmin()
+  const { data: event, error: eventError } = await admin
+    .from('events')
+    .select('date')
+    .eq('id', eventId)
+    .maybeSingle()
+
+  if (eventError) {
+    console.error('[admin wave preview] event lookup error', eventError)
+    return errorResponse('Erreur serveur', 500)
+  }
+  if (!event) return errorResponse('Événement introuvable', 404)
+  const cutoff = getEventCorrectionCutoff({ eventStart: event.date })
 
   const { data: registration, error: registrationError } = await admin
     .from('registrations')
@@ -131,6 +144,7 @@ export async function POST(
 
   const blockers: string[] = []
   const warnings: string[] = []
+  if (!cutoff.allowed && cutoff.blocker) blockers.push(cutoff.blocker)
   const anchorApplies = Boolean(
     group && group.anchor_event_id === eventId && group.anchor_wave_index !== null,
   )

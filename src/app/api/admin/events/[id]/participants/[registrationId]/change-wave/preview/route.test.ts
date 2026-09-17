@@ -26,6 +26,7 @@ function builder(result: { data: unknown; error: unknown }) {
 }
 
 function adminMock(options: {
+  event?: unknown
   registration?: unknown
   ticket?: unknown
   wave?: unknown
@@ -33,6 +34,7 @@ function adminMock(options: {
 } = {}) {
   return {
     from: vi.fn((table: string) => {
+      if (table === 'events') return builder({ data: options.event ?? { date: '2026-09-20T08:00:00Z' }, error: null })
       if (table === 'registrations') return builder({ data: options.registration ?? { id: REG_ID, event_id: EVENT_ID, ticket_id: TICKET_ID, user_id: null, wave_index: 2, start_time: '2026-09-20T12:10:00Z' }, error: null })
       if (table === 'tickets') return builder({ data: options.ticket ?? { id: TICKET_ID, event_id: EVENT_ID, name: 'Trail OPEN', race: { name: 'Trail' } }, error: null })
       if (table === 'event_waves') return builder({ data: options.wave ?? { wave_index: 4, start_time: '2026-09-20T12:30:00Z', capacity: 50, assigned_count: 12, is_closed: false }, error: null })
@@ -124,5 +126,18 @@ describe('POST wave change preview', () => {
 
     expect(response.status).toBe(422)
     expect((await response.json()).error).toContain('OPEN')
+  })
+
+  it('blocks a preview from J-1 on the server', async () => {
+    const admin = adminMock({ event: { date: '2026-09-17T08:00:00Z' } })
+    supabaseAdminMock.mockReturnValue(admin)
+    const response = await POST(
+      new Request('http://localhost', { method: 'POST', body: JSON.stringify({ waveIndex: 4 }) }) as any,
+      { params: Promise.resolve({ id: EVENT_ID, registrationId: REG_ID }) },
+    )
+    const body = await response.json()
+    expect(response.status).toBe(200)
+    expect(body.preview.allowed).toBe(false)
+    expect(body.preview.blockers).toContain('Les corrections sont interdites à partir de J-1 inclus avant le début de l’événement.')
   })
 })

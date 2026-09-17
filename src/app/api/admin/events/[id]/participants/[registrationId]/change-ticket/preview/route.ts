@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { buildTicketChangePreview } from '@/lib/admin/ticketChangePreview'
+import { getEventCorrectionCutoff } from '@/lib/admin/eventCorrectionCutoff'
 
 const paramsSchema = z.object({ id: z.string().uuid(), registrationId: z.string().uuid() })
 const bodySchema = z.object({ ticketId: z.string().uuid() }).strict()
@@ -37,6 +38,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { id: eventId, registrationId } = parsedParams.data
   const admin = supabaseAdmin()
+  const { data: event, error: eventError } = await admin.from('events').select('date').eq('id', eventId).maybeSingle()
+  if (eventError) { console.error('[admin ticket preview] event lookup error', eventError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
+  if (!event) return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
+  const cutoff = getEventCorrectionCutoff({ eventStart: event.date })
   const { data: registration, error: registrationError } = await admin.from('registrations').select('id, event_id, ticket_id, user_id, wave_index, start_time').eq('id', registrationId).eq('event_id', eventId).maybeSingle()
   if (registrationError) { console.error('[admin ticket preview] registration lookup error', registrationError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
   if (!registration) return NextResponse.json({ error: 'Inscription introuvable pour cet événement' }, { status: 404 })
@@ -66,5 +71,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     registration: { eventId: registration.event_id, waveIndex: registration.wave_index, startTime: registration.start_time, userId: registration.user_id },
     group: group ? { name: group.name, anchorEventId: group.anchor_event_id, anchorWaveIndex: group.anchor_wave_index, anchorStartTime: group.anchor_start_time } : null,
   })
+  if (!cutoff.allowed && cutoff.blocker) {
+    preview.allowed = false
+    preview.blockers.push(cutoff.blocker)
+  }
   return NextResponse.json({ preview })
 }
