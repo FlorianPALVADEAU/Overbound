@@ -18,6 +18,8 @@
 - Toute exception financière exige un **motif obligatoire**, un approbateur identifiable et une trace d’audit.
 - Les **taxes, frais de paiement et promotions ne sont pas recalculés** en V1. Si leur impact ne peut pas être prouvé comme nul, l’aperçu est bloqué.
 - Les avoirs et remboursements sont **hors périmètre** et non applicables à cette version.
+- Toute correction est **interdite à partir de J-1 inclus**, calculé par rapport au début de l’événement dans son fuseau horaire.
+- Aucune double approbation n’est requise en V1. Les rôles admin habilité et responsable finance restent distincts dans le modèle d’autorisation, même s’ils sont actuellement détenus par la même personne.
 
 ## 0. Guide de reprise autonome
 
@@ -88,8 +90,8 @@ Les libellés UI doivent utiliser ces termes. “Ajuster le prix”, “Forcer�
 - **DECISION Q-11** — `NO_MOVEMENT_EXCEPTION` est accessible à un admin habilité ou à un responsable finance, avec motif et approbation tracée.
 - **DECISION Q-12** — Les frais de paiement, taxes et promotions ne sont pas recalculés en V1 ; toute incertitude bloque l’opération.
 - **DECISION Q-13** — Aucun avoir ni remboursement n’est applicable en V1 ; ces scénarios sont hors périmètre.
-- **OPEN QUESTION Q-14** — Une correction est-elle autorisée après check-in, départ, transfert, annulation ou remboursement partiel ?
-- **OPEN QUESTION Q-15** — Faut-il gérer une approbation à deux personnes au-delà d’un seuil ? Définir devise, seuil, timezone et délégation.
+- **DECISION Q-14** — Aucune correction n’est autorisée à partir de J-1 inclus avant le début de l’événement. Le serveur applique cette règle avec le fuseau horaire de l’événement ; l’UI ne fait qu’afficher le blocage.
+- **DECISION Q-15** — Aucune double approbation ni seuil supplémentaire en V1. Une seule approbation par un admin habilité ou un responsable finance suffit.
 
 ## 4. Contrat d’aperçu (dry-run)
 
@@ -132,7 +134,7 @@ Requête minimale :
 Exigences :
 
 1. Authentifier l’appelant et vérifier son organisation, son rôle et le rôle d’approbateur.
-2. Recharger et verrouiller les ressources nécessaires ; vérifier que l’aperçu n’est pas expiré.
+2. Recharger et verrouiller les ressources nécessaires ; vérifier que l’aperçu n’est pas expiré et que l’événement n’est pas à J-1 ou moins.
 3. Revalider billet, événement, format, statut, groupe ancré, disponibilité SAS et état de paiement.
 4. Refuser si `expected_version` ne correspond plus ; ne pas écraser la modification concurrente.
 5. Exécuter dans une transaction atomique pour l’opération métier et son audit local.
@@ -214,6 +216,7 @@ Chaque lot est livrable séparément et doit inclure migration réversible si n�
 ## 12. Critères d’acceptation
 
 - Un changement sans écart affiche et journalise explicitement `NO_MOVEMENT`.
+- Une correction est refusée dès J-1, côté serveur, quelle que soit la date de création de l’aperçu.
 - Un écart ou une donnée incohérente est bloqué sans écriture partielle.
 - Un admin non habilité ne peut ni approuver ni confirmer une variante protégée.
 - Un double clic et une répétition réseau produisent un seul résultat via `command_id`.
