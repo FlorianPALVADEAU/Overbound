@@ -505,6 +505,7 @@ export default function EventDetailPage() {
       <section className="relative isolate overflow-hidden py-24 sm:py-28">
         <div className="absolute inset-0">
           {event.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={event.image_url}
               alt={event.title}

@@ -276,12 +276,12 @@ const sections: InfoSection[] = [
     content: (
       <div className="space-y-3">
         <p>
-          Les inscriptions sont non remboursables à moins de 30 jours de l'événement. Le transfert
-          de dossard reste possible gratuitement jusqu'à la veille de l'événement depuis l'espace billets.
+          Les inscriptions sont définitives et aucun remboursement, avoir ni compensation volontaire n'est accordé.
+          Le transfert de dossard reste possible gratuitement jusqu'à la veille de l'événement depuis l'espace
+          billets.
         </p>
         <p className="text-sm text-muted-foreground">
-          Les situations graves et justifiées peuvent être étudiées au cas par cas, sans droit
-          automatique au remboursement.
+          Cette politique s'applique sans préjudice des droits impératifs prévus par la loi applicable.
         </p>
       </div>
     ),

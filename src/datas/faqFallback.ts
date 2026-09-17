@@ -86,18 +86,18 @@ export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-inscriptions-annulation',
     title: 'Puis-je annuler ou me faire rembourser ?',
-    shortAnswer: 'À moins de 30 jours de l’événement, les billets ne sont pas remboursables.',
+    shortAnswer: 'Les billets ne sont ni remboursables, ni échangeables contre un avoir.',
     answer: [
       block(
         'Les inscriptions Overbound concernent une activité sportive datée et ne bénéficient pas du droit de rétractation de 14 jours.',
       ),
       ...bulletList([
-        'Jusqu’à 30 jours avant l’événement, une demande peut être étudiée à titre commercial, hors frais irréversibles.',
-        'À moins de 30 jours, aucun remboursement n’est dû : utilise plutôt le transfert de dossard jusqu’à la veille de l’événement.',
-        'Après J-1, aucun remboursement n’est dû et le transfert n’est plus garanti.',
+        'Aucun remboursement, avoir ni compensation volontaire n’est accordé, quelle que soit la raison invoquée.',
+        'Le transfert de dossard reste possible jusqu’à la veille de l’événement, dans les conditions prévues par les CGV.',
+        'Après J-1, aucun transfert n’est garanti.',
       ]),
       block(
-        'Les situations graves et justifiées, comme une blessure grave, une grossesse, un décès proche ou une mobilisation obligatoire par une autorité publique ou un service de secours, peuvent être étudiées au cas par cas sans droit automatique au remboursement.',
+        'Cette politique s’applique sans préjudice des droits impératifs prévus par la loi applicable.',
       ),
     ],
     category: 'inscriptions',

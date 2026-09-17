@@ -1202,7 +1202,7 @@ En contrepartie de mon droit à participer à la course et aux activités connex
 
 7. Effets personnels : j'accepte qu'Overbound ne soit pas responsable de la perte, du vol, de la casse ou de la dégradation de mes effets personnels.
 
-8. Frais d'inscription, remboursement et transfert : je reconnais que les frais d'inscription sont soumis aux conditions tarifaires, de remboursement et de transfert publiées sur la plateforme Overbound. Je reconnais que l'inscription à une activité sportive datée est exclue du droit de rétractation, qu'elle devient non remboursable à moins de 30 jours de l'événement, et que le transfert de dossard est possible uniquement dans les délais autorisés, notamment jusqu'à J-7 sauf décision exceptionnelle de l'organisation.
+8. Frais d'inscription, remboursement et transfert : je reconnais que les frais d'inscription sont soumis aux conditions tarifaires, de remboursement et de transfert publiées sur la plateforme Overbound. Je reconnais que l'inscription à une activité sportive datée est exclue du droit de rétractation et qu'aucun remboursement, avoir ni compensation volontaire n'est accordé, sous réserve des droits impératifs prévus par la loi applicable. Le transfert de dossard est possible uniquement dans les délais autorisés.
 
 9. Modifications et annulations : l'organisation peut reporter, modifier ou annuler un événement pour raisons de sécurité, météo, force majeure, contraintes administratives, sanitaires ou techniques ; les modalités applicables sont celles publiées dans les CGU/CGV et le règlement de l'événement.
 
@@ -1217,7 +1217,7 @@ En contrepartie de mon droit à participer à la course et aux activités connex
 
 
 ### Inscription
-L’inscription, le tarif, le report, le remboursement et les conditions d’annulation sont encadrés par les conditions de vente de l’édition concernée. Sauf disposition plus favorable explicitement publiée, les inscriptions sont non remboursables à moins de 30 jours de l’événement et le transfert de dossard est possible jusqu’à J-7.
+L’inscription, le tarif, le report, le remboursement et les conditions d’annulation sont encadrés par les conditions de vente de l’édition concernée. Aucun remboursement, avoir ni compensation volontaire n'est accordé, sous réserve des droits impératifs prévus par la loi applicable. Le transfert de dossard est possible uniquement dans les délais publiés pour l’édition concernée.
 
 > INFO : les exigences administratives peuvent évoluer selon la réglementation sportive applicable et la date de l’édition.
 
@@ -1311,7 +1311,7 @@ Cette section centralise les points restant à confirmer avant publication final
 | Système exact de validation OPEN | chouchous + backup manuel staff |
 | Système exact de validation RANKED | à confirmer (poinçonnage, puce, QR ou mixte) |
 | Dispositif de secours exact | à confirmer |
-| Modalités de remboursement / report | CGV : étude possible jusqu’à J-30, non remboursable à moins de J-30, transfert jusqu’à J-7, exceptions graves au cas par cas |
+| Modalités de remboursement / report | CGV : aucun remboursement, avoir ni compensation volontaire ; transfert selon les délais publiés ; droits impératifs réservés |
 | Règles finales groupes / équipes | à confirmer |
 | Politique droit à l’image | à confirmer |
 | Politique RGPD / données personnelles | à confirmer |

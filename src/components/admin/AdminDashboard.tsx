@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,7 @@ import { PromotionsSection } from '@/components/admin/promotions'
 import { UpsellsSection } from '@/components/admin/upsells'
 import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { ADMIN_NAV_ITEMS, ADMIN_NAV_GROUPS } from '@/components/admin/adminNavItems'
+import { ADMIN_NAV_GROUPS } from '@/components/admin/adminNavItems'
 import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
 import { UsersSection } from '@/components/admin/users/UsersSection'
@@ -27,7 +27,7 @@ import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSe
 import { GroupsSection } from '@/components/admin/groups/GroupsSection'
 import { BootcampsSection } from '@/components/admin/bootcamps/BootcampsSection'
 import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
-import { BarChart3, CreditCard, Database, Mail, NotebookPen, Sparkles } from 'lucide-react'
+import { BarChart3, CreditCard, Database, Mail, NotebookPen } from 'lucide-react'
 
 const externalLinks = [
   {
@@ -91,11 +91,6 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
   const isAdmin = profile.role === 'admin'
   const isVolunteer = profile.role === 'volunteer'
 
-  const activeTabLabel = useMemo(
-    () => ADMIN_NAV_ITEMS.find((item) => item.value === activeTab)?.label ?? 'Tableau de bord',
-    [activeTab]
-  )
-
   useEffect(() => {
     if (!tabParam) return
     if (ADMIN_TAB_VALUES.includes(tabParam as AdminTabValue)) {
@@ -153,21 +148,13 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
       <div className="flex min-h-screen w-full flex-col md:flex-row md:gap-6 lg:gap-10 px-0 md:px-6 lg:px-10 py-6">
         <AdminSidebar profileRole={profile.role} fullName={profile.full_name || user.email} />
         <div className="flex-1 overflow-hidden rounded-t-3xl bg-background shadow md:rounded-3xl">
-          <div className="flex flex-col gap-4 border-b border-border bg-background/80 px-4 py-4 backdrop-blur md:px-6 lg:px-10">
+          <div className="flex flex-col gap-4 border-b border-border bg-background px-4 py-4 md:px-6 lg:px-10">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
-                  <Sparkles className="h-4 w-4" />
-                  Command Center
-                </div>
-                <div>
-                  <h1 className="text-2xl font-semibold lg:text-3xl">
-                    {profile.full_name || user.email}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Pilote tes opérations et saute vers tes outils clés en un clic.
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-2xl font-semibold">Administration</h1>
+                <p className="text-sm text-muted-foreground">
+                  Événements, inscrits et opérations terrain.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">Administrateur</Badge>
@@ -178,9 +165,6 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 </Link>
               </div>
             </div>
-
-            <QuickLinksStrip />
-
             <div className="md:hidden">
               <Select
                 value={activeTab}
@@ -208,10 +192,6 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 </SelectContent>
               </Select>
             </div>
-
-            <p className="hidden text-sm font-medium text-muted-foreground md:block">
-              Section actuelle : {activeTabLabel}
-            </p>
           </div>
 
           <div className="space-y-6 px-4 py-6 md:px-6 lg:px-10">
@@ -291,26 +271,6 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function QuickLinksStrip() {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      {externalLinks.map(({ label, href, icon: Icon }) => (
-        <Button
-          key={label}
-          asChild
-          variant="outline"
-          className="justify-start gap-2 bg-card/60 hover:bg-primary hover:text-primary-foreground"
-        >
-          <Link href={href} target="_blank" rel="noreferrer">
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        </Button>
-      ))}
     </div>
   )
 }

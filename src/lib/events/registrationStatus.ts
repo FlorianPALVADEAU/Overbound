@@ -29,7 +29,7 @@ export const isEventOpenForRegistration = (
 ) => {
   const status = String(event.status ?? '').toLowerCase()
   if (status === 'on_sale') {
-    return true
+    return isEventDateUpcoming(event.date, now)
   }
 
   if (status === 'announced') {
@@ -46,6 +46,9 @@ export const getEffectiveEventStatus = <T extends EventRegistrationShape>(
   const status = String(event.status ?? '').toLowerCase()
   if (status === 'announced' && isEventOpenForRegistration(event, now)) {
     return 'on_sale' as T['status']
+  }
+  if (status === 'on_sale' && !isEventDateUpcoming(event.date, now)) {
+    return 'completed' as T['status']
   }
   return event.status
 }

@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle, AlertTriangle, ChevronLeft } from 'lucide-react'
+import { CheckCircle, AlertTriangle, ChevronLeft, CircleHelp } from 'lucide-react'
 import Link from 'next/link'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
@@ -326,6 +326,24 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
                     style: 'currency',
                     currency: registrationDraft.summary.currency.toUpperCase(),
                   })}</span>
+                </div>
+                <div className="group relative flex w-fit flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] leading-snug text-muted-foreground">
+                  <span>Billets non remboursables</span>
+                  <CircleHelp
+                    className="h-3.5 w-3.5 cursor-help"
+                    aria-label="Détail de la politique de remboursement"
+                    tabIndex={0}
+                  />
+                  <Link href="/cgv#annulation-participant" className="underline underline-offset-2 hover:text-foreground">
+                    Voir les CGV
+                  </Link>
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 rounded-md border bg-popover p-3 text-left text-xs leading-relaxed text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                  >
+                    Aucun remboursement, avoir ni compensation volontaire n&apos;est accordé, quelle que soit la raison
+                    invoquée. Les droits impératifs prévus par la loi restent réservés.
+                  </span>
                 </div>
                 {registrationDraft.promoCodes && registrationDraft.promoCodes.length > 0 ? (
                   <p className="text-xs text-muted-foreground">

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '13/08/2026'
+const lastUpdated = '15/09/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et acceptation' },
@@ -46,7 +46,7 @@ export default function CGVPage() {
             Conditions applicables à l'achat de billets et inscriptions aux événements Overbound
           </p>
           <p className="text-sm text-muted-foreground">
-            Dernière mise à jour : <time dateTime="2026-08-13">{lastUpdated}</time>
+            Dernière mise à jour : <time dateTime="2026-09-15">{lastUpdated}</time>
           </p>
         </div>
 
@@ -260,21 +260,14 @@ export default function CGVPage() {
             <section id="annulation-organisateur" className="mb-12">
               <h2 className="text-2xl font-bold">9. Annulation par l'organisateur</h2>
               <p>
-                En cas d'annulation définitive de l'événement par l'organisateur, les participants sont remboursés du
-                montant de leur inscription selon les modalités communiquées par Overbound.
+                <strong>Absence de remboursement volontaire :</strong> en cas d'annulation, de report, de modification
+                ou d'adaptation de l'événement, y compris pour raisons de sécurité, météo, administratives,
+                sanitaires, techniques ou de force majeure, Overbound n'accorde aucun remboursement, avoir ni
+                compensation à titre commercial.
               </p>
               <p>
-                <strong>Modalités de remboursement :</strong>
-              </p>
-              <ul>
-                <li>Remboursement du prix du billet (hors frais bancaires irréversibles)</li>
-                <li>Délai de remboursement : 14 jours ouvrés maximum</li>
-                <li>Mode de remboursement : sur le moyen de paiement utilisé lors de l'achat</li>
-              </ul>
-              <p>
-                En cas de report, modification substantielle ou adaptation de l'événement pour raisons de sécurité,
-                météo, administratives, sanitaires, techniques ou de force majeure, les modalités applicables seront
-                communiquées aux participants par email.
+                Cette disposition s'applique sans préjudice des droits impératifs éventuellement prévus par la loi
+                applicable. Les participants seront informés par email des conséquences opérationnelles de la décision.
               </p>
             </section>
 
@@ -282,45 +275,18 @@ export default function CGVPage() {
             <section id="annulation-participant" className="mb-12">
               <h2 className="text-2xl font-bold">10. Annulation par le participant</h2>
               <p>
-                <strong>Principe :</strong> les inscriptions ne sont pas remboursables, conformément à l'exclusion du
-                droit de rétractation (article L221-28 12° du Code de la consommation), sauf décision contraire
-                explicitement communiquée par Overbound.
+                <strong>Principe :</strong> les inscriptions sont définitives et ne donnent lieu à aucun remboursement,
+                avoir ni compensation volontaire, quelle que soit la raison invoquée par le participant.
               </p>
               <p>
-                Overbound applique la politique suivante pour les demandes formulées par le participant :
+                Cette règle inclut notamment les empêchements personnels, blessures, situations médicales,
+                changements de disponibilité et toute autre circonstance exceptionnelle. Elle s'applique sans
+                préjudice des droits impératifs éventuellement prévus par la loi applicable.
               </p>
-              <ul>
-                <li>
-                  <strong>Jusqu'à 30 jours avant l'événement :</strong> une demande de remboursement peut être étudiée
-                  et acceptée à titre commercial, hors frais bancaires ou frais de plateforme irréversibles.
-                </li>
-                <li>
-                  <strong>À moins de 30 jours de l'événement :</strong> aucun remboursement n'est dû par Overbound.
-                  Le participant est invité à utiliser le transfert de dossard jusqu'à la veille de l'événement.
-                </li>
-                <li>
-                  <strong>Après J-1 :</strong> aucun remboursement n'est dû et le transfert n'est plus garanti.
-                </li>
-              </ul>
               <p>
-                <strong>Cas exceptionnels :</strong> les situations graves et dûment justifiées, notamment blessure
-                grave, pathologie incompatible avec la participation, grossesse, décès d'un proche ou mobilisation
-                obligatoire par une autorité publique ou un service de secours, peuvent être étudiées au cas par cas.
+                Le transfert de dossard reste possible dans les conditions prévues à l'article 8 ; il ne constitue pas
+                un remboursement.
               </p>
-              <ul>
-                <li>
-                  Les demandes doivent être envoyées avant l'événement à{' '}
-                  <Link href={`mailto:${COMPANY_INFO.emails.medical}`} className="text-primary hover:underline">
-                    {COMPANY_INFO.emails.medical}
-                  </Link>
-                </li>
-                <li>Un justificatif pourra être demandé avant toute décision</li>
-                <li>
-                  La réponse peut prendre la forme d'un refus, d'un report, d'un avoir ou d'un remboursement partiel
-                  ou total
-                </li>
-                <li>Cette étude ne crée aucun droit automatique au remboursement</li>
-              </ul>
             </section>
 
             {/* 11. Conditions participation */}

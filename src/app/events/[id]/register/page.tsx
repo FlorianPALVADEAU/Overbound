@@ -85,16 +85,29 @@ export default function EventRegisterPage() {
   }
 
   if (error) {
+    const isClosed = error.message?.includes('inscriptions ne sont pas')
     return (
       <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto max-w-lg px-6 py-12">
           <Card>
             <CardHeader>
-              <CardTitle>Impossible de charger l'événement</CardTitle>
+              <CardTitle>
+                {isClosed ? 'Les inscriptions sont fermées' : "Impossible de charger l'événement"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
-              <p>{error.message}</p>
-              <Button onClick={() => refetch()}>Réessayer</Button>
+              <p>
+                {isClosed
+                  ? "Cet événement est terminé et n'accepte plus d'inscriptions. Merci à toutes et tous d'avoir participé !"
+                  : error.message}
+              </p>
+              {isClosed ? (
+                <Button asChild>
+                  <a href={`/events/${params.id}`}>Retour à la page événement</a>
+                </Button>
+              ) : (
+                <Button onClick={() => refetch()}>Réessayer</Button>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -41,4 +41,26 @@ describe('registrationStatus', () => {
     expect(isEventOpenForRegistration(event, now)).toBe(false)
     expect(getEffectiveEventStatus(event, now)).toBe('sold_out')
   })
+
+  it('closes on_sale events once the event date has passed', () => {
+    const event = {
+      status: 'on_sale',
+      sales_start: '2026-02-27T11:00:00.000Z',
+      date: '2026-02-20T08:00:00.000Z',
+    }
+
+    expect(isEventOpenForRegistration(event, now)).toBe(false)
+    expect(getEffectiveEventStatus(event, now)).toBe('completed')
+  })
+
+  it('keeps on_sale events open before the event date', () => {
+    const event = {
+      status: 'on_sale',
+      sales_start: '2026-02-27T11:00:00.000Z',
+      date: '2026-05-01T08:00:00.000Z',
+    }
+
+    expect(isEventOpenForRegistration(event, now)).toBe(true)
+    expect(getEffectiveEventStatus(event, now)).toBe('on_sale')
+  })
 })

@@ -45,7 +45,7 @@ next-env.d.ts
 
 # Supabase dumps
 *.dump
-./supabase/.db-dumps/*
+supabase/.db-dumps/
 
-# sql 
-./scripts/sql/*.sql
+# sql
+scripts/sql/*.sql

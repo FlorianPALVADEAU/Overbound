@@ -91,6 +91,16 @@ ERROR: No OPEN ticket found for event %
 - User's other registrations
 - Group membership
 
+### Admin interface
+
+The **Gestion des membres → Gérer** action performs the same operation through
+the atomic `admin_change_registration_ticket` database function. It only lists
+OPEN/RANKED tickets from the same event, keeps a group anchor when one exists,
+and refreshes the affected `event_waves` counters. An admin may also move an
+OPEN participant to a non-full SAS from that panel; this is refused for a
+participant covered by a group anchor, because the group anchor must be moved
+as a group.
+
 ### Rollback
 
 If something goes wrong:

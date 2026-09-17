@@ -372,7 +372,7 @@ R : Informations publiées sur la page événement ; privilégie le covoiturage.
 R : Non, sauf autorisation expresse de l’organisation avant l’événement avec pièce d’identité et confirmation écrite.
 
 22) Que se passe-t-il si l'événement est annulé ?
-R : En cas d’annulation définitive par l’organisation, les modalités de remboursement ou de report sont communiquées par email et encadrées par les CGV.
+R : Overbound n’accorde aucun remboursement, avoir ni compensation à titre commercial. Les participants reçoivent les informations opérationnelles par email ; les droits impératifs prévus par la loi applicable restent réservés.
 
 23) Puis‑je filmer l'événement en amateur ?
 R : Oui dans les zones publiques ; respect du droit à l'image des autres et des zones restricted.

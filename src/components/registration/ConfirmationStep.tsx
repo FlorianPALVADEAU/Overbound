@@ -53,6 +53,12 @@ export default function ConfirmationStep({
               renoncez à recours contre Overbound dans les limites légales, et vous autorisez
               l&apos;utilisation de votre image dans le cadre de l&apos;événement.
             </p>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              Billets non remboursables.{' '}
+              <a href="/cgv#annulation-participant" className="underline underline-offset-2 hover:text-foreground">
+                Consulter les CGV
+              </a>
+            </p>
             <button
               type="button"
               onClick={() => setIsDisclaimerExpanded((prev) => !prev)}
@@ -121,11 +127,11 @@ export default function ConfirmationStep({
                 </p>
                 <p>
                   8. Je reconnais que les frais d&apos;inscription sont soumis aux conditions tarifaires et
-                  de remboursement indiquées sur la plateforme Overbound. Je reconnais que
-                  l&apos;inscription à une activité sportive datée est exclue du droit de rétractation,
-                  qu&apos;elle devient non remboursable à moins de 30 jours de l&apos;événement, et que le
-                  transfert de dossard est possible uniquement dans les délais autorisés, notamment
-                  jusqu&apos;à la veille de l&apos;événement sauf décision exceptionnelle de l&apos;organisation.
+                  de remboursement indiquées sur la plateforme Overbound. Je reconnais que l&apos;inscription
+                  à une activité sportive datée est exclue du droit de rétractation et qu&apos;aucun remboursement,
+                  avoir ni compensation volontaire n&apos;est accordé, sous réserve des droits impératifs prévus par la
+                  loi applicable. Le transfert de dossard est possible uniquement dans les délais autorisés,
+                  notamment jusqu&apos;à la veille de l&apos;événement.
                 </p>
                 <p>
                   9. Overbound peut reporter, modifier ou annuler un événement pour des raisons de

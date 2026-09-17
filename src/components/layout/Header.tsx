@@ -23,6 +23,7 @@ import {
   ChevronDownIcon,
   MapPinIcon,
   UsersIcon,
+  CameraIcon,
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -201,9 +202,15 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
             <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
-              <Link href="/events/ultra-arena-2026" className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base">
-                inscriptions paris 2026
-              </Link>
+              <a
+                href="https://photo.capture-ai.fr/events/overbound-2026"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center gap-1.5 text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base"
+              >
+                <CameraIcon className="h-4 w-4" />
+                photos édition 2026
+              </a>
 
               <Link
                 href="/volunteers"
@@ -376,14 +383,17 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
             <div className="space-y-1">
-              {/* Lien Inscriptions 2026 mobile */}
-              <Link
-                href="/events/ultra-arena-2026"
-                className="block w-full px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
+              {/* Lien Photos édition 2026 mobile */}
+              <a
+                href="https://photo.capture-ai.fr/events/overbound-2026"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
-                Inscriptions 2026
-              </Link>
+                <CameraIcon className="h-4 w-4" />
+                Photos édition 2026
+              </a>
 
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
