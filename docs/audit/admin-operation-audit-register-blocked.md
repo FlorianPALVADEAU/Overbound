@@ -34,6 +34,28 @@ Ces constats ne prouvent pas l'absence de ces objets dans Supabase production. I
 qu'ils ne peuvent pas être déduits de Git. Une migration RLS ou une clé étrangère fondée sur ces objets
 serait donc spéculative.
 
+### Vérification distante en lecture seule — 2026-09-18
+
+Un dump de schéma du projet Supabase lié (`lffqqthmcimksgbcbzwb`) a été réalisé avec la CLI
+Supabase `2.84.2`. Il confirme les points suivants dans la base distante :
+
+- aucune table ou colonne `organization`/`organization_id` n'est présente dans le schéma `public` ;
+- `profiles` contient un champ `role`, mais aucune valeur ou table `finance` n'est définie par le
+  contrat SQL exporté ;
+- les policies admin existantes testent directement `profiles.role = 'admin'`, sans portée par
+  organisation ;
+- `admin_request_logs` existe, mais reçoit des `GRANT ALL` pour `anon` et `authenticated`, alors que
+  sa seule policy de lecture exportée vise `supabase_admin` ; cette table ne peut donc pas être
+  réutilisée telle quelle comme registre métier append-only ;
+- le démarrage local Supabase échoue avant initialisation complète sur la migration historique
+  `20260416_ambassador_promotional_codes.sql`, qui référence `ambassadors` avant que le socle local
+  correspondant soit disponible. Cette migration est hors périmètre et n'a pas été modifiée.
+
+La preuve distante renforce donc le blocage : avant le registre d'audit, il faut décider et migrer le
+modèle d'organisation/permissions, puis réduire les grants de toute nouvelle table à un chemin serveur
+contrôlé. Aucun secret, contenu de données ou dump complet n'est commité ; seul ce constat de contrat
+est conservé.
+
 ## 2. Pourquoi aucune migration n'est livrée
 
 Le registre demandé doit porter `organization_id` et ses policies doivent distinguer au minimum :
