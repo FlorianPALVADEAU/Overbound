@@ -69,6 +69,18 @@ est donc :
 Un raccourci `profiles.organization_id` n'est pas prévu. Toute évolution vers un modèle un-à-un
 devra faire l'objet d'un ADR séparé et préserver la source de vérité des memberships.
 
+### Décisions complémentaires issues du schéma distant
+
+- `tickets` est traité comme une ressource **attachée à un événement**, conformément à sa colonne
+  `event_id` non nullable. Il n'existe pas de catalogue global dans le contrat actuel.
+- `orders` peut regrouper plusieurs inscriptions et ne possède pas encore `event_id`. Son
+  `organization_id` ne pourra être rempli automatiquement que si toutes ses inscriptions appartiennent
+  au même tenant ; les commandes multi-tenant seront mises en quarantaine jusqu'à une décision produit.
+- Les participants invités sans compte ne deviennent pas des memberships : leur portée est héritée de
+  l'inscription et de l'événement, tandis que les memberships concernent les opérateurs.
+- Les rôles provisionnés en V1 sont `owner`, `admin` et `finance`. `operator` reste réservé à une
+  phase ultérieure, avec une portée événementielle explicite.
+
 ### 2.3 Rôles minimaux
 
 | Rôle | Portée initiale | Droits V1 |
@@ -113,8 +125,8 @@ mesurable et ne déclenche pas implicitement la suivante.
    triggers en lecture seule.
 2. Cartographier tous les lecteurs/writers des tables ci-dessus, y compris RPC et scripts historiques.
 3. Définir l'owner initial, le fuseau et le périmètre du tenant de bootstrap, avec approbation écrite.
-4. Décider si `tickets` est catalogue global, organisationnel ou événementiel, et si une commande
-   peut contenir plusieurs événements.
+4. Vérifier le backfill des tickets événementiels et identifier les commandes contenant plusieurs
+   événements ou organisations.
 5. Appliquer la décision de membership multiple : un profil peut appartenir à plusieurs
    organisations ; ne pas ajouter `profiles.organization_id` comme source de vérité.
 6. Capturer sauvegarde, environnement de test et plan de rollback.
@@ -209,12 +221,11 @@ prouve jamais qu'un rollback a réussi.
 ## 6. Décisions encore requises
 
 1. Qui est l'owner initial et quel périmètre lui est attribué ?
-2. `tickets` est-il global, organisationnel ou attaché à un événement ?
-3. Une commande peut-elle contenir plusieurs événements ou organisations ?
-4. Quels rôles sont provisionnés et comment sont-ils révoqués ?
-5. Comment rattacher les participants invités sans compte ?
-6. Quelle rétention et quel accès RGPD pour les snapshots d'audit ?
-7. Quel environnement permet d'appliquer, tester et restaurer les migrations ?
+2. Comment traiter les commandes historiques multi-événements ou multi-organisations lors du
+   backfill ?
+3. Comment les rôles `owner`, `admin` et `finance` sont-ils provisionnés et révoqués ?
+4. Quelle rétention et quel accès RGPD pour les snapshots d'audit ?
+5. Quel environnement permet d'appliquer, tester et restaurer les migrations ?
 
 Ces questions bloquent le DDL et le registre d'audit, mais pas les previews en lecture seule.
 
