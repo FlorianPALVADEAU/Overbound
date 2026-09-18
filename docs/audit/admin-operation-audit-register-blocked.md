@@ -56,6 +56,21 @@ modèle d'organisation/permissions, puis réduire les grants de toute nouvelle t
 contrôlé. Aucun secret, contenu de données ou dump complet n'est commité ; seul ce constat de contrat
 est conservé.
 
+### Advisors Supabase — constat de sécurité
+
+Le scan `supabase db advisors --linked --type security --level warn` du 18 septembre 2026 remonte
+également des alertes existantes à traiter séparément :
+
+- plusieurs fonctions `SECURITY DEFINER` du schéma `public` sont exécutables par `anon` et
+  `authenticated`, dont `admin_overview_safe` et `get_registrations_with_filters` ;
+- plusieurs fonctions ont un `search_path` mutable, dont `assign_open_wave_to_registration` ;
+- la protection contre les mots de passe compromis est désactivée ;
+- la version Postgres distante a des correctifs de sécurité disponibles.
+
+Ces alertes ne sont pas corrigées dans ce lot afin de ne pas mélanger une remédiation de sécurité
+globale avec la création du registre d'opérations. Elles renforcent toutefois l'interdiction de
+réutiliser une fonction privilégiée publique comme chemin de confirmation.
+
 ## 2. Pourquoi aucune migration n'est livrée
 
 Le registre demandé doit porter `organization_id` et ses policies doivent distinguer au minimum :
