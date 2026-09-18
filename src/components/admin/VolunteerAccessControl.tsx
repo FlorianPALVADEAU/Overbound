@@ -21,9 +21,10 @@ interface Event {
 
 interface VolunteerAccessControlProps {
   onEventSelect?: (eventId: string) => void
+  eventId?: string
 }
 
-export function VolunteerAccessControl({ onEventSelect }: VolunteerAccessControlProps) {
+export function VolunteerAccessControl({ onEventSelect, eventId }: VolunteerAccessControlProps) {
   const [availableEvents, setAvailableEvents] = useState<Event[]>([])
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,10 +43,16 @@ export function VolunteerAccessControl({ onEventSelect }: VolunteerAccessControl
         const data = await response.json()
         setAvailableEvents(data.events)
         
-        // Sélectionner automatiquement le premier événement accessible
-        if (data.events.length > 0) {
-          setSelectedEvent(data.events[0])
-          onEventSelect?.(data.events[0].id)
+        // Le contexte global prime. Sans contexte, conserver le comportement historique
+        // pour un seul événement et ne jamais choisir silencieusement parmi plusieurs.
+        const preferredEvent = eventId
+          ? data.events.find((availableEvent: Event) => availableEvent.id === eventId)
+          : data.events.length === 1
+            ? data.events[0]
+            : undefined
+        if (preferredEvent) {
+          setSelectedEvent(preferredEvent)
+          onEventSelect?.(preferredEvent.id)
         }
         
       } catch (error) {
@@ -57,7 +64,13 @@ export function VolunteerAccessControl({ onEventSelect }: VolunteerAccessControl
     }
 
     loadAccessibleEvents()
-  }, [onEventSelect])
+  }, [eventId, onEventSelect])
+
+  useEffect(() => {
+    if (!eventId || availableEvents.length === 0) return
+    const preferredEvent = availableEvents.find((availableEvent) => availableEvent.id === eventId)
+    setSelectedEvent(preferredEvent ?? null)
+  }, [availableEvents, eventId])
 
   if (loading) {
     return (

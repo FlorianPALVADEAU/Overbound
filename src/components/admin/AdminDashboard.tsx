@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ import { UsersSection } from '@/components/admin/users/UsersSection'
 import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSection'
 import { GroupsSection } from '@/components/admin/groups/GroupsSection'
 import { BootcampsSection } from '@/components/admin/bootcamps/BootcampsSection'
+import { AdminEventContextSelector } from '@/components/admin/events/AdminEventContextSelector'
 import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 import { BarChart3, CreditCard, Database, Mail, NotebookPen } from 'lucide-react'
 
@@ -84,9 +85,9 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
   const { activeTab, setActiveTab } = useAdminDashboardStore()
-  const [selectedEventId, setSelectedEventId] = useState<string | undefined>()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
+  const selectedEventId = searchParams.get('event') ?? undefined
 
   const isAdmin = profile.role === 'admin'
   const isVolunteer = profile.role === 'volunteer'
@@ -192,6 +193,7 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 </SelectContent>
               </Select>
             </div>
+            <AdminEventContextSelector eventId={selectedEventId} />
           </div>
 
           <div className="space-y-6 px-4 py-6 md:px-6 lg:px-10">
@@ -253,7 +255,7 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
               </TabsContent>
 
               <TabsContent value="checkin" className="space-y-6">
-                <VolunteerAccessControl onEventSelect={setSelectedEventId} />
+                <VolunteerAccessControl eventId={selectedEventId} />
               </TabsContent>
 
               <TabsContent value="logs" className="space-y-6">
