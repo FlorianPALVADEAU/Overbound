@@ -7,6 +7,10 @@ import { useEventParticipants, type EventParticipantCheckInFilter, type EventPar
 import { TicketChangePreviewPanel } from './TicketChangePreviewPanel'
 import { WaveChangePreviewPanel } from './WaveChangePreviewPanel'
 import {
+  getParticipantQuickActionState,
+  type ParticipantPreviewAction,
+} from './participantQuickActions'
+import {
   parseParticipantUrlState,
   writeParticipantUrlState,
 } from './participantUrlState'
@@ -68,6 +72,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const [cursor, setCursor] = useState<string | null>(initialUrlState.cursor)
   const [previousCursors, setPreviousCursors] = useState<string[]>([])
   const [selectedParticipant, setSelectedParticipant] = useState<EventParticipantRow | null>(null)
+  const [selectedPreview, setSelectedPreview] = useState<ParticipantPreviewAction>('ticket')
   const hasInitializedSearch = useRef(false)
 
   useEffect(() => {
@@ -148,6 +153,11 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     setCursor(previous || null)
   }
 
+  const openParticipant = (participant: EventParticipantRow, preview: ParticipantPreviewAction = 'ticket') => {
+    setSelectedParticipant(participant)
+    setSelectedPreview(preview)
+  }
+
   if (error) {
     return <p className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">{error.message}</p>
   }
@@ -220,13 +230,14 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                 <TableHead>Groupe</TableHead>
                 <TableHead>Paiement</TableHead>
                 <TableHead>Inscrit le</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && !data ? (
-                <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground"><Clock className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground"><Clock className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement…</TableCell></TableRow>
               ) : participants.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucun participant ne correspond à ces critères.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground">Aucun participant ne correspond à ces critères.</TableCell></TableRow>
               ) : participants.map((participant) => (
                 <TableRow key={participant.id}>
                   <TableCell>
@@ -245,6 +256,35 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                   <TableCell>{participant.group ?? '—'}</TableCell>
                   <TableCell>{participant.payment ? <><div>{participant.payment.status ?? '—'}</div><div className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</div></> : '—'}</TableCell>
                   <TableCell>{formatDate(participant.registration.createdAt)}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      {(() => {
+                        const actions = getParticipantQuickActionState(participant)
+                        return <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openParticipant(participant, 'ticket')}
+                            disabled={actions.ticket.disabled}
+                            title={actions.ticket.reason ?? 'Prévisualiser le changement de billet'}
+                          >
+                            Billet
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openParticipant(participant, 'wave')}
+                            disabled={actions.wave.disabled}
+                            title={actions.wave.reason ?? 'Prévisualiser le changement de SAS'}
+                          >
+                            SAS
+                          </Button>
+                        </>
+                      })()}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -274,6 +314,35 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           </DialogHeader>
           {selectedParticipant ? (
             <>
+              {(() => {
+                const actions = getParticipantQuickActionState(selectedParticipant)
+                return (
+                  <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3" aria-label="Actions participant">
+                    <span className="mr-1 text-sm font-medium">Prévisualiser</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={selectedPreview === 'ticket' ? 'secondary' : 'outline'}
+                      onClick={() => setSelectedPreview('ticket')}
+                      disabled={actions.ticket.disabled}
+                      title={actions.ticket.reason ?? 'Prévisualiser le changement de billet'}
+                    >
+                      Changement de billet
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={selectedPreview === 'wave' ? 'secondary' : 'outline'}
+                      onClick={() => setSelectedPreview('wave')}
+                      disabled={actions.wave.disabled}
+                      title={actions.wave.reason ?? 'Prévisualiser le changement de SAS'}
+                    >
+                      Changement de SAS
+                    </Button>
+                    {actions.wave.disabled ? <span className="text-xs text-muted-foreground">{actions.wave.reason}</span> : null}
+                  </div>
+                )
+              })()}
               <div className="grid gap-4 text-sm sm:grid-cols-2">
                 <div><p className="text-muted-foreground">Nom</p><p className="font-medium">{selectedParticipant.participant.name ?? 'Non renseigné'}</p></div>
                 <div><p className="text-muted-foreground">Compte</p><p>{selectedParticipant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</p></div>
@@ -286,8 +355,8 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                 <div><p className="text-muted-foreground">Check-in</p><p>{selectedParticipant.registration.checkedIn ? 'Effectué' : 'À faire'}</p></div>
                 <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(selectedParticipant.registration.createdAt)}</p></div>
               </div>
-              <TicketChangePreviewPanel eventId={eventId} participant={selectedParticipant} />
-              <WaveChangePreviewPanel eventId={eventId} participant={selectedParticipant} />
+              {selectedPreview === 'ticket' ? <TicketChangePreviewPanel eventId={eventId} participant={selectedParticipant} /> : null}
+              {selectedPreview === 'wave' ? <WaveChangePreviewPanel eventId={eventId} participant={selectedParticipant} /> : null}
             </>
           ) : null}
         </DialogContent>
