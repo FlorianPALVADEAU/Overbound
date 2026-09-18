@@ -63,12 +63,11 @@ est donc :
 
 - `profiles` reste une table d'identité globale ;
 - les rôles d'accès à une organisation vivent dans `organization_memberships` ;
-- `profiles.organization_id` **n'est pas canonique** tant que le produit n'a pas prouvé qu'un profil
-  ne peut appartenir qu'à une seule organisation.
+- `profiles.organization_id` **n'est pas canonique** : le modèle V1 assume une relation plusieurs-à-
+  plusieurs via `organization_memberships`.
 
-Si le contrat produit confirme une relation strictement un-à-un, un `profiles.organization_id`
-pourra être ajouté comme raccourci contrôlé. Il devra rester cohérent avec la membership par une
-contrainte ou un trigger ; il ne remplacera pas les tests de membership.
+Un raccourci `profiles.organization_id` n'est pas prévu. Toute évolution vers un modèle un-à-un
+devra faire l'objet d'un ADR séparé et préserver la source de vérité des memberships.
 
 ### 2.3 Rôles minimaux
 
@@ -97,7 +96,7 @@ Le tableau décrit la cible et la méthode de preuve. Il ne constitue pas encore
 | `event_waves` | obligatoire, direct | organisation de l'événement parent | SAS jamais hors tenant |
 | `groups` | obligatoire, direct | organisation de l'événement parent | groupe et ancre du même tenant |
 | `group_members` | obligatoire, direct ou dérivé | organisation du groupe parent | cohérence groupe/événement |
-| `profiles` | **à décider** | aucune valeur automatique | identité globale par défaut ; membership pour accès |
+| `profiles` | aucune colonne canonique | aucune valeur automatique | identité globale ; accès exclusivement via memberships |
 
 Les colonnes directes sur les tables opérationnelles permettent des policies et index simples. Elles
 doivent toutefois être vérifiées par des contraintes ou contrôles transactionnels pour éviter deux
@@ -116,8 +115,8 @@ mesurable et ne déclenche pas implicitement la suivante.
 3. Définir l'owner initial, le fuseau et le périmètre du tenant de bootstrap, avec approbation écrite.
 4. Décider si `tickets` est catalogue global, organisationnel ou événementiel, et si une commande
    peut contenir plusieurs événements.
-5. Décider si un profil peut appartenir à plusieurs organisations ; sans cette réponse, ne pas
-   ajouter `profiles.organization_id`.
+5. Appliquer la décision de membership multiple : un profil peut appartenir à plusieurs
+   organisations ; ne pas ajouter `profiles.organization_id` comme source de vérité.
 6. Capturer sauvegarde, environnement de test et plan de rollback.
 
 **Gate :** inventaire signé, owner prouvé, mapping complet, contradictions listées. Sinon, arrêt sans
@@ -151,7 +150,8 @@ Ordre :
 3. remplir `events` ;
 4. propager vers `event_waves`, `groups`, `registrations`, `orders` et `group_members` ;
 5. remplir `tickets` selon le contrat catalogue validé, jamais par simple égalité de nom ;
-6. traiter `profiles` selon la décision un-à-un/multi-organisation.
+6. traiter les memberships de `profiles` selon la relation plusieurs-à-plusieurs validée ; aucune
+   valeur n'est déduite automatiquement depuis le profil.
 
 Règles : une relation parent doit être unique et cohérente ; toute ligne sans owner démontré va en
 quarantaine/reporting ; les ambiguïtés sont bloquantes ; aucune ligne n'est supprimée ou fusionnée ;
@@ -209,13 +209,12 @@ prouve jamais qu'un rollback a réussi.
 ## 6. Décisions encore requises
 
 1. Qui est l'owner initial et quel périmètre lui est attribué ?
-2. Un profil peut-il appartenir à plusieurs organisations ?
-3. `tickets` est-il global, organisationnel ou attaché à un événement ?
-4. Une commande peut-elle contenir plusieurs événements ou organisations ?
-5. Quels rôles sont provisionnés et comment sont-ils révoqués ?
-6. Comment rattacher les participants invités sans compte ?
-7. Quelle rétention et quel accès RGPD pour les snapshots d'audit ?
-8. Quel environnement permet d'appliquer, tester et restaurer les migrations ?
+2. `tickets` est-il global, organisationnel ou attaché à un événement ?
+3. Une commande peut-elle contenir plusieurs événements ou organisations ?
+4. Quels rôles sont provisionnés et comment sont-ils révoqués ?
+5. Comment rattacher les participants invités sans compte ?
+6. Quelle rétention et quel accès RGPD pour les snapshots d'audit ?
+7. Quel environnement permet d'appliquer, tester et restaurer les migrations ?
 
 Ces questions bloquent le DDL et le registre d'audit, mais pas les previews en lecture seule.
 
