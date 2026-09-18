@@ -82,3 +82,19 @@ Avant merge :
 - application sur une base de test vide et vérification des policies/grants ;
 - test d'accès `anon`, utilisateur sans membership et membre actif ;
 - vérification que les RPC historiques et la migration du 15 septembre restent inchangées.
+
+## État du déploiement — 2026-09-18
+
+La CLI Supabase `2.84.2` a exécuté les contrôles suivants en lecture seule :
+
+- `supabase db push --linked --dry-run` propose de rejouer toutes les migrations locales, de
+  `20260416` jusqu'à cette migration, car aucune n'est reconnue comme appliquée dans l'historique
+  distant affiché par la CLI ;
+- `supabase migration list --linked` laisse la colonne `Remote` vide pour ces versions ;
+- `supabase start` local ne peut pas fournir une validation indépendante : l'initialisation échoue
+  sur une migration historique qui référence `ambassadors` avant son socle local.
+
+**GATE BLOQUANT** — ne pas exécuter `supabase db push`, même avec `--include-all`, tant que
+l'historique distant n'a pas été réconcilié et qu'un plan de déploiement des migrations historiques
+n'a pas été approuvé. La migration tenant est committée comme artefact expand, mais elle n'est pas
+déployée et ne doit pas être considérée comme active.
