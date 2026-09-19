@@ -4,7 +4,7 @@ import {
   buildOrderSummaries,
   countRegistrationsByOrder,
 } from '@/lib/admin/orderRevenue'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 type UpsellMeta = { sizes?: unknown; size?: unknown } | null | undefined
 
@@ -142,9 +142,22 @@ export async function GET(request: Request) {
     const limitCount = parseInt(limitParam || (format === 'csv' ? '10000' : '50'))
     const offsetCount = parseInt(searchParams.get('offset') || '0')
 
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
+    }
+
+    const adminClient = supabaseAdmin()
+    const { data: organizationEvents, error: organizationEventsError } = await adminClient
+      .from('events')
+      .select('id')
+      .eq('organization_id', auth.organizationId)
+
+    if (organizationEventsError) throw organizationEventsError
+
+    const organizationEventIds = new Set((organizationEvents ?? []).map((event) => event.id))
+    if (eventId && !organizationEventIds.has(eventId)) {
+      return NextResponse.json({ error: 'Événement inaccessible' }, { status: 403 })
     }
 
     const supabase = await createSupabaseServer()
@@ -161,8 +174,12 @@ export async function GET(request: Request) {
 
     if (error) throw error
 
-    const rows: RawRegistrationRow[] = data ?? []
-    const totalCount = rows[0]?.total_count ?? 0
+    const rows: RawRegistrationRow[] = (data ?? []).filter((row: RawRegistrationRow) =>
+      row.event_id ? organizationEventIds.has(row.event_id) : false,
+    )
+    const totalCount = eventId
+      ? rows[0]?.total_count ?? 0
+      : rows.length
 
     const registrationIds = rows.map((row) => row.id).filter(Boolean)
     const eventIds = Array.from(
@@ -193,8 +210,6 @@ export async function GET(request: Request) {
           .filter((value): value is string => Boolean(value)),
       ),
     )
-
-    const adminClient = supabaseAdmin()
 
     const [eventsResult, ticketsResult, ordersResult, profilesResult] = await Promise.all([
       eventIds.length
