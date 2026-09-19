@@ -102,7 +102,10 @@ where gm.group_id = g.id
 update public.orders o
 set organization_id = derived.organization_id
 from (
-  select r.order_id, min(r.organization_id) as organization_id
+  -- PostgreSQL ne fournit pas min(uuid). Les commandes multi-événements ont
+  -- déjà été bloquées plus haut, donc une valeur texte suffit ici pour
+  -- récupérer l'unique organisation représentée par la commande.
+  select r.order_id, min(r.organization_id::text)::uuid as organization_id
   from public.registrations r
   where r.order_id is not null
     and r.organization_id is not null
