@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { EVENT_OPENING_FIRST_LIST_ID } from '@/lib/subscriptions/constants'
 import {
   getResendAudienceIdForSlug,
@@ -24,7 +24,6 @@ export async function GET(
       return auth.response
     }
 
-    const supabase = await createClient()
     const { id } = await params
 
     // Get query params
@@ -33,8 +32,6 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Use admin client to bypass RLS and see all subscriptions (including email-only)
-    const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
 
     if (id === EVENT_OPENING_FIRST_LIST_ID) {
@@ -105,7 +102,7 @@ export async function GET(
       )
     }
 
-    const { data: list, error: listError } = await supabase
+    const { data: list, error: listError } = await admin
       .from('distribution_lists')
       .select('id, slug')
       .eq('id', id)
@@ -175,7 +172,6 @@ async function handleDelete(
       return auth.response
     }
 
-    const supabase = await createClient()
     const { id: listId } = await params
 
     // Parse request body to get subscription_id
@@ -189,7 +185,6 @@ async function handleDelete(
       )
     }
 
-    const { supabaseAdmin } = await import('@/lib/supabase/server')
     const admin = supabaseAdmin()
 
     if (listId === EVENT_OPENING_FIRST_LIST_ID) {
@@ -212,7 +207,7 @@ async function handleDelete(
       )
     }
 
-    const { data: list, error: listError } = await supabase
+    const { data: list, error: listError } = await admin
       .from('distribution_lists')
       .select('slug')
       .eq('id', listId)
@@ -262,7 +257,6 @@ async function handlePost(
       return auth.response
     }
 
-    const supabase = await createClient()
     const { id } = await params
 
     // Parse request body
@@ -276,7 +270,8 @@ async function handlePost(
       )
     }
 
-    const { data: list, error: listError } = await supabase
+    const admin = supabaseAdmin()
+    const { data: list, error: listError } = await admin
       .from('distribution_lists')
       .select('slug')
       .eq('id', id)
@@ -294,8 +289,6 @@ async function handlePost(
       )
     }
 
-    const { supabaseAdmin } = await import('@/lib/supabase/server')
-    const admin = supabaseAdmin()
     const userIdsSet = new Set(user_ids)
     const userEmails = new Map<string, string>()
     const perPage = 1000
@@ -315,7 +308,7 @@ async function handlePost(
       }
     }
 
-    const { data: profiles } = await supabase
+    const { data: profiles } = await admin
       .from('profiles')
       .select('id, full_name')
       .in('id', user_ids)

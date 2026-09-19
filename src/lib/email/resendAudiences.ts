@@ -108,15 +108,16 @@ const TOPIC_ENV_BY_PREFERENCE: Record<MarketingPreferenceKey, string> = {
 }
 
 export const getResendAudienceIdForSlug = (slug: string): string | null => {
-  if (RESEND_DEFAULT_AUDIENCE_ID?.trim()) {
-    return RESEND_DEFAULT_AUDIENCE_ID.trim()
-  }
+  // Prefer the list-specific audience. The previous order returned the
+  // default audience first, causing every distribution list to display the
+  // same contacts in the admin UI.
+  const normalizedSlug = slug.trim().toLowerCase().replace(/-/g, '_') as MarketingPreferenceKey
+  const topicEnv = TOPIC_ENV_BY_PREFERENCE[normalizedSlug]
+  const listSpecificValue = process.env[slugToEnvKey(slug)]
+    ?? (topicEnv ? process.env[topicEnv] : undefined)
+  if (listSpecificValue?.trim()) return listSpecificValue.trim()
 
-  const value = process.env[slugToEnvKey(slug)]
-  if (!value) return null
-
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
+  return RESEND_DEFAULT_AUDIENCE_ID?.trim() || null
 }
 
 export const getResendGeneralSegmentId = (): string | null => {
