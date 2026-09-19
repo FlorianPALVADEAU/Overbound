@@ -4,10 +4,12 @@ const {
   createSupabaseServerMock,
   supabaseAdminMock,
   syncOpenRegistrationsToWaveMock,
+  requireAdminOrganizationMock,
 } = vi.hoisted(() => ({
   createSupabaseServerMock: vi.fn(),
   supabaseAdminMock: vi.fn(),
   syncOpenRegistrationsToWaveMock: vi.fn(),
+  requireAdminOrganizationMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -18,6 +20,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/groups/syncOpenGroupWave', () => ({
   syncOpenRegistrationsToWave: syncOpenRegistrationsToWaveMock,
 }))
+vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
 
 vi.mock('@/app/api/admin/groups/promoGroupUtils', () => ({
   resolvePromoCode: vi.fn(),
@@ -52,12 +55,19 @@ function createPatchAdmin() {
       }
 
       if (table === 'groups') {
+        const scopedQuery: any = {
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'g1', organization_id: 'org-1' }, error: null }),
+        }
         return {
+          select: vi.fn().mockReturnValue(scopedQuery),
           update(payload: Record<string, unknown>) {
             state.groupsUpdatePayload = payload
-            return {
-              eq: async () => ({ error: null }),
+            const updateQuery: any = {
+              eq: vi.fn().mockReturnThis(),
+              then: (resolve: (value: unknown) => unknown) => resolve({ error: null }),
             }
+            return updateQuery
           },
         }
       }
@@ -85,6 +95,7 @@ function createPatchAdmin() {
 describe('PATCH /api/admin/groups/[id]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
     createSupabaseServerMock.mockResolvedValue({
       auth: {
         getUser: async () => ({ data: { user: { id: 'admin-1' } } }),

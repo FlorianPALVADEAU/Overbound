@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
 const createAdminGroupBodySchema = z.object({
@@ -11,7 +11,7 @@ const createAdminGroupBodySchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       .from('group_members')
       .select('group_id')
       .eq('profile_id', captain_profile_id)
+      .eq('organization_id', auth.organizationId)
       .maybeSingle()
 
     if (existingMembership) {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
     const { data: group, error: groupError } = await admin
       .from('groups')
-      .insert({ name: name.trim(), captain_id: captain_profile_id })
+      .insert({ name: name.trim(), captain_id: captain_profile_id, organization_id: auth.organizationId })
       .select('id, invite_code, name')
       .single()
 
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
 
     const { error: memberError } = await admin
       .from('group_members')
-      .insert({ group_id: group.id, profile_id: captain_profile_id, role: 'captain' })
+      .insert({ group_id: group.id, profile_id: captain_profile_id, role: 'captain', organization_id: auth.organizationId })
 
     if (memberError) {
       await admin.from('groups').delete().eq('id', group.id)
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -100,6 +101,7 @@ export async function GET(request: Request) {
     const { data: groupsRows, error: groupsError } = await admin
       .from('groups')
       .select('id, name, captain_id, invite_code, anchor_event_id, anchor_wave_index, anchor_start_time, anchor_initialized_by, anchor_initialized_from_profile_id, anchor_initialized_at, created_at')
+      .eq('organization_id', auth.organizationId)
       .order('created_at', { ascending: false })
 
     if (groupsError) {
@@ -114,6 +116,7 @@ export async function GET(request: Request) {
           .from('group_members')
           .select('id, group_id, profile_id, role, joined_at')
           .in('group_id', groupIds)
+          .eq('organization_id', auth.organizationId)
           .order('joined_at', { ascending: true })
       : { data: [], error: null }
 

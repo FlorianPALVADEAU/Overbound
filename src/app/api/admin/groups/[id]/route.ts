@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { getUserIdsFromPromoRegistrations, resolvePromoCode } from '@/app/api/admin/groups/promoGroupUtils'
 import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -21,6 +21,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const admin = supabaseAdmin()
+
+    const { data: scopedGroup } = await admin
+      .from('groups')
+      .select('id, organization_id')
+      .eq('id', id)
+      .eq('organization_id', auth.organizationId)
+      .maybeSingle()
+    if (!scopedGroup) return NextResponse.json({ error: 'Groupe introuvable' }, { status: 404 })
 
     if (typeof body.promotional_code === 'string' && body.promotional_code.trim().length > 0) {
       const promoCodeRow = await resolvePromoCode(admin, body.promotional_code)
@@ -37,6 +45,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .from('group_members')
         .select('profile_id, group_id')
         .in('profile_id', userIds)
+        .eq('organization_id', auth.organizationId)
 
       const inAnotherGroup = new Set(
         (existingMemberships ?? [])
@@ -55,7 +64,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (toAdd.length > 0) {
         const { error: insertMembersError } = await admin
           .from('group_members')
-          .insert(toAdd.map((profileId) => ({ group_id: id, profile_id: profileId, role: 'member' })))
+          .insert(toAdd.map((profileId) => ({ group_id: id, profile_id: profileId, role: 'member', organization_id: auth.organizationId })))
 
         if (insertMembersError) {
           console.error('[admin groups] promo import members error', insertMembersError)
@@ -67,6 +76,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .from('groups')
         .select('anchor_event_id, anchor_wave_index, anchor_start_time')
         .eq('id', id)
+        .eq('organization_id', auth.organizationId)
         .maybeSingle()
 
       let movedToAnchor = 0
@@ -169,7 +179,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { error } = await admin
       .from('groups')
       .update(updates)
-      .eq('id', id)
+        .eq('id', id)
+        .eq('organization_id', auth.organizationId)
 
     if (error) {
       console.error('[admin groups] update error', error)
@@ -209,7 +220,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -221,6 +232,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .from('groups')
       .delete()
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
 
     if (error) {
       console.error('[admin groups] delete error', error)
