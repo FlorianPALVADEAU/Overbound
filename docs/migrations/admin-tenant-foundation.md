@@ -77,6 +77,9 @@ transactionnel à coller dans **Supabase Dashboard → SQL Editor**. Il ne fait 
 fondation expand décrite ci-dessus. Il contient aussi des requêtes de vérification en lecture
 seule. Après exécution :
 
+Le script accorde `SELECT` à `authenticated` pour les policies RLS et à `service_role` pour les
+routes serveur qui résolvent le contexte organisationnel sans exposer de privilège au navigateur.
+
 1. conserver l'horodatage, l'identifiant du projet et les résultats de vérification ;
 2. ne pas exécuter `supabase migration repair` ou `supabase db push` dans le même changement ;
 3. réconcilier séparément l'historique CLI avant de reprendre un déploiement par migrations ;

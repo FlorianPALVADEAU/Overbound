@@ -85,6 +85,9 @@ revoke all on table public.organizations from public, anon, authenticated;
 revoke all on table public.organization_memberships from public, anon, authenticated;
 grant select on table public.organizations to authenticated;
 grant select on table public.organization_memberships to authenticated;
+-- Le service_role est utilisé uniquement par les routes serveur admin.
+grant select on table public.organizations to service_role;
+grant select on table public.organization_memberships to service_role;
 
 drop policy if exists organizations_member_read on public.organizations;
 create policy organizations_member_read
@@ -143,4 +146,3 @@ from information_schema.role_table_grants
 where table_schema = 'public'
   and table_name in ('organizations', 'organization_memberships')
 order by table_name, grantee, privilege_type;
-
