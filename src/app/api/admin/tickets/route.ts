@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         event:events(id, title, date, status),
         race:races!tickets_race_id_fkey(id, name, type, difficulty, target_public, distance_km)
       `)
+      .eq('organization_id', auth.organizationId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 const handlePost = async (request: NextRequest) => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -61,6 +62,14 @@ const handlePost = async (request: NextRequest) => {
 
     // Utiliser supabaseAdmin pour insérer
     const admin = supabaseAdmin()
+    const { data: event } = await admin
+      .from('events')
+      .select('id')
+      .eq('id', event_id)
+      .eq('organization_id', auth.organizationId)
+      .maybeSingle()
+    if (!event) return NextResponse.json({ error: 'Événement inaccessible' }, { status: 404 })
+
     const { data: ticket, error } = await admin
       .from('tickets')
       .insert({
@@ -72,7 +81,8 @@ const handlePost = async (request: NextRequest) => {
         max_participants: parseInt(max_participants) || 0,
         requires_document: false,
         document_types: [],
-        currency: currency || 'eur'
+        currency: currency || 'eur',
+        organization_id: auth.organizationId,
       })
       .select(`
         *,

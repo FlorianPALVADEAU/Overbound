@@ -1,14 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 const handlePut = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -27,6 +27,14 @@ const handlePut = async (
 
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
+    const { data: scopedEvent } = await admin
+      .from('events')
+      .select('id')
+      .eq('id', event_id)
+      .eq('organization_id', auth.organizationId)
+      .maybeSingle()
+    if (!scopedEvent) return NextResponse.json({ error: 'Événement inaccessible' }, { status: 404 })
+
     const { data: ticket, error } = await admin
       .from('tickets')
       .update({
@@ -42,6 +50,7 @@ const handlePut = async (
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
       .select(`
         *,
         event:events(id, title, date, status),
@@ -66,7 +75,7 @@ const handleDelete = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -82,6 +91,7 @@ const handleDelete = async (
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('ticket_id', id)
+      .eq('organization_id', auth.organizationId)
 
     if (count && count > 0 && !forceDelete) {
       return NextResponse.json(
@@ -100,6 +110,7 @@ const handleDelete = async (
         .from('registrations')
         .delete()
         .eq('ticket_id', id)
+        .eq('organization_id', auth.organizationId)
 
       if (regError) {
         console.error('Erreur suppression inscriptions:', regError)
@@ -115,6 +126,7 @@ const handleDelete = async (
       .from('tickets')
       .delete()
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
 
     if (error) {
       throw error
