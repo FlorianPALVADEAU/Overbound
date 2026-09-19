@@ -133,6 +133,17 @@ export function AmbassadorsSection() {
     })
   }, [rewards, search, statusFilter])
 
+  const groupedRewards = useMemo(() => {
+    const groups = new Map<string, typeof filteredRewards>()
+    for (const reward of filteredRewards) {
+      const key = reward.ambassador_id
+      const current = groups.get(key) ?? []
+      current.push(reward)
+      groups.set(key, current)
+    }
+    return Array.from(groups.values())
+  }, [filteredRewards])
+
   const handleStatusChange = async (id: string, status: AmbassadorRewardStatus) => {
     await updateReward.mutateAsync({ id, status })
   }
@@ -282,68 +293,74 @@ export function AmbassadorsSection() {
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ambassadeur</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Récompense</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Débloquée</TableHead>
-                <TableHead>Réclamée</TableHead>
-                <TableHead>Envoyée</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    Chargement...
-                  </TableCell>
-                </TableRow>
-              ) : filteredRewards.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    Aucun resultat.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredRewards.map((reward) => (
-                  <TableRow key={reward.id}>
-                    <TableCell className="font-medium">{reward.ambassador_name}</TableCell>
-                    <TableCell className="font-mono text-xs">{reward.ambassador_code ?? '-'}</TableCell>
-                    <TableCell>
-                      Palier {reward.reward_level} · {reward.reward_name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={STATUS_STYLES[reward.status]}>{STATUS_LABELS[reward.status]}</Badge>
-                    </TableCell>
-                    <TableCell>{formatDateTime(reward.earned_at)}</TableCell>
-                    <TableCell>{formatDateTime(reward.claimed_at)}</TableCell>
-                    <TableCell>{formatDateTime(reward.fulfilled_at)}</TableCell>
-                    <TableCell className="min-w-40">
-                      <Select
-                        value={reward.status}
-                        onValueChange={(value) => handleStatusChange(reward.id, value as AmbassadorRewardStatus)}
-                        disabled={updateReward.isPending}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Changer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="earned">Débloquée</SelectItem>
-                          <SelectItem value="claimed">Réclamée</SelectItem>
-                          <SelectItem value="fulfilled">Envoyée</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+        <div className="space-y-3">
+          {isLoading ? (
+            <div className="rounded-lg border p-8 text-center text-muted-foreground">Chargement...</div>
+          ) : groupedRewards.length === 0 ? (
+            <div className="rounded-lg border p-8 text-center text-muted-foreground">Aucun résultat.</div>
+          ) : (
+            groupedRewards.map((ambassadorRewards) => {
+              const ambassador = ambassadorRewards[0]
+              const earned = ambassadorRewards.filter((reward) => reward.status === 'earned').length
+              const claimed = ambassadorRewards.filter((reward) => reward.status === 'claimed').length
+              const fulfilled = ambassadorRewards.filter((reward) => reward.status === 'fulfilled').length
+              return (
+                <details key={ambassador.ambassador_id} className="group rounded-lg border bg-card" open>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{ambassador.ambassador_name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{ambassador.ambassador_code ?? 'Aucun code actif'}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 text-xs">
+                      <Badge variant="outline">{ambassadorRewards.length} rewards</Badge>
+                      <Badge className={STATUS_STYLES.earned}>{earned} à traiter</Badge>
+                      <Badge className={STATUS_STYLES.claimed}>{claimed} réclamées</Badge>
+                      <Badge className={STATUS_STYLES.fulfilled}>{fulfilled} envoyées</Badge>
+                    </div>
+                  </summary>
+                  <div className="overflow-x-auto border-t">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Palier</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead>Débloquée</TableHead>
+                          <TableHead>Réclamée</TableHead>
+                          <TableHead>Envoyée</TableHead>
+                          <TableHead className="w-44">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ambassadorRewards.map((reward) => (
+                          <TableRow key={reward.id}>
+                            <TableCell className="font-medium">Palier {reward.reward_level} · {reward.reward_name}</TableCell>
+                            <TableCell><Badge className={STATUS_STYLES[reward.status]}>{STATUS_LABELS[reward.status]}</Badge></TableCell>
+                            <TableCell>{formatDateTime(reward.earned_at)}</TableCell>
+                            <TableCell>{formatDateTime(reward.claimed_at)}</TableCell>
+                            <TableCell>{formatDateTime(reward.fulfilled_at)}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={reward.status}
+                                onValueChange={(value) => handleStatusChange(reward.id, value as AmbassadorRewardStatus)}
+                                disabled={updateReward.isPending}
+                              >
+                                <SelectTrigger><SelectValue placeholder="Changer" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="earned">Débloquée</SelectItem>
+                                  <SelectItem value="claimed">Réclamée</SelectItem>
+                                  <SelectItem value="fulfilled">Envoyée</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </details>
+              )
+            })
+          )}
         </div>
       </CardContent>
 
