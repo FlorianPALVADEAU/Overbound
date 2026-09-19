@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 const MAX_USERS = 5000
 const PAGE_SIZE = 1000
@@ -15,12 +15,44 @@ const chunkArray = <T,>(items: T[], size: number) => {
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
 
     const admin = supabaseAdmin()
+    const { data: organizationEvents, error: organizationEventsError } = await admin
+      .from('events')
+      .select('id')
+      .eq('organization_id', auth.organizationId)
+
+    if (organizationEventsError) throw organizationEventsError
+
+    const organizationEventIds = (organizationEvents ?? []).map((event) => event.id)
+    const organizationUserIds = new Set<string>([auth.user.id])
+
+    if (organizationEventIds.length > 0) {
+      const { data: registrations, error: registrationsError } = await admin
+        .from('registrations')
+        .select('user_id')
+        .in('event_id', organizationEventIds)
+        .not('user_id', 'is', null)
+
+      if (registrationsError) throw registrationsError
+      registrations?.forEach((registration) => {
+        if (registration.user_id) organizationUserIds.add(registration.user_id)
+      })
+    }
+
+    const { data: organizationGroupMembers, error: groupMembersError } = await admin
+      .from('group_members')
+      .select('profile_id')
+      .eq('organization_id', auth.organizationId)
+
+    if (groupMembersError) throw groupMembersError
+    organizationGroupMembers?.forEach((member) => {
+      if (member.profile_id) organizationUserIds.add(member.profile_id)
+    })
     const allUsers: Array<{
       id: string
       email: string | null
@@ -49,7 +81,8 @@ export async function GET(request: Request) {
       }
     }
 
-    const userIds = allUsers.map((u) => u.id)
+    const scopedUsers = allUsers.filter((authUser) => organizationUserIds.has(authUser.id))
+    const userIds = scopedUsers.map((u) => u.id)
     const profilesMap = new Map<
       string,
       {
@@ -127,29 +160,29 @@ export async function GET(request: Request) {
       })
     }
 
-    const usersWithProfiles = allUsers.map((authUser) => {
-      const profileData = profilesMap.get(authUser.id)
-      const ambassadorData = ambassadorsMap.get(authUser.id)
-      const groupData = groupsMap.get(authUser.id)
-      return {
-        id: authUser.id,
-        email: authUser.email,
-        created_at: authUser.created_at,
-        last_sign_in_at: authUser.last_sign_in_at,
-        full_name: profileData?.full_name ?? null,
-        role: profileData?.role ?? 'user',
-        phone: profileData?.phone ?? null,
-        profile_created_at: profileData?.created_at ?? null,
-        date_of_birth: profileData?.date_of_birth ?? null,
-        marketing_opt_in: profileData?.marketing_opt_in ?? null,
-        ambassador_promotional_code_id: ambassadorData?.promotional_code_id ?? null,
-        ambassador_code: ambassadorData?.code ?? null,
-        ambassador_code_is_active: ambassadorData?.code_is_active ?? null,
-        group_id: groupData?.group_id ?? null,
-        group_name: groupData?.group_name ?? null,
-        group_invite_code: groupData?.invite_code ?? null,
-      }
-    })
+    const usersWithProfiles = scopedUsers.map((authUser) => {
+        const profileData = profilesMap.get(authUser.id)
+        const ambassadorData = ambassadorsMap.get(authUser.id)
+        const groupData = groupsMap.get(authUser.id)
+        return {
+          id: authUser.id,
+          email: authUser.email,
+          created_at: authUser.created_at,
+          last_sign_in_at: authUser.last_sign_in_at,
+          full_name: profileData?.full_name ?? null,
+          role: profileData?.role ?? 'user',
+          phone: profileData?.phone ?? null,
+          profile_created_at: profileData?.created_at ?? null,
+          date_of_birth: profileData?.date_of_birth ?? null,
+          marketing_opt_in: profileData?.marketing_opt_in ?? null,
+          ambassador_promotional_code_id: ambassadorData?.promotional_code_id ?? null,
+          ambassador_code: ambassadorData?.code ?? null,
+          ambassador_code_is_active: ambassadorData?.code_is_active ?? null,
+          group_id: groupData?.group_id ?? null,
+          group_name: groupData?.group_name ?? null,
+          group_invite_code: groupData?.invite_code ?? null,
+        }
+      })
 
     return NextResponse.json({
       users: usersWithProfiles,
