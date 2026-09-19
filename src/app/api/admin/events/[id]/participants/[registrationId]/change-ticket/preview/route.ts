@@ -75,5 +75,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     preview.allowed = false
     preview.blockers.push(cutoff.blocker)
   }
-  return NextResponse.json({ preview })
+  return NextResponse.json({
+    preview,
+    confirmation: {
+      previewId: crypto.randomUUID(),
+      previewExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      eventStartsAt: event.date,
+      eventTimezone: 'Europe/Paris',
+      expectedTicketId: registration.ticket_id,
+      expectedWaveIndex: registration.wave_index,
+      expectedStartTime: registration.start_time,
+    },
+  })
 }

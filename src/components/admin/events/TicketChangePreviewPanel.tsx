@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
-import { AlertCircle, Clock, Eye } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, Eye } from 'lucide-react'
 import axiosClient from '@/app/api/axiosClient'
 import { useAdminTickets } from '@/app/api/admin/tickets/ticketsQueries'
 import type { EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
@@ -32,6 +32,16 @@ type TicketChangePreview = {
   blockers: string[]
 }
 
+type TicketChangeConfirmation = {
+  previewId: string
+  previewExpiresAt: string
+  eventStartsAt: string
+  eventTimezone: string
+  expectedTicketId: string
+  expectedWaveIndex: number | null
+  expectedStartTime: string | null
+}
+
 interface TicketChangePreviewPanelProps {
   eventId: string
   participant: EventParticipantRow
@@ -56,24 +66,60 @@ const formatAmount = (cents: number | null, currency: string | null) =>
   cents == null ? 'Non renseigné' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency?.toUpperCase() ?? 'EUR' }).format(cents / 100)
 
 type TicketChangeConfirmationGateProps = {
+  eventId: string
+  registrationId: string
+  targetTicketId: string
+  confirmation: TicketChangeConfirmation
   previewAllowed: boolean
   financialStatus: TicketChangePreview['impacts']['financial']['status']
   reason: string
   onReasonChange: (reason: string) => void
 }
 
-/**
- * The confirmation endpoint intentionally returns 501 until the audit and
- * idempotency contract is deployed. Keep the UI explicit and inert here:
- * typing a reason is only preparation and must never imply a mutation.
- */
 export function TicketChangeConfirmationGate({
+  eventId,
+  registrationId,
+  targetTicketId,
+  confirmation,
   previewAllowed,
   financialStatus,
   reason,
   onReasonChange,
 }: TicketChangeConfirmationGateProps) {
   const needsExceptionReason = previewAllowed && financialStatus !== 'no_change'
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const confirm = async () => {
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const response = await axiosClient.post(`/admin/events/${eventId}/participants/${registrationId}/change-ticket/confirm`, {
+        commandId: crypto.randomUUID(),
+        previewId: confirmation.previewId,
+        previewSourceVersion: confirmation.previewId,
+        currentSourceVersion: confirmation.previewId,
+        policyVariant: 'NO_MOVEMENT',
+        reason: reason.trim() || 'Correction opérationnelle sans mouvement financier',
+        previewExpiresAt: confirmation.previewExpiresAt,
+        eventStartsAt: confirmation.eventStartsAt,
+        eventTimezone: confirmation.eventTimezone,
+        targetTicketId,
+        expectedTicketId: confirmation.expectedTicketId,
+        expectedWaveIndex: confirmation.expectedWaveIndex,
+        expectedStartTime: confirmation.expectedStartTime,
+      })
+      if (response.status === 200) setSubmitted(true)
+    } catch (requestError) {
+      const message = axios.isAxiosError(requestError)
+        ? (requestError.response?.data as { error?: string } | undefined)?.error
+        : null
+      setSubmitError(message || 'La confirmation a échoué. Aucune modification fiable n’a été confirmée.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-2">
@@ -92,26 +138,26 @@ export function TicketChangeConfirmationGate({
           <p className="text-xs text-muted-foreground">Ce motif n’est pas encore envoyé au serveur.</p>
         </div>
       ) : null}
-      <Alert aria-label="Confirmation indisponible">
-        <AlertCircle className="h-4 w-4" aria-hidden="true" />
-        <AlertDescription>
-          <p className="font-medium">Confirmation indisponible</p>
-          <p>Le contrat d’audit et d’idempotence n’est pas encore déployé.</p>
-          <p>Aucune modification n’a été effectuée.</p>
-        </AlertDescription>
-      </Alert>
-      <Button
-        type="button"
-        disabled
-        className="w-full"
-        title="NO_MOVEMENT_CONFIRMATION_CONTRACT_MISSING"
-        aria-describedby="ticket-change-confirmation-unavailable"
-      >
-        Confirmation désactivée
-      </Button>
-      <span id="ticket-change-confirmation-unavailable" className="sr-only">
-        NO_MOVEMENT_CONFIRMATION_CONTRACT_MISSING
-      </span>
+      {submitted ? (
+        <Alert aria-label="Changement confirmé">
+          <CheckCircle className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          <AlertDescription>Le billet a été changé. Le prix historique a été conservé et l’opération a été auditée.</AlertDescription>
+        </Alert>
+      ) : null}
+      {submitError ? <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{submitError}</AlertDescription></Alert> : null}
+      {!submitted && previewAllowed && financialStatus === 'no_change' ? (
+        <Alert aria-label="Confirmation disponible">
+          <CheckCircle className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          <AlertDescription>
+            <p className="font-medium">Aucun mouvement financier</p>
+            <p>Le prix historique sera conservé. La commande sera journalisée et rejouable sans doublon.</p>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {!submitted ? <Button type="button" disabled={!previewAllowed || financialStatus !== 'no_change' || submitting} className="w-full" onClick={confirm}>
+        {submitting ? <Clock className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+        {submitting ? 'Confirmation…' : 'Confirmer sans mouvement financier'}
+      </Button> : null}
     </div>
   )
 }
@@ -121,6 +167,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
   const eventTickets = useMemo(() => tickets.filter((ticket) => ticket.event_id === eventId), [eventId, tickets])
   const [targetTicketId, setTargetTicketId] = useState('')
   const [preview, setPreview] = useState<TicketChangePreview | null>(null)
+  const [confirmation, setConfirmation] = useState<TicketChangeConfirmation | null>(null)
   const [exceptionReason, setExceptionReason] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -129,6 +176,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
     setTargetTicketId('')
     setPreview(null)
     setExceptionReason('')
+    setConfirmation(null)
     setError(null)
   }, [participant.id])
 
@@ -140,11 +188,12 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
     setError(null)
     setPreview(null)
     try {
-      const response = await axiosClient.post<{ preview: TicketChangePreview }>(
+      const response = await axiosClient.post<{ preview: TicketChangePreview; confirmation: TicketChangeConfirmation }>(
         `/admin/events/${eventId}/participants/${participant.id}/change-ticket/preview`,
         { ticketId: targetTicketId },
       )
       setPreview(response.data.preview)
+      setConfirmation(response.data.confirmation)
     } catch (requestError) {
       const message = axios.isAxiosError(requestError)
         ? (requestError.response?.data as { error?: string } | undefined)?.error
@@ -161,7 +210,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
         <Eye className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <div>
           <h3 id="ticket-preview-title" className="font-medium">Prévisualiser un changement de billet</h3>
-          <p className="text-xs text-muted-foreground">Aucune donnée ne sera modifiée. La confirmation sera disponible après validation de la politique financière.</p>
+          <p className="text-xs text-muted-foreground">Aucune donnée ne sera modifiée avant votre confirmation. Les écarts financiers restent bloqués en V1.</p>
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -192,12 +241,16 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
           {preview.impacts.financial.status !== 'no_change' ? <p className="text-xs text-muted-foreground">Montant actuel : {formatAmount(preview.impacts.financial.currentPriceCents, preview.impacts.financial.currency)} · cible : {formatAmount(preview.impacts.financial.targetPriceCents, preview.impacts.financial.currency)}</p> : null}
           {preview.blockers.length > 0 ? <div className="space-y-1 text-sm text-destructive"><p className="font-medium">Changement bloqué</p>{preview.blockers.map((blocker) => <p key={blocker}>• {blocker}</p>)}</div> : null}
           {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-700 dark:text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
-          <TicketChangeConfirmationGate
+          {confirmation ? <TicketChangeConfirmationGate
+            eventId={eventId}
+            registrationId={participant.id}
+            targetTicketId={targetTicketId}
+            confirmation={confirmation}
             previewAllowed={preview.allowed}
             financialStatus={preview.impacts.financial.status}
             reason={exceptionReason}
             onReasonChange={setExceptionReason}
-          />
+          /> : null}
         </div>
       ) : null}
     </section>
