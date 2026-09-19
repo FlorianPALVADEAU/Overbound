@@ -13,6 +13,7 @@ import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell } from '@/types/Upsell'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
+import { UpsellImagePreview } from '@/components/registration/UpsellImagePreview'
 
 interface EventTicket extends Ticket {}
 
@@ -275,11 +276,14 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
                     if (!upsell) return null
                     return (
                       <div key={item.upsellId} className="flex items-center justify-between gap-3">
-                        <div className="space-y-0.5">
-                          <p className="font-medium">{item.quantity} × {upsell.name}</p>
-                          {item.meta?.size ? (
-                            <p className="text-xs text-muted-foreground">Taille {item.meta.size}</p>
-                          ) : null}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <UpsellImagePreview src={upsell.image_url} alt={upsell.name} className="h-14 w-14" />
+                          <div className="space-y-0.5">
+                            <p className="font-medium">{item.quantity} × {upsell.name}</p>
+                            {item.meta?.size ? (
+                              <p className="text-xs text-muted-foreground">Taille {item.meta.size}</p>
+                            ) : null}
+                          </div>
                         </div>
                         <span className="font-medium">
                           {(upsell.price_cents * item.quantity / 100).toLocaleString('fr-FR', {

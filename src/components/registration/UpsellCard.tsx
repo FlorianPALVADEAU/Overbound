@@ -4,6 +4,7 @@ import { formatPrice, resolveUpsellSizes, normalizeTshirtSizes } from '@/lib/reg
 import { cn } from '@/lib/utils'
 import type { EventUpsell, Participant } from './types'
 import QuantityPicker from './QuantityPicker'
+import { UpsellImagePreview } from './UpsellImagePreview'
 
 interface UpsellCardProps {
   upsell: EventUpsell
@@ -46,14 +47,17 @@ export default function UpsellCard({
       )}
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-base font-semibold">
-            <Gift className="h-4 w-4 text-primary" />
-            {upsell.name}
+        <div className="flex min-w-0 items-start gap-3 space-y-1.5">
+          <UpsellImagePreview src={upsell.image_url} alt={upsell.name} />
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2 text-base font-semibold">
+              <Gift className="h-4 w-4 text-primary" />
+              {upsell.name}
+            </div>
+            {upsell.description && (
+              <p className="text-sm text-muted-foreground">{upsell.description}</p>
+            )}
           </div>
-          {upsell.description && (
-            <p className="text-sm text-muted-foreground">{upsell.description}</p>
-          )}
         </div>
         <div className="flex flex-col items-end gap-3">
           <div className="text-lg font-semibold text-primary">
