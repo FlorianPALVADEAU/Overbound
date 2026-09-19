@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { requireAdminMock, createSupabaseServerMock } = vi.hoisted(() => ({
+const { requireAdminMock, supabaseAdminMock } = vi.hoisted(() => ({
   requireAdminMock: vi.fn(),
-  createSupabaseServerMock: vi.fn(),
+  supabaseAdminMock: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/requireAdmin', () => ({ requireAdmin: requireAdminMock }))
-vi.mock('@/lib/supabase/server', () => ({ createSupabaseServer: createSupabaseServerMock }))
+vi.mock('@/lib/supabase/server', () => ({ supabaseAdmin: supabaseAdminMock }))
 
 import { requireAdminOrganization } from './requireAdminOrganization'
 
 const request = (url = 'https://example.test/api/admin/events') => new Request(url)
 
 function mockMemberships(rows: Array<{ organization_id: string; role: string; status: string }>) {
-  createSupabaseServerMock.mockResolvedValue({
+  supabaseAdminMock.mockReturnValue({
     from: () => ({
       select: () => ({
         eq: () => ({
@@ -27,7 +27,7 @@ function mockMemberships(rows: Array<{ organization_id: string; role: string; st
 describe('requireAdminOrganization', () => {
   beforeEach(() => {
     requireAdminMock.mockReset()
-    createSupabaseServerMock.mockReset()
+    supabaseAdminMock.mockReset()
   })
 
   it('resolves the only active membership', async () => {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin, type AdminAuthResult } from '@/lib/auth/requireAdmin'
 
 export type AdminOrganizationAuthResult =
@@ -16,7 +16,11 @@ export const requireAdminOrganization = async (
   const auth = await requireAdmin(request)
   if (!auth.ok) return auth
 
-  const client = await createSupabaseServer()
+  // Les appels admin peuvent être authentifiés par bearer token sans cookie
+  // SSR. Le client utilisateur serait alors évalué comme `anon` et ne pourrait
+  // pas lire le membership. Cette lecture reste server-only et le rôle/status
+  // sont vérifiés explicitement ci-dessous.
+  const client = supabaseAdmin()
   const { data: memberships, error } = await client
     .from('organization_memberships')
     .select('organization_id, role, status')
