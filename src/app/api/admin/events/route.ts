@@ -2,11 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     const { data: events, error } = await admin
       .from('events')
       .select('*')
+      .eq('organization_id', auth.organizationId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
 
 const handlePost = async (request: NextRequest) => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -106,7 +107,8 @@ const handlePost = async (request: NextRequest) => {
         status: status || 'draft',
         external_provider: external_provider || null,
         external_event_id: external_event_id || null,
-        external_url: external_url || null
+        external_url: external_url || null,
+        organization_id: auth.organizationId,
       })
       .select()
       .single()
