@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
@@ -81,8 +81,8 @@ export async function GET(request: Request) {
       return auth.response
     }
 
-    const supabase = await createSupabaseServer()
-    const { data: promotionalCodes, error: fetchError } = await supabase
+    const admin = supabaseAdmin()
+    const { data: promotionalCodes, error: fetchError } = await admin
       .from('promotional_codes')
       .select(
         `*,

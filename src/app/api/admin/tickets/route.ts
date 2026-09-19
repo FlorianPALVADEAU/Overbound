@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!auth.ok) {
       return auth.response
     }
-    const supabase = await createSupabaseServer()
+    const supabase = supabaseAdmin()
 
     // Récupérer tous les tickets avec les informations des événements et courses
     const { data: tickets, error } = await supabase

@@ -1,11 +1,11 @@
 'use server'
 
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = supabaseAdmin()
     const nowIso = new Date().toISOString()
 
     const { data: promotions, error } = await supabase
