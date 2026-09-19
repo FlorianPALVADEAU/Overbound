@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { createSupabaseServerMock, supabaseAdminMock } = vi.hoisted(() => ({
   createSupabaseServerMock: vi.fn(),
@@ -47,10 +47,15 @@ function adminMock(options: {
 describe('POST wave change preview', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.setSystemTime(new Date('2026-09-18T10:00:00.000Z'))
     createSupabaseServerMock.mockResolvedValue({
       auth: { getUser: async () => ({ data: { user: { id: 'admin-1' } } }) },
       from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'admin' } }) }) }) }),
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('returns an allowed read-only preview for an OPEN registration', async () => {

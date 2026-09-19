@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { createSupabaseServerMock, supabaseAdminMock } = vi.hoisted(() => ({ createSupabaseServerMock: vi.fn(), supabaseAdminMock: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServer: createSupabaseServerMock, supabaseAdmin: supabaseAdminMock }))
@@ -29,7 +29,12 @@ function adminMock() {
 describe('POST ticket change preview', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.setSystemTime(new Date('2026-09-18T10:00:00.000Z'))
     createSupabaseServerMock.mockResolvedValue({ auth: { getUser: async () => ({ data: { user: { id: 'admin-1' } } }) }, from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { role: 'admin' } }) }) }) }) })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('returns a read-only preview for an administrator', async () => {
