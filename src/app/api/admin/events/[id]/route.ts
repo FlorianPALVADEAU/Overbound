@@ -5,7 +5,7 @@ import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib
 import { notifyEventUpdate } from '@/lib/email/eventUpdates'
 import { notifyEventOpening } from '@/lib/email/eventOpenings'
 import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -14,7 +14,7 @@ const handleGet = async (
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -25,6 +25,7 @@ const handleGet = async (
       .from('events')
       .select('*, price_tiers:event_price_tiers(*)')
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
       .single()
 
     if (eventError || !event) {
@@ -137,7 +138,7 @@ const handlePut = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -148,6 +149,7 @@ const handlePut = async (
       .from('events')
       .select('id, status, title, date, location, subtitle, slug')
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
       .single()
 
     const body = await request.json()
@@ -184,6 +186,7 @@ const handlePut = async (
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
       .select()
       .single()
 
@@ -232,7 +235,7 @@ const handleDelete = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -248,6 +251,7 @@ const handleDelete = async (
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', id)
+      .eq('organization_id', auth.organizationId)
 
     // Vérifier s'il y a des candidatures bénévoles
     const { count: volunteersCount } = await supabase

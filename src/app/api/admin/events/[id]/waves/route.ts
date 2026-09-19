@@ -5,7 +5,7 @@ import {
   buildOpenWaveRows,
   getOpenWaveProvisioningState,
 } from '@/lib/openSas'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 const toCsv = (waves: any[]) => {
   const header = ['wave_index', 'start_time', 'capacity', 'assigned_count', 'is_closed']
@@ -29,7 +29,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(request)
+  const auth = await requireAdminOrganization(request)
   if (!auth.ok) {
     return auth.response
   }
@@ -41,6 +41,7 @@ export async function GET(
     .from('events')
     .select('id')
     .eq('id', id)
+    .eq('organization_id', auth.organizationId)
     .single()
 
   if (eventError || !event) {
@@ -60,6 +61,7 @@ export async function GET(
       .from('registrations')
       .select('id, email, start_time, wave_position, user_id, created_at')
       .eq('event_id', event.id)
+      .eq('organization_id', auth.organizationId)
       .eq('wave_index', waveIndexParam)
       .order('wave_position', { ascending: true })
       .order('created_at', { ascending: true })
@@ -108,6 +110,7 @@ export async function GET(
     .from('event_waves')
     .select('wave_index, start_time, capacity, assigned_count, is_closed')
     .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
     .order('wave_index', { ascending: true })
 
   if (error) {
@@ -133,7 +136,7 @@ async function handleProvision(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(request)
+  const auth = await requireAdminOrganization(request)
   if (!auth.ok) {
     return auth.response
   }
@@ -145,6 +148,7 @@ async function handleProvision(
     .from('events')
     .select('id, date')
     .eq('id', id)
+    .eq('organization_id', auth.organizationId)
     .single()
 
   if (eventError || !event) {
@@ -155,6 +159,7 @@ async function handleProvision(
     .from('event_waves')
     .select('wave_index')
     .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
 
   if (existingWavesError) {
     console.error('[admin waves] provisioning state fetch error', existingWavesError)
@@ -179,7 +184,7 @@ async function handleProvision(
   const { rows } = buildOpenWaveRows(event.id, event.date)
   const { error: provisionError } = await admin
     .from('event_waves')
-    .upsert(rows, { onConflict: 'event_id,wave_index', ignoreDuplicates: true })
+    .upsert(rows.map((row) => ({ ...row, organization_id: auth.organizationId })), { onConflict: 'event_id,wave_index', ignoreDuplicates: true })
 
   if (provisionError) {
     console.error('[admin waves] provision error', provisionError)
@@ -190,6 +195,7 @@ async function handleProvision(
     .from('event_waves')
     .select('wave_index')
     .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
 
   if (verificationError) {
     console.error('[admin waves] provision verification error', verificationError)
@@ -218,7 +224,7 @@ async function handlePatch(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(request)
+  const auth = await requireAdminOrganization(request)
   if (!auth.ok) {
     return auth.response
   }
@@ -230,6 +236,7 @@ async function handlePatch(
     .from('events')
     .select('id')
     .eq('id', id)
+    .eq('organization_id', auth.organizationId)
     .single()
 
   if (eventError || !event) {
@@ -250,6 +257,7 @@ async function handlePatch(
       .from('event_waves')
       .update({ capacity: capacityAll, updated_at: new Date().toISOString() })
       .eq('event_id', event.id)
+      .eq('organization_id', auth.organizationId)
 
     if (error) {
       console.error('[admin waves] update all error', error)
@@ -276,6 +284,7 @@ async function handlePatch(
     .from('event_waves')
     .update(updates)
     .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
     .eq('wave_index', waveIndex)
 
   if (error) {

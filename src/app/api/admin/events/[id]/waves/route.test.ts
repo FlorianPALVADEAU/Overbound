@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { createSupabaseServerMock, supabaseAdminMock } = vi.hoisted(() => ({
+const { createSupabaseServerMock, supabaseAdminMock, requireAdminOrganizationMock } = vi.hoisted(() => ({
   createSupabaseServerMock: vi.fn(),
   supabaseAdminMock: vi.fn(),
+  requireAdminOrganizationMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -13,6 +14,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/logging/adminRequestLogger', () => ({
   withRequestLogging: <T>(handler: T) => handler,
 }))
+vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
 
 import { GET, POST } from './route'
 
@@ -27,13 +29,11 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
         if (table === 'events') {
           return {
             select() {
-              return {
-                eq() {
-                  return {
-                    single: async () => ({ data: { id: 'event-1', date: '2026-09-12T08:00:00.000Z' }, error: null }),
-                  }
-                },
+              const builder: any = {
+                eq() { return builder },
+                single: async () => ({ data: { id: 'event-1', date: '2026-09-12T08:00:00.000Z' }, error: null }),
               }
+              return builder
             },
           }
         }
@@ -41,10 +41,9 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
         if (table === 'event_waves') {
           return {
             select() {
-              return {
-                eq() {
-                  return {
-                    order: async () => ({
+              const builder: any = {
+                eq() { return builder },
+                order: async () => ({
                       data: wavesError ? null : [{
                         wave_index: 1,
                         start_time: '2026-09-12T10:00:00.000Z',
@@ -54,9 +53,8 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
                       }],
                       error: wavesError,
                     }),
-                  }
-                },
               }
+              return builder
             },
             upsert,
           }
@@ -86,16 +84,14 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
         if (table === 'events') {
           return {
             select() {
-              return {
-                eq() {
-                  return {
-                    single: async () => ({
-                      data: { id: 'event-1', date: '2026-09-12T08:00:00.000Z' },
-                      error: null,
-                    }),
-                  }
-                },
+              const builder: any = {
+                eq() { return builder },
+                single: async () => ({
+                  data: { id: 'event-1', date: '2026-09-12T08:00:00.000Z' },
+                  error: null,
+                }),
               }
+              return builder
             },
           }
         }
@@ -103,12 +99,14 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
         if (table === 'event_waves') {
           return {
             select() {
-              return {
-                eq: async () => ({
+              const builder: any = {
+                eq() { return builder },
+                then: (resolve: (value: unknown) => unknown) => resolve({
                   data: waveIndexes.map((wave_index) => ({ wave_index })),
                   error: null,
                 }),
               }
+              return builder
             },
             upsert,
           }
@@ -124,6 +122,7 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
 describe('GET /api/admin/events/[id]/waves', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
     createSupabaseServerMock.mockResolvedValue({
       auth: {
         getUser: async () => ({ data: { user: { id: 'admin-1' } } }),
@@ -176,6 +175,9 @@ describe('GET /api/admin/events/[id]/waves', () => {
 })
 
 describe('POST /api/admin/events/[id]/waves', () => {
+  beforeEach(() => {
+    requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
+  })
   it('explicitly provisions all OPEN waves once and verifies the resulting configuration', async () => {
     const { admin, upsert } = createProvisioningAdmin()
     supabaseAdminMock.mockReturnValue(admin)
@@ -231,7 +233,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
   })
 
   it('rejects an authenticated user without admin permissions', async () => {
-    const volunteerServer = {
+    /* const volunteerServer = {
       auth: {
         getUser: async () => ({ data: { user: { id: 'volunteer-1' } } }),
       },
@@ -253,7 +255,11 @@ describe('POST /api/admin/events/[id]/waves', () => {
     // and then fetches the profile role directly (2nd call) — both must return the
     // non-admin user for this test to exercise the 403 path.
     createSupabaseServerMock.mockResolvedValueOnce(volunteerServer)
-    createSupabaseServerMock.mockResolvedValueOnce(volunteerServer)
+    createSupabaseServerMock.mockResolvedValueOnce(volunteerServer) */
+    requireAdminOrganizationMock.mockResolvedValue({
+      ok: false,
+      response: new Response(JSON.stringify({ error: 'Accès refusé' }), { status: 403 }),
+    })
 
     const response = await POST(
       new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
