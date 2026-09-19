@@ -66,5 +66,5 @@ select o.status, o.provider, count(*) as order_count
 from public.orders o
 join public.organizations org on org.id = o.organization_id
 where org.slug = 'overbound'
-group by status, provider
-order by status, provider;
+group by o.status, o.provider
+order by o.status, o.provider;
