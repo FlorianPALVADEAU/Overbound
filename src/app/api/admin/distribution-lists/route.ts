@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: listsWithResendStats }, { status: 200 })
     } else {
       // Regular query
-      let query = supabase.from('distribution_lists').select('*')
+      let query = admin.from('distribution_lists').select('*')
 
       if (type) {
         query = query.eq('type', type)
