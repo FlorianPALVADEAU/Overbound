@@ -8,6 +8,9 @@ Script SQL Editor (déploiement manuel contrôlé) :
 Bootstrap initial après inventaire :
 `admin-tenant-bootstrap-overbound-dashboard.sql`
 
+Rattachement des données historiques sans événement explicite :
+`admin-tenant-orphaned-data-dashboard.sql`
+
 ## Objectif
 
 Cette migration implémente uniquement la phase **expand** définie par
@@ -84,6 +87,11 @@ confirmé), le fichier `admin-tenant-bootstrap-overbound-dashboard.sql` peut êt
 crée l'organisation `Overbound` (fuseau `Europe/Paris`), ajoute le profil administrateur validé
 comme `owner`, puis rattache les données par leurs relations événement/inscription. Les
 commandes sans inscription restent non rattachées et sont listées dans la vérification finale.
+
+Les données restantes sans relation événement explicite peuvent ensuite être traitées par
+`admin-tenant-orphaned-data-dashboard.sql`. Ce script rattache uniquement le tenant : il ne
+fabrique pas de lien vers un événement et ne modifie aucune donnée financière. Les commandes
+concernées restent ainsi disponibles pour une réconciliation ultérieure.
 
 ## Rollback
 
