@@ -2,6 +2,9 @@
 
 Migration SQL : `20260918155059_admin_tenant_foundation.sql`
 
+Script SQL Editor (déploiement manuel contrôlé) :
+`admin-tenant-foundation-dashboard.sql`
+
 ## Objectif
 
 Cette migration implémente uniquement la phase **expand** définie par
@@ -55,6 +58,23 @@ explicitement validés :
 
 Après backfill, un gate séparé doit confirmer zéro ambiguïté, zéro orphelin et la cohérence
 parent/enfant avant d'ajouter des contraintes ou de rendre les colonnes obligatoires.
+
+## Déploiement via le Dashboard Supabase
+
+Le projet présente actuellement un historique de migrations distant non réconcilié avec les
+fichiers Git locaux (`supabase migration list --linked` affiche la colonne `Remote` vide). Dans
+cette situation, `supabase db push` pourrait rejouer des migrations historiques et n'est pas une
+méthode sûre pour cette étape.
+
+Le fichier `admin-tenant-foundation-dashboard.sql` est l'équivalent manuel, rejouable et
+transactionnel à coller dans **Supabase Dashboard → SQL Editor**. Il ne fait qu'ajouter la
+fondation expand décrite ci-dessus. Il contient aussi des requêtes de vérification en lecture
+seule. Après exécution :
+
+1. conserver l'horodatage, l'identifiant du projet et les résultats de vérification ;
+2. ne pas exécuter `supabase migration repair` ou `supabase db push` dans le même changement ;
+3. réconcilier séparément l'historique CLI avant de reprendre un déploiement par migrations ;
+4. ne pas lancer de backfill ou de bootstrap owner avant les gates listées ci-dessus.
 
 ## Rollback
 
