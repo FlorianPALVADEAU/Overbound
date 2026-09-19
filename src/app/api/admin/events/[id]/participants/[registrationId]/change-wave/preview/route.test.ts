@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { createSupabaseServerMock, supabaseAdminMock } = vi.hoisted(() => ({
+const { createSupabaseServerMock, supabaseAdminMock, requireAdminOrganizationMock } = vi.hoisted(() => ({
   createSupabaseServerMock: vi.fn(),
   supabaseAdminMock: vi.fn(),
+  requireAdminOrganizationMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServer: createSupabaseServerMock,
   supabaseAdmin: supabaseAdminMock,
 }))
+vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
 
 import { POST } from './route'
 
@@ -47,6 +49,7 @@ function adminMock(options: {
 describe('POST wave change preview', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
     vi.setSystemTime(new Date('2026-09-18T10:00:00.000Z'))
     createSupabaseServerMock.mockResolvedValue({
       auth: { getUser: async () => ({ data: { user: { id: 'admin-1' } } }) },

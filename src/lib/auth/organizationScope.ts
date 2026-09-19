@@ -34,3 +34,21 @@ export const profileBelongsToOrganization = async (
 
   return Boolean(membership || registration || groupMember)
 }
+
+export const registrationBelongsToOrganization = async (
+  admin: AdminDatabaseClient,
+  organizationId: string,
+  registrationId: string,
+  eventId?: string,
+): Promise<boolean> => {
+  let query = admin
+    .from('registrations')
+    .select('id')
+    .eq('id', registrationId)
+    .eq('organization_id', organizationId)
+
+  if (eventId) query = query.eq('event_id', eventId)
+  const { data, error } = await query.maybeSingle()
+  if (error) throw error
+  return Boolean(data)
+}

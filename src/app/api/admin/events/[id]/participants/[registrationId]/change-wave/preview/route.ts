@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { getEventCorrectionCutoff } from '@/lib/admin/eventCorrectionCutoff'
@@ -60,7 +60,7 @@ export async function POST(
   const parsedBody = bodySchema.safeParse(body)
   if (!parsedBody.success) return errorResponse('SAS cible invalide', 400)
 
-  const auth = await requireAdmin(request)
+  const auth = await requireAdminOrganization(request)
   if (!auth.ok) return auth.response
 
   const { id: eventId, registrationId } = parsedParams.data
@@ -70,6 +70,7 @@ export async function POST(
     .from('events')
     .select('date')
     .eq('id', eventId)
+    .eq('organization_id', auth.organizationId)
     .maybeSingle()
 
   if (eventError) {
@@ -84,6 +85,7 @@ export async function POST(
     .select('id, event_id, ticket_id, user_id, wave_index, start_time')
     .eq('id', registrationId)
     .eq('event_id', eventId)
+    .eq('organization_id', auth.organizationId)
     .maybeSingle()
 
   if (registrationError) {

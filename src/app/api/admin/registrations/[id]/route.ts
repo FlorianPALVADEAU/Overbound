@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { registrationBelongsToOrganization } from '@/lib/auth/organizationScope'
 
 const updateRegistrationSchema = z.union([
   z.object({ ticket_id: z.string().uuid() }),
@@ -14,7 +15,7 @@ const handlePatch = async (
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) return auth.response
 
     const { id } = await params
@@ -24,6 +25,9 @@ const handlePatch = async (
     }
 
     const admin = supabaseAdmin()
+    if (!(await registrationBelongsToOrganization(admin, auth.organizationId, id))) {
+      return NextResponse.json({ error: 'Inscription inaccessible' }, { status: 404 })
+    }
     const result = 'ticket_id' in parsed.data
       ? await admin.rpc('admin_change_registration_ticket', {
           p_registration_id: id,
@@ -53,7 +57,7 @@ const handleDelete = async (
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) return auth.response
 
     const { id } = await params
@@ -63,8 +67,9 @@ const handleDelete = async (
     // Vérifier que l'inscription existe
     const { data: registration, error: fetchError } = await admin
       .from('registrations')
-      .select('id, email, event_id, ticket_id, order_id')
+      .select('id, email, event_id, ticket_id, order_id, organization_id')
       .eq('id', id)
+      .eq('organization_id', auth.organizationId)
       .single()
 
     if (fetchError || !registration) {
