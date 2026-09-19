@@ -62,10 +62,9 @@ where organization_id is null;
 
 -- Contrôle d'intégrité : les commandes rattachées restent inchangées côté
 -- statut et fournisseur, et les membres suivent bien leur groupe.
-select status, provider, count(*) as order_count
+select o.status, o.provider, count(*) as order_count
 from public.orders o
 join public.organizations org on org.id = o.organization_id
 where org.slug = 'overbound'
 group by status, provider
 order by status, provider;
-
