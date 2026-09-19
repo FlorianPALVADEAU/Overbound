@@ -40,11 +40,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (userIds.length === 0) {
         return NextResponse.json({ error: 'Aucun inscrit lié à ce code promo' }, { status: 400 })
       }
+      const { data: scopedPromoRegistrations, error: scopedPromoError } = await admin
+        .from('registrations')
+        .select('user_id')
+        .eq('organization_id', auth.organizationId)
+        .in('user_id', userIds)
+      if (scopedPromoError) throw scopedPromoError
+      const scopedPromoUserIds = new Set(
+        (scopedPromoRegistrations ?? []).map((row) => row.user_id).filter(Boolean),
+      )
+      const scopedUserIds = userIds.filter((userId) => scopedPromoUserIds.has(userId))
+      if (scopedUserIds.length === 0) {
+        return NextResponse.json({ error: 'Aucun inscrit lié à ce code promo' }, { status: 400 })
+      }
 
       const { data: existingMemberships } = await admin
         .from('group_members')
         .select('profile_id, group_id')
-        .in('profile_id', userIds)
+        .in('profile_id', scopedUserIds)
         .eq('organization_id', auth.organizationId)
 
       const inAnotherGroup = new Set(
@@ -59,7 +72,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           .map((row) => row.profile_id)
       )
 
-      const toAdd = userIds.filter((profileId) => !inAnotherGroup.has(profileId) && !alreadyHere.has(profileId))
+      const toAdd = scopedUserIds.filter((profileId) => !inAnotherGroup.has(profileId) && !alreadyHere.has(profileId))
 
       if (toAdd.length > 0) {
         const { error: insertMembersError } = await admin
