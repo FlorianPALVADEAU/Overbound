@@ -5,6 +5,9 @@ Migration SQL : `20260918155059_admin_tenant_foundation.sql`
 Script SQL Editor (déploiement manuel contrôlé) :
 `admin-tenant-foundation-dashboard.sql`
 
+Bootstrap initial après inventaire :
+`admin-tenant-bootstrap-overbound-dashboard.sql`
+
 ## Objectif
 
 Cette migration implémente uniquement la phase **expand** définie par
@@ -75,6 +78,12 @@ seule. Après exécution :
 2. ne pas exécuter `supabase migration repair` ou `supabase db push` dans le même changement ;
 3. réconcilier séparément l'historique CLI avant de reprendre un déploiement par migrations ;
 4. ne pas lancer de backfill ou de bootstrap owner avant les gates listées ci-dessus.
+
+Une fois l'inventaire validé (un seul événement, aucune commande multi-événements et owner
+confirmé), le fichier `admin-tenant-bootstrap-overbound-dashboard.sql` peut être exécuté. Il
+crée l'organisation `Overbound` (fuseau `Europe/Paris`), ajoute le profil administrateur validé
+comme `owner`, puis rattache les données par leurs relations événement/inscription. Les
+commandes sans inscription restent non rattachées et sont listées dans la vérification finale.
 
 ## Rollback
 
