@@ -4,7 +4,8 @@ import { sendAmbassadorCodeAssignedEmail, sendAmbassadorWelcomeEmail } from '@/l
 import { z } from 'zod'
 import { deleteResendContactByEmail } from '@/lib/email/resendAudiences'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { profileBelongsToOrganization } from '@/lib/auth/organizationScope'
 
 const updateUserSchema = z
   .object({
@@ -24,7 +25,7 @@ async function handlePatch(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -34,6 +35,9 @@ async function handlePatch(
     const validated = updateUserSchema.parse(payload)
 
     const admin = supabaseAdmin()
+    if (!(await profileBelongsToOrganization(admin, auth.organizationId, id))) {
+      return NextResponse.json({ error: 'Utilisateur inaccessible' }, { status: 404 })
+    }
     const { data: currentProfile } = await admin
       .from('profiles')
       .select('role')
@@ -193,17 +197,21 @@ async function handleDelete(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
     const { id } = await params
 
+    const admin = supabaseAdmin()
+    if (!(await profileBelongsToOrganization(admin, auth.organizationId, id))) {
+      return NextResponse.json({ error: 'Utilisateur inaccessible' }, { status: 404 })
+    }
+
     if (auth.user.id === id) {
       return NextResponse.json({ error: 'Impossible de supprimer votre propre compte.' }, { status: 400 })
     }
 
-    const admin = supabaseAdmin()
     const { data: targetAuthUser, error: targetAuthUserError } = await admin.auth.admin.getUserById(id)
     if (targetAuthUserError) {
       throw targetAuthUserError
