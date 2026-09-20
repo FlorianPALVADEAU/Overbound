@@ -97,9 +97,8 @@ SET assigned_count = (
     updated_at = now()
 WHERE wave.ticket_id IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS event_waves_ticket_wave_unique
-  ON public.event_waves (ticket_id, wave_index)
-  WHERE ticket_id IS NOT NULL;
+ALTER TABLE public.event_waves
+  ADD CONSTRAINT event_waves_ticket_wave_unique UNIQUE (ticket_id, wave_index);
 
 CREATE INDEX IF NOT EXISTS event_waves_event_ticket_idx
   ON public.event_waves (event_id, ticket_id, wave_index);
