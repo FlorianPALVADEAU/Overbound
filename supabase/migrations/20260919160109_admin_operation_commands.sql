@@ -104,7 +104,10 @@ BEGIN
      AND position('open' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) = 0 THEN
     v_format := 'ranked';
   ELSE
-    RAISE EXCEPTION 'Target ticket format is ambiguous' USING ERRCODE = '22023';
+    -- Custom ticket profiles do not infer departure rules from labels. The
+    -- ticket change itself is safe; profile-specific scheduling is handled by
+    -- the ticket configuration layer when it is present.
+    v_format := 'custom';
   END IF;
 
   v_before := jsonb_build_object('ticket_id', v_registration.ticket_id, 'wave_index', v_registration.wave_index,
@@ -127,7 +130,7 @@ BEGIN
            auto_assigned = NULL, preferred_window_start = NULL, preferred_window_end = NULL,
            latest_allowed_time = NULL, assignment_constraint_breached = FALSE
      WHERE id = v_registration.id;
-  ELSE
+  ELSIF v_format = 'open' THEN
     SELECT g.id, g.anchor_wave_index, g.anchor_start_time INTO v_anchor
       FROM public.group_members gm
       JOIN public.groups g ON g.id = gm.group_id
@@ -160,6 +163,10 @@ BEGIN
         p_latest_allowed := (date_trunc('day', v_registration.event_date AT TIME ZONE 'Europe/Paris') + interval '15 hour 50 minute') AT TIME ZONE 'Europe/Paris'
       );
     END IF;
+  ELSE
+    UPDATE public.registrations
+       SET ticket_id = v_target.id
+     WHERE id = v_registration.id;
   END IF;
 
   SELECT jsonb_build_object('ticket_id', r.ticket_id, 'wave_index', r.wave_index,

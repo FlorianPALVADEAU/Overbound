@@ -7,9 +7,9 @@ describe('registration ticket changes', () => {
     expect(getRegistrationTicketFormat('Primal', 'RANKED 15 km')).toBe('ranked')
   })
 
-  it('refuses labels that are ambiguous or do not declare a supported format', () => {
-    expect(getRegistrationTicketFormat('OPEN RANKED', null)).toBe('unknown')
-    expect(getRegistrationTicketFormat('Primal 15 km', null)).toBe('unknown')
-    expect(registrationTicketFormatLabel('unknown')).toBe('Format à vérifier')
+  it('keeps arbitrary ticket names as custom profiles', () => {
+    expect(getRegistrationTicketFormat('OPEN RANKED', null)).toBe('custom')
+    expect(getRegistrationTicketFormat('Primal 15 km', null)).toBe('custom')
+    expect(registrationTicketFormatLabel('custom')).toBe('Configuration personnalisée')
   })
 })

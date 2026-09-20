@@ -132,7 +132,7 @@ export function RegistrationOperationsDialog({
               {eventTickets.filter((ticket) => ticket.id !== registration.ticket_id).map((ticket) => {
                 const format = getRegistrationTicketFormat(ticket.name, ticket.race?.name)
                 return (
-                  <SelectItem key={ticket.id} value={ticket.id} disabled={format === 'unknown'}>
+                  <SelectItem key={ticket.id} value={ticket.id}>
                     {ticket.name} · {registrationTicketFormatLabel(format)}
                   </SelectItem>
                 )
@@ -143,7 +143,9 @@ export function RegistrationOperationsDialog({
             <p className="text-xs text-muted-foreground">
               {selectedFormat === 'open'
                 ? 'Un SAS OPEN sera attribué automatiquement. Une ancre de groupe existante reste prioritaire.'
-                : 'Le participant partira à 08:00 et toutes les données de SAS seront retirées.'}
+                : selectedFormat === 'ranked'
+                  ? 'Le participant partira à 08:00 et toutes les données de SAS seront retirées.'
+                  : 'Les règles opérationnelles du billet cible seront appliquées depuis sa configuration.'}
             </p>
           ) : null}
           <DialogFooter>

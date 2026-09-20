@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 
 const PREVIEW_TTL_SECONDS = 300
 
-export type TicketFormat = 'OPEN' | 'RANKED' | 'UNKNOWN'
+export type TicketFormat = 'OPEN' | 'RANKED' | 'CUSTOM'
 
 export type TicketPreviewInput = {
   currentTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null }
@@ -33,7 +33,7 @@ export type TicketChangePreview = {
 export function getTicketFormat(name?: string | null, raceName?: string | null): TicketFormat {
   if (isOpenFormatTicket(name, raceName)) return 'OPEN'
   if (isRankedFormatTicket(name, raceName)) return 'RANKED'
-  return 'UNKNOWN'
+  return 'CUSTOM'
 }
 
 export function buildTicketChangePreview(input: TicketPreviewInput): TicketChangePreview {
@@ -48,7 +48,12 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
 
   if (!sameEvent) blockers.push('Le billet actuel et le billet cible doivent appartenir au même événement.')
   if (sameTicket) blockers.push('Le billet cible est déjà attribué à cette inscription.')
-  if (currentFormat === 'UNKNOWN' || targetFormat === 'UNKNOWN') blockers.push('Le format OPEN/RANKED ne peut pas être déterminé de façon fiable.')
+  // A ticket without a legacy OPEN/RANKED label is still a valid product.
+  // Its operational rules will come from the ticket configuration; until
+  // that configuration exists, preview remains generic and non-destructive.
+  if (currentFormat === 'CUSTOM' || targetFormat === 'CUSTOM') {
+    warnings.push('Ce billet utilise une configuration personnalisée ; aucune règle de SAS ne sera déduite de son nom.')
+  }
 
   let targetWave: number | null = null
   let targetStart: string | null = null
@@ -81,7 +86,8 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
     }
     if (input.group?.anchorEventId !== input.registration.eventId) groupImpact = input.group ? 'not_applicable' : 'none'
   } else {
-    sas = 'unknown'
+    sas = currentWave !== null || currentStart !== null ? 'unchanged' : 'not_applicable'
+    groupImpact = input.group ? 'preserved' : 'none'
   }
 
   const pricesKnown = input.currentTicket.priceCents != null && input.targetTicket.priceCents != null

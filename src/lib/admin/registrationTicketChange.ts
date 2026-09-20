@@ -1,10 +1,10 @@
 import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 
-export type RegistrationTicketFormat = 'open' | 'ranked' | 'unknown'
+export type RegistrationTicketFormat = 'open' | 'ranked' | 'custom'
 
 /**
- * Ticket format is intentionally inferred from the ticket/race labels. This
- * matches the production wave-assignment rule; IDs must never encode format.
+ * Legacy labels are supported for backwards compatibility only. New ticket
+ * behavior must be supplied by the ticket's explicit operational profile.
  */
 export const getRegistrationTicketFormat = (
   ticketName?: string | null,
@@ -13,12 +13,12 @@ export const getRegistrationTicketFormat = (
   const isOpen = isOpenFormatTicket(ticketName, raceName)
   const isRanked = isRankedFormatTicket(ticketName, raceName)
 
-  if (isOpen === isRanked) return 'unknown'
+  if (isOpen === isRanked) return 'custom'
   return isOpen ? 'open' : 'ranked'
 }
 
 export const registrationTicketFormatLabel = (format: RegistrationTicketFormat) => {
   if (format === 'open') return 'OPEN'
   if (format === 'ranked') return 'RANKED'
-  return 'Format à vérifier'
+  return 'Configuration personnalisée'
 }

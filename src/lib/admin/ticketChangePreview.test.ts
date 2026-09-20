@@ -53,4 +53,17 @@ describe('buildTicketChangePreview', () => {
     expect(preview.target.waveIndex).toBe(8)
     expect(preview.impacts.group).toBe('anchor_applies')
   })
+
+  it('allows a custom ticket without inferring a format from its name', () => {
+    const preview = buildTicketChangePreview({
+      ...base,
+      currentTicket: { ...base.currentTicket, name: 'pipi', raceName: 'Course test' },
+      targetTicket: { ...base.targetTicket, name: 'test ticket', raceName: 'Course test' },
+    })
+    expect(preview.allowed).toBe(true)
+    expect(preview.current.format).toBe('CUSTOM')
+    expect(preview.target.format).toBe('CUSTOM')
+    expect(preview.impacts.sas).toBe('unchanged')
+    expect(preview.blockers).toHaveLength(0)
+  })
 })
