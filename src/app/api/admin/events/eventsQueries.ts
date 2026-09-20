@@ -233,15 +233,22 @@ export const provisionAdminEventWaves = async (
   eventId: string,
   ticketId: string,
 ): Promise<AdminEventWaveProvisioningResult> => {
-  const response = await axiosClient.post<AdminEventWaveProvisioningResult>(
-    `/admin/events/${eventId}/waves?ticket_id=${ticketId}`,
-  )
+  try {
+    const response = await axiosClient.post<AdminEventWaveProvisioningResult>(
+      `/admin/events/${eventId}/waves?ticket_id=${ticketId}`,
+    )
 
-  if (response.status !== 200) {
-    throw new Error('Impossible d’initialiser les SAS')
+    if (response.status !== 200) {
+      throw new Error('Impossible d’initialiser les SAS')
+    }
+
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Impossible d’initialiser les SAS')
+    }
+    throw error
   }
-
-  return response.data
 }
 
 export const deleteAdminEventVolunteer = async (id: string): Promise<void> => {

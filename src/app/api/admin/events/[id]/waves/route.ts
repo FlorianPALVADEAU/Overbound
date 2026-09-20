@@ -133,7 +133,6 @@ export async function GET(
     .from('event_waves')
     .select('wave_index, start_time, capacity, assigned_count, is_closed')
     .eq('event_id', event.id)
-    .eq('organization_id', auth.organizationId)
     .eq('ticket_id', ticketId)
     .order('wave_index', { ascending: true })
 
@@ -201,7 +200,6 @@ async function handleProvision(
     .from('event_waves')
     .select('wave_index')
     .eq('event_id', event.id)
-    .eq('organization_id', auth.organizationId)
     .eq('ticket_id', ticketId)
 
   if (existingWavesError) {
@@ -227,7 +225,10 @@ async function handleProvision(
   const { rows } = buildDefaultEventWaveRows(event.id, event.date)
   const { error: provisionError } = await admin
     .from('event_waves')
-    .upsert(rows.map((row) => ({ ...row, ticket_id: ticketId, organization_id: auth.organizationId })), { onConflict: 'ticket_id,wave_index', ignoreDuplicates: true })
+    .upsert(
+      rows.map((row) => ({ ...row, ticket_id: ticketId, organization_id: auth.organizationId })),
+      { onConflict: 'ticket_id,wave_index', ignoreDuplicates: true },
+    )
 
   if (provisionError) {
     console.error('[admin waves] provision error', provisionError)
@@ -238,7 +239,6 @@ async function handleProvision(
     .from('event_waves')
     .select('wave_index')
     .eq('event_id', event.id)
-    .eq('organization_id', auth.organizationId)
     .eq('ticket_id', ticketId)
 
   if (verificationError) {
@@ -319,7 +319,6 @@ async function handlePatch(
       .from('event_waves')
       .update({ capacity: capacityAll, updated_at: new Date().toISOString() })
       .eq('event_id', event.id)
-      .eq('organization_id', auth.organizationId)
       .eq('ticket_id', ticketId)
 
     if (error) {
@@ -347,7 +346,6 @@ async function handlePatch(
     .from('event_waves')
     .update(updates)
     .eq('event_id', event.id)
-    .eq('organization_id', auth.organizationId)
     .eq('ticket_id', ticketId)
     .eq('wave_index', waveIndex)
 

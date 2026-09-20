@@ -3,9 +3,9 @@ import { buildOpenWaveRows, getOpenWaveProvisioningState } from '@/lib/openSas'
 /**
  * Admin-facing event wave contract.
  *
- * Event waves are shared by every ticket whose explicit operations profile
- * uses `departure_mode: "wave"`. The legacy OPEN implementation remains an
- * internal compatibility detail while checkout assignment is migrated.
+ * Every ticket whose explicit operations profile uses
+ * `departure_mode: "wave"` owns an independent wave inventory. The legacy
+ * builder name remains an internal compatibility detail only.
  */
 export const buildDefaultEventWaveRows = buildOpenWaveRows
 export const getEventWaveProvisioningState = getOpenWaveProvisioningState
