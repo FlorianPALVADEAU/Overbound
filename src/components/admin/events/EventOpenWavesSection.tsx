@@ -91,6 +91,10 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     const totalAssigned = waves.reduce((sum, wave) => sum + (wave.assigned_count ?? 0), 0)
     return { totalCapacity, totalAssigned }
   }, [data])
+  const displayPositionByWaveIndex = useMemo(
+    () => new Map((data ?? []).map((wave, index) => [wave.wave_index, index + 1])),
+    [data],
+  )
 
   const handleCreate = async (mode: 'single' | 'series') => {
     const capacity = Number.parseInt(newCapacity, 10)
@@ -122,7 +126,8 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
 
   const handleDelete = async (wave: AdminEventWave) => {
     if ((wave.assigned_count ?? 0) > 0) return
-    if (!window.confirm(`Supprimer le SAS ${wave.wave_index} ?`)) return
+    const displayPosition = displayPositionByWaveIndex.get(wave.wave_index) ?? wave.wave_index
+    if (!window.confirm(`Supprimer le SAS ${displayPosition} ?`)) return
     setProvisioningError(null)
     try {
       await deleteAdminEventWave(eventId, ticketId, wave.wave_index)
@@ -289,8 +294,8 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Chargement des SAS...</p>
         ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
-              {(data ?? []).map((wave) => {
+          <div className="space-y-2">
+              {(data ?? []).map((wave, position) => {
                 const row = editRows[wave.wave_index]
                 const capacityValue = Number.parseInt(row?.capacity ?? String(wave.capacity ?? 0), 10)
                 const assigned = wave.assigned_count ?? 0
@@ -299,13 +304,12 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                 const isFull = assigned >= (capacityValue || 0)
 
                 return (
-                  <article key={wave.wave_index} className="min-w-0 space-y-3 rounded-lg border p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div><p className="font-medium">SAS {wave.wave_index}</p><p className="text-xs text-muted-foreground">{formatClockTime(wave.start_time)}</p></div>
-                      {isClosed ? <Badge variant="destructive">Fermé</Badge> : isFull ? <Badge variant="secondary">Complet</Badge> : <Badge variant="outline">Ouvert</Badge>}
+                  <article key={wave.wave_index} className="grid min-w-0 gap-2 rounded-lg border p-2.5 md:grid-cols-[5rem_minmax(12rem,1fr)_5.5rem_minmax(7rem,auto)_auto] md:items-end">
+                    <div className="flex items-center justify-between gap-2 md:block md:self-center">
+                      <div><p className="font-medium">SAS {position + 1}</p><p className="text-xs text-muted-foreground">{formatClockTime(wave.start_time)}</p></div>
+                      <div className="md:mt-1">{isClosed ? <Badge variant="destructive">Fermé</Badge> : isFull ? <Badge variant="secondary">Complet</Badge> : <Badge variant="outline">Ouvert</Badge>}</div>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1 sm:col-span-2">
+                      <div className="min-w-0 space-y-1">
                         <label className="text-xs text-muted-foreground">Heure de départ</label>
                         <Input type="datetime-local" value={row?.startTime ?? toLocalDateTimeInput(wave.start_time)} onChange={(event) => handleRowChange(wave, { startTime: event.target.value })} />
                       </div>
@@ -317,37 +321,34 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                         inputMode="numeric"
                       />
                       </div>
-                      <div className="space-y-1"><label className="text-xs text-muted-foreground">Occupation</label><div className="flex h-10 items-center rounded-md border px-3 text-sm">{assigned} assigné{assigned > 1 ? 's' : ''} · {remaining} restant{remaining > 1 ? 's' : ''}</div></div>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="flex items-center gap-2 text-sm">
+                      <div className="space-y-1 md:self-center"><span className="text-xs text-muted-foreground">Occupation</span><p className="whitespace-nowrap text-sm">{assigned} / {capacityValue || 0} · {remaining} libre{remaining > 1 ? 's' : ''}</p></div>
+                    <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+                      <label className="mr-1 flex items-center gap-1.5 text-xs">
                       <Switch
                         checked={Boolean(isClosed)}
                         onCheckedChange={(checked) => handleRowChange(wave, { isClosed: checked })}
                       />
-                      Fermé
+                      Fermer
                       </label>
-                      <div className="flex flex-wrap gap-2">
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setSelectedWaveIndex(wave.wave_index)}
+                          aria-label={`Voir les inscrits du SAS ${position + 1}`}
                         >
-                          <Eye className="mr-1 h-4 w-4" />
-                          Voir inscrits
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleSaveRow(wave.wave_index)}
                           disabled={!row?.dirty || savingWave === wave.wave_index}
                         >
                           <Save className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(wave)} disabled={assigned > 0} aria-label={`Supprimer le SAS ${wave.wave_index}`}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(wave)} disabled={assigned > 0} aria-label={`Supprimer le SAS ${position + 1}`}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
                     </div>
                   </article>
                 )
@@ -365,7 +366,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              Inscrits du SAS {selectedWaveIndex ?? '—'}
+              Inscrits du SAS {selectedWaveIndex !== null ? displayPositionByWaveIndex.get(selectedWaveIndex) ?? '—' : '—'}
             </DialogTitle>
             <DialogDescription>
               Liste des participants assignés à ce SAS.

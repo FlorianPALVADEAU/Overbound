@@ -245,10 +245,6 @@ export const provisionAdminEventWaves = async (
       input,
     )
 
-    if (response.status !== 200) {
-      throw new Error('Impossible d’initialiser les SAS')
-    }
-
     return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {
