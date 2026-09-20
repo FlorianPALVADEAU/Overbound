@@ -275,6 +275,20 @@ export const deleteAdminEventWave = async (
   }
 }
 
+export const deleteEmptyAdminEventWaves = async (
+  eventId: string,
+  ticketId: string,
+): Promise<void> => {
+  try {
+    await axiosClient.delete(`/admin/events/${eventId}/waves?ticket_id=${ticketId}&empty=true`)
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Impossible de supprimer les SAS vides')
+    }
+    throw error
+  }
+}
+
 export const deleteAdminEventVolunteer = async (id: string): Promise<void> => {
   const response = await axiosClient.delete(`/admin/volunteer-applications/${id}`)
   if (response.status !== 200) {

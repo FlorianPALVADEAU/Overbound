@@ -368,7 +368,8 @@ async function handleDelete(
   const url = new URL(request.url)
   const parsedTicketId = ticketIdSchema.safeParse(url.searchParams.get('ticket_id'))
   const waveIndex = Number(url.searchParams.get('wave_index'))
-  if (!parsedTicketId.success || !Number.isInteger(waveIndex) || waveIndex <= 0) {
+  const deleteEmpty = url.searchParams.get('empty') === 'true'
+  if (!parsedTicketId.success || (!deleteEmpty && (!Number.isInteger(waveIndex) || waveIndex <= 0))) {
     return NextResponse.json({ error: 'Billet ou SAS invalide' }, { status: 400 })
   }
 
@@ -381,6 +382,17 @@ async function handleDelete(
     .eq('organization_id', auth.organizationId)
     .maybeSingle()
   if (!ticket) return NextResponse.json({ error: 'Billet introuvable pour cet événement' }, { status: 404 })
+
+  if (deleteEmpty) {
+    const { error } = await admin
+      .from('event_waves')
+      .delete()
+      .eq('event_id', id)
+      .eq('ticket_id', parsedTicketId.data)
+      .eq('assigned_count', 0)
+    if (error) return NextResponse.json({ error: 'Impossible de supprimer les SAS vides' }, { status: 500 })
+    return NextResponse.json({ success: true })
+  }
 
   const { data: wave } = await admin
     .from('event_waves')

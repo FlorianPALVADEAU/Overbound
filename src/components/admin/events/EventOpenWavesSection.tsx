@@ -6,6 +6,7 @@ import {
   useAdminWaveParticipants,
   provisionAdminEventWaves,
   deleteAdminEventWave,
+  deleteEmptyAdminEventWaves,
   updateAdminEventWave,
   type AdminEventWave,
 } from '@/app/api/admin/events/eventsQueries'
@@ -128,6 +129,17 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
       await refetch()
     } catch (error) {
       setProvisioningError(error instanceof Error ? error.message : 'Impossible de supprimer le SAS.')
+    }
+  }
+
+  const handleDeleteEmpty = async () => {
+    if (!window.confirm('Supprimer tous les SAS sans inscrit de ce billet ?')) return
+    setProvisioningError(null)
+    try {
+      await deleteEmptyAdminEventWaves(eventId, ticketId)
+      await refetch()
+    } catch (error) {
+      setProvisioningError(error instanceof Error ? error.message : 'Impossible de supprimer les SAS vides.')
     }
   }
 
@@ -256,7 +268,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
           </Alert>
         ) : null}
 
-        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Capacité globale</label>
             <Input
@@ -268,6 +280,9 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
           </div>
           <Button size="sm" onClick={handleSaveGlobal} disabled={savingGlobal}>
             {savingGlobal ? 'Mise à jour...' : 'Appliquer à toutes les vagues'}
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDeleteEmpty} disabled={(data ?? []).every((wave) => (wave.assigned_count ?? 0) > 0)}>
+            <Trash2 className="mr-2 h-4 w-4" />Supprimer les SAS vides
           </Button>
         </div>
 
