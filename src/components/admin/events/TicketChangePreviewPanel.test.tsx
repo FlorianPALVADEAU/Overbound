@@ -31,12 +31,12 @@ describe('TicketChangeConfirmationGate', () => {
       />,
     )
 
-    expect(screen.getByRole('alert', { name: 'Confirmation disponible' })).toHaveTextContent('Aucun mouvement financier')
-    expect(screen.getByRole('button', { name: 'Confirmer sans mouvement financier' })).toBeEnabled()
-    expect(screen.queryByLabelText('Motif de l’exception (préparation uniquement)')).not.toBeInTheDocument()
+    expect(screen.getByRole('alert', { name: 'Confirmation disponible' })).toHaveTextContent('Prix historique conservé')
+    expect(screen.getByRole('button', { name: 'Confirmer en conservant le prix payé' })).toBeEnabled()
+    expect(screen.queryByLabelText('Note interne (optionnelle)')).not.toBeInTheDocument()
   })
 
-  it('collects an exception reason locally without enabling a mutation', () => {
+  it('allows a price-difference confirmation and records an optional audit note', () => {
     const onReasonChange = vi.fn()
     render(
       <TicketChangeConfirmationGate
@@ -48,11 +48,11 @@ describe('TicketChangeConfirmationGate', () => {
       />,
     )
 
-    const reason = screen.getByLabelText('Motif de l’exception (préparation uniquement)')
+    const reason = screen.getByLabelText('Note interne (optionnelle)')
     expect(reason).toHaveValue('Prix historique conservé')
     fireEvent.change(reason, { target: { value: 'Correction validée par l’admin' } })
     expect(onReasonChange).toHaveBeenCalledWith('Correction validée par l’admin')
-    expect(screen.getByRole('button', { name: 'Confirmer sans mouvement financier' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Confirmer en conservant le prix payé' })).toBeEnabled()
   })
 
   it('does not ask for a financial reason when the preview is blocked', () => {
@@ -66,7 +66,7 @@ describe('TicketChangeConfirmationGate', () => {
       />,
     )
 
-    expect(screen.queryByLabelText('Motif de l’exception (préparation uniquement)')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Confirmer sans mouvement financier' })).toBeDisabled()
+    expect(screen.queryByLabelText('Note interne (optionnelle)')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Confirmer en conservant le prix payé' })).toBeDisabled()
   })
 })

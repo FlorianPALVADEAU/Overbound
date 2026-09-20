@@ -84,8 +84,11 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
   const pricesEqual = pricesKnown && input.currentTicket.priceCents === input.targetTicket.priceCents && input.currentTicket.currency === input.targetTicket.currency
   const financialStatus = pricesEqual ? 'no_change' : pricesKnown ? 'potential_change' : 'unknown'
   if (financialStatus !== 'no_change') {
-    const reason = financialStatus === 'unknown' ? 'non calculable' : 'différent'
-    blockers.push(`Impact financier ${reason} : la politique financière doit être validée avant toute mutation.`)
+    warnings.push(
+      financialStatus === 'unknown'
+        ? 'L’écart financier ne peut pas être calculé. Le prix historique restera inchangé et aucune opération financière ne sera créée.'
+        : 'Le prix du billet cible est différent. Le prix historique restera inchangé et aucune opération financière ne sera créée.',
+    )
   }
 
   const sourceDigest = createHash('sha256').update(JSON.stringify({

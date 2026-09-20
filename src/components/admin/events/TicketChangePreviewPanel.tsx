@@ -58,7 +58,12 @@ const impactLabels: Record<string, string> = {
   preserved: 'Conservé',
   anchor_applies: 'Ancre du groupe appliquée',
   no_change: 'Aucun changement de montant',
-  potential_change: 'Impact financier possible',
+}
+
+const financialLabels: Record<TicketChangePreview['impacts']['financial']['status'], string> = {
+  no_change: 'Aucun changement de montant',
+  potential_change: 'Écart ignoré — prix historique conservé',
+  unknown: 'Écart non calculable — prix historique conservé',
 }
 
 const formatAmount = (cents: number | null, currency: string | null) =>
@@ -107,7 +112,9 @@ export function TicketChangeConfirmationGate({
         previewSourceVersion: confirmation.previewId,
         currentSourceVersion: confirmation.previewId,
         policyVariant: 'NO_MOVEMENT',
-        reason: reason.trim() || 'Correction opérationnelle sans mouvement financier',
+        reason: reason.trim() || (financialStatus === 'no_change'
+          ? 'Correction opérationnelle sans mouvement financier'
+          : 'Écart catalogue accepté par l’admin ; prix historique conservé sans mouvement financier'),
         previewExpiresAt: confirmation.previewExpiresAt,
         eventStartsAt: confirmation.eventStartsAt,
         eventTimezone: confirmation.eventTimezone,
@@ -132,7 +139,7 @@ export function TicketChangeConfirmationGate({
       {needsExceptionReason ? (
         <div className="space-y-1">
           <label htmlFor="ticket-change-exception-reason" className="text-xs font-medium">
-            Motif de l’exception (préparation uniquement)
+            Note interne (optionnelle)
           </label>
           <Textarea
             id="ticket-change-exception-reason"
@@ -141,7 +148,7 @@ export function TicketChangeConfirmationGate({
             placeholder="Expliquez pourquoi le prix historique doit être conservé…"
             rows={2}
           />
-          <p className="text-xs text-muted-foreground">Ce motif n’est pas encore envoyé au serveur.</p>
+          <p className="text-xs text-muted-foreground">Cette note sera conservée dans la trace d’audit.</p>
         </div>
       ) : null}
       {submitted ? (
@@ -151,18 +158,18 @@ export function TicketChangeConfirmationGate({
         </Alert>
       ) : null}
       {submitError ? <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{submitError}</AlertDescription></Alert> : null}
-      {!submitted && previewAllowed && financialStatus === 'no_change' ? (
+      {!submitted && previewAllowed ? (
         <Alert aria-label="Confirmation disponible">
           <CheckCircle className="h-4 w-4 text-emerald-600" aria-hidden="true" />
           <AlertDescription>
-            <p className="font-medium">Aucun mouvement financier</p>
-            <p>Le prix historique sera conservé. La commande sera journalisée et rejouable sans doublon.</p>
+            <p className="font-medium">Prix historique conservé</p>
+            <p>Aucun débit, remboursement ou avoir ne sera créé automatiquement. La commande sera auditée.</p>
           </AlertDescription>
         </Alert>
       ) : null}
-      {!submitted ? <Button type="button" disabled={!previewAllowed || financialStatus !== 'no_change' || submitting} className="w-full" onClick={confirm}>
+      {!submitted ? <Button type="button" disabled={!previewAllowed || submitting} className="w-full" onClick={confirm}>
         {submitting ? <Clock className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-        {submitting ? 'Confirmation…' : 'Confirmer sans mouvement financier'}
+        {submitting ? 'Confirmation…' : 'Confirmer en conservant le prix payé'}
       </Button> : null}
     </div>
   )
@@ -216,7 +223,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
         <Eye className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <div>
           <h3 id="ticket-preview-title" className="font-medium">Prévisualiser un changement de billet</h3>
-          <p className="text-xs text-muted-foreground">Aucune donnée ne sera modifiée avant votre confirmation. Les écarts financiers restent bloqués en V1.</p>
+          <p className="text-xs text-muted-foreground">Aucune donnée ne sera modifiée avant votre confirmation. Le prix déjà payé restera inchangé, même si le billet cible a un autre prix.</p>
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -241,7 +248,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
           <div className="flex flex-wrap gap-2" aria-label="Impacts du changement">
             <Badge variant="outline">Départ : {impactLabels[preview.impacts.departure] ?? preview.impacts.departure}</Badge>
             <Badge variant="outline">Groupe : {impactLabels[preview.impacts.group] ?? preview.impacts.group}</Badge>
-            <Badge variant={preview.impacts.financial.status === 'no_change' ? 'outline' : 'secondary'}>Finance : {impactLabels[preview.impacts.financial.status] ?? preview.impacts.financial.status}</Badge>
+            <Badge variant={preview.impacts.financial.status === 'no_change' ? 'outline' : 'secondary'}>Finance : {financialLabels[preview.impacts.financial.status]}</Badge>
           </div>
           {preview.impacts.financial.status !== 'no_change' ? <p className="text-xs text-muted-foreground">Montant actuel : {formatAmount(preview.impacts.financial.currentPriceCents, preview.impacts.financial.currency)} · cible : {formatAmount(preview.impacts.financial.targetPriceCents, preview.impacts.financial.currency)}</p> : null}
           {preview.blockers.length > 0 ? <div className="space-y-1 text-sm text-destructive"><p className="font-medium">Changement bloqué</p>{preview.blockers.map((blocker) => <p key={blocker}>• {blocker}</p>)}</div> : null}

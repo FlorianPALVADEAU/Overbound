@@ -20,7 +20,7 @@ describe('buildTicketChangePreview', () => {
     expect(preview.sourceVersion).toHaveLength(16)
   })
 
-  it('blocks a ticket from another event and flags a price difference', () => {
+  it('blocks a ticket from another event but treats its price difference as a warning', () => {
     const preview = buildTicketChangePreview({
       ...base,
       targetTicket: { ...base.targetTicket, eventId: 'event-2', priceCents: 6500 },
@@ -29,17 +29,19 @@ describe('buildTicketChangePreview', () => {
     expect(preview.blockers).toContain('Le billet actuel et le billet cible doivent appartenir au même événement.')
     expect(preview.impacts.financial.status).toBe('potential_change')
     expect(preview.allowed).toBe(false)
-    expect(preview.blockers.some((blocker) => blocker.includes('Impact financier différent'))).toBe(true)
+    expect(preview.blockers.some((blocker) => blocker.includes('financier'))).toBe(false)
+    expect(preview.warnings.some((warning) => warning.includes('prix historique restera inchangé'))).toBe(true)
   })
 
-  it('blocks previews when the financial impact cannot be calculated', () => {
+  it('allows a configured change when the financial impact cannot be calculated', () => {
     const preview = buildTicketChangePreview({
       ...base,
       targetTicket: { ...base.targetTicket, priceCents: null },
     })
-    expect(preview.allowed).toBe(false)
+    expect(preview.allowed).toBe(true)
     expect(preview.impacts.financial.status).toBe('unknown')
-    expect(preview.blockers).toContain('Impact financier non calculable : la politique financière doit être validée avant toute mutation.')
+    expect(preview.blockers).toHaveLength(0)
+    expect(preview.warnings.some((warning) => warning.includes('aucune opération financière'))).toBe(true)
   })
 
   it('uses the group anchor when a target ticket requests wave reassignment', () => {

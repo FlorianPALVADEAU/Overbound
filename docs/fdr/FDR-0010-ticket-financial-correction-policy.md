@@ -1,6 +1,6 @@
 # FDR-0010 — Politique financière des corrections de billet et de SAS
 
-- **Statut** : Accepted — V1 sans mouvement financier
+- **Statut** : Accepted — V1 sans mouvement financier automatique
 - **Date** : 2026-09-17
 - **Owner produit** : à désigner (responsable opérations / finance)
 - **Owner technique** : à désigner
@@ -12,12 +12,11 @@
 ## Décisions produit validées pour la V1
 
 - Le **prix historique payé est conservé** lors d’un changement de billet.
-- Tout **écart financier est bloquant** ; il n’est ni collecté, ni remboursé, ni transformé en avoir.
-- La V1 ne permet que les corrections **sans mouvement financier**.
-- Une exception gratuite (`NO_MOVEMENT_EXCEPTION`) peut être validée par un **admin habilité ou un responsable finance**.
-- Toute exception financière exige un **motif obligatoire**, un approbateur identifiable et une trace d’audit.
-- Les **taxes, frais de paiement et promotions ne sont pas recalculés** en V1. Si leur impact ne peut pas être prouvé comme nul, l’aperçu est bloqué.
-- Les avoirs et remboursements sont **hors périmètre** et non applicables à cette version.
+- Un **écart financier n’est pas bloquant** pour une correction administrative : le prix historique payé est conservé et aucun mouvement financier automatique n’est créé.
+- La V1 autorise ces corrections sous la variante `NO_MOVEMENT`, quel que soit l’écart catalogue affiché.
+- L’admin actif est l’approbateur identifiable ; une note interne est facultative et la commande reste auditée.
+- Les **taxes, frais de paiement et promotions ne sont pas recalculés** en V1. Leur incertitude est affichée comme avertissement, sans bloquer la correction opérationnelle.
+- Les avoirs, codes promotionnels compensatoires et remboursements restent des opérations manuelles séparées, hors de la confirmation du changement de billet.
 - Toute correction est **interdite à partir de J-1 inclus**, calculé par rapport au début de l’événement dans son fuseau horaire.
 - Aucune double approbation n’est requise en V1. Les rôles admin habilité et responsable finance restent distincts dans le modèle d’autorisation, même s’ils sont actuellement détenus par la même personne.
 
@@ -75,21 +74,21 @@ Les libellés UI doivent utiliser ces termes. “Ajuster le prix”, “Forcer�
 
 | Code | Cas | Autorisation par défaut | Effet financier |
 |---|---|---|---|
-| `NO_MOVEMENT` | Billet de même prix, changement de format approuvé, ou changement de SAS | Admin opérations | Aucun mouvement ; le montant payé reste inchangé |
-| `NO_MOVEMENT_EXCEPTION` | Billet plus cher ou moins cher mais décision explicite de conserver le prix historique | Admin habilité ou responsable finance | Aucun mouvement ; motif obligatoire et approbation tracée |
+| `NO_MOVEMENT` | Tout changement administratif de billet ou de SAS, y compris avec écart catalogue | Admin opérations | Aucun mouvement ; le montant payé reste inchangé |
+| `NO_MOVEMENT_EXCEPTION` | Réservé pour une future politique d’exception plus stricte | Admin habilité ou responsable finance | Non utilisé dans la V1 active |
 | `COLLECT_DIFFERENCE` | Billet cible plus cher | Owner finance + paiement réussi | Collecter l’écart avant de finaliser, ou laisser l’inscription en attente |
 | `ISSUE_CREDIT` | Billet cible moins cher | Owner finance requis | Émettre un avoir selon durée, usage et éligibilité définis |
 | `REFUND_DIFFERENCE` | Billet cible moins cher | Owner finance requis | Remboursement explicite via prestataire, asynchrone et réconcilié |
 | `REJECT` | Écart non calculable, commande non payée, conflit de remise/taxe, ou cas non supporté | Tout admin | Aucune mutation |
 
-**DECISION** — V1 n’active que `NO_MOVEMENT` pour les changements sans écart et `NO_MOVEMENT_EXCEPTION` pour une exception explicitement approuvée. Tout autre cas retourne `REJECT`. `COLLECT_DIFFERENCE`, `ISSUE_CREDIT` et `REFUND_DIFFERENCE` sont hors périmètre et ne doivent générer aucun mouvement.
+**DECISION (mise à jour 2026-09-20)** — V1 applique `NO_MOVEMENT` à toute correction administrative, même si le prix catalogue diffère ou ne peut pas être calculé. L’écart est visible mais non bloquant. `COLLECT_DIFFERENCE`, `ISSUE_CREDIT` et `REFUND_DIFFERENCE` restent hors périmètre et ne doivent générer aucun mouvement implicite.
 
 ### 3.2 Choix à valider
 
 - **DECISION Q-10** — Le prix historique payé est conservé en V1.
-- **DECISION Q-11** — `NO_MOVEMENT_EXCEPTION` est accessible à un admin habilité ou à un responsable finance, avec motif et approbation tracée.
-- **DECISION Q-12** — Les frais de paiement, taxes et promotions ne sont pas recalculés en V1 ; toute incertitude bloque l’opération.
-- **DECISION Q-13** — Aucun avoir ni remboursement n’est applicable en V1 ; ces scénarios sont hors périmètre.
+- **DECISION Q-11** — L’admin peut confirmer un écart sous `NO_MOVEMENT` ; la trace d’audit identifie l’acteur et la note interne est facultative.
+- **DECISION Q-12** — Les frais de paiement, taxes et promotions ne sont pas recalculés en V1 ; toute incertitude est un avertissement non bloquant.
+- **DECISION Q-13** — Un avoir, un code promotionnel compensatoire ou un remboursement peut être géré séparément et manuellement ; il n’est jamais déclenché implicitement par le changement de billet.
 - **DECISION Q-14** — Aucune correction n’est autorisée à partir de J-1 inclus avant le début de l’événement. Le serveur applique cette règle avec le fuseau horaire de l’événement ; l’UI ne fait qu’afficher le blocage.
 - **DECISION Q-15** — Aucune double approbation ni seuil supplémentaire en V1. Une seule approbation par un admin habilité ou un responsable finance suffit.
 
@@ -205,9 +204,9 @@ Les logs contiennent `organization_id`, `event_id`, `registration_id`, `command_
 | Lot | Contenu | Sortie / gate |
 |---|---|---|
 | 0 | Décider Q-10 à Q-15, inventorier paiements et live Supabase | politique acceptée, owners nommés |
-| 1 | Aperçus billet/SAS, règles `NO_MOVEMENT`/`REJECT` | zéro écriture depuis preview, tests contrats |
+| 1 | Aperçus billet/SAS et avertissements d’écart | zéro écriture depuis preview, tests contrats |
 | 2 | Confirmation sans mouvement, audit, idempotence, rollback | tests concurrence + RLS + dry-run |
-| 3 | Approbations et `NO_MOVEMENT_EXCEPTION` | matrice rôles/seuils validée |
+| 3 | Politique d’exceptions financières futures | matrice rôles/seuils validée avant activation |
 | 4 | Collecte complémentaire | prestataire, webhook, retry et réconciliation testés |
 | 5 | Avoir et remboursement | validation finance/légale, runbook incident, pilote |
 
@@ -215,9 +214,9 @@ Chaque lot est livrable séparément et doit inclure migration réversible si n�
 
 ## 12. Critères d’acceptation
 
-- Un changement sans écart affiche et journalise explicitement `NO_MOVEMENT`.
+- Tout changement affiche et journalise explicitement `NO_MOVEMENT`, avec l’écart catalogue éventuel visible dans l’aperçu.
 - Une correction est refusée dès J-1, côté serveur, quelle que soit la date de création de l’aperçu.
-- Un écart ou une donnée incohérente est bloqué sans écriture partielle.
+- Un écart ou une donnée financière inconnue produit un avertissement sans mouvement financier ; une incohérence opérationnelle reste bloquante sans écriture partielle.
 - Un admin non habilité ne peut ni approuver ni confirmer une variante protégée.
 - Un double clic et une répétition réseau produisent un seul résultat via `command_id`.
 - Une course de concurrence échoue proprement si billet, SAS, groupe ou paiement a changé.
