@@ -86,7 +86,6 @@ export async function POST(request: Request) {
         admin,
         eventId: anchorEventId,
         waveIndex: anchorWaveIndex,
-        startTime: anchorStartTime,
         profileIds: [user.id],
       })
       waveReassigned = syncResult.moved > 0

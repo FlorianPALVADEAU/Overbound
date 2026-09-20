@@ -126,7 +126,6 @@ describe('POST /api/groups/join', () => {
       admin,
       eventId: 'event-1',
       waveIndex: 3,
-      startTime: '2026-06-01T08:20:00.000Z',
       profileIds: ['user-1'],
     }))
     expect(body.wave_reassigned).toBe(true)
@@ -149,7 +148,6 @@ describe('POST /api/groups/join', () => {
     expect(syncOpenRegistrationsToWaveMock).toHaveBeenCalledWith(expect.objectContaining({
       eventId: 'event-1',
       waveIndex: 2,
-      startTime: '2026-06-01T08:00:00.000Z',
       profileIds: ['user-1'],
     }))
   })

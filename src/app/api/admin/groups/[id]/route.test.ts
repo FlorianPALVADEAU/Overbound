@@ -37,20 +37,12 @@ function createPatchAdmin() {
   const admin = {
     from(table: string) {
       if (table === 'event_waves') {
+        const waveQuery: any = {
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { start_time: '2026-06-01T08:40:00.000Z' }, error: null }),
+        }
         return {
-          select() {
-            return {
-              eq() {
-                return {
-                  eq() {
-                    return {
-                      maybeSingle: async () => ({ data: { start_time: '2026-06-01T08:40:00.000Z' }, error: null }),
-                    }
-                  },
-                }
-              },
-            }
-          },
+          select: vi.fn().mockReturnValue(waveQuery),
         }
       }
 
@@ -126,6 +118,7 @@ describe('PATCH /api/admin/groups/[id]', () => {
       body: JSON.stringify({
         name: 'Team Updated',
         anchor_event_id: 'event-1',
+        anchor_ticket_id: 'ticket-wave-1',
         anchor_wave_index: 4,
       }),
     })
@@ -146,7 +139,6 @@ describe('PATCH /api/admin/groups/[id]', () => {
       admin,
       eventId: 'event-1',
       waveIndex: 4,
-      startTime: '2026-06-01T08:40:00.000Z',
       profileIds: ['m1', 'm2'],
     }))
     expect(body.members_moved_to_group_wave).toBe(2)

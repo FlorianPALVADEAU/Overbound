@@ -16,6 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       name?: string
       captain_id?: string
       anchor_event_id?: string | null
+      anchor_ticket_id?: string | null
       anchor_wave_index?: number | null
       promotional_code?: string
     }
@@ -103,7 +104,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           admin,
           eventId: groupAnchor.anchor_event_id,
           waveIndex: groupAnchor.anchor_wave_index,
-          startTime: groupAnchor.anchor_start_time,
           profileIds: toAdd,
         })
         movedToAnchor = sync.moved
@@ -167,6 +167,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     } else if (
       typeof body.anchor_event_id === 'string' &&
       body.anchor_event_id.length > 0 &&
+      typeof body.anchor_ticket_id === 'string' &&
+      body.anchor_ticket_id.length > 0 &&
       Number.isFinite(Number(body.anchor_wave_index))
     ) {
       const waveIndex = Number(body.anchor_wave_index)
@@ -174,6 +176,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .from('event_waves')
         .select('start_time')
         .eq('event_id', body.anchor_event_id)
+        .eq('ticket_id', body.anchor_ticket_id)
         .eq('wave_index', waveIndex)
         .maybeSingle()
 
@@ -217,7 +220,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           admin,
           eventId: updates.anchor_event_id,
           waveIndex: updates.anchor_wave_index,
-          startTime: updates.anchor_start_time,
           profileIds: memberIds,
         })
         movedToAnchor = sync.moved

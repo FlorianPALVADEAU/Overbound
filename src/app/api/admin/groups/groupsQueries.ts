@@ -163,6 +163,7 @@ export const useAdminUpdateGroup = () => {
       name?: string
       captain_id?: string
       anchor_event_id?: string | null
+      anchor_ticket_id?: string | null
       anchor_wave_index?: number | null
     }) => {
       const { id, ...body } = payload

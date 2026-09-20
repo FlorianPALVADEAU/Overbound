@@ -35,6 +35,7 @@ import {
   type AdminUser,
 } from '@/app/api/admin/users/usersQueries'
 import { useAdminEvents, useAdminEventWaves } from '@/app/api/admin/events/eventsQueries'
+import { useAdminTickets } from '@/app/api/admin/tickets/ticketsQueries'
 import {
   useAdminAddGroupMember,
   useAdminCreateGroup,
@@ -93,6 +94,7 @@ export function GroupsSection() {
   const { data, isLoading, isFetching, error, refetch } = useAdminGroups()
   const { data: usersData } = useAdminUsers()
   const { data: events = [] } = useAdminEvents()
+  const { data: tickets = [] } = useAdminTickets()
   const { data: promoCodesData } = useAdminGroupsPromoCodes()
 
   const createGroup = useAdminCreateGroup()
@@ -116,6 +118,7 @@ export function GroupsSection() {
   const [editName, setEditName] = useState('')
   const [editCaptainId, setEditCaptainId] = useState('')
   const [editAnchorEventId, setEditAnchorEventId] = useState<string>('none')
+  const [editAnchorTicketId, setEditAnchorTicketId] = useState<string>('none')
   const [editAnchorWaveIndex, setEditAnchorWaveIndex] = useState<string>('none')
   const [newMemberSearch, setNewMemberSearch] = useState('')
   const [selectedNewMemberId, setSelectedNewMemberId] = useState('')
@@ -163,13 +166,22 @@ export function GroupsSection() {
     return searchUsers(available, newMemberSearch)
   }, [users, membersInAnyGroup, editingGroup, newMemberSearch])
 
-  const { data: editAnchorWaves = [] } = useAdminEventWaves(editAnchorEventId !== 'none' ? editAnchorEventId : null)
+  const anchorTickets = useMemo(
+    () => tickets.filter((ticket) =>
+      ticket.event_id === editAnchorEventId && ticket.operations_config?.departure_mode === 'wave'),
+    [tickets, editAnchorEventId],
+  )
+  const { data: editAnchorWaves = [] } = useAdminEventWaves(
+    editAnchorEventId !== 'none' ? editAnchorEventId : null,
+    editAnchorTicketId !== 'none' ? editAnchorTicketId : null,
+  )
 
   useEffect(() => {
     if (!editingGroup) return
     setEditName(editingGroup.name)
     setEditCaptainId(editingGroup.captain_id)
     setEditAnchorEventId(editingGroup.anchor_event_id ?? 'none')
+    setEditAnchorTicketId('none')
     setEditAnchorWaveIndex(editingGroup.anchor_wave_index !== null ? String(editingGroup.anchor_wave_index) : 'none')
     setNewMemberSearch('')
     setSelectedNewMemberId('')
@@ -215,6 +227,7 @@ export function GroupsSection() {
       name: string
       captain_id: string
       anchor_event_id?: string | null
+      anchor_ticket_id?: string | null
       anchor_wave_index?: number | null
     } = {
       id: editingGroup.id,
@@ -225,8 +238,10 @@ export function GroupsSection() {
     if (editAnchorEventId === 'none') {
       payload.anchor_event_id = null
       payload.anchor_wave_index = null
+      payload.anchor_ticket_id = null
     } else if (editAnchorWaveIndex !== 'none') {
       payload.anchor_event_id = editAnchorEventId
+      payload.anchor_ticket_id = editAnchorTicketId
       payload.anchor_wave_index = Number(editAnchorWaveIndex)
     }
 
@@ -434,10 +449,10 @@ export function GroupsSection() {
               {editingGroup && formatAnchorSource(editingGroup) ? (
                 <p className="text-xs text-muted-foreground">{formatAnchorSource(editingGroup)}</p>
               ) : null}
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label>Événement</Label>
-                  <Select value={editAnchorEventId} onValueChange={(value) => { setEditAnchorEventId(value); setEditAnchorWaveIndex('none') }}>
+                  <Select value={editAnchorEventId} onValueChange={(value) => { setEditAnchorEventId(value); setEditAnchorTicketId('none'); setEditAnchorWaveIndex('none') }}>
                     <SelectTrigger><SelectValue placeholder="Aucune ancre" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucune ancre</SelectItem>
@@ -446,8 +461,18 @@ export function GroupsSection() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Billet SAS</Label>
+                  <Select value={editAnchorTicketId} onValueChange={(value) => { setEditAnchorTicketId(value); setEditAnchorWaveIndex('none') }} disabled={editAnchorEventId === 'none'}>
+                    <SelectTrigger><SelectValue placeholder="Choisir un billet" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Choisir un billet</SelectItem>
+                      {anchorTickets.map((ticket) => <SelectItem key={ticket.id} value={ticket.id}>{ticket.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>Vague</Label>
-                  <Select value={editAnchorWaveIndex} onValueChange={setEditAnchorWaveIndex} disabled={editAnchorEventId === 'none'}>
+                  <Select value={editAnchorWaveIndex} onValueChange={setEditAnchorWaveIndex} disabled={editAnchorTicketId === 'none'}>
                     <SelectTrigger><SelectValue placeholder="Choisir une vague" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucune vague</SelectItem>

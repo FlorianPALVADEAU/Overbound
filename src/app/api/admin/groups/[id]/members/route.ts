@@ -90,7 +90,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         admin,
         eventId: anchorEventId,
         waveIndex: anchorWaveIndex,
-        startTime: anchorStartTime,
         profileIds: [profile_id],
       })
       movedToAnchor = sync.moved

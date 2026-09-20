@@ -69,9 +69,18 @@ class Query {
 class FakeAdmin {
   registrations: RegistrationRow[] = []
   eventWaveUpdates: Array<{ event_id: string; wave_index: number; assigned_count: number }> = []
+  rpcCalls: Array<{ registrationId: string; waveIndex: number }> = []
 
   from(table: string) {
     return new Query(this, table)
+  }
+
+  async rpc(_name: string, params: { p_registration_id: string; p_wave_index: number }) {
+    this.rpcCalls.push({ registrationId: params.p_registration_id, waveIndex: params.p_wave_index })
+    this.registrations = this.registrations.map((row) =>
+      row.id === params.p_registration_id ? { ...row, wave_index: params.p_wave_index } : row,
+    )
+    return { data: {}, error: null }
   }
 
   execute(
@@ -124,7 +133,7 @@ class FakeAdmin {
 }
 
 describe('resolveGroupAnchorFromProfile', () => {
-  it('returns first OPEN anchor from latest registrations', async () => {
+  it('returns the latest anchor from a wave-enabled ticket', async () => {
     const admin = new FakeAdmin()
     admin.registrations = [
       {
@@ -134,7 +143,7 @@ describe('resolveGroupAnchorFromProfile', () => {
         wave_index: 3,
         start_time: '2026-05-01T08:30:00.000Z',
         created_at: '2026-05-02T10:00:00.000Z',
-        ticket: { name: 'RANKED Ultra', race: { name: 'RANKED' } },
+        ticket: { operations_config: { departure_mode: 'fixed' } },
       },
       {
         id: 'r-open',
@@ -143,7 +152,7 @@ describe('resolveGroupAnchorFromProfile', () => {
         wave_index: 1,
         start_time: '2026-05-01T08:00:00.000Z',
         created_at: '2026-05-01T09:00:00.000Z',
-        ticket: { name: 'OPEN Team', race: { name: 'OPEN' } },
+        ticket: { operations_config: { departure_mode: 'wave' } },
       },
     ]
 
@@ -155,7 +164,7 @@ describe('resolveGroupAnchorFromProfile', () => {
     })
   })
 
-  it('returns null when no OPEN registration exists', async () => {
+  it('returns null when no wave-enabled registration exists', async () => {
     const admin = new FakeAdmin()
     admin.registrations = [
       {
@@ -164,7 +173,7 @@ describe('resolveGroupAnchorFromProfile', () => {
         event_id: 'e1',
         wave_index: 3,
         start_time: '2026-05-01T08:30:00.000Z',
-        ticket: { name: 'RANKED Ultra', race: { name: 'RANKED' } },
+        ticket: { operations_config: { departure_mode: 'fixed' } },
       },
     ]
 
@@ -174,7 +183,7 @@ describe('resolveGroupAnchorFromProfile', () => {
 })
 
 describe('syncOpenRegistrationsToWave', () => {
-  it('moves only OPEN registrations to target wave and updates wave counters', async () => {
+  it('moves only wave-enabled registrations through the ticket-scoped RPC', async () => {
     const admin = new FakeAdmin()
     admin.registrations = [
       {
@@ -183,7 +192,7 @@ describe('syncOpenRegistrationsToWave', () => {
         event_id: 'event-1',
         wave_index: 2,
         start_time: '2026-06-01T08:10:00.000Z',
-        ticket: { name: 'OPEN Sprint', race: { name: 'OPEN' } },
+        ticket: { operations_config: { departure_mode: 'wave' } },
       },
       {
         id: 'open-already-target',
@@ -191,7 +200,7 @@ describe('syncOpenRegistrationsToWave', () => {
         event_id: 'event-1',
         wave_index: 1,
         start_time: '2026-06-01T08:00:00.000Z',
-        ticket: { name: 'OPEN Sprint', race: { name: 'OPEN' } },
+        ticket: { operations_config: { departure_mode: 'wave' } },
       },
       {
         id: 'ranked-untouched',
@@ -199,7 +208,7 @@ describe('syncOpenRegistrationsToWave', () => {
         event_id: 'event-1',
         wave_index: 3,
         start_time: '2026-06-01T08:00:00.000Z',
-        ticket: { name: 'RANKED Elite', race: { name: 'RANKED' } },
+        ticket: { operations_config: { departure_mode: 'fixed' } },
       },
     ]
 
@@ -207,24 +216,15 @@ describe('syncOpenRegistrationsToWave', () => {
       admin: admin as any,
       eventId: 'event-1',
       waveIndex: 1,
-      startTime: '2026-06-01T08:00:00.000Z',
       profileIds: ['u1', 'u2'],
     })
 
-    expect(result).toEqual({ moved: 1, openRegistrations: 2 })
+    expect(result).toEqual({ moved: 1, waveRegistrations: 2 })
 
     const moved = admin.registrations.find((row) => row.id === 'open-to-move')
     expect(moved?.wave_index).toBe(1)
-    expect(moved?.start_time).toBe('2026-06-01T08:00:00.000Z')
-
     const ranked = admin.registrations.find((row) => row.id === 'ranked-untouched')
     expect(ranked?.wave_index).toBe(3)
-
-    expect(admin.eventWaveUpdates).toEqual(
-      expect.arrayContaining([
-        { event_id: 'event-1', wave_index: 1, assigned_count: 2 },
-        { event_id: 'event-1', wave_index: 2, assigned_count: 0 },
-      ]),
-    )
+    expect(admin.rpcCalls).toEqual([{ registrationId: 'open-to-move', waveIndex: 1 }])
   })
 })

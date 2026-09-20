@@ -1,12 +1,9 @@
-import { OPEN_SAS_CONFIG, isOpenFormatTicket } from '@/lib/openSas'
-
 type AdminClient = any
 
 type SyncInput = {
   admin: AdminClient
   eventId: string
   waveIndex: number
-  startTime: string
   profileIds: string[]
 }
 
@@ -19,74 +16,32 @@ export async function syncOpenRegistrationsToWave({
   admin,
   eventId,
   waveIndex,
-  startTime,
   profileIds,
-}: SyncInput): Promise<{ moved: number; openRegistrations: number }> {
-  if (!profileIds.length) return { moved: 0, openRegistrations: 0 }
+}: SyncInput): Promise<{ moved: number; waveRegistrations: number }> {
+  if (!profileIds.length) return { moved: 0, waveRegistrations: 0 }
 
   const { data: rows, error } = await admin
     .from('registrations')
-    .select('id, user_id, wave_index, ticket:tickets(name, race:races(name))')
+    .select('id, user_id, wave_index, ticket:tickets(operations_config)')
     .eq('event_id', eventId)
     .in('user_id', profileIds)
 
   if (error) throw error
 
-  const openRows = (rows ?? []).filter((row: any) => {
+  const waveRows = (rows ?? []).filter((row: any) => {
     const ticket = firstRelation(row.ticket) as any
-    const race = firstRelation(ticket?.race) as any
-    return isOpenFormatTicket(ticket?.name ?? null, race?.name ?? null)
+    return ticket?.operations_config?.departure_mode === 'wave'
   }) as Array<{ id: string; wave_index: number | null }>
 
-  const toMove = openRows.filter((row) => row.wave_index !== waveIndex)
-  if (!toMove.length) return { moved: 0, openRegistrations: openRows.length }
-
-  const oldWaves = new Set<number>()
+  const toMove = waveRows.filter((row) => row.wave_index !== waveIndex)
   for (const row of toMove) {
-    if (typeof row.wave_index === 'number') oldWaves.add(row.wave_index)
+    const { error: syncError } = await admin.rpc('sync_registration_to_group_anchor', {
+      p_event_id: eventId,
+      p_registration_id: row.id,
+      p_wave_index: waveIndex,
+    })
+    if (syncError) throw syncError
   }
 
-  const { count: existingInTarget } = await admin
-    .from('registrations')
-    .select('id', { count: 'exact', head: true })
-    .eq('event_id', eventId)
-    .eq('wave_index', waveIndex)
-
-  for (let i = 0; i < toMove.length; i += 1) {
-    const row = toMove[i]
-    await admin
-      .from('registrations')
-      .update({
-        wave_index: waveIndex,
-        start_time: startTime,
-        wave_capacity: OPEN_SAS_CONFIG.waveCapacity,
-        wave_position: (existingInTarget ?? 0) + i + 1,
-        auto_assigned: true,
-        preferred_window_start: startTime,
-        preferred_window_end: startTime,
-        latest_allowed_time: startTime,
-        assignment_constraint_breached: false,
-      })
-      .eq('id', row.id)
-  }
-
-  const affectedWaves = new Set<number>([waveIndex, ...oldWaves])
-  for (const affectedWaveIndex of affectedWaves) {
-    const { count } = await admin
-      .from('registrations')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', eventId)
-      .eq('wave_index', affectedWaveIndex)
-
-    await admin
-      .from('event_waves')
-      .update({
-        assigned_count: count ?? 0,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('event_id', eventId)
-      .eq('wave_index', affectedWaveIndex)
-  }
-
-  return { moved: toMove.length, openRegistrations: openRows.length }
+  return { moved: toMove.length, waveRegistrations: waveRows.length }
 }
