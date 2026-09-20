@@ -8,9 +8,7 @@ export type ParticipantQuickActionState = {
 }
 
 /**
- * Preview actions deliberately stay read-only. A RANKED registration has no
- * SAS to inspect or change; the ticket preview remains available so its
- * server-side blockers can be explained to the operator.
+ * A SAS action is available only when the current ticket supports waves.
  */
 export function getParticipantQuickActionState(
   participant: EventParticipantRow,
@@ -21,6 +19,6 @@ export function getParticipantQuickActionState(
       : { disabled: true, reason: 'Aucun billet attribué' },
     wave: participant.ticket.format === 'OPEN'
       ? { disabled: false }
-      : { disabled: true, reason: 'Les inscriptions RANKED n’ont pas de SAS' },
+      : { disabled: true, reason: 'Ce billet ne gère pas de SAS' },
   }
 }

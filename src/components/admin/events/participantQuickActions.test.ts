@@ -13,11 +13,11 @@ const participant = (format: 'OPEN' | 'RANKED', ticketId: string | null = 'ticke
 })
 
 describe('getParticipantQuickActionState', () => {
-  it('keeps ticket preview available and disables SAS for RANKED', () => {
+  it('keeps ticket preview available and disables SAS when the ticket does not manage waves', () => {
     const state = getParticipantQuickActionState(participant('RANKED'))
 
     expect(state.ticket.disabled).toBe(false)
-    expect(state.wave).toEqual({ disabled: true, reason: 'Les inscriptions RANKED n’ont pas de SAS' })
+    expect(state.wave).toEqual({ disabled: true, reason: 'Ce billet ne gère pas de SAS' })
   })
 
   it('disables ticket preview when the registration has no ticket', () => {

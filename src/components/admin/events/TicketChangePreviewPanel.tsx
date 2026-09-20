@@ -65,6 +65,12 @@ const impactLabels: Record<string, string> = {
 const formatAmount = (cents: number | null, currency: string | null) =>
   cents == null ? 'Non renseigné' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency?.toUpperCase() ?? 'EUR' }).format(cents / 100)
 
+const operationalProfileLabel = (format: TicketChangePreview['current']['format']) => {
+  if (format === 'OPEN') return 'Départ par SAS'
+  if (format === 'RANKED') return 'Départ fixe'
+  return 'Configuration personnalisée'
+}
+
 type TicketChangeConfirmationGateProps = {
   eventId: string
   registrationId: string
@@ -229,8 +235,8 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
       {preview ? (
         <div className="space-y-3 rounded-md border bg-background p-3 text-sm">
           <div className="grid gap-2 sm:grid-cols-2">
-            <div><p className="text-xs text-muted-foreground">Billet actuel</p><p>{preview.current.name} · {preview.current.format}</p></div>
-            <div><p className="text-xs text-muted-foreground">Billet cible</p><p>{preview.target.name} · {preview.target.format}</p></div>
+            <div><p className="text-xs text-muted-foreground">Billet actuel</p><p>{preview.current.name} · {operationalProfileLabel(preview.current.format)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Billet cible</p><p>{preview.target.name} · {operationalProfileLabel(preview.target.format)}</p></div>
           </div>
           <div className="flex flex-wrap gap-2" aria-label="Impacts du changement">
             <Badge variant={preview.impacts.format === 'changed' ? 'secondary' : 'outline'}>Format : {impactLabels[preview.impacts.format] ?? preview.impacts.format}</Badge>

@@ -309,7 +309,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           <DialogHeader>
             <DialogTitle>Détail participant</DialogTitle>
             <DialogDescription>
-              Consultation en lecture seule. Les changements de billet et de SAS seront ajoutés dans un parcours séparé.
+              Consultez l’inscription et prévisualisez une correction avant de la confirmer.
             </DialogDescription>
           </DialogHeader>
           {selectedParticipant ? (
@@ -348,7 +348,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                 <div><p className="text-muted-foreground">Compte</p><p>{selectedParticipant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</p></div>
                 <div><p className="text-muted-foreground">Email</p><p className="break-all">{selectedParticipant.participant.email}</p></div>
                 <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{selectedParticipant.id}</p></div>
-                <div><p className="text-muted-foreground">Billet / format</p><p>{selectedParticipant.ticket.name ?? '—'} · {selectedParticipant.ticket.format}</p></div>
+                <div><p className="text-muted-foreground">Billet</p><p>{selectedParticipant.ticket.name ?? '—'}</p></div>
                 <div><p className="text-muted-foreground">Départ</p><p>{selectedParticipant.departure.startTime ? `${formatDate(selectedParticipant.departure.startTime)} · SAS ${selectedParticipant.departure.waveIndex ?? '—'}` : '—'}</p></div>
                 <div><p className="text-muted-foreground">Groupe</p><p>{selectedParticipant.group ?? 'Aucun'}</p></div>
                 <div><p className="text-muted-foreground">Paiement</p><p>{selectedParticipant.payment ? `${selectedParticipant.payment.status ?? '—'} · ${formatAmount(selectedParticipant.payment.amountCents, selectedParticipant.payment.currency)}` : '—'}</p></div>
