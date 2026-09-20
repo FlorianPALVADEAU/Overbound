@@ -8,7 +8,7 @@ import {
 describe('participant URL state', () => {
   it('parses supported state and keeps the event context separate from query state', () => {
     const state = parseParticipantUrlState(
-      new URLSearchParams('sort=email&direction=asc&check_in=checked_in&cursor=abc&limit=100'),
+      new URLSearchParams('sort=email&direction=asc&check_in=checked_in&cursor=abc&limit=100&selected=registration-1'),
       'event-1',
     )
 
@@ -19,6 +19,7 @@ describe('participant URL state', () => {
       checkIn: 'checked_in',
       cursor: 'abc',
       limit: 100,
+      selectedId: 'registration-1',
     })
   })
 
@@ -38,10 +39,11 @@ describe('participant URL state', () => {
         checkIn: 'not_checked_in',
         cursor: 'next-page',
         limit: 100,
+        selectedId: 'registration-1',
       },
     )
 
-    expect(query).toBe('view=participants&sort=email&direction=asc&check_in=not_checked_in&cursor=next-page&limit=100')
+    expect(query).toBe('view=participants&sort=email&direction=asc&check_in=not_checked_in&cursor=next-page&limit=100&selected=registration-1')
     expect(query).not.toContain('alice')
   })
 

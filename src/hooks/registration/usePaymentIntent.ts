@@ -72,6 +72,7 @@ export function usePaymentIntent(
             distanceIdealKm: p.distanceIdealKm,
             distanceMinKm: p.distanceMinKm,
             difficultyLevel: p.difficultyLevel || null,
+            selectedWaveIndex: p.selectedWaveIndex ?? null,
           })),
           upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
             upsellId,

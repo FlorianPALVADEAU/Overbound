@@ -9,6 +9,7 @@ export interface ParticipantUrlState {
   checkIn: ParticipantCheckIn
   cursor: string | null
   limit: number
+  selectedId: string | null
 }
 
 interface SearchParamsLike {
@@ -22,6 +23,7 @@ export const DEFAULT_PARTICIPANT_URL_STATE: Omit<ParticipantUrlState, 'eventId'>
   checkIn: 'all',
   cursor: null,
   limit: 50,
+  selectedId: null,
 }
 
 const LIMITS = new Set([25, 50, 100])
@@ -48,12 +50,13 @@ export function parseParticipantUrlState(
       : DEFAULT_PARTICIPANT_URL_STATE.checkIn,
     cursor: searchParams.get('cursor') || null,
     limit: LIMITS.has(limit) ? limit : DEFAULT_PARTICIPANT_URL_STATE.limit,
+    selectedId: searchParams.get('selected') || null,
   }
 }
 
 export function writeParticipantUrlState(
   searchParams: SearchParamsLike,
-  state: Pick<ParticipantUrlState, 'sort' | 'direction' | 'checkIn' | 'cursor' | 'limit'>,
+  state: Pick<ParticipantUrlState, 'sort' | 'direction' | 'checkIn' | 'cursor' | 'limit' | 'selectedId'>,
 ): string {
   const next = new URLSearchParams(searchParams.toString())
 
@@ -71,6 +74,9 @@ export function writeParticipantUrlState(
 
   if (state.limit === DEFAULT_PARTICIPANT_URL_STATE.limit) next.delete('limit')
   else next.set('limit', String(state.limit))
+
+  if (state.selectedId) next.set('selected', state.selectedId)
+  else next.delete('selected')
 
   // Never carry a free-text search through a shareable URL, even if an older
   // caller used the previous `query` or `search` parameter names.

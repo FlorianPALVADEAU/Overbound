@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { BarChart3, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ADMIN_NAV_GROUPS } from './adminNavItems'
-import { useAdminDashboardStore } from '@/store/useAdminDashboardStore'
-import type { AdminTabValue } from '@/store/useAdminDashboardStore'
 
 interface AdminSidebarProps {
   profileRole: 'admin' | 'volunteer'
@@ -14,7 +13,23 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
-  const { activeTab, setActiveTab } = useAdminDashboardStore()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const eventId = searchParams.get('event')
+  const activeTab = ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) =>
+    item.href === '/dashboard'
+      ? pathname === '/dashboard' && !searchParams.get('tab')
+      : item.href.startsWith('/dashboard?tab=')
+        ? searchParams.get('tab') === item.value
+        : pathname === item.href || (item.requiresEventContext && pathname.includes(`/${item.value}`))
+  )?.value
+
+  const hrefFor = (item: (typeof ADMIN_NAV_GROUPS)[number]['items'][number]) => {
+    if (!item.requiresEventContext || !eventId) return item.href
+    if (item.value === 'members') return `/dashboard/events/${eventId}/participants`
+    if (item.value === 'tickets') return `/dashboard/events/${eventId}/tickets`
+    return `${item.href}?event=${encodeURIComponent(eventId)}`
+  }
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
@@ -51,9 +66,8 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2">
         {/* Standalone: Tableau de bord */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('overview')}
+        <Link
+          href="/dashboard"
           className={cn(
             'w-full flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
             activeTab === 'overview'
@@ -63,7 +77,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
         >
           <BarChart3 className="h-4 w-4 shrink-0" />
           <span>Tableau de bord</span>
-        </button>
+        </Link>
 
         <div className="my-2 border-t border-border/40" />
 
@@ -109,10 +123,9 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
               >
                 <div className="ml-3 pl-3 border-l border-border/50">
                   {group.items.map((item) => (
-                    <button
+                    <Link
                       key={item.value}
-                      type="button"
-                      onClick={() => setActiveTab(item.value)}
+                      href={hrefFor(item)}
                       className={cn(
                         'w-full flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
                         activeTab === item.value
@@ -122,7 +135,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span className="truncate">{item.label}</span>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </div>

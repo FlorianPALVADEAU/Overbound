@@ -46,6 +46,7 @@ export type Participant = {
   distanceIdealKm: string
   distanceMinKm: string
   difficultyLevel?: 'low' | 'mid' | 'hard' | null
+  selectedWaveIndex?: number | null
 }
 
 export type SelectedUpsellState = Record<string, { quantity: number; meta?: Record<string, any> }>

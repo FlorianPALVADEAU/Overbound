@@ -6,27 +6,41 @@ import { Textarea } from '@/components/ui/textarea'
 import { Ticket as TicketIcon } from 'lucide-react'
 import { FORMAT_LEVELS, type FormatLevelId } from '@/constants/formatLevels'
 import { DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
-import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
+import { isOpenFormatTicket, isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
+import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
 import type { EventTicket, Participant } from './types'
 
 interface ParticipantFormProps {
+  eventId: string
   participant: Participant
   index: number
   ticket: EventTicket | undefined
   onFieldChange: (participantId: string, field: keyof Participant, value: string) => void
+  onWaveSelect: (participantId: string, waveIndex: number | null) => void
   showErrors: boolean
+  groupAnchor: { waveIndex: number; startTime: string } | null
 }
 
 export default function ParticipantForm({
+  eventId,
   participant,
   index,
   ticket,
   onFieldChange,
+  onWaveSelect,
   showErrors,
+  groupAnchor,
 }: ParticipantFormProps) {
   const isUniversalRace = ticket?.race?.is_universal ?? true
   const isOpenFormat = isOpenFormatTicket(ticket?.name, ticket?.race?.name)
   const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
+  const { waves: selectableWaves, isLoading: wavesLoading, error: wavesError } = useSelectableOpenWaves(
+    eventId,
+    ticket?.id,
+    participant.distanceIdealKm,
+    participant.distanceMinKm,
+    isOpenFormat && !groupAnchor,
+  )
   const errorClass = 'border-destructive focus-visible:ring-destructive'
   const hasError = (value: string) => showErrors && !value.trim()
   const distanceMinValue = Number(participant.distanceMinKm)
@@ -264,7 +278,7 @@ export default function ParticipantForm({
             </div>
             <div className="space-y-2 md:col-span-2">
               <p className="text-xs text-muted-foreground">
-                Ces infos servent à attribuer automatiquement votre heure de départ.
+                Ces infos déterminent les SAS de départ que tu peux choisir.
               </p>
               {distanceOrderError ? (
                 <p className="text-xs text-destructive font-medium">
@@ -276,6 +290,54 @@ export default function ParticipantForm({
                   La distance doit être comprise entre {DISTANCE_MIN_KM} et {DISTANCE_MAX_KM} km.
                 </p>
               ) : null}
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor={`${participant.id}-wave`} className="flex items-center gap-2">
+                SAS de départ <span className="text-destructive">*</span>
+              </Label>
+              {groupAnchor ? (
+                <p className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                  Départ fixé par ton groupe : <span className="font-semibold">{formatWaveStartTime(groupAnchor.startTime)}</span>
+                </p>
+              ) : (
+                <>
+                  <Select
+                    value={participant.selectedWaveIndex ? String(participant.selectedWaveIndex) : ''}
+                    onValueChange={(value) => onWaveSelect(participant.id, Number(value))}
+                    disabled={!distanceMinValue || !distanceIdealValue || wavesLoading}
+                  >
+                    <SelectTrigger
+                      id={`${participant.id}-wave`}
+                      className={showErrors && !participant.selectedWaveIndex ? errorClass : ''}
+                    >
+                      <SelectValue
+                        placeholder={
+                          wavesLoading
+                            ? 'Chargement des SAS...'
+                            : !distanceMinValue || !distanceIdealValue
+                              ? 'Renseigne tes distances d’abord'
+                              : selectableWaves.length === 0
+                                ? 'Aucun SAS disponible pour ces distances'
+                                : 'Choisis ton SAS de départ'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectableWaves.map((wave) => (
+                        <SelectItem key={wave.wave_index} value={String(wave.wave_index)}>
+                          {formatWaveStartTime(wave.start_time)} — {wave.remaining} place{wave.remaining > 1 ? 's' : ''} restante{wave.remaining > 1 ? 's' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {wavesError ? (
+                    <p className="text-xs text-destructive font-medium">{wavesError}</p>
+                  ) : null}
+                  {showErrors && !participant.selectedWaveIndex ? (
+                    <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
+                  ) : null}
+                </>
+              )}
             </div>
           </>
         ) : null}

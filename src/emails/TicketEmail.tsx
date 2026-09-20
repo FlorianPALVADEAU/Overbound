@@ -11,6 +11,8 @@ export default function TicketEmail({
   eventLocation,
   ticketName,
   startTime,
+  waveIndex,
+  bibNumber,
   qrUrl,
   manageUrl,
 }: {
@@ -20,6 +22,8 @@ export default function TicketEmail({
   eventLocation: string
   ticketName: string
   startTime?: string | null
+  waveIndex?: number | null
+  bibNumber?: number | null
   qrUrl: string
   manageUrl: string
 }) {
@@ -101,6 +105,18 @@ export default function TicketEmail({
                 <tr>
                   <td style={styles.cardLabel}>⏱ Départ</td>
                   <td style={styles.cardValue}>{startTime}</td>
+                </tr>
+              ) : null}
+              {waveIndex ? (
+                <tr>
+                  <td style={styles.cardLabel}>🚦 SAS</td>
+                  <td style={styles.cardValue}>SAS {waveIndex}</td>
+                </tr>
+              ) : null}
+              {bibNumber ? (
+                <tr>
+                  <td style={styles.cardLabel}>🔢 Dossard</td>
+                  <td style={styles.cardValue}>N° {bibNumber}</td>
                 </tr>
               ) : null}
             </tbody>

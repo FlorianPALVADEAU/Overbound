@@ -5,10 +5,12 @@ import {
   CalendarIcon,
   Clock as ClockIcon,
   DownloadIcon,
+  Hash,
   MapPinIcon,
   QrCodeIcon,
   Share2,
   AlertTriangle,
+  Milestone,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -51,6 +53,7 @@ export interface AccountRegistrationItem {
   distance_ideal_km?: number | null
   distance_min_km?: number | null
   assignment_constraint_breached?: boolean | null
+  bib_number?: number | null
   ticket_id: string | null
   ticket_name: string | null
   difficulty_level: 'low' | 'mid' | 'hard' | null
@@ -216,6 +219,18 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                     <span>Départ prévu : {formattedStartTime}</span>
                   </div>
                 ) : null}
+                {registration.wave_index ? (
+                  <div className="flex items-center gap-2">
+                    <Milestone className="h-4 w-4 text-muted-foreground" />
+                    <span>SAS {registration.wave_index}</span>
+                  </div>
+                ) : null}
+                {registration.bib_number ? (
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    <span>Dossard n° {registration.bib_number}</span>
+                  </div>
+                ) : null}
                 {registration.assignment_constraint_breached ? (
                   <div className="flex items-center gap-2 text-amber-700">
                     <AlertTriangle className="h-4 w-4" />
@@ -341,6 +356,13 @@ export function AccountRegistrationsList({ registrations }: AccountRegistrations
                             ) : null}
                             {formattedStartTime ? (
                               <p className="text-xs text-muted-foreground">Départ prévu : {formattedStartTime}</p>
+                            ) : null}
+                            {registration.wave_index || registration.bib_number ? (
+                              <p className="text-xs font-semibold text-foreground">
+                                {registration.wave_index ? `SAS ${registration.wave_index}` : null}
+                                {registration.wave_index && registration.bib_number ? ' · ' : null}
+                                {registration.bib_number ? `Dossard n° ${registration.bib_number}` : null}
+                              </p>
                             ) : null}
                           </div>
                           <Button variant="outline" className="w-full" onClick={() => setActiveDialog(null)}>

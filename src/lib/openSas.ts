@@ -174,6 +174,28 @@ const getLatestAllowed = (eventDateIso: string, distanceMin: number) => {
   return getOpenLastDeparture(eventDateIso)
 }
 
+/**
+ * Window of SAS start times a participant is allowed to pick from, given
+ * their declared distance range (FDR-0012 §3.1). Combines the existing
+ * ideal-distance window (getPreferredWindow) with the min-distance upper
+ * bound (getLatestAllowed): the selectable window is the intersection, so a
+ * short min-distance run never lets someone pick a start time later than
+ * their min-distance ceiling even if their ideal distance alone would allow
+ * a wider window.
+ */
+export const getSelectableWaveWindow = (
+  eventDateIso: string,
+  distanceIdealKm: number,
+  distanceMinKm: number,
+) => {
+  const idealWindow = getPreferredWindow(eventDateIso, distanceIdealKm)
+  const latestAllowed = getLatestAllowed(eventDateIso, distanceMinKm)
+
+  const end = idealWindow.end.getTime() < latestAllowed.getTime() ? idealWindow.end : latestAllowed
+
+  return { start: idealWindow.start, end }
+}
+
 export const formatWaveStartTime = (startTime: string | null | undefined) => {
   return formatClockTimeParis(startTime)
 }

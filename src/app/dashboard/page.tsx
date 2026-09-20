@@ -1,19 +1,42 @@
 'use client'
 
-import { redirect } from 'next/navigation'
+import { redirect, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useAdminOverview } from '@/app/api/admin/overview/overviewQueries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { AdminStats } from '@/components/admin/AdminStats'
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session, isLoading: sessionLoading } = useSession()
   const role = session?.profile?.role ?? null
   const isAdmin = role === 'admin'
   const isVolunteer = role === 'volunteer'
   const { data, isLoading, error, refetch } = useAdminOverview({ enabled: isAdmin })
+  const legacyTab = searchParams.get('tab')
+  const eventId = searchParams.get('event')
+
+  useEffect(() => {
+    if (!legacyTab) return
+    const routes: Record<string, string> = {
+      events: '/dashboard/events',
+      ambassadors: '/dashboard/ambassadors',
+      'distribution-lists': '/dashboard/distribution-lists',
+      upsells: '/dashboard/upsells',
+      logs: '/dashboard/logs',
+    }
+    const destination = legacyTab === 'members' && eventId
+      ? `/dashboard/events/${eventId}/participants`
+      : legacyTab === 'tickets' && eventId
+        ? `/dashboard/events/${eventId}/tickets`
+        : routes[legacyTab]
+    if (destination) router.replace(destination)
+  }, [eventId, legacyTab, router])
 
   if (sessionLoading || (isAdmin && isLoading)) {
     return (
@@ -69,11 +92,15 @@ export default function DashboardPage() {
     )
   }
 
-  return (
-    <AdminDashboard
-      user={data.user as any}
-      profile={{ role: data.profile.role as any, full_name: data.profile.full_name ?? undefined }}
-      stats={data.stats}
-    />
-  )
+  if (legacyTab) {
+    return (
+      <AdminDashboard
+        user={data.user as any}
+        profile={{ role: data.profile.role as any, full_name: data.profile.full_name ?? undefined }}
+        stats={data.stats}
+      />
+    )
+  }
+
+  return <AdminStats stats={data.stats} />
 }

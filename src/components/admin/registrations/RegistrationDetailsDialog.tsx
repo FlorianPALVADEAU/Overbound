@@ -311,6 +311,13 @@ export function RegistrationDetailsDialog({
               </span>
             </div>
             <div className={rowClassName}>
+              <span className="text-muted-foreground">Dossard</span>
+              <span>
+                {registration.bib_number ?? 'Non assigné'}
+                {registration.race_format ? ` (${registration.race_format})` : ''}
+              </span>
+            </div>
+            <div className={rowClassName}>
               <span className="text-muted-foreground">Auto-assigné</span>
               <span>{formatBoolean(registration.auto_assigned)}</span>
             </div>

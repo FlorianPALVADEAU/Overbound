@@ -77,7 +77,7 @@ export default function MultiStepEventRegistration({
     handleTicketQuantityChange,
   } = useTicketSelections(tickets)
 
-  const { participants, setParticipants, handleParticipantChange } = useParticipants(
+  const { participants, setParticipants, handleParticipantChange, handleWaveSelection } = useParticipants(
     selectedTicketSlots,
     user,
     suppressEmptyParticipantsSyncRef,
@@ -172,6 +172,9 @@ export default function MultiStepEventRegistration({
   // Step validation
   const isTicketsStepValid = totalParticipants > 0
 
+  const hasActiveGroupAnchor =
+    Boolean(myGroup) && myGroup?.anchor_event_id === event.id && myGroup?.anchor_wave_index != null
+
   const isParticipantsStepValid =
     participants.length === totalParticipants &&
     participants.every((participant) => {
@@ -191,6 +194,9 @@ export default function MultiStepEventRegistration({
         distanceIdeal >= DISTANCE_MIN_KM &&
         distanceIdeal <= DISTANCE_MAX_KM &&
         distanceIdeal >= distanceMin
+      // A member of an already-anchored group never picks a SAS — the
+      // anchor is forced server-side regardless (FDR-0005/FDR-0012 §3.3).
+      const hasWaveSelectionIfNeeded = hasActiveGroupAnchor || Boolean(participant.selectedWaveIndex)
 
       return (
         participant.firstName.trim() &&
@@ -200,7 +206,7 @@ export default function MultiStepEventRegistration({
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
         hasDifficultyIfNeeded &&
-        (isOpenFormat ? hasDistances : true)
+        (isOpenFormat ? hasDistances && hasWaveSelectionIfNeeded : true)
       )
     })
 
@@ -544,11 +550,18 @@ export default function MultiStepEventRegistration({
             sectionRef={participantsSectionRef}
           >
             <ParticipantsStep
+              eventId={event.id}
               participants={participants}
               ticketMap={ticketMap}
               onFieldChange={handleParticipantChange}
+              onWaveSelect={handleWaveSelection}
               showErrors={showValidationErrors}
               groupBanner={groupBanner}
+              groupAnchor={
+                hasActiveGroupAnchor
+                  ? { waveIndex: myGroup!.anchor_wave_index as number, startTime: myGroup!.anchor_start_time as string }
+                  : null
+              }
             />
           </RegistrationSection>
 

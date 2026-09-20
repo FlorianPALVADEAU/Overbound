@@ -3,13 +3,26 @@
 --
 -- Usage:
 -- 1) Edit the PARAMS section below.
--- 2) Run in SQL editor / psql.
--- 3) Verify NOTICE output.
--- 4) Set v_dry_run := false and rerun.
+-- 2) If the participant is not part of an anchored group, resolve their
+--    chosen SAS wave_index up front (v_wave_index) — this script no longer
+--    auto-picks a wave; wave choice is a participant decision (FDR-0012).
+-- 3) Run in SQL editor / psql.
+-- 4) Verify NOTICE output.
+-- 5) Set v_dry_run := false and rerun.
 --
 -- IMPORTANT:
--- - This script updates only the registration/ticket/wave assignment.
+-- - This script updates registration/ticket/wave/bib assignment.
 -- - It does NOT rebill/refund/order accounting differences.
+-- - It refuses to transfer a registration that is already checked in
+--   (checked_in = true) — never move someone mid/post-event.
+-- - Wave assignment goes through assign_selected_wave_to_registration /
+--   sync_registration_to_group_anchor (locked, atomic — FDR-0012). No
+--   manual SELECT MAX(...) + UPDATE on event_waves counters.
+-- - Bib number goes through transfer_bib_number (locked, atomic, all-or-
+--   nothing — FDR-0011). The RANKED bib is released and a new OPEN bib is
+--   assigned; if the OPEN format has no bib capacity left, the whole
+--   transfer rolls back and the registration keeps its original ticket,
+--   wave and bib.
 
 BEGIN;
 
@@ -21,6 +34,10 @@ DECLARE
   v_registration_id uuid := '00000000-0000-0000-0000-000000000000';
   -- Optional explicit OPEN ticket id. Keep NULL to auto-resolve.
   v_open_ticket_id uuid := NULL;
+  -- Required when the participant is NOT in an anchored group: the
+  -- wave_index they chose. Ignored (and may be left NULL) when an anchor
+  -- applies, since the anchor always wins (FDR-0005/FDR-0012 §3.3).
+  v_wave_index integer := NULL;
   -- Keep TRUE for simulation first, then FALSE to apply.
   v_dry_run boolean := TRUE;
 
@@ -30,9 +47,9 @@ DECLARE
   r record;
   t_open record;
   g_anchor record;
-  v_new_wave_position integer;
-  v_new_start_time timestamptz;
-  v_new_wave_index integer;
+  v_open_bib_capacity integer;
+  v_assignment json;
+  v_new_bib integer;
 BEGIN
   -- Lock the registration row we are about to mutate.
   SELECT
@@ -42,19 +59,21 @@ BEGIN
     reg.ticket_id,
     reg.wave_index,
     reg.start_time,
-    reg.distance_ideal_km,
-    reg.distance_min_km,
+    reg.checked_in,
+    reg.bib_number,
+    reg.race_format,
     t.name AS ticket_name,
     race.name AS race_name,
     race.distance_km AS race_distance_km,
-    evt.date AS event_date
+    evt.date AS event_date,
+    evt.open_bib_capacity AS event_open_bib_capacity
   INTO r
   FROM registrations reg
   JOIN tickets t ON t.id = reg.ticket_id
   LEFT JOIN races race ON race.id = t.race_id
   JOIN events evt ON evt.id = reg.event_id
   WHERE reg.id = v_registration_id
-  FOR UPDATE;
+  FOR UPDATE OF reg;
 
   IF r.id IS NULL THEN
     RAISE EXCEPTION 'Registration % not found', v_registration_id;
@@ -62,6 +81,10 @@ BEGIN
 
   IF r.user_id IS NULL THEN
     RAISE EXCEPTION 'Registration % has NULL user_id; cannot map group/member logic safely', v_registration_id;
+  END IF;
+
+  IF r.checked_in THEN
+    RAISE EXCEPTION 'Registration % is already checked in; refusing to transfer a checked-in participant', r.id;
   END IF;
 
   -- Validate source format is ranked.
@@ -134,13 +157,22 @@ BEGIN
   ORDER BY gm.joined_at DESC
   LIMIT 1;
 
+  IF g_anchor.group_id IS NULL AND v_wave_index IS NULL THEN
+    RAISE EXCEPTION 'Registration % has no group anchor on this event: v_wave_index must be set to the participant''s chosen SAS before running this script (FDR-0012)', r.id;
+  END IF;
+
+  v_open_bib_capacity := r.event_open_bib_capacity;
+  IF v_open_bib_capacity IS NULL OR v_open_bib_capacity <= 0 THEN
+    RAISE EXCEPTION 'Event % has no open_bib_capacity configured; cannot assign an OPEN bib number', r.event_id;
+  END IF;
+
   RAISE NOTICE 'Registration=% user=% event=%', r.id, r.user_id, r.event_id;
-  RAISE NOTICE 'Current ticket=% (% / %)', r.ticket_id, COALESCE(r.ticket_name, 'n/a'), COALESCE(r.race_name, 'n/a');
+  RAISE NOTICE 'Current ticket=% (% / %) bib_number=% race_format=%', r.ticket_id, COALESCE(r.ticket_name, 'n/a'), COALESCE(r.race_name, 'n/a'), COALESCE(r.bib_number::text, 'n/a'), COALESCE(r.race_format, 'n/a');
   RAISE NOTICE 'Target ticket=% (% / %)', t_open.id, COALESCE(t_open.name, 'n/a'), COALESCE(t_open.race_name, 'n/a');
   IF g_anchor.group_id IS NOT NULL THEN
-    RAISE NOTICE 'Group anchor found: group=% wave_index=% start_time=%', g_anchor.group_id, g_anchor.anchor_wave_index, g_anchor.anchor_start_time;
+    RAISE NOTICE 'Group anchor found: group=% wave_index=% start_time=% (overrides v_wave_index if set)', g_anchor.group_id, g_anchor.anchor_wave_index, g_anchor.anchor_start_time;
   ELSE
-    RAISE NOTICE 'No group anchor found for this user on this event. SAS OPEN will be assigned by RPC.';
+    RAISE NOTICE 'No group anchor found. Will assign to participant-chosen wave_index=%.', v_wave_index;
   END IF;
 
   IF v_dry_run THEN
@@ -148,7 +180,9 @@ BEGIN
     RETURN;
   END IF;
 
-  -- 1) Switch ticket + reset wave fields before reassignment.
+  -- 1) Switch ticket, reset wave fields before reassignment. bib_number is
+  --    intentionally left untouched here — transfer_bib_number() below
+  --    handles it atomically together with the format flip.
   UPDATE registrations
   SET
     ticket_id = t_open.id,
@@ -163,88 +197,38 @@ BEGIN
     assignment_constraint_breached = FALSE
   WHERE id = r.id;
 
-  -- 2) Assign OPEN SAS.
+  -- 2) Assign OPEN SAS via the atomic, locked RPCs (FDR-0012) — never a
+  --    manual SELECT MAX(wave_position)+1 / event_waves counter UPDATE.
   IF g_anchor.group_id IS NOT NULL THEN
-    -- Keep group coherence: force the registration on group's anchored wave.
-    SELECT COALESCE(MAX(reg2.wave_position), 0) + 1
-      INTO v_new_wave_position
-    FROM registrations reg2
-    JOIN tickets t2 ON t2.id = reg2.ticket_id
-    LEFT JOIN races race2 ON race2.id = t2.race_id
-    WHERE reg2.event_id = r.event_id
-      AND reg2.wave_index = g_anchor.anchor_wave_index
-      AND POSITION('open' IN LOWER(COALESCE(t2.name, '') || ' ' || COALESCE(race2.name, ''))) > 0;
-
-    UPDATE registrations
-    SET
-      start_time = g_anchor.anchor_start_time,
-      wave_index = g_anchor.anchor_wave_index,
-      wave_capacity = 50,
-      wave_position = v_new_wave_position,
-      auto_assigned = TRUE,
-      assignment_constraint_breached = FALSE
-    WHERE id = r.id;
-  ELSE
-    -- Use existing production assignment logic.
-    PERFORM *
-    FROM assign_open_wave_to_registration(
+    PERFORM sync_registration_to_group_anchor(
       p_event_id := r.event_id,
       p_registration_id := r.id,
-      p_first_departure := (
-        date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '12 hour'
-      ) AT TIME ZONE 'Europe/Paris',
-      p_wave_count := 24,
-      p_interval_minutes := 10,
-      p_default_capacity := 50,
-      p_preferred_start := (
-        date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '12 hour'
-      ) AT TIME ZONE 'Europe/Paris',
-      p_preferred_end := (
-        date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '15 hour 50 minute'
-      ) AT TIME ZONE 'Europe/Paris',
-      p_latest_allowed := (
-        date_trunc('day', r.event_date AT TIME ZONE 'Europe/Paris')
-        + interval '15 hour 50 minute'
-      ) AT TIME ZONE 'Europe/Paris'
+      p_wave_index := g_anchor.anchor_wave_index
+    );
+  ELSE
+    PERFORM assign_selected_wave_to_registration(
+      p_event_id := r.event_id,
+      p_registration_id := r.id,
+      p_wave_index := v_wave_index
     );
   END IF;
 
-  -- 3) Refresh event_waves assigned_count for the event (OPEN registrations only).
-  UPDATE event_waves ew
-  SET
-    assigned_count = sub.open_count,
-    updated_at = NOW()
-  FROM (
-    SELECT
-      ew2.event_id,
-      ew2.wave_index,
-      COUNT(reg3.id)::int AS open_count
-    FROM event_waves ew2
-    LEFT JOIN registrations reg3
-      ON reg3.event_id = ew2.event_id
-     AND reg3.wave_index = ew2.wave_index
-    LEFT JOIN tickets t3 ON t3.id = reg3.ticket_id
-    LEFT JOIN races race3 ON race3.id = t3.race_id
-    WHERE ew2.event_id = r.event_id
-      AND (
-        reg3.id IS NULL
-        OR POSITION('open' IN LOWER(COALESCE(t3.name, '') || ' ' || COALESCE(race3.name, ''))) > 0
-      )
-    GROUP BY ew2.event_id, ew2.wave_index
-  ) AS sub
-  WHERE ew.event_id = sub.event_id
-    AND ew.wave_index = sub.wave_index;
+  -- 3) Transfer the bib number: release the RANKED bib, assign a new OPEN
+  --    bib, atomically. Rolls back entirely if OPEN has no capacity left.
+  v_new_bib := transfer_bib_number(
+    p_registration_id := r.id,
+    p_event_id := r.event_id,
+    p_target_format := 'open',
+    p_max_number := v_open_bib_capacity
+  );
 
-  SELECT reg.start_time, reg.wave_index
-    INTO v_new_start_time, v_new_wave_index
+  SELECT reg.start_time, reg.wave_index, reg.bib_number
+    INTO r.start_time, r.wave_index, r.bib_number
   FROM registrations reg
   WHERE reg.id = r.id;
 
-  RAISE NOTICE 'DONE: registration % moved to OPEN ticket % with start_time=% wave_index=%',
-    r.id, t_open.id, v_new_start_time, v_new_wave_index;
+  RAISE NOTICE 'DONE: registration % moved to OPEN ticket % with start_time=% wave_index=% bib_number=%',
+    r.id, t_open.id, r.start_time, r.wave_index, r.bib_number;
 END;
 $$;
 

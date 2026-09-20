@@ -85,6 +85,8 @@ const EVENT_ROW = {
   slug: 'ultra-arena',
   location: 'SQY',
   date: '2026-09-12T06:00:00.000Z',
+  open_bib_capacity: 5000,
+  ranked_bib_capacity: 1000,
 }
 
 const RANKED_TICKET_ROW = {
@@ -230,7 +232,10 @@ function createAdmin(overrides: {
       }
       throw new Error(`Unexpected table: ${table}`)
     },
-    rpc: async () => ({ error: null }),
+    rpc: async (fn: string) => {
+      if (fn === 'assign_bib_number') return { data: 1, error: null }
+      return { error: null }
+    },
   }
 }
 

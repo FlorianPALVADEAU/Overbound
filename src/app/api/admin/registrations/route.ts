@@ -27,6 +27,13 @@ interface RawRegistrationRow {
   preferred_window_end: string | null
   latest_allowed_time: string | null
   assignment_constraint_breached: boolean | null
+  // Not guaranteed present: get_registrations_with_filters is an
+  // undocumented RPC (rpc-reference.md) whose definition may predate
+  // bib_number/race_format (FDR-0011/FDR-0012). Fall back to the
+  // registrations-table fetch below (documentMetaMap) instead of assuming
+  // the RPC returns these columns.
+  bib_number?: number | null
+  race_format?: 'open' | 'ranked' | null
   event?: EventSummary | null
   ticket?: TicketSummary | null
   order?: OrderSummary | null
@@ -97,6 +104,8 @@ interface DocumentMeta {
   preferred_window_end: string | null
   latest_allowed_time: string | null
   assignment_constraint_breached: boolean | null
+  bib_number: number | null
+  race_format: 'open' | 'ranked' | null
   documents_count: 0
   required_documents_count: 0
   uploaded_document_types: never[]
@@ -487,6 +496,8 @@ export async function GET(request: Request) {
       preferred_window_end: string | null
       latest_allowed_time: string | null
       assignment_constraint_breached: boolean | null
+      bib_number: number | null
+      race_format: 'open' | 'ranked' | null
       ticket: TicketSummary | TicketSummary[] | null
       event: EventSummary | EventSummary[] | null
       order: Pick<OrderSummary, 'id' | 'amount_total' | 'currency' | 'status'> | Pick<OrderSummary, 'id' | 'amount_total' | 'currency' | 'status'>[] | null
@@ -510,6 +521,8 @@ export async function GET(request: Request) {
           preferred_window_end,
           latest_allowed_time,
           assignment_constraint_breached,
+          bib_number,
+          race_format,
           ticket:tickets(id, name, distance_km),
           event:events(id, title, date, location),
           order:orders(id, amount_total, currency, status)
@@ -542,6 +555,8 @@ export async function GET(request: Request) {
           preferred_window_end: row.preferred_window_end ?? null,
           latest_allowed_time: row.latest_allowed_time ?? null,
           assignment_constraint_breached: row.assignment_constraint_breached ?? null,
+          bib_number: row.bib_number ?? null,
+          race_format: row.race_format ?? null,
           documents_count: 0,
           required_documents_count: 0,
           uploaded_document_types: [],
@@ -644,6 +659,8 @@ export async function GET(request: Request) {
         preferred_window_end: meta?.preferred_window_end ?? row.preferred_window_end ?? null,
         latest_allowed_time: meta?.latest_allowed_time ?? row.latest_allowed_time ?? null,
         assignment_constraint_breached: meta?.assignment_constraint_breached ?? row.assignment_constraint_breached ?? null,
+        bib_number: meta?.bib_number ?? row.bib_number ?? null,
+        race_format: meta?.race_format ?? row.race_format ?? null,
         documents_count: 0,
         required_documents_count: 0,
         uploaded_document_types: [],

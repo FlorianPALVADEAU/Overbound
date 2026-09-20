@@ -22,12 +22,16 @@ import {
   Dumbbell,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import type { AdminTabValue } from '@/store/useAdminDashboardStore'
-
 export interface AdminNavItem {
-  value: AdminTabValue
+  /**
+   * Kept while old `/dashboard?tab=` links are still accepted.  New navigation
+   * must use `href`, never this value as client-side navigation state.
+   */
+  value: string
   label: string
   icon: LucideIcon
+  href: string
+  requiresEventContext?: boolean
 }
 
 export interface AdminNavGroup {
@@ -39,23 +43,23 @@ export interface AdminNavGroup {
 
 // Flat list — used for mobile select, breadcrumbs, etc.
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
-  { value: 'overview', label: 'Tableau de bord', icon: BarChart3 },
-  { value: 'events', label: 'Événements', icon: Calendar },
-  { value: 'races', label: 'Courses', icon: Trophy },
-  { value: 'obstacles', label: 'Obstacles', icon: Zap },
-  { value: 'tickets', label: 'Tickets', icon: Ticket },
-  { value: 'promocodes', label: 'Codes promo', icon: Percent },
-  { value: 'promotions', label: 'Promotions', icon: Megaphone },
-  { value: 'upsells', label: 'Upsells', icon: Package },
-  { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal },
-  { value: 'groups', label: 'Groupes', icon: Users },
-  { value: 'bootcamps', label: 'Bootcamps', icon: Dumbbell },
-  { value: 'users', label: 'Utilisateurs', icon: UserCog },
-  { value: 'members', label: 'Membres', icon: Users },
-  { value: 'checkin', label: 'Check-in', icon: UserCheck },
-  { value: 'logs', label: 'Logs', icon: ScrollText },
-  { value: 'emails', label: 'Emails', icon: Mail },
-  { value: 'distribution-lists', label: 'Listes de diffusion', icon: List },
+  { value: 'overview', label: 'Tableau de bord', icon: BarChart3, href: '/dashboard' },
+  { value: 'events', label: 'Événements', icon: Calendar, href: '/dashboard/events' },
+  { value: 'races', label: 'Courses', icon: Trophy, href: '/dashboard?tab=races' },
+  { value: 'obstacles', label: 'Obstacles', icon: Zap, href: '/dashboard?tab=obstacles' },
+  { value: 'tickets', label: 'Tickets', icon: Ticket, href: '/dashboard/events', requiresEventContext: true },
+  { value: 'promocodes', label: 'Codes promo', icon: Percent, href: '/dashboard?tab=promocodes' },
+  { value: 'promotions', label: 'Promotions', icon: Megaphone, href: '/dashboard?tab=promotions' },
+  { value: 'upsells', label: 'Upsells', icon: Package, href: '/dashboard/upsells' },
+  { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal, href: '/dashboard/ambassadors' },
+  { value: 'groups', label: 'Groupes', icon: Users, href: '/dashboard?tab=groups' },
+  { value: 'bootcamps', label: 'Bootcamps', icon: Dumbbell, href: '/dashboard?tab=bootcamps' },
+  { value: 'users', label: 'Utilisateurs', icon: UserCog, href: '/dashboard?tab=users' },
+  { value: 'members', label: 'Membres', icon: Users, href: '/dashboard/events', requiresEventContext: true },
+  { value: 'checkin', label: 'Check-in', icon: UserCheck, href: '/dashboard?tab=checkin', requiresEventContext: true },
+  { value: 'logs', label: 'Logs', icon: ScrollText, href: '/dashboard/logs' },
+  { value: 'emails', label: 'Emails', icon: Mail, href: '/dashboard?tab=emails' },
+  { value: 'distribution-lists', label: 'Listes de diffusion', icon: List, href: '/dashboard/distribution-lists' },
 ]
 
 // Grouped navigation — used for sidebar collapsible menus
@@ -65,9 +69,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: 'Événements',
     icon: Calendar,
     items: [
-      { value: 'events', label: 'Événements', icon: Calendar },
-      { value: 'races', label: 'Courses', icon: Trophy },
-      { value: 'obstacles', label: 'Obstacles', icon: Zap },
+      ADMIN_NAV_ITEMS[1], ADMIN_NAV_ITEMS[2], ADMIN_NAV_ITEMS[3],
     ],
   },
   {
@@ -75,10 +77,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: 'Billetterie',
     icon: ShoppingCart,
     items: [
-      { value: 'tickets', label: 'Tickets', icon: Ticket },
-      { value: 'promocodes', label: 'Codes promo', icon: Percent },
-      { value: 'promotions', label: 'Promotions', icon: Megaphone },
-      { value: 'upsells', label: 'Upsells', icon: Package },
+      ADMIN_NAV_ITEMS[4], ADMIN_NAV_ITEMS[5], ADMIN_NAV_ITEMS[6], ADMIN_NAV_ITEMS[7],
     ],
   },
   {
@@ -86,12 +85,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: 'Communauté',
     icon: Users,
     items: [
-      { value: 'ambassadors', label: 'Ambassadeurs', icon: Medal },
-      { value: 'groups', label: 'Groupes', icon: Users },
-      { value: 'bootcamps', label: 'Bootcamps', icon: Dumbbell },
-      { value: 'users', label: 'Utilisateurs', icon: UserCog },
-      { value: 'members', label: 'Membres', icon: Users },
-      { value: 'checkin', label: 'Check-in', icon: UserCheck },
+      ADMIN_NAV_ITEMS[8], ADMIN_NAV_ITEMS[9], ADMIN_NAV_ITEMS[10], ADMIN_NAV_ITEMS[11], ADMIN_NAV_ITEMS[12], ADMIN_NAV_ITEMS[13],
     ],
   },
   {
@@ -99,14 +93,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: 'Communication',
     icon: MessageSquare,
     items: [
-      { value: 'emails', label: 'Emails', icon: Mail },
-      { value: 'distribution-lists', label: 'Listes de diffusion', icon: List },
+      ADMIN_NAV_ITEMS[15], ADMIN_NAV_ITEMS[16],
     ],
   },
   {
     id: 'system',
     label: 'Système',
     icon: Settings2,
-    items: [{ value: 'logs', label: 'Logs', icon: ScrollText }],
+    items: [ADMIN_NAV_ITEMS[14]],
   },
 ]

@@ -51,6 +51,8 @@ export interface Registration {
   preferred_window_end?: Timestamp | null
   latest_allowed_time?: Timestamp | null
   assignment_constraint_breached?: boolean | null
+  bib_number?: number | null
+  race_format?: 'open' | 'ranked' | null
 }
 
 export interface RegistrationDocument {

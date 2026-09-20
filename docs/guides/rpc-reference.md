@@ -3,7 +3,18 @@
 **For**: Developers calling PostgreSQL functions from Next.js API routes  
 **Coverage**: All critical RPCs with signatures, side effects, and usage patterns
 
-**Repository note**: The codebase calls several RPCs from application code, but the SQL definitions were not found in the repository migrations at the time of this audit. Treat the signatures below as the contract used by the app and verify the deployed database or add migrations before changing callers.
+**Repository note (updated 2026-09-20)**: This guide mixes historical RPC descriptions and newer local migrations. It is not a live database contract. The checkout contains the four SAS/tenant migrations listed in FDR-0008, including ticket-scoped SAS RPCs, but neither their remote application nor their effective grants/RLS were verified. Verify the deployed database before changing a caller.
+
+## Reprise / statut des RPCs SAS
+
+| RPC / famille | Statut | Référence locale |
+|---|---|---|
+| `assign_open_wave_to_registration` et les flux event-wide associés | **abandonné comme cible** | Description historique ci-dessous. Les nouveaux parcours doivent utiliser des SAS configurés par billet, pas une capacité globale d'événement. |
+| `assign_first_available_ticket_wave`, `assign_selected_wave_to_registration`, `sync_registration_to_group_anchor` | **fait localement** | Définis dans `20260920172444_ticket_scoped_event_waves.sql`, `SECURITY INVOKER`, puis `EXECUTE` restreint à `service_role`. Application distante à vérifier. |
+| `admin_change_registration_ticket`, `admin_move_open_registration_wave`, `admin_confirm_ticket_change` | **partiel / historique** | Des définitions existent localement, mais leurs contrats ont évolué et doivent être confrontés à la base cible avant usage. Les nouvelles commandes doivent respecter `operations_config`, le cutoff J-1, l'idempotence et l'audit. |
+| Inventaire complet des RPC, propriétaires et grants | **à faire (live)** | Le checkout ne permet pas de conclure sur `pg_proc`, `information_schema` ou les grants effectifs. |
+
+Les signatures qui suivent sont conservées pour comprendre les appels existants; elles ne doivent pas être utilisées comme autorisation de créer ou d'appeler une fonction distante non vérifiée.
 
 **Observed in code but not fully documented below**:
 - `admin_overview`

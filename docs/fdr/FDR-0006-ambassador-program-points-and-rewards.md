@@ -1,10 +1,22 @@
 # FDR-0006 - Ambassador Program: Points & Rewards
 
-**Status**: Accepted (Production)  
+**Status**: Accepted — implementation evidence is local only (audit 2026-09-20)
 **Date**: May 2026  
 **References**: [implementation-guide-ambassador.md](../guides/implementation-guide-ambassador.md)
 
 ---
+
+## Reprise / état vérifié localement — 2026-09-20
+
+| Élément | Statut | Constat local / suite nécessaire |
+|---|---|---|
+| Programme de points, niveaux et rewards | **fait localement** | Les helpers, dashboard et routes de claim sont présents; la migration `20260706_fix_ambassador_points_all_codes.sql` met à jour les points pour les codes historiques. |
+| Attribution par format | **partiel** | La règle 1 point OPEN / 2 points RANKED demeure métier, mais les nouveaux parcours ne doivent pas inférer le format depuis un libellé. La source exacte de `race_format` et son contrat live sont à vérifier. |
+| Isolation organisation / événement | **à faire** | Les structures historiques de points et rewards ne sont pas documentées comme tenant-scopées. Audit live et décision de migration requis avant exposition multi-organisation. |
+| Ledger, justification et idempotence des corrections admin | **à faire** | Les modifications manuelles restent une opération critique; aucune preuve locale d'un ledger robuste avec motif obligatoire et outbox n'est établie par cette FDR. |
+| RLS et grants effectifs | **à faire (live)** | L'activation RLS existe localement pour certaines tables ambassadeur, sans inventaire ni vérification de la base cible. |
+
+Ne pas déduire de ce tableau que les migrations sont appliquées en production ou que les données distantes ont été contrôlées.
 
 ## Decision
 
@@ -260,4 +272,3 @@ LIMIT 10;
 - 🔴 **Critical**: Points awarded for cancelled registration (should be reverted)
 - 🟡 **Warning**: Ambassador with multi-code (is_current not unique)
 - 🟢 **Info**: Monthly ambassador growth, average points per ambassador
-

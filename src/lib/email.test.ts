@@ -82,6 +82,20 @@ describe('sendTicketEmail', () => {
     expect(renderEmailMock).toHaveBeenCalledTimes(1)
     expect(sendMock).toHaveBeenCalledTimes(1)
   })
+
+  it('accepts an optional waveIndex and bibNumber (FDR-0011/FDR-0012)', async () => {
+    await sendTicketEmail({ ...baseParams, waveIndex: 5, bibNumber: 42 })
+
+    expect(renderEmailMock).toHaveBeenCalledTimes(1)
+    expect(sendMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('supports an optional waveIndex/bibNumber left unset (RANKED has no SAS)', async () => {
+    await sendTicketEmail({ ...baseParams, startTime: '08:00', waveIndex: null, bibNumber: 42 })
+
+    expect(renderEmailMock).toHaveBeenCalledTimes(1)
+    expect(sendMock).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('sendReceiptEmail', () => {

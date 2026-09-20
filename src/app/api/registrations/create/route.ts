@@ -9,14 +9,18 @@ import * as QRCode from 'qrcode'
 import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
 import { captureException } from '@/lib/sentry'
 import {
-  OPEN_SAS_CONFIG,
-  assignOpenWaveToRegistration,
-  type OpenWaveAssignment,
   formatWaveStartTime,
   getRankedStartTime,
   isOpenFormatTicket,
   isRankedFormatTicket,
 } from '@/lib/openSas'
+import {
+  assignSelectedWaveToRegistration,
+  syncRegistrationToGroupAnchor,
+  SelectedWaveUnavailableError,
+  type SelectedWaveAssignment,
+} from '@/lib/selectedWaveAssignment'
+import { assignBibNumber, BibCapacityExhaustedError, type RaceFormat } from '@/lib/bibNumber'
 import { sendAdminPushNotification } from '@/lib/push'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
@@ -46,6 +50,7 @@ const participantSchema = z.object({
   distanceIdealKm: z.union([z.string(), z.number()]).optional(),
   distanceMinKm: z.union([z.string(), z.number()]).optional(),
   difficultyLevel: z.enum(['low', 'mid', 'hard']).nullable().optional(),
+  selectedWaveIndex: z.number().int().positive().nullable().optional(),
 })
 
 const createRegistrationBodySchema = z.object({
@@ -198,7 +203,7 @@ export async function POST(request: NextRequest) {
     // Get event info with price tiers
     const { data: eventRow, error: eventError } = await admin
       .from('events')
-      .select('id, title, date, location, price_tiers:event_price_tiers(*)')
+      .select('id, title, date, location, open_bib_capacity, ranked_bib_capacity, price_tiers:event_price_tiers(*)')
       .eq('id', eventId)
       .single()
 
@@ -398,10 +403,9 @@ export async function POST(request: NextRequest) {
       wave_capacity: number | null
       wave_position: number | null
       auto_assigned: boolean | null
-      preferred_window_start: string | null
-      preferred_window_end: string | null
-      latest_allowed_time: string | null
       assignment_constraint_breached: boolean
+      bib_number: number | null
+      race_format: RaceFormat | null
     }
 
     const createdRegistrations: Array<{
@@ -410,43 +414,24 @@ export async function POST(request: NextRequest) {
       participant: (typeof participants)[number]
       participantName: string | null
     }> = []
-    let openGroupAnchor: OpenWaveAssignment | null = null
-    let openGroupCount = 0
-    let groupAnchorPreSet = false
 
-    // If the user belongs to a group, pre-load the wave anchor for this event
+    // If the user belongs to a group with an active anchor on this event,
+    // every OPEN registration for this order is forced onto that wave
+    // (FDR-0005). Otherwise, the participant's own selectedWaveIndex is
+    // used and the first OPEN registration becomes the group's anchor.
+    let groupAnchorWaveIndex: number | null = null
     if (groupId) {
       const { data: groupRow } = await admin
         .from('groups')
-        .select('id, anchor_event_id, anchor_wave_index, anchor_start_time')
+        .select('id, anchor_event_id, anchor_wave_index')
         .eq('id', groupId)
         .maybeSingle()
 
-      if (
-        groupRow &&
-        groupRow.anchor_event_id === eventId &&
-        groupRow.anchor_wave_index !== null &&
-        groupRow.anchor_start_time !== null
-      ) {
-        const { count: existingInWave } = await admin
-          .from('registrations')
-          .select('id', { count: 'exact', head: true })
-          .eq('event_id', eventId)
-          .eq('wave_index', groupRow.anchor_wave_index)
-
-        openGroupAnchor = {
-          waveIndex: groupRow.anchor_wave_index as number,
-          startTime: groupRow.anchor_start_time as string,
-          waveCapacity: OPEN_SAS_CONFIG.waveCapacity,
-          wavePosition: (existingInWave ?? 0) + 1,
-          assignmentConstraintBreached: false,
-          preferredWindowStart: groupRow.anchor_start_time as string,
-          preferredWindowEnd: groupRow.anchor_start_time as string,
-          latestAllowedTime: groupRow.anchor_start_time as string,
-        }
-        groupAnchorPreSet = true
+      if (groupRow && groupRow.anchor_event_id === eventId && groupRow.anchor_wave_index !== null) {
+        groupAnchorWaveIndex = groupRow.anchor_wave_index as number
       }
     }
+    let groupAnchorAlreadySet = groupAnchorWaveIndex !== null
 
     for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
@@ -477,6 +462,13 @@ export async function POST(request: NextRequest) {
           distanceMin > DISTANCE_MAX_KM
         ) {
           return NextResponse.json({ error: 'Distances participant hors limite.' }, { status: 422 })
+        }
+
+        // A member of an already-anchored group never chooses their SAS
+        // (FDR-0005 anchor always wins) — only an unanchored participant
+        // must submit an explicit selection (FDR-0012 §3.2).
+        if (groupAnchorWaveIndex === null && !participant.selectedWaveIndex) {
+          return NextResponse.json({ error: 'SAS_SELECTION_REQUIRED: choix du SAS requis.' }, { status: 422 })
         }
       }
 
@@ -519,104 +511,115 @@ export async function POST(request: NextRequest) {
       const derivedName = `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim()
       const participantName = derivedName || participant.email || registration.email || null
 
-      try {
-        if (isOpenFormat) {
-          if (!openGroupAnchor) {
-            const assignment = await assignOpenWaveToRegistration({
+      // Bib number: independent of wave/SAS assignment, atomic, immutable
+      // once set (FDR-0011). Skipped only for tickets that are neither
+      // OPEN nor RANKED (kids/relay formats not covered by this scheme).
+      if (isOpenFormat || isRankedFormat) {
+        const raceFormat: RaceFormat = isOpenFormat ? 'open' : 'ranked'
+        const maxBibNumber = isOpenFormat ? eventRow.open_bib_capacity : eventRow.ranked_bib_capacity
+
+        if (!maxBibNumber || maxBibNumber <= 0) {
+          console.error(`Capacité dossard non configurée pour l'événement ${eventId} (${raceFormat})`)
+          return NextResponse.json(
+            { error: `Capacité dossard non configurée pour ce format (${raceFormat}).` },
+            { status: 422 },
+          )
+        }
+
+        try {
+          const bibNumber = await assignBibNumber({
+            admin,
+            eventId,
+            registrationId: registration.id,
+            raceFormat,
+            maxBibNumber,
+          })
+          registration.bib_number = bibNumber
+          registration.race_format = raceFormat
+        } catch (bibError) {
+          if (bibError instanceof BibCapacityExhaustedError) {
+            return NextResponse.json({ error: 'Plus aucun dossard disponible pour ce format.' }, { status: 422 })
+          }
+          console.error('Erreur attribution dossard:', bibError)
+          throw bibError
+        }
+      }
+
+      if (isOpenFormat) {
+        let assignment: SelectedWaveAssignment
+        try {
+          if (groupAnchorWaveIndex !== null) {
+            // Anchor always wins over any selection submitted by the client (FDR-0005/FDR-0012 §3.3).
+            assignment = await syncRegistrationToGroupAnchor({
               admin,
               eventId,
               registrationId: registration.id,
-              eventDateIso: eventRow.date,
-              ticketName: ticket.name,
-              raceName: ticket.race?.name ?? null,
-              distanceIdealKm: distanceIdeal,
-              distanceMinKm: distanceMin,
+              waveIndex: groupAnchorWaveIndex,
             })
-
-            if (assignment) {
-              openGroupAnchor = assignment
-              openGroupCount = 1
-              // Save wave anchor to group if this is the first group member for this event
-              if (groupId && !groupAnchorPreSet) {
-                await admin
-                  .from('groups')
-                  .update({
-                    anchor_event_id: eventId,
-                    anchor_wave_index: assignment.waveIndex,
-                    anchor_start_time: assignment.startTime,
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq('id', groupId)
-              }
-              registration.start_time = assignment.startTime
-              registration.wave_index = assignment.waveIndex
-              registration.wave_capacity = assignment.waveCapacity
-              registration.wave_position = assignment.wavePosition
-              registration.auto_assigned = true
-              registration.preferred_window_start = assignment.preferredWindowStart
-              registration.preferred_window_end = assignment.preferredWindowEnd
-              registration.latest_allowed_time = assignment.latestAllowedTime
-              registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
-            }
           } else {
-            openGroupCount += 1
-            const copiedWavePosition = (openGroupAnchor.wavePosition ?? 1) + openGroupCount - 1
-            const { error: syncOpenError } = await admin
-              .from('registrations')
-              .update({
-                start_time: openGroupAnchor.startTime,
-                wave_index: openGroupAnchor.waveIndex,
-                wave_capacity: openGroupAnchor.waveCapacity,
-                wave_position: copiedWavePosition,
-                auto_assigned: true,
-                preferred_window_start: openGroupAnchor.preferredWindowStart,
-                preferred_window_end: openGroupAnchor.preferredWindowEnd,
-                latest_allowed_time: openGroupAnchor.latestAllowedTime,
-                assignment_constraint_breached: openGroupAnchor.assignmentConstraintBreached,
-              })
-              .eq('id', registration.id)
-
-            if (syncOpenError) {
-              throw syncOpenError
-            }
-
-            registration.start_time = openGroupAnchor.startTime
-            registration.wave_index = openGroupAnchor.waveIndex
-            registration.wave_capacity = openGroupAnchor.waveCapacity
-            registration.wave_position = copiedWavePosition
-            registration.auto_assigned = true
-            registration.preferred_window_start = openGroupAnchor.preferredWindowStart
-            registration.preferred_window_end = openGroupAnchor.preferredWindowEnd
-            registration.latest_allowed_time = openGroupAnchor.latestAllowedTime
-            registration.assignment_constraint_breached = openGroupAnchor.assignmentConstraintBreached
-          }
-        } else if (isRankedFormat) {
-          const rankedStart = getRankedStartTime(eventRow.date).toISOString()
-          const { error: rankedUpdateError } = await admin
-            .from('registrations')
-            .update({
-              start_time: rankedStart,
-              auto_assigned: true,
-              wave_index: null,
-              wave_capacity: null,
-              wave_position: null,
-              preferred_window_start: null,
-              preferred_window_end: null,
-              latest_allowed_time: null,
-              assignment_constraint_breached: false,
+            // Zod allows null/undefined; validated non-null above when no anchor applies.
+            const waveIndex = participant.selectedWaveIndex as number
+            assignment = await assignSelectedWaveToRegistration({
+              admin,
+              eventId,
+              registrationId: registration.id,
+              waveIndex,
             })
-            .eq('id', registration.id)
 
-          if (rankedUpdateError) {
-            throw rankedUpdateError
+            // First OPEN registration of an order for a group without an
+            // anchor yet becomes the anchor for all subsequent members.
+            if (groupId && !groupAnchorAlreadySet) {
+              await admin
+                .from('groups')
+                .update({
+                  anchor_event_id: eventId,
+                  anchor_wave_index: assignment.waveIndex,
+                  anchor_start_time: assignment.startTime,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', groupId)
+              groupAnchorWaveIndex = assignment.waveIndex
+              groupAnchorAlreadySet = true
+            }
           }
-
-          registration.start_time = rankedStart
-          registration.auto_assigned = true
+        } catch (assignmentError) {
+          if (assignmentError instanceof SelectedWaveUnavailableError) {
+            return NextResponse.json({ error: 'SAS choisi indisponible, merci de sélectionner un autre créneau.' }, { status: 422 })
+          }
+          console.error('Erreur attribution SAS OPEN:', assignmentError)
+          throw assignmentError
         }
-      } catch (assignmentError) {
-        console.error('Erreur attribution SAS OPEN:', assignmentError)
-        throw assignmentError
+
+        registration.start_time = assignment.startTime
+        registration.wave_index = assignment.waveIndex
+        registration.wave_capacity = assignment.waveCapacity
+        registration.wave_position = assignment.wavePosition
+        registration.auto_assigned = groupAnchorWaveIndex !== null
+        registration.assignment_constraint_breached = false
+      } else if (isRankedFormat) {
+        const rankedStart = getRankedStartTime(eventRow.date).toISOString()
+        const { error: rankedUpdateError } = await admin
+          .from('registrations')
+          .update({
+            start_time: rankedStart,
+            auto_assigned: true,
+            wave_index: null,
+            wave_capacity: null,
+            wave_position: null,
+            preferred_window_start: null,
+            preferred_window_end: null,
+            latest_allowed_time: null,
+            assignment_constraint_breached: false,
+          })
+          .eq('id', registration.id)
+
+        if (rankedUpdateError) {
+          console.error('Erreur attribution départ RANKED:', rankedUpdateError)
+          throw rankedUpdateError
+        }
+
+        registration.start_time = rankedStart
+        registration.auto_assigned = true
       }
 
       createdRegistrations.push({ registration, ticket, participant, participantName })
@@ -659,33 +662,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // When openGroupAnchor was pre-set from group (no RPC call), ALL participants are extra.
-    // When first participant called RPC, only subsequent ones (openGroupCount - 1) are extra.
-    const waveCountIncrement = groupAnchorPreSet ? openGroupCount : openGroupCount - 1
-    if (openGroupAnchor && waveCountIncrement > 0) {
-      const { data: waveRow, error: waveFetchError } = await admin
-        .from('event_waves')
-        .select('id, assigned_count')
-        .eq('event_id', eventId)
-        .eq('wave_index', openGroupAnchor.waveIndex)
-        .maybeSingle()
-
-      if (waveFetchError) {
-        console.error('Erreur récupération compteur SAS OPEN:', waveFetchError)
-      } else if (waveRow?.id) {
-        const { error: waveUpdateError } = await admin
-          .from('event_waves')
-          .update({
-            assigned_count: (waveRow.assigned_count ?? 0) + waveCountIncrement,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', waveRow.id)
-
-        if (waveUpdateError) {
-          console.error('Erreur mise à jour compteur SAS OPEN:', waveUpdateError)
-        }
-      }
-    }
+    // event_waves.assigned_count is now incremented atomically, once per
+    // participant, inside assign_selected_wave_to_registration /
+    // sync_registration_to_group_anchor — no batch counter refresh needed
+    // here (FDR-0009 §1.2, FDR-0012 §4).
 
     if (upsells && upsells.length > 0 && createdRegistrations.length > 0) {
       const referenceRegistration = createdRegistrations[0].registration
@@ -770,6 +750,8 @@ export async function POST(request: NextRequest) {
           eventLocation: eventRow.location,
           ticketName: ticket.name,
           startTime: formatWaveStartTime(registration.start_time),
+          waveIndex: registration.wave_index,
+          bibNumber: registration.bib_number,
           qrUrl: `data:image/png;base64,${qrCodeBase64}`,
           manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`,
         })

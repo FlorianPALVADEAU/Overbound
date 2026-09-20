@@ -179,6 +179,7 @@ export async function GET(request: Request) {
         distance_ideal_km: number | null
         distance_min_km: number | null
         assignment_constraint_breached: boolean | null
+        bib_number: number | null
         requires_document: boolean
         document_types: string[]
       }
@@ -198,7 +199,8 @@ export async function GET(request: Request) {
           auto_assigned,
           distance_ideal_km,
           distance_min_km,
-          assignment_constraint_breached
+          assignment_constraint_breached,
+          bib_number
         `,
         )
         .in('id', registrationIds)
@@ -221,6 +223,7 @@ export async function GET(request: Request) {
             assignment_constraint_breached: typeof row.assignment_constraint_breached === 'boolean'
               ? row.assignment_constraint_breached
               : null,
+            bib_number: typeof row.bib_number === 'number' ? row.bib_number : null,
             requires_document: false,
             document_types: [],
           })
@@ -244,6 +247,7 @@ export async function GET(request: Request) {
           distance_ideal_km: null,
           distance_min_km: null,
           assignment_constraint_breached: null,
+          bib_number: null,
           requires_document: false,
           document_types: [],
         }
@@ -266,6 +270,7 @@ export async function GET(request: Request) {
           distance_ideal_km: meta.distance_ideal_km,
           distance_min_km: meta.distance_min_km,
           assignment_constraint_breached: meta.assignment_constraint_breached,
+          bib_number: meta.bib_number,
           requires_document: false,
           required_document_types: [],
           uploaded_document_types: [],

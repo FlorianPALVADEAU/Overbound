@@ -2,7 +2,6 @@
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Clock, Search } from 'lucide-react'
 import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort, type EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
 import { TicketChangePreviewPanel } from './TicketChangePreviewPanel'
 import { WaveChangePreviewPanel } from './WaveChangePreviewPanel'
@@ -16,30 +15,12 @@ import {
 } from './participantUrlState'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  OperationsList,
+  type OperationsListAction,
+  type OperationsListColumn,
+  type OperationsListFilter,
+} from '@/components/admin/operations'
 
 interface EventParticipantsListProps {
   eventId: string
@@ -71,7 +52,9 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const [limit, setLimit] = useState(initialUrlState.limit)
   const [cursor, setCursor] = useState<string | null>(initialUrlState.cursor)
   const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectedParticipant, setSelectedParticipant] = useState<EventParticipantRow | null>(null)
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(initialUrlState.selectedId)
   const [selectedPreview, setSelectedPreview] = useState<ParticipantPreviewAction>('ticket')
   const hasInitializedSearch = useRef(false)
 
@@ -99,11 +82,6 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     setSort(value as EventParticipantSort)
   }
 
-  const changeDirection = () => {
-    resetPagination()
-    setDirection((value) => value === 'asc' ? 'desc' : 'asc')
-  }
-
   const changeLimit = (value: string) => {
     resetPagination()
     setLimit(Number(value))
@@ -118,15 +96,16 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     setDirection((current) => current === next.direction ? current : next.direction)
     setLimit((current) => current === next.limit ? current : next.limit)
     setCursor((current) => current === next.cursor ? current : next.cursor)
+    setSelectedParticipantId((current) => current === next.selectedId ? current : next.selectedId)
     setPreviousCursors([])
   }, [eventId, searchParams])
 
   useEffect(() => {
-    const next = writeParticipantUrlState(searchParams, { checkIn, sort, direction, cursor, limit })
+    const next = writeParticipantUrlState(searchParams, { checkIn, sort, direction, cursor, limit, selectedId: selectedParticipantId })
     const current = searchParams.toString()
     if (next === current) return
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
-  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, sort])
+  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, selectedParticipantId, sort])
 
   const params = useMemo(
     () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, sort }),
@@ -136,233 +115,158 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const participants = data?.participants ?? []
   const page = data?.page
 
-  const pageLabel = previousCursors.length + 1
-  const canGoNext = Boolean(page?.nextCursor)
-  const canGoPrevious = previousCursors.length > 0
-
-  const goNext = () => {
-    if (!page?.nextCursor) return
-    setPreviousCursors((current) => [...current, cursor ?? ''])
-    setCursor(page.nextCursor)
-  }
-
-  const goPrevious = () => {
-    const previous = previousCursors.at(-1)
-    if (previous === undefined) return
-    setPreviousCursors((current) => current.slice(0, -1))
-    setCursor(previous || null)
-  }
+  useEffect(() => {
+    if (!selectedParticipantId) return
+    const matchingParticipant = participants.find((participant) => participant.id === selectedParticipantId)
+    if (matchingParticipant) setSelectedParticipant(matchingParticipant)
+  }, [participants, selectedParticipantId])
 
   const openParticipant = (participant: EventParticipantRow, preview: ParticipantPreviewAction = 'ticket') => {
     setSelectedParticipant(participant)
+    setSelectedParticipantId(participant.id)
     setSelectedPreview(preview)
   }
 
-  if (error) {
-    return <p className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">{error.message}</p>
-  }
+  const filters: OperationsListFilter[] = [
+    {
+      id: 'check-in',
+      label: 'Check-in',
+      value: checkIn === 'all' ? '' : checkIn,
+      allLabel: 'Tous les statuts',
+      options: [
+        { value: 'checked_in', label: 'Effectué' },
+        { value: 'not_checked_in', label: 'À faire' },
+      ],
+    },
+    {
+      id: 'sort',
+      label: 'Trier par',
+      value: sort,
+      options: [
+        { value: 'created_at', label: 'Date d’inscription' },
+        { value: 'email', label: 'Email' },
+      ],
+    },
+    {
+      id: 'direction',
+      label: 'Ordre',
+      value: direction,
+      options: [
+        { value: 'desc', label: 'Décroissant' },
+        { value: 'asc', label: 'Croissant' },
+      ],
+    },
+    {
+      id: 'limit',
+      label: 'Lignes',
+      value: String(limit),
+      options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })),
+    },
+  ]
+
+  const columns: OperationsListColumn<EventParticipantRow>[] = [
+    {
+      id: 'participant',
+      header: 'Participant',
+      cell: (participant) => <><p className="font-medium">{participant.participant.name ?? 'Nom non renseigné'}</p><p className="truncate text-xs text-muted-foreground">{participant.participant.email}</p></>,
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      cell: (participant) => <div className="flex flex-wrap gap-1"><Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge><Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div>,
+    },
+    {
+      id: 'ticket',
+      header: 'Billet',
+      cell: (participant) => <><p>{participant.ticket.name ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</p></>,
+    },
+    {
+      id: 'departure',
+      header: 'Départ',
+      cell: (participant) => participant.departure.startTime ? <><p>{formatDate(participant.departure.startTime)}</p><p className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</p></> : '—',
+      hiddenByDefault: true,
+    },
+    { id: 'group', header: 'Groupe', cell: (participant) => participant.group ?? '—', hiddenByDefault: true },
+    {
+      id: 'payment',
+      header: 'Paiement',
+      cell: (participant) => participant.payment ? <><p>{participant.payment.status ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</p></> : '—',
+      hiddenByDefault: true,
+    },
+    { id: 'created-at', header: 'Inscrit le', cell: (participant) => formatDate(participant.registration.createdAt), hiddenByDefault: true },
+  ]
+
+  const rowActions: OperationsListAction<EventParticipantRow>[] = [
+    {
+      id: 'change-ticket',
+      label: 'Changer le billet',
+      onSelect: (participant) => openParticipant(participant, 'ticket'),
+      disabled: (participant) => getParticipantQuickActionState(participant).ticket.disabled,
+    },
+    {
+      id: 'change-wave',
+      label: 'Changer la SAS',
+      onSelect: (participant) => openParticipant(participant, 'wave'),
+      disabled: (participant) => getParticipantQuickActionState(participant).wave.disabled,
+    },
+  ]
 
   return (
-    <section className="space-y-4" aria-label="Liste des participants">
-      <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 md:flex-row md:items-end md:justify-between">
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-          <div className="space-y-1.5 sm:col-span-2 md:col-span-1">
-            <Label htmlFor="participant-search">Rechercher</Label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="participant-search"
-                className="pl-9"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Email ou identifiant"
-              />
-            </div>
+    <OperationsList
+      data={{ items: participants, nextCursor: page?.nextCursor ?? null, total: page?.totalCount }}
+      status={error ? 'error' : isLoading && !data ? 'loading' : isFetching ? 'stale' : 'idle'}
+      errorMessage={error?.message}
+      onRetry={() => window.location.reload()}
+      getItemId={(participant) => participant.id}
+      columns={columns}
+      filters={filters}
+      onFilterChange={(filterId, value) => {
+        resetPagination()
+        if (filterId === 'check-in') changeCheckIn(value || 'all')
+        if (filterId === 'sort') changeSort(value as EventParticipantSort)
+        if (filterId === 'direction') setDirection(value as 'asc' | 'desc')
+        if (filterId === 'limit') changeLimit(value)
+      }}
+      search={search}
+      searchPlaceholder="Nom, email ou identifiant"
+      onSearchChange={setSearch}
+      selectedIds={selectedIds}
+      onSelectedIdsChange={setSelectedIds}
+      rowActions={rowActions}
+      pagination={{ cursor, previousCursors, nextCursor: page?.nextCursor ?? null, total: page?.totalCount }}
+      onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => {
+        setCursor(nextCursor)
+        setPreviousCursors(nextPreviousCursors)
+      }}
+      itemLabel="participant"
+      selectedItem={selectedParticipant}
+      onSelectedItemChange={(participant) => {
+        setSelectedParticipant(participant)
+        setSelectedParticipantId(participant?.id ?? null)
+      }}
+      detailTitle={(participant) => participant.participant.name ?? 'Participant'}
+      detailDescription={() => 'Consultez l’inscription et prévisualisez une correction avant de la confirmer.'}
+      renderDetail={(participant) => {
+        const actions = getParticipantQuickActionState(participant)
+        return <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3" aria-label="Actions participant">
+            <span className="mr-1 text-sm font-medium">Prévisualiser</span>
+            <Button type="button" size="sm" variant={selectedPreview === 'ticket' ? 'secondary' : 'outline'} onClick={() => setSelectedPreview('ticket')} disabled={actions.ticket.disabled}>Changement de billet</Button>
+            <Button type="button" size="sm" variant={selectedPreview === 'wave' ? 'secondary' : 'outline'} onClick={() => setSelectedPreview('wave')} disabled={actions.wave.disabled}>Changement de SAS</Button>
+            {actions.wave.disabled ? <span className="text-xs text-muted-foreground">{actions.wave.reason}</span> : null}
           </div>
-          <div className="space-y-1.5">
-            <Label>Check-in</Label>
-            <Select value={checkIn} onValueChange={changeCheckIn}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="checked_in">Effectué</SelectItem>
-                <SelectItem value="not_checked_in">À faire</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 text-sm sm:grid-cols-2">
+            <div><p className="text-muted-foreground">Email</p><p className="break-all">{participant.participant.email}</p></div>
+            <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{participant.id}</p></div>
+            <div><p className="text-muted-foreground">Billet</p><p>{participant.ticket.name ?? '—'}</p></div>
+            <div><p className="text-muted-foreground">Départ</p><p>{participant.departure.startTime ? `${formatDate(participant.departure.startTime)} · SAS ${participant.departure.waveIndex ?? '—'}` : '—'}</p></div>
+            <div><p className="text-muted-foreground">Groupe</p><p>{participant.group ?? 'Aucun'}</p></div>
+            <div><p className="text-muted-foreground">Paiement</p><p>{participant.payment ? `${participant.payment.status ?? '—'} · ${formatAmount(participant.payment.amountCents, participant.payment.currency)}` : '—'}</p></div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Trier par</Label>
-            <Select value={sort} onValueChange={changeSort}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">Date d’inscription</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {selectedPreview === 'ticket' ? <TicketChangePreviewPanel eventId={eventId} participant={participant} /> : null}
+          {selectedPreview === 'wave' ? <WaveChangePreviewPanel eventId={eventId} participant={participant} /> : null}
         </div>
-        <div className="flex items-end gap-2">
-          <Button variant="outline" size="sm" onClick={changeDirection}>
-            {direction === 'asc' ? 'Croissant' : 'Décroissant'}
-          </Button>
-          <Select value={String(limit)} onValueChange={changeLimit}>
-            <SelectTrigger className="w-20" aria-label="Lignes par page"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[25, 50, 100].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-lg border bg-card">
-        <div className="flex items-center justify-between border-b px-4 py-3 text-sm text-muted-foreground">
-          <span>{page?.totalCount ?? 0} participant{(page?.totalCount ?? 0) > 1 ? 's' : ''}</span>
-          {isFetching ? <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 animate-spin" />Actualisation…</span> : null}
-        </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Participant</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Billet</TableHead>
-                <TableHead>Départ</TableHead>
-                <TableHead>Groupe</TableHead>
-                <TableHead>Paiement</TableHead>
-                <TableHead>Inscrit le</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && !data ? (
-                <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground"><Clock className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement…</TableCell></TableRow>
-              ) : participants.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground">Aucun participant ne correspond à ces critères.</TableCell></TableRow>
-              ) : participants.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell>
-                    <Button
-                      variant="link"
-                      className="h-auto p-0 font-medium"
-                      onClick={() => setSelectedParticipant(participant)}
-                    >
-                      {participant.participant.name ?? 'Nom non renseigné'}
-                    </Button>
-                    <div className="text-xs text-muted-foreground">{participant.participant.email}</div>
-                  </TableCell>
-                  <TableCell><div className="flex flex-wrap gap-1"><Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge><Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div></TableCell>
-                  <TableCell><div>{participant.ticket.name ?? '—'}</div><div className="text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</div></TableCell>
-                  <TableCell>{participant.departure.startTime ? <><div>{formatDate(participant.departure.startTime)}</div><div className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</div></> : '—'}</TableCell>
-                  <TableCell>{participant.group ?? '—'}</TableCell>
-                  <TableCell>{participant.payment ? <><div>{participant.payment.status ?? '—'}</div><div className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</div></> : '—'}</TableCell>
-                  <TableCell>{formatDate(participant.registration.createdAt)}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      {(() => {
-                        const actions = getParticipantQuickActionState(participant)
-                        return <>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => openParticipant(participant, 'ticket')}
-                            disabled={actions.ticket.disabled}
-                            title={actions.ticket.reason ?? 'Prévisualiser le changement de billet'}
-                          >
-                            Billet
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => openParticipant(participant, 'wave')}
-                            disabled={actions.wave.disabled}
-                            title={actions.wave.reason ?? 'Prévisualiser le changement de SAS'}
-                          >
-                            SAS
-                          </Button>
-                        </>
-                      })()}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="flex items-center justify-between border-t px-4 py-3">
-          <span className="text-sm text-muted-foreground">Page {pageLabel}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={goPrevious} disabled={!canGoPrevious}><ChevronLeft className="mr-1 h-4 w-4" />Précédente</Button>
-            <Button variant="outline" size="sm" onClick={goNext} disabled={!canGoNext}>Suivante<ChevronRight className="ml-1 h-4 w-4" /></Button>
-          </div>
-        </div>
-      </div>
-
-      <Dialog
-        open={Boolean(selectedParticipant)}
-        onOpenChange={(open) => {
-          if (!open) setSelectedParticipant(null)
-        }}
-      >
-        <DialogContent className="grid max-h-[calc(100dvh-2rem)] max-w-xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0">
-          <DialogHeader className="border-b px-6 py-5 pr-12">
-            <DialogTitle>Détail participant</DialogTitle>
-            <DialogDescription>
-              Consultez l’inscription et prévisualisez une correction avant de la confirmer.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedParticipant ? (
-            <div className="min-h-0 overflow-y-auto overscroll-contain px-6 py-5 [scrollbar-gutter:stable]">
-              <div className="space-y-4">
-              {(() => {
-                const actions = getParticipantQuickActionState(selectedParticipant)
-                return (
-                  <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3" aria-label="Actions participant">
-                    <span className="mr-1 text-sm font-medium">Prévisualiser</span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={selectedPreview === 'ticket' ? 'secondary' : 'outline'}
-                      onClick={() => setSelectedPreview('ticket')}
-                      disabled={actions.ticket.disabled}
-                      title={actions.ticket.reason ?? 'Prévisualiser le changement de billet'}
-                    >
-                      Changement de billet
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={selectedPreview === 'wave' ? 'secondary' : 'outline'}
-                      onClick={() => setSelectedPreview('wave')}
-                      disabled={actions.wave.disabled}
-                      title={actions.wave.reason ?? 'Prévisualiser le changement de SAS'}
-                    >
-                      Changement de SAS
-                    </Button>
-                    {actions.wave.disabled ? <span className="text-xs text-muted-foreground">{actions.wave.reason}</span> : null}
-                  </div>
-                )
-              })()}
-              <div className="grid gap-4 text-sm sm:grid-cols-2">
-                <div><p className="text-muted-foreground">Nom</p><p className="font-medium">{selectedParticipant.participant.name ?? 'Non renseigné'}</p></div>
-                <div><p className="text-muted-foreground">Compte</p><p>{selectedParticipant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</p></div>
-                <div><p className="text-muted-foreground">Email</p><p className="break-all">{selectedParticipant.participant.email}</p></div>
-                <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{selectedParticipant.id}</p></div>
-                <div><p className="text-muted-foreground">Billet</p><p>{selectedParticipant.ticket.name ?? '—'}</p></div>
-                <div><p className="text-muted-foreground">Départ</p><p>{selectedParticipant.departure.startTime ? `${formatDate(selectedParticipant.departure.startTime)} · SAS ${selectedParticipant.departure.waveIndex ?? '—'}` : '—'}</p></div>
-                <div><p className="text-muted-foreground">Groupe</p><p>{selectedParticipant.group ?? 'Aucun'}</p></div>
-                <div><p className="text-muted-foreground">Paiement</p><p>{selectedParticipant.payment ? `${selectedParticipant.payment.status ?? '—'} · ${formatAmount(selectedParticipant.payment.amountCents, selectedParticipant.payment.currency)}` : '—'}</p></div>
-                <div><p className="text-muted-foreground">Check-in</p><p>{selectedParticipant.registration.checkedIn ? 'Effectué' : 'À faire'}</p></div>
-                <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(selectedParticipant.registration.createdAt)}</p></div>
-              </div>
-              {selectedPreview === 'ticket' ? <TicketChangePreviewPanel eventId={eventId} participant={selectedParticipant} /> : null}
-              {selectedPreview === 'wave' ? <WaveChangePreviewPanel eventId={eventId} participant={selectedParticipant} /> : null}
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </section>
+      }}
+    />
   )
 }

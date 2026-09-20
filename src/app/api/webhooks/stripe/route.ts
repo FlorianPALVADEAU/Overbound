@@ -8,13 +8,14 @@ import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
+import { assignBibNumber, BibCapacityExhaustedError, type RaceFormat } from '@/lib/bibNumber'
 import {
-  assignOpenWaveToRegistration,
   formatWaveStartTime,
   getRankedStartTime,
   isOpenFormatTicket,
   isRankedFormatTicket,
 } from '@/lib/openSas'
+import { assignSelectedWaveToRegistration, SelectedWaveUnavailableError } from '@/lib/selectedWaveAssignment'
 
 export const runtime = 'nodejs'
 
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
         distance_ideal_km,
         distance_min_km,
         participants: participantsJson,
+        selected_wave_index,
       } = metadata
 
       if (registration_flow === 'multi') {
@@ -302,31 +304,62 @@ export async function POST(request: NextRequest) {
           throw registrationError
         }
 
+        // Bib number: independent of wave/SAS, atomic, immutable once set (FDR-0011).
+        if (isOpenFormat || isRankedFormat) {
+          const raceFormat: RaceFormat = isOpenFormat ? 'open' : 'ranked'
+          const maxBibNumber = isOpenFormat ? event?.open_bib_capacity : event?.ranked_bib_capacity
+
+          if (!maxBibNumber || maxBibNumber <= 0) {
+            console.error(`Capacité dossard non configurée pour l'événement ${event_id} (${raceFormat})`)
+            throw new Error(`Capacité dossard non configurée pour ce format (${raceFormat}).`)
+          }
+
+          try {
+            const bibNumber = await assignBibNumber({
+              admin,
+              eventId: event_id,
+              registrationId: registration.id,
+              raceFormat,
+              maxBibNumber,
+            })
+            registration.bib_number = bibNumber
+            registration.race_format = raceFormat
+          } catch (bibError) {
+            if (bibError instanceof BibCapacityExhaustedError) {
+              console.error('Dossard épuisé pour', event_id, raceFormat)
+            }
+            throw bibError
+          }
+        }
+
         if (event?.date) {
           try {
             if (isOpenFormat) {
-              const assignment = await assignOpenWaveToRegistration({
+              // This PaymentIntent metadata path predates the multi-step
+              // registration flow (registration_flow: 'multi', handled
+              // exclusively by POST /api/registrations/create — see
+              // FDR-0012). It is not reachable from any currently mounted
+              // UI, but if it is ever revived it must not silently
+              // bin-pack: the participant's chosen SAS must travel through
+              // Stripe metadata like distance_ideal_km already does.
+              const waveIndex = Number(selected_wave_index)
+              if (!Number.isFinite(waveIndex) || waveIndex <= 0) {
+                throw new Error('SAS_SELECTION_REQUIRED: selected_wave_index manquant dans les métadonnées PaymentIntent.')
+              }
+
+              const assignment = await assignSelectedWaveToRegistration({
                 admin,
                 eventId: event_id,
                 registrationId: registration.id,
-                eventDateIso: event.date,
-                ticketName: ticket.name,
-                raceName: ticket.race?.name ?? null,
-                distanceIdealKm: idealDistance,
-                distanceMinKm: minDistance,
+                waveIndex,
               })
 
-              if (assignment) {
-                registration.start_time = assignment.startTime
-                registration.wave_index = assignment.waveIndex
-                registration.wave_capacity = assignment.waveCapacity
-                registration.wave_position = assignment.wavePosition
-                registration.auto_assigned = true
-                registration.preferred_window_start = assignment.preferredWindowStart
-                registration.preferred_window_end = assignment.preferredWindowEnd
-                registration.latest_allowed_time = assignment.latestAllowedTime
-                registration.assignment_constraint_breached = assignment.assignmentConstraintBreached
-              }
+              registration.start_time = assignment.startTime
+              registration.wave_index = assignment.waveIndex
+              registration.wave_capacity = assignment.waveCapacity
+              registration.wave_position = assignment.wavePosition
+              registration.auto_assigned = false
+              registration.assignment_constraint_breached = false
             } else if (isRankedFormat) {
               const rankedStart = getRankedStartTime(event.date).toISOString()
               const { error: rankedUpdateError } = await admin
@@ -516,6 +549,8 @@ export async function POST(request: NextRequest) {
             eventLocation: event.location,
             ticketName: ticket_name || ticket.name,
             startTime: formatWaveStartTime(registration.start_time),
+            waveIndex: registration.wave_index,
+            bibNumber: registration.bib_number,
             qrUrl, // Public URL from Supabase Storage
             manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`
           })

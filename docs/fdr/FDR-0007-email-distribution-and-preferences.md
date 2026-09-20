@@ -1,10 +1,23 @@
 # FDR-0007 - Email Distribution & Preferences (4-Phase System)
 
-**Status**: Accepted (Production)  
+**Status**: Accepted — implementation evidence is local only (audit 2026-09-20)
 **Date**: May 2026  
 **References**: [implementation-guide-email.md](../guides/implementation-guide-email.md)
 
 ---
+
+## Reprise / état vérifié localement — 2026-09-20
+
+| Élément | Statut | Constat local / suite nécessaire |
+|---|---|---|
+| Désinscription, préférences et interfaces de listes | **fait localement** | Les routes et composants référencés ci-dessous existent dans le checkout, y compris les headers `List-Unsubscribe`. |
+| Schéma des listes, abonnements et préférences | **partiel** | Le code utilise `distribution_lists`, `list_subscriptions` et `notification_preferences`, mais les migrations de création correspondantes ne sont pas présentes dans `supabase/migrations`. Retrouver/réconcilier l'historique distant avant toute évolution. |
+| Segmentation par événement / organisation | **à faire** | La FDR ne définit pas de source de vérité tenant-aware. La liste virtuelle d'ouverture et les audiences Resend doivent être auditées dans l'environnement cible avant correction. |
+| Pagination, recherche et export serveur | **à faire** | Le parcours admin historique charge un sous-ensemble local; le contrat `OperationsList` reste à appliquer. |
+| Source de vérité Supabase / Resend | **à faire (live)** | Contrôler les audiences configurées, variables d'environnement et les contacts Supabase/Resend sans modifier les abonnements. |
+| RLS et grants effectifs | **à faire (live)** | Aucun inventaire live ne permet d'affirmer que les policies décrites dans cette FDR sont celles de la base cible. |
+
+Les exemples SQL de cette FDR restent une spécification historique; ils ne prouvent pas une migration appliquée.
 
 ## Decision
 
@@ -313,4 +326,3 @@ WHERE np.announcements_enabled = true
 - 🔴 **Critical**: Unsub rate spike (>5% in a day)
 - 🟡 **Warning**: Out-of-sync pref ↔ list (consistency check)
 - 🟢 **Info**: Campaign send status (successes, failures)
-

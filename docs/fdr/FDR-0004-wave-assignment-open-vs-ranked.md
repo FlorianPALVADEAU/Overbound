@@ -1,8 +1,16 @@
 # FDR-0004 - Wave Assignment : OPEN vs RANKED Format
 
-**Status**: Accepted (Production)  
-**Date**: May 2026  
+**Status**: Superseded (partial) — see [FDR-0012](FDR-0012-user-selected-open-wave.md)  
+**Date**: May 2026 (superseded 2026-09-19)  
 **References**: [implementation-guide-wave-assignment.md](../guides/implementation-guide-wave-assignment.md)
+
+> **2026-09-19**: The "OPEN Assignment Workflow" section below (automatic bin-packing via
+> `assign_open_wave_to_registration`) no longer reflects production behavior. OPEN wave assignment is
+> now a participant-selected choice, revalidated and locked atomically via
+> `assign_selected_wave_to_registration` — see [FDR-0012](FDR-0012-user-selected-open-wave.md). Everything
+> else in this document remains accurate: wave configuration (24 waves, 12:00–15:50), `EventWaves`
+> structure, format detection, RANKED behavior (unaffected), and wave counter maintenance principles
+> (now enforced by the new RPC's own locking rather than the batch refresh described below).
 
 ---
 

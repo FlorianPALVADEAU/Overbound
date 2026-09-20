@@ -1,6 +1,6 @@
 # FDR-0008 — Espace opérations admin orienté événement
 
-- **Statut** : Proposed
+- **Statut** : Proposed — phase 0 partiellement vérifiée localement (2026-09-20)
 - **Date** : 2026-09-15
 - **Owner produit** : à désigner
 - **Owner technique** : à désigner
@@ -8,6 +8,22 @@
 - **Références prioritaires** : [FDR-0004](./FDR-0004-wave-assignment-open-vs-ranked.md), [FDR-0005](./FDR-0005-group-membership-and-wave-anchoring.md), [FDR-0006](./FDR-0006-ambassador-program-points-and-rewards.md), [FDR-0007](./FDR-0007-email-distribution-and-preferences.md), [critical operations](../guides/critical-operations.md), [ADR-0004](../adr/ADR-0004-architecture-reality-vs-hexagonal-theory.md)
 
 > **Document de cadrage, pas autorisation de déploiement.** Cette FDR définit la cible et les prérequis. Aucun changement de politique RLS, de fonction SQL privilégiée, de prix, ou de données de production ne découle automatiquement de sa lecture.
+
+## État de reprise vérifié localement — 2026-09-20
+
+Les statuts ci-dessous portent uniquement sur le checkout local. Ils ne prouvent ni l'application des migrations, ni les grants, RLS, données ou fonctions de la base Supabase cible.
+
+| Élément du lot 0 | Statut | Preuve / prochaine étape |
+|---|---|---|
+| `20260920172444_ticket_scoped_event_waves.sql` | **fait localement** | Fichier présent : SAS isolés par billet, contrainte `(ticket_id, wave_index)`, RPCs d'assignation et grants `service_role`. Vérifier l'historique et l'application distants. |
+| `20260920174613_fix_ticket_wave_upsert_constraint.sql` | **fait localement** | Fichier présent : réparation idempotente de la contrainte d'upsert `(ticket_id, wave_index)`. Vérifier que la contrainte distante porte ce nom et est effective. |
+| `20260920174854_reconcile_ticket_wave_organization.sql` | **fait localement** | Fichier présent : réconciliation `event_waves` depuis le billet parent. Exécuter un dry-run / rapport de lignes affectées sur la base cible avant application. |
+| `20260920181348_reconcile_registration_organization.sql` | **fait localement** | Fichier présent : réconciliation `registrations` depuis l'événement parent. Exécuter un dry-run / rapport de lignes affectées sur la base cible avant application. |
+| Inventaire RLS, grants, vues, propriétaires et `EXECUTE` | **à faire (live)** | Les migrations locales montrent des protections ponctuelles, insuffisantes pour conclure sur la base cible. |
+| `GET /api/admin/events/:id/waves` sans écriture | **fait localement** | La route ne lit que `event_waves`; le test couvre l'absence de création/mise à jour. Le provisionnement est une commande `POST`. |
+| Baseline locale | **partiel** | Typecheck et build réussissent; lint réussit avec 32 avertissements; 544/546 tests passent. Deux tests `resolveGroupAnchorFromProfile` échouent. |
+
+Les anciennes migrations `20260915_admin_change_registration_ticket.sql` et `20260919160109_admin_operation_commands.sql` existent aussi localement, mais ne constituent pas la preuve d'un contrat distant et ne remplacent pas les quatre migrations ci-dessus.
 
 ## 0. Guide de reprise pour un agent
 
@@ -61,8 +77,8 @@ L’administration actuelle permet de nombreuses actions, mais ne donne pas un f
 - **OBSERVED** — `RegistrationsSection` et `UsersSection` portent des logiques de listes distinctes. L’API utilisateurs a une limite de récupération de 5 000 comptes.
 - **OBSERVED** — `AdminDataGrid` n’est pas aujourd’hui une primitive complète de recherche, filtres, tri, sélection, vues enregistrées et pagination serveur.
 - **OBSERVED** — les inscriptions utilisent `get_registrations_with_filters`; son contrat déployé doit être vérifié avant réutilisation.
-- **OBSERVED** — `GET /api/admin/events/:id/waves` appelle une initialisation de SAS. C’est une lecture à effet de bord à supprimer dans la cible.
-- **OBSERVED** — OPEN/RANKED est détecté par `isOpenFormatTicket(ticket.name, race.name)`, donc par les libellés.
+- **OBSERVED / fait localement** — `GET /api/admin/events/:id/waves` est sans écriture; le provisionnement explicite est porté par `POST` et couvert par test. Sa conformité distante reste à vérifier.
+- **OBSERVED** — certains chemins legacy et migrations historiques détectent encore OPEN/RANKED par libellé. Ce n'est plus un contrat acceptable pour les nouveaux parcours : voir section 7.
 
 Ces observations décrivent le checkout courant, non la production. Elles constituent le point de départ de la phase 0.
 
@@ -179,7 +195,7 @@ Le panneau latéral présente : identité et moyen de contact avec minimisation,
 | OPEN → RANKED | Réinitialiser les attributs de SAS OPEN et affecter le départ RANKED de FDR-0004. |
 | RANKED → RANKED | Pas de SAS ; conserver les données compatibles uniquement. |
 
-**OPEN QUESTION Q-06 — politique financière** : un changement de billet peut-il modifier le prix, déclencher un avoir, une collecte ou aucune opération comptable ? Tant qu’elle n’est pas acceptée, le premier lot autorise seulement les changements sans impact financier prouvable. Toute autre transition est bloquée, et une sous-FDR « correction financière » est requise.
+**DECISION — politique financière de reprise** : un changement de billet conserve le prix historique et ne crée aucun mouvement financier automatique. Les changements sont interdits à partir de J-1. Toute exception comptable reste hors de cette commande et exige une décision dédiée.
 
 ### Commande : changer la SAS
 
@@ -195,7 +211,9 @@ Les actions ajouter/retirer/déléguer/changer l’ancre montrent l’étendue e
 
 ## 7. Format : contrat présent et migration future
 
-**DECISION** — jusqu’à une décision séparée, la source de vérité fonctionnelle est `isOpenFormatTicket(ticket.name, race.name)` conformément à FDR-0004. Aucun écran ne doit introduire `race_format` comme vérité concurrente.
+**DECISION** — les capacités opérationnelles d'un billet proviennent de `ticket.operations_config`, notamment son mode de départ. Aucun nouveau comportement ne doit être déduit du nom du billet, de la course ou d'un identifiant fixe. Les SAS sont rattachés au triplet `organization + event + ticket`.
+
+**OBSERVED / dette à éliminer** — les migrations historiques et certains chemins de compatibilité conservent une heuristique par libellé OPEN/RANKED. Ils sont **à faire** : migrer ou retirer avant de les présenter comme comportement cible. Ils ne doivent pas guider une nouvelle implémentation.
 
 **PROPOSAL** — migrer ultérieurement vers une donnée structurée de format, probablement portée par le billet ou la course selon le modèle commercial retenu.
 
@@ -283,16 +301,17 @@ Chaque commande sensible produit un événement avec : type, acteur, cible, év�
 | `registrations/RegistrationsSection.tsx` | liste Participants + panneau détail | pagination, filtres et commandes dédiées |
 | `users/UsersSection.tsx` | espace Comptes global | aucune récupération massive pour filtrer côté client |
 | `ui/AdminDataGrid.tsx` | primitive `OperationsList` ou retrait | contrat section 5 couvert et testé |
-| `GET .../events/:id/waves` avec initialisation | lecture sans effet de bord + commande setup SAS | GET idempotent et sans `INSERT`/`UPDATE` |
+| `GET .../events/:id/waves` avec initialisation | lecture sans effet de bord + commande setup SAS | **fait localement** : GET idempotent et sans `INSERT`/`UPDATE`; validation live à faire |
 | RPC / endpoints admin hétérogènes | contrats de lecture/commande versionnés | contrat live vérifié et tests de non-régression |
 
 Chaque migration est incrémentale : conserver l’ancien chemin jusqu’à validation du nouveau, instrumenter l’usage, puis retirer l’ancien code dans un lot séparé.
 
 ## 11. Phases d’exécution et gates
 
-### Phase 0 — preuve de l’état réel
+### Phase 0 — preuve de l’état réel — **partiel**
 
-- Audit RLS/fonctions/grants live, inventaire des routes, data model et volumes.
+- Audit RLS/fonctions/grants live, inventaire des routes, data model et volumes : **à faire** (non accessible depuis ce checkout).
+- Présence locale des quatre migrations SAS/tenant et baseline applicative : **fait localement**, avec les limites consignées en tête de cette FDR.
 - Décisions Q-01, Q-02, Q-06, Q-07, Q-08 et Q-09 suffisamment tranchées pour le premier lot.
 - Gate : aucune écriture de sécurité ou opération critique sans revue et rollback documentés.
 
@@ -391,4 +410,3 @@ Chaque use-case a au minimum un succès et un échec, suivant la stratégie de t
 ## 16. Première tranche autorisable après validation phase 0
 
 La première livraison doit rester volontairement petite : routes événement, sélecteur, liste Participants en lecture seule, cursor, recherche/tri/filtres non sensibles, panneau détail en lecture seule et tests de performance/autorisation. Elle ne comprend ni changement de billet, ni changement de SAS, ni rôle nouveau, ni migration de données métier.
-

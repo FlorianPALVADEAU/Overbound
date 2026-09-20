@@ -35,6 +35,8 @@ export async function sendTicketEmail(params: {
   eventLocation: string
   ticketName: string
   startTime?: string | null
+  waveIndex?: number | null
+  bibNumber?: number | null
   qrUrl: string
   manageUrl: string
 }) {
