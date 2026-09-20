@@ -17,7 +17,7 @@ export type WaveChangePreview = {
     id: string
     eventId: string
     ticketId: string
-    format: 'OPEN'
+    departureMode: 'wave'
     currentWaveIndex: number | null
     currentStartTime: string | null
   }
@@ -59,7 +59,8 @@ export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePrevi
   const [preview, setPreview] = useState<WaveChangePreview | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const isOpen = participant.ticket.format === 'OPEN'
+  const supportsWaveChanges = participant.ticket.operations.status === 'configured'
+    && participant.ticket.operations.departureMode === 'wave'
 
   useEffect(() => {
     setTargetWaveIndex('')
@@ -73,7 +74,7 @@ export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePrevi
   )
 
   const requestPreview = async () => {
-    if (!targetWaveIndex || !isOpen) return
+    if (!targetWaveIndex || !supportsWaveChanges) return
     setLoading(true)
     setError(null)
     setPreview(null)
@@ -102,8 +103,12 @@ export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePrevi
           <p className="text-xs text-muted-foreground">Lecture seule : aucune inscription ni capacité ne sera modifiée.</p>
         </div>
       </div>
-      {!isOpen ? (
-        <p className="text-sm text-muted-foreground">Le changement de SAS concerne uniquement les inscriptions OPEN.</p>
+      {!supportsWaveChanges ? (
+        <p className="text-sm text-muted-foreground">
+          {participant.ticket.operations.status === 'unconfigured'
+            ? 'Configurez les règles opérationnelles du billet pour activer la gestion du départ.'
+            : 'Ce billet ne permet pas de modifier le départ par SAS.'}
+        </p>
       ) : (
         <>
           <div className="flex flex-col gap-2 sm:flex-row">

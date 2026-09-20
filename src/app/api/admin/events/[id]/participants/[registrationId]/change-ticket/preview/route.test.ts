@@ -21,8 +21,8 @@ function adminMock() {
   const event = query({ date: '2026-09-20T08:00:00Z' })
   const registrations = query({ id: REG_ID, event_id: EVENT_ID, ticket_id: CURRENT_ID, user_id: null, wave_index: 2, start_time: '2026-09-20T12:10:00Z' })
   const tickets = query([
-    { id: CURRENT_ID, event_id: EVENT_ID, name: 'Trail OPEN', final_price_cents: 5000, currency: 'eur', race: { name: 'Trail' } },
-    { id: TARGET_ID, event_id: EVENT_ID, name: 'Trail RANKED', final_price_cents: 5000, currency: 'eur', race: { name: 'Trail' } },
+    { id: CURRENT_ID, event_id: EVENT_ID, name: 'Trail vague', final_price_cents: 5000, currency: 'eur', operations_config: { departure_mode: 'wave', departure_change_policy: 'reassign' } },
+    { id: TARGET_ID, event_id: EVENT_ID, name: 'Trail fixe', final_price_cents: 5000, currency: 'eur', operations_config: { departure_mode: 'fixed', departure_change_policy: 'clear' } },
   ])
   return { from: vi.fn((table: string) => table === 'events' ? event : table === 'registrations' ? registrations : table === 'tickets' ? tickets : query(null)) }
 }
@@ -44,7 +44,7 @@ describe('POST ticket change preview', () => {
     supabaseAdminMock.mockReturnValue(admin)
     const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ticketId: TARGET_ID }) }) as any, { params: Promise.resolve({ id: EVENT_ID, registrationId: REG_ID }) })
     expect(response.status).toBe(200)
-    expect((await response.json()).preview).toMatchObject({ allowed: true, current: { format: 'OPEN' }, target: { format: 'RANKED' } })
+    expect((await response.json()).preview).toMatchObject({ allowed: true, current: { operations: { departureMode: 'wave' } }, target: { operations: { departureMode: 'fixed' } } })
     expect(admin.from).not.toHaveBeenCalledWith('registrations', expect.objectContaining({ update: expect.anything() }))
   })
 

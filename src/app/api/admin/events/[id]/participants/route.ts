@@ -4,11 +4,11 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import {
   decodeParticipantsCursor,
   encodeParticipantsCursor,
-  getParticipantFormat,
   type ParticipantDirection,
   participantSortSchema,
 } from '@/lib/admin/eventParticipants'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
 
 const routeParamsSchema = z.object({ id: z.string().uuid() })
 const querySchema = z.object({
@@ -127,7 +127,7 @@ export async function GET(
 
     const [ticketsResult, profilesResult, membershipsResult, ordersResult] = await Promise.all([
       ticketIds.length
-        ? admin.from('tickets').select('id, name, race:races(name)').in('id', ticketIds)
+        ? admin.from('tickets').select('id, name, operations_config').in('id', ticketIds)
         : Promise.resolve({ data: [], error: null }),
       profileIds.length
         ? admin.from('profiles').select('id, full_name').in('id', profileIds)
@@ -154,7 +154,7 @@ export async function GET(
         ticket.id,
         {
           name: ticket.name ?? null,
-          raceName: Array.isArray(ticket.race) ? ticket.race[0]?.name ?? null : ticket.race?.name ?? null,
+          operationsConfig: ticket.operations_config ?? null,
         },
       ]),
     )
@@ -181,6 +181,7 @@ export async function GET(
     const participants = registrations.map((registration) => {
       const ticket = registration.ticket_id ? tickets.get(registration.ticket_id) : null
       const order = registration.order_id ? orders.get(registration.order_id) : null
+      const operations = resolveTicketOperationsProfile(ticket?.operationsConfig)
       return {
         id: registration.id,
         participant: {
@@ -197,7 +198,10 @@ export async function GET(
         ticket: {
           id: registration.ticket_id,
           name: ticket?.name ?? null,
-          format: getParticipantFormat(ticket?.name, ticket?.raceName),
+          operations: {
+            status: operations.status,
+            departureMode: operations.departureMode,
+          },
         },
         departure: {
           startTime: registration.start_time,

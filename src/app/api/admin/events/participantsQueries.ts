@@ -20,7 +20,10 @@ export interface EventParticipantRow {
   ticket: {
     id: string | null
     name: string | null
-    format: 'OPEN' | 'RANKED' | '—'
+    operations: {
+      status: 'configured' | 'unconfigured'
+      departureMode: 'none' | 'wave' | 'fixed' | null
+    }
   }
   departure: {
     startTime: string | null

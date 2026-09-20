@@ -20,11 +20,10 @@ import {
 
 type TicketChangePreview = {
   allowed: boolean
-  current: { ticketId: string; name: string; format: string; waveIndex: number | null; startTime: string | null }
-  target: { ticketId: string; name: string; format: string; waveIndex: number | null; startTime: string | null }
+  current: { ticketId: string; name: string; operations: { status: 'configured' | 'unconfigured'; departureMode: 'none' | 'wave' | 'fixed' | null }; waveIndex: number | null; startTime: string | null }
+  target: { ticketId: string; name: string; operations: { status: 'configured' | 'unconfigured'; departureMode: 'none' | 'wave' | 'fixed' | null }; waveIndex: number | null; startTime: string | null }
   impacts: {
-    format: 'unchanged' | 'changed'
-    sas: string
+    departure: string
     group: string
     financial: { status: 'no_change' | 'potential_change' | 'unknown'; currentPriceCents: number | null; targetPriceCents: number | null; currency: string | null }
   }
@@ -65,10 +64,11 @@ const impactLabels: Record<string, string> = {
 const formatAmount = (cents: number | null, currency: string | null) =>
   cents == null ? 'Non renseigné' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency?.toUpperCase() ?? 'EUR' }).format(cents / 100)
 
-const operationalProfileLabel = (format: TicketChangePreview['current']['format']) => {
-  if (format === 'OPEN') return 'Départ par SAS'
-  if (format === 'RANKED') return 'Départ fixe'
-  return 'Configuration personnalisée'
+const operationalProfileLabel = (operations: TicketChangePreview['current']['operations']) => {
+  if (operations.status === 'unconfigured') return 'Règles à configurer'
+  if (operations.departureMode === 'wave') return 'Départ par SAS'
+  if (operations.departureMode === 'fixed') return 'Départ fixe'
+  return 'Aucun départ géré'
 }
 
 type TicketChangeConfirmationGateProps = {
@@ -235,12 +235,11 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
       {preview ? (
         <div className="space-y-3 rounded-md border bg-background p-3 text-sm">
           <div className="grid gap-2 sm:grid-cols-2">
-            <div><p className="text-xs text-muted-foreground">Billet actuel</p><p>{preview.current.name} · {operationalProfileLabel(preview.current.format)}</p></div>
-            <div><p className="text-xs text-muted-foreground">Billet cible</p><p>{preview.target.name} · {operationalProfileLabel(preview.target.format)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Billet actuel</p><p>{preview.current.name} · {operationalProfileLabel(preview.current.operations)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Billet cible</p><p>{preview.target.name} · {operationalProfileLabel(preview.target.operations)}</p></div>
           </div>
           <div className="flex flex-wrap gap-2" aria-label="Impacts du changement">
-            <Badge variant={preview.impacts.format === 'changed' ? 'secondary' : 'outline'}>Format : {impactLabels[preview.impacts.format] ?? preview.impacts.format}</Badge>
-            <Badge variant="outline">SAS : {impactLabels[preview.impacts.sas] ?? preview.impacts.sas}</Badge>
+            <Badge variant="outline">Départ : {impactLabels[preview.impacts.departure] ?? preview.impacts.departure}</Badge>
             <Badge variant="outline">Groupe : {impactLabels[preview.impacts.group] ?? preview.impacts.group}</Badge>
             <Badge variant={preview.impacts.financial.status === 'no_change' ? 'outline' : 'secondary'}>Finance : {impactLabels[preview.impacts.financial.status] ?? preview.impacts.financial.status}</Badge>
           </div>

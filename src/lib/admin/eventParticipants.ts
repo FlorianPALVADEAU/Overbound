@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 
 export const participantSortSchema = z.enum(['created_at', 'email'])
 export type ParticipantSort = z.infer<typeof participantSortSchema>
@@ -48,13 +47,4 @@ export function decodeParticipantsCursor(
     }
     throw new Error('Cursor de pagination invalide')
   }
-}
-
-export function getParticipantFormat(
-  ticketName: string | null | undefined,
-  raceName: string | null | undefined,
-): 'OPEN' | 'RANKED' | '—' {
-  if (isOpenFormatTicket(ticketName, raceName)) return 'OPEN'
-  if (isRankedFormatTicket(ticketName, raceName)) return 'RANKED'
-  return '—'
 }

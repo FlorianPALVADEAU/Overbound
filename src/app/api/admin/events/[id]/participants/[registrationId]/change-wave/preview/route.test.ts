@@ -38,7 +38,7 @@ function adminMock(options: {
     from: vi.fn((table: string) => {
       if (table === 'events') return builder({ data: options.event ?? { date: '2026-09-20T08:00:00Z' }, error: null })
       if (table === 'registrations') return builder({ data: options.registration ?? { id: REG_ID, event_id: EVENT_ID, ticket_id: TICKET_ID, user_id: null, wave_index: 2, start_time: '2026-09-20T12:10:00Z' }, error: null })
-      if (table === 'tickets') return builder({ data: options.ticket ?? { id: TICKET_ID, event_id: EVENT_ID, name: 'Trail OPEN', race: { name: 'Trail' } }, error: null })
+      if (table === 'tickets') return builder({ data: options.ticket ?? { id: TICKET_ID, event_id: EVENT_ID, operations_config: { departure_mode: 'wave', departure_change_policy: 'reassign' } }, error: null })
       if (table === 'event_waves') return builder({ data: options.wave ?? { wave_index: 4, start_time: '2026-09-20T12:30:00Z', capacity: 50, assigned_count: 12, is_closed: false }, error: null })
       if (table === 'group_members') return builder({ data: options.group === undefined ? null : { group: options.group }, error: null })
       throw new Error(`Unexpected table: ${table}`)
@@ -61,7 +61,7 @@ describe('POST wave change preview', () => {
     vi.useRealTimers()
   })
 
-  it('returns an allowed read-only preview for an OPEN registration', async () => {
+  it('returns an allowed read-only preview for a ticket configured for wave management', async () => {
     const admin = adminMock()
     supabaseAdminMock.mockReturnValue(admin)
 
@@ -74,7 +74,7 @@ describe('POST wave change preview', () => {
     expect(response.status).toBe(200)
     expect(body.preview).toMatchObject({
       allowed: true,
-      registration: { format: 'OPEN', currentWaveIndex: 2 },
+      registration: { departureMode: 'wave', currentWaveIndex: 2 },
       target: { waveIndex: 4, remainingCapacity: 38 },
       impacts: { departure: 'changed', group: 'none', waveCounters: 'would_refresh' },
     })
@@ -124,8 +124,8 @@ describe('POST wave change preview', () => {
     expect(supabaseAdminMock).not.toHaveBeenCalled()
   })
 
-  it('rejects RANKED registrations', async () => {
-    supabaseAdminMock.mockReturnValue(adminMock({ ticket: { id: TICKET_ID, event_id: EVENT_ID, name: 'Trail RANKED', race: { name: 'Trail' } } }))
+  it('rejects tickets that do not enable wave management', async () => {
+    supabaseAdminMock.mockReturnValue(adminMock({ ticket: { id: TICKET_ID, event_id: EVENT_ID, operations_config: { departure_mode: 'fixed', departure_change_policy: 'clear' } } }))
 
     const response = await POST(
       new Request('http://localhost', { method: 'POST', body: JSON.stringify({ waveIndex: 4 }) }) as any,
@@ -133,7 +133,7 @@ describe('POST wave change preview', () => {
     )
 
     expect(response.status).toBe(422)
-    expect((await response.json()).error).toContain('OPEN')
+    expect((await response.json()).error).toContain('ne permet pas de modifier le départ')
   })
 
   it('blocks a preview from J-1 on the server', async () => {

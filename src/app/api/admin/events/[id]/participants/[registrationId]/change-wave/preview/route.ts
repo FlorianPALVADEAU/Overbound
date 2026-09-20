@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { isOpenFormatTicket } from '@/lib/openSas'
 import { getEventCorrectionCutoff } from '@/lib/admin/eventCorrectionCutoff'
+import { resolveTicketOperationsProfile, supportsManualWaveChange } from '@/lib/tickets/operationsProfile'
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
@@ -20,7 +20,7 @@ type WavePreview = {
     id: string
     eventId: string
     ticketId: string
-    format: 'OPEN'
+    departureMode: 'wave'
     currentWaveIndex: number | null
     currentStartTime: string | null
   }
@@ -97,7 +97,7 @@ export async function POST(
 
   const { data: ticket, error: ticketError } = await admin
     .from('tickets')
-    .select('id, name, race:races(name)')
+    .select('id, operations_config')
     .eq('id', registration.ticket_id)
     .eq('event_id', eventId)
     .maybeSingle()
@@ -108,10 +108,14 @@ export async function POST(
   }
   if (!ticket) return errorResponse('Billet actuel introuvable pour cet événement', 404)
 
-  const race = ticket.race as { name?: string | null } | Array<{ name?: string | null }> | null
-  const raceName = Array.isArray(race) ? race[0]?.name : race?.name
-  if (!isOpenFormatTicket(ticket.name, raceName)) {
-    return errorResponse('Seules les inscriptions OPEN peuvent changer de SAS', 422)
+  const operations = resolveTicketOperationsProfile(ticket.operations_config)
+  if (!supportsManualWaveChange(operations)) {
+    return errorResponse(
+      operations.status === 'unconfigured'
+        ? 'Les règles opérationnelles du billet doivent être configurées avant de modifier le départ.'
+        : 'Ce billet ne permet pas de modifier le départ par SAS.',
+      422,
+    )
   }
 
   const { data: targetWave, error: targetWaveError } = await admin
@@ -170,7 +174,7 @@ export async function POST(
       id: registration.id,
       eventId: registration.event_id,
       ticketId: registration.ticket_id,
-      format: 'OPEN',
+      departureMode: 'wave',
       currentWaveIndex: registration.wave_index,
       currentStartTime: registration.start_time,
     },

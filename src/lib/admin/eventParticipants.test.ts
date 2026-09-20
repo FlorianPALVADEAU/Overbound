@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   decodeParticipantsCursor,
   encodeParticipantsCursor,
-  getParticipantFormat,
 } from './eventParticipants'
 
 describe('participants cursor', () => {
@@ -66,16 +65,5 @@ describe('participants cursor', () => {
       'email',
       'desc',
     )).toThrow('Cursor incompatible avec l’événement demandé')
-  })
-})
-
-describe('getParticipantFormat', () => {
-  it('uses the existing OPEN/RANKED detection contract', () => {
-    expect(getParticipantFormat('Ticket Open', null)).toBe('OPEN')
-    expect(getParticipantFormat('Ranked 20 km', null)).toBe('RANKED')
-  })
-
-  it('does not invent a format when the existing contract cannot classify it', () => {
-    expect(getParticipantFormat('Découverte', 'Course loisirs')).toBe('—')
   })
 })

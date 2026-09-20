@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Clock, Ticket, Users } from 'lucide-react'
 import { useAdminTickets } from '@/app/api/admin/tickets/ticketsQueries'
@@ -22,9 +21,11 @@ import {
   moveAdminRegistrationWave,
 } from '@/app/api/admin/registrations/registrationsQueries'
 import {
-  getRegistrationTicketFormat,
-  registrationTicketFormatLabel,
-} from '@/lib/admin/registrationTicketChange'
+  resolveTicketOperationsProfile,
+  supportsManualWaveChange,
+  ticketChangeDepartureDescription,
+  ticketOperationsLabel,
+} from '@/lib/tickets/operationsProfile'
 import { formatClockTimeParis } from '@/lib/dateTime'
 import type { AdminRegistration } from '@/types/Registration'
 
@@ -64,13 +65,10 @@ export function RegistrationOperationsDialog({
     [tickets, registration?.event_id],
   )
   const currentTicket = eventTickets.find((ticket) => ticket.id === registration?.ticket_id)
-  const currentFormat = getRegistrationTicketFormat(
-    currentTicket?.name ?? registration?.ticket?.name,
-    currentTicket?.race?.name,
-  )
   const selectedTicket = eventTickets.find((ticket) => ticket.id === ticketId)
-  const selectedFormat = getRegistrationTicketFormat(selectedTicket?.name, selectedTicket?.race?.name)
-  const isOpen = currentFormat === 'open'
+  const currentOperations = resolveTicketOperationsProfile(currentTicket?.operations_config)
+  const selectedOperations = resolveTicketOperationsProfile(selectedTicket?.operations_config)
+  const canChangeWave = supportsManualWaveChange(currentOperations)
 
   if (!registration) return null
 
@@ -122,30 +120,23 @@ export function RegistrationOperationsDialog({
         <section className="space-y-3 rounded-lg border p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 font-medium"><Ticket className="h-4 w-4" /> Billet</div>
-            <Badge variant="secondary">{registrationTicketFormatLabel(currentFormat)}</Badge>
+            <Badge variant="secondary">{ticketOperationsLabel(currentOperations)}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">Actuel : {registration.ticket?.name ?? 'Non renseigné'}</p>
           <Select value={ticketId} onValueChange={setTicketId} disabled={ticketsLoading || saving !== null}>
             <SelectTrigger><SelectValue placeholder="Choisir un nouveau billet" /></SelectTrigger>
             <SelectContent>
               <SelectItem value={SELECT_TICKET}>Choisir un nouveau billet</SelectItem>
-              {eventTickets.filter((ticket) => ticket.id !== registration.ticket_id).map((ticket) => {
-                const format = getRegistrationTicketFormat(ticket.name, ticket.race?.name)
-                return (
-                  <SelectItem key={ticket.id} value={ticket.id}>
-                    {ticket.name} · {registrationTicketFormatLabel(format)}
-                  </SelectItem>
-                )
-              })}
+              {eventTickets.filter((ticket) => ticket.id !== registration.ticket_id).map((ticket) => (
+                <SelectItem key={ticket.id} value={ticket.id}>
+                  {ticket.name} · {ticketOperationsLabel(resolveTicketOperationsProfile(ticket.operations_config))}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {selectedTicket ? (
             <p className="text-xs text-muted-foreground">
-              {selectedFormat === 'open'
-                ? 'Un SAS OPEN sera attribué automatiquement. Une ancre de groupe existante reste prioritaire.'
-                : selectedFormat === 'ranked'
-                  ? 'Le participant partira à 08:00 et toutes les données de SAS seront retirées.'
-                  : 'Les règles opérationnelles du billet cible seront appliquées depuis sa configuration.'}
+              {ticketChangeDepartureDescription(selectedOperations)}
             </p>
           ) : null}
           <DialogFooter>
@@ -162,7 +153,7 @@ export function RegistrationOperationsDialog({
               {formatClockTimeParis(registration.start_time) ?? '—'}
             </span>
           </div>
-          {isOpen ? (
+          {canChangeWave ? (
             <>
               <Select value={waveIndex} onValueChange={setWaveIndex} disabled={wavesLoading || saving !== null}>
                 <SelectTrigger><SelectValue placeholder="Déplacer vers un SAS" /></SelectTrigger>
@@ -190,7 +181,11 @@ export function RegistrationOperationsDialog({
               </DialogFooter>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Le SAS se gère uniquement pour un billet OPEN.</p>
+            <p className="text-sm text-muted-foreground">
+              {currentOperations.status === 'unconfigured'
+                ? 'Configurez les règles opérationnelles de ce billet pour autoriser la gestion du départ.'
+                : 'Ce billet ne permet pas la modification manuelle du départ.'}
+            </p>
           )}
         </section>
       </DialogContent>

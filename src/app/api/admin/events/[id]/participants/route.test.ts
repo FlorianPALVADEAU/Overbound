@@ -50,7 +50,7 @@ function createAdminMock() {
         return { select: vi.fn().mockReturnValue(registrationQuery) }
       }
       if (table === 'tickets') {
-        return lookup([{ id: registrations[0].ticket_id, name: 'Open 20 km', race: { name: 'Open' } }])
+        return lookup([{ id: registrations[0].ticket_id, name: 'Course 20 km', operations_config: { departure_mode: 'wave', departure_change_policy: 'reassign' } }])
       }
       if (table === 'profiles') {
         return lookup([{ id: registrations[0].user_id, full_name: 'Camille Martin' }])
@@ -95,7 +95,7 @@ describe('GET /api/admin/events/[id]/participants', () => {
         {
           id: REGISTRATION_ID,
           participant: { name: 'Camille Martin', email: 'runner@example.com', accountStatus: 'claimed' },
-          ticket: { name: 'Open 20 km', format: 'OPEN' },
+          ticket: { name: 'Course 20 km', operations: { status: 'configured', departureMode: 'wave' } },
           group: 'Les loups',
           payment: { status: 'paid', amountCents: 4900, currency: 'eur' },
         },

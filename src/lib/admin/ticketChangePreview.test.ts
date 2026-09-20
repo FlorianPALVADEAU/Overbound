@@ -3,17 +3,17 @@ import { buildTicketChangePreview } from './ticketChangePreview'
 
 const base = {
   registration: { eventId: 'event-1', waveIndex: 3, startTime: '2026-09-20T12:20:00Z' },
-  currentTicket: { id: 'ticket-1', eventId: 'event-1', name: 'Trail OPEN', raceName: 'Trail', priceCents: 5000, currency: 'eur' },
-  targetTicket: { id: 'ticket-2', eventId: 'event-1', name: 'Trail RANKED', raceName: 'Trail', priceCents: 5000, currency: 'eur' },
+  currentTicket: { id: 'ticket-1', eventId: 'event-1', name: 'Trail vague', priceCents: 5000, currency: 'eur', operationsConfig: { departure_mode: 'wave', departure_change_policy: 'reassign' } },
+  targetTicket: { id: 'ticket-2', eventId: 'event-1', name: 'Trail fixe', priceCents: 5000, currency: 'eur', operationsConfig: { departure_mode: 'fixed', departure_change_policy: 'clear' } },
 }
 
 describe('buildTicketChangePreview', () => {
-  it('describes an OPEN to RANKED change without mutating state', () => {
+  it('describes a configured ticket change without mutating state', () => {
     const preview = buildTicketChangePreview(base)
     expect(preview.allowed).toBe(true)
-    expect(preview.current.format).toBe('OPEN')
-    expect(preview.target.format).toBe('RANKED')
-    expect(preview.impacts.sas).toBe('cleared')
+    expect(preview.current.operations.departureMode).toBe('wave')
+    expect(preview.target.operations.departureMode).toBe('fixed')
+    expect(preview.impacts.departure).toBe('cleared')
     expect(preview.impacts.financial.status).toBe('no_change')
     expect(preview.previewId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/)
     expect(new Date(preview.expiresAt).getTime()).toBeGreaterThan(Date.now())
@@ -42,11 +42,11 @@ describe('buildTicketChangePreview', () => {
     expect(preview.blockers).toContain('Impact financier non calculable : la politique financière doit être validée avant toute mutation.')
   })
 
-  it('uses the group anchor when moving to OPEN', () => {
+  it('uses the group anchor when a target ticket requests wave reassignment', () => {
     const preview = buildTicketChangePreview({
       ...base,
-      currentTicket: { ...base.currentTicket, name: 'Trail RANKED' },
-      targetTicket: { ...base.targetTicket, name: 'Trail OPEN' },
+      currentTicket: { ...base.currentTicket, operationsConfig: { departure_mode: 'fixed', departure_change_policy: 'clear' } },
+      targetTicket: { ...base.targetTicket, operationsConfig: { departure_mode: 'wave', departure_change_policy: 'reassign' } },
       registration: { eventId: 'event-1', waveIndex: null, startTime: '2026-09-20T08:00:00Z' },
       group: { name: 'Team A', anchorEventId: 'event-1', anchorWaveIndex: 8, anchorStartTime: '2026-09-20T13:10:00Z' },
     })
@@ -54,16 +54,15 @@ describe('buildTicketChangePreview', () => {
     expect(preview.impacts.group).toBe('anchor_applies')
   })
 
-  it('allows a custom ticket without inferring a format from its name', () => {
+  it('blocks an unconfigured ticket instead of inferring rules from its name', () => {
     const preview = buildTicketChangePreview({
       ...base,
-      currentTicket: { ...base.currentTicket, name: 'pipi', raceName: 'Course test' },
-      targetTicket: { ...base.targetTicket, name: 'test ticket', raceName: 'Course test' },
+      currentTicket: { ...base.currentTicket, name: 'pipi', operationsConfig: null },
+      targetTicket: { ...base.targetTicket, name: 'test ticket', operationsConfig: null },
     })
-    expect(preview.allowed).toBe(true)
-    expect(preview.current.format).toBe('CUSTOM')
-    expect(preview.target.format).toBe('CUSTOM')
-    expect(preview.impacts.sas).toBe('unchanged')
-    expect(preview.blockers).toHaveLength(0)
+    expect(preview.allowed).toBe(false)
+    expect(preview.current.operations.status).toBe('unconfigured')
+    expect(preview.target.operations.status).toBe('unconfigured')
+    expect(preview.blockers).toContain('Les règles opérationnelles du billet cible doivent être configurées avant toute modification.')
   })
 })

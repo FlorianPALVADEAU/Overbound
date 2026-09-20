@@ -251,7 +251,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
                     <div className="text-xs text-muted-foreground">{participant.participant.email}</div>
                   </TableCell>
                   <TableCell><div className="flex flex-wrap gap-1"><Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge><Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div></TableCell>
-                  <TableCell><div>{participant.ticket.name ?? '—'}</div><div className="text-xs text-muted-foreground">{participant.ticket.format}</div></TableCell>
+                  <TableCell><div>{participant.ticket.name ?? '—'}</div><div className="text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</div></TableCell>
                   <TableCell>{participant.departure.startTime ? <><div>{formatDate(participant.departure.startTime)}</div><div className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</div></> : '—'}</TableCell>
                   <TableCell>{participant.group ?? '—'}</TableCell>
                   <TableCell>{participant.payment ? <><div>{participant.payment.status ?? '—'}</div><div className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</div></> : '—'}</TableCell>

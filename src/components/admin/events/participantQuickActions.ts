@@ -1,4 +1,5 @@
 import type { EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
+import { supportsManualWaveChange } from '@/lib/tickets/operationsProfile'
 
 export type ParticipantPreviewAction = 'ticket' | 'wave'
 
@@ -17,8 +18,14 @@ export function getParticipantQuickActionState(
     ticket: participant.ticket.id
       ? { disabled: false }
       : { disabled: true, reason: 'Aucun billet attribué' },
-    wave: participant.ticket.format === 'OPEN'
+    wave: supportsManualWaveChange({
+      status: participant.ticket.operations.status,
+      departureMode: participant.ticket.operations.departureMode,
+      departureChangePolicy: null,
+    })
       ? { disabled: false }
-      : { disabled: true, reason: 'Ce billet ne gère pas de SAS' },
+      : { disabled: true, reason: participant.ticket.operations.status === 'unconfigured'
+        ? 'Règles opérationnelles du billet à configurer'
+        : 'Ce billet ne permet pas de modifier le départ' },
   }
 }

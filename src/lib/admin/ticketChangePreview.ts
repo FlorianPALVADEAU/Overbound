@@ -1,13 +1,11 @@
-import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 import { createHash } from 'node:crypto'
+import { resolveTicketOperationsProfile, type TicketOperationsProfile } from '@/lib/tickets/operationsProfile'
 
 const PREVIEW_TTL_SECONDS = 300
 
-export type TicketFormat = 'OPEN' | 'RANKED' | 'CUSTOM'
-
 export type TicketPreviewInput = {
-  currentTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null; operationsConfig?: Record<string, unknown> | null }
-  targetTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null; operationsConfig?: Record<string, unknown> | null }
+  currentTicket: { id: string; eventId: string; name: string; priceCents?: number | null; currency?: string | null; operationsConfig?: Record<string, unknown> | null }
+  targetTicket: { id: string; eventId: string; name: string; priceCents?: number | null; currency?: string | null; operationsConfig?: Record<string, unknown> | null }
   registration: { eventId: string; waveIndex?: number | null; startTime?: string | null; userId?: string | null }
   group?: { name: string; anchorEventId?: string | null; anchorWaveIndex?: number | null; anchorStartTime?: string | null } | null
   targetWave?: { waveIndex: number; startTime: string; capacity: number; assignedCount: number } | null
@@ -18,11 +16,10 @@ export type TicketChangePreview = {
   expiresAt: string
   sourceVersion: string
   allowed: boolean
-  current: { ticketId: string; name: string; format: TicketFormat; waveIndex: number | null; startTime: string | null }
-  target: { ticketId: string; name: string; format: TicketFormat; waveIndex: number | null; startTime: string | null }
+  current: { ticketId: string; name: string; operations: TicketOperationsProfile; waveIndex: number | null; startTime: string | null }
+  target: { ticketId: string; name: string; operations: TicketOperationsProfile; waveIndex: number | null; startTime: string | null }
   impacts: {
-    format: 'unchanged' | 'changed'
-    sas: 'unchanged' | 'cleared' | 'requires_assignment' | 'assigned' | 'not_applicable' | 'unknown'
+    departure: 'unchanged' | 'cleared' | 'requires_assignment' | 'assigned' | 'not_applicable' | 'unknown'
     group: 'none' | 'preserved' | 'anchor_applies' | 'not_applicable'
     financial: { status: 'no_change' | 'potential_change' | 'unknown'; currentPriceCents: number | null; targetPriceCents: number | null; currency: string | null }
   }
@@ -30,15 +27,9 @@ export type TicketChangePreview = {
   blockers: string[]
 }
 
-export function getTicketFormat(name?: string | null, raceName?: string | null): TicketFormat {
-  if (isOpenFormatTicket(name, raceName)) return 'OPEN'
-  if (isRankedFormatTicket(name, raceName)) return 'RANKED'
-  return 'CUSTOM'
-}
-
 export function buildTicketChangePreview(input: TicketPreviewInput): TicketChangePreview {
-  const currentFormat = getTicketFormat(input.currentTicket.name, input.currentTicket.raceName)
-  const targetFormat = getTicketFormat(input.targetTicket.name, input.targetTicket.raceName)
+  const currentOperations = resolveTicketOperationsProfile(input.currentTicket.operationsConfig)
+  const targetOperations = resolveTicketOperationsProfile(input.targetTicket.operationsConfig)
   const warnings: string[] = []
   const blockers: string[] = []
   const currentWave = input.registration.waveIndex ?? null
@@ -48,57 +39,45 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
 
   if (!sameEvent) blockers.push('Le billet actuel et le billet cible doivent appartenir au même événement.')
   if (sameTicket) blockers.push('Le billet cible est déjà attribué à cette inscription.')
-  // A ticket without a legacy OPEN/RANKED label is still a valid product.
-  // Its operational rules will come from the ticket configuration; until
-  // that configuration exists, preview remains generic and non-destructive.
-  if (currentFormat === 'CUSTOM' || targetFormat === 'CUSTOM') {
-    warnings.push('Ce billet utilise une configuration personnalisée ; aucune règle de SAS ne sera déduite de son nom.')
+  if (targetOperations.status === 'unconfigured') {
+    blockers.push('Les règles opérationnelles du billet cible doivent être configurées avant toute modification.')
   }
 
   let targetWave: number | null = null
   let targetStart: string | null = null
-  let sas: TicketChangePreview['impacts']['sas'] = 'unknown'
+  let departure: TicketChangePreview['impacts']['departure'] = 'unknown'
   let groupImpact: TicketChangePreview['impacts']['group'] = 'none'
-  const configuredDepartureMode = input.targetTicket.operationsConfig?.departure_mode
-  const targetDepartureMode = configuredDepartureMode === 'none' || configuredDepartureMode === 'wave' || configuredDepartureMode === 'fixed'
-    ? configuredDepartureMode
-    : targetFormat === 'OPEN'
-      ? 'wave'
-      : targetFormat === 'RANKED'
-        ? 'fixed'
-        : 'custom'
+  const targetDepartureMode = targetOperations.departureMode
 
-  if (targetDepartureMode === 'none') {
-    sas = currentWave !== null || currentStart !== null ? 'cleared' : 'not_applicable'
+  if (targetOperations.departureChangePolicy === 'preserve') {
+    departure = currentWave !== null || currentStart !== null ? 'unchanged' : 'not_applicable'
+    groupImpact = input.group ? 'preserved' : 'none'
+  } else if (targetDepartureMode === 'none' || targetOperations.departureChangePolicy === 'clear') {
+    departure = currentWave !== null || currentStart !== null ? 'cleared' : 'not_applicable'
     groupImpact = input.group ? 'not_applicable' : 'none'
   } else if (targetDepartureMode === 'fixed') {
-    sas = currentFormat === 'OPEN' && currentWave !== null ? 'cleared' : 'not_applicable'
-    if (currentWave !== null || currentStart !== null) {
-      warnings.push('Le billet cible définit un départ fixe ; la configuration détaillée sera appliquée lors de la confirmation.')
-      groupImpact = 'not_applicable'
-    }
+    departure = 'requires_assignment'
+    warnings.push('Le départ fixe configuré sur le billet sera appliqué lors de la confirmation.')
+    groupImpact = input.group ? 'not_applicable' : 'none'
   } else if (targetDepartureMode === 'wave') {
     const group = input.group
     const anchorApplies = group?.anchorEventId === input.registration.eventId && group.anchorWaveIndex != null
     if (anchorApplies) {
       targetWave = group.anchorWaveIndex ?? null
       targetStart = group.anchorStartTime ?? null
-      sas = 'assigned'
+      departure = 'assigned'
       groupImpact = 'anchor_applies'
       warnings.push(`L’ancre du groupe « ${group.name} » impose la SAS ${targetWave}.`)
     } else if (input.targetWave) {
       targetWave = input.targetWave.waveIndex
       targetStart = input.targetWave.startTime
-      sas = input.targetWave.assignedCount >= input.targetWave.capacity ? 'requires_assignment' : 'assigned'
-      if (sas === 'requires_assignment') blockers.push('La SAS cible est pleine ; une nouvelle attribution OPEN doit être calculée au moment de la confirmation.')
+      departure = input.targetWave.assignedCount >= input.targetWave.capacity ? 'requires_assignment' : 'assigned'
+      if (departure === 'requires_assignment') blockers.push('La SAS cible est pleine ; une nouvelle attribution doit être calculée au moment de la confirmation.')
     } else {
-      sas = 'requires_assignment'
-      warnings.push('La SAS OPEN sera calculée au moment de la confirmation selon les règles d’assignation.')
+      departure = 'requires_assignment'
+      warnings.push('Le départ par SAS sera calculé au moment de la confirmation selon les règles d’assignation.')
     }
     if (input.group?.anchorEventId !== input.registration.eventId) groupImpact = input.group ? 'not_applicable' : 'none'
-  } else {
-    sas = currentWave !== null || currentStart !== null ? 'unchanged' : 'not_applicable'
-    groupImpact = input.group ? 'preserved' : 'none'
   }
 
   const pricesKnown = input.currentTicket.priceCents != null && input.targetTicket.priceCents != null
@@ -125,11 +104,10 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
     expiresAt,
     sourceVersion,
     allowed: blockers.length === 0,
-    current: { ticketId: input.currentTicket.id, name: input.currentTicket.name, format: currentFormat, waveIndex: currentWave, startTime: currentStart },
-    target: { ticketId: input.targetTicket.id, name: input.targetTicket.name, format: targetFormat, waveIndex: targetWave, startTime: targetStart },
+    current: { ticketId: input.currentTicket.id, name: input.currentTicket.name, operations: currentOperations, waveIndex: currentWave, startTime: currentStart },
+    target: { ticketId: input.targetTicket.id, name: input.targetTicket.name, operations: targetOperations, waveIndex: targetWave, startTime: targetStart },
     impacts: {
-      format: currentFormat === targetFormat ? 'unchanged' : 'changed',
-      sas,
+      departure,
       group: groupImpact,
       financial: { status: financialStatus, currentPriceCents: input.currentTicket.priceCents ?? null, targetPriceCents: input.targetTicket.priceCents ?? null, currency: input.targetTicket.currency ?? input.currentTicket.currency ?? null },
     },
