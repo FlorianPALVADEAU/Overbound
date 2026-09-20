@@ -8,7 +8,7 @@ import {
   updateAdminEventWave,
   type AdminEventWave,
 } from '@/app/api/admin/events/eventsQueries'
-import { getOpenWaveProvisioningState } from '@/lib/openSas'
+import { getEventWaveProvisioningState } from '@/lib/admin/eventWaves'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Eye, RefreshCw, Save, Download } from 'lucide-react'
 import { formatClockTimeParis } from '@/lib/dateTime'
 
-interface EventOpenWavesSectionProps {
+interface EventWavesSectionProps {
   eventId: string
 }
 
@@ -40,7 +40,7 @@ const formatClockTime = (value?: string | null) => {
   return formatClockTimeParis(value) ?? '—'
 }
 
-export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
+export function EventWavesSection({ eventId }: EventWavesSectionProps) {
   const { data, isLoading, error, refetch, isFetching } = useAdminEventWaves(eventId)
   const [editRows, setEditRows] = useState<Record<number, EditRow>>({})
   const [globalCapacity, setGlobalCapacity] = useState('50')
@@ -76,7 +76,7 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
   }, [data])
 
   const provisioningState = useMemo(
-    () => getOpenWaveProvisioningState((data ?? []).map((wave) => wave.wave_index)),
+    () => getEventWaveProvisioningState((data ?? []).map((wave) => wave.wave_index)),
     [data],
   )
 
@@ -89,7 +89,7 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
       await refetch()
     } catch (error) {
       setProvisioningError(
-        error instanceof Error ? error.message : 'Impossible d’initialiser les SAS OPEN.',
+        error instanceof Error ? error.message : 'Impossible d’initialiser les SAS.',
       )
     } finally {
       setProvisioning(false)
@@ -147,7 +147,7 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
   if (error) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>{(error as Error).message || 'Impossible de charger les SAS OPEN.'}</AlertDescription>
+        <AlertDescription>{(error as Error).message || 'Impossible de charger les SAS.'}</AlertDescription>
       </Alert>
     )
   }
@@ -157,9 +157,12 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
       <CardContent className="space-y-4 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">SAS OPEN</h2>
+            <h2 className="text-lg font-semibold">SAS de départ</h2>
             <p className="text-sm text-muted-foreground">
               {totals.totalAssigned.toLocaleString('fr-FR')} / {totals.totalCapacity.toLocaleString('fr-FR')} participants affectés
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Communs à tous les billets configurés avec un départ par SAS.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -179,9 +182,9 @@ export function EventOpenWavesSection({ eventId }: EventOpenWavesSectionProps) {
         {provisioningState === 'unprovisioned' ? (
           <Alert>
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>Les 24 SAS OPEN ne sont pas encore initialisés pour cet événement.</span>
+              <span>Les SAS de départ ne sont pas encore initialisés pour cet événement.</span>
               <Button size="sm" onClick={handleProvision} disabled={provisioning}>
-                {provisioning ? 'Initialisation…' : 'Initialiser les SAS OPEN'}
+                {provisioning ? 'Initialisation…' : 'Initialiser les SAS'}
               </Button>
             </AlertDescription>
           </Alert>

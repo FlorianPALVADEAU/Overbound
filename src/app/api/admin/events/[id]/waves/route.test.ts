@@ -172,6 +172,59 @@ describe('GET /api/admin/events/[id]/waves', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Impossible de récupérer les SAS' })
     expect(upsert).not.toHaveBeenCalled()
   })
+
+  it('lists participants from every ticket explicitly configured for wave departures', async () => {
+    const ticketIds = ['ticket-a', 'ticket-b']
+    const registrationTicketFilter = vi.fn()
+    const rows = [{
+      id: 'registration-1',
+      email: 'runner@example.com',
+      start_time: '2026-09-12T10:00:00.000Z',
+      wave_position: 1,
+      user_id: null,
+      created_at: '2026-09-01T10:00:00.000Z',
+    }]
+
+    const admin = {
+      from(table: string) {
+        if (table === 'events') {
+          const builder: any = { select: () => builder, eq: () => builder, single: async () => ({ data: { id: 'event-1' }, error: null }) }
+          return builder
+        }
+        if (table === 'tickets') {
+          const builder: any = {
+            select: () => builder,
+            eq: () => builder,
+            contains: async () => ({ data: ticketIds.map((id) => ({ id })), error: null }),
+          }
+          return builder
+        }
+        if (table === 'registrations') {
+          const builder: any = {
+            select: () => builder,
+            eq: () => builder,
+            in: (column: string, values: string[]) => { registrationTicketFilter(column, values); return builder },
+            order: () => builder,
+            then: (resolve: (value: unknown) => unknown) => resolve({ data: rows, error: null }),
+          }
+          return builder
+        }
+        throw new Error(`Unexpected table: ${table}`)
+      },
+    }
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await GET(
+      new Request('http://localhost/api/admin/events/event-1/waves?include_registrations=true&wave_index=1'),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(200)
+    expect(registrationTicketFilter).toHaveBeenCalledWith('ticket_id', ticketIds)
+    await expect(response.json()).resolves.toMatchObject({
+      participants: [{ id: 'registration-1', email: 'runner@example.com' }],
+    })
+  })
 })
 
 describe('POST /api/admin/events/[id]/waves', () => {

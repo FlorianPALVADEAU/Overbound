@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import {
-  buildOpenWaveRows,
-  getOpenWaveProvisioningState,
-} from '@/lib/openSas'
+  buildDefaultEventWaveRows,
+  getEventWaveProvisioningState,
+} from '@/lib/admin/eventWaves'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 const toCsv = (waves: any[]) => {
@@ -57,12 +57,30 @@ export async function GET(
       return NextResponse.json({ error: 'wave_index invalide' }, { status: 400 })
     }
 
+    const { data: waveTickets, error: ticketsError } = await admin
+      .from('tickets')
+      .select('id')
+      .eq('event_id', event.id)
+      .eq('organization_id', auth.organizationId)
+      .contains('operations_config', { departure_mode: 'wave' })
+
+    if (ticketsError) {
+      console.error('[admin waves] wave tickets fetch error', ticketsError)
+      return NextResponse.json({ error: 'Impossible de déterminer les billets avec départ par SAS' }, { status: 500 })
+    }
+
+    const waveTicketIds = (waveTickets ?? []).map((ticket) => ticket.id)
+    if (waveTicketIds.length === 0) {
+      return NextResponse.json({ wave_index: waveIndexParam, participants: [] })
+    }
+
     const { data: rows, error: registrationsError } = await admin
       .from('registrations')
       .select('id, email, start_time, wave_position, user_id, created_at')
       .eq('event_id', event.id)
       .eq('organization_id', auth.organizationId)
       .eq('wave_index', waveIndexParam)
+      .in('ticket_id', waveTicketIds)
       .order('wave_position', { ascending: true })
       .order('created_at', { ascending: true })
 
@@ -124,7 +142,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="event-${event.id}-sas-open.csv"`,
+        'Content-Disposition': `attachment; filename="event-${event.id}-sas.csv"`,
       },
     })
   }
@@ -166,7 +184,7 @@ async function handleProvision(
     return NextResponse.json({ error: 'Impossible de vérifier la configuration des SAS' }, { status: 500 })
   }
 
-  const state = getOpenWaveProvisioningState(
+  const state = getEventWaveProvisioningState(
     (existingWaves ?? []).map((wave) => wave.wave_index),
   )
 
@@ -181,7 +199,7 @@ async function handleProvision(
     )
   }
 
-  const { rows } = buildOpenWaveRows(event.id, event.date)
+  const { rows } = buildDefaultEventWaveRows(event.id, event.date)
   const { error: provisionError } = await admin
     .from('event_waves')
     .upsert(rows.map((row) => ({ ...row, organization_id: auth.organizationId })), { onConflict: 'event_id,wave_index', ignoreDuplicates: true })
@@ -202,7 +220,7 @@ async function handleProvision(
     return NextResponse.json({ error: 'Impossible de vérifier les SAS initialisés' }, { status: 500 })
   }
 
-  const provisionedState = getOpenWaveProvisioningState(
+  const provisionedState = getEventWaveProvisioningState(
     (provisionedWaves ?? []).map((wave) => wave.wave_index),
   )
 
@@ -217,7 +235,7 @@ async function handleProvision(
 }
 
 export const POST = withRequestLogging(handleProvision, {
-  actionType: 'Initialisation SAS OPEN événement admin',
+  actionType: 'Initialisation SAS événement admin',
 })
 
 async function handlePatch(

@@ -234,7 +234,7 @@ export const provisionAdminEventWaves = async (
   )
 
   if (response.status !== 200) {
-    throw new Error('Impossible d’initialiser les SAS OPEN')
+    throw new Error('Impossible d’initialiser les SAS')
   }
 
   return response.data
