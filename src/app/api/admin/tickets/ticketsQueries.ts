@@ -13,6 +13,7 @@ export interface AdminTicketPayload {
   max_participants: number
   requires_document: boolean
   document_types: string[]
+  operations_config?: Ticket['operations_config'] | null
 }
 
 interface TicketsResponse {

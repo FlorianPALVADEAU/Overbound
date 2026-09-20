@@ -14,6 +14,7 @@ type TicketRow = {
   name: string
   final_price_cents: number | null
   currency: string | null
+  operations_config: Record<string, unknown> | null
   race: { name?: string | null } | Array<{ name?: string | null }> | null
 }
 
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!registration.ticket_id) return NextResponse.json({ error: 'L’inscription ne possède pas de billet actuel' }, { status: 422 })
 
   const ticketIds = [registration.ticket_id, parsedBody.data.ticketId]
-  const { data: tickets, error: ticketsError } = await admin.from('tickets').select('id, event_id, name, final_price_cents, currency, race:races(name)').eq('event_id', eventId).in('id', ticketIds)
+  const { data: tickets, error: ticketsError } = await admin.from('tickets').select('id, event_id, name, final_price_cents, currency, operations_config, race:races(name)').eq('event_id', eventId).in('id', ticketIds)
   if (ticketsError) { console.error('[admin ticket preview] ticket lookup error', ticketsError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
   const ticketById = new Map((tickets ?? []).map((ticket) => [ticket.id, ticket as unknown as TicketRow]))
   const current = ticketById.get(registration.ticket_id)
@@ -75,8 +76,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const preview = buildTicketChangePreview({
-    currentTicket: { id: current.id, eventId: current.event_id, name: current.name, raceName: Array.isArray(current.race) ? current.race[0]?.name : current.race?.name, priceCents: current.final_price_cents, currency: current.currency },
-    targetTicket: { id: target.id, eventId: target.event_id, name: target.name, raceName: Array.isArray(target.race) ? target.race[0]?.name : target.race?.name, priceCents: target.final_price_cents, currency: target.currency },
+    currentTicket: { id: current.id, eventId: current.event_id, name: current.name, raceName: Array.isArray(current.race) ? current.race[0]?.name : current.race?.name, priceCents: current.final_price_cents, currency: current.currency, operationsConfig: current.operations_config },
+    targetTicket: { id: target.id, eventId: target.event_id, name: target.name, raceName: Array.isArray(target.race) ? target.race[0]?.name : target.race?.name, priceCents: target.final_price_cents, currency: target.currency, operationsConfig: target.operations_config },
     registration: { eventId: registration.event_id, waveIndex: registration.wave_index, startTime: registration.start_time, userId: registration.user_id },
     group: group ? { name: group.name, anchorEventId: group.anchor_event_id, anchorWaveIndex: group.anchor_wave_index, anchorStartTime: group.anchor_start_time } : null,
   })

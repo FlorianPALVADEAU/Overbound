@@ -6,8 +6,8 @@ const PREVIEW_TTL_SECONDS = 300
 export type TicketFormat = 'OPEN' | 'RANKED' | 'CUSTOM'
 
 export type TicketPreviewInput = {
-  currentTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null }
-  targetTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null }
+  currentTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null; operationsConfig?: Record<string, unknown> | null }
+  targetTicket: { id: string; eventId: string; name: string; raceName?: string | null; priceCents?: number | null; currency?: string | null; operationsConfig?: Record<string, unknown> | null }
   registration: { eventId: string; waveIndex?: number | null; startTime?: string | null; userId?: string | null }
   group?: { name: string; anchorEventId?: string | null; anchorWaveIndex?: number | null; anchorStartTime?: string | null } | null
   targetWave?: { waveIndex: number; startTime: string; capacity: number; assignedCount: number } | null
@@ -59,14 +59,25 @@ export function buildTicketChangePreview(input: TicketPreviewInput): TicketChang
   let targetStart: string | null = null
   let sas: TicketChangePreview['impacts']['sas'] = 'unknown'
   let groupImpact: TicketChangePreview['impacts']['group'] = 'none'
+  const configuredDepartureMode = input.targetTicket.operationsConfig?.departure_mode
+  const targetDepartureMode = configuredDepartureMode === 'none' || configuredDepartureMode === 'wave' || configuredDepartureMode === 'fixed'
+    ? configuredDepartureMode
+    : targetFormat === 'OPEN'
+      ? 'wave'
+      : targetFormat === 'RANKED'
+        ? 'fixed'
+        : 'custom'
 
-  if (targetFormat === 'RANKED') {
+  if (targetDepartureMode === 'none') {
+    sas = currentWave !== null || currentStart !== null ? 'cleared' : 'not_applicable'
+    groupImpact = input.group ? 'not_applicable' : 'none'
+  } else if (targetDepartureMode === 'fixed') {
     sas = currentFormat === 'OPEN' && currentWave !== null ? 'cleared' : 'not_applicable'
-    if (currentFormat === 'OPEN' && input.group?.anchorEventId === input.registration.eventId) {
-      warnings.push('Le passage en RANKED retire la SAS OPEN ; l’ancre du groupe ne s’applique pas au format RANKED.')
+    if (currentWave !== null || currentStart !== null) {
+      warnings.push('Le billet cible définit un départ fixe ; la configuration détaillée sera appliquée lors de la confirmation.')
       groupImpact = 'not_applicable'
     }
-  } else if (targetFormat === 'OPEN') {
+  } else if (targetDepartureMode === 'wave') {
     const group = input.group
     const anchorApplies = group?.anchorEventId === input.registration.eventId && group.anchorWaveIndex != null
     if (anchorApplies) {

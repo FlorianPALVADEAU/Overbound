@@ -40,6 +40,8 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
       max_participants: '0',
       requires_document: false,
       document_types: [],
+      departure_mode: 'none',
+      departure_change_policy: 'preserve',
     }
   }
 
@@ -53,6 +55,8 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
     max_participants: ticket.max_participants.toString(),
     requires_document: false,
     document_types: [],
+    departure_mode: ticket.operations_config?.departure_mode ?? 'none',
+    departure_change_policy: ticket.operations_config?.departure_change_policy ?? 'preserve',
   }
 }
 
@@ -205,6 +209,11 @@ export function TicketsSection() {
       max_participants: parseInt(values.max_participants, 10) || 0,
       requires_document: false,
       document_types: [],
+      operations_config: {
+        profile_key: 'ticket-default-v1',
+        departure_mode: values.departure_mode,
+        departure_change_policy: values.departure_change_policy,
+      },
     }
 
     try {

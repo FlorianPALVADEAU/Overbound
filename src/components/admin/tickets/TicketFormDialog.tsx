@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Clock } from 'lucide-react'
 import type { Event } from '@/types/Event'
 import type { Race } from '@/types/Race'
-import type { Ticket } from '@/types/Ticket'
+import type { Ticket, TicketDepartureChangePolicy, TicketDepartureMode } from '@/types/Ticket'
 
 export interface TicketFormValues {
   event_id: string
@@ -29,6 +29,8 @@ export interface TicketFormValues {
   max_participants: string
   requires_document: boolean
   document_types: string[]
+  departure_mode: TicketDepartureMode
+  departure_change_policy: TicketDepartureChangePolicy
 }
 
 interface TicketFormDialogProps {
@@ -52,6 +54,8 @@ const DEFAULT_VALUES: TicketFormValues = {
   max_participants: '0',
   requires_document: false,
   document_types: [],
+  departure_mode: 'none',
+  departure_change_policy: 'preserve',
 }
 
 export function TicketFormDialog({
@@ -199,6 +203,37 @@ export function TicketFormDialog({
               onChange={(event) => handleChange('price', event.target.value)}
               placeholder="10000 = 100€"
             />
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-4">
+            <div>
+              <h3 className="font-medium">Règles opérationnelles</h3>
+              <p className="text-sm text-muted-foreground">Le comportement du billet est configuré ici, jamais déduit de son nom.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Gestion du départ</Label>
+                <Select value={values.departure_mode} onValueChange={(value) => handleChange('departure_mode', value)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun départ géré</SelectItem>
+                    <SelectItem value="wave">Départ par SAS</SelectItem>
+                    <SelectItem value="fixed">Départ fixe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Lors d’un changement de billet</Label>
+                <Select value={values.departure_change_policy} onValueChange={(value) => handleChange('departure_change_policy', value)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="preserve">Conserver le départ</SelectItem>
+                    <SelectItem value="clear">Retirer le départ</SelectItem>
+                    <SelectItem value="reassign">Réattribuer le départ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
 

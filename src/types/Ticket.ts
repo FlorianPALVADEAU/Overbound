@@ -17,6 +17,17 @@ export interface TicketRaceSummary {
   is_universal?: boolean
 }
 
+export type TicketDepartureMode = 'none' | 'wave' | 'fixed'
+export type TicketDepartureChangePolicy = 'preserve' | 'clear' | 'reassign'
+
+export interface TicketOperationsConfig {
+  /** Stable extension point for future ticket behavior factories. */
+  profile_key?: string | null
+  departure_mode?: TicketDepartureMode
+  departure_change_policy?: TicketDepartureChangePolicy
+  [key: string]: unknown
+}
+
 export interface Ticket {
   id: UUID
   event_id: UUID
@@ -31,6 +42,7 @@ export interface Ticket {
   max_participants: number
   requires_document: boolean
   document_types: DocumentType[] | null
+  operations_config?: TicketOperationsConfig | null
   created_at: Timestamp
   updated_at: Timestamp
   event?: TicketEventSummary | null

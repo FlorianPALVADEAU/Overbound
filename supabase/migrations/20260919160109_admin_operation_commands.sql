@@ -55,6 +55,7 @@ DECLARE
   v_target record;
   v_anchor record;
   v_format text;
+  v_departure_mode text;
   v_wave_position integer;
   v_before jsonb;
   v_after jsonb;
@@ -88,7 +89,7 @@ BEGIN
     RAISE EXCEPTION 'Registration changed since preview' USING ERRCODE = '40001';
   END IF;
 
-  SELECT t.id, t.event_id, t.name AS ticket_name, race.name AS race_name
+  SELECT t.id, t.event_id, t.name AS ticket_name, race.name AS race_name, t.operations_config
     INTO v_target
     FROM public.tickets t
     LEFT JOIN public.races race ON race.id = t.race_id
@@ -97,18 +98,21 @@ BEGIN
     RAISE EXCEPTION 'Target ticket is invalid' USING ERRCODE = '22023';
   END IF;
 
-  IF position('open' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) > 0
+  v_departure_mode := v_target.operations_config ->> 'departure_mode';
+  IF v_departure_mode IS NULL AND position('open' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) > 0
      AND position('ranked' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) = 0 THEN
     v_format := 'open';
-  ELSIF position('ranked' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) > 0
+  ELSIF v_departure_mode IS NULL AND position('ranked' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) > 0
      AND position('open' IN lower(coalesce(v_target.ticket_name, '') || ' ' || coalesce(v_target.race_name, ''))) = 0 THEN
     v_format := 'ranked';
   ELSE
-    -- Custom ticket profiles do not infer departure rules from labels. The
-    -- ticket change itself is safe; profile-specific scheduling is handled by
-    -- the ticket configuration layer when it is present.
+    -- Custom ticket profiles do not infer departure rules from labels.
     v_format := 'custom';
   END IF;
+
+  IF v_departure_mode = 'none' THEN v_format := 'none'; END IF;
+  IF v_departure_mode = 'wave' THEN v_format := 'open'; END IF;
+  IF v_departure_mode = 'fixed' THEN v_format := 'ranked'; END IF;
 
   v_before := jsonb_build_object('ticket_id', v_registration.ticket_id, 'wave_index', v_registration.wave_index,
     'wave_position', v_registration.wave_position, 'wave_capacity', v_registration.wave_capacity,
@@ -122,10 +126,10 @@ BEGIN
     'NO_MOVEMENT', 'PENDING', p_reason, p_actor_id, p_request_hash, v_before
   ) RETURNING id INTO v_command_id;
 
-  IF v_format = 'ranked' THEN
+  IF v_format IN ('ranked', 'none') THEN
     UPDATE public.registrations
        SET ticket_id = v_target.id,
-           start_time = (date_trunc('day', v_registration.event_date AT TIME ZONE 'Europe/Paris') + interval '8 hour') AT TIME ZONE 'Europe/Paris',
+           start_time = CASE WHEN v_format = 'ranked' THEN (date_trunc('day', v_registration.event_date AT TIME ZONE 'Europe/Paris') + interval '8 hour') AT TIME ZONE 'Europe/Paris' ELSE NULL END,
            wave_index = NULL, wave_capacity = NULL, wave_position = NULL,
            auto_assigned = NULL, preferred_window_start = NULL, preferred_window_end = NULL,
            latest_allowed_time = NULL, assignment_constraint_breached = FALSE

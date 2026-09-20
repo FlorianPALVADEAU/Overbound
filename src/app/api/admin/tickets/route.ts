@@ -50,6 +50,7 @@ const handlePost = async (request: NextRequest) => {
       price,
       currency,
       max_participants,
+      operations_config,
     } = body
 
     // Validation
@@ -83,6 +84,7 @@ const handlePost = async (request: NextRequest) => {
         document_types: [],
         currency: currency || 'eur',
         organization_id: auth.organizationId,
+        operations_config: operations_config || null,
       })
       .select(`
         *,

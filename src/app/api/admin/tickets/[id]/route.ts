@@ -23,6 +23,7 @@ const handlePut = async (
       price,
       currency,
       max_participants,
+      operations_config,
     } = body
 
     // Utiliser supabaseAdmin pour modifier
@@ -47,7 +48,8 @@ const handlePut = async (
         max_participants: parseInt(max_participants) || 0,
         requires_document: false,
         document_types: [],
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        operations_config: operations_config || null,
       })
       .eq('id', id)
       .eq('organization_id', auth.organizationId)
