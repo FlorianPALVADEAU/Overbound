@@ -304,16 +304,16 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                 const isFull = assigned >= (capacityValue || 0)
 
                 return (
-                  <article key={wave.wave_index} className="grid min-w-0 gap-2 rounded-lg border p-2.5 md:grid-cols-[5rem_minmax(12rem,1fr)_5.5rem_minmax(7rem,auto)_auto] md:items-end">
-                    <div className="flex items-center justify-between gap-2 md:block md:self-center">
+                  <article key={wave.wave_index} className="grid min-w-0 gap-3 rounded-lg border p-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+                    <div className="flex min-w-0 items-center justify-between gap-2 sm:col-span-2 lg:col-span-2 lg:block lg:self-center">
                       <div><p className="font-medium">SAS {position + 1}</p><p className="text-xs text-muted-foreground">{formatClockTime(wave.start_time)}</p></div>
                       <div className="md:mt-1">{isClosed ? <Badge variant="destructive">Fermé</Badge> : isFull ? <Badge variant="secondary">Complet</Badge> : <Badge variant="outline">Ouvert</Badge>}</div>
                     </div>
-                      <div className="min-w-0 space-y-1">
+                      <div className="min-w-0 space-y-1 lg:col-span-3">
                         <label className="text-xs text-muted-foreground">Heure de départ</label>
-                        <Input type="datetime-local" value={row?.startTime ?? toLocalDateTimeInput(wave.start_time)} onChange={(event) => handleRowChange(wave, { startTime: event.target.value })} />
+                        <Input className="min-w-0 w-full" type="datetime-local" value={row?.startTime ?? toLocalDateTimeInput(wave.start_time)} onChange={(event) => handleRowChange(wave, { startTime: event.target.value })} />
                       </div>
-                      <div className="space-y-1"><label className="text-xs text-muted-foreground">Capacité</label>
+                      <div className="min-w-0 space-y-1 lg:col-span-2"><label className="text-xs text-muted-foreground">Capacité</label>
                       <Input
                         value={row?.capacity ?? String(wave.capacity ?? 0)}
                         onChange={(event) => handleRowChange(wave, { capacity: event.target.value })}
@@ -321,8 +321,8 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                         inputMode="numeric"
                       />
                       </div>
-                      <div className="space-y-1 md:self-center"><span className="text-xs text-muted-foreground">Occupation</span><p className="whitespace-nowrap text-sm">{assigned} / {capacityValue || 0} · {remaining} libre{remaining > 1 ? 's' : ''}</p></div>
-                    <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+                      <div className="min-w-0 space-y-1 lg:col-span-2 lg:self-center"><span className="text-xs text-muted-foreground">Occupation</span><p className="text-sm">{assigned} / {capacityValue || 0} · {remaining} libre{remaining > 1 ? 's' : ''}</p></div>
+                    <div className="flex min-w-0 flex-wrap items-center gap-1 sm:col-span-2 lg:col-span-3 lg:justify-end">
                       <label className="mr-1 flex items-center gap-1.5 text-xs">
                       <Switch
                         checked={Boolean(isClosed)}
