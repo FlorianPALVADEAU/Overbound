@@ -1,7 +1,7 @@
 -- Server-only, idempotent command registry for administrative corrections.
 -- This migration intentionally supports only NO_MOVEMENT ticket changes.
 
-CREATE TABLE public.admin_operation_commands (
+CREATE TABLE IF NOT EXISTS public.admin_operation_commands (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id),
   event_id uuid NOT NULL REFERENCES public.events(id),
@@ -22,9 +22,9 @@ CREATE TABLE public.admin_operation_commands (
   CONSTRAINT admin_operation_commands_org_command_key UNIQUE (organization_id, command_id)
 );
 
-CREATE INDEX admin_operation_commands_event_created_idx
+CREATE INDEX IF NOT EXISTS admin_operation_commands_event_created_idx
   ON public.admin_operation_commands (organization_id, event_id, created_at DESC);
-CREATE INDEX admin_operation_commands_registration_created_idx
+CREATE INDEX IF NOT EXISTS admin_operation_commands_registration_created_idx
   ON public.admin_operation_commands (organization_id, registration_id, created_at DESC);
 
 ALTER TABLE public.admin_operation_commands ENABLE ROW LEVEL SECURITY;
