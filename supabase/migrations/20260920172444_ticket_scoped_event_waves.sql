@@ -592,9 +592,10 @@ BEGIN
          registration.start_time
   INTO v_registration
   FROM public.registrations registration
+  JOIN public.events event ON event.id = registration.event_id
   WHERE registration.id = p_registration_id
     AND registration.event_id = p_event_id
-    AND registration.organization_id = p_organization_id
+    AND event.organization_id = p_organization_id
   FOR UPDATE;
 
   IF v_registration.id IS NULL THEN

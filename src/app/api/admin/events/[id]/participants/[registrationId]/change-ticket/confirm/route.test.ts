@@ -29,12 +29,34 @@ const BODY = {
 }
 
 describe('POST ticket change confirmation', () => {
+  const rpc = vi.fn()
+  const registrationUpdate = vi.fn()
+
   beforeEach(() => {
     vi.clearAllMocks()
     requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'admin' })
-    supabaseAdminMock.mockReturnValue({
-      rpc: vi.fn().mockResolvedValue({ data: { status: 'SUCCEEDED' }, error: null }),
-    })
+    rpc.mockResolvedValue({ data: { status: 'SUCCEEDED' }, error: null })
+    const admin = {
+      rpc,
+      from(table: string) {
+        if (table === 'events') {
+          const query: any = { select: () => query, eq: () => query, maybeSingle: async () => ({ data: { id: EVENT_ID }, error: null }) }
+          return query
+        }
+        if (table === 'registrations') {
+          const query: any = {
+            select: () => query,
+            update: (payload: unknown) => { registrationUpdate(payload); return query },
+            eq: () => query,
+            maybeSingle: async () => ({ data: { id: REG_ID, organization_id: null }, error: null }),
+            then: (resolve: (value: unknown) => unknown) => resolve({ error: null }),
+          }
+          return query
+        }
+        throw new Error(`Unexpected table: ${table}`)
+      },
+    }
+    supabaseAdminMock.mockReturnValue(admin)
   })
 
   it('confirms a valid no-movement command through the server RPC', async () => {
@@ -43,6 +65,8 @@ describe('POST ticket change confirmation', () => {
       { params: Promise.resolve({ id: EVENT_ID, registrationId: REG_ID }) },
     )
     expect(response.status).toBe(200)
+    expect(registrationUpdate).toHaveBeenCalledWith({ organization_id: 'org-1' })
+    expect(rpc).toHaveBeenCalledOnce()
   })
 
   it('rejects malformed commands before authentication', async () => {

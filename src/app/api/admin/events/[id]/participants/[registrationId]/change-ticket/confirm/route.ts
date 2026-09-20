@@ -43,6 +43,46 @@ export async function POST(
   }
 
   const admin = supabaseAdmin()
+  const { data: event, error: eventError } = await admin
+    .from('events')
+    .select('id')
+    .eq('id', parsedParams.data.id)
+    .eq('organization_id', auth.organizationId)
+    .maybeSingle()
+  if (eventError) {
+    console.error('[admin ticket confirm] event lookup failed', eventError)
+    return NextResponse.json({ error: 'Impossible de vérifier l’événement' }, { status: 500 })
+  }
+  if (!event) return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
+
+  const { data: registration, error: registrationError } = await admin
+    .from('registrations')
+    .select('id, organization_id')
+    .eq('id', parsedParams.data.registrationId)
+    .eq('event_id', parsedParams.data.id)
+    .maybeSingle()
+  if (registrationError) {
+    console.error('[admin ticket confirm] registration lookup failed', registrationError)
+    return NextResponse.json({ error: 'Impossible de vérifier l’inscription' }, { status: 500 })
+  }
+  if (!registration) {
+    return NextResponse.json({ error: 'Inscription introuvable pour cet événement' }, { status: 404 })
+  }
+
+  // The event is the authorization boundary. Repair historical denormalized
+  // tenant metadata before calling the transactional command.
+  if (registration.organization_id !== auth.organizationId) {
+    const { error: repairError } = await admin
+      .from('registrations')
+      .update({ organization_id: auth.organizationId })
+      .eq('id', registration.id)
+      .eq('event_id', parsedParams.data.id)
+    if (repairError) {
+      console.error('[admin ticket confirm] organization repair failed', repairError)
+      return NextResponse.json({ error: 'Impossible de rattacher l’inscription à l’organisation' }, { status: 500 })
+    }
+  }
+
   const { data, error } = await admin.rpc('admin_confirm_ticket_change', {
     p_organization_id: auth.organizationId,
     p_event_id: parsedParams.data.id,
