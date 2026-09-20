@@ -18,6 +18,9 @@ vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization
 
 import { GET, POST } from './route'
 
+const TICKET_ID = '4d0272d2-647c-4b7b-8c68-3c9a3ecb99d9'
+const withTicket = (url: string) => `${url}${url.includes('?') ? '&' : '?'}ticket_id=${TICKET_ID}`
+
 function createAdmin({ wavesError = null }: { wavesError?: { message: string } | null } = {}) {
   const upsert = vi.fn(() => {
     throw new Error('GET must not initialize waves')
@@ -58,6 +61,15 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
             },
             upsert,
           }
+        }
+
+        if (table === 'tickets') {
+          const builder: any = {
+            select() { return builder },
+            eq() { return builder },
+            maybeSingle: async () => ({ data: { id: TICKET_ID, name: 'Wave ticket', operations_config: { departure_mode: 'wave' } }, error: null }),
+          }
+          return builder
         }
 
         throw new Error(`Unexpected table: ${table}`)
@@ -112,6 +124,15 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
           }
         }
 
+        if (table === 'tickets') {
+          const builder: any = {
+            select() { return builder },
+            eq() { return builder },
+            maybeSingle: async () => ({ data: { id: TICKET_ID, operations_config: { departure_mode: 'wave' } }, error: null }),
+          }
+          return builder
+        }
+
         throw new Error(`Unexpected table: ${table}`)
       },
     },
@@ -120,6 +141,18 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
 }
 
 describe('GET /api/admin/events/[id]/waves', () => {
+  it('requires an explicit ticket scope', async () => {
+    const { admin } = createAdmin()
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await GET(
+      new Request('http://localhost/api/admin/events/event-1/waves'),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(400)
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
@@ -148,7 +181,7 @@ describe('GET /api/admin/events/[id]/waves', () => {
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await GET(
-      new Request('http://localhost/api/admin/events/event-1/waves'),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves')),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
@@ -164,7 +197,7 @@ describe('GET /api/admin/events/[id]/waves', () => {
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await GET(
-      new Request('http://localhost/api/admin/events/event-1/waves'),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves')),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
@@ -173,8 +206,7 @@ describe('GET /api/admin/events/[id]/waves', () => {
     expect(upsert).not.toHaveBeenCalled()
   })
 
-  it('lists participants from every ticket explicitly configured for wave departures', async () => {
-    const ticketIds = ['ticket-a', 'ticket-b']
+  it('lists only participants belonging to the requested wave ticket', async () => {
     const registrationTicketFilter = vi.fn()
     const rows = [{
       id: 'registration-1',
@@ -195,15 +227,14 @@ describe('GET /api/admin/events/[id]/waves', () => {
           const builder: any = {
             select: () => builder,
             eq: () => builder,
-            contains: async () => ({ data: ticketIds.map((id) => ({ id })), error: null }),
+            maybeSingle: async () => ({ data: { id: TICKET_ID, name: 'Wave ticket', operations_config: { departure_mode: 'wave' } }, error: null }),
           }
           return builder
         }
         if (table === 'registrations') {
           const builder: any = {
             select: () => builder,
-            eq: () => builder,
-            in: (column: string, values: string[]) => { registrationTicketFilter(column, values); return builder },
+            eq: (column: string, value: unknown) => { if (column === 'ticket_id') registrationTicketFilter(column, value); return builder },
             order: () => builder,
             then: (resolve: (value: unknown) => unknown) => resolve({ data: rows, error: null }),
           }
@@ -215,12 +246,12 @@ describe('GET /api/admin/events/[id]/waves', () => {
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await GET(
-      new Request('http://localhost/api/admin/events/event-1/waves?include_registrations=true&wave_index=1'),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves?include_registrations=true&wave_index=1')),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
     expect(response.status).toBe(200)
-    expect(registrationTicketFilter).toHaveBeenCalledWith('ticket_id', ticketIds)
+    expect(registrationTicketFilter).toHaveBeenCalledWith('ticket_id', TICKET_ID)
     await expect(response.json()).resolves.toMatchObject({
       participants: [{ id: 'registration-1', email: 'runner@example.com' }],
     })
@@ -236,7 +267,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await POST(
-      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
@@ -249,7 +280,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
     expect(upsert).toHaveBeenCalledOnce()
     expect(upsert).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ event_id: 'event-1', wave_index: 1 })]),
-      { onConflict: 'event_id,wave_index', ignoreDuplicates: true },
+      { onConflict: 'ticket_id,wave_index', ignoreDuplicates: true },
     )
   })
 
@@ -260,7 +291,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await POST(
-      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
@@ -274,7 +305,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await POST(
-      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
@@ -315,7 +346,7 @@ describe('POST /api/admin/events/[id]/waves', () => {
     })
 
     const response = await POST(
-      new Request('http://localhost/api/admin/events/event-1/waves', { method: 'POST' }),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 

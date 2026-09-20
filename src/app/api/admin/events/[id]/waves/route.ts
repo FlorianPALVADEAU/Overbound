@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import {
@@ -25,6 +26,8 @@ const toCsv = (waves: any[]) => {
   return lines.join('\n')
 }
 
+const ticketIdSchema = z.string().uuid()
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -49,6 +52,25 @@ export async function GET(
   }
 
   const url = new URL(request.url)
+  const parsedTicketId = ticketIdSchema.safeParse(url.searchParams.get('ticket_id'))
+  if (!parsedTicketId.success) {
+    return NextResponse.json({ error: 'ticket_id invalide ou manquant' }, { status: 400 })
+  }
+  const ticketId = parsedTicketId.data
+  const { data: ticket, error: ticketError } = await admin
+    .from('tickets')
+    .select('id, name, operations_config')
+    .eq('id', ticketId)
+    .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
+    .maybeSingle()
+
+  if (ticketError || !ticket) {
+    return NextResponse.json({ error: 'Billet introuvable pour cet événement' }, { status: 404 })
+  }
+  if (ticket.operations_config?.departure_mode !== 'wave') {
+    return NextResponse.json({ error: 'Ce billet n’est pas configuré pour un départ par SAS' }, { status: 422 })
+  }
   const includeRegistrations = url.searchParams.get('include_registrations') === 'true'
   const waveIndexParam = Number.parseInt(url.searchParams.get('wave_index') ?? '', 10)
 
@@ -57,30 +79,13 @@ export async function GET(
       return NextResponse.json({ error: 'wave_index invalide' }, { status: 400 })
     }
 
-    const { data: waveTickets, error: ticketsError } = await admin
-      .from('tickets')
-      .select('id')
-      .eq('event_id', event.id)
-      .eq('organization_id', auth.organizationId)
-      .contains('operations_config', { departure_mode: 'wave' })
-
-    if (ticketsError) {
-      console.error('[admin waves] wave tickets fetch error', ticketsError)
-      return NextResponse.json({ error: 'Impossible de déterminer les billets avec départ par SAS' }, { status: 500 })
-    }
-
-    const waveTicketIds = (waveTickets ?? []).map((ticket) => ticket.id)
-    if (waveTicketIds.length === 0) {
-      return NextResponse.json({ wave_index: waveIndexParam, participants: [] })
-    }
-
     const { data: rows, error: registrationsError } = await admin
       .from('registrations')
       .select('id, email, start_time, wave_position, user_id, created_at')
       .eq('event_id', event.id)
       .eq('organization_id', auth.organizationId)
       .eq('wave_index', waveIndexParam)
-      .in('ticket_id', waveTicketIds)
+      .eq('ticket_id', ticketId)
       .order('wave_position', { ascending: true })
       .order('created_at', { ascending: true })
 
@@ -129,6 +134,7 @@ export async function GET(
     .select('wave_index, start_time, capacity, assigned_count, is_closed')
     .eq('event_id', event.id)
     .eq('organization_id', auth.organizationId)
+    .eq('ticket_id', ticketId)
     .order('wave_index', { ascending: true })
 
   if (error) {
@@ -142,7 +148,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="event-${event.id}-sas.csv"`,
+        'Content-Disposition': `attachment; filename="ticket-${ticketId}-sas.csv"`,
       },
     })
   }
@@ -160,6 +166,12 @@ async function handleProvision(
   }
 
   const { id } = await params
+  const url = new URL(request.url)
+  const parsedTicketId = ticketIdSchema.safeParse(url.searchParams.get('ticket_id'))
+  if (!parsedTicketId.success) {
+    return NextResponse.json({ error: 'ticket_id invalide ou manquant' }, { status: 400 })
+  }
+  const ticketId = parsedTicketId.data
   const admin = supabaseAdmin()
 
   const { data: event, error: eventError } = await admin
@@ -173,11 +185,24 @@ async function handleProvision(
     return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
   }
 
+  const { data: ticket } = await admin
+    .from('tickets')
+    .select('id, operations_config')
+    .eq('id', ticketId)
+    .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
+    .maybeSingle()
+  if (!ticket) return NextResponse.json({ error: 'Billet introuvable pour cet événement' }, { status: 404 })
+  if (ticket.operations_config?.departure_mode !== 'wave') {
+    return NextResponse.json({ error: 'Ce billet n’est pas configuré pour un départ par SAS' }, { status: 422 })
+  }
+
   const { data: existingWaves, error: existingWavesError } = await admin
     .from('event_waves')
     .select('wave_index')
     .eq('event_id', event.id)
     .eq('organization_id', auth.organizationId)
+    .eq('ticket_id', ticketId)
 
   if (existingWavesError) {
     console.error('[admin waves] provisioning state fetch error', existingWavesError)
@@ -202,7 +227,7 @@ async function handleProvision(
   const { rows } = buildDefaultEventWaveRows(event.id, event.date)
   const { error: provisionError } = await admin
     .from('event_waves')
-    .upsert(rows.map((row) => ({ ...row, organization_id: auth.organizationId })), { onConflict: 'event_id,wave_index', ignoreDuplicates: true })
+    .upsert(rows.map((row) => ({ ...row, ticket_id: ticketId, organization_id: auth.organizationId })), { onConflict: 'ticket_id,wave_index', ignoreDuplicates: true })
 
   if (provisionError) {
     console.error('[admin waves] provision error', provisionError)
@@ -214,6 +239,7 @@ async function handleProvision(
     .select('wave_index')
     .eq('event_id', event.id)
     .eq('organization_id', auth.organizationId)
+    .eq('ticket_id', ticketId)
 
   if (verificationError) {
     console.error('[admin waves] provision verification error', verificationError)
@@ -248,6 +274,12 @@ async function handlePatch(
   }
 
   const { id } = await params
+  const url = new URL(request.url)
+  const parsedTicketId = ticketIdSchema.safeParse(url.searchParams.get('ticket_id'))
+  if (!parsedTicketId.success) {
+    return NextResponse.json({ error: 'ticket_id invalide ou manquant' }, { status: 400 })
+  }
+  const ticketId = parsedTicketId.data
   const admin = supabaseAdmin()
 
   const { data: event, error: eventError } = await admin
@@ -259,6 +291,18 @@ async function handlePatch(
 
   if (eventError || !event) {
     return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
+  }
+
+  const { data: ticket } = await admin
+    .from('tickets')
+    .select('id, operations_config')
+    .eq('id', ticketId)
+    .eq('event_id', event.id)
+    .eq('organization_id', auth.organizationId)
+    .maybeSingle()
+  if (!ticket) return NextResponse.json({ error: 'Billet introuvable pour cet événement' }, { status: 404 })
+  if (ticket.operations_config?.departure_mode !== 'wave') {
+    return NextResponse.json({ error: 'Ce billet n’est pas configuré pour un départ par SAS' }, { status: 422 })
   }
 
   const payload = await request.json().catch(() => ({}))
@@ -276,6 +320,7 @@ async function handlePatch(
       .update({ capacity: capacityAll, updated_at: new Date().toISOString() })
       .eq('event_id', event.id)
       .eq('organization_id', auth.organizationId)
+      .eq('ticket_id', ticketId)
 
     if (error) {
       console.error('[admin waves] update all error', error)
@@ -303,6 +348,7 @@ async function handlePatch(
     .update(updates)
     .eq('event_id', event.id)
     .eq('organization_id', auth.organizationId)
+    .eq('ticket_id', ticketId)
     .eq('wave_index', waveIndex)
 
   if (error) {

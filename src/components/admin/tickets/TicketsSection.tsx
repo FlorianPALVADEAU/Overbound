@@ -12,6 +12,14 @@ import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/A
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { Ticket } from '@/types/Ticket'
 import { TicketFormDialog, type TicketFormValues } from './TicketFormDialog'
+import { EventWavesSection } from '@/components/admin/events/EventOpenWavesSection'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   adminTicketsQueryKey,
   createAdminTicket,
@@ -28,6 +36,14 @@ interface MessageState {
   text: string
 }
 
+const toLocalDateTimeInput = (value: unknown): string => {
+  if (typeof value !== 'string' || !value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const offsetMs = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
+}
+
 function buildFormValues(ticket?: Ticket): TicketFormValues {
   if (!ticket) {
     return {
@@ -42,6 +58,7 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
       document_types: [],
       departure_mode: 'none',
       departure_change_policy: 'preserve',
+      fixed_start_time: '',
     }
   }
 
@@ -57,6 +74,7 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
     document_types: [],
     departure_mode: ticket.operations_config?.departure_mode ?? 'none',
     departure_change_policy: ticket.operations_config?.departure_change_policy ?? 'preserve',
+    fixed_start_time: toLocalDateTimeInput(ticket.operations_config?.fixed_start_time),
   }
 }
 
@@ -102,6 +120,7 @@ export function TicketsSection() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
   const [registrationCount, setRegistrationCount] = useState<number>(0)
+  const [waveTicket, setWaveTicket] = useState<Ticket | null>(null)
 
   const combinedLoading = ticketsLoading || eventsLoading || racesLoading
   const combinedError = ticketsError || eventsError || racesError
@@ -213,6 +232,9 @@ export function TicketsSection() {
         profile_key: 'ticket-default-v1',
         departure_mode: values.departure_mode,
         departure_change_policy: values.departure_change_policy,
+        fixed_start_time: values.departure_mode === 'fixed' && values.fixed_start_time
+          ? new Date(values.fixed_start_time).toISOString()
+          : null,
       },
     }
 
@@ -313,9 +335,14 @@ export function TicketsSection() {
       {
         key: 'actions',
         header: '',
-        className: 'w-[180px]',
+        className: 'w-[280px]',
         cell: (ticket) => (
           <div className="flex justify-end gap-2">
+            {ticket.operations_config?.departure_mode === 'wave' ? (
+              <Button variant="outline" size="sm" onClick={() => setWaveTicket(ticket)}>
+                Gérer les SAS
+              </Button>
+            ) : null}
             <Button variant="outline" size="sm" onClick={() => handleEdit(ticket)}>
               Modifier
             </Button>
@@ -408,6 +435,24 @@ export function TicketsSection() {
         }
         getRowId={(ticket) => ticket.id}
       />
+
+      <Dialog open={Boolean(waveTicket)} onOpenChange={(open) => { if (!open) setWaveTicket(null) }}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-6xl overflow-y-auto p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Gérer les SAS du billet</DialogTitle>
+            <DialogDescription>
+              Chaque billet possède sa propre grille de départs, ses capacités et ses inscrits.
+            </DialogDescription>
+          </DialogHeader>
+          {waveTicket ? (
+            <EventWavesSection
+              eventId={waveTicket.event_id}
+              ticketId={waveTicket.id}
+              ticketName={waveTicket.name}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <TicketFormDialog
         open={dialogOpen}

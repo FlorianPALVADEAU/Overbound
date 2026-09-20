@@ -31,6 +31,7 @@ export interface TicketFormValues {
   document_types: string[]
   departure_mode: TicketDepartureMode
   departure_change_policy: TicketDepartureChangePolicy
+  fixed_start_time: string
 }
 
 interface TicketFormDialogProps {
@@ -56,6 +57,7 @@ const DEFAULT_VALUES: TicketFormValues = {
   document_types: [],
   departure_mode: 'none',
   departure_change_policy: 'preserve',
+  fixed_start_time: '',
 }
 
 export function TicketFormDialog({
@@ -234,6 +236,20 @@ export function TicketFormDialog({
                 </Select>
               </div>
             </div>
+            {values.departure_mode === 'fixed' ? (
+              <div className="space-y-2">
+                <Label htmlFor="ticket-fixed-start">Horaire du départ fixe</Label>
+                <Input
+                  id="ticket-fixed-start"
+                  type="datetime-local"
+                  value={values.fixed_start_time}
+                  onChange={(event) => handleChange('fixed_start_time', event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Utilisé lorsque la politique de changement demande de réattribuer le départ.
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
 

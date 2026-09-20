@@ -122,6 +122,7 @@ export async function POST(
     .from('event_waves')
     .select('wave_index, start_time, capacity, assigned_count, is_closed')
     .eq('event_id', eventId)
+    .eq('ticket_id', registration.ticket_id)
     .eq('wave_index', targetWaveIndex)
     .maybeSingle()
 

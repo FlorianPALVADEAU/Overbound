@@ -46,7 +46,7 @@ export function RegistrationOperationsDialog({
   onUpdated,
 }: RegistrationOperationsDialogProps) {
   const { data: tickets = [], isLoading: ticketsLoading } = useAdminTickets()
-  const { data: waves = [], isLoading: wavesLoading } = useAdminEventWaves(registration?.event_id)
+  const { data: waves = [], isLoading: wavesLoading } = useAdminEventWaves(registration?.event_id, registration?.ticket_id)
   const [ticketId, setTicketId] = useState(SELECT_TICKET)
   const [waveIndex, setWaveIndex] = useState(SELECT_WAVE)
   const [saving, setSaving] = useState<'ticket' | 'wave' | null>(null)

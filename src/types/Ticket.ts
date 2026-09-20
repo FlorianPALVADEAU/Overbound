@@ -25,6 +25,8 @@ export interface TicketOperationsConfig {
   profile_key?: string | null
   departure_mode?: TicketDepartureMode
   departure_change_policy?: TicketDepartureChangePolicy
+  /** ISO timestamp used when departure_mode=fixed and policy=reassign. */
+  fixed_start_time?: Timestamp | null
   [key: string]: unknown
 }
 

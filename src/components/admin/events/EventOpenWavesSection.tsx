@@ -28,6 +28,8 @@ import { formatClockTimeParis } from '@/lib/dateTime'
 
 interface EventWavesSectionProps {
   eventId: string
+  ticketId: string
+  ticketName: string
 }
 
 type EditRow = {
@@ -40,8 +42,8 @@ const formatClockTime = (value?: string | null) => {
   return formatClockTimeParis(value) ?? '—'
 }
 
-export function EventWavesSection({ eventId }: EventWavesSectionProps) {
-  const { data, isLoading, error, refetch, isFetching } = useAdminEventWaves(eventId)
+export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesSectionProps) {
+  const { data, isLoading, error, refetch, isFetching } = useAdminEventWaves(eventId, ticketId)
   const [editRows, setEditRows] = useState<Record<number, EditRow>>({})
   const [globalCapacity, setGlobalCapacity] = useState('50')
   const [savingWave, setSavingWave] = useState<number | null>(null)
@@ -53,7 +55,7 @@ export function EventWavesSection({ eventId }: EventWavesSectionProps) {
     data: selectedWaveParticipants = [],
     isLoading: participantsLoading,
     error: participantsError,
-  } = useAdminWaveParticipants(eventId, selectedWaveIndex)
+  } = useAdminWaveParticipants(eventId, ticketId, selectedWaveIndex)
 
   useEffect(() => {
     if (!data) return
@@ -85,7 +87,7 @@ export function EventWavesSection({ eventId }: EventWavesSectionProps) {
     setProvisioningError(null)
 
     try {
-      await provisionAdminEventWaves(eventId)
+      await provisionAdminEventWaves(eventId, ticketId)
       await refetch()
     } catch (error) {
       setProvisioningError(
@@ -118,7 +120,7 @@ export function EventWavesSection({ eventId }: EventWavesSectionProps) {
 
     setSavingWave(waveIndex)
     try {
-      await updateAdminEventWave(eventId, {
+      await updateAdminEventWave(eventId, ticketId, {
         wave_index: waveIndex,
         capacity: capacityValue,
         is_closed: row.isClosed,
@@ -135,7 +137,7 @@ export function EventWavesSection({ eventId }: EventWavesSectionProps) {
 
     setSavingGlobal(true)
     try {
-      await updateAdminEventWave(eventId, {
+      await updateAdminEventWave(eventId, ticketId, {
         capacity_all: capacityValue,
       })
       await refetch()
@@ -157,12 +159,12 @@ export function EventWavesSection({ eventId }: EventWavesSectionProps) {
       <CardContent className="space-y-4 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">SAS de départ</h2>
+            <h2 className="text-lg font-semibold">SAS · {ticketName}</h2>
             <p className="text-sm text-muted-foreground">
               {totals.totalAssigned.toLocaleString('fr-FR')} / {totals.totalCapacity.toLocaleString('fr-FR')} participants affectés
             </p>
             <p className="text-xs text-muted-foreground">
-              Communs à tous les billets configurés avec un départ par SAS.
+              Capacité, horaires et inscrits propres à ce billet.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -171,7 +173,7 @@ export function EventWavesSection({ eventId }: EventWavesSectionProps) {
               Actualiser
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <a href={`/api/admin/events/${eventId}/waves?format=csv`} target="_blank" rel="noopener noreferrer">
+              <a href={`/api/admin/events/${eventId}/waves?ticket_id=${ticketId}&format=csv`} target="_blank" rel="noopener noreferrer">
                 <Download className="mr-2 h-4 w-4" />
                 Export CSV
               </a>

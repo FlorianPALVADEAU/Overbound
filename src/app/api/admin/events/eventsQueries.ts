@@ -101,9 +101,9 @@ interface EventResponse {
 const ADMIN_EVENTS_QUERY_KEY = ['admin', 'events'] as const
 const ADMIN_EVENT_DETAIL_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId] as const
 const ADMIN_EVENT_VOLUNTEERS_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'volunteers'] as const
-const ADMIN_EVENT_WAVES_QUERY_KEY = (eventId: string) => ['admin', 'events', eventId, 'waves'] as const
-const ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY = (eventId: string, waveIndex: number) =>
-  ['admin', 'events', eventId, 'waves', waveIndex, 'participants'] as const
+const ADMIN_EVENT_WAVES_QUERY_KEY = (eventId: string, ticketId: string) => ['admin', 'events', eventId, 'tickets', ticketId, 'waves'] as const
+const ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY = (eventId: string, ticketId: string, waveIndex: number) =>
+  ['admin', 'events', eventId, 'tickets', ticketId, 'waves', waveIndex, 'participants'] as const
 
 const fetchAdminEvents = async (): Promise<AdminEventSummary[]> => {
   const response = await axiosClient.get<EventsResponse>('/admin/events')
@@ -172,27 +172,28 @@ export const useAdminEventVolunteers = (eventId?: string | null) =>
     enabled: Boolean(eventId),
   })
 
-const fetchAdminEventWaves = async (eventId: string): Promise<AdminEventWave[]> => {
-  const response = await axiosClient.get<AdminEventWavesResponse>(`/admin/events/${eventId}/waves`)
+const fetchAdminEventWaves = async (eventId: string, ticketId: string): Promise<AdminEventWave[]> => {
+  const response = await axiosClient.get<AdminEventWavesResponse>(`/admin/events/${eventId}/waves?ticket_id=${ticketId}`)
   if (response.status !== 200) {
     throw new Error('Erreur lors du chargement des SAS')
   }
   return response.data.waves ?? []
 }
 
-export const useAdminEventWaves = (eventId?: string | null) =>
+export const useAdminEventWaves = (eventId?: string | null, ticketId?: string | null) =>
   useQuery<AdminEventWave[], Error>({
-    queryKey: eventId ? ADMIN_EVENT_WAVES_QUERY_KEY(eventId) : ['admin', 'events', 'waves'],
-    queryFn: () => fetchAdminEventWaves(eventId as string),
-    enabled: Boolean(eventId),
+    queryKey: eventId && ticketId ? ADMIN_EVENT_WAVES_QUERY_KEY(eventId, ticketId) : ['admin', 'events', 'tickets', 'waves'],
+    queryFn: () => fetchAdminEventWaves(eventId as string, ticketId as string),
+    enabled: Boolean(eventId && ticketId),
   })
 
 const fetchAdminWaveParticipants = async (
   eventId: string,
+  ticketId: string,
   waveIndex: number,
 ): Promise<AdminWaveParticipant[]> => {
   const response = await axiosClient.get<AdminWaveParticipantsResponse>(
-    `/admin/events/${eventId}/waves?include_registrations=true&wave_index=${waveIndex}`,
+    `/admin/events/${eventId}/waves?ticket_id=${ticketId}&include_registrations=true&wave_index=${waveIndex}`,
   )
   if (response.status !== 200) {
     throw new Error('Erreur lors du chargement des inscrits du SAS')
@@ -202,22 +203,24 @@ const fetchAdminWaveParticipants = async (
 
 export const useAdminWaveParticipants = (
   eventId?: string | null,
+  ticketId?: string | null,
   waveIndex?: number | null,
 ) =>
   useQuery<AdminWaveParticipant[], Error>({
     queryKey:
-      eventId && waveIndex
-        ? ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY(eventId, waveIndex)
+      eventId && ticketId && waveIndex
+        ? ADMIN_EVENT_WAVE_PARTICIPANTS_QUERY_KEY(eventId, ticketId, waveIndex)
         : ['admin', 'events', 'waves', 'participants'],
-    queryFn: () => fetchAdminWaveParticipants(eventId as string, waveIndex as number),
-    enabled: Boolean(eventId && waveIndex),
+    queryFn: () => fetchAdminWaveParticipants(eventId as string, ticketId as string, waveIndex as number),
+    enabled: Boolean(eventId && ticketId && waveIndex),
   })
 
 export const updateAdminEventWave = async (
   eventId: string,
+  ticketId: string,
   payload: { wave_index?: number; capacity?: number; is_closed?: boolean; capacity_all?: number }
 ): Promise<void> => {
-  await axiosClient.patch(`/admin/events/${eventId}/waves`, payload)
+  await axiosClient.patch(`/admin/events/${eventId}/waves?ticket_id=${ticketId}`, payload)
 }
 
 export interface AdminEventWaveProvisioningResult {
@@ -228,9 +231,10 @@ export interface AdminEventWaveProvisioningResult {
 
 export const provisionAdminEventWaves = async (
   eventId: string,
+  ticketId: string,
 ): Promise<AdminEventWaveProvisioningResult> => {
   const response = await axiosClient.post<AdminEventWaveProvisioningResult>(
-    `/admin/events/${eventId}/waves`,
+    `/admin/events/${eventId}/waves?ticket_id=${ticketId}`,
   )
 
   if (response.status !== 200) {

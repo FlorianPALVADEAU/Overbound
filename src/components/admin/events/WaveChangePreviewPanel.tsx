@@ -54,7 +54,7 @@ const groupLabels: Record<WaveChangePreview['impacts']['group'], string> = {
 }
 
 export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePreviewPanelProps) {
-  const { data: waves = [], isLoading: wavesLoading } = useAdminEventWaves(eventId)
+  const { data: waves = [], isLoading: wavesLoading } = useAdminEventWaves(eventId, participant.ticket.id)
   const [targetWaveIndex, setTargetWaveIndex] = useState('')
   const [preview, setPreview] = useState<WaveChangePreview | null>(null)
   const [loading, setLoading] = useState(false)
