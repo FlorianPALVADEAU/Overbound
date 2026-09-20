@@ -16,7 +16,7 @@ vi.mock('@/lib/logging/adminRequestLogger', () => ({
 }))
 vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
 
-import { GET, POST } from './route'
+import { DELETE, GET, POST } from './route'
 
 const TICKET_ID = '4d0272d2-647c-4b7b-8c68-3c9a3ecb99d9'
 const withTicket = (url: string) => `${url}${url.includes('?') ? '&' : '?'}ticket_id=${TICKET_ID}`
@@ -81,7 +81,7 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
 
 function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
   const waveIndexes = [...initialWaveIndexes]
-  const upsert = vi.fn(async (rows: Array<{ wave_index: number }>) => {
+  const insert = vi.fn(async (rows: Array<{ wave_index: number }>) => {
     for (const row of rows) {
       if (!waveIndexes.includes(row.wave_index)) {
         waveIndexes.push(row.wave_index)
@@ -120,7 +120,7 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
               }
               return builder
             },
-            upsert,
+            insert,
           }
         }
 
@@ -136,7 +136,7 @@ function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
         throw new Error(`Unexpected table: ${table}`)
       },
     },
-    upsert,
+    insert,
   }
 }
 
@@ -262,58 +262,44 @@ describe('POST /api/admin/events/[id]/waves', () => {
   beforeEach(() => {
     requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
   })
-  it('explicitly provisions all OPEN waves once and verifies the resulting configuration', async () => {
-    const { admin, upsert } = createProvisioningAdmin()
+  it('creates a freely configured series after the existing ticket waves', async () => {
+    const { admin, insert } = createProvisioningAdmin([1, 2])
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await POST(
-      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'POST',
+        body: JSON.stringify({ mode: 'series', start_time: '2027-02-07T11:00:00.000Z', capacity: 30, count: 3, interval_minutes: 15 }),
+      }),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(201)
     await expect(response.json()).resolves.toEqual({
-      state: 'provisioned',
       created: true,
-      wave_count: 24,
+      wave_count: 3,
     })
-    expect(upsert).toHaveBeenCalledOnce()
-    expect(upsert).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ event_id: 'event-1', wave_index: 1 })]),
-      { onConflict: 'ticket_id,wave_index', ignoreDuplicates: true },
-    )
+    expect(insert).toHaveBeenCalledWith([
+      expect.objectContaining({ wave_index: 3, capacity: 30, start_time: '2027-02-07T11:00:00.000Z' }),
+      expect.objectContaining({ wave_index: 4, capacity: 30, start_time: '2027-02-07T11:15:00.000Z' }),
+      expect.objectContaining({ wave_index: 5, capacity: 30, start_time: '2027-02-07T11:30:00.000Z' }),
+    ])
   })
 
-  it('is an idempotent no-op for a complete configuration', async () => {
-    const { admin, upsert } = createProvisioningAdmin(
-      Array.from({ length: 24 }, (_, index) => index + 1),
-    )
+  it('rejects an invalid series without writing', async () => {
+    const { admin, insert } = createProvisioningAdmin()
     supabaseAdminMock.mockReturnValue(admin)
 
     const response = await POST(
-      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'POST',
+        body: JSON.stringify({ mode: 'series', start_time: 'invalid', capacity: 50, count: 0, interval_minutes: 0 }),
+      }),
       { params: Promise.resolve({ id: 'event-1' }) },
     )
 
-    expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ state: 'provisioned', created: false })
-    expect(upsert).not.toHaveBeenCalled()
-  })
-
-  it('refuses a partial configuration instead of silently repairing it', async () => {
-    const { admin, upsert } = createProvisioningAdmin([1, 2, 3])
-    supabaseAdminMock.mockReturnValue(admin)
-
-    const response = await POST(
-      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), { method: 'POST' }),
-      { params: Promise.resolve({ id: 'event-1' }) },
-    )
-
-    expect(response.status).toBe(409)
-    await expect(response.json()).resolves.toEqual({
-      error: 'Configuration SAS incomplète : aucune correction automatique n’a été appliquée.',
-    })
-    expect(upsert).not.toHaveBeenCalled()
+    expect(response.status).toBe(400)
+    expect(insert).not.toHaveBeenCalled()
   })
 
   it('rejects an authenticated user without admin permissions', async () => {
@@ -352,5 +338,54 @@ describe('POST /api/admin/events/[id]/waves', () => {
 
     expect(response.status).toBe(403)
     await expect(response.json()).resolves.toEqual({ error: 'Accès refusé' })
+  })
+})
+
+describe('DELETE /api/admin/events/[id]/waves', () => {
+  beforeEach(() => {
+    requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
+  })
+
+  const createDeleteAdmin = (assignedCount: number) => {
+    const deleteEq = vi.fn().mockResolvedValue({ error: null })
+    return {
+      deleteEq,
+      admin: {
+        from(table: string) {
+          if (table === 'tickets') {
+            const query: any = { select: () => query, eq: () => query, maybeSingle: async () => ({ data: { id: TICKET_ID }, error: null }) }
+            return query
+          }
+          if (table === 'event_waves') {
+            const selectQuery: any = { select: () => selectQuery, eq: () => selectQuery, maybeSingle: async () => ({ data: { id: 'wave-1', assigned_count: assignedCount }, error: null }) }
+            selectQuery.delete = () => ({ eq: deleteEq })
+            return selectQuery
+          }
+          throw new Error(`Unexpected table: ${table}`)
+        },
+      },
+    }
+  }
+
+  it('deletes an empty ticket wave', async () => {
+    const { admin, deleteEq } = createDeleteAdmin(0)
+    supabaseAdminMock.mockReturnValue(admin)
+    const response = await DELETE(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves?wave_index=1'), { method: 'DELETE' }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+    expect(response.status).toBe(200)
+    expect(deleteEq).toHaveBeenCalledWith('id', 'wave-1')
+  })
+
+  it('refuses to delete a wave containing registrations', async () => {
+    const { admin, deleteEq } = createDeleteAdmin(2)
+    supabaseAdminMock.mockReturnValue(admin)
+    const response = await DELETE(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves?wave_index=1'), { method: 'DELETE' }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+    expect(response.status).toBe(409)
+    expect(deleteEq).not.toHaveBeenCalled()
   })
 })

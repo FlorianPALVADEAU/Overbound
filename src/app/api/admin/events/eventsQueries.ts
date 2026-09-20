@@ -218,24 +218,31 @@ export const useAdminWaveParticipants = (
 export const updateAdminEventWave = async (
   eventId: string,
   ticketId: string,
-  payload: { wave_index?: number; capacity?: number; is_closed?: boolean; capacity_all?: number }
+  payload: { wave_index?: number; start_time?: string; capacity?: number; is_closed?: boolean; capacity_all?: number }
 ): Promise<void> => {
   await axiosClient.patch(`/admin/events/${eventId}/waves?ticket_id=${ticketId}`, payload)
 }
 
 export interface AdminEventWaveProvisioningResult {
-  state: 'provisioned'
   created: boolean
-  wave_count?: number
+  wave_count: number
 }
 
 export const provisionAdminEventWaves = async (
   eventId: string,
   ticketId: string,
+  input: {
+    mode: 'single' | 'series'
+    start_time: string
+    capacity: number
+    count?: number
+    interval_minutes?: number
+  },
 ): Promise<AdminEventWaveProvisioningResult> => {
   try {
     const response = await axiosClient.post<AdminEventWaveProvisioningResult>(
       `/admin/events/${eventId}/waves?ticket_id=${ticketId}`,
+      input,
     )
 
     if (response.status !== 200) {
@@ -246,6 +253,23 @@ export const provisionAdminEventWaves = async (
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.error || 'Impossible d’initialiser les SAS')
+    }
+    throw error
+  }
+}
+
+export const deleteAdminEventWave = async (
+  eventId: string,
+  ticketId: string,
+  waveIndex: number,
+): Promise<void> => {
+  try {
+    await axiosClient.delete(
+      `/admin/events/${eventId}/waves?ticket_id=${ticketId}&wave_index=${waveIndex}`,
+    )
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Impossible de supprimer le SAS')
     }
     throw error
   }

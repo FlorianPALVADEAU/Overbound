@@ -437,7 +437,7 @@ export function TicketsSection() {
       />
 
       <Dialog open={Boolean(waveTicket)} onOpenChange={(open) => { if (!open) setWaveTicket(null) }}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-6xl overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-6xl overflow-x-hidden overflow-y-auto p-4 sm:p-6 max-h-[calc(100dvh-2rem)]">
           <DialogHeader>
             <DialogTitle>Gérer les SAS du billet</DialogTitle>
             <DialogDescription>

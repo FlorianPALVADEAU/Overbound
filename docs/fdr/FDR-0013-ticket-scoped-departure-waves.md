@@ -17,6 +17,8 @@ Un SAS appartient à un billet. L'identité fonctionnelle d'un SAS devient `(tic
 - Le nom du billet et le nom de la course ne participent à aucune décision opérationnelle.
 - Les horaires, capacités, fermetures et compteurs sont indépendants entre billets.
 - La gestion principale des SAS est exposée depuis la ligne du billet dans l'admin.
+- L'administrateur définit librement chaque heure et chaque capacité. Il peut ajouter un SAS isolé ou générer une série à partir d'une heure, d'un nombre et d'un intervalle explicites.
+- Aucun nombre de SAS, horaire initial ou intervalle par défaut n'est imposé par le domaine.
 - La page événement ne porte plus un tableau de SAS supposé global.
 - Un changement de billet conserve le prix historiquement payé et ne crée aucun mouvement financier automatique.
 - La politique `departure_change_policy` du billet cible décide si le départ est conservé, supprimé ou réattribué.
@@ -49,6 +51,7 @@ Les sélections publiques de SAS reçoivent également le billet afin de ne jama
 ## Invariants
 
 - Un compteur de SAS ne compte que les inscriptions ayant le même `ticket_id` et le même `wave_index`.
+- La suppression d'un SAS est interdite dès qu'il contient une inscription.
 - Une inscription ne peut être déplacée que vers un SAS de son billet courant.
 - Une réattribution après changement de billet ne peut utiliser qu'un SAS du billet cible.
 - Une configuration absente ou invalide bloque l'opération; aucun fallback par nom n'est autorisé.

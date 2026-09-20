@@ -2,10 +2,6 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
-import {
-  buildDefaultEventWaveRows,
-  getEventWaveProvisioningState,
-} from '@/lib/admin/eventWaves'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
 const toCsv = (waves: any[]) => {
@@ -27,6 +23,20 @@ const toCsv = (waves: any[]) => {
 }
 
 const ticketIdSchema = z.string().uuid()
+const createWavesSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('single'),
+    start_time: z.string().datetime({ offset: true }),
+    capacity: z.number().int().min(0),
+  }),
+  z.object({
+    mode: z.literal('series'),
+    start_time: z.string().datetime({ offset: true }),
+    capacity: z.number().int().min(0),
+    count: z.number().int().min(1).max(200),
+    interval_minutes: z.number().int().min(1).max(1440),
+  }),
+])
 
 export async function GET(
   request: Request,
@@ -207,57 +217,35 @@ async function handleProvision(
     return NextResponse.json({ error: 'Impossible de vérifier la configuration des SAS' }, { status: 500 })
   }
 
-  const state = getEventWaveProvisioningState(
-    (existingWaves ?? []).map((wave) => wave.wave_index),
-  )
-
-  if (state === 'provisioned') {
-    return NextResponse.json({ state, created: false })
+  const parsedBody = createWavesSchema.safeParse(await request.json().catch(() => null))
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: 'Configuration des SAS invalide' }, { status: 400 })
   }
 
-  if (state === 'inconsistent') {
-    return NextResponse.json(
-      { error: 'Configuration SAS incomplète : aucune correction automatique n’a été appliquée.' },
-      { status: 409 },
-    )
-  }
-
-  const { rows } = buildDefaultEventWaveRows(event.id, event.date)
+  const firstWaveIndex = Math.max(0, ...(existingWaves ?? []).map((wave) => wave.wave_index)) + 1
+  const waveCount = parsedBody.data.mode === 'series' ? parsedBody.data.count : 1
+  const intervalMinutes = parsedBody.data.mode === 'series' ? parsedBody.data.interval_minutes : 0
+  const firstStartTime = new Date(parsedBody.data.start_time)
+  const rows = Array.from({ length: waveCount }, (_, offset) => ({
+    event_id: event.id,
+    ticket_id: ticketId,
+    organization_id: auth.organizationId,
+    wave_index: firstWaveIndex + offset,
+    start_time: new Date(firstStartTime.getTime() + offset * intervalMinutes * 60_000).toISOString(),
+    capacity: parsedBody.data.capacity,
+    assigned_count: 0,
+    is_closed: false,
+  }))
   const { error: provisionError } = await admin
     .from('event_waves')
-    .upsert(
-      rows.map((row) => ({ ...row, ticket_id: ticketId, organization_id: auth.organizationId })),
-      { onConflict: 'ticket_id,wave_index', ignoreDuplicates: true },
-    )
+    .insert(rows)
 
   if (provisionError) {
     console.error('[admin waves] provision error', provisionError)
     return NextResponse.json({ error: 'Impossible d’initialiser les SAS' }, { status: 500 })
   }
 
-  const { data: provisionedWaves, error: verificationError } = await admin
-    .from('event_waves')
-    .select('wave_index')
-    .eq('event_id', event.id)
-    .eq('ticket_id', ticketId)
-
-  if (verificationError) {
-    console.error('[admin waves] provision verification error', verificationError)
-    return NextResponse.json({ error: 'Impossible de vérifier les SAS initialisés' }, { status: 500 })
-  }
-
-  const provisionedState = getEventWaveProvisioningState(
-    (provisionedWaves ?? []).map((wave) => wave.wave_index),
-  )
-
-  if (provisionedState !== 'provisioned') {
-    return NextResponse.json(
-      { error: 'Initialisation SAS incomplète : vérification manuelle requise.' },
-      { status: 409 },
-    )
-  }
-
-  return NextResponse.json({ state: provisionedState, created: true, wave_count: rows.length })
+  return NextResponse.json({ created: true, wave_count: rows.length }, { status: 201 })
 }
 
 export const POST = withRequestLogging(handleProvision, {
@@ -310,6 +298,13 @@ async function handlePatch(
   const waveIndex = Number.isFinite(Number(payload.wave_index)) ? Number(payload.wave_index) : null
   const capacity = Number.isFinite(Number(payload.capacity)) ? Number(payload.capacity) : null
   const isClosed = typeof payload.is_closed === 'boolean' ? payload.is_closed : null
+  const parsedStartTime = typeof payload.start_time === 'string'
+    ? z.string().datetime({ offset: true }).safeParse(payload.start_time)
+    : null
+
+  if (parsedStartTime && !parsedStartTime.success) {
+    return NextResponse.json({ error: 'Heure de départ invalide' }, { status: 400 })
+  }
 
   if (capacityAll !== null) {
     if (capacityAll < 0) {
@@ -341,6 +336,7 @@ async function handlePatch(
     updates.capacity = capacity
   }
   if (isClosed !== null) updates.is_closed = isClosed
+  if (parsedStartTime?.success) updates.start_time = parsedStartTime.data
 
   const { error } = await admin
     .from('event_waves')
@@ -359,4 +355,50 @@ async function handlePatch(
 
 export const PATCH = withRequestLogging(handlePatch, {
   actionType: 'Mise à jour vagues événement admin',
+})
+
+async function handleDelete(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdminOrganization(request)
+  if (!auth.ok) return auth.response
+
+  const { id } = await params
+  const url = new URL(request.url)
+  const parsedTicketId = ticketIdSchema.safeParse(url.searchParams.get('ticket_id'))
+  const waveIndex = Number(url.searchParams.get('wave_index'))
+  if (!parsedTicketId.success || !Number.isInteger(waveIndex) || waveIndex <= 0) {
+    return NextResponse.json({ error: 'Billet ou SAS invalide' }, { status: 400 })
+  }
+
+  const admin = supabaseAdmin()
+  const { data: ticket } = await admin
+    .from('tickets')
+    .select('id')
+    .eq('id', parsedTicketId.data)
+    .eq('event_id', id)
+    .eq('organization_id', auth.organizationId)
+    .maybeSingle()
+  if (!ticket) return NextResponse.json({ error: 'Billet introuvable pour cet événement' }, { status: 404 })
+
+  const { data: wave } = await admin
+    .from('event_waves')
+    .select('id, assigned_count')
+    .eq('event_id', id)
+    .eq('ticket_id', parsedTicketId.data)
+    .eq('wave_index', waveIndex)
+    .maybeSingle()
+  if (!wave) return NextResponse.json({ error: 'SAS introuvable' }, { status: 404 })
+  if ((wave.assigned_count ?? 0) > 0) {
+    return NextResponse.json({ error: 'Impossible de supprimer un SAS avec des inscrits' }, { status: 409 })
+  }
+
+  const { error } = await admin.from('event_waves').delete().eq('id', wave.id)
+  if (error) return NextResponse.json({ error: 'Impossible de supprimer le SAS' }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
+export const DELETE = withRequestLogging(handleDelete, {
+  actionType: 'Suppression SAS billet admin',
 })

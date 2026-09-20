@@ -5,10 +5,10 @@ import {
   useAdminEventWaves,
   useAdminWaveParticipants,
   provisionAdminEventWaves,
+  deleteAdminEventWave,
   updateAdminEventWave,
   type AdminEventWave,
 } from '@/app/api/admin/events/eventsQueries'
-import { getEventWaveProvisioningState } from '@/lib/admin/eventWaves'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Eye, RefreshCw, Save, Download } from 'lucide-react'
+import { Eye, RefreshCw, Save, Download, Plus, Trash2 } from 'lucide-react'
 import { formatClockTimeParis } from '@/lib/dateTime'
 
 interface EventWavesSectionProps {
@@ -33,9 +33,18 @@ interface EventWavesSectionProps {
 }
 
 type EditRow = {
+  startTime: string
   capacity: string
   isClosed: boolean
   dirty: boolean
+}
+
+const toLocalDateTimeInput = (value?: string | null) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const offsetMs = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
 }
 
 const formatClockTime = (value?: string | null) => {
@@ -46,6 +55,10 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
   const { data, isLoading, error, refetch, isFetching } = useAdminEventWaves(eventId, ticketId)
   const [editRows, setEditRows] = useState<Record<number, EditRow>>({})
   const [globalCapacity, setGlobalCapacity] = useState('50')
+  const [newStartTime, setNewStartTime] = useState('')
+  const [newCapacity, setNewCapacity] = useState('50')
+  const [seriesCount, setSeriesCount] = useState('1')
+  const [seriesInterval, setSeriesInterval] = useState('10')
   const [savingWave, setSavingWave] = useState<number | null>(null)
   const [savingGlobal, setSavingGlobal] = useState(false)
   const [provisioning, setProvisioning] = useState(false)
@@ -62,6 +75,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     const next: Record<number, EditRow> = {}
     for (const wave of data) {
       next[wave.wave_index] = {
+        startTime: toLocalDateTimeInput(wave.start_time),
         capacity: String(wave.capacity ?? 0),
         isClosed: Boolean(wave.is_closed),
         dirty: false,
@@ -77,17 +91,24 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     return { totalCapacity, totalAssigned }
   }, [data])
 
-  const provisioningState = useMemo(
-    () => getEventWaveProvisioningState((data ?? []).map((wave) => wave.wave_index)),
-    [data],
-  )
+  const handleCreate = async (mode: 'single' | 'series') => {
+    const capacity = Number.parseInt(newCapacity, 10)
+    const count = Number.parseInt(seriesCount, 10)
+    const intervalMinutes = Number.parseInt(seriesInterval, 10)
+    const startTime = new Date(newStartTime)
+    if (!newStartTime || Number.isNaN(startTime.getTime()) || capacity < 0) return
+    if (mode === 'series' && (count < 1 || intervalMinutes < 1)) return
 
-  const handleProvision = async () => {
     setProvisioning(true)
     setProvisioningError(null)
 
     try {
-      await provisionAdminEventWaves(eventId, ticketId)
+      await provisionAdminEventWaves(eventId, ticketId, {
+        mode,
+        start_time: startTime.toISOString(),
+        capacity,
+        ...(mode === 'series' ? { count, interval_minutes: intervalMinutes } : {}),
+      })
       await refetch()
     } catch (error) {
       setProvisioningError(
@@ -98,12 +119,25 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     }
   }
 
+  const handleDelete = async (wave: AdminEventWave) => {
+    if ((wave.assigned_count ?? 0) > 0) return
+    if (!window.confirm(`Supprimer le SAS ${wave.wave_index} ?`)) return
+    setProvisioningError(null)
+    try {
+      await deleteAdminEventWave(eventId, ticketId, wave.wave_index)
+      await refetch()
+    } catch (error) {
+      setProvisioningError(error instanceof Error ? error.message : 'Impossible de supprimer le SAS.')
+    }
+  }
+
   const handleRowChange = (wave: AdminEventWave, patch: Partial<EditRow>) => {
     setEditRows((prev) => {
-      const current = prev[wave.wave_index] ?? { capacity: String(wave.capacity ?? 0), isClosed: wave.is_closed, dirty: false }
+      const current = prev[wave.wave_index] ?? { startTime: toLocalDateTimeInput(wave.start_time), capacity: String(wave.capacity ?? 0), isClosed: wave.is_closed, dirty: false }
       return {
         ...prev,
         [wave.wave_index]: {
+          startTime: patch.startTime ?? current.startTime,
           capacity: patch.capacity ?? current.capacity,
           isClosed: patch.isClosed ?? current.isClosed,
           dirty: true,
@@ -116,12 +150,14 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     const row = editRows[waveIndex]
     if (!row) return
     const capacityValue = Number.parseInt(row.capacity, 10)
-    if (!Number.isFinite(capacityValue) || capacityValue < 0) return
+    const startTime = new Date(row.startTime)
+    if (!Number.isFinite(capacityValue) || capacityValue < 0 || Number.isNaN(startTime.getTime())) return
 
     setSavingWave(waveIndex)
     try {
       await updateAdminEventWave(eventId, ticketId, {
         wave_index: waveIndex,
+        start_time: startTime.toISOString(),
         capacity: capacityValue,
         is_closed: row.isClosed,
       })
@@ -155,8 +191,8 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-4 p-6">
+    <Card className="min-w-0 overflow-hidden">
+      <CardContent className="min-w-0 space-y-4 p-3 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">SAS · {ticketName}</h2>
@@ -181,24 +217,38 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
           </div>
         </div>
 
-        {provisioningState === 'unprovisioned' ? (
-          <Alert>
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>Les SAS de départ ne sont pas encore initialisés pour cet événement.</span>
-              <Button size="sm" onClick={handleProvision} disabled={provisioning}>
-                {provisioning ? 'Initialisation…' : 'Initialiser les SAS'}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        {provisioningState === 'inconsistent' ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Configuration SAS incomplète. Aucune correction automatique n’est appliquée : vérifie les données avant toute opération.
-            </AlertDescription>
-          </Alert>
-        ) : null}
+        <section className="space-y-3 rounded-lg border p-3 sm:p-4">
+          <div>
+            <h3 className="font-medium">Ajouter des SAS</h3>
+            <p className="text-xs text-muted-foreground">Ajoute un départ unique ou génère une série régulière. Rien n’est imposé.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-muted-foreground">Premier départ</label>
+              <Input type="datetime-local" value={newStartTime} onChange={(event) => setNewStartTime(event.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Capacité</label>
+              <Input type="number" min="0" value={newCapacity} onChange={(event) => setNewCapacity(event.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Nombre de SAS</label>
+              <Input type="number" min="1" max="200" value={seriesCount} onChange={(event) => setSeriesCount(event.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Intervalle (minutes)</label>
+              <Input type="number" min="1" value={seriesInterval} onChange={(event) => setSeriesInterval(event.target.value)} />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => handleCreate('single')} disabled={provisioning || !newStartTime}>
+              <Plus className="mr-2 h-4 w-4" />Ajouter un SAS
+            </Button>
+            <Button size="sm" onClick={() => handleCreate('series')} disabled={provisioning || !newStartTime}>
+              {provisioning ? 'Création…' : 'Générer la série'}
+            </Button>
+          </div>
+        </section>
 
         {provisioningError ? (
           <Alert variant="destructive">
@@ -224,20 +274,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Chargement des SAS...</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Vague</TableHead>
-                <TableHead>Départ</TableHead>
-                <TableHead>Capacité</TableHead>
-                <TableHead>Assignés</TableHead>
-                <TableHead>Restant</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Fermer</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <div className="grid gap-3 lg:grid-cols-2">
               {(data ?? []).map((wave) => {
                 const row = editRows[wave.wave_index]
                 const capacityValue = Number.parseInt(row?.capacity ?? String(wave.capacity ?? 0), 10)
@@ -247,36 +284,35 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                 const isFull = assigned >= (capacityValue || 0)
 
                 return (
-                  <TableRow key={wave.wave_index}>
-                    <TableCell>SAS {wave.wave_index}</TableCell>
-                    <TableCell>{formatClockTime(wave.start_time)}</TableCell>
-                    <TableCell>
+                  <article key={wave.wave_index} className="min-w-0 space-y-3 rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div><p className="font-medium">SAS {wave.wave_index}</p><p className="text-xs text-muted-foreground">{formatClockTime(wave.start_time)}</p></div>
+                      {isClosed ? <Badge variant="destructive">Fermé</Badge> : isFull ? <Badge variant="secondary">Complet</Badge> : <Badge variant="outline">Ouvert</Badge>}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="text-xs text-muted-foreground">Heure de départ</label>
+                        <Input type="datetime-local" value={row?.startTime ?? toLocalDateTimeInput(wave.start_time)} onChange={(event) => handleRowChange(wave, { startTime: event.target.value })} />
+                      </div>
+                      <div className="space-y-1"><label className="text-xs text-muted-foreground">Capacité</label>
                       <Input
                         value={row?.capacity ?? String(wave.capacity ?? 0)}
                         onChange={(event) => handleRowChange(wave, { capacity: event.target.value })}
-                        className="w-24"
+                        className="w-full"
                         inputMode="numeric"
                       />
-                    </TableCell>
-                    <TableCell>{assigned}</TableCell>
-                    <TableCell>{remaining}</TableCell>
-                    <TableCell>
-                      {isClosed ? (
-                        <Badge variant="destructive">Fermé</Badge>
-                      ) : isFull ? (
-                        <Badge variant="secondary">Complet</Badge>
-                      ) : (
-                        <Badge variant="outline">Ouvert</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
+                      </div>
+                      <div className="space-y-1"><label className="text-xs text-muted-foreground">Occupation</label><div className="flex h-10 items-center rounded-md border px-3 text-sm">{assigned} assigné{assigned > 1 ? 's' : ''} · {remaining} restant{remaining > 1 ? 's' : ''}</div></div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="flex items-center gap-2 text-sm">
                       <Switch
                         checked={Boolean(isClosed)}
                         onCheckedChange={(checked) => handleRowChange(wave, { isClosed: checked })}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                      Fermé
+                      </label>
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -293,13 +329,15 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                         >
                           <Save className="h-4 w-4" />
                         </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(wave)} disabled={assigned > 0} aria-label={`Supprimer le SAS ${wave.wave_index}`}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </article>
                 )
               })}
-            </TableBody>
-          </Table>
+          </div>
         )}
       </CardContent>
 
