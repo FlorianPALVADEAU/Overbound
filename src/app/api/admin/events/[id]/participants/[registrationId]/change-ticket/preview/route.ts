@@ -42,7 +42,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (eventError) { console.error('[admin ticket preview] event lookup error', eventError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
   if (!event) return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
   const cutoff = getEventCorrectionCutoff({ eventStart: event.date })
-  const { data: registration, error: registrationError } = await admin.from('registrations').select('id, event_id, ticket_id, user_id, wave_index, start_time').eq('id', registrationId).eq('event_id', eventId).eq('organization_id', auth.organizationId).maybeSingle()
+  // The event lookup above is the authorization boundary. Keep the
+  // registration lookup scoped to that event so historical rows created
+  // before tenant backfill remain operable while the event itself is owned by
+  // the current organization.
+  const { data: registration, error: registrationError } = await admin
+    .from('registrations')
+    .select('id, event_id, ticket_id, user_id, wave_index, start_time')
+    .eq('id', registrationId)
+    .eq('event_id', eventId)
+    .maybeSingle()
   if (registrationError) { console.error('[admin ticket preview] registration lookup error', registrationError); return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 }) }
   if (!registration) return NextResponse.json({ error: 'Inscription introuvable pour cet événement' }, { status: 404 })
   if (!registration.ticket_id) return NextResponse.json({ error: 'L’inscription ne possède pas de billet actuel' }, { status: 422 })
