@@ -305,15 +305,16 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           if (!open) setSelectedParticipant(null)
         }}
       >
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
+        <DialogContent className="grid max-h-[calc(100dvh-2rem)] max-w-xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0">
+          <DialogHeader className="border-b px-6 py-5 pr-12">
             <DialogTitle>Détail participant</DialogTitle>
             <DialogDescription>
               Consultez l’inscription et prévisualisez une correction avant de la confirmer.
             </DialogDescription>
           </DialogHeader>
           {selectedParticipant ? (
-            <>
+            <div className="min-h-0 overflow-y-auto overscroll-contain px-6 py-5 [scrollbar-gutter:stable]">
+              <div className="space-y-4">
               {(() => {
                 const actions = getParticipantQuickActionState(selectedParticipant)
                 return (
@@ -357,7 +358,8 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
               </div>
               {selectedPreview === 'ticket' ? <TicketChangePreviewPanel eventId={eventId} participant={selectedParticipant} /> : null}
               {selectedPreview === 'wave' ? <WaveChangePreviewPanel eventId={eventId} participant={selectedParticipant} /> : null}
-            </>
+              </div>
+            </div>
           ) : null}
         </DialogContent>
       </Dialog>
