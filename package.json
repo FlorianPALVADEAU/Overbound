@@ -10,6 +10,8 @@
     "test": "NODE_ENV=test vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:update-snapshots": "playwright test --update-snapshots",
     "optimize:images": "node scripts/images/optimize-images.mjs"
   },
   "dependencies": {
@@ -72,6 +74,7 @@
   "devDependencies": {
     "@eslint/config-array": "^0.23.2",
     "@eslint/eslintrc": "^3.3.3",
+    "@playwright/test": "^1.63.0",
     "@sanity/client": "^7.12.1",
     "@sanity/image-url": "^1.2.0",
     "@tailwindcss/postcss": "^4.1.12",

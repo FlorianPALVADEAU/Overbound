@@ -26,13 +26,14 @@ export function CookieConsentBanner() {
               des cookies de mesure d’audience. Tu peux modifier ton choix à tout moment.
             </p>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <Link href="/cookies" className="underline-offset-4 hover:underline">Politique cookies</Link>
-              <Link href="/privacy-policies" className="underline-offset-4 hover:underline">Confidentialité</Link>
+              <Link href="/cookies" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Politique cookies</Link>
+              <Link href="/privacy-policies" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Confidentialité</Link>
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               variant="outline"
+              className="min-h-11"
               onClick={() => {
                 writeConsent(false)
                 setIsOpen(false)
@@ -41,6 +42,7 @@ export function CookieConsentBanner() {
               Refuser
             </Button>
             <Button
+              className="min-h-11"
               onClick={() => {
                 writeConsent(true)
                 setIsOpen(false)

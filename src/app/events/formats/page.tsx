@@ -150,7 +150,7 @@ export default function FormatsPage() {
             </div>
             <Link
               href="/events"
-              className="hidden rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white sm:inline-flex"
+              className="hidden min-h-11 items-center rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white sm:inline-flex"
             >
               Voir les courses
             </Link>
@@ -192,7 +192,7 @@ export default function FormatsPage() {
               </div>
               <Link
                 href="/trainings/what-race-for-me"
-                className="inline-flex items-center rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white"
+                className="inline-flex min-h-11 items-center rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white"
               >
                 M&apos;aider à choisir
               </Link>

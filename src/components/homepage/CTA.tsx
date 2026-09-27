@@ -39,14 +39,13 @@ const CTA = () => {
                       : "Rejoins la tribu Overbound et repousse tes limites."}
                 </p>
             </div>
-            <Link href={registerHref}>
-                <Button
-                    className='min-h-11 w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
-                    variant='default'
-                >
-                    Je m'inscris maintenant
-                </Button>
-            </Link>
+            <Button
+                asChild
+                className='min-h-11 w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
+                variant='default'
+            >
+                <Link href={registerHref}>Je m'inscris maintenant</Link>
+            </Button>
         </div>
 
         {/* Image de fond responsive */}

@@ -238,7 +238,7 @@ export default function ObstaclesPage() {
                     <Button
                       variant={typeFilter === 'all' ? 'default' : 'outline'}
                       size='sm'
-                      className='rounded-full'
+                      className='min-h-11 rounded-full'
                       onClick={() => setTypeFilter('all')}
                     >
                       Tous ({totalObstacles})
@@ -248,7 +248,7 @@ export default function ObstaclesPage() {
                         key={type}
                         variant={typeFilter === type ? 'default' : 'outline'}
                         size='sm'
-                        className='rounded-full'
+                        className='min-h-11 rounded-full'
                         onClick={() => setTypeFilter(type)}
                       >
                         {OBSTACLE_TYPES[type] ?? type} ({count})

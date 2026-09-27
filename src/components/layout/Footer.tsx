@@ -67,7 +67,7 @@ export function Footer() {
         </span>
 
         <div className='relative z-10 space-y-4 px-6 text-center sm:text-left sm:px-6 xl:px-32'>
-          <Link href="/" className="flex items-center justify-center sm:justify-start">
+          <Link href="/" className="flex min-h-11 items-center justify-center sm:justify-start">
             <Image
               src="/images/brand/totem_logo_white.png"
               alt="OverBound Logo"
@@ -90,8 +90,15 @@ export function Footer() {
               <h3 className='text-sm font-semibold uppercase tracking-[0.35em] text-foreground/70'>{group.title}</h3>
               <ul className='space-y-2'>
                 {group.links.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className='inline-flex font-medium transition hover:text-primary'>
+                  // -my-3 pulls the <li>'s own extra height back out of the
+                  // list's flow, so space-y-2 between items reads the same
+                  // as before -- only the link's own tap target (below)
+                  // grows, never the visible list rhythm (FDR-0015 §10).
+                  <li key={link.href} className='-my-3'>
+                    <Link
+                      href={link.href}
+                      className='inline-flex min-h-11 min-w-11 items-center py-3 font-medium transition hover:text-primary'
+                    >
                       {link.label}
                     </Link>
                   </li>
@@ -104,7 +111,11 @@ export function Footer() {
         <div className='-mt-4 relative z-10 flex flex-col gap-6 px-6 pb-12 text-center text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-left xl:px-32'>
           <div className='flex flex-wrap items-center justify-center gap-4 sm:justify-start'>
             {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
-              <Link key={label} href={href} className='flex items-center gap-2 transition hover:text-primary'>
+              <Link
+                key={label}
+                href={href}
+                className='-my-3.5 flex min-h-11 min-w-11 items-center justify-center gap-2 py-3.5 transition hover:text-primary'
+              >
                 <Icon className='h-4 w-4' />
                 <span className='hidden text-sm font-medium sm:inline'>{label}</span>
               </Link>

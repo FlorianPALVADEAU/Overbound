@@ -194,8 +194,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         <div className="w-full relative flex h-14 sm:h-16 items-center justify-between">
           
           {/* Logo - responsive text visibility */}
-          <div className="flex items-between z-10">
-            <Link href="/" className="flex items-center space-x-2">
+          <div className="flex items-between z-10 py-2 pr-2">
+            {/* py-2 pr-2 on the wrapping div above (not negative-margined,
+                since the logo sits flush against the header's left edge
+                and can't grow further left) plus p-2 here grows the tap
+                target toward 44px on every remaining side without
+                overflowing the row (FDR-0015 §10). */}
+            <Link href="/" className="flex items-center space-x-2 p-2">
               <Image
                 src="/images/brand/totem_logo_white.png"
                 alt="OverBound Logo"
@@ -407,7 +412,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="h-8 w-8 p-0"
+                className="h-11 w-11 p-0"
               >
                 {mobileMenuOpen ? (
                   <XIcon className="h-5 w-5" />
@@ -425,7 +430,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
             <div className="space-y-1">
               <Link
                 href={featuredEventHref}
-                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
                 Événement
@@ -433,7 +438,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
               <Link
                 href="/events/formats"
-                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
                 Formats
@@ -441,7 +446,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
               <Link
                 href="/obstacles"
-                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
                 Obstacles
@@ -452,7 +457,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   href={featuredEvent.photos_url}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
+                  className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
                   onClick={closeMobileMenu}
                 >
                   <CameraIcon className="h-4 w-4" />
@@ -467,7 +472,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       onClick={() =>
                         setMobileDropdownOpen((current) => (current === item.name ? null : item.name))
                       }
-                      className="flex w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-[#26AA26]"
+                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-[#26AA26]"
                     >
                       <span>{item.name}</span>
                       <ChevronDownIcon
@@ -482,7 +487,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            className="block w-full px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                            className="flex min-h-11 w-full items-center px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
                             onClick={closeMobileMenu}
                           >
                             {subItem.name}
@@ -495,7 +500,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                     onClick={closeMobileMenu}
                   >
                     {item.name}
@@ -506,7 +511,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Devenir bénévole mobile */}
               <Link
                 href="/volunteers"
-                className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                 onClick={closeMobileMenu}
               >
                 Devenir bénévole
@@ -515,7 +520,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Bootcamps mobile */}
               <Link
                 href="/bootcamps"
-                className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                 onClick={closeMobileMenu}
               >
                 Bootcamps
