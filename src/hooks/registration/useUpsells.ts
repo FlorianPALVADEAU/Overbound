@@ -6,6 +6,7 @@ import {
   normalizeTshirtSizes,
   humanizeMetaKey,
 } from '@/lib/registration'
+import { getUpsellQuantityLimit } from '@/lib/upsells/quantity'
 
 export function useUpsells(
   upsells: EventUpsell[],
@@ -22,12 +23,13 @@ export function useUpsells(
 
       let hasChanges = false
       const nextState: SelectedUpsellState = { ...previous }
-      const maxPerTicket = selectedTicketSlots.length
-
       upsells.forEach((upsell) => {
         const entry = nextState[upsell.id]
         if (!entry) return
-        const allowedQuantity = Math.min(entry.quantity, maxPerTicket)
+        const allowedQuantity = Math.min(
+          entry.quantity,
+          getUpsellQuantityLimit(upsell.type, selectedTicketSlots.length),
+        )
         if (allowedQuantity <= 0) {
           delete nextState[upsell.id]
           hasChanges = true
@@ -68,10 +70,9 @@ export function useUpsells(
     (upsellId: string, quantity: number) => {
       setSelectedUpsells((previous) => {
         const upsell = upsells.find((item) => item.id === upsellId)
-        const maxAllowed =
-          upsell?.type === 'tshirt' || upsell?.type === 'photos'
-            ? selectedTicketSlots.length
-            : Number.MAX_SAFE_INTEGER
+        const maxAllowed = upsell
+          ? getUpsellQuantityLimit(upsell.type, selectedTicketSlots.length)
+          : 0
         const nextQuantity = Math.min(Math.max(0, quantity), maxAllowed)
         const existing = previous[upsellId]
 

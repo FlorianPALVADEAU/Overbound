@@ -33,6 +33,13 @@ export default function OptionsStep({
         </Alert>
       ) : null}
 
+      {upsells.length > 0 && selectedTicketSlots.length === 0 ? (
+        <Alert>
+          <Gift className="h-4 w-4" />
+          <AlertDescription>Ajoutez au moins un billet avant de choisir des options.</AlertDescription>
+        </Alert>
+      ) : null}
+
       {upsells.map((upsell) => (
         <UpsellCard
           key={upsell.id}

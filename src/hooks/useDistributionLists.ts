@@ -4,6 +4,7 @@ import type {
   DistributionListWithStats,
   CreateDistributionListData,
   UpdateDistributionListData,
+  DistributionListSubscriber,
 } from '@/types/DistributionList'
 
 /**
@@ -160,7 +161,7 @@ export function useDistributionLists() {
  * Hook pour gérer les abonnés d'une liste (admin)
  */
 export function useListSubscribers(listId: string) {
-  const [subscribers, setSubscribers] = useState<any[]>([])
+  const [subscribers, setSubscribers] = useState<DistributionListSubscriber[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -170,9 +171,10 @@ export function useListSubscribers(listId: string) {
    */
   const fetchSubscribers = async (options?: {
     subscribedOnly?: boolean
+    search?: string
     limit?: number
     offset?: number
-  }) => {
+  }): Promise<DistributionListSubscriber[]> => {
     setIsLoading(true)
     setError(null)
 
@@ -180,6 +182,7 @@ export function useListSubscribers(listId: string) {
       const params = new URLSearchParams()
       if (options?.subscribedOnly !== undefined)
         params.append('subscribedOnly', String(options.subscribedOnly))
+      if (options?.search?.trim()) params.append('search', options.search.trim())
       if (options?.limit) params.append('limit', String(options.limit))
       if (options?.offset) params.append('offset', String(options.offset))
 
@@ -191,11 +194,15 @@ export function useListSubscribers(listId: string) {
         throw new Error('Failed to fetch subscribers')
       }
 
-      const { data, total: totalCount } = await response.json()
+      const payload: { data?: DistributionListSubscriber[]; total?: number } =
+        await response.json()
+      const data = Array.isArray(payload.data) ? payload.data : []
       setSubscribers(data)
-      setTotal(totalCount)
+      setTotal(payload.total ?? 0)
+      return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
+      return []
     } finally {
       setIsLoading(false)
     }

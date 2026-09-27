@@ -31,8 +31,10 @@ import {
 } from '@/components/ui/dialog'
 import {
   useAdminAmbassadors,
+  useAdminAmbassadorDetail,
   useAdminAmbassadorPoints,
   useUpdateAmbassadorReward,
+  useTransitionAmbassadorReward,
   useUpdateAmbassadorPoints,
   useAmbassadorCodes,
   useAdminPromoCodes,
@@ -42,17 +44,20 @@ import {
   useAddManualReferralWithPoints,
 } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
+import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
 
 const STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
   earned: 'Débloquée',
   claimed: 'Réclamée',
   fulfilled: 'Envoyée',
+  cancelled: 'Annulée',
 }
 
 const STATUS_STYLES: Record<AmbassadorRewardStatus, string> = {
   earned: 'border-emerald-500/40 bg-emerald-500/20 text-emerald-600',
   claimed: 'border-amber-500/40 bg-amber-500/20 text-amber-600',
   fulfilled: 'border-sky-500/40 bg-sky-500/20 text-sky-600',
+  cancelled: 'border-rose-500/40 bg-rose-500/20 text-rose-600',
 }
 
 const formatDateTime = (value: string | null) =>
@@ -68,10 +73,12 @@ export function AmbassadorsSection() {
   const initialSearch = searchParams.get('search')?.trim() ?? ''
   const [search, setSearch] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState<AmbassadorRewardStatus | 'all'>('all')
+  const [globalYear, setGlobalYear] = useState<string>('current')
   const { data, isLoading, error, refetch, isFetching } = useAdminAmbassadors()
   const updateReward = useUpdateAmbassadorReward()
+  const transitionReward = useTransitionAmbassadorReward()
   const { data: pointsData, isLoading: pointsLoading, error: pointsError, refetch: refetchPoints } =
-    useAdminAmbassadorPoints()
+    useAdminAmbassadorPoints(globalYear === 'current' ? null : Number(globalYear))
   const updatePoints = useUpdateAmbassadorPoints()
   const [editingPoints, setEditingPoints] = useState<{
     ambassador_id: string
@@ -80,6 +87,7 @@ export function AmbassadorsSection() {
     total_points: number
     recruits_open: number
     recruits_ranked: number
+    reason: string
   } | null>(null)
 
   const [managingCodesFor, setManagingCodesFor] = useState<{
@@ -116,6 +124,14 @@ export function AmbassadorsSection() {
 
   const rewards = data?.rewards ?? []
   const pointsRows = pointsData?.ambassadors ?? []
+  const globalYears = pointsData?.available_program_years ?? []
+  const [selectedAmbassadorId, setSelectedAmbassadorId] = useState<string | null>(null)
+  const [selectedDetailYear, setSelectedDetailYear] = useState<string>('all')
+  const { data: ambassadorDetail, isLoading: detailLoading } = useAdminAmbassadorDetail(selectedAmbassadorId)
+  const detailYears = ambassadorDetail?.yearly_points.map((row) => row.program_year) ?? []
+  const visibleDetailRewards = (ambassadorDetail?.rewards ?? []).filter(
+    (reward) => selectedDetailYear === 'all' || reward.program_year === Number(selectedDetailYear),
+  )
 
   useEffect(() => {
     if (!initialSearch) return
@@ -148,13 +164,24 @@ export function AmbassadorsSection() {
     await updateReward.mutateAsync({ id, status })
   }
 
+  const handleRewardTransition = async (id: string, action: 'cancelled' | 'reopened') => {
+    const reason = window.prompt(action === 'cancelled' ? 'Motif de l’annulation :' : 'Motif de la réouverture :')?.trim()
+    if (!reason) return
+    await transitionReward.mutateAsync({
+      id,
+      action,
+      reason,
+      idempotency_key: crypto.randomUUID(),
+    })
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <CardTitle>Ambassadeurs</CardTitle>
+          <CardTitle>Fiches ambassadeurs</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Gestion des récompenses ambassadeurs.
+            Ouvrez une fiche pour consulter ses années, récompenses et historique.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -184,19 +211,53 @@ export function AmbassadorsSection() {
         <div className="mb-6 rounded-lg border bg-card">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
-              <p className="text-sm font-semibold">Points ambassadeurs</p>
-              <p className="text-xs text-muted-foreground">Ajuste le total et la répartition Open/Ranked.</p>
+              <p className="text-sm font-semibold">Ambassadeurs</p>
+              <p className="text-xs text-muted-foreground">Année {pointsData?.program_year ?? 'en cours'} · ouvrez une fiche pour gérer les récompenses sans les mélanger.</p>
             </div>
-            <Button variant="outline" onClick={() => refetchPoints()} disabled={pointsLoading}>
-              {pointsLoading ? 'Actualisation...' : 'Actualiser'}
-            </Button>
+            <div className="flex gap-2">
+              <Select value={globalYear} onValueChange={setGlobalYear}>
+                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">Année en cours</SelectItem>
+                  {globalYears.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={() => refetchPoints()} disabled={pointsLoading}>
+                {pointsLoading ? 'Actualisation...' : 'Actualiser'}
+              </Button>
+            </div>
           </div>
           {pointsError ? (
             <div className="px-4 py-3 text-sm text-destructive">
               Impossible de charger les points. {pointsError.message}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="space-y-3 md:hidden">
+              {pointsLoading ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Chargement...</div> : null}
+              {!pointsLoading && pointsRows.length === 0 ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Aucun ambassadeur.</div> : null}
+              {!pointsLoading && pointsRows.map((row) => (
+                <div key={row.ambassador_id} className="rounded-lg border bg-background p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{row.ambassador_name}</p>
+                      <p className="truncate font-mono text-xs text-muted-foreground">{row.ambassador_code ?? 'Aucun code actif'}</p>
+                    </div>
+                    <span className="shrink-0 text-lg font-bold">{row.total_points} pts</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <span>Open <strong className="text-foreground">{row.recruits_open}</strong></span>
+                    <span>Ranked <strong className="text-foreground">{row.recruits_ranked}</strong></span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Button size="sm" className="col-span-2" onClick={() => { setSelectedAmbassadorId(row.ambassador_id); setSelectedDetailYear('all') }}>Ouvrir la fiche</Button>
+                    <Button size="sm" variant="outline" onClick={() => setManagingCodesFor({ ambassador_id: row.ambassador_id, ambassador_name: row.ambassador_name })}>Codes</Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingPoints({ ambassador_id: row.ambassador_id, ambassador_name: row.ambassador_name, ambassador_code: row.ambassador_code, total_points: row.total_points, recruits_open: row.recruits_open, recruits_ranked: row.recruits_ranked, reason: '' })}>Points</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -224,13 +285,33 @@ export function AmbassadorsSection() {
                   ) : (
                     pointsRows.map((row) => (
                       <TableRow key={row.ambassador_id}>
-                        <TableCell className="font-medium">{row.ambassador_name}</TableCell>
+                        <TableCell className="font-medium">
+                          <Button
+                            variant="link"
+                            className="h-auto p-0 font-semibold"
+                            onClick={() => {
+                              setSelectedAmbassadorId(row.ambassador_id)
+                              setSelectedDetailYear('all')
+                            }}
+                          >
+                            {row.ambassador_name}
+                          </Button>
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{row.ambassador_code ?? '-'}</TableCell>
                         <TableCell className="text-right font-semibold">{row.total_points}</TableCell>
                         <TableCell className="text-right">{row.recruits_open}</TableCell>
                         <TableCell className="text-right">{row.recruits_ranked}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedAmbassadorId(row.ambassador_id)
+                                setSelectedDetailYear('all')
+                              }}
+                            >
+                              Ouvrir la fiche
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -254,6 +335,7 @@ export function AmbassadorsSection() {
                                   total_points: row.total_points,
                                   recruits_open: row.recruits_open,
                                   recruits_ranked: row.recruits_ranked,
+                                  reason: '',
                                 })
                               }
                             >
@@ -284,6 +366,7 @@ export function AmbassadorsSection() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </div>
 
@@ -318,7 +401,44 @@ export function AmbassadorsSection() {
                       <Badge className={STATUS_STYLES.fulfilled}>{fulfilled} envoyées</Badge>
                     </div>
                   </summary>
-                  <div className="overflow-x-auto border-t">
+                  <div className="border-t md:hidden">
+                    <div className="space-y-2 p-3">
+                      {ambassadorRewards.map((reward) => {
+                        const expired = isAmbassadorRewardExpired(reward.expires_at)
+                        return (
+                          <div key={reward.id} className="space-y-3 rounded-lg border bg-background p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-medium">Palier {reward.reward_level}</p>
+                                <p className="truncate text-xs text-muted-foreground">{reward.reward_name}</p>
+                              </div>
+                              <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                                <Badge className={STATUS_STYLES[reward.status]}>{STATUS_LABELS[reward.status]}</Badge>
+                                {expired ? <Badge variant="outline">Expirée</Badge> : null}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                              <span>Année <strong className="text-foreground">{reward.program_year ?? '—'}</strong></span>
+                              <span>Expire <strong className="text-foreground">{formatDateTime(reward.expires_at)}</strong></span>
+                            </div>
+                            <Select
+                              value={reward.status}
+                              onValueChange={(value) => handleStatusChange(reward.id, value as AmbassadorRewardStatus)}
+                              disabled={updateReward.isPending}
+                            >
+                              <SelectTrigger className="w-full"><SelectValue placeholder="Changer le statut" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="earned">Débloquée</SelectItem>
+                                <SelectItem value="claimed">Réclamée</SelectItem>
+                                <SelectItem value="fulfilled">Envoyée</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div className="hidden overflow-x-auto border-t md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -363,6 +483,90 @@ export function AmbassadorsSection() {
           )}
         </div>
       </CardContent>
+
+      <Dialog open={Boolean(selectedAmbassadorId)} onOpenChange={(open) => !open && setSelectedAmbassadorId(null)}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{ambassadorDetail?.ambassador.name ?? 'Fiche ambassadeur'}</DialogTitle>
+            <DialogDescription>
+              {ambassadorDetail?.ambassador.code ? `Code : ${ambassadorDetail.ambassador.code}` : 'Historique et récompenses'}
+            </DialogDescription>
+          </DialogHeader>
+          {detailLoading ? <p className="text-sm text-muted-foreground">Chargement…</p> : null}
+          {ambassadorDetail ? <div className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {ambassadorDetail.yearly_points.map((year) => (
+                <div key={year.program_year} className="rounded-lg border p-3">
+                  <p className="font-semibold">{year.program_year}</p>
+                  <p className="text-2xl font-bold">{year.total_points} pts</p>
+                  <p className="text-xs text-muted-foreground">{year.recruits_open} Open · {year.recruits_ranked} Ranked</p>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold">Récompenses</p>
+                <Select value={selectedDetailYear} onValueChange={setSelectedDetailYear}>
+                  <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filtrer par année" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les années</SelectItem>
+                    {detailYears.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {visibleDetailRewards.length === 0 ? (
+                <p className="rounded-lg border p-3 text-sm text-muted-foreground">Aucune récompense pour cette année.</p>
+              ) : visibleDetailRewards.map((reward) => (
+                <div key={reward.id} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium">{reward.program_year} · Palier {reward.reward_level} — {reward.reward_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Expire le {formatDateTime(reward.expires_at)}
+                      {reward.cancellation_reason ? ` · Motif : ${reward.cancellation_reason}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={STATUS_STYLES[reward.status]}>{STATUS_LABELS[reward.status]}</Badge>
+                    {reward.is_expired ? <Badge variant="outline">Expirée</Badge> : null}
+                    {reward.status !== 'cancelled' ? (
+                      <Select
+                        value={reward.status}
+                        onValueChange={(value) => handleStatusChange(reward.id, value as AmbassadorRewardStatus)}
+                        disabled={updateReward.isPending}
+                      >
+                        <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="earned">Débloquée</SelectItem>
+                          <SelectItem value="claimed">Réclamée</SelectItem>
+                          <SelectItem value="fulfilled">Envoyée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : null}
+                    {reward.status === 'cancelled' ? (
+                      <Button size="sm" variant="outline" disabled={transitionReward.isPending} onClick={() => handleRewardTransition(reward.id, 'reopened')}>
+                        Rouvrir
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" disabled={transitionReward.isPending} onClick={() => handleRewardTransition(reward.id, 'cancelled')}>
+                        Annuler
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {ambassadorDetail.audit_events.length > 0 ? <div className="space-y-2">
+              <p className="text-sm font-semibold">Historique des décisions</p>
+              {ambassadorDetail.audit_events.map((event) => (
+                <div key={`${event.reward_id}-${event.occurred_at}`} className="rounded-lg border p-3 text-sm">
+                  <p className="font-medium">{event.action === 'cancelled' ? 'Récompense annulée' : 'Récompense rouverte'} · {formatDateTime(event.occurred_at)}</p>
+                  <p className="text-muted-foreground">{event.reason}</p>
+                </div>
+              ))}
+            </div> : null}
+          </div> : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(managingCodesFor)}
@@ -552,6 +756,14 @@ export function AmbassadorsSection() {
                   />
                 </div>
               </div>
+              <div className="grid gap-2">
+                <label className="text-xs font-medium">Motif obligatoire</label>
+                <Input
+                  value={editingPoints.reason}
+                  onChange={(event) => setEditingPoints((prev) => (prev ? { ...prev, reason: event.target.value } : prev))}
+                  placeholder="Ex. correction après vérification d’une inscription"
+                />
+              </div>
             </div>
           ) : null}
           <DialogFooter>
@@ -566,10 +778,12 @@ export function AmbassadorsSection() {
                   total_points: editingPoints.total_points,
                   recruits_open: editingPoints.recruits_open,
                   recruits_ranked: editingPoints.recruits_ranked,
+                  reason: editingPoints.reason,
+                  idempotency_key: crypto.randomUUID(),
                 })
                 setEditingPoints(null)
               }}
-              disabled={updatePoints.isPending}
+              disabled={updatePoints.isPending || editingPoints !== null && editingPoints.reason.trim().length < 3}
             >
               {updatePoints.isPending ? 'Enregistrement…' : 'Enregistrer'}
             </Button>

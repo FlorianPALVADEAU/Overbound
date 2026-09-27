@@ -25,6 +25,7 @@ import { sendAdminPushNotification } from '@/lib/push'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import { validateUpsellQuantities } from '@/lib/upsells/quantity'
 
 export const runtime = 'nodejs'
 
@@ -307,6 +308,15 @@ export async function POST(request: NextRequest) {
     const upsellMap = new Map<string, any>()
     for (const row of upsellRows || []) {
       upsellMap.set(row.id, row)
+    }
+
+    const upsellQuantityError = validateUpsellQuantities(
+      upsells,
+      new Map(Array.from(upsellMap.values()).map((upsell) => [upsell.id, upsell])),
+      participants.length,
+    )
+    if (upsellQuantityError) {
+      return NextResponse.json({ error: upsellQuantityError }, { status: 422 })
     }
 
     const upsellSubtotal = upsells.reduce((accumulator: number, item: { upsellId: string; quantity: number }) => {

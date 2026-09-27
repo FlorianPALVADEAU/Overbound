@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import axiosClient from '../../axiosClient'
-import type { Upsell } from '@/types/Upsell'
+import type { Upsell, UpsellImage } from '@/types/Upsell'
 
 export interface AdminUpsellPayload {
   name: string
@@ -13,6 +13,7 @@ export interface AdminUpsellPayload {
   is_active: boolean
   stock_quantity?: number | null
   image_url?: string | null
+  images?: Array<Pick<UpsellImage, 'source' | 'external_url' | 'alt_text' | 'position'>>
   options?: Upsell['options'] | null
 }
 

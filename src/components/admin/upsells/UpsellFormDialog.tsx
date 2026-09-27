@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import type { Event } from '@/types/Event'
 import type { Upsell } from '@/types/Upsell'
-import { Clock } from 'lucide-react'
+import { ArrowDown, ArrowUp, Clock, Plus, Trash2, Upload } from 'lucide-react'
+
+export interface UpsellImageFormValue {
+  url: string
+  alt_text: string
+}
 
 export interface UpsellFormValues {
   name: string
@@ -29,6 +34,7 @@ export interface UpsellFormValues {
   is_active: boolean
   stock_quantity: string
   image_url: string
+  images: UpsellImageFormValue[]
   sizes: string
 }
 
@@ -40,6 +46,7 @@ interface UpsellFormDialogProps {
   loading?: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (values: UpsellFormValues) => void
+  onUpload?: (file: File) => Promise<void>
 }
 
 const DEFAULT_VALUES: UpsellFormValues = {
@@ -52,6 +59,7 @@ const DEFAULT_VALUES: UpsellFormValues = {
   is_active: true,
   stock_quantity: '',
   image_url: '',
+  images: [],
   sizes: '',
 }
 
@@ -63,9 +71,12 @@ export function UpsellFormDialog({
   loading,
   onOpenChange,
   onSubmit,
+  onUpload,
 }: UpsellFormDialogProps) {
   const [values, setValues] = useState<UpsellFormValues>(DEFAULT_VALUES)
   const isCreateMode = mode === 'create'
+  const uploadInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     setValues(initialValues)
@@ -102,7 +113,41 @@ export function UpsellFormDialog({
     })
   }
   const handleSubmit = () => {
-    onSubmit(values)
+    const images = values.images
+      .map((image) => ({ ...image, url: image.url.trim(), alt_text: image.alt_text.trim() }))
+      .filter((image) => image.url.length > 0)
+
+    if (images.some((image) => !image.url.startsWith('https://'))) {
+      return
+    }
+
+    onSubmit({ ...values, images })
+  }
+
+  const handleUpload = async (file: File | undefined) => {
+    if (!file || !onUpload) return
+    setUploading(true)
+    try { await onUpload(file) } finally { setUploading(false); if (uploadInputRef.current) uploadInputRef.current.value = '' }
+  }
+
+  const updateImage = (index: number, field: keyof UpsellImageFormValue, value: string) => {
+    setValues((previous) => ({
+      ...previous,
+      images: previous.images.map((image, imageIndex) =>
+        imageIndex === index ? { ...image, [field]: value } : image
+      ),
+    }))
+  }
+
+  const moveImage = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction
+    if (nextIndex < 0 || nextIndex >= values.images.length) return
+
+    setValues((previous) => {
+      const images = [...previous.images]
+      ;[images[index], images[nextIndex]] = [images[nextIndex], images[index]]
+      return { ...previous, images }
+    })
   }
 
   return (
@@ -166,6 +211,7 @@ export function UpsellFormDialog({
                 <SelectContent>
                   <SelectItem value="tshirt">T-shirt</SelectItem>
                   <SelectItem value="photos">Photos</SelectItem>
+                  <SelectItem value="patch">Patch adhésif</SelectItem>
                   <SelectItem value="other">Autre</SelectItem>
                 </SelectContent>
               </Select>
@@ -217,14 +263,78 @@ export function UpsellFormDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="upsell-image">Image (URL)</Label>
-            <Input
-              id="upsell-image"
-              value={values.image_url}
-              onChange={(event) => handleChange('image_url', event.target.value)}
-              placeholder="https://..."
-            />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-1">
+                <Label>Images</Label>
+                <p className="text-xs text-muted-foreground">Jusqu’à 10 URLs HTTPS. La première image est la couverture.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setValues((previous) => ({ ...previous, images: [...previous.images, { url: '', alt_text: '' }] }))}
+                disabled={values.images.length >= 10}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Ajouter
+              </Button>
+              {!isCreateMode && onUpload ? <>
+                <input ref={uploadInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void handleUpload(event.target.files?.[0])} />
+                <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>
+                  <Upload className="mr-1 h-4 w-4" />{uploading ? 'Envoi…' : 'Téléverser'}
+                </Button>
+              </> : null}
+            </div>
+
+            {values.images.map((image, index) => (
+              <div key={`${index}-${image.url}`} className="rounded-lg border p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Image {index + 1}</span>
+                  <div className="ml-auto flex gap-1">
+                    <Button type="button" variant="ghost" size="icon" aria-label="Monter l'image" onClick={() => moveImage(index, -1)} disabled={index === 0}>
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" aria-label="Descendre l'image" onClick={() => moveImage(index, 1)} disabled={index === values.images.length - 1}>
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" aria-label="Supprimer l'image" onClick={() => setValues((previous) => ({ ...previous, images: previous.images.filter((_, imageIndex) => imageIndex !== index) }))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Input
+                  value={image.url}
+                  type="url"
+                  inputMode="url"
+                  onChange={(event) => updateImage(index, 'url', event.target.value)}
+                  placeholder="https://..."
+                  aria-label={`URL de l'image ${index + 1}`}
+                />
+                <Input
+                  value={image.alt_text}
+                  onChange={(event) => updateImage(index, 'alt_text', event.target.value)}
+                  placeholder="Texte alternatif (facultatif)"
+                  aria-label={`Texte alternatif de l'image ${index + 1}`}
+                />
+                {image.url && !image.url.startsWith('https://') ? (
+                  <p className="text-xs text-destructive">Utilisez une URL HTTPS.</p>
+                ) : null}
+              </div>
+            ))}
+
+            {values.images.length === 0 ? (
+              <div className="space-y-2">
+                <Label htmlFor="upsell-image">Image (URL, compatibilité)</Label>
+                <Input
+                  id="upsell-image"
+                  value={values.image_url}
+                  type="url"
+                  onChange={(event) => handleChange('image_url', event.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+            ) : null}
           </div>
 
           <div className="flex items-center justify-between border rounded-lg p-4">

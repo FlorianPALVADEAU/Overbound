@@ -5,9 +5,8 @@ import {
   getNextReward,
   resolvePaymentStatus,
   resolveRaceFormat,
-  getExtraTicketsEarned,
-  EXTRA_TICKET_BASE_LEVEL,
 } from '@/lib/ambassadors/program'
+import { getCurrentProgramYear, isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
 import {
   resolveRewardStatus,
   inferFormatFromLabels,
@@ -26,6 +25,10 @@ import type {
 
 export async function GET(request: Request) {
   try {
+    const requestedYear = Number(new URL(request.url).searchParams.get('year'))
+    const programYear = Number.isInteger(requestedYear) && requestedYear >= 2020 && requestedYear <= 2100
+      ? requestedYear
+      : getCurrentProgramYear()
     const supabase = await createSupabaseServer()
     const {
       data: { user },
@@ -72,6 +75,8 @@ export async function GET(request: Request) {
     }
 
     const emptyResponse: AmbassadorDashboardData = {
+      program_year: programYear,
+      available_program_years: [programYear],
       code: null,
       total_points: 0,
       points_breakdown: {
@@ -146,41 +151,35 @@ export async function GET(request: Request) {
 
     const ambassadorCode = promoData?.code ?? null
 
+    await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: ambassadorId })
+
     const { data: pointsData, error: pointsError } = await admin
-      .from('ambassador_points')
+      .from('ambassador_points_years')
       .select('total_points, recruits_open, recruits_ranked')
       .eq('ambassador_id', ambassadorId)
+      .eq('program_year', programYear)
       .maybeSingle()
+
+    const { data: availableYearsData } = await admin
+      .from('ambassador_points_years')
+      .select('program_year')
+      .eq('ambassador_id', ambassadorId)
+      .order('program_year', { ascending: false })
+
+    const availableProgramYears = Array.from(new Set([
+      programYear,
+      ...(availableYearsData ?? []).map((row) => row.program_year),
+    ])).sort((a, b) => b - a)
 
     if (pointsError) {
       console.error('[ambassador dashboard] points error', pointsError)
     }
 
-    await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: ambassadorId })
-
-    const pointsForExtraTickets = (pointsData?.total_points as number | null) ?? 0
-    const extraTicketsEarned = getExtraTicketsEarned(pointsForExtraTickets)
-    if (extraTicketsEarned > 0) {
-      const now = new Date().toISOString()
-      await admin
-        .from('ambassador_rewards')
-        .upsert(
-          Array.from({ length: extraTicketsEarned }, (_, i) => ({
-            ambassador_id: ambassadorId,
-            reward_level: EXTRA_TICKET_BASE_LEVEL + i,
-            reward_name: 'Dossard offert',
-            status: 'earned',
-            earned_at: now,
-            updated_at: now,
-          })),
-          { onConflict: 'ambassador_id,reward_level', ignoreDuplicates: true },
-        )
-    }
-
     const { data: rewardsData, error: rewardsError } = await admin
       .from('ambassador_rewards')
-      .select('id, reward_level, reward_name, status, earned_at, claimed_at, fulfilled_at')
+      .select('id, reward_level, reward_name, status, program_year, earned_at, expires_at, claimed_at, fulfilled_at, cancelled_at, cancellation_reason')
       .eq('ambassador_id', ambassadorId)
+      .eq('program_year', programYear)
       .order('reward_level', { ascending: true })
 
     if (rewardsError) {
@@ -193,9 +192,14 @@ export async function GET(request: Request) {
       reward_level: row.reward_level,
       reward_name: row.reward_name,
       status: resolveRewardStatus(row.status),
+      program_year: row.program_year,
       earned_at: row.earned_at,
+      expires_at: row.expires_at,
       claimed_at: row.claimed_at,
       fulfilled_at: row.fulfilled_at,
+      cancelled_at: row.cancelled_at,
+      cancellation_reason: row.cancellation_reason,
+      is_expired: isAmbassadorRewardExpired(row.expires_at),
     }))
 
     const { data: registrationsFromPromo, error: registrationsError } = allCodeIds.length > 0
@@ -521,6 +525,8 @@ export async function GET(request: Request) {
     }))
 
     const response: AmbassadorDashboardData = {
+      program_year: programYear,
+      available_program_years: availableProgramYears,
       code: ambassadorCode,
       total_points: totalPoints,
       points_breakdown: {

@@ -73,7 +73,7 @@ export function OperationsListTable<T>({
           return (
             <TableRow key={itemId} data-state={selected ? 'selected' : undefined} className={onItemOpen ? 'cursor-pointer' : undefined} onClick={() => onItemOpen?.(item)}>
               {canSelect ? <TableCell className="w-10" onClick={(event) => event.stopPropagation()}><Checkbox aria-label={`Sélectionner la ligne ${itemId}`} checked={selected} onCheckedChange={() => toggleItem(itemId)} /></TableCell> : null}
-              {visibleColumns.map((column) => <TableCell key={column.id} className={cn('overflow-hidden text-ellipsis', column.className)}>{column.cell(item)}</TableCell>)}
+              {visibleColumns.map((column) => <TableCell key={column.id} className={cn('min-w-0 whitespace-normal break-words overflow-hidden text-ellipsis', column.className)}>{column.cell(item)}</TableCell>)}
               {actions.length > 0 ? (
                 <TableCell className="w-12" onClick={(event) => event.stopPropagation()}>
                   <DropdownMenu>

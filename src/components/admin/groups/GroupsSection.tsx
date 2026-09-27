@@ -333,7 +333,22 @@ export function GroupsSection() {
           <Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>
         ) : null}
 
-        <div className="overflow-x-auto">
+        <div className="space-y-3 md:hidden">
+          {isLoading ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Chargement…</div> : null}
+          {!isLoading && filteredGroups.length === 0 ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Aucun groupe.</div> : null}
+          {!isLoading && filteredGroups.map((group) => {
+            const captain = group.members.find((member) => member.profile_id === group.captain_id)
+            return <div key={group.id} className="rounded-lg border bg-background p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0"><p className="truncate font-semibold">{group.name}</p><p className="truncate font-mono text-xs text-muted-foreground">{group.invite_code}</p></div>
+                <span className="shrink-0 text-sm font-medium">{group.members.length} membre{group.members.length > 1 ? 's' : ''}</span>
+              </div>
+              <div className="mt-3 space-y-1 text-sm"><p className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" />{captain ? getMemberLabel(captain) : 'Pas de capitaine'}</p><p className="text-muted-foreground">{formatAnchor(group)} · créé le {formatDate(group.created_at)}</p></div>
+              <div className="mt-4 grid grid-cols-2 gap-2"><Button variant="outline" size="sm" onClick={() => handleOpenEdit(group)}>Modifier</Button><Button variant="ghost" size="sm" onClick={() => handleDelete(group)} disabled={deleteGroup.isPending}><Trash2 className="mr-2 h-4 w-4" />Supprimer</Button></div>
+            </div>
+          })}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <Table>
             <TableHeader>
               <TableRow>

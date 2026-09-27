@@ -1,7 +1,7 @@
 'use client'
 
 import { redirect, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useAdminOverview } from '@/app/api/admin/overview/overviewQueries'
@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { AdminStats } from '@/components/admin/AdminStats'
 
 export default function DashboardPage() {
+  const [hasMounted, setHasMounted] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, isLoading: sessionLoading } = useSession()
@@ -22,6 +23,10 @@ export default function DashboardPage() {
   const eventId = searchParams.get('event')
 
   useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
+  useEffect(() => {
     if (!legacyTab) return
     const routes: Record<string, string> = {
       events: '/dashboard/events',
@@ -29,6 +34,14 @@ export default function DashboardPage() {
       'distribution-lists': '/dashboard/distribution-lists',
       upsells: '/dashboard/upsells',
       logs: '/dashboard/logs',
+      races: '/dashboard/races',
+      obstacles: '/dashboard/obstacles',
+      promocodes: '/dashboard/promocodes',
+      promotions: '/dashboard/promotions',
+      groups: '/dashboard/groups',
+      bootcamps: '/dashboard/bootcamps',
+      users: '/dashboard/users',
+      tickets: '/dashboard/tickets',
     }
     const destination = legacyTab === 'members' && eventId
       ? `/dashboard/events/${eventId}/participants`
@@ -38,7 +51,7 @@ export default function DashboardPage() {
     if (destination) router.replace(destination)
   }, [eventId, legacyTab, router])
 
-  if (sessionLoading || (isAdmin && isLoading)) {
+  if (!hasMounted || sessionLoading || (isAdmin && isLoading)) {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-sm text-muted-foreground">Chargement…</div>

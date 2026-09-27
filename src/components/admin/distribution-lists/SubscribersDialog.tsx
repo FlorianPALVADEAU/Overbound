@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useListSubscribers } from '@/hooks/useDistributionLists'
-import type { DistributionList } from '@/types/DistributionList'
+import type { DistributionList, DistributionListSubscriber } from '@/types/DistributionList'
 import {
   Dialog,
   DialogContent,
@@ -50,14 +50,23 @@ export function SubscribersDialog({
     list?.id || ''
   )
   const [searchQuery, setSearchQuery] = useState('')
-  const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null)
+  const [subscriberToDelete, setSubscriberToDelete] = useState<DistributionListSubscriber | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    if (open && list) {
-      fetchSubscribers({ subscribedOnly: true, limit: 100 })
-    }
-  }, [open, list?.id])
+    if (!open || !list) return
+
+    const timeout = window.setTimeout(() => {
+      fetchSubscribers({
+        subscribedOnly: true,
+        search: searchQuery,
+        limit: 100,
+        offset: 0,
+      })
+    }, searchQuery ? 250 : 0)
+
+    return () => window.clearTimeout(timeout)
+  }, [open, list?.id, searchQuery])
 
   const handleDeleteSubscriber = async () => {
     if (!subscriberToDelete || !list) return
@@ -89,17 +98,29 @@ export function SubscribersDialog({
     }
   }
 
-  const filteredSubscribers = subscribers.filter((sub) =>
-    searchQuery
-      ? sub.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-      : true
-  )
+  // La recherche est effectuée par l'API afin de fonctionner sur toute la liste,
+  // et non uniquement sur la page actuellement chargée.
+  const filteredSubscribers: DistributionListSubscriber[] = subscribers
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (!list || total === 0) return
+    // Exporter l'ensemble du résultat filtré, pas seulement la page visible.
+    const exportSubscribers: DistributionListSubscriber[] = []
+    let exportOffset = 0
+    do {
+      const page = await fetchSubscribers({
+        subscribedOnly: true,
+        search: searchQuery,
+        limit: 100,
+        offset: exportOffset,
+      })
+      exportSubscribers.push(...page)
+      exportOffset += page.length
+      if (page.length === 0) break
+    } while (exportSubscribers.length < total)
     const csv = [
       ['Email', 'Nom', 'Date d\'abonnement', 'Source'].join(','),
-      ...filteredSubscribers.map((sub) =>
+      ...exportSubscribers.map((sub) =>
         [
           sub.user.email,
           sub.user.full_name || '',
@@ -118,6 +139,8 @@ export function SubscribersDialog({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    // Restaurer la page courante après l'export.
+    void fetchSubscribers({ subscribedOnly: true, search: searchQuery, limit: 100, offset: 0 })
   }
 
   return (
@@ -176,7 +199,7 @@ export function SubscribersDialog({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredSubscribers.map((sub: any) => (
+                  filteredSubscribers.map((sub) => (
                     <TableRow key={sub.id}>
                       <TableCell>
                         <div>

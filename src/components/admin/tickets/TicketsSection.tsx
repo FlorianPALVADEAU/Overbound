@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
+import { MoreHorizontal, Pencil, Plus, Search, Trash2, Waves } from 'lucide-react'
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { Ticket } from '@/types/Ticket'
@@ -30,6 +30,12 @@ import {
 } from '@/app/api/admin/tickets/ticketsQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
 import { useAdminRaces } from '@/app/api/admin/races/racesQueries'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -281,9 +287,9 @@ export function TicketsSection() {
         header: 'Ticket',
         cell: (ticket) => (
           <div className="flex flex-col gap-1">
-            <span className="font-semibold">{ticket.name}</span>
+              <span className="truncate font-semibold" title={ticket.name}>{ticket.name}</span>
             {ticket.description ? (
-              <span className="text-xs text-muted-foreground line-clamp-1">
+              <span className="line-clamp-1 max-w-[22rem] text-xs text-muted-foreground" title={ticket.description}>
                 {ticket.description}
               </span>
             ) : null}
@@ -295,7 +301,7 @@ export function TicketsSection() {
         header: 'Événement',
         cell: (ticket) => (
           <div className="flex flex-col gap-1">
-            <span>{ticket.event?.title ?? '—'}</span>
+            <span className="truncate" title={ticket.event?.title ?? undefined}>{ticket.event?.title ?? '—'}</span>
             {ticket.event?.date ? (
               <span className="text-xs text-muted-foreground">
                 {new Date(ticket.event.date).toLocaleDateString('fr-FR')}
@@ -310,7 +316,7 @@ export function TicketsSection() {
         cell: (ticket) =>
           ticket.race ? (
             <div className="flex flex-col gap-1">
-              <span>{ticket.race.name}</span>
+                <span className="truncate" title={ticket.race.name}>{ticket.race.name}</span>
               <span className="text-xs text-muted-foreground">
                 {ticket.race.distance_km ? `${ticket.race.distance_km} km • ` : ''}
                 Difficulté {ticket.race.difficulty}/10
@@ -335,25 +341,36 @@ export function TicketsSection() {
       {
         key: 'actions',
         header: '',
-        className: 'w-[280px]',
+        className: 'w-16 text-right',
         cell: (ticket) => (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9" aria-label={`Actions pour ${ticket.name}`}>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
             {ticket.operations_config?.departure_mode === 'wave' ? (
-              <Button variant="outline" size="sm" onClick={() => setWaveTicket(ticket)}>
+              <DropdownMenuItem onSelect={() => setWaveTicket(ticket)}>
+                <Waves className="h-4 w-4" />
                 Gérer les SAS
-              </Button>
+              </DropdownMenuItem>
             ) : null}
-            <Button variant="outline" size="sm" onClick={() => handleEdit(ticket)}>
-              Modifier
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDeleteClick(ticket)}
-              disabled={deleteLoadingId === ticket.id}
-            >
-              {deleteLoadingId === ticket.id ? 'Suppression…' : 'Supprimer'}
-            </Button>
+                <DropdownMenuItem onSelect={() => handleEdit(ticket)}>
+                  <Pencil className="h-4 w-4" />
+                  Modifier
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => handleDeleteClick(ticket)}
+                  disabled={deleteLoadingId === ticket.id}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleteLoadingId === ticket.id ? 'Suppression…' : 'Supprimer'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ),
       },
@@ -394,6 +411,7 @@ export function TicketsSection() {
       <AdminDataGrid
         data={filteredTickets}
         columns={columns}
+        noHorizontalScroll
         loading={combinedLoading}
         emptyMessage={
           searchTerm || eventFilter !== 'all'

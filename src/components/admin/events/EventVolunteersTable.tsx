@@ -134,8 +134,8 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
+        <div className="min-w-0 overflow-hidden">
+          <Table className="table-fixed [&_td]:min-w-0 [&_td]:break-words [&_th]:truncate">
             <TableHeader>
               <TableRow>
                 <TableHead>Bénévole</TableHead>

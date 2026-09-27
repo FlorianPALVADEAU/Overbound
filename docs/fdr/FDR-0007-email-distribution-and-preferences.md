@@ -21,6 +21,13 @@ Les exemples SQL de cette FDR restent une spécification historique; ils ne prou
 
 ## Decision
 
+### Décisions de reprise — 2026-09-21
+
+- Supabase est le référentiel métier des listes, abonnements, consentements, compteurs, exports et diagnostics. Resend est une projection d'envoi asynchrone, jamais une source de réconciliation vers Supabase.
+- Les mutations de consentement écrivent d'abord l'état maître et un événement/outbox idempotent dans la même transaction. Elles ne contactent pas Resend directement.
+- La conservation des événements d'audit métier est de **24 mois**. La purge est une commande planifiée distincte et auditable.
+- La migration reste bloquée avant modification de schéma : les tables, view, triggers et RLS actuels ne sont pas versionnés dans ce dépôt et doivent être inventoriés dans la base cible.
+
 Overbound implements a **4-phase email system** for compliance, segmentation, and engagement:
 
 1. **Phase 1 (Unsubscribe)**: One-click unsubscribe links with secure tokens

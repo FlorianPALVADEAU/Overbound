@@ -62,9 +62,9 @@ export async function GET(
 
     const { data: upsellsData, error: upsellError } = await supabase
       .from('upsells')
-      .select('*')
-      .eq('event_id', event.id)
+      .select('*, images:upsell_images(*)')
       .eq('is_active', true)
+      .or(`event_id.eq.${event.id},event_id.is.null`)
 
     if (upsellError) {
       console.error('[payment-data] upsell error', upsellError)
@@ -77,7 +77,15 @@ export async function GET(
         requires_document: false,
         document_types: [],
       })),
-      upsells: upsellsData || [],
+      upsells: (upsellsData ?? []).map((upsell) => ({
+        ...upsell,
+        images: (upsell.images ?? []).map((image: { source: string; storage_path: string | null; external_url: string | null }) => ({
+          ...image,
+          url: image.source === 'upload' && image.storage_path
+            ? supabase.storage.from('upsell-images').getPublicUrl(image.storage_path).data.publicUrl
+            : image.external_url,
+        })),
+      })),
       userEmail: user.email ?? '',
     })
   } catch (error) {

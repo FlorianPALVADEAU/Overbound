@@ -10,7 +10,7 @@ vi.mock('@/lib/supabase/server', () => ({
   supabaseAdmin: supabaseAdminMock,
 }))
 
-import { POST } from './route'
+import { GET, POST } from './route'
 
 const REGISTRATION_ROW = {
   id: 'reg-1',
@@ -53,20 +53,40 @@ function mockUnauthenticated() {
   })
 }
 
-function createAdmin(options: { registration?: typeof REGISTRATION_ROW | null; updateError?: unknown }) {
+function createAdmin(options: {
+  registration?: typeof REGISTRATION_ROW | null
+  registrations?: typeof REGISTRATION_ROW[]
+  readError?: unknown
+  updateError?: unknown
+}) {
   const registration = options.registration
   return {
     from(table: string) {
       if (table === 'registrations') {
+        const listResult = {
+          data: options.registrations ?? [],
+          error: options.readError ?? null,
+        }
+        let isListQuery = false
+        const selectQuery = {
+          order() {
+            isListQuery = true
+            return selectQuery
+          },
+          eq() {
+            if (isListQuery) return selectQuery
+            return {
+              single: async () => ({ data: registration ?? null }),
+            }
+          },
+          then(resolve: (value: typeof listResult) => unknown) {
+            return Promise.resolve(listResult).then(resolve)
+          },
+        }
+
         return {
           select() {
-            return {
-              eq() {
-                return {
-                  single: async () => ({ data: registration ?? null }),
-                }
-              },
-            }
+            return selectQuery
           },
           update(payload: { checked_in: boolean }) {
             return {
@@ -92,6 +112,12 @@ function createAdmin(options: { registration?: typeof REGISTRATION_ROW | null; u
       throw new Error(`Unexpected table: ${table}`)
     },
   }
+}
+
+function getRequest(eventId?: string) {
+  const url = new URL('http://localhost/api/checkin')
+  if (eventId) url.searchParams.set('event_id', eventId)
+  return new Request(url)
 }
 
 function jsonRequest(body: unknown) {
@@ -193,6 +219,38 @@ describe('POST /api/checkin', () => {
     )
 
     const response = await POST(jsonRequest({ token: 'qr-1' }))
+
+    expect(response.status).toBe(500)
+  })
+})
+
+describe('GET /api/checkin', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('reads registrations with the server client after authorizing the operator', async () => {
+    mockAuthedUser('volunteer')
+    supabaseAdminMock.mockReturnValue(
+      createAdmin({ registrations: [REGISTRATION_ROW] }),
+    )
+
+    const response = await GET(getRequest('event-1'))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(supabaseAdminMock).toHaveBeenCalledOnce()
+    expect(body.registrations).toHaveLength(1)
+    expect(body.stats).toEqual({ total: 1, checkedIn: 0, pending: 1 })
+  })
+
+  it('returns 500 when the server-side registration query fails', async () => {
+    mockAuthedUser('admin')
+    supabaseAdminMock.mockReturnValue(
+      createAdmin({ readError: { code: '42501', message: 'permission denied' } }),
+    )
+
+    const response = await GET(getRequest())
 
     expect(response.status).toBe(500)
   })

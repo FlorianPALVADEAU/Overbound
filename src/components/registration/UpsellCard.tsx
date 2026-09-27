@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Gift } from 'lucide-react'
 import { formatPrice, resolveUpsellSizes, normalizeTshirtSizes } from '@/lib/registration'
+import { getUpsellQuantityLimit } from '@/lib/upsells/quantity'
 import { cn } from '@/lib/utils'
 import type { EventUpsell, Participant } from './types'
 import QuantityPicker from './QuantityPicker'
@@ -32,12 +33,8 @@ export default function UpsellCard({
   const availableSizes = upsell.type === 'tshirt' ? resolveUpsellSizes(upsell) : []
   const selectedSizes =
     upsell.type === 'tshirt' ? normalizeTshirtSizes(selection?.meta, quantity, availableSizes) : []
-  const maxQuantity =
-    upsell.type === 'tshirt' || upsell.type === 'photos' ? selectedTicketSlots.length : undefined
-  const addDisabled =
-    upsell.type === 'tshirt' || upsell.type === 'photos'
-      ? !maxQuantity || quantity >= maxQuantity
-      : false
+  const maxQuantity = getUpsellQuantityLimit(upsell.type, selectedTicketSlots.length)
+  const addDisabled = maxQuantity === 0 || quantity >= maxQuantity
 
   return (
     <div
@@ -48,7 +45,11 @@ export default function UpsellCard({
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="flex min-w-0 items-start gap-3 space-y-1.5">
-          <UpsellImagePreview src={upsell.image_url} alt={upsell.name} />
+          <UpsellImagePreview
+            src={upsell.image_url}
+            sources={upsell.images?.map((image) => ({ src: image.url ?? image.external_url, alt: image.alt_text }))}
+            alt={upsell.name}
+          />
           <div className="min-w-0 space-y-1.5">
             <div className="flex items-center gap-2 text-base font-semibold">
               <Gift className="h-4 w-4 text-primary" />
@@ -100,6 +101,18 @@ export default function UpsellCard({
               {selectedTicketSlots.length > 0
                 ? `Maximum ${selectedTicketSlots.length} t-shirt${selectedTicketSlots.length > 1 ? 's' : ''} (${quantity}/${selectedTicketSlots.length} sélectionné${quantity > 1 ? 's' : ''}).`
                 : 'Sélectionnez au moins un billet pour ajouter un t-shirt.'}
+            </p>
+          ) : null}
+          {upsell.type === 'patch' ? (
+            <p className="text-xs text-muted-foreground text-right">
+              {selectedTicketSlots.length > 0
+                ? `Maximum ${maxQuantity} patch${maxQuantity > 1 ? 's' : ''} (2 par billet).`
+                : 'Sélectionnez au moins un billet pour ajouter des patchs.'}
+            </p>
+          ) : null}
+          {upsell.type === 'other' && selectedTicketSlots.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-right">
+              Sélectionnez au moins un billet pour ajouter cette option.
             </p>
           ) : null}
           {upsell.type === 'photos' && quantity > 0 ? (

@@ -404,8 +404,8 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
+        <div className="min-w-0 overflow-hidden">
+          <Table className="table-fixed [&_td]:min-w-0 [&_td]:break-words [&_th]:truncate">
             <TableHeader>
               <TableRow>
                 <TableHead>Participant</TableHead>
@@ -681,4 +681,3 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     </div>
   )
 }
-

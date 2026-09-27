@@ -6,6 +6,7 @@ import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 import type { AmbassadorReward, AmbassadorRewardStatus } from '@/types/Ambassador'
+import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
 
 const claimBodySchema = z.object({
   reward_level: z.number().int().positive(),
@@ -20,6 +21,7 @@ const resolveRewardStatus = (value: string | null | undefined): AmbassadorReward
   const normalized = String(value || '').toLowerCase()
   if (normalized === 'claimed') return 'claimed'
   if (normalized === 'fulfilled') return 'fulfilled'
+  if (normalized === 'cancelled') return 'cancelled'
   return 'earned'
 }
 
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const { data: rewardData, error: rewardError } = await admin
       .from('ambassador_rewards')
-      .select('id, reward_level, reward_name, status, earned_at, claimed_at, fulfilled_at')
+      .select('id, reward_level, reward_name, status, program_year, earned_at, expires_at, claimed_at, fulfilled_at, cancelled_at, cancellation_reason')
       .eq('ambassador_id', ambassadorData.id)
       .eq('reward_level', rewardLevel)
       .maybeSingle()
@@ -91,6 +93,9 @@ export async function POST(request: NextRequest) {
     }
 
     const currentStatus = resolveRewardStatus(rewardData.status)
+    if (isAmbassadorRewardExpired(rewardData.expires_at)) {
+      return NextResponse.json({ error: 'Cette récompense a expiré le 31 décembre.' }, { status: 409 })
+    }
     if (currentStatus !== 'earned') {
       return NextResponse.json({ error: 'Cette récompense ne peut pas être réclamée.' }, { status: 409 })
     }
@@ -103,7 +108,7 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', rewardData.id)
-      .select('id, reward_level, reward_name, status, earned_at, claimed_at, fulfilled_at')
+      .select('id, reward_level, reward_name, status, program_year, earned_at, expires_at, claimed_at, fulfilled_at, cancelled_at, cancellation_reason')
       .single()
 
     if (updateError || !updatedReward) {
@@ -165,9 +170,14 @@ export async function POST(request: NextRequest) {
       reward_level: updatedReward.reward_level,
       reward_name: updatedReward.reward_name,
       status: resolveRewardStatus(updatedReward.status),
+      program_year: updatedReward.program_year,
       earned_at: updatedReward.earned_at,
+      expires_at: updatedReward.expires_at,
       claimed_at: updatedReward.claimed_at,
       fulfilled_at: updatedReward.fulfilled_at,
+      cancelled_at: updatedReward.cancelled_at,
+      cancellation_reason: updatedReward.cancellation_reason,
+      is_expired: isAmbassadorRewardExpired(updatedReward.expires_at),
     }
 
     return NextResponse.json({ reward: response })

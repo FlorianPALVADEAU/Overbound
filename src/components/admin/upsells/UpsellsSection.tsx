@@ -39,6 +39,7 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
       is_active: true,
       stock_quantity: '',
       image_url: '',
+      images: [],
       sizes: '',
     }
   }
@@ -53,6 +54,10 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
     is_active: upsell.is_active,
     stock_quantity: upsell.stock_quantity?.toString() || '',
     image_url: upsell.image_url || '',
+    images: (upsell.images ?? [])
+      .filter((image) => image.source === 'external' && Boolean(image.external_url))
+      .sort((left, right) => left.position - right.position)
+      .map((image) => ({ url: image.external_url!, alt_text: image.alt_text ?? '' })),
     sizes:
       upsell.type === 'tshirt' && upsell.options?.sizes && upsell.options.sizes.length > 0
         ? upsell.options.sizes.join(', ')
@@ -162,7 +167,17 @@ export function UpsellsSection() {
       event_id: values.event_id === 'none' ? null : values.event_id,
       is_active: values.is_active,
       stock_quantity: values.stock_quantity ? parseInt(values.stock_quantity, 10) : null,
-      image_url: values.image_url || null,
+      // Keep image_url populated during the transition: existing consumers can
+      // continue using it while gallery-aware ones read images.
+      image_url: values.images.find((image) => image.url.trim())?.url.trim() || values.image_url || null,
+      images: values.images
+        .filter((image) => image.url.trim())
+        .map((image, position) => ({
+          source: 'external' as const,
+          external_url: image.url.trim(),
+          alt_text: image.alt_text.trim() || null,
+          position,
+        })),
       options:
         values.type === 'tshirt'
           ? {
@@ -205,6 +220,15 @@ export function UpsellsSection() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleUpload = async (file: File) => {
+    if (!selectedUpsell) return
+    const form = new FormData()
+    form.set('file', file)
+    await axios.post(`/api/admin/upsells/${selectedUpsell.id}/images`, form)
+    await queryClient.invalidateQueries({ queryKey: adminUpsellsQueryKey })
+    setMessage({ type: 'success', text: 'Image téléversée avec succès' })
   }
 
   const columns = useMemo<AdminDataGridColumn<Upsell>[]>(() => {
@@ -380,6 +404,7 @@ export function UpsellsSection() {
         events={events}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
+        onUpload={dialogMode === 'edit' ? handleUpload : undefined}
       />
     </div>
   )

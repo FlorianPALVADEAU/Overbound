@@ -29,6 +29,7 @@ interface AdminDataGridProps<T> {
   toolbar?: ReactNode
   meta?: ReactNode
   getRowId?: (item: T, index: number) => string
+  noHorizontalScroll?: boolean
 }
 
 export function AdminDataGrid<T>({
@@ -53,8 +54,8 @@ export function AdminDataGrid<T>({
         </div>
       )}
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
+        <div className="min-w-0 overflow-hidden">
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
@@ -82,7 +83,7 @@ export function AdminDataGrid<T>({
                 data.map((item, index) => (
                   <TableRow key={getRowId ? getRowId(item, index) : index}>
                     {columns.map((column) => (
-                      <TableCell key={`${column.key}-${index}`} className={cn(column.className)}>
+                    <TableCell key={`${column.key}-${index}`} className={cn('min-w-0 whitespace-normal break-words', column.className)}>
                         {column.cell(item)}
                       </TableCell>
                     ))}

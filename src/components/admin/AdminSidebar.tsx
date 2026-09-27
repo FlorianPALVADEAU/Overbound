@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { BarChart3, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ADMIN_NAV_GROUPS } from './adminNavItems'
+import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS } from './adminNavItems'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface AdminSidebarProps {
   profileRole: 'admin' | 'volunteer'
@@ -14,6 +15,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const eventId = searchParams.get('event')
   const activeTab = ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) =>
@@ -25,10 +27,13 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
   )?.value
 
   const hrefFor = (item: (typeof ADMIN_NAV_GROUPS)[number]['items'][number]) => {
-    if (!item.requiresEventContext || !eventId) return item.href
-    if (item.value === 'members') return `/dashboard/events/${eventId}/participants`
-    if (item.value === 'tickets') return `/dashboard/events/${eventId}/tickets`
-    return `${item.href}?event=${encodeURIComponent(eventId)}`
+    if (item.requiresEventContext && eventId) {
+      if (item.value === 'members') return `/dashboard/events/${eventId}/participants`
+      if (item.value === 'tickets') return `/dashboard/events/${eventId}/tickets`
+    }
+    if (!eventId) return item.href
+    const separator = item.href.includes('?') ? '&' : '?'
+    return `${item.href}${separator}event=${encodeURIComponent(eventId)}`
   }
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -53,7 +58,39 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
   }
 
   return (
-    <aside className="hidden md:flex w-64 flex-col border-r bg-background">
+    <>
+      <div className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background px-4 py-3 md:hidden">
+        <BarChart3 className="size-4 shrink-0 text-primary" aria-hidden />
+        <label htmlFor="admin-mobile-navigation" className="sr-only">Section d’administration</label>
+        <Select
+          value={activeTab ?? 'overview'}
+          onValueChange={(value) => {
+            const item = ADMIN_NAV_ITEMS.find((candidate) => candidate.value === value)
+            if (!item) return
+            router.push(hrefFor(item))
+          }}
+        >
+          <SelectTrigger id="admin-mobile-navigation" className="min-w-0 flex-1 bg-background text-sm font-medium">
+            <SelectValue placeholder="Choisir une section" />
+          </SelectTrigger>
+          <SelectContent position="popper" className="max-h-[min(70vh,20rem)]">
+            <SelectGroup>
+              <SelectLabel>Général</SelectLabel>
+              <SelectItem value="overview">Tableau de bord</SelectItem>
+            </SelectGroup>
+            {ADMIN_NAV_GROUPS.map((group) => (
+              <SelectGroup key={group.id}>
+                <SelectSeparator />
+                <SelectLabel>{group.label}</SelectLabel>
+                {group.items.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <aside className="hidden w-64 flex-col border-r bg-background md:flex">
       {/* User identity */}
       <div className="p-6 border-b">
         <p className="text-sm font-medium text-muted-foreground">Connecté en tant que</p>
@@ -153,6 +190,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
           Retour au site
         </Link>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

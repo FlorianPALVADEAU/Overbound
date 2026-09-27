@@ -2,16 +2,21 @@ import { Timestamp, UUID } from './base.type'
 
 export type AmbassadorRaceFormat = 'open' | 'ranked'
 export type AmbassadorPaymentStatus = 'paid' | 'pending' | 'refunded' | 'cancelled'
-export type AmbassadorRewardStatus = 'earned' | 'claimed' | 'fulfilled'
+export type AmbassadorRewardStatus = 'earned' | 'claimed' | 'fulfilled' | 'cancelled'
 
 export interface AmbassadorReward {
   id: UUID
   reward_level: number
   reward_name: string
   status: AmbassadorRewardStatus
+  program_year: number
   earned_at: Timestamp
+  expires_at: Timestamp
   claimed_at: Timestamp | null
   fulfilled_at: Timestamp | null
+  cancelled_at: Timestamp | null
+  cancellation_reason: string | null
+  is_expired: boolean
 }
 
 export interface AmbassadorRecruitRow {
@@ -39,6 +44,8 @@ export interface AmbassadorLeaderboardEntry {
 }
 
 export interface AmbassadorDashboardData {
+  program_year: number
+  available_program_years: number[]
   code: string | null
   total_points: number
   points_breakdown: {

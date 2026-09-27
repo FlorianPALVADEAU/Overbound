@@ -11,10 +11,6 @@ import {
   EVENT_OPENING_FIRST_LIST_ID,
   EVENT_OPENING_FIRST_LIST_SLUG,
 } from '@/lib/subscriptions/constants'
-import {
-  getResendAudienceIdForSlug,
-  listResendAudienceContacts,
-} from '@/lib/email/resendAudiences'
 
 // Validation schema
 const distributionListSchema = z.object({
@@ -90,38 +86,10 @@ export async function GET(request: NextRequest) {
         admin,
       })
 
-      const listsWithResendStats = await Promise.all(
-        enhancedData.map(async (list) => {
-          if (list.id === EVENT_OPENING_FIRST_LIST_ID) {
-            return list
-          }
-
-          const audienceId = getResendAudienceIdForSlug(list.slug)
-          if (!audienceId) {
-            return list
-          }
-
-          try {
-            const contacts = await listResendAudienceContacts(audienceId)
-            const subscriberCount = contacts.filter((contact) => !contact.unsubscribed).length
-            const unsubscriberCount = contacts.filter((contact) => contact.unsubscribed).length
-            return {
-              ...list,
-              subscriber_count: subscriberCount,
-              unsubscriber_count: unsubscriberCount,
-              total_interactions: subscriberCount + unsubscriberCount,
-            }
-          } catch (error) {
-            console.warn('[distribution-lists] resend stats lookup failed', {
-              slug: list.slug,
-              error: error instanceof Error ? error.message : String(error),
-            })
-            return list
-          }
-        }),
-      )
-
-      return NextResponse.json({ data: listsWithResendStats }, { status: 200 })
+      // Keep the database stats as the displayed source of truth. Resend is a
+      // delivery projection and must not silently replace a valid count with
+      // zero when an audience mapping is missing or stale.
+      return NextResponse.json({ data: enhancedData }, { status: 200 })
     } else {
       // Regular query
       let query = admin.from('distribution_lists').select('*')

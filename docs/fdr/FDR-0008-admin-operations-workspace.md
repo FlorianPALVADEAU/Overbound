@@ -1,6 +1,6 @@
 # FDR-0008 — Espace opérations admin orienté événement
 
-- **Statut** : Proposed — phase 0 partiellement vérifiée localement (2026-09-20)
+- **Statut** : Proposed — phases 0 à 2 partiellement vérifiées localement (2026-09-27)
 - **Date** : 2026-09-15
 - **Owner produit** : à désigner
 - **Owner technique** : à désigner
@@ -9,7 +9,7 @@
 
 > **Document de cadrage, pas autorisation de déploiement.** Cette FDR définit la cible et les prérequis. Aucun changement de politique RLS, de fonction SQL privilégiée, de prix, ou de données de production ne découle automatiquement de sa lecture.
 
-## État de reprise vérifié localement — 2026-09-20
+## État de reprise vérifié localement — 2026-09-27
 
 Les statuts ci-dessous portent uniquement sur le checkout local. Ils ne prouvent ni l'application des migrations, ni les grants, RLS, données ou fonctions de la base Supabase cible.
 
@@ -21,7 +21,14 @@ Les statuts ci-dessous portent uniquement sur le checkout local. Ils ne prouvent
 | `20260920181348_reconcile_registration_organization.sql` | **fait localement** | Fichier présent : réconciliation `registrations` depuis l'événement parent. Exécuter un dry-run / rapport de lignes affectées sur la base cible avant application. |
 | Inventaire RLS, grants, vues, propriétaires et `EXECUTE` | **à faire (live)** | Les migrations locales montrent des protections ponctuelles, insuffisantes pour conclure sur la base cible. |
 | `GET /api/admin/events/:id/waves` sans écriture | **fait localement** | La route ne lit que `event_waves`; le test couvre l'absence de création/mise à jour. Le provisionnement est une commande `POST`. |
-| Baseline locale | **partiel** | Typecheck et build réussissent; lint réussit avec 32 avertissements; 544/546 tests passent. Deux tests `resolveGroupAnchorFromProfile` échouent. |
+| Baseline locale | **partiel** | Typecheck, lint et vérifications de diff passent sur les lots récents. Les tests complets et le build doivent être relancés sur le checkout courant avant clôture. La validation Supabase distante reste hors preuve locale. |
+
+Depuis l'état initial, le checkout contient également :
+
+- des routes dédiées pour les principaux domaines admin (`events`, `tickets`, `races`, `obstacles`, `groups`, `users`, `logs`, `distribution-lists`, `upsells`, `ambassadors`, `bootcamps`, promotions et codes promo) ;
+- un sélecteur de contexte événement partagé dans le shell et une primitive `OperationsList` désormais utilisée par Participants, Événements, Billets, Courses, Obstacles, Codes promo, Promotions, Upsells, Groupes, Bootcamps, Utilisateurs, Membres, Listes de diffusion et Lucky Wheel ;
+- des commandes de prévisualisation pour les opérations participant billet/SAS, dont la validation métier et l'autorisation doivent encore être vérifiées contre l'environnement cible ;
+- des adaptations mobile-first sur ces listes, avec cartes sans débordement horizontal et actions regroupées. Les routes historiques restent compatibles, tandis que les écrans actifs consomment les variantes paginées. Deux adaptateurs sont explicitement conservés : Membres réutilise la pagination offset de son RPC existant et Utilisateurs effectue encore un scan Auth borné côté serveur avant de ne renvoyer qu'une page au client.
 
 Les anciennes migrations `20260915_admin_change_registration_ticket.sql` et `20260919160109_admin_operation_commands.sql` existent aussi localement, mais ne constituent pas la preuve d'un contrat distant et ne remplacent pas les quatre migrations ci-dessus.
 
@@ -66,6 +73,11 @@ Les anciennes migrations `20260915_admin_change_registration_ticket.sql` et `202
 3. **DECISION** — Les mutations sensibles sont des commandes serveur dédiées, jamais des `PATCH` génériques de lignes.
 4. **DECISION** — Les FDR spécialisées prévalent sur cette FDR en cas de conflit métier.
 5. **DECISION** — Cette FDR est un programme. Les décisions d’architecture, d’autorisation et de politique financière devront être extraites dans les documents indiqués en section 14 avant leur lot concerné.
+6. **DECISION (2026-09-21)** — Supabase est le référentiel métier des listes de diffusion ; Resend est une projection via outbox idempotente.
+7. **DECISION (2026-09-21)** — Les rewards ambassadeurs sont calculées par année civile de l'attribution, peuvent être annulées et rouvertes, et chaque transition est auditée.
+8. **DECISION (2026-09-21)** — Les upsells acceptent une galerie d'images, provenant soit d'une URL HTTPS externe soit d'un upload géré. La colonne historique `image_url` demeure un fallback pendant la migration.
+9. **DECISION (2026-09-21)** — La durée de conservation des journaux métier est de 24 mois ; leur purge est une commande séparée et vérifiable.
+10. **DECISION (2026-09-21)** — Le produit est opéré par une unique entité Overbound. Plusieurs membres d'équipe peuvent administrer cette entité et plusieurs événements coexistent, mais aucun espace tiers ni gestion produit multi-organisation n'est construit dans ce programme. Les références techniques historiques à `organization_id` restent compatibles lorsqu'elles existent, sans introduire d'interface ni de propriété multi-tenant nouvelle.
 
 ## 2. Besoin métier et diagnostic
 
@@ -73,9 +85,9 @@ L’administration actuelle permet de nombreuses actions, mais ne donne pas un f
 
 ### État observé dans le dépôt
 
-- **OBSERVED** — `AdminDashboard`, `AdminSidebar` et `useAdminDashboardStore` organisent l’admin autour de nombreuses sections ; l’onglet sélectionné est persistant côté navigateur plutôt que représenté par une route métier.
-- **OBSERVED** — `RegistrationsSection` et `UsersSection` portent des logiques de listes distinctes. L’API utilisateurs a une limite de récupération de 5 000 comptes.
-- **OBSERVED** — `AdminDataGrid` n’est pas aujourd’hui une primitive complète de recherche, filtres, tri, sélection, vues enregistrées et pagination serveur.
+- **OBSERVED / partiellement résolu** — `AdminDashboard` et `useAdminDashboardStore` conservent le shell legacy pour compatibilité, mais les domaines disposent maintenant de routes dédiées, y compris `checkin` et `emails`. Les anciennes URLs `?tab=` redirigent vers ces routes.
+- **OBSERVED / résolu en présentation** — `RegistrationsSection` et `UsersSection` utilisent maintenant `OperationsList`. Membres adapte la pagination offset existante ; l’API utilisateurs conserve une limite de récupération Auth de 5 000 comptes et applique recherche, filtre, tri et découpage côté serveur avant de retourner la page.
+- **OBSERVED / résolu pour les listes actives** — les principaux domaines admin utilisent maintenant `OperationsList` avec rendu mobile en cartes. Les vues enregistrées, la sélection inter-pages et la suppression définitive du composant legacy `AdminDataGrid` restent à traiter.
 - **OBSERVED** — les inscriptions utilisent `get_registrations_with_filters`; son contrat déployé doit être vérifié avant réutilisation.
 - **OBSERVED / fait localement** — `GET /api/admin/events/:id/waves` est sans écriture; le provisionnement explicite est porté par `POST` et couvert par test. Sa conformité distante reste à vérifier.
 - **OBSERVED** — certains chemins legacy et migrations historiques détectent encore OPEN/RANKED par libellé. Ce n'est plus un contrat acceptable pour les nouveaux parcours : voir section 7.
@@ -295,12 +307,12 @@ Chaque commande sensible produit un événement avec : type, acteur, cible, év�
 
 | Élément actuel observé | Destination | Critère de sortie |
 |---|---|---|
-| `src/components/admin/AdminDashboard.tsx` | shell admin + routes événement | aucune navigation principale par tab local persistant seule |
-| `src/components/admin/AdminSidebar.tsx` | navigation par domaines et contexte événement | labels canoniques, liens routables |
+| `src/components/admin/AdminDashboard.tsx` | shell legacy conservé pour compatibilité + routes événement | les principaux domaines ne dépendent plus du tab local |
+| `src/components/admin/AdminSidebar.tsx` | navigation par domaines et contexte événement | liens routables et contexte propagé ; les anciennes URLs legacy sont redirigées |
 | `src/store/useAdminDashboardStore.ts` | état UI local non métier | contexte/filtre partageable hors PII dans la route ou la query |
 | `registrations/RegistrationsSection.tsx` | liste Participants + panneau détail | pagination, filtres et commandes dédiées |
 | `users/UsersSection.tsx` | espace Comptes global | aucune récupération massive pour filtrer côté client |
-| `ui/AdminDataGrid.tsx` | primitive `OperationsList` ou retrait | contrat section 5 couvert et testé |
+| `ui/AdminDataGrid.tsx` | primitive `OperationsList` ou retrait | aucun écran admin actif ne l'utilise désormais ; le fichier legacy reste conservé temporairement pour compatibilité de branche |
 | `GET .../events/:id/waves` avec initialisation | lecture sans effet de bord + commande setup SAS | **fait localement** : GET idempotent et sans `INSERT`/`UPDATE`; validation live à faire |
 | RPC / endpoints admin hétérogènes | contrats de lecture/commande versionnés | contrat live vérifié et tests de non-régression |
 
@@ -317,7 +329,7 @@ Chaque migration est incrémentale : conserver l’ancien chemin jusqu’à vali
 
 ### Phase 1 — fondations de lecture
 
-- Routes événement + sélecteur + `OperationsList` sur une seule ressource pilote : Participants.
+- Routes événement + sélecteur + `OperationsList` sur trois ressources : Participants, Événements et Billets. Les anciens hooks non paginés restent disponibles pendant la fenêtre de compatibilité pour les sélecteurs et dialogues existants.
 - Recherche, filtres, tri et cursor côté serveur ; aucune nouvelle mutation de billet/SAS.
 - Gate : objectifs de performance, accessibilité clavier, non-régression des listes existantes.
 

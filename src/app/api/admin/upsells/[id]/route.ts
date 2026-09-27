@@ -2,33 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-
-function sanitizeOptions(options: any) {
-  if (!options) return null
-  const sizes = Array.isArray(options.sizes)
-    ? options.sizes
-        .map((size: string) => (typeof size === 'string' ? size.trim() : ''))
-        .filter((size: string) => size.length > 0)
-    : []
-  if (sizes.length === 0) return null
-  return { sizes }
-}
-
-function sanitizePayload(body: any) {
-  return {
-    name: body.name,
-    description: body.description || null,
-    price_cents: body.price_cents,
-    currency: body.currency || 'eur',
-    type: body.type,
-    event_id: body.event_id || null,
-    is_active: body.is_active ?? true,
-    stock_quantity: body.stock_quantity ?? null,
-    image_url: body.image_url || null,
-    options: sanitizeOptions(body.options),
-    updated_at: new Date().toISOString(),
-  }
-}
+import { adminUpsellPayloadSchema, replaceExternalUpsellImages, toUpsellWritePayload } from '@/lib/upsells/adminPayload'
 
 async function fetchUpsell(id: string) {
   const admin = supabaseAdmin()
@@ -36,7 +10,8 @@ async function fetchUpsell(id: string) {
     .from('upsells')
     .select(
       `*,
-      event:events(id, title, date)`
+      event:events(id, title, date),
+      images:upsell_images(*)`
     )
     .eq('id', id)
     .single()
@@ -53,13 +28,11 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { id } = await params
-    const payload = await request.json()
-    if (!payload.name || payload.price_cents === undefined || !payload.type) {
-      return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 })
-    }
+    const parsed = adminUpsellPayloadSchema.safeParse(await request.json())
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Données invalides' }, { status: 400 })
 
     const admin = supabaseAdmin()
-    const updatePayload = sanitizePayload(payload)
+    const updatePayload = { ...toUpsellWritePayload(parsed.data), updated_at: new Date().toISOString() }
 
     const { data: upsell, error: updateError } = await admin
       .from('upsells')
@@ -69,6 +42,7 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
       .single()
 
     if (updateError) throw updateError
+    await replaceExternalUpsellImages(admin, upsell.id, parsed.data.images)
 
     const data = await fetchUpsell(upsell.id)
     return NextResponse.json({ upsell: data })

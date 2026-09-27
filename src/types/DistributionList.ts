@@ -104,6 +104,21 @@ export interface ListSubscriptionWithUser extends ListSubscription {
   }
 }
 
+/** Abonné retourné par l'interface d'administration (également compatible Resend). */
+export interface DistributionListSubscriber {
+  id: string
+  user_id: string | null
+  list_id: string
+  subscribed: boolean
+  source: string | null
+  subscribed_at: string | null
+  user: {
+    id: string | null
+    email: string
+    full_name: string | null
+  }
+}
+
 /**
  * Données pour créer un abonnement
  */
