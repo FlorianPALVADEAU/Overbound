@@ -28,6 +28,7 @@ interface AdminDataGridProps<T> {
   emptyMessage?: ReactNode
   toolbar?: ReactNode
   meta?: ReactNode
+  mobileContent?: ReactNode
   getRowId?: (item: T, index: number) => string
   noHorizontalScroll?: boolean
 }
@@ -40,7 +41,9 @@ export function AdminDataGrid<T>({
   emptyMessage = 'Aucune donnée disponible.',
   toolbar,
   meta,
+  mobileContent,
   getRowId,
+  noHorizontalScroll = false,
 }: AdminDataGridProps<T>) {
   const showLoadingState = loading && data.length === 0
   const showEmptyState = !loading && data.length === 0
@@ -54,8 +57,9 @@ export function AdminDataGrid<T>({
         </div>
       )}
       <CardContent className="p-0">
-        <div className="min-w-0 overflow-hidden">
-          <Table className="table-fixed">
+        {mobileContent ? <div className="md:hidden">{mobileContent}</div> : null}
+        <div className={cn('min-w-0 overflow-hidden', mobileContent && 'hidden md:block')}>
+          <Table className={cn('w-full table-fixed', noHorizontalScroll && 'max-w-full')}>
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (

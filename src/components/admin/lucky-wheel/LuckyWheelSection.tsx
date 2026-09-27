@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -20,7 +20,9 @@ import {
   updateAdminLuckyWheelCampaign,
   updateAdminLuckyWheelReward,
   useAdminLuckyWheelCampaigns,
+  useAdminLuckyWheelCampaignsPage,
   useAdminLuckyWheelRewards,
+  useAdminLuckyWheelRewardsPage,
   type LuckyWheelCampaign,
   type LuckyWheelCampaignPayload,
   type LuckyWheelReward,
@@ -83,7 +85,12 @@ const errorMessage = (error: unknown, fallback: string) =>
 // CampaignTable/RewardTable/*FormDialog, per engineering.md.
 export function LuckyWheelSection() {
   const queryClient = useQueryClient()
-  const { data: campaigns = [], isLoading: campaignsLoading } = useAdminLuckyWheelCampaigns()
+  const [campaignSearch, setCampaignSearch] = useState('')
+  const deferredCampaignSearch = useDeferredValue(campaignSearch.trim())
+  const [campaignCursor, setCampaignCursor] = useState<string | null>(null)
+  const [campaignPreviousCursors, setCampaignPreviousCursors] = useState<string[]>([])
+  const { data: campaignPage, isLoading: campaignsLoading } = useAdminLuckyWheelCampaignsPage({ cursor: campaignCursor, limit: 25, search: deferredCampaignSearch })
+  const campaigns = useMemo(() => campaignPage?.items ?? [], [campaignPage?.items])
   const { data: events = [] } = useAdminEvents()
   // FDR-0014 addendum (product-line discounts) §3.1: options for the
   // PRODUCT_DISCOUNT/PHOTO_DISCOUNT "produit ciblé" selector.
@@ -91,7 +98,20 @@ export function LuckyWheelSection() {
   const upsellOptions = useMemo(() => upsells.map((upsell) => ({ id: upsell.id, name: upsell.name })), [upsells])
 
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
-  const { data: rewards = [], isLoading: rewardsLoading } = useAdminLuckyWheelRewards(selectedCampaignId)
+  const [rewardCursor, setRewardCursor] = useState<string | null>(null)
+  const [rewardPreviousCursors, setRewardPreviousCursors] = useState<string[]>([])
+  const { data: rewardPage, isLoading: rewardsLoading } = useAdminLuckyWheelRewardsPage(selectedCampaignId, { cursor: rewardCursor, limit: 25 })
+  const rewards = rewardPage?.items ?? []
+
+  useEffect(() => {
+    setCampaignCursor(null)
+    setCampaignPreviousCursors([])
+  }, [deferredCampaignSearch])
+
+  useEffect(() => {
+    setRewardCursor(null)
+    setRewardPreviousCursors([])
+  }, [selectedCampaignId])
 
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false)
   const [campaignDialogMode, setCampaignDialogMode] = useState<'create' | 'edit'>('create')
@@ -284,6 +304,10 @@ export function LuckyWheelSection() {
         onEdit={handleEditCampaign}
         onDelete={handleDeleteCampaign}
         onTogglePause={handleTogglePause}
+        search={campaignSearch}
+        onSearchChange={(value) => { setCampaignSearch(value); setCampaignCursor(null); setCampaignPreviousCursors([]) }}
+        pagination={{ cursor: campaignCursor, previousCursors: campaignPreviousCursors, nextCursor: campaignPage?.nextCursor ?? null, total: campaignPage?.total }}
+        onPaginationChange={({ cursor, previousCursors }) => { setCampaignCursor(cursor); setCampaignPreviousCursors(previousCursors) }}
       />
 
       {selectedCampaignFromList ? (
@@ -301,12 +325,14 @@ export function LuckyWheelSection() {
             </Button>
           </CardHeader>
           <CardContent>
-            <RewardTable
+        <RewardTable
               rewards={rewards}
               loading={rewardsLoading}
               deletingId={rewardDeletingId}
               onEdit={handleEditReward}
-              onDelete={handleDeleteReward}
+          onDelete={handleDeleteReward}
+          pagination={{ cursor: rewardCursor, previousCursors: rewardPreviousCursors, nextCursor: rewardPage?.nextCursor ?? null, total: rewardPage?.total }}
+          onPaginationChange={({ cursor, previousCursors }) => { setRewardCursor(cursor); setRewardPreviousCursors(previousCursors) }}
             />
           </CardContent>
         </Card>

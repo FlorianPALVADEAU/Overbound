@@ -1,6 +1,7 @@
 'use client'
 
 import { Search, SlidersHorizontal } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -23,23 +24,27 @@ import type { OperationsListColumn, OperationsListFilter } from './types'
 interface OperationsListToolbarProps<T> {
   search?: string
   searchPlaceholder?: string
+  searchLabel?: string
   onSearchChange?: (value: string) => void
   filters?: OperationsListFilter[]
   onFilterChange?: (filterId: string, value: string) => void
   columns: OperationsListColumn<T>[]
   visibleColumnIds?: readonly string[]
   onVisibleColumnIdsChange?: (columnIds: string[]) => void
+  actions?: ReactNode
 }
 
 export function OperationsListToolbar<T>({
   search,
   searchPlaceholder = 'Rechercher',
+  searchLabel,
   onSearchChange,
   filters = [],
   onFilterChange,
   columns,
   visibleColumnIds,
   onVisibleColumnIdsChange,
+  actions,
 }: OperationsListToolbarProps<T>) {
   const canChooseColumns = visibleColumnIds !== undefined && onVisibleColumnIdsChange !== undefined
 
@@ -54,9 +59,12 @@ export function OperationsListToolbar<T>({
   return (
     <div className="flex flex-col gap-3 border-b p-3 sm:flex-row sm:flex-wrap sm:items-center">
       {onSearchChange ? (
-        <div className="relative min-w-0 flex-1 sm:max-w-sm">
+        <div className="min-w-0 flex-1 sm:max-w-sm">
+          {searchLabel ? <label className="mb-1 block text-xs font-medium text-muted-foreground">{searchLabel}</label> : null}
+          <div className="relative">
           <Search aria-hidden className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
           <Input value={search ?? ''} onChange={(event) => onSearchChange(event.target.value)} className="pl-9" placeholder={searchPlaceholder} />
+          </div>
         </div>
       ) : null}
       {filters.map((filter) => (
@@ -78,6 +86,7 @@ export function OperationsListToolbar<T>({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div> : null}
     </div>
   )
 }

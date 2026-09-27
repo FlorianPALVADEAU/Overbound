@@ -1,20 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Users, Crown, Clock, Search, Trash2, RefreshCw, Plus, Save } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { Crown, Clock, Trash2, RefreshCw, Plus, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import {
   Dialog,
   DialogContent,
@@ -41,7 +34,7 @@ import {
   useAdminCreateGroup,
   useAdminCreateGroupFromPromoCode,
   useAdminDeleteGroup,
-  useAdminGroups,
+  useAdminGroupsPage,
   useAdminGroupsPromoCodes,
   useAdminImportGroupMembersFromPromoCode,
   useAdminRemoveGroupMember,
@@ -91,7 +84,15 @@ const searchUsers = (users: AdminUser[], term: string) => {
 }
 
 export function GroupsSection() {
-  const { data, isLoading, isFetching, error, refetch } = useAdminGroups()
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const { data, isLoading, isFetching, error, refetch } = useAdminGroupsPage({
+    cursor,
+    limit: 50,
+    query: deferredSearch || undefined,
+  })
   const { data: usersData } = useAdminUsers()
   const { data: events = [] } = useAdminEvents()
   const { data: tickets = [] } = useAdminTickets()
@@ -104,8 +105,6 @@ export function GroupsSection() {
   const deleteGroup = useAdminDeleteGroup()
   const addMember = useAdminAddGroupMember()
   const removeMember = useAdminRemoveGroupMember()
-
-  const [searchTerm, setSearchTerm] = useState('')
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [createName, setCreateName] = useState('')
@@ -126,21 +125,15 @@ export function GroupsSection() {
 
   const groups = data?.groups ?? []
 
-  const filteredGroups = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    if (!term) return groups
-    return groups.filter((group) =>
-      [group.name, group.invite_code, ...group.members.map((m) => `${m.full_name ?? ''} ${m.email ?? ''}`)]
-        .join(' ')
-        .toLowerCase()
-        .includes(term)
-    )
-  }, [groups, searchTerm])
-
   const membersInAnyGroup = useMemo(
-    () => new Set(groups.flatMap((group) => group.members.map((member) => member.profile_id))),
-    [groups]
+    () => new Set(data?.memberProfileIds ?? []),
+    [data?.memberProfileIds]
   )
+
+  useEffect(() => {
+    setCursor(null)
+    setPreviousCursors([])
+  }, [deferredSearch])
 
   const users = usersData?.users ?? []
 
@@ -165,6 +158,7 @@ export function GroupsSection() {
     const available = users.filter((user) => !membersInAnyGroup.has(user.id))
     return searchUsers(available, newMemberSearch)
   }, [users, membersInAnyGroup, editingGroup, newMemberSearch])
+
 
   const anchorTickets = useMemo(
     () => tickets.filter((ticket) =>
@@ -294,6 +288,34 @@ export function GroupsSection() {
     removeMember.error?.message ||
     null
 
+  const columns = useMemo<OperationsListColumn<AdminGroup>[]>(() => [
+    {
+      id: 'group',
+      header: 'Groupe',
+      cell: (group) => <div className="min-w-0"><p className="truncate font-medium">{group.name}</p><p className="truncate font-mono text-xs text-muted-foreground">{group.invite_code}</p></div>,
+    },
+    {
+      id: 'captain',
+      header: 'Capitaine',
+      cell: (group) => {
+        const captain = group.members.find((member) => member.profile_id === group.captain_id)
+        return <span className="flex min-w-0 items-center gap-2"><Crown className="h-4 w-4 shrink-0 text-amber-500" /><span className="truncate">{captain ? getMemberLabel(captain) : '—'}</span></span>
+      },
+    },
+    { id: 'members', header: 'Membres', cell: (group) => group.members.length },
+    {
+      id: 'anchor',
+      header: 'Vague ancre',
+      cell: (group) => <div className="space-y-1"><p>{formatAnchor(group)}</p>{formatAnchorSource(group) ? <p className="text-xs text-muted-foreground">{formatAnchorSource(group)}</p> : null}</div>,
+    },
+    { id: 'created', header: 'Créé le', cell: (group) => formatDate(group.created_at), hiddenByDefault: true },
+  ], [])
+
+  const rowActions: OperationsListAction<AdminGroup>[] = [
+    { id: 'edit', label: 'Modifier', onSelect: handleOpenEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: () => deleteGroup.isPending, onSelect: handleDelete },
+  ]
+
   if (error) {
     return (
       <Alert variant="destructive">
@@ -304,28 +326,20 @@ export function GroupsSection() {
 
   return (
     <Card>
-      <CardContent className="space-y-4 p-4 md:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <CardContent className="min-w-0 space-y-4 p-4 md:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">Groupes</h3>
-            <p className="text-sm text-muted-foreground">{groups.length} groupe{groups.length > 1 ? 's' : ''}.</p>
+            <p className="text-sm text-muted-foreground">{data?.page.totalCount ?? 0} groupe{(data?.page.totalCount ?? 0) > 1 ? 's' : ''}.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Button className="min-w-0 flex-1 sm:flex-none" size="sm" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />Créer un groupe
             </Button>
             {isFetching ? <Clock className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <Button className="min-w-0 flex-1 sm:flex-none" variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className="mr-2 h-4 w-4" />Rafraîchir
             </Button>
-          </div>
-        </div>
-
-        <div className="space-y-1 md:max-w-sm">
-          <Label>Recherche</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" />
           </div>
         </div>
 
@@ -333,68 +347,20 @@ export function GroupsSection() {
           <Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>
         ) : null}
 
-        <div className="space-y-3 md:hidden">
-          {isLoading ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Chargement…</div> : null}
-          {!isLoading && filteredGroups.length === 0 ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Aucun groupe.</div> : null}
-          {!isLoading && filteredGroups.map((group) => {
-            const captain = group.members.find((member) => member.profile_id === group.captain_id)
-            return <div key={group.id} className="rounded-lg border bg-background p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><p className="truncate font-semibold">{group.name}</p><p className="truncate font-mono text-xs text-muted-foreground">{group.invite_code}</p></div>
-                <span className="shrink-0 text-sm font-medium">{group.members.length} membre{group.members.length > 1 ? 's' : ''}</span>
-              </div>
-              <div className="mt-3 space-y-1 text-sm"><p className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" />{captain ? getMemberLabel(captain) : 'Pas de capitaine'}</p><p className="text-muted-foreground">{formatAnchor(group)} · créé le {formatDate(group.created_at)}</p></div>
-              <div className="mt-4 grid grid-cols-2 gap-2"><Button variant="outline" size="sm" onClick={() => handleOpenEdit(group)}>Modifier</Button><Button variant="ghost" size="sm" onClick={() => handleDelete(group)} disabled={deleteGroup.isPending}><Trash2 className="mr-2 h-4 w-4" />Supprimer</Button></div>
-            </div>
-          })}
-        </div>
-        <div className="hidden overflow-x-auto md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Groupe</TableHead>
-                <TableHead>Capitaine</TableHead>
-                <TableHead>Membres</TableHead>
-                <TableHead>Vague ancre</TableHead>
-                <TableHead>Créé le</TableHead>
-                <TableHead className="w-[220px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">Chargement…</TableCell></TableRow>
-              ) : filteredGroups.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">Aucun groupe.</TableCell></TableRow>
-              ) : (
-                filteredGroups.map((group) => {
-                  const captain = group.members.find((member) => member.profile_id === group.captain_id)
-                  return (
-                    <TableRow key={group.id}>
-                      <TableCell><div className="font-medium">{group.name}</div><div className="text-xs text-muted-foreground font-mono">{group.invite_code}</div></TableCell>
-                      <TableCell><div className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" />{captain ? getMemberLabel(captain) : '—'}</div></TableCell>
-                      <TableCell>{group.members.length}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div>{formatAnchor(group)}</div>
-                          {formatAnchorSource(group) ? (
-                            <div className="text-xs text-muted-foreground">{formatAnchorSource(group)}</div>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatDate(group.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleOpenEdit(group)}>Modifier</Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(group)} disabled={deleteGroup.isPending}><Trash2 className="mr-2 h-4 w-4" />Supprimer</Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <OperationsList
+          data={{ items: groups, nextCursor: data?.page.nextCursor ?? null, total: data?.page.totalCount }}
+          status={isLoading && !data ? 'loading' : isFetching ? 'stale' : 'idle'}
+          onRetry={() => refetch()}
+          getItemId={(group) => group.id}
+          columns={columns}
+          rowActions={rowActions}
+          search={searchTerm}
+          searchPlaceholder="Rechercher un groupe ou un code…"
+          onSearchChange={setSearchTerm}
+          pagination={{ cursor, previousCursors, nextCursor: data?.page.nextCursor ?? null, total: data?.page.totalCount, limit: 50 }}
+          onPaginationChange={({ cursor: nextCursor, previousCursors: nextPrevious }) => { setCursor(nextCursor); setPreviousCursors(nextPrevious) }}
+          itemLabel="groupe"
+        />
       </CardContent>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -403,7 +369,7 @@ export function GroupsSection() {
             <DialogTitle>Créer un groupe</DialogTitle>
             <DialogDescription>Sélectionne explicitement le capitaine.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <div className="space-y-2">
               <Label>Nom du groupe</Label>
               <Input value={createName} onChange={(event) => setCreateName(event.target.value)} />
@@ -412,6 +378,7 @@ export function GroupsSection() {
               <Label>Capitaine</Label>
               <Input value={createCaptainSearch} onChange={(event) => setCreateCaptainSearch(event.target.value)} placeholder="Rechercher un utilisateur" />
               <div className="max-h-44 overflow-auto rounded-md border">
+                {createCaptainCandidates.length === 0 ? <p className="p-3 text-sm text-muted-foreground">Aucun utilisateur disponible.</p> : null}
                 {createCaptainCandidates.map((user) => (
                   <button key={user.id} type="button" onClick={() => setCreateCaptainId(user.id)} className={`w-full px-3 py-2 text-left text-sm hover:bg-muted ${createCaptainId === user.id ? 'bg-muted' : ''}`}>
                     <p className="truncate">{getUserLabel(user)}</p>
@@ -423,7 +390,7 @@ export function GroupsSection() {
             <div className="rounded-md border p-3 space-y-2">
               <p className="text-sm font-medium">Créer depuis code promo ambassadeur</p>
               <Input value={createPromoCode} onChange={(event) => setCreatePromoCode(event.target.value.toUpperCase())} className="font-mono uppercase" />
-              <Button variant="outline" onClick={handleCreateFromPromoCode} disabled={!createName.trim() || !createCaptainId || !createPromoCode.trim() || createFromPromoCode.isPending}>
+              <Button className="w-full sm:w-auto" variant="outline" onClick={handleCreateFromPromoCode} disabled={!createName.trim() || !createCaptainId || !createPromoCode.trim() || createFromPromoCode.isPending}>
                 {createFromPromoCode.isPending ? 'Création…' : 'Créer depuis ce code promo'}
               </Button>
             </div>
@@ -442,7 +409,7 @@ export function GroupsSection() {
             <DialogDescription>Infos, capitaine, membres, SAS et import promo.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="min-w-0 space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Nom du groupe</Label>
@@ -451,7 +418,7 @@ export function GroupsSection() {
               <div className="space-y-2">
                 <Label>Capitaine</Label>
                 <Select value={editCaptainId} onValueChange={setEditCaptainId}>
-                  <SelectTrigger><SelectValue placeholder="Choisir le capitaine" /></SelectTrigger>
+                    <SelectTrigger className="min-w-0"><SelectValue className="truncate" placeholder="Choisir le capitaine" /></SelectTrigger>
                   <SelectContent>
                     {editableCaptainCandidates.map((user) => <SelectItem key={user.id} value={user.id}>{getUserLabel(user)}</SelectItem>)}
                   </SelectContent>
@@ -468,7 +435,7 @@ export function GroupsSection() {
                 <div className="space-y-2">
                   <Label>Événement</Label>
                   <Select value={editAnchorEventId} onValueChange={(value) => { setEditAnchorEventId(value); setEditAnchorTicketId('none'); setEditAnchorWaveIndex('none') }}>
-                    <SelectTrigger><SelectValue placeholder="Aucune ancre" /></SelectTrigger>
+                    <SelectTrigger className="min-w-0"><SelectValue className="truncate" placeholder="Aucune ancre" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucune ancre</SelectItem>
                       {events.map((event) => <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>)}
@@ -478,7 +445,7 @@ export function GroupsSection() {
                 <div className="space-y-2">
                   <Label>Billet SAS</Label>
                   <Select value={editAnchorTicketId} onValueChange={(value) => { setEditAnchorTicketId(value); setEditAnchorWaveIndex('none') }} disabled={editAnchorEventId === 'none'}>
-                    <SelectTrigger><SelectValue placeholder="Choisir un billet" /></SelectTrigger>
+                    <SelectTrigger className="min-w-0"><SelectValue className="truncate" placeholder="Choisir un billet" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Choisir un billet</SelectItem>
                       {anchorTickets.map((ticket) => <SelectItem key={ticket.id} value={ticket.id}>{ticket.name}</SelectItem>)}
@@ -488,7 +455,7 @@ export function GroupsSection() {
                 <div className="space-y-2">
                   <Label>Vague</Label>
                   <Select value={editAnchorWaveIndex} onValueChange={setEditAnchorWaveIndex} disabled={editAnchorTicketId === 'none'}>
-                    <SelectTrigger><SelectValue placeholder="Choisir une vague" /></SelectTrigger>
+                    <SelectTrigger className="min-w-0"><SelectValue className="truncate" placeholder="Choisir une vague" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucune vague</SelectItem>
                       {editAnchorWaves.map((wave) => <SelectItem key={wave.wave_index} value={String(wave.wave_index)}>Vague {wave.wave_index} - {formatWaveStartTime(wave.start_time)}</SelectItem>)}
@@ -501,7 +468,7 @@ export function GroupsSection() {
             <div className="rounded-md border p-3 space-y-3">
               <p className="text-sm font-medium">Importer des membres depuis un code promo</p>
               <Select value={selectedPromoCodeId} onValueChange={setSelectedPromoCodeId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un code promo" /></SelectTrigger>
+                <SelectTrigger className="min-w-0"><SelectValue className="truncate" placeholder="Sélectionner un code promo" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Aucun</SelectItem>
                   {(promoCodesData?.codes ?? []).map((code) => (
@@ -511,7 +478,7 @@ export function GroupsSection() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={handleImportFromPromo} disabled={selectedPromoCodeId === 'none' || importFromPromoCode.isPending}>
+              <Button className="w-full sm:w-auto" onClick={handleImportFromPromo} disabled={selectedPromoCodeId === 'none' || importFromPromoCode.isPending}>
                 {importFromPromoCode.isPending ? 'Import…' : 'Importer les membres du code promo'}
               </Button>
             </div>
@@ -527,7 +494,7 @@ export function GroupsSection() {
                   </button>
                 ))}
               </div>
-              <Button onClick={handleAddMember} disabled={!selectedNewMemberId || addMember.isPending}>{addMember.isPending ? 'Ajout…' : 'Ajouter au groupe'}</Button>
+              <Button className="w-full sm:w-auto" onClick={handleAddMember} disabled={!selectedNewMemberId || addMember.isPending}>{addMember.isPending ? 'Ajout…' : 'Ajouter au groupe'}</Button>
             </div>
 
             <div className="space-y-2">
@@ -535,7 +502,7 @@ export function GroupsSection() {
               {(editingGroup?.members ?? []).map((member) => {
                 const isCaptain = member.profile_id === editingGroup?.captain_id
                 return (
-                  <div key={member.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
+                  <div key={member.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border p-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{getMemberLabel(member)}</p>
                       <p className="text-xs text-muted-foreground">{member.email ?? `Utilisateur #${member.profile_id.slice(0, 8)}`}</p>
@@ -543,7 +510,7 @@ export function GroupsSection() {
                     {isCaptain ? (
                       <span className="text-xs text-amber-600 flex items-center gap-1"><Crown className="h-3.5 w-3.5" />Capitaine</span>
                     ) : (
-                      <Button size="sm" variant="ghost" onClick={() => editingGroup && handleRemoveMember(editingGroup, member.profile_id)} disabled={removeMember.isPending}><Trash2 className="mr-1.5 h-4 w-4" />Exclure</Button>
+                      <Button className="shrink-0" size="sm" variant="ghost" onClick={() => editingGroup && handleRemoveMember(editingGroup, member.profile_id)} disabled={removeMember.isPending}><Trash2 className="mr-1.5 h-4 w-4" />Exclure</Button>
                     )}
                   </div>
                 )

@@ -42,6 +42,9 @@ export default function DashboardPage() {
       bootcamps: '/dashboard/bootcamps',
       users: '/dashboard/users',
       tickets: '/dashboard/tickets',
+      checkin: '/dashboard/checkin',
+      emails: '/dashboard/emails',
+      'lucky-wheel': '/dashboard/lucky-wheel',
     }
     const destination = legacyTab === 'members' && eventId
       ? `/dashboard/events/${eventId}/participants`

@@ -1,14 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MoreHorizontal, Pencil, Plus, Search, Trash2, Waves } from 'lucide-react'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { Plus } from 'lucide-react'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { Ticket } from '@/types/Ticket'
 import { TicketFormDialog, type TicketFormValues } from './TicketFormDialog'
@@ -25,17 +23,19 @@ import {
   createAdminTicket,
   deleteAdminTicket,
   updateAdminTicket,
-  useAdminTickets,
+  useAdminTicketsPage,
   type AdminTicketPayload,
 } from '@/app/api/admin/tickets/ticketsQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
 import { useAdminRaces } from '@/app/api/admin/races/racesQueries'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  OperationsList,
+  parseOperationsListUrlState,
+  writeOperationsListUrlState,
+  type OperationsListAction,
+  type OperationsListColumn,
+  type OperationsListFilter,
+} from '@/components/admin/operations'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -94,13 +94,22 @@ const formatPrice = (cents: number | null | undefined, currency?: string | null)
   })
 }
 
+const TICKET_SORTS = new Set(['created_at', 'name', 'final_price_cents'])
+
 export function TicketsSection() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const routeParams = useParams<{ eventId?: string }>()
+  const searchParams = useSearchParams()
+  // Standalone ticket routes keep the event context in `?event=...`; nested
+  // event routes keep it in the pathname. Supporting both prevents the
+  // sidebar context from being silently ignored on `/dashboard/tickets`.
+  const scopedEventId = routeParams?.eventId ?? searchParams.get('event') ?? undefined
   const queryClient = useQueryClient()
-  const {
-    data: tickets = [],
-    isLoading: ticketsLoading,
-    error: ticketsError,
-  } = useAdminTickets()
+  const initialUrlState = useMemo(
+    () => parseOperationsListUrlState(searchParams, { filterIds: ['event'], allowedLimits: new Set([25, 50, 100]) }),
+    [searchParams],
+  )
   const {
     data: events = [],
     isLoading: eventsLoading,
@@ -119,8 +128,16 @@ export function TicketsSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [eventFilter, setEventFilter] = useState<string>('all')
+  const [eventFilter, setEventFilter] = useState<string>(initialUrlState.filters.event ?? '')
   const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [sort, setSort] = useState<'created_at' | 'name' | 'final_price_cents'>(
+    initialUrlState.sort === 'name' || initialUrlState.sort === 'final_price_cents' ? initialUrlState.sort : 'created_at',
+  )
+  const [direction, setDirection] = useState<'asc' | 'desc'>(initialUrlState.direction ?? 'desc')
+  const [limit, setLimit] = useState(initialUrlState.limit as 25 | 50 | 100)
+  const [cursor, setCursor] = useState<string | null>(initialUrlState.cursor)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
 
   // Delete confirmation dialog state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -128,28 +145,62 @@ export function TicketsSection() {
   const [registrationCount, setRegistrationCount] = useState<number>(0)
   const [waveTicket, setWaveTicket] = useState<Ticket | null>(null)
 
+  const activeEventFilter = scopedEventId ?? (eventFilter || undefined)
+  const {
+    data: ticketsPage,
+    isLoading: ticketsLoading,
+    isFetching: ticketsFetching,
+    error: ticketsError,
+    refetch: refetchTickets,
+  } = useAdminTicketsPage({ cursor, limit, query: deferredSearch || undefined, eventId: activeEventFilter, sort, direction })
+  const tickets = ticketsPage?.tickets ?? []
   const combinedLoading = ticketsLoading || eventsLoading || racesLoading
   const combinedError = ticketsError || eventsError || racesError
 
-  const filteredTickets = useMemo(() => {
-    let result = [...tickets]
+  const resetPagination = () => {
+    setCursor(null)
+    setPreviousCursors([])
+  }
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter((ticket) => {
-        const matchesName = ticket.name.toLowerCase().includes(term)
-        const matchesEvent = ticket.event?.title.toLowerCase().includes(term)
-        const matchesRace = ticket.race?.name.toLowerCase().includes(term)
-        return matchesName || matchesEvent || matchesRace
-      })
-    }
+  useEffect(() => {
+    resetPagination()
+  }, [deferredSearch])
 
-    if (eventFilter !== 'all') {
-      result = result.filter((ticket) => ticket.event_id === eventFilter)
-    }
+  useEffect(() => {
+    const next = writeOperationsListUrlState(searchParams, {
+      cursor,
+      sort,
+      direction,
+      limit,
+      selectedId: null,
+      filters: { event: scopedEventId ? '' : eventFilter || '' },
+    }, { filterIds: ['event'] })
+    const current = searchParams.toString()
+    if (next !== current) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+  }, [cursor, direction, eventFilter, limit, pathname, router, scopedEventId, searchParams, sort])
 
-    return result
-  }, [tickets, searchTerm, eventFilter])
+  useEffect(() => {
+    const next = parseOperationsListUrlState(searchParams, { filterIds: ['event'], allowedLimits: new Set([25, 50, 100]) })
+    const nextSort = TICKET_SORTS.has(next.sort ?? '')
+      ? (next.sort as typeof sort)
+      : 'created_at'
+    const nextDirection = next.direction ?? 'desc'
+    const nextEventFilter = scopedEventId ? eventFilter : next.filters.event ?? ''
+    const hasExternalStateChange = eventFilter !== nextEventFilter
+      || sort !== nextSort
+      || direction !== nextDirection
+      || limit !== next.limit
+      || cursor !== next.cursor
+    setEventFilter((current) => current === nextEventFilter ? current : nextEventFilter)
+    setSort((current) => current === nextSort ? current : nextSort)
+    setDirection((current) => current === nextDirection ? current : nextDirection)
+    setLimit((current) => current === next.limit ? current : next.limit as typeof limit)
+    setCursor((current) => current === next.cursor ? current : next.cursor)
+    if (hasExternalStateChange) setPreviousCursors([])
+    // State is intentionally read here to distinguish browser navigation from
+    // the URL update emitted by the preceding effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopedEventId, searchParams])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -191,6 +242,7 @@ export function TicketsSection() {
       setDeleteConfirmOpen(false)
       setTicketToDelete(null)
       setRegistrationCount(0)
+      await queryClient.invalidateQueries({ queryKey: adminTicketsQueryKey })
     } catch (error) {
       const err = error as Error & { registrationCount?: number; requiresConfirmation?: boolean }
       if (err.requiresConfirmation && err.registrationCount && registrationCount === 0) {
@@ -280,10 +332,9 @@ export function TicketsSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<Ticket>[]>(() => {
-    return [
+  const columns: OperationsListColumn<Ticket>[] = [
       {
-        key: 'ticket',
+        id: 'ticket',
         header: 'Ticket',
         cell: (ticket) => (
           <div className="flex flex-col gap-1">
@@ -297,7 +348,7 @@ export function TicketsSection() {
         ),
       },
       {
-        key: 'event',
+        id: 'event',
         header: 'Événement',
         cell: (ticket) => (
           <div className="flex flex-col gap-1">
@@ -311,7 +362,7 @@ export function TicketsSection() {
         ),
       },
       {
-        key: 'race',
+        id: 'race',
         header: 'Format',
         cell: (ticket) =>
           ticket.race ? (
@@ -327,7 +378,7 @@ export function TicketsSection() {
           ),
       },
       {
-        key: 'pricing',
+        id: 'pricing',
         header: 'Tarif & quotas',
         cell: (ticket) => (
           <div className="flex flex-col">
@@ -338,44 +389,20 @@ export function TicketsSection() {
           </div>
         ),
       },
-      {
-        key: 'actions',
-        header: '',
-        className: 'w-16 text-right',
-        cell: (ticket) => (
-          <div className="flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9" aria-label={`Actions pour ${ticket.name}`}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-            {ticket.operations_config?.departure_mode === 'wave' ? (
-              <DropdownMenuItem onSelect={() => setWaveTicket(ticket)}>
-                <Waves className="h-4 w-4" />
-                Gérer les SAS
-              </DropdownMenuItem>
-            ) : null}
-                <DropdownMenuItem onSelect={() => handleEdit(ticket)}>
-                  <Pencil className="h-4 w-4" />
-                  Modifier
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onSelect={() => handleDeleteClick(ticket)}
-                  disabled={deleteLoadingId === ticket.id}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {deleteLoadingId === ticket.id ? 'Suppression…' : 'Supprimer'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ),
-      },
-    ]
-  }, [deleteLoadingId, handleDeleteClick])
+  ]
+
+  const filters: OperationsListFilter[] = [
+    ...(!scopedEventId ? [{ id: 'event', label: 'Événement', value: eventFilter, allLabel: 'Tous les événements', options: events.map((event) => ({ value: event.id, label: event.title })) }] : []),
+    { id: 'sort', label: 'Trier par', value: sort, options: [{ value: 'created_at', label: 'Date de création' }, { value: 'name', label: 'Nom' }, { value: 'final_price_cents', label: 'Tarif' }] },
+    { id: 'direction', label: 'Ordre', value: direction, options: [{ value: 'desc', label: 'Décroissant' }, { value: 'asc', label: 'Croissant' }] },
+    { id: 'limit', label: 'Lignes', value: String(limit), options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })) },
+  ]
+
+  const rowActions: OperationsListAction<Ticket>[] = [
+    { id: 'waves', label: 'Gérer les SAS', onSelect: setWaveTicket, disabled: (ticket) => ticket.operations_config?.departure_mode !== 'wave' },
+    { id: 'edit', label: 'Modifier', onSelect: handleEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, onSelect: handleDeleteClick, disabled: (ticket) => deleteLoadingId === ticket.id },
+  ]
 
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
 
@@ -408,50 +435,28 @@ export function TicketsSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredTickets}
+      <OperationsList
+        data={{ items: tickets, nextCursor: ticketsPage?.page.nextCursor ?? null, total: ticketsPage?.page.totalCount }}
+        status={combinedError ? 'error' : combinedLoading && !ticketsPage ? 'loading' : ticketsFetching ? 'stale' : 'idle'}
+        errorMessage={(combinedError as Error | null)?.message}
+        onRetry={() => { void refetchTickets() }}
+        getItemId={(ticket) => ticket.id}
         columns={columns}
-        noHorizontalScroll
-        loading={combinedLoading}
-        emptyMessage={
-          searchTerm || eventFilter !== 'all'
-            ? 'Aucun ticket ne correspond aux filtres appliqués.'
-            : 'Aucun ticket disponible. Crée un ticket pour proposer une inscription.'
-        }
-        toolbar={
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Rechercher par nom, événement ou format…"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Événement" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les événements</SelectItem>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        meta={
-          <span>
-            {filteredTickets.length} ticket{filteredTickets.length > 1 ? 's' : ''} affiché
-          </span>
-        }
-        getRowId={(ticket) => ticket.id}
+        filters={filters}
+        onFilterChange={(filterId, value) => {
+          resetPagination()
+          if (filterId === 'event' && !scopedEventId) setEventFilter(value)
+          if (filterId === 'sort') setSort(value as typeof sort)
+          if (filterId === 'direction') setDirection(value as typeof direction)
+          if (filterId === 'limit') setLimit(Number(value) as typeof limit)
+        }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher par nom ou description…"
+        onSearchChange={setSearchTerm}
+        rowActions={rowActions}
+        pagination={{ cursor, previousCursors, nextCursor: ticketsPage?.page.nextCursor ?? null, total: ticketsPage?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => { setCursor(nextCursor); setPreviousCursors(nextPreviousCursors) }}
+        itemLabel="ticket"
       />
 
       <Dialog open={Boolean(waveTicket)} onOpenChange={(open) => { if (!open) setWaveTicket(null) }}>

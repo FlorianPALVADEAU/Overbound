@@ -47,7 +47,7 @@ describe('AdminEventContextSelector', () => {
     render(<AdminEventContextSelector eventId="event-1" />)
 
     expect(screen.getByText('Overbound Paris')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Participants/ })).toHaveAttribute('href', '?tab=members&event=event-1')
+    expect(screen.getByRole('link', { name: /Participants/ })).toHaveAttribute('href', '/dashboard/events/event-1/participants')
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'event-2' } })
     expect(replace).toHaveBeenCalledWith('/dashboard?event=event-2')
   })

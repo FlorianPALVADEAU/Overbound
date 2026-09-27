@@ -100,13 +100,7 @@ export function TicketFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="!w-screen max-h-[90vh] overflow-y-auto"
-        style={{ 
-          maxWidth: '1000px'
-
-         }}
-      >
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[1000px] max-h-[calc(100dvh-1rem)] overflow-x-hidden overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
@@ -162,6 +156,7 @@ export function TicketFormDialog({
               id="ticket-description"
               value={values.description}
               onChange={(event) => handleChange('description', event.target.value)}
+              className="min-h-24 resize-y"
             />
           </div>
 
@@ -212,7 +207,7 @@ export function TicketFormDialog({
               <h3 className="font-medium">Règles opérationnelles</h3>
               <p className="text-sm text-muted-foreground">Le comportement du billet est configuré ici, jamais déduit de son nom.</p>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Gestion du départ</Label>
                 <Select value={values.departure_mode} onValueChange={(value) => handleChange('departure_mode', value)}>
@@ -253,7 +248,7 @@ export function TicketFormDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Annuler
           </Button>

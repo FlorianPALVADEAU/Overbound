@@ -1,15 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { Plus } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import type { Obstacle } from '@/types/Obstacle'
 import { ObstacleFormDialog, type ObstacleFormValues } from './ObstacleFormDialog'
 import { ObstaclePreviewDialog } from './ObstaclePreviewDialog'
@@ -18,7 +18,7 @@ import {
   createAdminObstacle,
   deleteAdminObstacle,
   updateAdminObstacle,
-  useAdminObstacles,
+  useAdminObstaclesPage,
   type AdminObstaclePayload,
 } from '@/app/api/admin/obstacles/obstaclesQueries'
 
@@ -53,12 +53,21 @@ const formatDateTime = (value: string) =>
   new Date(value).toLocaleDateString('fr-FR', { dateStyle: 'medium' })
 
 export function ObstaclesSection() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialUrl = useMemo(() => parseOperationsListUrlState(searchParams, { filterIds: ['type', 'difficulty'] }), [searchParams])
   const queryClient = useQueryClient()
-  const {
-    data: obstacles = [],
-    isLoading,
-    error: obstaclesError,
-  } = useAdminObstacles()
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [typeFilter, setTypeFilter] = useState<'all' | Obstacle['type']>((initialUrl.filters.type as Obstacle['type'] | undefined) ?? 'all')
+  const [difficultyFilter, setDifficultyFilter] = useState<'all' | '1-3' | '4-6' | '7-10'>((initialUrl.filters.difficulty as 'all' | '1-3' | '4-6' | '7-10' | undefined) ?? 'all')
+  const [limit, setLimit] = useState(initialUrl.limit)
+  const [cursor, setCursor] = useState<string | null>(initialUrl.cursor)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const obstacleParams = useMemo(() => ({ cursor, limit, query: deferredSearch || undefined, type: typeFilter === 'all' ? undefined : typeFilter, difficulty: difficultyFilter, sort: 'created_at' as const, direction: 'desc' as const }), [cursor, deferredSearch, difficultyFilter, limit, typeFilter])
+  const { data: pageData, isLoading, isFetching, error: obstaclesError } = useAdminObstaclesPage(obstacleParams)
+  const obstacles = pageData?.obstacles ?? []
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedObstacle, setSelectedObstacle] = useState<Obstacle | null>(null)
@@ -67,32 +76,13 @@ export function ObstaclesSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [typeFilter, setTypeFilter] = useState<'all' | Obstacle['type']>('all')
-  const [difficultyFilter, setDifficultyFilter] = useState<'all' | '1-3' | '4-6' | '7-10'>('all')
-  const [searchTerm, setSearchTerm] = useState('')
-
-  const filteredObstacles = useMemo(() => {
-    let result = [...obstacles]
-
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter((obstacle) =>
-        obstacle.name.toLowerCase().includes(term) ||
-        obstacle.description?.toLowerCase().includes(term)
-      )
-    }
-
-    if (typeFilter !== 'all') {
-      result = result.filter((obstacle) => obstacle.type === typeFilter)
-    }
-
-    if (difficultyFilter !== 'all') {
-      const [min, max] = difficultyFilter.split('-').map(Number)
-      result = result.filter((obstacle) => obstacle.difficulty >= min && obstacle.difficulty <= max)
-    }
-
-    return result
-  }, [obstacles, searchTerm, typeFilter, difficultyFilter])
+  const filteredObstacles = obstacles
+  const resetPagination = () => { setCursor(null); setPreviousCursors([]) }
+  useEffect(() => { resetPagination() }, [deferredSearch])
+  useEffect(() => {
+    const next = writeOperationsListUrlState(searchParams, { cursor, sort: null, direction: null, limit, selectedId: null, filters: { type: typeFilter === 'all' ? '' : typeFilter, difficulty: difficultyFilter === 'all' ? '' : difficultyFilter } }, { filterIds: ['type', 'difficulty'] })
+    if (next !== searchParams.toString()) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+  }, [cursor, difficultyFilter, limit, pathname, router, searchParams, typeFilter])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -124,6 +114,7 @@ export function ObstaclesSection() {
         if (!previous) return []
         return previous.filter((item) => item.id !== obstacle.id)
       })
+      await queryClient.invalidateQueries({ queryKey: adminObstaclesQueryKey })
       setMessage({ type: 'success', text: 'Obstacle supprimé avec succès' })
     } catch (error) {
       const text = axios.isAxiosError(error)
@@ -176,6 +167,8 @@ export function ObstaclesSection() {
         setMessage({ type: 'success', text: 'Obstacle mis à jour avec succès' })
       }
 
+      await queryClient.invalidateQueries({ queryKey: adminObstaclesQueryKey })
+
       setDialogOpen(false)
       setSelectedObstacle(null)
     } catch (error) {
@@ -188,10 +181,10 @@ export function ObstaclesSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<Obstacle>[]>(() => {
+  const columns = useMemo<OperationsListColumn<Obstacle>[]>(() => {
     return [
       {
-        key: 'name',
+        id: 'name',
         header: 'Obstacle',
         className: 'max-w-[300px]',
         cell: (obstacle) => (
@@ -206,7 +199,7 @@ export function ObstaclesSection() {
         ),
       },
       {
-        key: 'type',
+        id: 'type',
         header: 'Type',
         className: 'w-[120px]',
         cell: (obstacle) => (
@@ -216,13 +209,13 @@ export function ObstaclesSection() {
         ),
       },
       {
-        key: 'difficulty',
+        id: 'difficulty',
         header: 'Difficulté',
         className: 'w-[100px]',
         cell: (obstacle) => <span>{obstacle.difficulty}/10</span>,
       },
       {
-        key: 'media',
+        id: 'media',
         header: 'Médias',
         className: 'w-[180px]',
         cell: (obstacle) => (
@@ -237,38 +230,21 @@ export function ObstaclesSection() {
         ),
       },
       {
-        key: 'updated',
+        id: 'updated',
         header: 'Mise à jour',
         className: 'w-[140px]',
         cell: (obstacle) => (
           <span className="text-sm text-muted-foreground">{formatDateTime(obstacle.updated_at)}</span>
         ),
       },
-      {
-        key: 'actions',
-        header: '',
-        className: 'w-[210px]',
-        cell: (obstacle) => (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => handlePreview(obstacle)}>
-              Voir
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleEdit(obstacle)}>
-              Modifier
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDelete(obstacle)}
-              disabled={deleteLoadingId === obstacle.id}
-            >
-              {deleteLoadingId === obstacle.id ? 'Suppression…' : 'Supprimer'}
-            </Button>
-          </div>
-        ),
-      },
     ]
-  }, [deleteLoadingId])
+  }, [])
+
+  const rowActions = useMemo<OperationsListAction<Obstacle>[]>(() => [
+    { id: 'preview', label: 'Voir', onSelect: handlePreview },
+    { id: 'edit', label: 'Modifier', onSelect: handleEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: (obstacle) => deleteLoadingId === obstacle.id, onSelect: handleDelete },
+  ], [deleteLoadingId])
 
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
 
@@ -301,65 +277,27 @@ export function ObstaclesSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredObstacles}
+      <OperationsList
+        data={{ items: filteredObstacles, nextCursor: pageData?.page.nextCursor ?? null, total: pageData?.page.totalCount }}
+        status={obstaclesError ? 'error' : isLoading && !pageData ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={obstaclesError?.message}
+        onRetry={() => window.location.reload()}
+        getItemId={(obstacle) => obstacle.id}
         columns={columns}
-        loading={isLoading}
-        emptyMessage={
-          searchTerm || typeFilter !== 'all' || difficultyFilter !== 'all'
-            ? 'Aucun obstacle ne correspond aux filtres appliqués.'
-            : 'Aucun obstacle enregistré pour le moment.'
-        }
-        toolbar={
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Rechercher par nom ou description…"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                <SelectItem value="force">Force</SelectItem>
-                <SelectItem value="agilité">Agilité</SelectItem>
-                <SelectItem value="technique">Technique</SelectItem>
-                <SelectItem value="endurance">Endurance</SelectItem>
-                <SelectItem value="mental">Mental</SelectItem>
-                <SelectItem value="équilibre">Équilibre</SelectItem>
-                <SelectItem value="vitesse">Vitesse</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={difficultyFilter}
-              onValueChange={(value) => setDifficultyFilter(value as typeof difficultyFilter)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Difficulté" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les difficultés</SelectItem>
-                <SelectItem value="1-3">Facile (1-3)</SelectItem>
-                <SelectItem value="4-6">Intermédiaire (4-6)</SelectItem>
-                <SelectItem value="7-10">Difficile (7-10)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        meta={
-          <span>
-            {filteredObstacles.length} obstacle{filteredObstacles.length > 1 ? 's' : ''} affiché
-          </span>
-        }
-        getRowId={(obstacle) => obstacle.id}
+        filters={[
+          { id: 'type', label: 'Type', value: typeFilter === 'all' ? '' : typeFilter, options: ['force', 'agilité', 'technique', 'endurance', 'mental', 'équilibre', 'vitesse'].map((value) => ({ value, label: value })) },
+          { id: 'difficulty', label: 'Difficulté', value: difficultyFilter === 'all' ? '' : difficultyFilter, options: [{ value: '1-3', label: 'Facile (1-3)' }, { value: '4-6', label: 'Intermédiaire (4-6)' }, { value: '7-10', label: 'Difficile (7-10)' }] },
+          { id: 'limit', label: 'Lignes', value: String(limit), options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })) },
+        ]}
+        onFilterChange={(id, value) => { resetPagination(); if (id === 'type') setTypeFilter((value || 'all') as typeof typeFilter); if (id === 'difficulty') setDifficultyFilter((value || 'all') as typeof difficultyFilter); if (id === 'limit') setLimit(Number(value)) }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher par nom ou description…"
+        onSearchChange={setSearchTerm}
+        rowActions={rowActions}
+        pagination={{ cursor, previousCursors, nextCursor: pageData?.page.nextCursor ?? null, total: pageData?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => { setCursor(nextCursor); setPreviousCursors(nextPreviousCursors) }}
+        itemLabel="obstacle"
+        emptyState={<div className="px-3 py-12 text-center text-sm text-muted-foreground">{searchTerm || typeFilter !== 'all' || difficultyFilter !== 'all' ? 'Aucun obstacle ne correspond aux filtres appliqués.' : 'Aucun obstacle enregistré.'}</div>}
       />
 
       <ObstacleFormDialog
@@ -383,4 +321,3 @@ export function ObstaclesSection() {
     </div>
   )
 }
-

@@ -1,29 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useDistributionLists } from '@/hooks/useDistributionLists'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useDistributionLists, useDistributionListsPage } from '@/hooks/useDistributionLists'
 import type { DistributionList, DistributionListWithStats } from '@/types/DistributionList'
-import { DistributionListsTable } from './DistributionListsTable'
 import { ListFormDialog } from './ListFormDialog'
 import { SubscribersDialog } from './SubscribersDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, RefreshCw, Loader2, List, TrendingUp } from 'lucide-react'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 
 export function DistributionListsSection() {
-  const { lists, isLoading, fetchLists } = useDistributionLists()
+  const { lists, isLoading, fetchLists, toggleActive } = useDistributionLists()
+  const queryClient = useQueryClient()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [listToEdit, setListToEdit] = useState<DistributionListWithStats | undefined>()
   const [subscribersDialogList, setSubscribersDialogList] = useState<DistributionList | null>(null)
   const [activeTab, setActiveTab] = useState('all')
+  const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search.trim())
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const { data: pageData, isLoading: pageLoading, isFetching: pageFetching, error: pageError } = useDistributionListsPage({ cursor, limit: 25, search: deferredSearch, type: activeTab })
 
   useEffect(() => {
     fetchLists({ includeStats: true })
   }, [])
 
+  useEffect(() => {
+    setCursor(null)
+    setPreviousCursors([])
+  }, [activeTab, deferredSearch])
+
   const handleRefresh = () => {
     fetchLists({ includeStats: true })
+    queryClient.invalidateQueries({ queryKey: ['admin', 'distribution-lists', 'page'] })
   }
 
   const handleCreateClick = () => {
@@ -40,11 +53,19 @@ export function DistributionListsSection() {
     setSubscribersDialogList(list)
   }
 
-  // Filter lists by type
-  const filteredLists = lists.filter((list) => {
-    if (activeTab === 'all') return true
-    return list.type === activeTab
-  })
+  const pageLists = pageData?.items ?? []
+  const columns = useMemo<OperationsListColumn<DistributionListWithStats>[]>(() => [
+    { id: 'name', header: 'Nom', cell: (list) => <div className="min-w-0"><p className="truncate font-medium">{list.name}</p>{list.description ? <p className="line-clamp-1 text-sm text-muted-foreground">{list.description}</p> : null}</div> },
+    { id: 'type', header: 'Type', cell: (list) => <span className="rounded-full bg-muted px-2 py-1 text-xs">{list.type}</span> },
+    { id: 'slug', header: 'Slug', cell: (list) => <code className="text-xs">{list.slug}</code> },
+    { id: 'subscribers', header: 'Abonnés', cell: (list) => <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted" onClick={(event) => { event.stopPropagation(); handleViewSubscribers(list) }}><span>♙</span>{list.subscriber_count || 0}</button> },
+    { id: 'status', header: 'Statut', cell: (list) => <span className={list.active ? 'text-emerald-600' : 'text-muted-foreground'}>{list.active ? 'Active' : 'Inactive'}</span> },
+  ], [])
+  const rowActions: OperationsListAction<DistributionListWithStats>[] = [
+    { id: 'subscribers', label: 'Voir les abonnés', onSelect: handleViewSubscribers },
+    { id: 'edit', label: 'Modifier', onSelect: handleEditClick },
+    { id: 'toggle', label: 'Modifier le statut', onSelect: (list) => { void toggleActive(list.id, !list.active).then(handleRefresh) } },
+  ]
 
   // Calculate stats
   const totalLists = lists.length
@@ -165,16 +186,25 @@ export function DistributionListsSection() {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4">
-              {isLoading ? (
+              {isLoading || pageLoading ? (
                 <div className="flex items-center justify-center h-48">
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <DistributionListsTable
-                  lists={filteredLists}
-                  onEdit={handleEditClick}
-                  onViewSubscribers={handleViewSubscribers}
-                  onRefresh={handleRefresh}
+                <OperationsList
+                  data={{ items: pageLists, nextCursor: pageData?.nextCursor ?? null, total: pageData?.total }}
+                  status={pageError ? 'error' : pageLoading && !pageData ? 'loading' : pageFetching ? 'stale' : 'idle'}
+                  errorMessage={pageError?.message}
+                  onRetry={handleRefresh}
+                  getItemId={(list) => list.id}
+                  columns={columns}
+                  rowActions={rowActions}
+                  search={search}
+                  searchPlaceholder="Rechercher une liste…"
+                  onSearchChange={setSearch}
+                  pagination={{ cursor, previousCursors, nextCursor: pageData?.nextCursor ?? null, total: pageData?.total, limit: 25 }}
+                  onPaginationChange={({ cursor: nextCursor, previousCursors: nextPrevious }) => { setCursor(nextCursor); setPreviousCursors(nextPrevious) }}
+                  itemLabel="liste"
                 />
               )}
             </TabsContent>

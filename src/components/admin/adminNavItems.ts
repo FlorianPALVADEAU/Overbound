@@ -56,10 +56,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'groups', label: 'Groupes', icon: Users, href: '/dashboard/groups' },
   { value: 'bootcamps', label: 'Bootcamps', icon: Dumbbell, href: '/dashboard/bootcamps' },
   { value: 'users', label: 'Utilisateurs', icon: UserCog, href: '/dashboard/users' },
-  { value: 'members', label: 'Membres', icon: Users, href: '/dashboard/events', requiresEventContext: true },
-  { value: 'checkin', label: 'Check-in', icon: UserCheck, href: '/dashboard?tab=checkin', requiresEventContext: true },
+  { value: 'members', label: 'Membres', icon: Users, href: '/dashboard/members' },
+  { value: 'checkin', label: 'Check-in', icon: UserCheck, href: '/dashboard/checkin', requiresEventContext: true },
   { value: 'logs', label: 'Logs', icon: ScrollText, href: '/dashboard/logs' },
-  { value: 'emails', label: 'Emails', icon: Mail, href: '/dashboard?tab=emails' },
+  { value: 'emails', label: 'Emails', icon: Mail, href: '/dashboard/emails' },
   { value: 'distribution-lists', label: 'Listes de diffusion', icon: List, href: '/dashboard/distribution-lists' },
   { value: 'lucky-wheel', label: 'Lucky Wheel', icon: Sparkles, href: '/dashboard/lucky-wheel' },
 ]

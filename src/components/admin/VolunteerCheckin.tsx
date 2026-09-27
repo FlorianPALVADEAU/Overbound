@@ -519,7 +519,7 @@ export function VolunteerCheckin() {
       {/* Liste des inscriptions */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-wrap items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Liste des inscrits
@@ -570,8 +570,8 @@ export function VolunteerCheckin() {
                         : 'border-border bg-card'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4 p-4">
-                      <div className="flex items-start gap-3">
+                    <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-full border ${
                             registration.checked_in
@@ -587,7 +587,7 @@ export function VolunteerCheckin() {
                         </div>
 
                         <div className="min-w-0">
-                          <div className="mb-1 flex items-center gap-2">
+                          <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
                             <p className="truncate font-medium">{registration.email}</p>
                             <Badge
                               variant={registration.checked_in ? 'default' : 'secondary'}
@@ -606,7 +606,7 @@ export function VolunteerCheckin() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                         {registration.checked_in ? (
                           <Badge variant="outline" className="border-emerald-400 text-emerald-700 dark:border-emerald-300 dark:text-emerald-100">
                             <CheckCircle className="mr-1 h-4 w-4" />
@@ -618,6 +618,7 @@ export function VolunteerCheckin() {
                             onClick={() => handleManualCheckin(registration, 'checkin')}
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                           >
                             <UserCheck className="mr-1 h-4 w-4" />
                             Check-in
@@ -627,6 +628,7 @@ export function VolunteerCheckin() {
                             onClick={() => handleManualCheckin(registration, 'undo')}
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                           >
                             Annuler check-in
                           </Button>

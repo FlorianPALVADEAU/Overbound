@@ -23,12 +23,13 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
       ? pathname === '/dashboard' && !searchParams.get('tab')
       : item.href.startsWith('/dashboard?tab=')
         ? searchParams.get('tab') === item.value
-        : pathname === item.href || (item.requiresEventContext && pathname.includes(`/${item.value}`))
+        : pathname === item.href ||
+          (item.value === 'tickets' && pathname.endsWith('/tickets')) ||
+          (item.requiresEventContext && pathname.includes(`/${item.value}`))
   )?.value
 
   const hrefFor = (item: (typeof ADMIN_NAV_GROUPS)[number]['items'][number]) => {
     if (item.requiresEventContext && eventId) {
-      if (item.value === 'members') return `/dashboard/events/${eventId}/participants`
       if (item.value === 'tickets') return `/dashboard/events/${eventId}/tickets`
     }
     if (!eventId) return item.href

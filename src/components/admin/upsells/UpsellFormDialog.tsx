@@ -20,8 +20,12 @@ import type { Upsell } from '@/types/Upsell'
 import { ArrowDown, ArrowUp, Clock, Plus, Trash2, Upload } from 'lucide-react'
 
 export interface UpsellImageFormValue {
+  id?: string
+  file?: File
   url: string
   alt_text: string
+  source?: 'external' | 'upload'
+  storage_path?: string
 }
 
 export interface UpsellFormValues {
@@ -46,7 +50,8 @@ interface UpsellFormDialogProps {
   loading?: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (values: UpsellFormValues) => void
-  onUpload?: (file: File) => Promise<void>
+  onUpload?: (file: File) => Promise<Partial<UpsellImageFormValue> | void>
+  onDeleteUpload?: (image: UpsellImageFormValue) => Promise<void>
 }
 
 const DEFAULT_VALUES: UpsellFormValues = {
@@ -72,6 +77,7 @@ export function UpsellFormDialog({
   onOpenChange,
   onSubmit,
   onUpload,
+  onDeleteUpload,
 }: UpsellFormDialogProps) {
   const [values, setValues] = useState<UpsellFormValues>(DEFAULT_VALUES)
   const isCreateMode = mode === 'create'
@@ -115,6 +121,7 @@ export function UpsellFormDialog({
   const handleSubmit = () => {
     const images = values.images
       .map((image) => ({ ...image, url: image.url.trim(), alt_text: image.alt_text.trim() }))
+      .filter((image) => image.source !== 'upload')
       .filter((image) => image.url.length > 0)
 
     if (images.some((image) => !image.url.startsWith('https://'))) {
@@ -127,7 +134,23 @@ export function UpsellFormDialog({
   const handleUpload = async (file: File | undefined) => {
     if (!file || !onUpload) return
     setUploading(true)
-    try { await onUpload(file) } finally { setUploading(false); if (uploadInputRef.current) uploadInputRef.current.value = '' }
+    try {
+      const uploaded = await onUpload(file)
+      const uploadedUrl = uploaded?.url
+      if (uploadedUrl) {
+        setValues((previous) => ({
+          ...previous,
+          images: [...previous.images, {
+            url: uploadedUrl,
+            alt_text: uploaded.alt_text ?? '',
+            source: 'upload',
+            id: uploaded.id,
+            storage_path: uploaded.storage_path,
+            file: uploaded.file,
+          }],
+        }))
+      }
+    } finally { setUploading(false); if (uploadInputRef.current) uploadInputRef.current.value = '' }
   }
 
   const updateImage = (index: number, field: keyof UpsellImageFormValue, value: string) => {
@@ -279,7 +302,7 @@ export function UpsellFormDialog({
                 <Plus className="mr-1 h-4 w-4" />
                 Ajouter
               </Button>
-              {!isCreateMode && onUpload ? <>
+              {onUpload ? <>
                 <input ref={uploadInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void handleUpload(event.target.files?.[0])} />
                 <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => uploadInputRef.current?.click()}>
                   <Upload className="mr-1 h-4 w-4" />{uploading ? 'Envoi…' : 'Téléverser'}
@@ -298,19 +321,37 @@ export function UpsellFormDialog({
                     <Button type="button" variant="ghost" size="icon" aria-label="Descendre l'image" onClick={() => moveImage(index, 1)} disabled={index === values.images.length - 1}>
                       <ArrowDown className="h-4 w-4" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" aria-label="Supprimer l'image" onClick={() => setValues((previous) => ({ ...previous, images: previous.images.filter((_, imageIndex) => imageIndex !== index) }))}>
+                    <Button type="button" variant="ghost" size="icon" aria-label="Supprimer l'image" disabled={image.source === 'upload' && (!image.id || !onDeleteUpload)} onClick={async () => {
+                      if (image.source === 'upload' && onDeleteUpload) await onDeleteUpload(image)
+                      setValues((previous) => ({ ...previous, images: previous.images.filter((_, imageIndex) => imageIndex !== index) }))
+                    }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-                <Input
-                  value={image.url}
-                  type="url"
-                  inputMode="url"
-                  onChange={(event) => updateImage(index, 'url', event.target.value)}
-                  placeholder="https://..."
-                  aria-label={`URL de l'image ${index + 1}`}
-                />
+                {image.url ? (
+                  <div className="overflow-hidden rounded-md border bg-muted/20">
+                    <img
+                      src={image.url}
+                      alt={image.alt_text || `Aperçu de l’image ${index + 1}`}
+                      className="h-28 w-full object-contain"
+                    />
+                  </div>
+                ) : null}
+                {image.source === 'upload' ? (
+                  <p className="text-xs text-muted-foreground">
+                    Image téléversée. Elle sera supprimée du Storage avec ce bouton.
+                  </p>
+                ) : (
+                  <Input
+                    value={image.url}
+                    type="url"
+                    inputMode="url"
+                    onChange={(event) => updateImage(index, 'url', event.target.value)}
+                    placeholder="https://..."
+                    aria-label={`URL de l'image ${index + 1}`}
+                  />
+                )}
                 <Input
                   value={image.alt_text}
                   onChange={(event) => updateImage(index, 'alt_text', event.target.value)}

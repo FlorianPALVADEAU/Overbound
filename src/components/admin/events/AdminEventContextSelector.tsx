@@ -92,8 +92,25 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
             value={selectedEvent?.id ?? EMPTY_EVENT_VALUE}
             onChange={(event) => {
               const params = new URLSearchParams(window.location.search)
-              if (event.target.value === EMPTY_EVENT_VALUE) params.delete('event')
-              else params.set('event', event.target.value)
+              const nextEventId = event.target.value === EMPTY_EVENT_VALUE ? null : event.target.value
+              // Detail routes encode the event in the pathname. Keep that route
+              // and replace its id instead of leaving a stale detail page with a
+              // different context query parameter.
+              const detailMatch = pathname.match(/^\/dashboard\/events\/([^/]+)(\/.*)?$/)
+              if (detailMatch && nextEventId) {
+                params.delete('event')
+                const query = params.toString()
+                router.replace(`/dashboard/events/${nextEventId}${detailMatch[2] ?? ''}${query ? `?${query}` : ''}`)
+                return
+              }
+              if (detailMatch && !nextEventId) {
+                params.delete('event')
+                const query = params.toString()
+                router.replace(`/dashboard/events${query ? `?${query}` : ''}`)
+                return
+              }
+              if (!nextEventId) params.delete('event')
+              else params.set('event', nextEventId)
               const query = params.toString()
               router.replace(`${pathname}${query ? `?${query}` : ''}`)
             }}
@@ -122,12 +139,12 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
 
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm" variant="secondary" disabled={!selectedEvent}>
-          <Link href={selectedEvent ? `?tab=members&event=${selectedEvent.id}` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
+          <Link href={selectedEvent ? `/dashboard/events/${selectedEvent.id}/participants` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
             Participants <ChevronRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>
         <Button asChild size="sm" variant="secondary" disabled={!selectedEvent}>
-          <Link href={selectedEvent ? `?tab=checkin&event=${selectedEvent.id}` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
+          <Link href={selectedEvent ? `/dashboard?tab=checkin&event=${selectedEvent.id}` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
             Check-in <ChevronRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>

@@ -1,15 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { Plus } from 'lucide-react'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
 import type { PromotionalCode } from '@/types/PromotionalCode'
 import { PromotionalCodeFormDialog, type PromotionalCodeFormValues } from './PromotionalCodeFormDialog'
 import {
@@ -17,7 +17,7 @@ import {
   createAdminPromotionalCode,
   deleteAdminPromotionalCode,
   updateAdminPromotionalCode,
-  useAdminPromotionalCodes,
+  useAdminPromotionalCodesPage,
   type AdminPromotionalCodePayload,
 } from '@/app/api/admin/promotional-codes/promotionalCodesQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
@@ -91,12 +91,19 @@ const discountLabel = (code: PromotionalCode) => {
 }
 
 export function PromotionalCodesSection() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialUrl = useMemo(() => parseOperationsListUrlState(searchParams, { filterIds: ['status'] }), [searchParams])
   const queryClient = useQueryClient()
-  const {
-    data: promotionalCodes = [],
-    isLoading,
-    error: promotionalCodesError,
-  } = useAdminPromotionalCodes()
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>((initialUrl.filters.status as 'all' | 'active' | 'inactive' | undefined) ?? 'all')
+  const [cursor, setCursor] = useState<string | null>(initialUrl.cursor)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const [limit, setLimit] = useState(initialUrl.limit)
+  const { data: pageData, isLoading, isFetching, error: promotionalCodesError } = useAdminPromotionalCodesPage({ cursor, limit, query: deferredSearch || undefined, status: statusFilter })
+  const promotionalCodes = pageData?.promotionalCodes ?? []
   const { data: events = [] } = useAdminEvents()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -106,31 +113,10 @@ export function PromotionalCodesSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-
-  const filteredCodes = useMemo(() => {
-    let result = [...promotionalCodes]
-
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter((code) => {
-        return (
-          code.code.toLowerCase().includes(term) ||
-          code.name.toLowerCase().includes(term) ||
-          code.description?.toLowerCase().includes(term)
-        )
-      })
-    }
-
-    if (statusFilter !== 'all') {
-      result = result.filter((code) =>
-        statusFilter === 'active' ? code.is_active : !code.is_active
-      )
-    }
-
-    return result
-  }, [promotionalCodes, searchTerm, statusFilter])
+  const filteredCodes = promotionalCodes
+  const resetPagination = () => { setCursor(null); setPreviousCursors([]) }
+  useEffect(() => { resetPagination() }, [deferredSearch])
+  useEffect(() => { const next = writeOperationsListUrlState(searchParams, { cursor, sort: null, direction: null, limit, selectedId: null, filters: { status: statusFilter === 'all' ? '' : statusFilter } }, { filterIds: ['status'] }); if (next !== searchParams.toString()) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false }) }, [cursor, limit, pathname, router, searchParams, statusFilter])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -158,6 +144,7 @@ export function PromotionalCodesSection() {
         if (!previous) return []
         return previous.filter((item) => item.id !== code.id)
       })
+      await queryClient.invalidateQueries({ queryKey: adminPromotionalCodesQueryKey })
       setMessage({ type: 'success', text: 'Code supprimé avec succès' })
     } catch (error) {
       const text = axios.isAxiosError(error)
@@ -249,6 +236,8 @@ export function PromotionalCodesSection() {
         setMessage({ type: 'success', text: 'Code promotionnel mis à jour avec succès' })
       }
 
+      await queryClient.invalidateQueries({ queryKey: adminPromotionalCodesQueryKey })
+
       setDialogOpen(false)
       setSelectedCode(null)
     } catch (error) {
@@ -261,10 +250,10 @@ export function PromotionalCodesSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<PromotionalCode>[]>(() => {
+  const columns = useMemo<OperationsListColumn<PromotionalCode>[]>(() => {
     return [
       {
-        key: 'code',
+        id: 'code',
         header: 'Code',
         cell: (code) => (
           <div className="flex flex-col gap-1">
@@ -274,14 +263,14 @@ export function PromotionalCodesSection() {
         ),
       },
       {
-        key: 'discount',
+        id: 'discount',
         header: 'Remise',
         cell: (code) => (
           <span className="font-medium text-primary">{discountLabel(code)}</span>
         ),
       },
       {
-        key: 'validity',
+        id: 'validity',
         header: 'Validité',
         cell: (code) => (
           <div className="flex flex-col text-xs text-muted-foreground">
@@ -291,7 +280,7 @@ export function PromotionalCodesSection() {
         ),
       },
       {
-        key: 'usage',
+        id: 'usage',
         header: 'Utilisation',
         cell: (code) => (
           <span>
@@ -300,7 +289,7 @@ export function PromotionalCodesSection() {
         ),
       },
       {
-        key: 'status',
+        id: 'status',
         header: 'Statut',
         cell: (code) => (
           <Badge variant={code.is_active ? 'default' : 'secondary'}>
@@ -308,30 +297,19 @@ export function PromotionalCodesSection() {
           </Badge>
         ),
       },
-      {
-        key: 'actions',
-        header: '',
-        className: 'w-[160px]',
-        cell: (code) => (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleEdit(code)}>
-              Modifier
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDelete(code)}
-              disabled={deleteLoadingId === code.id}
-            >
-              {deleteLoadingId === code.id ? 'Suppression…' : 'Supprimer'}
-            </Button>
-          </div>
-        ),
-      },
     ]
-  }, [deleteLoadingId])
+  }, [])
+
+  const rowActions = useMemo<OperationsListAction<PromotionalCode>[]>(() => [
+    { id: 'edit', label: 'Modifier', onSelect: handleEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: (code) => deleteLoadingId === code.id, onSelect: handleDelete },
+  ], [deleteLoadingId])
 
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
+
+  const emptyMessage = searchTerm || statusFilter !== 'all'
+    ? 'Aucun code ne correspond aux filtres appliqués.'
+    : 'Aucun code promotionnel enregistré.'
 
   return (
     <div className="space-y-6">
@@ -362,49 +340,26 @@ export function PromotionalCodesSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredCodes}
+      <OperationsList
+        data={{ items: filteredCodes, nextCursor: pageData?.page.nextCursor ?? null, total: pageData?.page.totalCount }}
+        status={promotionalCodesError ? 'error' : isLoading && !pageData ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={promotionalCodesError?.message}
+        onRetry={() => window.location.reload()}
+        getItemId={(code) => code.id}
         columns={columns}
-        loading={isLoading}
-        emptyMessage={
-          searchTerm || statusFilter !== 'all'
-            ? 'Aucun code ne correspond aux filtres appliqués.'
-            : 'Aucun code promotionnel enregistré.'
-        }
-        toolbar={
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Rechercher par code, nom ou description…"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="active">Actifs</SelectItem>
-                <SelectItem value="inactive">Inactifs</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        meta={
-          <span>
-            {filteredCodes.length} code{filteredCodes.length > 1 ? 's' : ''} affiché
-          </span>
-        }
-        getRowId={(code) => code.id}
+        filters={[
+          { id: 'status', label: 'Statut', value: statusFilter === 'all' ? '' : statusFilter, options: [{ value: 'active', label: 'Actifs' }, { value: 'inactive', label: 'Inactifs' }] },
+          { id: 'limit', label: 'Lignes', value: String(limit), options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })) },
+        ]}
+        onFilterChange={(id, value) => { resetPagination(); if (id === 'status') setStatusFilter((value || 'all') as typeof statusFilter); if (id === 'limit') setLimit(Number(value)) }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher par code, nom ou description…"
+        onSearchChange={setSearchTerm}
+        rowActions={rowActions}
+        pagination={{ cursor, previousCursors, nextCursor: pageData?.page.nextCursor ?? null, total: pageData?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => { setCursor(nextCursor); setPreviousCursors(nextPreviousCursors) }}
+        itemLabel="code"
+        emptyState={<div className="px-3 py-12 text-center text-sm text-muted-foreground">{emptyMessage}</div>}
       />
 
       <PromotionalCodeFormDialog
@@ -419,4 +374,3 @@ export function PromotionalCodesSection() {
     </div>
   )
 }
-

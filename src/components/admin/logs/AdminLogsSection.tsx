@@ -289,7 +289,7 @@ export function AdminLogsSection() {
             </div>
           ) : null}
 
-          <div className="overflow-hidden rounded-xl border border-muted-foreground/20 bg-card shadow-sm">
+          <div className="hidden overflow-hidden rounded-xl border border-muted-foreground/20 bg-card shadow-sm md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -361,6 +361,38 @@ export function AdminLogsSection() {
                 ) : null}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="space-y-2 md:hidden">
+            {logs.map((log) => (
+              <button
+                key={log.id}
+                type="button"
+                className="w-full rounded-xl border border-muted-foreground/20 bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/60"
+                onClick={() => setSelectedLog(log)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs text-muted-foreground">{formatDateTime(log.created_at)}</p>
+                    <p className="mt-1 line-clamp-2 text-sm font-medium">{log.summary}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${getStatusStyles(log.status_code)}`}>
+                    {log.status_code}
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className={`rounded-full px-2 py-0.5 font-semibold ${getMethodStyles(log.method)}`}>{log.method}</span>
+                  <span className="max-w-full truncate">{log.path}</span>
+                  <span>{log.duration_ms} ms</span>
+                </div>
+                {log.user_email ? <p className="mt-2 truncate text-xs text-muted-foreground">{log.user_email}</p> : null}
+              </button>
+            ))}
+            {logs.length === 0 && !isLoading ? (
+              <div className="rounded-xl border border-muted-foreground/20 px-3 py-8 text-center text-sm text-muted-foreground">
+                Aucun log trouvé pour ces critères.
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
