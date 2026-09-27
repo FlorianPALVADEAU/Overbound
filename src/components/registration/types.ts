@@ -55,7 +55,14 @@ export type TicketSelections = Record<string, number>
 
 export type AppliedPromo = Pick<
   PromotionalCode,
-  'id' | 'code' | 'description' | 'discount_percent' | 'discount_amount' | 'currency' | 'is_ambassador'
+  | 'id'
+  | 'code'
+  | 'description'
+  | 'discount_percent'
+  | 'discount_amount'
+  | 'currency'
+  | 'is_ambassador'
+  | 'target_upsell_id'
 >
 
 export interface PricingSummary {

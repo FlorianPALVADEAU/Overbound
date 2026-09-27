@@ -24,4 +24,8 @@ export interface PromotionalCode {
   created_at: Timestamp
   updated_at: Timestamp
   events?: PromotionalCodeEvent[]
+  // FDR-0014 addendum (product-line discounts): null = nets against the
+  // ticket subtotal (legacy behavior). Non-null = scoped to one upsell,
+  // nets only against that upsell's own subtotal.
+  target_upsell_id?: UUID | null
 }

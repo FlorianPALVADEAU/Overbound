@@ -11,6 +11,13 @@ type PromoDiscountOptions = {
   tierDiscountAmount?: number
   baseTicketSubtotal?: number
   firstOpenTicketPrice?: number
+  // FDR-0014 addendum (product-line discounts): subtotal per selected
+  // upsell (quantity * unit price), keyed by upsell id. Required to net a
+  // promo.target_upsell_id code against the right line -- never against
+  // ticketSubtotal. An upsell missing from this map (not selected by the
+  // participant) makes the code's discount resolve to 0, not a fallback to
+  // the ticket subtotal.
+  upsellSubtotalsById?: Record<string, number>
 }
 
 export const resolveUpsellSizes = (upsell: EventUpsell): string[] => {
@@ -82,7 +89,7 @@ export const calculatePromoDiscount = (
   ticketSubtotal: number,
   options?: PromoDiscountOptions,
 ): number => {
-  if (!promo || ticketSubtotal <= 0) return 0
+  if (!promo) return 0
 
   const calculateDiscountForSubtotal = (subtotal: number) => {
     if (promo.discount_percent && promo.discount_percent > 0) {
@@ -95,6 +102,19 @@ export const calculatePromoDiscount = (
 
     return 0
   }
+
+  // FDR-0014 addendum: a product-scoped code nets only against its own
+  // upsell's subtotal, never against ticketSubtotal -- and resolves to 0,
+  // not a fallback to the ticket, when that upsell isn't in the cart. This
+  // branch is checked first and is a hard exit: a target_upsell_id code
+  // never falls through to the ticket-scoped branches below.
+  if (promo.target_upsell_id) {
+    const upsellSubtotal = options?.upsellSubtotalsById?.[promo.target_upsell_id] ?? 0
+    if (upsellSubtotal <= 0) return 0
+    return calculateDiscountForSubtotal(upsellSubtotal)
+  }
+
+  if (ticketSubtotal <= 0) return 0
 
   const normalizedCode = promo.code?.trim().toUpperCase()
 
@@ -119,13 +139,28 @@ export const calculatePromoDiscounts = (
   ticketSubtotal: number,
   options?: PromoDiscountOptions,
 ): number => {
-  if (!Array.isArray(promos) || promos.length === 0 || ticketSubtotal <= 0) return 0
+  if (!Array.isArray(promos) || promos.length === 0) return 0
 
-  const total = promos.reduce(
-    (acc, promo) => acc + calculatePromoDiscount(promo, ticketSubtotal, options),
-    0,
-  )
-  return Math.min(total, ticketSubtotal)
+  // FDR-0014 addendum: the overall ceiling can no longer be a flat
+  // Math.min(total, ticketSubtotal) -- a product-scoped promo's discount
+  // must never be clamped against the ticket subtotal, only against its
+  // own upsell's subtotal (already enforced per-promo above via
+  // calculateDiscountForSubtotal's Math.min(subtotal, ...)). Ticket-scoped
+  // discounts are summed and clamped to ticketSubtotal as before;
+  // upsell-scoped discounts are summed separately with no shared ceiling
+  // across different upsells (each already capped at its own line's value).
+  let ticketScopedTotal = 0
+  let upsellScopedTotal = 0
+  for (const promo of promos) {
+    const amount = calculatePromoDiscount(promo, ticketSubtotal, options)
+    if (promo.target_upsell_id) {
+      upsellScopedTotal += amount
+    } else {
+      ticketScopedTotal += amount
+    }
+  }
+
+  return Math.min(ticketScopedTotal, Math.max(ticketSubtotal, 0)) + upsellScopedTotal
 }
 
 export const joinName = (first: string, last: string): string =>
