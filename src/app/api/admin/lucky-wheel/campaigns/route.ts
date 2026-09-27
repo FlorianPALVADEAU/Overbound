@@ -19,6 +19,18 @@ const campaignSchema = z.object({
   event_ids: z.array(z.string().uuid()).min(1, 'Au moins un événement est requis'),
 })
 
+const pageQuerySchema = z.object({
+  paginated: z.coerce.boolean().optional(),
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  search: z.string().trim().max(120).optional(),
+})
+const decodeCursor = (value: string | undefined) => {
+  if (!value) return 0
+  try { const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { offset?: number }; return Number.isInteger(parsed.offset) && (parsed.offset ?? 0) >= 0 ? parsed.offset ?? 0 : null } catch { return null }
+}
+const encodeCursor = (offset: number) => Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url')
+
 function sanitizePayload(body: z.infer<typeof campaignSchema>) {
   return {
     name: body.name,
@@ -54,8 +66,15 @@ export async function GET(request: Request) {
     const auth = await requireAdmin(request)
     if (!auth.ok) return auth.response
 
+    const url = new URL(request.url)
+    const parsedPage = pageQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()))
+    if (!parsedPage.success) return NextResponse.json({ error: 'Paramètres de pagination invalides' }, { status: 400 })
+    const paginated = parsedPage.data.paginated || url.searchParams.has('cursor') || url.searchParams.has('limit') || url.searchParams.has('search')
+    const decodedOffset = decodeCursor(parsedPage.data.cursor)
+    if (decodedOffset === null) return NextResponse.json({ error: 'Curseur de pagination invalide' }, { status: 400 })
+    const offset = decodedOffset
     const admin = supabaseAdmin()
-    const { data: campaigns, error } = await admin
+    let campaignsQuery = admin
       .from('lucky_wheel_campaigns')
       .select(
         `*,
@@ -63,10 +82,13 @@ export async function GET(request: Request) {
         rewards:lucky_wheel_rewards(id)`,
       )
       .order('created_at', { ascending: false })
+    if (paginated) campaignsQuery = campaignsQuery.range(offset, offset + parsedPage.data.limit - 1)
+    const { data: campaigns, error } = await campaignsQuery
 
     if (error) throw error
 
-    return NextResponse.json({ campaigns })
+    const result = campaigns ?? []
+    return NextResponse.json(paginated ? { campaigns: result, page: { limit: parsedPage.data.limit, totalCount: result.length, nextCursor: result.length === parsedPage.data.limit ? encodeCursor(offset + result.length) : null } } : { campaigns: result })
   } catch (error) {
     console.error('Erreur GET lucky wheel campaigns:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

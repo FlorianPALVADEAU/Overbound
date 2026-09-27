@@ -3,11 +3,32 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
+import { hydrateAdminGroups } from '@/lib/admin/groups'
 
 const createAdminGroupBodySchema = z.object({
   name: z.string().trim().min(1, 'Nom de groupe requis'),
   captain_profile_id: z.string().uuid('Capitaine requis'),
 })
+
+const groupsQuerySchema = z.object({
+  paginated: z.enum(['true', '1']).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(25).max(100).default(50),
+  query: z.string().trim().max(100).optional(),
+})
+
+const decodeOffset = (cursor: string | undefined) => {
+  if (!cursor) return 0
+  try {
+    const offset = Number(Buffer.from(cursor, 'base64url').toString('utf8'))
+    if (!Number.isInteger(offset) || offset < 0) throw new Error()
+    return offset
+  } catch {
+    throw new Error('Cursor de pagination invalide')
+  }
+}
+
+const encodeOffset = (offset: number) => Buffer.from(String(offset)).toString('base64url')
 
 export async function POST(request: Request) {
   try {
@@ -91,6 +112,15 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const parsedQuery = groupsQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams.entries()))
+    if (!parsedQuery.success) return NextResponse.json({ error: 'Paramètres de liste invalides' }, { status: 400 })
+    const isPaginated = Boolean(parsedQuery.data.paginated || parsedQuery.data.cursor)
+    let offset = 0
+    if (isPaginated) {
+      try { offset = decodeOffset(parsedQuery.data.cursor) } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Cursor de pagination invalide' }, { status: 400 })
+      }
+    }
     const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
@@ -98,11 +128,17 @@ export async function GET(request: Request) {
 
     const admin = supabaseAdmin()
 
-    const { data: groupsRows, error: groupsError } = await admin
+    let groupsQuery = admin
       .from('groups')
-      .select('id, name, captain_id, invite_code, anchor_event_id, anchor_wave_index, anchor_start_time, anchor_initialized_by, anchor_initialized_from_profile_id, anchor_initialized_at, created_at')
+      .select('id, name, captain_id, invite_code, anchor_event_id, anchor_wave_index, anchor_start_time, anchor_initialized_by, anchor_initialized_from_profile_id, anchor_initialized_at, created_at', isPaginated ? { count: 'exact' } : undefined)
       .eq('organization_id', auth.organizationId)
       .order('created_at', { ascending: false })
+    const safeQuery = parsedQuery.data.query?.replace(/[%_,()]/g, ' ').trim()
+    if (isPaginated && safeQuery) {
+      groupsQuery = groupsQuery.or(`name.ilike.%${safeQuery}%,invite_code.ilike.%${safeQuery}%`)
+    }
+    if (isPaginated) groupsQuery = groupsQuery.range(offset, offset + parsedQuery.data.limit - 1)
+    const { data: groupsRows, error: groupsError, count: groupsCount } = await groupsQuery
 
     if (groupsError) {
       console.error('[admin groups] groups fetch error', groupsError)
@@ -110,6 +146,11 @@ export async function GET(request: Request) {
     }
 
     const groupIds = (groupsRows ?? []).map((group) => group.id)
+
+    const globalMemberIdsResult = isPaginated
+      ? await admin.from('group_members').select('profile_id').eq('organization_id', auth.organizationId)
+      : { data: [], error: null }
+    if (globalMemberIdsResult.error) throw globalMemberIdsResult.error
 
     const { data: membersRows, error: membersError } = groupIds.length
       ? await admin
@@ -134,46 +175,26 @@ export async function GET(request: Request) {
           .in('id', profileIds)
       : { data: [] }
 
-    const profileMap = new Map<string, string | null>()
-    for (const row of profilesRows ?? []) {
-      profileMap.set(row.id, row.full_name ?? null)
-    }
-
     const { data: usersData } = profileIds.length
       ? await admin.auth.admin.listUsers({ page: 1, perPage: 5000 })
       : { data: { users: [] } }
 
-    const emailMap = new Map<string, string | null>()
-    for (const authUser of usersData?.users ?? []) {
-      if (profileIds.includes(authUser.id)) {
-        emailMap.set(authUser.id, authUser.email ?? null)
-      }
-    }
+    const { groups } = hydrateAdminGroups(
+      groupsRows ?? [],
+      membersRows ?? [],
+      profilesRows ?? [],
+      usersData?.users ?? [],
+    )
 
-    const membersByGroup = new Map<string, any[]>()
-    for (const member of membersRows ?? []) {
-      const groupList = membersByGroup.get(member.group_id) ?? []
-      groupList.push({
-        id: member.id,
-        profile_id: member.profile_id,
-        role: member.role,
-        joined_at: member.joined_at,
-        full_name: profileMap.get(member.profile_id) ?? null,
-        email: emailMap.get(member.profile_id) ?? null,
-      })
-      membersByGroup.set(member.group_id, groupList)
-    }
-
-    const groups = (groupsRows ?? []).map((group) => {
-      const sourceProfileId = group.anchor_initialized_from_profile_id as string | null
-      return {
-        ...group,
-        anchor_initialized_from_profile_name: sourceProfileId ? profileMap.get(sourceProfileId) ?? null : null,
-        members: membersByGroup.get(group.id) ?? [],
-      }
+    if (!isPaginated) return NextResponse.json({ groups, total: groups.length })
+    const total = groupsCount ?? 0
+    const nextCursor = offset + groups.length < total ? encodeOffset(offset + groups.length) : null
+    return NextResponse.json({
+      groups,
+      total,
+      memberProfileIds: [...new Set((globalMemberIdsResult.data ?? []).map((row) => row.profile_id))],
+      page: { limit: parsedQuery.data.limit, totalCount: total, nextCursor },
     })
-
-    return NextResponse.json({ groups, total: groups.length })
   } catch (error) {
     console.error('[admin groups] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

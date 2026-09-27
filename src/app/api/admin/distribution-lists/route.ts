@@ -36,6 +36,25 @@ const distributionListSchema = z.object({
   active: z.boolean().optional().default(true),
 })
 
+const pageQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  search: z.string().trim().max(120).optional(),
+  type: z.string().optional(),
+})
+
+const decodeCursor = (value: string | undefined) => {
+  if (!value) return 0
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { offset?: number }
+    return Number.isInteger(parsed.offset) && (parsed.offset ?? 0) >= 0 ? parsed.offset ?? 0 : null
+  } catch {
+    return null
+  }
+}
+
+const encodeCursor = (offset: number) => Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url')
+
 /**
  * GET /api/admin/distribution-lists
  * Get all distribution lists (admin only)
@@ -47,19 +66,26 @@ export async function GET(request: NextRequest) {
       return auth.response
     }
 
-    const supabase = await createClient()
-    const admin = supabaseAdmin()
-
     // Get query params
     const searchParams = request.nextUrl.searchParams
     const includeStats = searchParams.get('includeStats') === 'true'
     const type = searchParams.get('type') as DistributionListType | null
     const activeOnly = searchParams.get('activeOnly') === 'true'
+    const hasPaging = ['cursor', 'limit', 'search'].some((key) => searchParams.has(key))
+    const parsedPage = pageQuerySchema.safeParse(Object.fromEntries(searchParams.entries()))
+    if (!parsedPage.success) return NextResponse.json({ error: parsedPage.error.flatten() }, { status: 422 })
+    const decodedOffset = decodeCursor(parsedPage.data.cursor)
+    if (decodedOffset === null) return NextResponse.json({ error: 'Curseur invalide' }, { status: 422 })
+    const offset = decodedOffset
+    const limit = parsedPage.data.limit
+    const search = parsedPage.data.search
+    const supabase = await createClient()
+    const admin = supabaseAdmin()
 
     // Build query
     if (includeStats) {
       // Use the stats view
-      let query = admin.from('distribution_lists_stats').select('*')
+      let query = admin.from('distribution_lists_stats').select('*', { count: 'exact' })
 
       if (type) {
         query = query.eq('type', type)
@@ -67,6 +93,15 @@ export async function GET(request: NextRequest) {
 
       if (activeOnly) {
         query = query.eq('active', true)
+      }
+
+      if (search) query = query.or(`name.ilike.%${search.replace(/[(),]/g, ' ')}%,slug.ilike.%${search.replace(/[(),]/g, ' ')}%`)
+
+      if (hasPaging) {
+        const { data: pagedData, error: pagedError, count } = await query.order('subscriber_count', { ascending: false }).range(offset, offset + limit - 1)
+        if (pagedError) return NextResponse.json({ error: 'Failed to fetch distribution lists' }, { status: 500 })
+        const enhancedData = await addEventOpeningVirtualList({ lists: pagedData ?? [], admin })
+        return NextResponse.json({ items: enhancedData, nextCursor: offset + enhancedData.length < (count ?? 0) ? encodeCursor(offset + enhancedData.length) : null, total: (count ?? 0) + (offset === 0 && enhancedData.some((list) => list.id === EVENT_OPENING_FIRST_LIST_ID) ? 1 : 0) })
       }
 
       const { data, error } = await query.order('subscriber_count', {
@@ -101,6 +136,8 @@ export async function GET(request: NextRequest) {
       if (activeOnly) {
         query = query.eq('active', true)
       }
+
+      if (search) query = query.or(`name.ilike.%${search.replace(/[(),]/g, ' ')}%,slug.ilike.%${search.replace(/[(),]/g, ' ')}%`)
 
       const { data, error } = await query.order('created_at', {
         ascending: false,

@@ -34,6 +34,9 @@ const REWARD_TYPES = [
 const LEGACY_AMBIGUOUS_REWARD_TYPES = new Set(['PRODUCT_DISCOUNT', 'PHOTO_DISCOUNT'])
 
 const COMMERCIAL_PHASES = ['LAUNCH', 'STANDARD', 'HIGH_DEMAND'] as const
+const pageQuerySchema = z.object({ paginated: z.coerce.boolean().optional(), cursor: z.string().optional(), limit: z.coerce.number().int().min(1).max(100).default(25) })
+const decodeCursor = (value: string | undefined) => { if (!value) return 0; try { const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { offset?: number }; return Number.isInteger(parsed.offset) && (parsed.offset ?? 0) >= 0 ? parsed.offset ?? 0 : null } catch { return null } }
+const encodeCursor = (offset: number) => Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url')
 
 // FDR-0014 §5/§10: reward config, fully admin-editable. weight/probability,
 // stock/maxWins are optional -- null/undefined means unlimited (§4).
@@ -88,17 +91,24 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url)
     const campaignId = url.searchParams.get('campaign_id')
+    const parsedPage = pageQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()))
+    if (!parsedPage.success) return NextResponse.json({ error: 'Paramètres de pagination invalides' }, { status: 400 })
+    const paginated = parsedPage.data.paginated || url.searchParams.has('cursor') || url.searchParams.has('limit')
+    const decodedOffset = decodeCursor(parsedPage.data.cursor)
+    if (decodedOffset === null) return NextResponse.json({ error: 'Curseur de pagination invalide' }, { status: 400 })
+    const offset = decodedOffset
 
     const admin = supabaseAdmin()
     let query = admin.from('lucky_wheel_rewards').select('*').order('created_at', { ascending: false })
     if (campaignId) {
       query = query.eq('campaign_id', campaignId)
     }
+    if (paginated) query = query.range(offset, offset + parsedPage.data.limit - 1)
 
     const { data: rewards, error } = await query
     if (error) throw error
 
-    return NextResponse.json({ rewards })
+    return NextResponse.json(paginated ? { rewards, page: { limit: parsedPage.data.limit, totalCount: rewards?.length ?? 0, nextCursor: rewards?.length === parsedPage.data.limit ? encodeCursor(offset + (rewards?.length ?? 0)) : null } } : { rewards })
   } catch (error) {
     console.error('Erreur GET lucky wheel rewards:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

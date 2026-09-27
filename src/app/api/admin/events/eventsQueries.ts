@@ -92,6 +92,16 @@ interface AdminWaveParticipantsResponse {
 
 interface EventsResponse {
   events: AdminEventSummary[]
+  page?: {
+    limit: number
+    totalCount: number
+    nextCursor: string | null
+  }
+}
+
+export interface AdminEventsPage {
+  events: AdminEventSummary[]
+  page: NonNullable<EventsResponse['page']>
 }
 
 interface EventResponse {
@@ -121,6 +131,40 @@ export const useAdminEvents = () =>
   useQuery<AdminEventSummary[], Error>({
     queryKey: ADMIN_EVENTS_QUERY_KEY,
     queryFn: fetchAdminEvents,
+  })
+
+export interface AdminEventsPageParams {
+  cursor?: string | null
+  limit?: number
+  query?: string
+  status?: Event['status']
+  sort?: 'date' | 'created_at' | 'title'
+  direction?: 'asc' | 'desc'
+}
+
+const fetchAdminEventsPage = async (params: AdminEventsPageParams = {}): Promise<AdminEventsPage> => {
+  const search = new URLSearchParams({ paginated: 'true' })
+  if (params.cursor) search.set('cursor', params.cursor)
+  if (params.limit !== undefined) search.set('limit', String(params.limit))
+  if (params.query) search.set('query', params.query)
+  if (params.status) search.set('status', params.status)
+  if (params.sort) search.set('sort', params.sort)
+  if (params.direction) search.set('direction', params.direction)
+
+  const response = await axiosClient.get<EventsResponse>(`/admin/events?${search.toString()}`)
+  if (response.status !== 200 || !response.data.page) {
+    throw new Error('Erreur lors du chargement des événements')
+  }
+  return {
+    events: response.data.events ?? [],
+    page: response.data.page,
+  }
+}
+
+export const useAdminEventsPage = (params: AdminEventsPageParams = {}) =>
+  useQuery<AdminEventsPage, Error>({
+    queryKey: [...ADMIN_EVENTS_QUERY_KEY, 'page', params],
+    queryFn: () => fetchAdminEventsPage(params),
   })
 
 const fetchAdminEventDetail = async (eventId: string): Promise<AdminEventDetailResponse> => {

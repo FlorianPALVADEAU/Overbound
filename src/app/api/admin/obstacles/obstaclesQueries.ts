@@ -14,7 +14,9 @@ export interface AdminObstaclePayload {
 
 interface ObstaclesResponse {
   obstacles: Obstacle[]
+  page?: { limit: number; totalCount: number; nextCursor: string | null }
 }
+export interface AdminObstaclesPage { obstacles: Obstacle[]; page: NonNullable<ObstaclesResponse['page']> }
 
 interface ObstacleResponse {
   obstacle: Obstacle
@@ -35,6 +37,29 @@ export const useAdminObstacles = () =>
     queryKey: ADMIN_OBSTACLES_QUERY_KEY,
     queryFn: fetchAdminObstacles,
   })
+
+export interface AdminObstaclesPageParams {
+  cursor?: string | null
+  limit?: number
+  query?: string
+  type?: Obstacle['type']
+  difficulty?: 'all' | '1-3' | '4-6' | '7-10'
+  sort?: 'created_at' | 'updated_at' | 'name' | 'difficulty'
+  direction?: 'asc' | 'desc'
+}
+
+const fetchAdminObstaclesPage = async (params: AdminObstaclesPageParams = {}): Promise<AdminObstaclesPage> => {
+  const search = new URLSearchParams({ paginated: 'true' })
+  for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== null && value !== '') search.set(key, String(value))
+  const response = await axiosClient.get<ObstaclesResponse>(`/admin/obstacles?${search.toString()}`)
+  if (response.status !== 200 || !response.data.page) throw new Error('Erreur lors du chargement des obstacles')
+  return { obstacles: response.data.obstacles ?? [], page: response.data.page }
+}
+
+export const useAdminObstaclesPage = (params: AdminObstaclesPageParams = {}) => useQuery<AdminObstaclesPage, Error>({
+  queryKey: [...ADMIN_OBSTACLES_QUERY_KEY, 'page', params],
+  queryFn: () => fetchAdminObstaclesPage(params),
+})
 
 export const createAdminObstacle = async (
   payload: AdminObstaclePayload

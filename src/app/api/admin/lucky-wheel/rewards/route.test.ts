@@ -50,6 +50,17 @@ describe('GET /api/admin/lucky-wheel/rewards', () => {
     expect(json.rewards).toHaveLength(1)
   })
 
+  it('returns a paginated contract', async () => {
+    requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' } })
+    const chain: any = { select: () => chain, order: () => chain, eq: () => chain, range: () => chain, then: (resolve: any) => resolve({ data: [{ id: 'reward-1' }], error: null }) }
+    supabaseAdminMock.mockReturnValue({ from: () => chain })
+    const response = await GET(buildRequest(null, 'http://localhost/api/admin/lucky-wheel/rewards?paginated=true&limit=1&campaign_id=aaaaaaaa-1111-4111-8111-111111111111'))
+    const json = await response.json()
+    expect(response.status).toBe(200)
+    expect(json.rewards).toHaveLength(1)
+    expect(json.page).toMatchObject({ limit: 1, totalCount: 1 })
+  })
+
   it('returns 403 for a non-admin', async () => {
     requireAdminMock.mockResolvedValue({
       ok: false,

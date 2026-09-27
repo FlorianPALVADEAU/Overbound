@@ -13,6 +13,24 @@ const bootcampSchema = z.object({
   starts_at: z.string().datetime({ offset: true }),
 })
 
+const pageQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  search: z.string().trim().max(120).optional(),
+})
+
+const decodeCursor = (value: string | undefined) => {
+  if (!value) return 0
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { offset?: number }
+    return Number.isInteger(parsed.offset) && (parsed.offset ?? 0) >= 0 ? parsed.offset ?? 0 : 0
+  } catch {
+    return 0
+  }
+}
+
+const encodeCursor = (offset: number) => Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url')
+
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createSupabaseServer>>) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -27,7 +45,7 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createSupabaseSe
   return user
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const supabase = await createSupabaseServer()
 
   if (!(await requireAdmin(supabase))) {
@@ -36,7 +54,14 @@ export async function GET() {
 
   const admin = supabaseAdmin()
 
-  const { data, error } = await admin
+  const url = new URL(req.url)
+  const hasPaging = ['cursor', 'limit', 'search'].some((key) => url.searchParams.has(key))
+  const parsedQuery = pageQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()))
+  if (!parsedQuery.success) return NextResponse.json({ error: parsedQuery.error.flatten() }, { status: 422 })
+  const { cursor, limit, search } = parsedQuery.data
+  const offset = decodeCursor(cursor)
+
+  let query = admin
     .from('bootcamps')
     .select(`
       *,
@@ -47,6 +72,12 @@ export async function GET() {
       )
     `)
     .order('starts_at', { ascending: true })
+    .order('id', { ascending: true })
+
+  if (search) query = query.or(`title.ilike.%${search}%,location_name.ilike.%${search}%`)
+  if (hasPaging) query = query.range(offset, offset + limit - 1)
+
+  const { data, error, count } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -85,7 +116,12 @@ export async function GET() {
     }
   })
 
-  return NextResponse.json(result)
+  if (!hasPaging) return NextResponse.json(result)
+  return NextResponse.json({
+    items: result,
+    nextCursor: offset + result.length < (count ?? 0) ? encodeCursor(offset + result.length) : null,
+    total: count ?? result.length,
+  })
 }
 
 export async function POST(req: Request) {

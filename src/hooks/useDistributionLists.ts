@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import type { ListResponse } from '@/components/admin/operations'
 import type {
   DistributionList,
   DistributionListWithStats,
@@ -6,6 +8,27 @@ import type {
   UpdateDistributionListData,
   DistributionListSubscriber,
 } from '@/types/DistributionList'
+
+export interface DistributionListsPageParams {
+  cursor?: string | null
+  limit?: number
+  search?: string
+  type?: string
+}
+
+export const useDistributionListsPage = (params: DistributionListsPageParams) =>
+  useQuery<ListResponse<DistributionListWithStats>, Error>({
+    queryKey: ['admin', 'distribution-lists', 'page', params],
+    queryFn: async () => {
+      const query = new URLSearchParams({ includeStats: 'true', limit: String(params.limit ?? 25) })
+      if (params.cursor) query.set('cursor', params.cursor)
+      if (params.search?.trim()) query.set('search', params.search.trim())
+      if (params.type && params.type !== 'all') query.set('type', params.type)
+      const response = await fetch(`/api/admin/distribution-lists?${query.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch lists')
+      return response.json() as Promise<ListResponse<DistributionListWithStats>>
+    },
+  })
 
 /**
  * Hook pour gérer les distribution lists (admin)

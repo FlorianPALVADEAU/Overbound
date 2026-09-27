@@ -13,6 +13,7 @@ interface RegistrationsResponse {
 
 export interface AdminRegistrationsParams {
   eventId?: string
+  ticketType?: 'open' | 'ranked' | 'all'
   approvalFilter?: RegistrationApprovalStatus | 'all'
   searchTerm?: string
   limit?: number
@@ -24,6 +25,7 @@ const ADMIN_REGISTRATIONS_QUERY_BASE_KEY = ['admin', 'registrations'] as const
 const buildQueryKey = (params: AdminRegistrationsParams) => [
   ...ADMIN_REGISTRATIONS_QUERY_BASE_KEY,
   params.eventId ?? null,
+  params.ticketType ?? 'all',
   params.approvalFilter ?? 'all',
   params.searchTerm ?? '',
   params.limit ?? null,
@@ -36,6 +38,7 @@ const fetchAdminRegistrations = async (
   const searchParams = new URLSearchParams()
 
   if (params.eventId) searchParams.set('event_id', params.eventId)
+  if (params.ticketType && params.ticketType !== 'all') searchParams.set('ticket_type', params.ticketType)
   if (params.approvalFilter && params.approvalFilter !== 'all') {
     searchParams.set('approval_filter', params.approvalFilter)
   }

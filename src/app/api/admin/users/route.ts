@@ -1,9 +1,36 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import {
+  adminUserDirectionSchema,
+  adminUserSortSchema,
+  decodeAdminUsersCursor,
+  encodeAdminUsersCursor,
+  sanitizeAdminUserSearch,
+  type AdminUserDirection,
+} from '@/lib/admin/usersList'
 
-const MAX_USERS = 5000
+const listQuerySchema = z.object({
+  paginated: z.enum(['true', 'false']).default('false'),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(25).max(100).default(50),
+  query: z.string().trim().min(1).max(160).optional(),
+  role: z.union([z.enum(['user', 'volunteer', 'admin', 'ambassador']), z.literal('all')]).default('all'),
+  sort: adminUserSortSchema.default('created_at'),
+  direction: adminUserDirectionSchema.default('desc'),
+})
+
+// This admin page manages the single Overbound account universe. Keep a high
+// safety bound for Auth scans while returning only the requested page.
+const MAX_USERS = 50000
 const PAGE_SIZE = 1000
+const roleLabels: Record<string, string> = {
+  user: 'Utilisateur',
+  volunteer: 'Bénévole',
+  admin: 'Administrateur',
+  ambassador: 'Ambassadeur',
+}
 
 const chunkArray = <T,>(items: T[], size: number) => {
   const chunks: T[][] = []
@@ -15,44 +42,24 @@ const chunkArray = <T,>(items: T[], size: number) => {
 
 export async function GET(request: Request) {
   try {
+    const parsed = listQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams.entries()))
+    if (!parsed.success) return NextResponse.json({ error: 'Paramètres de liste invalides' }, { status: 400 })
     const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
 
     const admin = supabaseAdmin()
-    const { data: organizationEvents, error: organizationEventsError } = await admin
-      .from('events')
-      .select('id')
-      .eq('organization_id', auth.organizationId)
-
-    if (organizationEventsError) throw organizationEventsError
-
-    const organizationEventIds = (organizationEvents ?? []).map((event) => event.id)
-    const organizationUserIds = new Set<string>([auth.user.id])
-
-    if (organizationEventIds.length > 0) {
-      const { data: registrations, error: registrationsError } = await admin
-        .from('registrations')
-        .select('user_id')
-        .in('event_id', organizationEventIds)
-        .not('user_id', 'is', null)
-
-      if (registrationsError) throw registrationsError
-      registrations?.forEach((registration) => {
-        if (registration.user_id) organizationUserIds.add(registration.user_id)
-      })
+    const params = parsed.data
+    const isPaginated = params.paginated === 'true' || Boolean(params.cursor || params.query || params.role !== 'all' || request.url.includes('limit=') || request.url.includes('sort=') || request.url.includes('direction='))
+    let cursor: ReturnType<typeof decodeAdminUsersCursor> | null = null
+    if (isPaginated && params.cursor) {
+      try {
+        cursor = decodeAdminUsersCursor(params.cursor, params.sort, params.direction)
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Cursor de pagination invalide' }, { status: 400 })
+      }
     }
-
-    const { data: organizationGroupMembers, error: groupMembersError } = await admin
-      .from('group_members')
-      .select('profile_id')
-      .eq('organization_id', auth.organizationId)
-
-    if (groupMembersError) throw groupMembersError
-    organizationGroupMembers?.forEach((member) => {
-      if (member.profile_id) organizationUserIds.add(member.profile_id)
-    })
     const allUsers: Array<{
       id: string
       email: string | null
@@ -81,7 +88,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const scopedUsers = allUsers.filter((authUser) => organizationUserIds.has(authUser.id))
+    const scopedUsers = allUsers
     const userIds = scopedUsers.map((u) => u.id)
     const profilesMap = new Map<
       string,
@@ -184,10 +191,46 @@ export async function GET(request: Request) {
         }
       })
 
-    return NextResponse.json({
-      users: usersWithProfiles,
-      total: usersWithProfiles.length,
+    if (!isPaginated) {
+      return NextResponse.json({ users: usersWithProfiles, total: usersWithProfiles.length })
+    }
+
+    // Auth users are exposed through Supabase Auth's paged admin API, while
+    // profile/group/ambassador data is joined separately. A bounded Auth scan
+    // is still required before this server applies filters and emits the
+    // requested page; the browser never receives the complete dataset in
+    // paginated mode.
+    const search = params.query ? sanitizeAdminUserSearch(params.query) : ''
+    let pageUsers = usersWithProfiles.filter((user) => {
+      if (params.role !== 'all' && user.role !== params.role) return false
+      if (!search) return true
+      return [user.full_name, user.email, roleLabels[user.role], user.phone, user.group_name, user.group_invite_code]
+        .filter(Boolean)
+        .some((value) => value?.toLowerCase().includes(search))
     })
+    const getSortValue = (user: typeof usersWithProfiles[number]): string => {
+      const value = user[params.sort]
+      return value == null ? '' : String(value).toLowerCase()
+    }
+    pageUsers.sort((left, right) => {
+      const valueCompare = getSortValue(left).localeCompare(getSortValue(right), 'fr', { numeric: true })
+      if (valueCompare !== 0) return params.direction === 'asc' ? valueCompare : -valueCompare
+      return params.direction === 'asc' ? left.id.localeCompare(right.id) : right.id.localeCompare(left.id)
+    })
+    const filteredCount = pageUsers.length
+    if (cursor) {
+      const cursorIndex = pageUsers.findIndex((user) => user.id === cursor?.id)
+      if (cursorIndex < 0) return NextResponse.json({ error: 'Cursor de pagination expiré' }, { status: 400 })
+      pageUsers = pageUsers.slice(cursorIndex + 1)
+    }
+    const pageUsersResult = pageUsers.slice(0, params.limit)
+    const hasNextPage = pageUsers.length > params.limit
+    const lastUser = pageUsersResult.at(-1)
+    const nextCursor = hasNextPage && lastUser
+      ? encodeAdminUsersCursor({ sort: params.sort, direction: params.direction as AdminUserDirection, id: lastUser.id })
+      : null
+
+    return NextResponse.json({ users: pageUsersResult, total: usersWithProfiles.length, page: { limit: params.limit, totalCount: filteredCount, nextCursor } })
   } catch (error) {
     console.error('[admin users] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
