@@ -6,6 +6,8 @@ import {
   fetchUpsellsForEvent,
   fetchPromo,
   getUpsellSubtotal,
+  getUpsellSubtotalsById,
+  isTargetUpsellSoldOnEvent,
   ensureAvailability,
   respondJson,
   allocateParticipantsToTiers,
@@ -217,6 +219,7 @@ export async function POST(request: NextRequest) {
     }
 
     const upsellSubtotal = getUpsellSubtotal(upsells, upsellMap)
+    const upsellSubtotalsById = getUpsellSubtotalsById(upsells, upsellMap)
 
     let discountAmount = 0
     const appliedPromos: Array<{
@@ -226,9 +229,14 @@ export async function POST(request: NextRequest) {
       discount_amount: number | null
       currency: string | null
       is_ambassador: boolean
+      target_upsell_id: string | null
     }> = []
     let validatedAmbassadorReferralCode: string | null = null
-    const regularPromoCodes: string[] = []
+    // FDR-0014 addendum §6: "1 standard code" quota split by target -- 1
+    // ticket-scoped + 1 product-scoped standard code can coexist, never two
+    // of the same target. Tracked separately instead of one flat array.
+    const ticketScopedRegularCodes: string[] = []
+    const productScopedRegularCodes: string[] = []
     let ambassadorPromoCount = 0
 
     for (const promoCode of promoCodes) {
@@ -239,16 +247,43 @@ export async function POST(request: NextRequest) {
 
       const isAmbassadorCode = Array.isArray(promo.ambassadors) && promo.ambassadors.length > 0
       const normalizedPromoCode = promo.code.trim().toUpperCase()
+      const isProductScoped = Boolean(promo.target_upsell_id)
+
+      if (isProductScoped) {
+        // Rejected outright if the targeted upsell isn't sold on this
+        // event at all -- distinct from "sold but not in this cart", which
+        // is a silent 0-discount below, not an error here (parity with
+        // /api/promotions/validate, FDR-0014 addendum §6).
+        const soldOnEvent = await isTargetUpsellSoldOnEvent(supabase, promo.target_upsell_id as string, eventId)
+        if (!soldOnEvent) {
+          return respondJson(
+            { error: `Le code ${promoCode} n'est pas applicable pour cet événement, aucun produit éligible.` },
+            422,
+          )
+        }
+      }
+
       if (isAmbassadorCode) {
         ambassadorPromoCount += 1
+      } else if (isProductScoped) {
+        productScopedRegularCodes.push(normalizedPromoCode)
       } else {
-        regularPromoCodes.push(normalizedPromoCode)
+        ticketScopedRegularCodes.push(normalizedPromoCode)
       }
       if (ambassadorPromoCount > 1) {
         return respondJson({ error: 'Un seul code ambassadeur peut être appliqué par commande.' }, 409)
       }
-      if (regularPromoCodes.length > 1 && !regularPromoCodes.some((code) => isWelcomeStackableCode(code))) {
-        return respondJson({ error: 'Un seul code promo standard peut être appliqué par commande.' }, 409)
+      if (
+        productScopedRegularCodes.length > 1 &&
+        !productScopedRegularCodes.some((code) => isWelcomeStackableCode(code))
+      ) {
+        return respondJson({ error: 'Un seul code promo produit peut être appliqué par commande.' }, 409)
+      }
+      if (
+        ticketScopedRegularCodes.length > 1 &&
+        !ticketScopedRegularCodes.some((code) => isWelcomeStackableCode(code))
+      ) {
+        return respondJson({ error: 'Un seul code promo billet peut être appliqué par commande.' }, 409)
       }
 
       if (isAmbassadorCode) {
@@ -263,6 +298,26 @@ export async function POST(request: NextRequest) {
           return Math.min(subtotal, promo.discount_amount)
         }
         return 0
+      }
+
+      if (isProductScoped) {
+        // Nets only against this upsell's own subtotal -- 0 (not a
+        // ticket-subtotal fallback) when the upsell isn't in the cart.
+        const targetSubtotal = upsellSubtotalsById[promo.target_upsell_id as string] ?? 0
+        const promoDiscountAmount = targetSubtotal > 0 ? calculatePromoForSubtotal(targetSubtotal) : 0
+        discountAmount += Math.max(0, promoDiscountAmount)
+        if (promoDiscountAmount > 0) {
+          appliedPromos.push({
+            id: promo.id,
+            code: promo.code,
+            discount_percent: promo.discount_percent,
+            discount_amount: promo.discount_amount,
+            currency: promo.currency,
+            is_ambassador: isAmbassadorCode,
+            target_upsell_id: promo.target_upsell_id,
+          })
+        }
+        continue
       }
 
       if (isOpenTicketCode(normalizedPromoCode)) {
@@ -284,6 +339,7 @@ export async function POST(request: NextRequest) {
             discount_amount: promo.discount_amount,
             currency: promo.currency,
             is_ambassador: isAmbassadorCode,
+            target_upsell_id: null,
           })
         }
         continue
@@ -309,10 +365,9 @@ export async function POST(request: NextRequest) {
         discount_amount: promo.discount_amount,
         currency: promo.currency,
         is_ambassador: isAmbassadorCode,
+        target_upsell_id: null,
       })
     }
-
-    discountAmount = Math.min(discountAmount, ticketSubtotal)
 
     const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0)
 

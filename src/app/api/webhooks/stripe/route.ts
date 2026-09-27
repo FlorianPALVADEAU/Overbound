@@ -16,6 +16,7 @@ import {
   isRankedFormatTicket,
 } from '@/lib/openSas'
 import { assignSelectedWaveToRegistration, SelectedWaveUnavailableError } from '@/lib/selectedWaveAssignment'
+import { markLuckyWheelAllocationRedeemed } from '@/lib/luckyWheel/redemption'
 
 export const runtime = 'nodejs'
 
@@ -397,6 +398,15 @@ export async function POST(request: NextRequest) {
 
           if (promoIncrementError) {
             console.error('Error incrementing promotional code usage:', promoIncrementError)
+          }
+
+          // FDR-0014 §7: no-op for ordinary promo codes, marks the Lucky
+          // Wheel allocation redeemed if this code was one of its dedicated
+          // single-use codes. Never blocks order confirmation on failure.
+          try {
+            await markLuckyWheelAllocationRedeemed({ admin, promotionalCodeId, orderId: order.id })
+          } catch (luckyWheelRedemptionError) {
+            console.error('Error marking Lucky Wheel allocation redeemed:', luckyWheelRedemptionError)
           }
         }
 
