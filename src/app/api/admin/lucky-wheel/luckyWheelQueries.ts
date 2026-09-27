@@ -131,25 +131,44 @@ export const useAdminLuckyWheelCampaignsPage = (params: { cursor?: string | null
     },
   })
 
+// FDR-0015 §7.3 layer 2: a non-blocking overlap warning the write route may
+// return alongside a successful create/update -- see campaignConflicts.ts.
+export interface LuckyWheelCampaignWriteWarning {
+  severity: 'warn'
+  kind: 'promotion'
+  conflict: { id: string; title: string; starts_at: string; ends_at: string }
+}
+
+export interface LuckyWheelCampaignWriteResult {
+  campaign: LuckyWheelCampaign
+  warnings: LuckyWheelCampaignWriteWarning[]
+}
+
 export const createAdminLuckyWheelCampaign = async (
   payload: LuckyWheelCampaignPayload,
-): Promise<LuckyWheelCampaign> => {
-  const response = await axiosClient.post<{ campaign: LuckyWheelCampaign }>('/admin/lucky-wheel/campaigns', payload)
+): Promise<LuckyWheelCampaignWriteResult> => {
+  const response = await axiosClient.post<{ campaign: LuckyWheelCampaign; warnings?: LuckyWheelCampaignWriteWarning[] }>(
+    '/admin/lucky-wheel/campaigns',
+    payload,
+  )
   if (!isSuccessStatus(response.status)) {
     throw new Error('Erreur lors de la création de la campagne')
   }
-  return response.data.campaign
+  return { campaign: response.data.campaign, warnings: response.data.warnings ?? [] }
 }
 
 export const updateAdminLuckyWheelCampaign = async (
   id: string,
   payload: LuckyWheelCampaignPayload,
-): Promise<LuckyWheelCampaign> => {
-  const response = await axiosClient.put<{ campaign: LuckyWheelCampaign }>(`/admin/lucky-wheel/campaigns/${id}`, payload)
+): Promise<LuckyWheelCampaignWriteResult> => {
+  const response = await axiosClient.put<{ campaign: LuckyWheelCampaign; warnings?: LuckyWheelCampaignWriteWarning[] }>(
+    `/admin/lucky-wheel/campaigns/${id}`,
+    payload,
+  )
   if (!isSuccessStatus(response.status)) {
     throw new Error('Erreur lors de la mise à jour de la campagne')
   }
-  return response.data.campaign
+  return { campaign: response.data.campaign, warnings: response.data.warnings ?? [] }
 }
 
 export const deleteAdminLuckyWheelCampaign = async (id: string): Promise<void> => {

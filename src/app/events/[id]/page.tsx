@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,14 +30,6 @@ import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
 import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
 import { useEventAnalytics } from '@/hooks/events/useEventAnalytics'
-
-// FDR-0014 §12.3/§18: lazy-loaded, same pattern as Layout.tsx's
-// PopupPromotion -- never part of the initial bundle, and a failure inside
-// it must never block the rest of the page.
-const LuckyWheelWidget = dynamic(
-  () => import('@/components/lucky-wheel/LuckyWheelWidget').then((mod) => mod.LuckyWheelWidget),
-  { ssr: false },
-)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -519,7 +510,6 @@ export default function EventDetailPage() {
             </div>
           </div>
         ) : null}
-        <LuckyWheelWidget eventId={event.id} />
       </main>
     )
   }
@@ -636,7 +626,6 @@ export default function EventDetailPage() {
           eventPriceTiers={eventPriceTiers}
         />
       </section>
-      <LuckyWheelWidget eventId={event.id} />
     </main>
   )
 }

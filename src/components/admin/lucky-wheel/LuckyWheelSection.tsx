@@ -25,6 +25,7 @@ import {
   useAdminLuckyWheelRewardsPage,
   type LuckyWheelCampaign,
   type LuckyWheelCampaignPayload,
+  type LuckyWheelCampaignWriteWarning,
   type LuckyWheelReward,
   type LuckyWheelRewardPayload,
 } from '@/app/api/admin/lucky-wheel/luckyWheelQueries'
@@ -38,7 +39,7 @@ import { RewardTable } from './RewardTable'
 import { RewardFormDialog, DEFAULT_REWARD_FORM_VALUES, type RewardFormValues } from './RewardFormDialog'
 
 interface MessageState {
-  type: 'success' | 'error'
+  type: 'success' | 'error' | 'warning'
   text: string
 }
 
@@ -184,23 +185,36 @@ export function LuckyWheelSection() {
     }
   }
 
+  // FDR-0015 §7.3 layer 2: a successful save can still carry a non-blocking
+  // overlap warning against an active popup promotion -- shown instead of
+  // the plain success message, never silently dropped.
+  const describeCampaignWarning = (warnings: LuckyWheelCampaignWriteWarning[]) => {
+    const promotionWarning = warnings.find((w) => w.kind === 'promotion')
+    if (!promotionWarning) return null
+    const { title, starts_at, ends_at } = promotionWarning.conflict
+    const format = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+    return `Attention : chevauche la popup "${title}" active du ${format(starts_at)} au ${format(ends_at)}. Une seule des deux s'ouvrira par visite.`
+  }
+
   const handleCampaignSubmit = async (payload: LuckyWheelCampaignPayload) => {
     setCampaignSubmitting(true)
     setMessage(null)
     try {
       if (campaignDialogMode === 'create') {
-        const created = await createAdminLuckyWheelCampaign(payload)
+        const { campaign: created, warnings } = await createAdminLuckyWheelCampaign(payload)
         queryClient.setQueryData<LuckyWheelCampaign[]>(adminLuckyWheelCampaignsQueryKey, (previous) => [
           created,
           ...(previous ?? []),
         ])
-        setMessage({ type: 'success', text: 'Campagne créée' })
+        const warningText = describeCampaignWarning(warnings)
+        setMessage(warningText ? { type: 'warning', text: warningText } : { type: 'success', text: 'Campagne créée' })
       } else if (selectedCampaign) {
-        const updated = await updateAdminLuckyWheelCampaign(selectedCampaign.id, payload)
+        const { campaign: updated, warnings } = await updateAdminLuckyWheelCampaign(selectedCampaign.id, payload)
         queryClient.setQueryData<LuckyWheelCampaign[]>(adminLuckyWheelCampaignsQueryKey, (previous) =>
           (previous ?? []).map((c) => (c.id === selectedCampaign.id ? updated : c)),
         )
-        setMessage({ type: 'success', text: 'Campagne mise à jour' })
+        const warningText = describeCampaignWarning(warnings)
+        setMessage(warningText ? { type: 'warning', text: warningText } : { type: 'success', text: 'Campagne mise à jour' })
       }
       setCampaignDialogOpen(false)
     } catch (error) {
@@ -272,7 +286,7 @@ export function LuckyWheelSection() {
     }
   }
 
-  const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
+  const alertVariant = message?.type === 'error' || message?.type === 'warning' ? 'destructive' : 'default'
 
   return (
     <div className="space-y-6">

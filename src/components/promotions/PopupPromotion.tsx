@@ -12,6 +12,7 @@ import {
   getPopupSubscribeValidationError,
   normalizePopupSubscribeValue,
 } from '@/lib/promotions/popupSubscribeValidation'
+import { usePopupSlot } from '@/components/popups/PopupArbiterProvider'
 
 interface PopupPromotionProps {
   isAuthenticated: boolean
@@ -26,6 +27,7 @@ const buildRedirectUrlWithNotice = (basePath: string, notice: string) => {
 
 export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const { data: promotions = [], isLoading } = usePromotions()
+  const requestPopupSlot = usePopupSlot('marketing-popup')
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -73,12 +75,15 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
     const delay = activePopup.popup_config?.delay_ms || 0
 
     const timer = setTimeout(() => {
+      // FDR-0015 §7.3 layer 1: only one automatic popup per session -- if
+      // the Lucky Wheel already claimed the slot, this popup never opens.
+      if (!requestPopupSlot('marketing-popup')) return
       setOpenedAt(Date.now())
       setIsOpen(true)
     }, delay)
 
     return () => clearTimeout(timer)
-  }, [activePopup])
+  }, [activePopup, requestPopupSlot])
 
   const handleClose = useCallback(() => {
     if (activePopup) {

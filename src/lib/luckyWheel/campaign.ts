@@ -79,6 +79,10 @@ export const getActiveCampaignForEvent = async ({
     .eq('lucky_wheel_campaign_events.event_id', eventId)
     .lte('starts_at', now)
     .gte('ends_at', now)
+    // FDR-0015 §7.2: without this order, two campaigns active on the same
+    // event at once made the pick non-deterministic (could flip between
+    // requests). Most recently started wins, deterministically.
+    .order('starts_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 

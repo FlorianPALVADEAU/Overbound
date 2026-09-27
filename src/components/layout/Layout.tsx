@@ -10,6 +10,8 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { CookieConsentBanner } from '@/components/consent/CookieConsentBanner'
 import type { Session } from '@supabase/supabase-js'
+import { PopupArbiterProvider } from '@/components/popups/PopupArbiterProvider'
+import { GlobalLuckyWheelWidget } from '@/components/lucky-wheel/GlobalLuckyWheelWidget'
 
 interface LayoutProps {
   children: ReactNode
@@ -108,19 +110,25 @@ export function Layout({ children }: LayoutProps) {
   }, [supabase, seedSessionCache, syncPostAuthData, queryClient])
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header
-        user={data?.user ?? null}
-        profile={data?.profile ?? null}
-        alerts={data?.alerts ?? null}
-        isLoading={isLoading}
-      />
-      <PromotionsBanner />
-      <main className="flex-1">{children}</main>
-      <Footer />
-      <CookieConsentBanner />
-      {/* Popup promotion for non-authenticated users */}
-      <PopupPromotion isAuthenticated={!!data?.user} />
-    </div>
+    <PopupArbiterProvider>
+      <div className="flex min-h-screen flex-col">
+        <Header
+          user={data?.user ?? null}
+          profile={data?.profile ?? null}
+          alerts={data?.alerts ?? null}
+          isLoading={isLoading}
+        />
+        <PromotionsBanner />
+        <main className="flex-1">{children}</main>
+        <Footer />
+        <CookieConsentBanner />
+        {/* Popup promotion for non-authenticated users */}
+        <PopupPromotion isAuthenticated={!!data?.user} />
+        {/* FDR-0015 §7.1: Lucky Wheel is site-wide, not just on event pages
+            -- it resolves its own event from context (the current event
+            page, or the featured event elsewhere). */}
+        <GlobalLuckyWheelWidget />
+      </div>
+    </PopupArbiterProvider>
   )
 }

@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti'
 import { useLuckyWheelTrigger, type LuckyWheelTriggerRules } from '@/hooks/lucky-wheel/use-lucky-wheel-trigger'
 import { useLuckyWheelSpin } from '@/hooks/lucky-wheel/use-lucky-wheel-spin'
 import { trackLuckyWheelEvent } from '@/lib/luckyWheel/analytics'
+import { usePopupSlot } from '@/components/popups/PopupArbiterProvider'
 import { LuckyWheelEntryForm } from './LuckyWheelEntryForm'
 import { LuckyWheelWheel, type WheelSegment } from './LuckyWheelWheel'
 import { LuckyWheelResult } from './LuckyWheelResult'
@@ -101,9 +102,14 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
     alreadyTriggered: alreadyParticipated,
   })
 
+  // FDR-0015 §7.3 layer 1: only one automatic popup per session -- if
+  // PopupPromotion already claimed the slot, this widget never opens even
+  // though its own trigger condition was met.
+  const requestPopupSlot = usePopupSlot('lucky-wheel')
+
   useEffect(() => {
-    if (shouldOpen) setIsOpen(true)
-  }, [shouldOpen])
+    if (shouldOpen && requestPopupSlot('lucky-wheel')) setIsOpen(true)
+  }, [shouldOpen, requestPopupSlot])
 
   useEffect(() => {
     if (isOpen && campaign) {

@@ -114,6 +114,100 @@ describe('POST /api/admin/lucky-wheel/campaigns', () => {
     expect(json.campaign.id).toBe('campaign-1')
   })
 
+  it('creates an enabled campaign with no conflicts, warnings empty', async () => {
+    requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' } })
+    const enabledBody = { ...VALID_BODY, enabled: true, paused: false }
+    const insertedCampaign = { id: 'campaign-1', ...enabledBody }
+    supabaseAdminMock.mockReturnValue({
+      from: (table: string) => {
+        if (table === 'lucky_wheel_campaigns') {
+          return {
+            insert: () => ({
+              select: () => ({
+                single: async () => ({ data: insertedCampaign, error: null }),
+              }),
+            }),
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  neq: async () => ({ data: [], error: null }),
+                }),
+                single: async () => ({ data: { ...insertedCampaign, events: [], rewards: [] }, error: null }),
+              }),
+            }),
+          }
+        }
+        if (table === 'lucky_wheel_campaign_events') {
+          return { insert: async () => ({ error: null }) }
+        }
+        if (table === 'site_promotions') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: async () => ({ data: [], error: null }),
+              }),
+            }),
+          }
+        }
+        throw new Error(`Unexpected table: ${table}`)
+      },
+    })
+
+    const response = await POST(buildRequest(enabledBody))
+    const json = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(json.warnings).toEqual([])
+  })
+
+  it('refuses (409) an enabled campaign overlapping another active campaign on a shared event', async () => {
+    requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' } })
+    const enabledBody = { ...VALID_BODY, enabled: true, paused: false }
+    const sharedEventId = VALID_BODY.event_ids[0]
+    supabaseAdminMock.mockReturnValue({
+      from: (table: string) => {
+        if (table === 'lucky_wheel_campaigns') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  neq: async () => ({
+                    data: [
+                      {
+                        id: 'existing-campaign',
+                        name: 'Campagne existante',
+                        starts_at: enabledBody.starts_at,
+                        ends_at: enabledBody.ends_at,
+                        lucky_wheel_campaign_events: [{ event_id: sharedEventId }],
+                      },
+                    ],
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }
+        }
+        if (table === 'site_promotions') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: async () => ({ data: [], error: null }),
+              }),
+            }),
+          }
+        }
+        throw new Error(`Unexpected table: ${table}`)
+      },
+    })
+
+    const response = await POST(buildRequest(enabledBody))
+    const json = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(json.conflict.kind).toBe('campaign')
+  })
+
   it('rejects a campaign with no event_ids', async () => {
     requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' } })
     supabaseAdminMock.mockReturnValue({ from: () => ({}) })
