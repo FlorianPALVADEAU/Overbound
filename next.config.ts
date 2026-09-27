@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // FDR-0014: react-custom-roulette-r19 (Lucky Wheel) ships its layout as
+  // styled-components. Without this flag, Next's SWC compiler doesn't
+  // transform styled-components for App Router SSR, so those components'
+  // CSS rules (e.g. the wheel's own max-width: 445px) can fail to apply on
+  // first client render -- exactly the "wheel has no size limit and spills
+  // out of the popup" bug observed 2026-09-22. Sanity Studio also ships
+  // styled-components; this flag benefits it identically, no conflict.
+  compiler: {
+    styledComponents: true,
+  },
 }
 
 // Wrap with Sentry config
