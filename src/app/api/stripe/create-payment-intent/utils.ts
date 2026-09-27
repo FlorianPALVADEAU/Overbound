@@ -19,6 +19,11 @@ type PromoRecord = {
   used_count: number
   events: Array<{ event_id: string }>
   ambassadors?: Array<{ id: string }>
+  // FDR-0014 addendum: null/absent = nets against ticketSubtotal (legacy).
+  // Set = scoped to one upsell, nets only against that upsell's own
+  // subtotal. Optional so existing test fixtures without this field
+  // (pre-addendum) keep compiling as the legacy/unscoped case.
+  target_upsell_id?: string | null
 }
 
 type EventPriceTier = {
@@ -107,12 +112,32 @@ export const fetchPromo = async (supabase: SupabaseSessionClient, promoCode: str
         valid_until,
         usage_limit,
         used_count,
+        target_upsell_id,
         events:promotional_code_events(event_id),
         ambassadors:ambassadors(id)
       `,
     )
     .ilike('code', promoCode.trim().toUpperCase())
     .maybeSingle()
+
+// FDR-0014 addendum §6: a product-scoped code is rejected outright if its
+// target upsell isn't even sold on this event -- distinct from "sold but
+// not in this cart", which nets to a silent 0-discount at price-calc time.
+export const isTargetUpsellSoldOnEvent = async (
+  supabase: SupabaseSessionClient,
+  targetUpsellId: string,
+  eventId: string,
+) => {
+  const { data, error } = await supabase
+    .from('upsells')
+    .select('id')
+    .eq('id', targetUpsellId)
+    .eq('is_active', true)
+    .or(`event_id.eq.${eventId},event_id.is.null`)
+    .maybeSingle()
+  if (error) throw error
+  return Boolean(data)
+}
 
 /**
  * Get the current price for a ticket based on event price tiers
@@ -242,6 +267,20 @@ export const getUpsellSubtotal = (
     }
     return accumulator + upsell.price_cents * (item.quantity || 0)
   }, 0)
+
+// FDR-0014 addendum: subtotal per selected upsell, keyed by upsell id --
+// needed to net a target_upsell_id promo code against the right line
+// instead of the ticket or the aggregated upsell total.
+export const getUpsellSubtotalsById = (
+  upsells: Array<{ upsellId: string; quantity: number }>,
+  upsellMap: Map<string, UpsellRow>,
+): Record<string, number> =>
+  upsells.reduce<Record<string, number>>((accumulator, item) => {
+    const upsell = upsellMap.get(item.upsellId)
+    if (!upsell) return accumulator
+    accumulator[item.upsellId] = (accumulator[item.upsellId] ?? 0) + upsell.price_cents * (item.quantity || 0)
+    return accumulator
+  }, {})
 
 export const calcPromo = (
   promo: PromoRecord,

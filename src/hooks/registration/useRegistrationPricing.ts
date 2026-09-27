@@ -8,7 +8,11 @@ import type {
 } from '@/components/registration/types'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { getCurrentPriceTier, calculateCurrentPrice } from '@/types/EventPriceTier'
-import { calculatePromoDiscount, calculatePromoDiscounts, isOpenTicketPromoCode } from '@/lib/registration'
+import {
+  calculatePromoDiscount,
+  calculatePromoDiscounts,
+  isOpenTicketPromoCode,
+} from '@/lib/registration'
 import { isOpenFormatTicket } from '@/lib/openSas'
 
 export function useRegistrationPricing(
@@ -69,13 +73,21 @@ export function useRegistrationPricing(
       : ticket.final_price_cents
   }, [appliedPromos, selectedTicketSlots, ticketMap, activeTier])
 
-  const upsellSubtotal = useMemo(() => {
-    return Object.entries(selectedUpsells).reduce((acc, [upsellId, config]) => {
+  // Per-upsell subtotal (quantity * unit price), keyed by upsell id -- the
+  // FDR-0014 addendum's calculatePromoDiscounts needs this to net a
+  // target_upsell_id code against the right line instead of the ticket.
+  const upsellSubtotalsById = useMemo(() => {
+    return Object.entries(selectedUpsells).reduce<Record<string, number>>((acc, [upsellId, config]) => {
       const upsell = upsells.find((u) => u.id === upsellId)
       if (!upsell) return acc
-      return acc + config.quantity * upsell.price_cents
-    }, 0)
+      acc[upsellId] = config.quantity * upsell.price_cents
+      return acc
+    }, {})
   }, [selectedUpsells, upsells])
+
+  const upsellSubtotal = useMemo(() => {
+    return Object.values(upsellSubtotalsById).reduce((acc, amount) => acc + amount, 0)
+  }, [upsellSubtotalsById])
 
   const discountAmount = useMemo(
     () =>
@@ -83,9 +95,34 @@ export function useRegistrationPricing(
         tierDiscountAmount,
         baseTicketSubtotal,
         firstOpenTicketPrice,
+        upsellSubtotalsById,
       }),
-    [appliedPromos, baseTicketSubtotal, firstOpenTicketPrice, tierDiscountAmount, ticketSubtotal],
+    [appliedPromos, baseTicketSubtotal, firstOpenTicketPrice, tierDiscountAmount, ticketSubtotal, upsellSubtotalsById],
   )
+
+  // Decomposition by target, for order-summary display (FDR-0014 addendum
+  // §2.2/§6 -- exact presentation left open, this exposes the split so the
+  // UI can render "-3,00€ sur T-shirt finisher" instead of one opaque
+  // total). Ticket-scoped codes keep their existing combined behavior
+  // (tier/OPENTICKET interactions); only the upsell split is new.
+  const upsellDiscountAmount = useMemo(
+    () =>
+      appliedPromos
+        .filter((promo) => promo.target_upsell_id)
+        .reduce(
+          (acc, promo) =>
+            acc +
+            calculatePromoDiscount(promo, ticketSubtotal, {
+              tierDiscountAmount,
+              baseTicketSubtotal,
+              firstOpenTicketPrice,
+              upsellSubtotalsById,
+            }),
+          0,
+        ),
+    [appliedPromos, baseTicketSubtotal, firstOpenTicketPrice, tierDiscountAmount, ticketSubtotal, upsellSubtotalsById],
+  )
+  const ticketDiscountAmount = discountAmount - upsellDiscountAmount
 
   const isTierDiscountOverriddenByPromo = useMemo(() => {
     const luoffPromo = appliedPromos.find((promo) => promo.code?.trim().toUpperCase() === 'LUOFF30')
@@ -127,7 +164,10 @@ export function useRegistrationPricing(
     isTierDiscountOverriddenByPromo,
     ticketSubtotal,
     upsellSubtotal,
+    upsellSubtotalsById,
     discountAmount,
+    ticketDiscountAmount,
+    upsellDiscountAmount,
     totalDue,
     computedPricing,
     summaryPricing,

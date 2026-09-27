@@ -20,6 +20,8 @@ import VolunteerApplicationConfirmationEmail from '@/emails/VolunteerApplication
 import SupportContactEmail from '@/emails/SupportContactEmail'
 import SupportContactConfirmationEmail from '@/emails/SupportContactConfirmationEmail'
 import PopupSubscribeConfirmationEmail from '@/emails/PopupSubscribeConfirmationEmail'
+import LuckyWheelRewardEmail from '@/emails/LuckyWheelRewardEmail'
+import LuckyWheelReminderEmail from '@/emails/LuckyWheelReminderEmail'
 import { renderEmail } from '@/lib/email/render'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
@@ -570,6 +572,60 @@ export async function sendPopupSubscribeConfirmationEmail(params: {
     from: UNFORMAL_FROM,
     to: params.to,
     subject: 'Bienvenue dans la communauté Overbound !',
+    html,
+  })
+}
+
+// FDR-0014 §11: sent immediately after a winning spin.
+export async function sendLuckyWheelRewardEmail(params: {
+  to: string
+  rewardName: string
+  promoCode: string | null
+  expiresAtLabel: string
+  registerUrl: string
+}) {
+  const html = await renderEmail(
+    LuckyWheelRewardEmail({
+      rewardName: params.rewardName,
+      promoCode: params.promoCode,
+      expiresAtLabel: params.expiresAtLabel,
+      registerUrl: params.registerUrl,
+    }),
+  )
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    subject: `Tu as gagné : ${params.rewardName}`,
+    html,
+  })
+}
+
+// FDR-0014 §11: reminder sequence for an unredeemed reward. Caller is
+// responsible for checking redeemed_at before each scheduled send and
+// stopping the sequence immediately once set.
+export async function sendLuckyWheelReminderEmail(params: {
+  to: string
+  rewardName: string
+  expiresAtLabel: string
+  registerUrl: string
+  isLastChance?: boolean
+}) {
+  const html = await renderEmail(
+    LuckyWheelReminderEmail({
+      rewardName: params.rewardName,
+      expiresAtLabel: params.expiresAtLabel,
+      registerUrl: params.registerUrl,
+      isLastChance: params.isLastChance,
+    }),
+  )
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    subject: params.isLastChance
+      ? `Dernières heures pour ${params.rewardName}`
+      : `N'oublie pas : ${params.rewardName}`,
     html,
   })
 }

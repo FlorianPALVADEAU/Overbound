@@ -36,12 +36,14 @@ export async function POST(request: NextRequest) {
       : []
 
     const uniqueExistingCodes = [...new Set(normalizedExistingCodes)]
-    if (uniqueExistingCodes.length >= 2) {
-      return NextResponse.json({ error: 'Vous avez déjà atteint la limite de 2 codes promo.' }, { status: 409 })
-    }
     if (uniqueExistingCodes.includes(normalizedCode)) {
       return NextResponse.json({ error: 'Ce code promo est déjà appliqué.' }, { status: 409 })
     }
+    // FDR-0014 addendum §6: the old flat "2 codes max" cap is replaced by a
+    // per-target cap enforced below (max 1 ticket-scoped + max 1
+    // product-scoped standard code) -- a code never targets both, so the
+    // effective ceiling stays 2 standard codes total, just never 2 of the
+    // same target. No blanket count check needed here anymore.
 
     const admin = supabaseAdmin()
 
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
         is_active,
         usage_limit,
         used_count,
+        target_upsell_id,
         events:promotional_code_events(event_id),
         ambassadors:ambassadors(id)
       `,
@@ -69,6 +72,33 @@ export async function POST(request: NextRequest) {
 
     if (error || !promotionalCode) {
       return NextResponse.json({ error: 'Code promo introuvable ou expiré.' }, { status: 404 })
+    }
+
+    // FDR-0014 addendum §6: a product-scoped code (target_upsell_id set) is
+    // rejected here, explicitly, if the targeted upsell isn't even sold on
+    // this event -- distinct from "upsell sold but not selected in the
+    // cart", which is a silent 0-discount at pricing time
+    // (calculatePromoDiscount), not an error here. An upsell that IS sold
+    // on the event but simply not added to the cart yet must still pass
+    // this check (the participant may add it after applying the code).
+    if (promotionalCode.target_upsell_id) {
+      const { data: targetUpsell, error: targetUpsellError } = await admin
+        .from('upsells')
+        .select('id')
+        .eq('id', promotionalCode.target_upsell_id)
+        .eq('is_active', true)
+        .or(`event_id.eq.${eventId},event_id.is.null`)
+        .maybeSingle()
+
+      if (targetUpsellError) {
+        return NextResponse.json({ error: 'Impossible de vérifier le produit associé au code.' }, { status: 500 })
+      }
+      if (!targetUpsell) {
+        return NextResponse.json(
+          { error: "Ce code n'est pas applicable pour cet événement, aucun produit éligible." },
+          { status: 422 },
+        )
+      }
     }
 
     const now = new Date()
@@ -132,7 +162,7 @@ export async function POST(request: NextRequest) {
     if (uniqueExistingCodes.length > 0) {
       const { data: existingPromoRows, error: existingPromoError } = await admin
         .from('promotional_codes')
-        .select('code, ambassadors:ambassadors(id)')
+        .select('code, target_upsell_id, ambassadors:ambassadors(id)')
         .in('code', uniqueExistingCodes)
 
       if (existingPromoError) {
@@ -140,15 +170,24 @@ export async function POST(request: NextRequest) {
       }
 
       let ambassadorCount = 0
-      let regularCount = 0
+      // FDR-0014 addendum §6: "1 standard code" split by target instead of
+      // one flat count -- 1 ticket-scoped (target_upsell_id null) + 1
+      // product-scoped (target_upsell_id set) standard code can coexist;
+      // never two of the same target.
+      let ticketScopedRegularCount = 0
+      let productScopedRegularCount = 0
       const regularCodes: string[] = []
 
       for (const existingPromo of existingPromoRows || []) {
         if (hasAmbassadorLink((existingPromo as { ambassadors?: unknown }).ambassadors)) {
           ambassadorCount += 1
+          continue
+        }
+        regularCodes.push(String((existingPromo as { code?: string }).code || '').trim().toUpperCase())
+        if ((existingPromo as { target_upsell_id?: string | null }).target_upsell_id) {
+          productScopedRegularCount += 1
         } else {
-          regularCount += 1
-          regularCodes.push(String((existingPromo as { code?: string }).code || '').trim().toUpperCase())
+          ticketScopedRegularCount += 1
         }
       }
 
@@ -159,11 +198,17 @@ export async function POST(request: NextRequest) {
           { status: 409 },
         )
       }
-      if (!isIncomingAmbassador && regularCount >= 1) {
+
+      const incomingIsProductScoped = Boolean(promotionalCode.target_upsell_id)
+      const sameTargetRegularCount = incomingIsProductScoped ? productScopedRegularCount : ticketScopedRegularCount
+
+      if (!isIncomingAmbassador && sameTargetRegularCount >= 1) {
         const regularCodesWithIncoming = [...regularCodes, normalizedCode]
-        const welcomeExceptionApplies = regularCodesWithIncoming.some((code) => isWelcomeStackableCode(code))
+        const welcomeExceptionApplies = !incomingIsProductScoped && regularCodesWithIncoming.some((code) => isWelcomeStackableCode(code))
         if (welcomeExceptionApplies) {
-          // Allow stacking WELCOME05 with one other standard promo code.
+          // Allow stacking WELCOME05 with one other standard ticket-scoped
+          // promo code. Never applies to product-scoped codes -- WELCOME05
+          // is a ticket code, this exception was never meant to reach here.
           return NextResponse.json({
             promotionalCode: {
               id: promotionalCode.id,
@@ -173,11 +218,16 @@ export async function POST(request: NextRequest) {
               discount_amount: promotionalCode.discount_amount,
               currency: promotionalCode.currency,
               is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
+              target_upsell_id: promotionalCode.target_upsell_id,
             },
           })
         }
         return NextResponse.json(
-          { error: 'Un seul code promo standard peut être appliqué par commande.' },
+          {
+            error: incomingIsProductScoped
+              ? 'Un seul code promo produit peut être appliqué par commande.'
+              : 'Un seul code promo billet peut être appliqué par commande.',
+          },
           { status: 409 },
         )
       }
@@ -192,6 +242,7 @@ export async function POST(request: NextRequest) {
         discount_amount: promotionalCode.discount_amount,
         currency: promotionalCode.currency,
         is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
+        target_upsell_id: promotionalCode.target_upsell_id,
       },
     })
   } catch (error) {

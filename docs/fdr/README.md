@@ -22,3 +22,4 @@ Template: `docs/templates/fdr-template.md`
 - [FDR-0010 - Politique financière des corrections de billet et de SAS](./FDR-0010-ticket-financial-correction-policy.md) — Proposed
 - [FDR-0011 - Attribution de numéro de dossard fixe](./FDR-0011-fixed-bib-number-assignment.md) — Proposed
 - [FDR-0012 - Choix du SAS OPEN par le participant](./FDR-0012-user-selected-open-wave.md) — Proposed
+- [FDR-0014 - Lucky Wheel (roue de la chance)](./FDR-0014-lucky-wheel.md) — Proposed

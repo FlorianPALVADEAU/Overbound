@@ -231,6 +231,39 @@ describe('registration utils', () => {
 
       expect(result).toBe(0)
     })
+
+    // FDR-0014 addendum (product-line discounts) §2.4: success path.
+    it('nets a target_upsell_id code against its own upsell subtotal, not the ticket subtotal', () => {
+      const result = calculatePromoDiscount(
+        { ...basePromo, discount_percent: 20, target_upsell_id: 'upsell-1' },
+        10000, // ticketSubtotal -- must be ignored entirely for this code
+        { upsellSubtotalsById: { 'upsell-1': 1500 } },
+      )
+
+      expect(result).toBe(300) // 20% of 1500, not of 10000
+    })
+
+    // FDR-0014 addendum §2.4: the prioritized failure path -- upsell not
+    // selected must resolve to 0, never fall back to discounting the ticket.
+    it('resolves to 0, not a ticket-subtotal fallback, when the target upsell is not selected', () => {
+      const result = calculatePromoDiscount(
+        { ...basePromo, discount_percent: 20, target_upsell_id: 'upsell-1' },
+        10000,
+        { upsellSubtotalsById: {} }, // upsell-1 absent = not in the cart
+      )
+
+      expect(result).toBe(0)
+    })
+
+    it('caps a target_upsell_id discount at that upsell subtotal, never spills onto the ticket', () => {
+      const result = calculatePromoDiscount(
+        { ...basePromo, discount_amount: 5000, target_upsell_id: 'upsell-1' },
+        10000,
+        { upsellSubtotalsById: { 'upsell-1': 1200 } },
+      )
+
+      expect(result).toBe(1200)
+    })
   })
 
   describe('calculatePromoDiscounts', () => {
@@ -275,6 +308,36 @@ describe('registration utils', () => {
         tierDiscountAmount: 2000,
       })
 
+      expect(discount).toBe(1000)
+    })
+
+    // FDR-0014 addendum §2.4: a product-scoped code + a ticket-scoped code
+    // coexist and net independently -- neither clamps the other.
+    it('sums a ticket-scoped and a product-scoped discount independently, capped separately', () => {
+      const promos = [
+        { ...basePromo, code: 'TICKET10', discount_percent: 10 }, // ticket-scoped
+        { ...basePromo, code: 'PRODUCT20', discount_percent: 20, target_upsell_id: 'upsell-1' },
+      ]
+
+      const discount = calculatePromoDiscounts(promos, 10000, {
+        upsellSubtotalsById: { 'upsell-1': 1500 },
+      })
+
+      // 10% of 10000 (ticket) + 20% of 1500 (upsell) = 1000 + 300
+      expect(discount).toBe(1300)
+    })
+
+    it('does not let an unmatched product-scoped code reduce the ticket-scoped total', () => {
+      const promos = [
+        { ...basePromo, code: 'TICKET10', discount_percent: 10 },
+        { ...basePromo, code: 'PRODUCT20', discount_percent: 20, target_upsell_id: 'upsell-not-in-cart' },
+      ]
+
+      const discount = calculatePromoDiscounts(promos, 10000, {
+        upsellSubtotalsById: {}, // targeted upsell not selected
+      })
+
+      // Only the ticket-scoped 10% applies; the product code contributes 0.
       expect(discount).toBe(1000)
     })
   })

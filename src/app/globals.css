@@ -151,3 +151,19 @@
 .animate-scroll:hover {
   animation-play-state: paused;
 }
+
+/* FDR-0014: idle "heartbeat" pulse on the Lucky Wheel while it waits for
+   the participant to spin -- catches the eye before any interaction. */
+@keyframes luckyWheelBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.animate-lucky-wheel-breathe {
+  animation: luckyWheelBreathe 1.8s ease-in-out infinite;
+}

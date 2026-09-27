@@ -3,6 +3,7 @@ import {
   getCurrentTicketPriceFromRow,
   getTicketSubtotal,
   getUpsellSubtotal,
+  getUpsellSubtotalsById,
   calcPromo,
   allocateParticipantsToTiers,
   expandTierAllocations,
@@ -251,6 +252,41 @@ describe('Payment Calculation Utils', () => {
       ])
 
       expect(getUpsellSubtotal(upsells, upsellMap)).toBe(0)
+    })
+  })
+
+  describe('getUpsellSubtotalsById', () => {
+    it('keys the subtotal by upsell id instead of aggregating', () => {
+      const upsells = [
+        { upsellId: 'upsell1', quantity: 2 },
+        { upsellId: 'upsell2', quantity: 1 },
+      ]
+      const upsellMap = new Map([
+        ['upsell1', { id: 'upsell1', price_cents: 1000 }],
+        ['upsell2', { id: 'upsell2', price_cents: 1500 }],
+      ])
+
+      expect(getUpsellSubtotalsById(upsells, upsellMap)).toEqual({
+        upsell1: 2000,
+        upsell2: 1500,
+      })
+    })
+
+    it('ignores unknown upsell IDs, same as getUpsellSubtotal', () => {
+      const upsells = [{ upsellId: 'unknown', quantity: 2 }]
+      const upsellMap = new Map([['upsell1', { id: 'upsell1', price_cents: 1000 }]])
+
+      expect(getUpsellSubtotalsById(upsells, upsellMap)).toEqual({})
+    })
+
+    it('sums quantities for the same upsell id appearing more than once', () => {
+      const upsells = [
+        { upsellId: 'upsell1', quantity: 1 },
+        { upsellId: 'upsell1', quantity: 1 },
+      ]
+      const upsellMap = new Map([['upsell1', { id: 'upsell1', price_cents: 1000 }]])
+
+      expect(getUpsellSubtotalsById(upsells, upsellMap)).toEqual({ upsell1: 2000 })
     })
   })
 
@@ -562,6 +598,78 @@ describe('Payment Calculation Utils', () => {
         { tier, quantity: 6 },
       ])
       expect(result).toHaveLength(10)
+    })
+  })
+
+  // FDR-0014 addendum (product-line discounts) §2.3/§2.4: parity between
+  // the client preview (src/lib/registration.ts calculatePromoDiscount)
+  // and the server calculation inlined in
+  // create-payment-intent/route.ts. Both implementations discount a
+  // target_upsell_id code by percent/amount, clamped to that upsell's own
+  // subtotal, never against the ticket subtotal -- verified here against
+  // the same fixed inputs since the two are independent implementations
+  // (the server route inlines its own calculatePromoForSubtotal closure
+  // rather than importing calculatePromoDiscount), not a single shared
+  // function.
+  describe('client/server parity -- target_upsell_id discount math', () => {
+    const percentTargetedPromo = { discount_percent: 20, discount_amount: null }
+    const targetUpsellSubtotal = 1500 // e.g. 2 x 750-cent T-shirts
+    const ticketSubtotal = 10000 // must never be touched by this code
+
+    const serverCalculatePromoForSubtotal = (
+      promo: { discount_percent: number | null; discount_amount: number | null },
+      subtotal: number,
+    ) => {
+      // Mirrors the closure inlined in create-payment-intent/route.ts.
+      if (promo.discount_percent && promo.discount_percent > 0) {
+        return Math.min(subtotal, Math.round(subtotal * (promo.discount_percent / 100)))
+      }
+      if (promo.discount_amount && promo.discount_amount > 0) {
+        return Math.min(subtotal, promo.discount_amount)
+      }
+      return 0
+    }
+
+    it('server math nets a percent target_upsell_id discount against the upsell subtotal, matching the client function', async () => {
+      const { calculatePromoDiscount } = await import('@/lib/registration')
+
+      const clientResult = calculatePromoDiscount(
+        {
+          id: 'p1',
+          code: 'PRODUCT20',
+          currency: 'eur',
+          ...percentTargetedPromo,
+          target_upsell_id: 'upsell-1',
+        },
+        ticketSubtotal,
+        { upsellSubtotalsById: { 'upsell-1': targetUpsellSubtotal } },
+      )
+      const serverResult = serverCalculatePromoForSubtotal(percentTargetedPromo, targetUpsellSubtotal)
+
+      expect(clientResult).toBe(serverResult)
+      expect(clientResult).toBe(300) // 20% of 1500
+    })
+
+    it('server math resolves to 0 (never the ticket subtotal) when the target upsell subtotal is 0, matching the client function', async () => {
+      const { calculatePromoDiscount } = await import('@/lib/registration')
+
+      const clientResult = calculatePromoDiscount(
+        {
+          id: 'p1',
+          code: 'PRODUCT20',
+          currency: 'eur',
+          ...percentTargetedPromo,
+          target_upsell_id: 'upsell-1',
+        },
+        ticketSubtotal,
+        { upsellSubtotalsById: {} },
+      )
+      // Server route: `targetSubtotal > 0 ? calculatePromoForSubtotal(...) : 0`
+      const serverTargetSubtotal = 0
+      const serverResult = serverTargetSubtotal > 0 ? serverCalculatePromoForSubtotal(percentTargetedPromo, serverTargetSubtotal) : 0
+
+      expect(clientResult).toBe(serverResult)
+      expect(clientResult).toBe(0)
     })
   })
 })
