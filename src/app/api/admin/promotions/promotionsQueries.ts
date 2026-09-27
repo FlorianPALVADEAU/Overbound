@@ -19,7 +19,9 @@ export interface AdminPromotionPayload {
 
 interface PromotionsResponse {
   promotions: Promotion[]
+  page?: { limit: number; totalCount: number; nextCursor: string | null }
 }
+export interface AdminPromotionsPage { promotions: Promotion[]; page: NonNullable<PromotionsResponse['page']> }
 
 interface PromotionResponse {
   promotion: Promotion
@@ -40,6 +42,10 @@ export const useAdminPromotions = () =>
     queryKey: adminPromotionsQueryKey,
     queryFn: fetchAdminPromotions,
   })
+
+export interface AdminPromotionsPageParams { cursor?: string | null; limit?: number; query?: string; status?: 'all' | 'running' | 'upcoming' | 'expired' | 'inactive'; sort?: 'starts_at' | 'ends_at' | 'created_at' | 'title'; direction?: 'asc' | 'desc' }
+const fetchAdminPromotionsPage = async (params: AdminPromotionsPageParams = {}): Promise<AdminPromotionsPage> => { const search = new URLSearchParams({ paginated: 'true' }); for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== null && value !== '') search.set(key, String(value)); const response = await axiosClient.get<PromotionsResponse>(`/admin/promotions?${search}`); if (response.status !== 200 || !response.data.page) throw new Error('Erreur lors du chargement des promotions'); return { promotions: response.data.promotions ?? [], page: response.data.page } }
+export const useAdminPromotionsPage = (params: AdminPromotionsPageParams = {}) => useQuery<AdminPromotionsPage, Error>({ queryKey: [...adminPromotionsQueryKey, 'page', params], queryFn: () => fetchAdminPromotionsPage(params) })
 
 export const createAdminPromotion = async (
   payload: AdminPromotionPayload,

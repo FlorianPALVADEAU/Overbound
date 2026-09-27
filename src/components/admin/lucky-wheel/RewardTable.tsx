@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import type { LuckyWheelReward } from '@/app/api/admin/lucky-wheel/luckyWheelQueries'
 
 interface RewardTableProps {
@@ -11,12 +11,14 @@ interface RewardTableProps {
   deletingId?: string | null
   onEdit: (reward: LuckyWheelReward) => void
   onDelete: (reward: LuckyWheelReward) => void
+  pagination: { cursor: string | null; previousCursors: string[]; nextCursor: string | null; total?: number }
+  onPaginationChange: (pagination: { cursor: string | null; previousCursors: string[] }) => void
 }
 
-export function RewardTable({ rewards, loading, deletingId, onEdit, onDelete }: RewardTableProps) {
-  const columns: AdminDataGridColumn<LuckyWheelReward>[] = [
+export function RewardTable({ rewards, loading, deletingId, onEdit, onDelete, pagination, onPaginationChange }: RewardTableProps) {
+  const columns: OperationsListColumn<LuckyWheelReward>[] = [
     {
-      key: 'name',
+      id: 'name',
       header: 'Récompense',
       cell: (reward) => (
         <div className="flex flex-col gap-1">
@@ -26,7 +28,7 @@ export function RewardTable({ rewards, loading, deletingId, onEdit, onDelete }: 
       ),
     },
     {
-      key: 'stock',
+      id: 'stock',
       header: 'Stock / gains',
       cell: (reward) => (
         <span>
@@ -35,12 +37,12 @@ export function RewardTable({ rewards, loading, deletingId, onEdit, onDelete }: 
       ),
     },
     {
-      key: 'weight',
+      id: 'weight',
       header: 'Poids',
       cell: (reward) => <span>{reward.weight ?? '—'}</span>,
     },
     {
-      key: 'phases',
+      id: 'phases',
       header: 'Phases',
       cell: (reward) => (
         <div className="flex flex-wrap gap-1">
@@ -53,41 +55,20 @@ export function RewardTable({ rewards, loading, deletingId, onEdit, onDelete }: 
       ),
     },
     {
-      key: 'status',
+      id: 'status',
       header: 'Statut',
       cell: (reward) => (
         <Badge variant={reward.enabled ? 'default' : 'secondary'}>{reward.enabled ? 'Active' : 'Inactive'}</Badge>
       ),
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-[160px]',
-      cell: (reward) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(reward)}>
-            Modifier
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDelete(reward)}
-            disabled={deletingId === reward.id}
-          >
-            {deletingId === reward.id ? 'Suppression…' : 'Supprimer'}
-          </Button>
-        </div>
-      ),
-    },
+  ]
+
+  const actions: OperationsListAction<LuckyWheelReward>[] = [
+    { id: 'edit', label: 'Modifier', onSelect: onEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: (reward) => deletingId === reward.id, onSelect: onDelete },
   ]
 
   return (
-    <AdminDataGrid
-      data={rewards}
-      columns={columns}
-      loading={loading}
-      emptyMessage="Aucune récompense configurée pour cette campagne."
-      getRowId={(reward) => reward.id}
-    />
+    <OperationsList data={{ items: rewards, nextCursor: pagination.nextCursor, total: pagination.total }} status={loading ? 'loading' : 'idle'} getItemId={(reward) => reward.id} columns={columns} rowActions={actions} pagination={{ ...pagination, limit: 25 }} onPaginationChange={onPaginationChange} itemLabel="récompense" />
   )
 }

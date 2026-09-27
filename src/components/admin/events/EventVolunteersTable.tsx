@@ -6,7 +6,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAdminEventVolunteers, deleteAdminEventVolunteer } from '@/app/api/admin/events/eventsQueries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -100,18 +99,19 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
               {volunteers.length > 1 ? 's' : ''} reçue{volunteers.length > 1 ? 's' : ''}.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
             {isFetching ? (
               <span className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 animate-spin" />
                 Actualisation…
               </span>
             ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="shrink-0"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Rafraîchir
@@ -121,21 +121,21 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
 
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-1">
-            <Label>Recherche</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Nom, email, mission…"
+                aria-label="Rechercher un bénévole"
                 className="pl-9"
               />
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
+        <div className="hidden min-w-0 overflow-hidden md:block">
+          <Table className="table-fixed [&_td]:min-w-0 [&_td]:break-words [&_th]:truncate">
             <TableHeader>
               <TableRow>
                 <TableHead>Bénévole</TableHead>
@@ -220,6 +220,86 @@ export function EventVolunteersTable({ eventId }: EventVolunteersTableProps) {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="space-y-3 md:hidden">
+          {isLoading ? (
+            <div className="py-10 text-center text-muted-foreground">
+              <Clock className="mx-auto mb-3 h-6 w-6 animate-spin" />
+              Chargement des bénévoles…
+            </div>
+          ) : filteredVolunteers.length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground">
+              <Users className="mx-auto mb-3 h-6 w-6" />
+              Aucun bénévole ne correspond à cette recherche.
+            </div>
+          ) : (
+            filteredVolunteers.map((volunteer) => (
+              <article key={volunteer.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-sm">
+                <div className="min-w-0 space-y-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{volunteer.full_name ?? 'Bénévole sans nom'}</p>
+                    <a
+                      href={`mailto:${volunteer.email}`}
+                      className="block truncate text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      {volunteer.email}
+                    </a>
+                    {volunteer.phone ? (
+                      <a
+                        href={`tel:${volunteer.phone}`}
+                        className="block truncate text-sm text-muted-foreground hover:text-foreground"
+                      >
+                        {volunteer.phone}
+                      </a>
+                    ) : null}
+                  </div>
+
+                  <dl className="grid min-w-0 grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Mission</dt>
+                      <dd className="truncate">{volunteer.preferred_mission ?? 'Mission à définir'}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-xs text-muted-foreground">Disponibilité</dt>
+                      <dd className="break-words text-muted-foreground">{volunteer.availability ?? '—'}</dd>
+                    </div>
+                  </dl>
+
+                  <p className="text-xs text-muted-foreground">
+                    Candidature soumise le {formatDate(volunteer.submitted_at ?? null)}
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <a href={`mailto:${volunteer.email}`}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Envoyer un email
+                      </a>
+                    </Button>
+                    {volunteer.phone ? (
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <a href={`tel:${volunteer.phone}`}>
+                          <Phone className="mr-2 h-4 w-4" />
+                          Appeler
+                        </a>
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full sm:col-span-2"
+                      onClick={() => handleDelete(volunteer.id, volunteer.full_name)}
+                      disabled={deleteLoadingId === volunteer.id}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {deleteLoadingId === volunteer.id ? 'Suppression…' : 'Supprimer la candidature'}
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </CardContent>
     </Card>

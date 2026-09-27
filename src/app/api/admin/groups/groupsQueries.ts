@@ -32,6 +32,16 @@ interface AdminGroupsResponse {
   total: number
 }
 
+export interface AdminGroupsPageParams {
+  cursor?: string | null
+  limit?: 25 | 50 | 100
+  query?: string
+}
+export interface AdminGroupsPageResponse extends AdminGroupsResponse {
+  memberProfileIds: string[]
+  page: { limit: number; totalCount: number; nextCursor: string | null }
+}
+
 interface AdminGroupsPromoCodesResponse {
   codes: Array<Pick<AmbassadorPromoCode, 'id' | 'code' | 'name' | 'is_active'>>
 }
@@ -50,6 +60,19 @@ export const useAdminGroups = () =>
   useQuery<AdminGroupsResponse, Error>({
     queryKey: adminGroupsQueryKey,
     queryFn: fetchAdminGroups,
+  })
+
+export const useAdminGroupsPage = (params: AdminGroupsPageParams = {}) =>
+  useQuery<AdminGroupsPageResponse, Error>({
+    queryKey: [...adminGroupsQueryKey, 'page', params],
+    queryFn: async () => {
+      const search = new URLSearchParams({ paginated: 'true', limit: String(params.limit ?? 50) })
+      if (params.cursor) search.set('cursor', params.cursor)
+      if (params.query) search.set('query', params.query)
+      const response = await axiosClient.get<AdminGroupsPageResponse>(`/admin/groups?${search.toString()}`)
+      if (response.status !== 200) throw new Error('Erreur lors du chargement des groupes')
+      return response.data
+    },
   })
 
 const ADMIN_GROUPS_PROMO_CODES_QUERY_KEY = ['admin', 'groups', 'promo-codes'] as const

@@ -9,6 +9,7 @@ const resolveRewardStatus = (value: string | null | undefined): AmbassadorReward
   const normalized = String(value || '').toLowerCase()
   if (normalized === 'claimed') return 'claimed'
   if (normalized === 'fulfilled') return 'fulfilled'
+  if (normalized === 'cancelled') return 'cancelled'
   return 'earned'
 }
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const { data: rewardsRows, error: rewardsError } = await admin
       .from('ambassador_rewards')
-      .select('id, ambassador_id, reward_level, reward_name, status, earned_at, claimed_at, fulfilled_at')
+      .select('id, ambassador_id, reward_level, reward_name, status, program_year, earned_at, expires_at, claimed_at, fulfilled_at, cancelled_at, cancellation_reason')
       .order('earned_at', { ascending: false })
 
     if (rewardsError) {
@@ -37,9 +38,13 @@ export async function GET(request: NextRequest) {
       reward_level: number
       reward_name: string
       status: string | null
+      program_year: number | null
       earned_at: string
+      expires_at: string | null
       claimed_at: string | null
       fulfilled_at: string | null
+      cancelled_at: string | null
+      cancellation_reason: string | null
     }>
 
     if (rewards.length === 0) {
@@ -76,7 +81,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur profils' }, { status: 500 })
     }
 
-    const profilesMap = new Map((profilesRows || []).map((row: any) => [row.id, row.full_name ?? null]))
+    const profilesMap = new Map(
+      (profilesRows || []).map((row) => [row.id as string, row.full_name as string | null]),
+    )
     const ambassadorMap = new Map(
       ambassadors.map((row) => [
         row.id,
@@ -99,9 +106,13 @@ export async function GET(request: NextRequest) {
         reward_level: reward.reward_level,
         reward_name: reward.reward_name,
         status: resolveRewardStatus(reward.status),
+        program_year: reward.program_year,
         earned_at: reward.earned_at,
+        expires_at: reward.expires_at,
         claimed_at: reward.claimed_at,
         fulfilled_at: reward.fulfilled_at,
+        cancelled_at: reward.cancelled_at,
+        cancellation_reason: reward.cancellation_reason,
       }
     })
 

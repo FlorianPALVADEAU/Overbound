@@ -4,6 +4,7 @@ import { sendAmbassadorRewardStatusEmail } from '@/lib/ambassadors/email'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { z } from 'zod'
 
 export const runtime = 'nodejs'
 
@@ -11,8 +12,15 @@ const resolveRewardStatus = (value: string | null | undefined): AmbassadorReward
   const normalized = String(value || '').toLowerCase()
   if (normalized === 'claimed') return 'claimed'
   if (normalized === 'fulfilled') return 'fulfilled'
+  if (normalized === 'cancelled') return 'cancelled'
   return 'earned'
 }
+
+const lifecycleCommandSchema = z.object({
+  action: z.enum(['cancelled', 'reopened']),
+  reason: z.string().trim().min(3).max(1000),
+  idempotency_key: z.string().uuid(),
+})
 
 async function handlePatch(
   request: NextRequest,
@@ -24,25 +32,44 @@ async function handlePatch(
       return auth.response
     }
 
-    const payload = (await request.json().catch(() => null)) as { status?: string } | null
+    const payload = (await request.json().catch(() => null)) as { status?: string; action?: string; reason?: string; idempotency_key?: string } | null
+    const lifecycleCommand = lifecycleCommandSchema.safeParse(payload)
+    const { id } = await params
+    const admin = supabaseAdmin()
+
+    if (lifecycleCommand.success) {
+      const { data: reward, error } = await admin.rpc('transition_ambassador_reward', {
+        p_reward_id: id,
+        p_action: lifecycleCommand.data.action,
+        p_reason: lifecycleCommand.data.reason,
+        p_actor_profile_id: auth.user.id,
+        p_idempotency_key: lifecycleCommand.data.idempotency_key,
+      }).single()
+      if (error || !reward) {
+        console.error('[admin ambassadors] lifecycle transition error', error)
+        return NextResponse.json({ error: 'Impossible de modifier cette récompense.' }, { status: 409 })
+      }
+      return NextResponse.json({ reward })
+    }
+
     const status = String(payload?.status || '').toLowerCase()
 
     if (!['earned', 'claimed', 'fulfilled'].includes(status)) {
       return NextResponse.json({ error: 'Statut invalide' }, { status: 400 })
     }
 
-    const { id } = await params
-    const admin = supabaseAdmin()
-
     const updatePayload: Record<string, string | null> = {
       status,
       updated_at: new Date().toISOString(),
+      claimed_at: null,
+      fulfilled_at: null,
     }
 
     if (status === 'claimed') {
       updatePayload.claimed_at = new Date().toISOString()
     }
     if (status === 'fulfilled') {
+      updatePayload.claimed_at = new Date().toISOString()
       updatePayload.fulfilled_at = new Date().toISOString()
     }
 
@@ -78,7 +105,7 @@ async function handlePatch(
         if (email) {
           const statusLabel =
             reward.status === 'fulfilled'
-              ? 'Complétée'
+              ? 'Envoyée'
               : reward.status === 'claimed'
                 ? 'Réclamée'
                 : 'Débloquée'

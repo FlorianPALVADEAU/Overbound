@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { getCurrentProgramYear } from '@/lib/ambassadors/rewardLifecycle'
 
 export const runtime = 'nodejs'
 
@@ -12,6 +13,10 @@ export async function GET(request: NextRequest) {
     }
 
     const admin = supabaseAdmin()
+    const requestedYear = Number(request.nextUrl.searchParams.get('year'))
+    const programYear = Number.isInteger(requestedYear) && requestedYear >= 2020 && requestedYear <= 2100
+      ? requestedYear
+      : getCurrentProgramYear()
 
     const { data: ambassadors, error: ambassadorsError } = await admin
       .from('ambassadors')
@@ -38,16 +43,17 @@ export async function GET(request: NextRequest) {
         ? admin.from('profiles').select('id, full_name').in('id', profileIds)
         : Promise.resolve({ data: [] }),
       ambassadorIds.length > 0
-        ? admin.from('ambassador_points').select('ambassador_id, total_points, recruits_open, recruits_ranked').in('ambassador_id', ambassadorIds)
+        ? admin.from('ambassador_points_years').select('ambassador_id, program_year, total_points, recruits_open, recruits_ranked').in('ambassador_id', ambassadorIds)
         : Promise.resolve({ data: [] }),
     ])
 
     const profileMap = new Map((profiles || []).map((row: any) => [row.id, row.full_name ?? null]))
-    const pointsMap = new Map((points || []).map((row: any) => [row.ambassador_id, row]))
+    const pointsMap = new Map((points || []).map((row: any) => [`${row.ambassador_id}:${row.program_year}`, row]))
+    const availableProgramYears = Array.from(new Set((points || []).map((row: any) => Number(row.program_year)).filter(Number.isInteger))).sort((a, b) => b - a)
 
     const response = ambassadorRows.map((row) => {
       const promoValue = Array.isArray(row.promo) ? row.promo?.[0] : row.promo
-      const pointRow = pointsMap.get(row.id)
+      const pointRow = pointsMap.get(`${row.id}:${programYear}`)
       return {
         ambassador_id: row.id,
         profile_id: row.profile_id,
@@ -60,7 +66,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ ambassadors: response })
+    return NextResponse.json({ ambassadors: response, program_year: programYear, available_program_years: availableProgramYears })
   } catch (error) {
     console.error('[admin ambassadors points] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

@@ -1,15 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
-import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { EventFormDialog, type EventFormValues } from './EventFormDialog'
 import type { Event } from '@/types/Event'
 import type { EventPriceTier } from '@/types/EventPriceTier'
@@ -18,14 +16,15 @@ import {
   createAdminEvent,
   deleteAdminEvent,
   updateAdminEvent,
-  useAdminEvents,
+  useAdminEventsPage,
   type AdminEventPayload,
   type AdminEventSummary,
   type DeleteEventConflict,
 } from '@/app/api/admin/events/eventsQueries'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import axiosClient from '@/app/api/axiosClient'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
+import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -134,13 +133,43 @@ const formatDateTime = (value: string) =>
     timeStyle: 'short',
   })
 
+const EVENT_SORTS = new Set(['date', 'created_at', 'title'])
+const EVENT_STATUSES = new Set<Event['status']>(['draft', 'announced', 'on_sale', 'sold_out', 'closed', 'cancelled', 'completed'])
+
 export function EventsSection() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialUrlState = useMemo(
+    () => parseOperationsListUrlState(searchParams, { filterIds: ['status'] }),
+    [searchParams],
+  )
+  const initialStatus = EVENT_STATUSES.has(initialUrlState.filters.status as Event['status'])
+    ? (initialUrlState.filters.status as Event['status'])
+    : 'all'
+  const initialSort = EVENT_SORTS.has(initialUrlState.sort ?? '')
+    ? (initialUrlState.sort as 'date' | 'created_at' | 'title')
+    : 'created_at'
   const queryClient = useQueryClient()
-  const {
-    data: events = [],
-    isLoading,
-    error: queryError,
-  } = useAdminEvents()
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [statusFilter, setStatusFilter] = useState<'all' | Event['status']>(initialStatus)
+  const [sort, setSort] = useState<'date' | 'created_at' | 'title'>(initialSort)
+  const [direction, setDirection] = useState<'asc' | 'desc'>(initialUrlState.direction ?? 'desc')
+  const [limit, setLimit] = useState(initialUrlState.limit)
+  const [cursor, setCursor] = useState<string | null>(initialUrlState.cursor)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const eventsParams = useMemo(() => ({
+    cursor,
+    limit,
+    query: deferredSearch || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    sort,
+    direction,
+  }), [cursor, deferredSearch, direction, limit, sort, statusFilter])
+  const { data: pageData, isLoading, isFetching, error: queryError, refetch } = useAdminEventsPage(eventsParams)
+  const events = pageData?.events ?? []
+  const filteredEvents = events
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedEvent, setSelectedEvent] = useState<AdminEventSummary | null>(null)
@@ -148,8 +177,6 @@ export function EventsSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | Event['status']>('all')
   const [priceTiers, setPriceTiers] = useState<EventPriceTier[]>([])
   const [loadingPriceTiers, setLoadingPriceTiers] = useState(false)
 
@@ -158,26 +185,55 @@ export function EventsSection() {
   const [eventToDelete, setEventToDelete] = useState<AdminEventSummary | null>(null)
   const [deleteConflict, setDeleteConflict] = useState<DeleteEventConflict | null>(null)
 
-  const filteredEvents = useMemo(() => {
-    let result = [...events]
+  const resetPagination = () => {
+    setCursor(null)
+    setPreviousCursors([])
+  }
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter((event) => {
-        return (
-          event.title.toLowerCase().includes(term) ||
-          event.slug.toLowerCase().includes(term) ||
-          event.location.toLowerCase().includes(term)
-        )
-      })
+  useEffect(() => {
+    if (!deferredSearch) {
+      resetPagination()
+      return
     }
+    resetPagination()
+  }, [deferredSearch])
 
-    if (statusFilter !== 'all') {
-      result = result.filter((event) => event.status === statusFilter)
-    }
+  useEffect(() => {
+    const next = writeOperationsListUrlState(searchParams, {
+      cursor,
+      sort,
+      direction,
+      limit,
+      selectedId: null,
+      filters: { status: statusFilter === 'all' ? '' : statusFilter },
+    }, { filterIds: ['status'] })
+    if (next !== searchParams.toString()) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+  }, [cursor, direction, limit, pathname, router, searchParams, sort, statusFilter])
 
-    return result
-  }, [events, searchTerm, statusFilter])
+  useEffect(() => {
+    const next = parseOperationsListUrlState(searchParams, { filterIds: ['status'] })
+    const nextStatus = EVENT_STATUSES.has(next.filters.status as Event['status'])
+      ? (next.filters.status as Event['status'])
+      : 'all'
+    const nextSort = EVENT_SORTS.has(next.sort ?? '')
+      ? (next.sort as 'date' | 'created_at' | 'title')
+      : 'created_at'
+    const nextDirection = next.direction ?? 'desc'
+    const hasExternalStateChange = statusFilter !== nextStatus
+      || sort !== nextSort
+      || direction !== nextDirection
+      || limit !== next.limit
+      || cursor !== next.cursor
+    setStatusFilter((current) => current === nextStatus ? current : nextStatus)
+    setSort((current) => current === nextSort ? current : nextSort)
+    setDirection((current) => current === nextDirection ? current : nextDirection)
+    setLimit((current) => current === next.limit ? current : next.limit)
+    setCursor((current) => current === next.cursor ? current : next.cursor)
+    if (hasExternalStateChange) setPreviousCursors([])
+    // State is intentionally read here to distinguish browser navigation from
+    // the URL update emitted by the preceding effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -227,6 +283,7 @@ export function EventsSection() {
         if (!previous) return []
         return previous.filter((item) => item.id !== eventToDelete.id)
       })
+      await queryClient.invalidateQueries({ queryKey: adminEventsQueryKey })
       setMessage({ type: 'success', text: 'Événement supprimé avec succès' })
       setDeleteDialogOpen(false)
       setEventToDelete(null)
@@ -289,6 +346,8 @@ export function EventsSection() {
         setMessage({ type: 'success', text: 'Événement mis à jour avec succès' })
       }
 
+      await queryClient.invalidateQueries({ queryKey: adminEventsQueryKey })
+
       setDialogOpen(false)
       setSelectedEvent(null)
     } catch (error) {
@@ -301,10 +360,10 @@ export function EventsSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<AdminEventSummary>[]>(() => {
+  const columns = useMemo<OperationsListColumn<AdminEventSummary>[]>(() => {
     return [
       {
-        key: 'title',
+        id: 'title',
         header: 'Événement',
         cell: (event) => (
           <div className="flex flex-col gap-1">
@@ -314,12 +373,12 @@ export function EventsSection() {
         ),
       },
       {
-        key: 'date',
+        id: 'date',
         header: 'Date & heure',
         cell: (event) => <span>{formatDateTime(event.date)}</span>,
       },
       {
-        key: 'location',
+        id: 'location',
         header: 'Lieu',
         cell: (event) => (
           <div className="flex flex-col">
@@ -329,7 +388,7 @@ export function EventsSection() {
         ),
       },
       {
-        key: 'status',
+        id: 'status',
         header: 'Statut',
         cell: (event) => (
           <Badge variant={statusVariant(event.status)} className="capitalize">
@@ -338,7 +397,7 @@ export function EventsSection() {
         ),
       },
       {
-        key: 'attendees',
+        id: 'attendees',
         header: 'Participants',
         cell: (event) => (
           <div className="flex flex-col">
@@ -354,37 +413,20 @@ export function EventsSection() {
         ),
       },
       {
-        key: 'updated_at',
+        id: 'updated_at',
         header: 'Dernière mise à jour',
         cell: (event) => (
           <span className="text-sm text-muted-foreground">{formatDateTime(event.updated_at)}</span>
         ),
       },
-      {
-        key: 'actions',
-        header: '',
-        className: 'w-[220px]',
-        cell: (event) => (
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="sm" asChild>
-              <Link href={`/dashboard/events/${event.id}`}>Voir</Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
-              Modifier
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDeleteClick(event)}
-              disabled={deleteLoadingId === event.id}
-            >
-              {deleteLoadingId === event.id ? 'Suppression…' : 'Supprimer'}
-            </Button>
-          </div>
-        ),
-      },
     ]
-  }, [deleteLoadingId])
+  }, [])
+
+  const rowActions = useMemo<OperationsListAction<AdminEventSummary>[]>(() => [
+    { id: 'view', label: 'Voir l’événement', onSelect: (event) => router.push(`/dashboard/events/${event.id}`) },
+    { id: 'edit', label: 'Modifier', onSelect: handleEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: (event) => deleteLoadingId === event.id, onSelect: handleDeleteClick },
+  ], [deleteLoadingId, router])
 
   return (
     <div className="space-y-6">
@@ -415,54 +457,44 @@ export function EventsSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredEvents}
+      <OperationsList
+        data={{ items: filteredEvents, nextCursor: pageData?.page.nextCursor ?? null, total: pageData?.page.totalCount }}
+        status={queryError ? 'error' : isLoading && !pageData ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={queryError?.message}
+        onRetry={() => { void refetch() }}
+        getItemId={(event) => event.id}
         columns={columns}
-        loading={isLoading}
-        emptyMessage={
-          searchTerm || statusFilter !== 'all'
-            ? 'Aucun événement ne correspond aux filtres appliqués.'
-            : 'Aucun événement enregistré. Créez votre premier événement pour commencer.'
-        }
-        toolbar={
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Rechercher par titre, slug ou lieu…"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="draft">Brouillon</SelectItem>
-                <SelectItem value="announced">Ouvert (inscriptions à venir)</SelectItem>
-                <SelectItem value="on_sale">En vente</SelectItem>
-                <SelectItem value="sold_out">Complet</SelectItem>
-                <SelectItem value="closed">Clôturé</SelectItem>
-                <SelectItem value="cancelled">Annulé</SelectItem>
-                <SelectItem value="completed">Terminé</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        meta={
-          <span>
-            {filteredEvents.length} événement{filteredEvents.length > 1 ? 's' : ''} affiché
-          </span>
-        }
-        getRowId={(event) => event.id}
+        filters={[{
+          id: 'status', label: 'Statut', value: statusFilter === 'all' ? '' : statusFilter,
+          options: ['draft', 'announced', 'on_sale', 'sold_out', 'closed', 'cancelled', 'completed'].map((value) => ({ value, label: statusLabel(value as Event['status']) })),
+        }, {
+          id: 'sort', label: 'Trier par', value: sort,
+          options: [{ value: 'created_at', label: 'Création' }, { value: 'date', label: 'Date' }, { value: 'title', label: 'Titre' }],
+        }, {
+          id: 'direction', label: 'Ordre', value: direction,
+          options: [{ value: 'desc', label: 'Décroissant' }, { value: 'asc', label: 'Croissant' }],
+        }, {
+          id: 'limit', label: 'Lignes', value: String(limit),
+          options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })),
+        }]}
+        onFilterChange={(filterId, value) => {
+          resetPagination()
+          if (filterId === 'status') setStatusFilter((value || 'all') as typeof statusFilter)
+          if (filterId === 'sort') setSort(value as typeof sort)
+          if (filterId === 'direction') setDirection(value as typeof direction)
+          if (filterId === 'limit') setLimit(Number(value))
+        }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher par titre, slug ou lieu…"
+        onSearchChange={setSearchTerm}
+        rowActions={rowActions}
+        pagination={{ cursor, previousCursors, nextCursor: pageData?.page.nextCursor ?? null, total: pageData?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => {
+          setCursor(nextCursor)
+          setPreviousCursors(nextPreviousCursors)
+        }}
+        itemLabel="événement"
+        emptyState={<div className="px-3 py-12 text-center text-sm text-muted-foreground">{searchTerm || statusFilter !== 'all' ? 'Aucun événement ne correspond aux filtres appliqués.' : 'Aucun événement enregistré. Créez votre premier événement pour commencer.'}</div>}
       />
 
       <EventFormDialog

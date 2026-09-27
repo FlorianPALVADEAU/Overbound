@@ -145,11 +145,15 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('event_id')
+    const ticketType = searchParams.get('ticket_type')
     const searchTerm = searchParams.get('search_term')
     const limitParam = searchParams.get('limit')
     const format = searchParams.get('format')
     const limitCount = parseInt(limitParam || (format === 'csv' ? '10000' : '50'))
     const offsetCount = parseInt(searchParams.get('offset') || '0')
+    if (ticketType && ticketType !== 'open' && ticketType !== 'ranked') {
+      return NextResponse.json({ error: 'Type de billet invalide' }, { status: 400 })
+    }
 
     const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
@@ -171,24 +175,65 @@ export async function GET(request: Request) {
 
     const supabase = await createSupabaseServer()
 
+    let matchingTicketRegistrationIds: Set<string> | null = null
+    if (ticketType) {
+      const matchingResult = organizationEventIds.size === 0
+        ? { data: [], error: null }
+        : await adminClient
+            .from('registrations')
+            .select('id, race_format, ticket:tickets(name)')
+            .in('event_id', eventId ? [eventId] : Array.from(organizationEventIds))
+      if (matchingResult.error) throw matchingResult.error
+      matchingTicketRegistrationIds = new Set(
+        (matchingResult.data ?? [])
+          .filter((row: { id: string; race_format?: string | null; ticket?: { name?: string | null } | Array<{ name?: string | null }> | null }) => {
+            const ticket = Array.isArray(row.ticket) ? row.ticket[0] : row.ticket
+            const format = String(row.race_format ?? '').toLowerCase()
+            const ticketName = String(ticket?.name ?? '').toLowerCase()
+            return format === ticketType || new RegExp(`\\b${ticketType}\\b`, 'i').test(ticketName)
+          })
+          .map((row: { id: string }) => row.id),
+      )
+    }
+
     const { data, error } = await supabase.rpc('get_registrations_with_filters', {
       args: {
         approval: null,
         event_id: eventId || null,
         search: searchTerm || null,
-        limit: Number.isFinite(limitCount) ? limitCount : 50,
-        offset: Number.isFinite(offsetCount) ? offsetCount : 0,
+        // The legacy RPC has no ticket-type argument. Fetch the bounded source
+        // set when that filter is active, then apply the type and page it here.
+        limit: ticketType ? 10000 : (Number.isFinite(limitCount) ? limitCount : 50),
+        offset: ticketType ? 0 : (Number.isFinite(offsetCount) ? offsetCount : 0),
       },
     })
 
     if (error) throw error
 
-    const rows: RawRegistrationRow[] = (data ?? []).filter((row: RawRegistrationRow) =>
+    const sourceRows: RawRegistrationRow[] = (data ?? []).filter((row: RawRegistrationRow) =>
       row.event_id ? organizationEventIds.has(row.event_id) : false,
     )
-    const totalCount = eventId
-      ? rows[0]?.total_count ?? 0
-      : rows.length
+    const filteredRows = ticketType
+      ? sourceRows.filter((row) => row.race_format === ticketType || matchingTicketRegistrationIds?.has(row.id))
+      : sourceRows
+    let totalCount = ticketType
+      ? filteredRows.length
+      : filteredRows[0]?.total_count ?? filteredRows.length
+    // Some deployed versions of the legacy RPC omit total_count for the
+    // unscoped listing. Use a cheap exact head count for the common no-search
+    // case so the UI never reports only the current page size.
+    if (!ticketType && !searchTerm) {
+      let countQuery = adminClient.from('registrations').select('id', { count: 'exact', head: true })
+      if (eventId) countQuery = countQuery.eq('event_id', eventId)
+      else if (organizationEventIds.size > 0) countQuery = countQuery.in('event_id', Array.from(organizationEventIds))
+      const countResult = await countQuery
+      if (!countResult.error && countResult.count !== null && countResult.count !== undefined) {
+        totalCount = countResult.count
+      }
+    }
+    const rows = ticketType
+      ? filteredRows.slice(offsetCount, offsetCount + limitCount)
+      : filteredRows
 
     const registrationIds = rows.map((row) => row.id).filter(Boolean)
     const eventIds = Array.from(

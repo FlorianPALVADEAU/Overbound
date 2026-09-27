@@ -211,8 +211,11 @@ export async function GET(req: Request) {
       )
     }
 
-    // Récupérer les inscriptions
-    let query = supabase
+    // L'autorisation de l'opérateur est vérifiée ci-dessus avec sa session.
+    // La lecture métier passe ensuite par le client serveur, comme le POST,
+    // afin de ne pas exposer toutes les inscriptions au rôle authenticated.
+    const admin = supabaseAdmin()
+    let query = admin
       .from('registrations')
       .select(`
         id,

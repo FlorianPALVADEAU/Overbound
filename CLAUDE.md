@@ -107,4 +107,5 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 | **Legal / Juridique** | @docs/guides/legal.md |
 | **Rate limiting** | @docs/security/rate-limiting.md (config Vercel Firewall, pas de code) |
 | **Refactoring / dette technique** | @docs/fdr/FDR-0009-maintainability-refactor.md + @docs/audit/AUDIT-2026-09-15-full-codebase-review.md |
+| **UX/UI accueil, page événement, funnel, Lucky Wheel global, responsive** | @docs/fdr/FDR-0015-homepage-evergreen-and-conversion-funnel.md — lire le §0 (guide de reprise) avant toute sous-tâche |
 

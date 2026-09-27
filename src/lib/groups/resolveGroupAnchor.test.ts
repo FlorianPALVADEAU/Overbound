@@ -6,7 +6,7 @@ type RegistrationRow = {
   wave_index: number | null
   start_time: string | null
   created_at: string
-  ticket: { name: string | null; race: { name: string | null } | null } | { name: string | null; race: { name: string | null } | null }[] | null
+  ticket: { name: string | null; operations_config?: { departure_mode?: string }; race: { name: string | null } | null } | { name: string | null; operations_config?: { departure_mode?: string }; race: { name: string | null } | null }[] | null
 }
 
 function createAdmin(rows: RegistrationRow[]) {
@@ -47,14 +47,14 @@ describe('resolveGroupAnchorFromProfile', () => {
         wave_index: null,
         start_time: '2026-09-12T08:00:00.000Z',
         created_at: '2026-06-02T10:00:00.000Z',
-        ticket: { name: 'Fury RANKED', race: { name: 'Fury' } },
+        ticket: { name: 'Fury RANKED', operations_config: { departure_mode: 'fixed' }, race: { name: 'Fury' } },
       },
       {
         event_id: 'event-1',
         wave_index: 3,
         start_time: '2026-09-12T10:20:00.000Z',
         created_at: '2026-06-01T09:00:00.000Z',
-        ticket: { name: 'Primal OPEN', race: { name: 'Primal' } },
+        ticket: { name: 'Primal OPEN', operations_config: { departure_mode: 'wave' }, race: { name: 'Primal' } },
       },
     ])
 
@@ -74,7 +74,7 @@ describe('resolveGroupAnchorFromProfile', () => {
         wave_index: null,
         start_time: '2026-09-12T08:00:00.000Z',
         created_at: '2026-06-02T10:00:00.000Z',
-        ticket: { name: 'Fury RANKED', race: { name: 'Fury' } },
+        ticket: { name: 'Fury RANKED', operations_config: { departure_mode: 'fixed' }, race: { name: 'Fury' } },
       },
     ])
 
@@ -90,7 +90,7 @@ describe('resolveGroupAnchorFromProfile', () => {
         wave_index: 7,
         start_time: '2026-09-12T11:00:00.000Z',
         created_at: '2026-06-03T10:00:00.000Z',
-        ticket: [{ name: 'Kids OPEN', race: [{ name: 'Kids' }] as any }],
+        ticket: [{ name: 'Kids OPEN', operations_config: { departure_mode: 'wave' }, race: [{ name: 'Kids' }] as any }],
       },
     ])
 

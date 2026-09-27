@@ -60,6 +60,24 @@ describe('GET /api/admin/lucky-wheel/campaigns', () => {
     expect(response.status).toBe(200)
     expect(json.campaigns).toHaveLength(1)
   })
+
+  it('returns a paginated contract', async () => {
+    requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' } })
+    const chain: any = { select: () => chain, order: () => chain, range: async () => ({ data: [{ id: 'campaign-1' }], error: null }) }
+    supabaseAdminMock.mockReturnValue({ from: () => chain })
+    const response = await GET(new Request('http://localhost/api/admin/lucky-wheel/campaigns?paginated=true&limit=1') as any)
+    const json = await response.json()
+    expect(response.status).toBe(200)
+    expect(json.campaigns).toHaveLength(1)
+    expect(json.page).toMatchObject({ limit: 1, totalCount: 1 })
+  })
+
+  it('rejects an invalid cursor before database access', async () => {
+    requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' } })
+    const response = await GET(new Request('http://localhost/api/admin/lucky-wheel/campaigns?paginated=true&cursor=invalid') as any)
+    expect(response.status).toBe(400)
+    expect(supabaseAdminMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('POST /api/admin/lucky-wheel/campaigns', () => {

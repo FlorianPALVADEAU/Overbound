@@ -1,10 +1,9 @@
 'use client'
 import Link from 'next/link'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AdminStats } from '@/components/admin/AdminStats'
@@ -19,13 +18,13 @@ import { PromotionsSection } from '@/components/admin/promotions'
 import { UpsellsSection } from '@/components/admin/upsells'
 import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { ADMIN_NAV_GROUPS } from '@/components/admin/adminNavItems'
 import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
 import { UsersSection } from '@/components/admin/users/UsersSection'
 import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSection'
 import { GroupsSection } from '@/components/admin/groups/GroupsSection'
 import { BootcampsSection } from '@/components/admin/bootcamps/BootcampsSection'
+import { LuckyWheelSection } from '@/components/admin/lucky-wheel/LuckyWheelSection'
 import { AdminEventContextSelector } from '@/components/admin/events/AdminEventContextSelector'
 import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
 import { BarChart3, CreditCard, Database, Mail, NotebookPen } from 'lucide-react'
@@ -166,33 +165,6 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
                 </Link>
               </div>
             </div>
-            <div className="md:hidden">
-              <Select
-                value={activeTab}
-                onValueChange={(value) => setActiveTab(value as AdminTabValue)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner une section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="overview">Tableau de bord</SelectItem>
-                  <SelectSeparator />
-                  {ADMIN_NAV_GROUPS.map((group, i) => (
-                    <React.Fragment key={group.id}>
-                      <SelectGroup>
-                        <SelectLabel>{group.label}</SelectLabel>
-                        {group.items.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      {i < ADMIN_NAV_GROUPS.length - 1 && <SelectSeparator />}
-                    </React.Fragment>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <AdminEventContextSelector eventId={selectedEventId} />
           </div>
 
@@ -232,6 +204,10 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
               <TabsContent value="upsells" className="space-y-6">
                 <UpsellsSection />
+              </TabsContent>
+
+              <TabsContent value="lucky-wheel" className="space-y-6">
+                <LuckyWheelSection />
               </TabsContent>
 
               <TabsContent value="ambassadors" className="space-y-6">

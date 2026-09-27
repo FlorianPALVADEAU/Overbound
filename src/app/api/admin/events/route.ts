@@ -1,11 +1,51 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import {
+  adminEventDirectionSchema,
+  adminEventSortSchema,
+  decodeAdminEventsCursor,
+  encodeAdminEventsCursor,
+  sanitizeAdminEventSearch,
+  type AdminEventDirection,
+} from '@/lib/admin/eventsList'
+
+const paginatedEventsQuerySchema = z.object({
+  paginated: z.enum(['true', 'false']).default('false'),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(25).max(100).default(50),
+  query: z.string().trim().min(1).max(160).optional(),
+  status: z.enum(['draft', 'announced', 'on_sale', 'sold_out', 'closed', 'cancelled', 'completed']).optional(),
+  sort: adminEventSortSchema.default('created_at'),
+  direction: adminEventDirectionSchema.default('desc'),
+})
+
+async function addEventStats(admin: ReturnType<typeof supabaseAdmin>, events: Array<Record<string, unknown>>) {
+  return Promise.all(events.map(async (event) => {
+    const [{ count: registrationsCount, error: registrationsError }, { count: volunteersCount, error: volunteersError }] =
+      await Promise.all([
+        admin.from('registrations').select('id', { head: true, count: 'exact' }).eq('event_id', event.id as string),
+        admin.from('volunteer_applications').select('id', { head: true, count: 'exact' }).eq('event_id', event.id as string),
+      ])
+
+    if (registrationsError) console.error('[admin events] registrations count error', registrationsError)
+    if (volunteersError) console.error('[admin events] volunteers count error', volunteersError)
+    return { ...event, registrations_count: registrationsCount ?? 0, volunteer_applications_count: volunteersCount ?? 0 }
+  }))
+}
 
 export async function GET(request: Request) {
   try {
+    const parsedQuery = paginatedEventsQuerySchema.safeParse(
+      Object.fromEntries(new URL(request.url).searchParams.entries()),
+    )
+    if (!parsedQuery.success) {
+      return NextResponse.json({ error: 'Paramètres de liste invalides' }, { status: 400 })
+    }
+
     const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
@@ -13,48 +53,72 @@ export async function GET(request: Request) {
 
     const admin = supabaseAdmin()
 
-    // Récupérer tous les événements
-    const { data: events, error } = await admin
+    const params = parsedQuery.data
+    const isPaginated = params.paginated === 'true' || Boolean(params.cursor || params.query || params.status || request.url.includes('limit=') || request.url.includes('sort=') || request.url.includes('direction='))
+
+    if (!isPaginated) {
+      const { data: events, error } = await admin
       .from('events')
       .select('*')
       .eq('organization_id', auth.organizationId)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      throw error
+      if (error) throw error
+      return NextResponse.json({ events: await addEventStats(admin, (events ?? []) as Array<Record<string, unknown>>) })
     }
 
-    const eventsWithStats = await Promise.all(
-      (events ?? []).map(async (event) => {
-        const [{ count: registrationsCount, error: registrationsError }, { count: volunteersCount, error: volunteersError }] =
-          await Promise.all([
-            admin
-              .from('registrations')
-              .select('id', { head: true, count: 'exact' })
-              .eq('event_id', event.id),
-            admin
-              .from('volunteer_applications')
-              .select('id', { head: true, count: 'exact' })
-              .eq('event_id', event.id),
-          ])
+    let cursor: ReturnType<typeof decodeAdminEventsCursor> | null = null
+    if (params.cursor) {
+      try {
+        cursor = decodeAdminEventsCursor(params.cursor, params.sort, params.direction)
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Cursor de pagination invalide' }, { status: 400 })
+      }
+    }
 
-        if (registrationsError) {
-          console.error('[admin events] registrations count error', registrationsError)
-        }
+    let eventsQuery = admin
+      .from('events')
+      .select('*', { count: 'exact' })
+      .eq('organization_id', auth.organizationId)
 
-        if (volunteersError) {
-          console.error('[admin events] volunteers count error', volunteersError)
-        }
+    if (params.status) eventsQuery = eventsQuery.eq('status', params.status)
+    const searchTerm = params.query ? sanitizeAdminEventSearch(params.query) : ''
+    if (searchTerm) eventsQuery = eventsQuery.or(`title.ilike.%${searchTerm}%,slug.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)
 
-        return {
-          ...event,
-          registrations_count: registrationsCount ?? 0,
-          volunteer_applications_count: volunteersCount ?? 0,
-        }
-      }),
-    )
+    if (cursor) {
+      const { data: cursorEvent, error: cursorError } = await admin
+        .from('events')
+        .select(`id, ${params.sort}`)
+        .eq('organization_id', auth.organizationId)
+        .eq('id', cursor.id)
+        .maybeSingle()
+      if (cursorError) throw cursorError
+      const cursorValue = (cursorEvent as Record<string, unknown> | null)?.[params.sort]
+      if (typeof cursorValue !== 'string' && typeof cursorValue !== 'number') {
+        return NextResponse.json({ error: 'Cursor de pagination expiré' }, { status: 400 })
+      }
+      const operator = params.direction === 'asc' ? 'gt' : 'lt'
+      const encodedCursorValue = encodeURIComponent(String(cursorValue))
+      eventsQuery = eventsQuery.or(`${params.sort}.${operator}.${encodedCursorValue},and(${params.sort}.eq.${encodedCursorValue},id.${operator}.${cursor.id})`)
+    }
 
-    return NextResponse.json({ events: eventsWithStats })
+    const { data: pageRows, error, count } = await eventsQuery
+      .order(params.sort, { ascending: params.direction === 'asc' })
+      .order('id', { ascending: params.direction === 'asc' })
+      .limit(params.limit + 1)
+    if (error) throw error
+
+    const hasNextPage = (pageRows?.length ?? 0) > params.limit
+    const pageEvents = ((pageRows ?? []).slice(0, params.limit) as Array<Record<string, unknown>>)
+    const lastEvent = pageEvents.at(-1)
+    const nextCursor = hasNextPage && lastEvent && typeof lastEvent[params.sort] === 'string'
+      ? encodeAdminEventsCursor({ sort: params.sort, direction: params.direction as AdminEventDirection, id: lastEvent.id as string })
+      : null
+
+    return NextResponse.json({
+      events: await addEventStats(admin, pageEvents),
+      page: { limit: params.limit, totalCount: count ?? 0, nextCursor },
+    })
 
   } catch (error) {
     console.error('Erreur GET events:', error)

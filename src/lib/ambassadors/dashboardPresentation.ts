@@ -66,12 +66,14 @@ export const REWARD_STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
   earned: 'Débloquée',
   claimed: 'Réclamée',
   fulfilled: 'Remise',
+  cancelled: 'Annulée',
 }
 
 export const REWARD_STATUS_STYLES: Record<AmbassadorRewardStatus, string> = {
   earned: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600',
   claimed: 'border-amber-500/40 bg-amber-500/10 text-amber-600',
   fulfilled: 'border-sky-500/40 bg-sky-500/10 text-sky-600',
+  cancelled: 'border-rose-500/40 bg-rose-500/10 text-rose-600',
 }
 
 export const FORMAT_LABELS: Record<AmbassadorRaceFormat, string> = { open: 'Open', ranked: 'Ranked' }

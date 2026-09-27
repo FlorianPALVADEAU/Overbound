@@ -29,6 +29,7 @@ interface OperationsListProps<T> {
   onFilterChange?: (filterId: string, value: string) => void
   search?: string
   searchPlaceholder?: string
+  searchLabel?: string
   onSearchChange?: (value: string) => void
   visibleColumnIds?: readonly string[]
   onVisibleColumnIdsChange?: (columnIds: string[]) => void
@@ -45,6 +46,7 @@ interface OperationsListProps<T> {
   renderDetail?: (item: T) => ReactNode
   detailTitle?: (item: T) => string
   detailDescription?: (item: T) => string | undefined
+  toolbarActions?: ReactNode
 }
 
 /**
@@ -62,6 +64,7 @@ export function OperationsList<T>({
   onFilterChange,
   search,
   searchPlaceholder,
+  searchLabel,
   onSearchChange,
   visibleColumnIds,
   onVisibleColumnIdsChange,
@@ -78,6 +81,7 @@ export function OperationsList<T>({
   renderDetail,
   detailTitle,
   detailDescription,
+  toolbarActions,
 }: OperationsListProps<T>) {
   const items = data?.items ?? []
   const selectedItems = selectedIds ? items.filter((item) => selectedIds.includes(getItemId(item))) : []
@@ -92,12 +96,14 @@ export function OperationsList<T>({
       <OperationsListToolbar
         search={search}
         searchPlaceholder={searchPlaceholder}
+        searchLabel={searchLabel}
         onSearchChange={onSearchChange}
         filters={filters}
         onFilterChange={onFilterChange}
         columns={columns}
         visibleColumnIds={visibleColumnIds}
         onVisibleColumnIdsChange={onVisibleColumnIdsChange}
+        actions={toolbarActions}
       />
       {selectedItems.length > 0 && bulkActions && bulkActions.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm">
@@ -108,6 +114,9 @@ export function OperationsList<T>({
       ) : null}
       {status === 'error' ? <OperationsListErrorState message={errorMessage} onRetry={onRetry} /> : null}
       {status !== 'error' && items.length === 0 && status !== 'loading' ? (emptyState ?? <OperationsListEmptyState />) : null}
+      {status !== 'error' && (items.length > 0 || status === 'loading') ? (
+        <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} position="top" />
+      ) : null}
       {status !== 'error' && (items.length > 0 || status === 'loading') ? (
         <div aria-busy={status === 'loading'} className={status === 'stale' ? 'opacity-65' : undefined}>
           <OperationsListTable
@@ -122,7 +131,7 @@ export function OperationsList<T>({
           />
         </div>
       ) : null}
-      {status !== 'error' ? <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} /> : null}
+      {status !== 'error' ? <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} position="bottom" /> : null}
       {hasDetail && selectedItem && renderDetail && detailTitle && onSelectedItemChange ? (
         <OperationsListDetailPanel open title={detailTitle(selectedItem)} description={detailDescription?.(selectedItem)} onOpenChange={(open) => !open && onSelectedItemChange(null)}>{renderDetail(selectedItem)}</OperationsListDetailPanel>
       ) : null}

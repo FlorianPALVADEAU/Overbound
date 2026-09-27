@@ -19,6 +19,7 @@ import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { serializeUtmParams } from '@/lib/attribution/utm'
+import { validateUpsellQuantities } from '@/lib/upsells/quantity'
 
 export const runtime = 'nodejs'
 
@@ -217,6 +218,13 @@ export async function POST(request: NextRequest) {
     for (const row of upsellRows || []) {
       upsellMap.set(row.id, row)
     }
+
+    const upsellQuantityError = validateUpsellQuantities(
+      upsells,
+      new Map(Array.from(upsellMap.values()).map((upsell) => [upsell.id, upsell])),
+      participants.length,
+    )
+    if (upsellQuantityError) return respondJson({ error: upsellQuantityError }, 422)
 
     const upsellSubtotal = getUpsellSubtotal(upsells, upsellMap)
     const upsellSubtotalsById = getUpsellSubtotalsById(upsells, upsellMap)

@@ -2,8 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
-import { PauseCampaignButton } from './PauseCampaignButton'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import type { LuckyWheelCampaign } from '@/app/api/admin/lucky-wheel/luckyWheelQueries'
 
 interface CampaignTableProps {
@@ -15,6 +14,10 @@ interface CampaignTableProps {
   onEdit: (campaign: LuckyWheelCampaign) => void
   onDelete: (campaign: LuckyWheelCampaign) => void
   onTogglePause: (campaign: LuckyWheelCampaign, paused: boolean) => Promise<void>
+  search?: string
+  onSearchChange?: (value: string) => void
+  pagination: { cursor: string | null; previousCursors: string[]; nextCursor: string | null; total?: number }
+  onPaginationChange: (pagination: { cursor: string | null; previousCursors: string[] }) => void
 }
 
 const formatDate = (value: string) =>
@@ -29,10 +32,14 @@ export function CampaignTable({
   onEdit,
   onDelete,
   onTogglePause,
+  search,
+  onSearchChange,
+  pagination,
+  onPaginationChange,
 }: CampaignTableProps) {
-  const columns: AdminDataGridColumn<LuckyWheelCampaign>[] = [
+  const columns: OperationsListColumn<LuckyWheelCampaign>[] = [
     {
-      key: 'name',
+      id: 'name',
       header: 'Campagne',
       cell: (campaign) => (
         <button
@@ -49,7 +56,7 @@ export function CampaignTable({
       ),
     },
     {
-      key: 'window',
+      id: 'window',
       header: 'Fenêtre',
       cell: (campaign) => (
         <div className="flex flex-col text-xs text-muted-foreground">
@@ -59,12 +66,12 @@ export function CampaignTable({
       ),
     },
     {
-      key: 'phase',
+      id: 'phase',
       header: 'Phase',
       cell: (campaign) => <Badge variant="outline">{campaign.commercial_phase}</Badge>,
     },
     {
-      key: 'status',
+      id: 'status',
       header: 'Statut',
       cell: (campaign) => (
         <div className="flex flex-col gap-1">
@@ -75,39 +82,15 @@ export function CampaignTable({
         </div>
       ),
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-[280px]',
-      cell: (campaign) => (
-        <div className="flex flex-wrap justify-end gap-2">
-          <PauseCampaignButton
-            paused={campaign.paused}
-            onToggle={(paused) => onTogglePause(campaign, paused)}
-          />
-          <Button variant="outline" size="sm" onClick={() => onEdit(campaign)}>
-            Modifier
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDelete(campaign)}
-            disabled={deletingId === campaign.id}
-          >
-            {deletingId === campaign.id ? 'Suppression…' : 'Supprimer'}
-          </Button>
-        </div>
-      ),
-    },
+  ]
+
+  const actions: OperationsListAction<LuckyWheelCampaign>[] = [
+    { id: 'pause', label: 'Changer la pause', onSelect: (campaign) => { void onTogglePause(campaign, !campaign.paused) } },
+    { id: 'edit', label: 'Modifier', onSelect: onEdit },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: (campaign) => deletingId === campaign.id, onSelect: onDelete },
   ]
 
   return (
-    <AdminDataGrid
-      data={campaigns}
-      columns={columns}
-      loading={loading}
-      emptyMessage="Aucune campagne Lucky Wheel configurée."
-      getRowId={(campaign) => campaign.id}
-    />
+    <OperationsList data={{ items: campaigns, nextCursor: pagination.nextCursor, total: pagination.total }} status={loading ? 'loading' : 'idle'} getItemId={(campaign) => campaign.id} columns={columns} rowActions={actions} search={search} searchPlaceholder="Rechercher une campagne…" onSearchChange={onSearchChange} pagination={{ ...pagination, limit: 25 }} onPaginationChange={onPaginationChange} itemLabel="campagne" />
   )
 }

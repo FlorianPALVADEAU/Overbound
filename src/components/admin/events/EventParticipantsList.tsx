@@ -116,9 +116,15 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const page = data?.page
 
   useEffect(() => {
-    if (!selectedParticipantId) return
+    if (!selectedParticipantId) {
+      setSelectedParticipant(null)
+      return
+    }
     const matchingParticipant = participants.find((participant) => participant.id === selectedParticipantId)
-    if (matchingParticipant) setSelectedParticipant(matchingParticipant)
+    // A filter, sort or page change can make the previously opened row leave
+    // the current result set. Never keep showing its detail panel with stale
+    // data; the URL selection remains available if the row comes back.
+    setSelectedParticipant(matchingParticipant ?? null)
   }, [participants, selectedParticipantId])
 
   const openParticipant = (participant: EventParticipantRow, preview: ParticipantPreviewAction = 'ticket') => {

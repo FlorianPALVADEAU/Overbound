@@ -9,6 +9,18 @@ import {
 } from '@/lib/email/resendAudiences'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { z } from 'zod'
+
+const subscribersQuerySchema = z.object({
+  subscribedOnly: z
+    .string()
+    .optional()
+    .default('true')
+    .transform((value) => value !== 'false'),
+  search: z.string().trim().max(120).optional().default(''),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(100),
+  offset: z.coerce.number().int().min(0).max(100_000).optional().default(0),
+})
 
 /**
  * GET /api/admin/distribution-lists/[id]/subscribers
@@ -26,11 +38,17 @@ export async function GET(
 
     const { id } = await params
 
-    // Get query params
-    const searchParams = request.nextUrl.searchParams
-    const subscribedOnly = searchParams.get('subscribedOnly') !== 'false' // Default true
-    const limit = parseInt(searchParams.get('limit') || '100')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const parsedQuery = subscribersQuerySchema.safeParse(
+      Object.fromEntries(request.nextUrl.searchParams.entries()),
+    )
+    if (!parsedQuery.success) {
+      return NextResponse.json(
+        { error: 'Invalid subscriber query parameters', details: parsedQuery.error.flatten() },
+        { status: 400 },
+      )
+    }
+
+    const { subscribedOnly, search, limit, offset } = parsedQuery.data
 
     const admin = supabaseAdmin()
 
@@ -57,10 +75,19 @@ export async function GET(
         )
       }
 
-      const { data: notifications, error: notificationsError } = await admin
+      const notificationSearch = search
+        ? search.replace(/[(),\\*]/g, '\\$&')
+        : ''
+      let notificationsQuery = admin
         .from('event_opening_notifications')
         .select('id, email, full_name, user_id, source, created_at')
         .eq('event_id', firstEvent.id)
+      if (notificationSearch) {
+        notificationsQuery = notificationsQuery.or(
+          `email.ilike.*${notificationSearch}*,full_name.ilike.*${notificationSearch}*`,
+        )
+      }
+      const { data: notifications, error: notificationsError } = await notificationsQuery
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -86,10 +113,16 @@ export async function GET(
         },
       }))
 
-      const { count } = await admin
+      let notificationCountQuery = admin
         .from('event_opening_notifications')
         .select('id', { count: 'exact', head: true })
         .eq('event_id', firstEvent.id)
+      if (notificationSearch) {
+        notificationCountQuery = notificationCountQuery.or(
+          `email.ilike.*${notificationSearch}*,full_name.ilike.*${notificationSearch}*`,
+        )
+      }
+      const { count } = await notificationCountQuery
 
       return NextResponse.json(
         {
@@ -121,9 +154,16 @@ export async function GET(
     }
 
     const contacts = await listResendAudienceContacts(audienceId)
-    const filteredContacts = subscribedOnly
-      ? contacts.filter((contact) => !contact.unsubscribed)
-      : contacts
+    const normalizedSearch = search.toLocaleLowerCase('fr-FR')
+    const filteredContacts = contacts.filter((contact) => {
+      if (subscribedOnly && contact.unsubscribed) return false
+      if (!normalizedSearch) return true
+
+      const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ')
+      return [contact.email, name].some((value) =>
+        value.toLocaleLowerCase('fr-FR').includes(normalizedSearch),
+      )
+    })
 
     const paginated = filteredContacts.slice(offset, offset + limit)
     const subscribersWithDetails = paginated.map((contact) => ({
@@ -146,6 +186,7 @@ export async function GET(
         total: filteredContacts.length,
         limit,
         offset,
+        search,
       },
       { status: 200 }
     )

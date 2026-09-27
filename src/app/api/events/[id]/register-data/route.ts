@@ -96,19 +96,31 @@ export async function GET(
 
     const { data: upsellsData, error: upsellError } = await supabase
       .from('upsells')
-      .select('*')
+      .select('*, images:upsell_images(*)')
       .eq('is_active', true)
       .or(`event_id.eq.${event.id},event_id.is.null`)
       .order('created_at', { ascending: false })
 
     if (upsellError) {
       console.error('[register-data] upsell fetch error', upsellError)
+      return NextResponse.json(
+        { error: 'Impossible de charger les options additionnelles.' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({
       event: eventWithEffectiveStatus,
       tickets: ticketsWithCounts,
-      upsells: upsellsData || [],
+      upsells: (upsellsData ?? []).map((upsell) => ({
+        ...upsell,
+        images: (upsell.images ?? []).map((image: { source: string; storage_path: string | null; external_url: string | null }) => ({
+          ...image,
+          url: image.source === 'upload' && image.storage_path
+            ? supabase.storage.from('upsell-images').getPublicUrl(image.storage_path).data.publicUrl
+            : image.external_url,
+        })),
+      })),
       availableSpots,
       user: user
         ? {

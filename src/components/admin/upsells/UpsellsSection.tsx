@@ -1,15 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { Plus } from 'lucide-react'
 import type { Upsell } from '@/types/Upsell'
 import { UpsellFormDialog, type UpsellFormValues } from './UpsellFormDialog'
 import {
@@ -17,10 +14,12 @@ import {
   createAdminUpsell,
   deleteAdminUpsell,
   updateAdminUpsell,
-  useAdminUpsells,
+  useAdminUpsellsPage,
   type AdminUpsellPayload,
 } from '@/app/api/admin/upsells/upsellsQueries'
+import { OperationsList, type OperationsListAction, type OperationsListColumn, type OperationsListFilter } from '@/components/admin/operations'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -39,6 +38,7 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
       is_active: true,
       stock_quantity: '',
       image_url: '',
+      images: [],
       sizes: '',
     }
   }
@@ -53,6 +53,18 @@ function buildFormValues(upsell?: Upsell): UpsellFormValues {
     is_active: upsell.is_active,
     stock_quantity: upsell.stock_quantity?.toString() || '',
     image_url: upsell.image_url || '',
+    images: (upsell.images ?? [])
+      .filter((image) => Boolean(image.external_url) || (image.source === 'upload' && Boolean(image.storage_path)))
+      .sort((left, right) => left.position - right.position)
+      .map((image) => ({
+        id: image.id,
+        url: image.external_url ?? (image.storage_path
+          ? createSupabaseBrowser().storage.from('upsell-images').getPublicUrl(image.storage_path).data.publicUrl
+          : ''),
+        alt_text: image.alt_text ?? '',
+        source: image.source,
+        storage_path: image.storage_path ?? undefined,
+      })),
     sizes:
       upsell.type === 'tshirt' && upsell.options?.sizes && upsell.options.sizes.length > 0
         ? upsell.options.sizes.join(', ')
@@ -68,11 +80,11 @@ const formatPrice = (cents: number, currency: string) =>
 
 export function UpsellsSection() {
   const queryClient = useQueryClient()
-  const {
-    data: upsells = [],
-    isLoading,
-    error: upsellsError,
-  } = useAdminUpsells()
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const [limit, setLimit] = useState<25 | 50 | 100>(50)
+  const [sort, setSort] = useState<'created_at' | 'name' | 'price_cents'>('created_at')
+  const [direction, setDirection] = useState<'asc' | 'desc'>('desc')
   const { data: events = [] } = useAdminEvents()
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -84,28 +96,12 @@ export function UpsellsSection() {
   const [message, setMessage] = useState<MessageState | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const { data: page, isLoading, isFetching, error: upsellsError } = useAdminUpsellsPage({ cursor, limit, query: deferredSearch, status: statusFilter, sort, direction })
+  const upsells = page?.upsells ?? []
+  const filteredUpsells = upsells
 
-  const filteredUpsells = useMemo(() => {
-    let result = [...upsells]
-
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter((upsell) => {
-        return (
-          upsell.name.toLowerCase().includes(term) ||
-          upsell.description?.toLowerCase().includes(term)
-        )
-      })
-    }
-
-    if (statusFilter !== 'all') {
-      result = result.filter((upsell) =>
-        statusFilter === 'active' ? upsell.is_active : !upsell.is_active
-      )
-    }
-
-    return result
-  }, [upsells, searchTerm, statusFilter])
+  const resetPagination = () => { setCursor(null); setPreviousCursors([]) }
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -162,7 +158,17 @@ export function UpsellsSection() {
       event_id: values.event_id === 'none' ? null : values.event_id,
       is_active: values.is_active,
       stock_quantity: values.stock_quantity ? parseInt(values.stock_quantity, 10) : null,
-      image_url: values.image_url || null,
+      // Keep image_url populated during the transition: existing consumers can
+      // continue using it while gallery-aware ones read images.
+      image_url: values.images.find((image) => image.url.trim())?.url.trim() || values.image_url || null,
+      images: values.images
+        .filter((image) => image.url.trim())
+        .map((image, position) => ({
+          source: 'external' as const,
+          external_url: image.url.trim(),
+          alt_text: image.alt_text.trim() || null,
+          position,
+        })),
       options:
         values.type === 'tshirt'
           ? {
@@ -181,6 +187,15 @@ export function UpsellsSection() {
     try {
       if (dialogMode === 'create') {
         const created = await createAdminUpsell(payload)
+        const pendingUploads = values.images.filter((image) => image.source === 'upload' && image.file)
+        for (const image of pendingUploads) {
+          const form = new FormData()
+          form.set('file', image.file as File)
+          await axios.post(`/api/admin/upsells/${created.id}/images`, form)
+        }
+        if (pendingUploads.length > 0) {
+          await queryClient.invalidateQueries({ queryKey: adminUpsellsQueryKey })
+        }
         queryClient.setQueryData<Upsell[]>(adminUpsellsQueryKey, (previous) => {
           if (!previous) return [created]
           return [created, ...previous]
@@ -207,10 +222,42 @@ export function UpsellsSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<Upsell>[]>(() => {
+  const handleUpload = async (file: File) => {
+    if (!selectedUpsell) {
+      return {
+        file,
+        url: URL.createObjectURL(file),
+        alt_text: '',
+        source: 'upload' as const,
+      }
+    }
+    const form = new FormData()
+    form.set('file', file)
+    const response = await axios.post(`/api/admin/upsells/${selectedUpsell.id}/images`, form)
+    await queryClient.invalidateQueries({ queryKey: adminUpsellsQueryKey })
+    setMessage({ type: 'success', text: 'Image téléversée avec succès' })
+    const image = response.data?.image
+    if (!image?.storage_path) return undefined
+    return {
+      url: createSupabaseBrowser().storage.from('upsell-images').getPublicUrl(image.storage_path).data.publicUrl,
+      alt_text: image.alt_text ?? '',
+      source: 'upload' as const,
+      id: image.id,
+      storage_path: image.storage_path,
+    }
+  }
+
+  const handleDeleteUpload = async (image: { id?: string }) => {
+    if (!selectedUpsell || !image.id) return
+    await axios.delete(`/api/admin/upsells/${selectedUpsell.id}/images`, { params: { image_id: image.id } })
+    await queryClient.invalidateQueries({ queryKey: adminUpsellsQueryKey })
+    setMessage({ type: 'success', text: 'Image supprimée' })
+  }
+
+  const columns: OperationsListColumn<Upsell>[] = useMemo(() => {
     return [
       {
-        key: 'upsell',
+        id: 'upsell',
         header: 'Upsell',
         cell: (upsell) => (
           <div className="flex flex-col gap-1">
@@ -224,7 +271,7 @@ export function UpsellsSection() {
         ),
       },
       {
-        key: 'price',
+        id: 'price',
         header: 'Tarif',
         cell: (upsell) => (
           <span className="font-medium text-primary">
@@ -233,7 +280,7 @@ export function UpsellsSection() {
         ),
       },
       {
-        key: 'type',
+        id: 'type',
         header: 'Type',
         cell: (upsell) => (
           <Badge variant="secondary" className="capitalize">
@@ -242,7 +289,7 @@ export function UpsellsSection() {
         ),
       },
       {
-        key: 'event',
+        id: 'event',
         header: 'Événement',
         cell: (upsell) => (
           <div className="flex flex-col text-xs">
@@ -256,7 +303,7 @@ export function UpsellsSection() {
         ),
       },
       {
-        key: 'stock',
+        id: 'stock',
         header: 'Stock',
         cell: (upsell) => (
           <span>
@@ -265,7 +312,7 @@ export function UpsellsSection() {
         ),
       },
       {
-        key: 'status',
+        id: 'status',
         header: 'Statut',
         cell: (upsell) => (
           <Badge variant={upsell.is_active ? 'default' : 'secondary'}>
@@ -274,27 +321,13 @@ export function UpsellsSection() {
         ),
       },
       {
-        key: 'actions',
+        id: 'actions',
         header: '',
         className: 'w-[160px]',
-        cell: (upsell) => (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleEdit(upsell)}>
-              Modifier
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDelete(upsell)}
-              disabled={deleteLoadingId === upsell.id}
-            >
-              {deleteLoadingId === upsell.id ? 'Suppression…' : 'Supprimer'}
-            </Button>
-          </div>
-        ),
+        cell: () => null,
       },
     ]
-  }, [deleteLoadingId])
+  }, [])
 
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
 
@@ -327,49 +360,30 @@ export function UpsellsSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredUpsells}
-        columns={columns}
-        loading={isLoading}
-        emptyMessage={
-          searchTerm || statusFilter !== 'all'
-            ? 'Aucun upsell ne correspond aux filtres appliqués.'
-            : 'Aucun upsell enregistré pour le moment.'
-        }
-        toolbar={
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Rechercher par nom ou description…"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="active">Actifs</SelectItem>
-                <SelectItem value="inactive">Inactifs</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        meta={
-          <span>
-            {filteredUpsells.length} upsell{filteredUpsells.length > 1 ? 's' : ''} affiché
-          </span>
-        }
-        getRowId={(upsell) => upsell.id}
+      <OperationsList
+        data={{ items: upsells, nextCursor: page?.page.nextCursor ?? null, total: page?.page.totalCount }}
+        status={upsellsError ? 'error' : isLoading && !page ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={upsellsError?.message}
+        onRetry={() => window.location.reload()}
+        getItemId={(upsell) => upsell.id}
+        columns={columns.filter((column) => column.id !== 'actions')}
+        filters={[
+          { id: 'status', label: 'Statut', value: statusFilter, allLabel: 'Tous les statuts', options: [{ value: 'active', label: 'Actifs' }, { value: 'inactive', label: 'Inactifs' }] },
+          { id: 'sort', label: 'Trier par', value: sort, options: [{ value: 'created_at', label: 'Date de création' }, { value: 'name', label: 'Nom' }, { value: 'price_cents', label: 'Tarif' }] },
+          { id: 'direction', label: 'Ordre', value: direction, options: [{ value: 'desc', label: 'Décroissant' }, { value: 'asc', label: 'Croissant' }] },
+          { id: 'limit', label: 'Lignes', value: String(limit), options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })) },
+        ] satisfies OperationsListFilter[]}
+        onFilterChange={(id, value) => { resetPagination(); if (id === 'status') setStatusFilter(value as typeof statusFilter); if (id === 'sort') setSort(value as typeof sort); if (id === 'direction') setDirection(value as typeof direction); if (id === 'limit') setLimit(Number(value) as typeof limit) }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher par nom ou description…"
+        onSearchChange={(value) => { setSearchTerm(value); resetPagination() }}
+        rowActions={[
+          { id: 'edit', label: 'Modifier', onSelect: handleEdit },
+          { id: 'delete', label: 'Supprimer', destructive: true, onSelect: handleDelete, disabled: (upsell) => deleteLoadingId === upsell.id },
+        ] satisfies OperationsListAction<Upsell>[]}
+        pagination={{ cursor, previousCursors, nextCursor: page?.page.nextCursor ?? null, total: page?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => { setCursor(nextCursor); setPreviousCursors(nextPreviousCursors) }}
+        itemLabel="upsell"
       />
 
       <UpsellFormDialog
@@ -380,6 +394,8 @@ export function UpsellsSection() {
         events={events}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
+        onUpload={handleUpload}
+        onDeleteUpload={dialogMode === 'edit' ? handleDeleteUpload : undefined}
       />
     </div>
   )

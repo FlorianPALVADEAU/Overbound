@@ -54,6 +54,8 @@ export interface CursorPagination {
   previousCursors: string[]
   nextCursor: string | null
   total?: number
+  /** Number of rows requested per page; used only for the page-count label. */
+  limit?: number
 }
 
 export type OperationsListStatus = 'idle' | 'loading' | 'stale' | 'error'

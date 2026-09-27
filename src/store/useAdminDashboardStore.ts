@@ -12,6 +12,7 @@ export const ADMIN_TAB_VALUES = [
   'promocodes',
   'promotions',
   'upsells',
+  'lucky-wheel',
   'ambassadors',
   'groups',
   'bootcamps',

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import axiosClient from '../../axiosClient'
-import type { Upsell } from '@/types/Upsell'
+import type { Upsell, UpsellImage } from '@/types/Upsell'
 
 export interface AdminUpsellPayload {
   name: string
@@ -13,12 +13,15 @@ export interface AdminUpsellPayload {
   is_active: boolean
   stock_quantity?: number | null
   image_url?: string | null
+  images?: Array<Pick<UpsellImage, 'source' | 'external_url' | 'alt_text' | 'position'>>
   options?: Upsell['options'] | null
 }
 
 interface UpsellsResponse {
   upsells: Upsell[]
 }
+export interface AdminUpsellsPageParams { cursor?: string | null; limit?: 25 | 50 | 100; query?: string; status?: 'all' | 'active' | 'inactive'; eventId?: string; sort?: 'created_at' | 'name' | 'price_cents'; direction?: 'asc' | 'desc' }
+export interface AdminUpsellsPageResponse extends UpsellsResponse { page: { limit: number; totalCount: number; nextCursor: string | null } }
 
 interface UpsellResponse {
   upsell: Upsell
@@ -39,6 +42,19 @@ export const useAdminUpsells = () =>
     queryKey: ADMIN_UPSELLS_QUERY_KEY,
     queryFn: fetchAdminUpsells,
   })
+
+export const useAdminUpsellsPage = (params: AdminUpsellsPageParams = {}) => useQuery<AdminUpsellsPageResponse, Error>({
+  queryKey: [...ADMIN_UPSELLS_QUERY_KEY, 'page', params],
+  queryFn: async () => {
+    const search = new URLSearchParams({ paginated: 'true', limit: String(params.limit ?? 50), status: params.status ?? 'all', sort: params.sort ?? 'created_at', direction: params.direction ?? 'desc' })
+    if (params.cursor) search.set('cursor', params.cursor)
+    if (params.query?.trim()) search.set('query', params.query.trim())
+    if (params.eventId) search.set('event_id', params.eventId)
+    const response = await axiosClient.get<AdminUpsellsPageResponse>(`/admin/upsells?${search.toString()}`)
+    if (response.status !== 200) throw new Error('Erreur lors du chargement des upsells')
+    return response.data
+  },
+})
 
 export const createAdminUpsell = async (
   payload: AdminUpsellPayload

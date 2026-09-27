@@ -1,10 +1,34 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import type { ListResponse } from '@/components/admin/operations'
 import type {
   DistributionList,
   DistributionListWithStats,
   CreateDistributionListData,
   UpdateDistributionListData,
+  DistributionListSubscriber,
 } from '@/types/DistributionList'
+
+export interface DistributionListsPageParams {
+  cursor?: string | null
+  limit?: number
+  search?: string
+  type?: string
+}
+
+export const useDistributionListsPage = (params: DistributionListsPageParams) =>
+  useQuery<ListResponse<DistributionListWithStats>, Error>({
+    queryKey: ['admin', 'distribution-lists', 'page', params],
+    queryFn: async () => {
+      const query = new URLSearchParams({ includeStats: 'true', limit: String(params.limit ?? 25) })
+      if (params.cursor) query.set('cursor', params.cursor)
+      if (params.search?.trim()) query.set('search', params.search.trim())
+      if (params.type && params.type !== 'all') query.set('type', params.type)
+      const response = await fetch(`/api/admin/distribution-lists?${query.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch lists')
+      return response.json() as Promise<ListResponse<DistributionListWithStats>>
+    },
+  })
 
 /**
  * Hook pour gérer les distribution lists (admin)
@@ -160,7 +184,7 @@ export function useDistributionLists() {
  * Hook pour gérer les abonnés d'une liste (admin)
  */
 export function useListSubscribers(listId: string) {
-  const [subscribers, setSubscribers] = useState<any[]>([])
+  const [subscribers, setSubscribers] = useState<DistributionListSubscriber[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -170,9 +194,10 @@ export function useListSubscribers(listId: string) {
    */
   const fetchSubscribers = async (options?: {
     subscribedOnly?: boolean
+    search?: string
     limit?: number
     offset?: number
-  }) => {
+  }): Promise<DistributionListSubscriber[]> => {
     setIsLoading(true)
     setError(null)
 
@@ -180,6 +205,7 @@ export function useListSubscribers(listId: string) {
       const params = new URLSearchParams()
       if (options?.subscribedOnly !== undefined)
         params.append('subscribedOnly', String(options.subscribedOnly))
+      if (options?.search?.trim()) params.append('search', options.search.trim())
       if (options?.limit) params.append('limit', String(options.limit))
       if (options?.offset) params.append('offset', String(options.offset))
 
@@ -191,11 +217,15 @@ export function useListSubscribers(listId: string) {
         throw new Error('Failed to fetch subscribers')
       }
 
-      const { data, total: totalCount } = await response.json()
+      const payload: { data?: DistributionListSubscriber[]; total?: number } =
+        await response.json()
+      const data = Array.isArray(payload.data) ? payload.data : []
       setSubscribers(data)
-      setTotal(totalCount)
+      setTotal(payload.total ?? 0)
+      return data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
+      return []
     } finally {
       setIsLoading(false)
     }

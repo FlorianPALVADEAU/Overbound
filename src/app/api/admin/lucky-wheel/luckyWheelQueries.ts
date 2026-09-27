@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import axiosClient from '../../axiosClient'
+import type { ListResponse } from '@/components/admin/operations'
 
 export type LuckyWheelRewardType =
   | 'TICKET_PERCENT_DISCOUNT'
@@ -118,6 +119,18 @@ export const useAdminLuckyWheelCampaigns = () =>
     queryFn: fetchAdminLuckyWheelCampaigns,
   })
 
+export const useAdminLuckyWheelCampaignsPage = (params: { cursor?: string | null; limit?: number; search?: string }) =>
+  useQuery<ListResponse<LuckyWheelCampaign>, Error>({
+    queryKey: [...ADMIN_LUCKY_WHEEL_CAMPAIGNS_QUERY_KEY, 'page', params],
+    queryFn: async () => {
+      const query = new URLSearchParams({ paginated: 'true', limit: String(params.limit ?? 25) })
+      if (params.cursor) query.set('cursor', params.cursor)
+      if (params.search?.trim()) query.set('search', params.search.trim())
+      const response = await axiosClient.get<{ campaigns: LuckyWheelCampaign[]; page: { nextCursor: string | null; totalCount: number } }>(`/admin/lucky-wheel/campaigns?${query.toString()}`)
+      return { items: response.data.campaigns ?? [], nextCursor: response.data.page.nextCursor, total: response.data.page.totalCount }
+    },
+  })
+
 export const createAdminLuckyWheelCampaign = async (
   payload: LuckyWheelCampaignPayload,
 ): Promise<LuckyWheelCampaign> => {
@@ -182,6 +195,18 @@ export const useAdminLuckyWheelRewards = (campaignId: string | null) =>
   useQuery<LuckyWheelReward[], Error>({
     queryKey: ADMIN_LUCKY_WHEEL_REWARDS_QUERY_KEY(campaignId ?? 'none'),
     queryFn: () => fetchAdminLuckyWheelRewards(campaignId as string),
+    enabled: Boolean(campaignId),
+  })
+
+export const useAdminLuckyWheelRewardsPage = (campaignId: string | null, params: { cursor?: string | null; limit?: number } = {}) =>
+  useQuery<ListResponse<LuckyWheelReward>, Error>({
+    queryKey: [...ADMIN_LUCKY_WHEEL_REWARDS_QUERY_KEY(campaignId ?? 'none'), 'page', params],
+    queryFn: async () => {
+      const query = new URLSearchParams({ paginated: 'true', campaign_id: campaignId as string, limit: String(params.limit ?? 25) })
+      if (params.cursor) query.set('cursor', params.cursor)
+      const response = await axiosClient.get<{ rewards: LuckyWheelReward[]; page: { nextCursor: string | null; totalCount: number } }>(`/admin/lucky-wheel/rewards?${query.toString()}`)
+      return { items: response.data.rewards ?? [], nextCursor: response.data.page.nextCursor, total: response.data.page.totalCount }
+    },
     enabled: Boolean(campaignId),
   })
 

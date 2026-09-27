@@ -25,12 +25,12 @@ export function ObstacleCard({ obstacle, onEdit, onDelete, onPreview, isDeleting
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-base font-semibold truncate">{obstacle.name}</h3>
-              <Badge variant="secondary" className="text-xs">{obstacle.type}</Badge>
-              <span className={`px-1.5 py-0.5 rounded text-xs ${difficultyColor(obstacle.difficulty)}`}>
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+              <h3 className="min-w-0 flex-1 truncate text-base font-semibold">{obstacle.name}</h3>
+              <Badge variant="secondary" className="shrink-0 text-xs">{obstacle.type}</Badge>
+              <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs ${difficultyColor(obstacle.difficulty)}`}>
                 {obstacle.difficulty}/10
               </span>
             </div>
@@ -47,7 +47,7 @@ export function ObstacleCard({ obstacle, onEdit, onDelete, onPreview, isDeleting
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
             {onPreview && (
               <Button variant="outline" size="sm" onClick={() => onPreview(obstacle)}>
                 <Eye className="h-4 w-4" />

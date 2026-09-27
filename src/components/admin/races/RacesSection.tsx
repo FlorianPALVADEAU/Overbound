@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -8,8 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search } from 'lucide-react'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { Race } from '@/types/Race'
 import type { Obstacle } from '@/types/Obstacle'
 import { RaceFormDialog, type RaceFormValues } from './RaceFormDialog'
@@ -18,12 +23,13 @@ import {
   createAdminRace,
   deleteAdminRace,
   updateAdminRace,
-  useAdminRaces,
+  useAdminRacesPage,
   type AdminRacePayload,
   type DeleteRaceConflict,
 } from '@/app/api/admin/races/racesQueries'
 import { useAdminObstacles } from '@/app/api/admin/obstacles/obstaclesQueries'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
+import { OperationsList, type OperationsListColumn } from '@/components/admin/operations'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -65,11 +71,16 @@ const formatDateTime = (value: string) =>
 
 export function RacesSection() {
   const queryClient = useQueryClient()
-  const {
-    data: races = [],
-    isLoading: racesLoading,
-    error: racesError,
-  } = useAdminRaces()
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const [limit, setLimit] = useState<25 | 50 | 100>(50)
+  const [sort, setSort] = useState<'created_at' | 'name' | 'difficulty' | 'distance_km'>('created_at')
+  const [direction, setDirection] = useState<'asc' | 'desc'>('desc')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | Race['type']>('all')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const { data: racesPage, isLoading: racesLoading, isFetching: racesFetching, error: racesError } = useAdminRacesPage({ cursor, limit, query: deferredSearch, type: typeFilter === 'all' ? undefined : typeFilter, sort, direction })
+  const races = racesPage?.races ?? []
   const {
     data: obstacles = [],
     isLoading: obstaclesLoading,
@@ -83,8 +94,7 @@ export function RacesSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [typeFilter, setTypeFilter] = useState<'all' | Race['type']>('all')
+  const resetPagination = () => { setCursor(null); setPreviousCursors([]) }
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -94,26 +104,7 @@ export function RacesSection() {
   const combinedLoading = racesLoading || obstaclesLoading
   const combinedError = racesError || obstaclesError
 
-  const filteredRaces = useMemo(() => {
-    let result = [...races]
-
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter((race) => {
-        return (
-          race.name.toLowerCase().includes(term) ||
-          race.target_public.toLowerCase().includes(term) ||
-          race.description?.toLowerCase().includes(term)
-        )
-      })
-    }
-
-    if (typeFilter !== 'all') {
-      result = result.filter((race) => race.type === typeFilter)
-    }
-
-    return result
-  }, [races, searchTerm, typeFilter])
+  const filteredRaces = races
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -221,10 +212,10 @@ export function RacesSection() {
     }
   }
 
-  const columns = useMemo<AdminDataGridColumn<Race>[]>(() => {
+  const columns: OperationsListColumn<Race>[] = useMemo(() => {
     return [
       {
-        key: 'name',
+        id: 'name',
         header: 'Format',
         cell: (race) => (
           <div className="flex flex-col gap-1">
@@ -238,7 +229,7 @@ export function RacesSection() {
         ),
       },
       {
-        key: 'type',
+        id: 'type',
         header: 'Type & public',
         cell: (race) => (
           <div className="flex flex-wrap items-center gap-2">
@@ -252,7 +243,7 @@ export function RacesSection() {
         ),
       },
       {
-        key: 'distance',
+        id: 'distance',
         header: 'Distance',
         cell: (race) => (
           <span>
@@ -261,7 +252,7 @@ export function RacesSection() {
         ),
       },
       {
-        key: 'difficulty',
+        id: 'difficulty',
         header: 'Difficulté',
         cell: (race) => (
           <span>
@@ -270,7 +261,7 @@ export function RacesSection() {
         ),
       },
       {
-        key: 'obstacles',
+        id: 'obstacles',
         header: 'Obstacles',
         cell: (race) => (
           <span>
@@ -279,29 +270,35 @@ export function RacesSection() {
         ),
       },
       {
-        key: 'updated',
+        id: 'updated',
         header: 'Mise à jour',
         cell: (race) => (
           <span className="text-sm text-muted-foreground">{formatDateTime(race.updated_at)}</span>
         ),
       },
       {
-        key: 'actions',
+        id: 'actions',
         header: '',
         className: 'w-[160px]',
         cell: (race) => (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleEdit(race)}>
-              Modifier
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleDeleteClick(race)}
-              disabled={deleteLoadingId === race.id}
-            >
-              {deleteLoadingId === race.id ? 'Suppression…' : 'Supprimer'}
-            </Button>
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9" aria-label={`Actions pour ${race.name}`}>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => handleEdit(race)}>
+                  <Pencil className="h-4 w-4" />
+                  Modifier
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onSelect={() => handleDeleteClick(race)} disabled={deleteLoadingId === race.id}>
+                  <Trash2 className="h-4 w-4" />
+                  {deleteLoadingId === race.id ? 'Suppression…' : 'Supprimer'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ),
       },
@@ -339,52 +336,30 @@ export function RacesSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredRaces}
-        columns={columns}
-        loading={combinedLoading}
-        emptyMessage={
-          searchTerm || typeFilter !== 'all'
-            ? 'Aucun format ne correspond aux filtres appliqués.'
-            : 'Aucun format enregistré. Créez une course pour structurer vos billets.'
-        }
-        toolbar={
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Rechercher par nom, public ou description…"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <Select
-              value={typeFilter}
-              onValueChange={(value) => setTypeFilter(value as typeof typeFilter)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                <SelectItem value="trail">Trail</SelectItem>
-                <SelectItem value="obstacle">Obstacle</SelectItem>
-                <SelectItem value="urbain">Urbain</SelectItem>
-                <SelectItem value="nature">Nature</SelectItem>
-                <SelectItem value="extreme">Extrême</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        meta={
-          <span>
-            {filteredRaces.length} format{filteredRaces.length > 1 ? 's' : ''} affiché
-          </span>
-        }
-        getRowId={(race) => race.id}
+      <OperationsList
+        data={{ items: filteredRaces, nextCursor: racesPage?.page.nextCursor ?? null, total: racesPage?.page.totalCount }}
+        status={combinedError ? 'error' : combinedLoading && !racesPage ? 'loading' : racesFetching ? 'stale' : 'idle'}
+        errorMessage={(combinedError as Error | null)?.message}
+        onRetry={() => window.location.reload()}
+        getItemId={(race) => race.id}
+        columns={columns.filter((column) => column.id !== 'actions')}
+        filters={[
+          { id: 'type', label: 'Type', value: typeFilter === 'all' ? '' : typeFilter, allLabel: 'Tous les types', options: ['trail', 'obstacle', 'urbain', 'nature', 'extreme'].map((value) => ({ value, label: value })) },
+          { id: 'sort', label: 'Trier par', value: sort, options: [{ value: 'created_at', label: 'Date de création' }, { value: 'name', label: 'Nom' }, { value: 'difficulty', label: 'Difficulté' }, { value: 'distance_km', label: 'Distance' }] },
+          { id: 'direction', label: 'Ordre', value: direction, options: [{ value: 'desc', label: 'Décroissant' }, { value: 'asc', label: 'Croissant' }] },
+          { id: 'limit', label: 'Lignes', value: String(limit), options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })) },
+        ]}
+        onFilterChange={(id, value) => { resetPagination(); if (id === 'type') setTypeFilter((value || 'all') as typeof typeFilter); if (id === 'sort') setSort(value as typeof sort); if (id === 'direction') setDirection(value as typeof direction); if (id === 'limit') setLimit(Number(value) as typeof limit) }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher par nom, public ou description…"
+        onSearchChange={(value) => { setSearchTerm(value); resetPagination() }}
+        rowActions={[
+          { id: 'edit', label: 'Modifier', onSelect: handleEdit },
+          { id: 'delete', label: 'Supprimer', destructive: true, onSelect: handleDeleteClick, disabled: (race) => deleteLoadingId === race.id },
+        ]}
+        pagination={{ cursor, previousCursors, nextCursor: racesPage?.page.nextCursor ?? null, total: racesPage?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => { setCursor(nextCursor); setPreviousCursors(nextPreviousCursors) }}
+        itemLabel="format"
       />
 
       <RaceFormDialog
@@ -432,4 +407,3 @@ export function RacesSection() {
     </div>
   )
 }
-

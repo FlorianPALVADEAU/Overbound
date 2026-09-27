@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { Mail, Search, UserCog, RefreshCw, Clock, Pencil, Trash2 } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Mail, UserCog, RefreshCw, Clock, Pencil, Trash2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -18,14 +19,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,7 +27,7 @@ import {
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
-  useAdminUsers,
+  useAdminUsersPage,
   useAmbassadorPromoCodes,
   updateAdminUserRole,
   updateAdminUser,
@@ -43,6 +36,8 @@ import {
   type AdminUser,
   type AmbassadorPromoCode,
 } from '@/app/api/admin/users/usersQueries'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
+import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
 
 const roleLabels: Record<AdminUser['role'], string> = {
   user: 'Utilisateur',
@@ -60,9 +55,16 @@ const formatDate = (value: string | null) =>
     : '—'
 
 export function UsersSection() {
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
-  const initialSearch = searchParams.get('search')?.trim() ?? ''
-  const [searchTerm, setSearchTerm] = useState(initialSearch)
+  const initialUrl = useMemo(() => parseOperationsListUrlState(searchParams, { filterIds: ['role'] }), [searchParams])
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [roleFilter, setRoleFilter] = useState<AdminUser['role'] | 'all'>((initialUrl.filters.role as AdminUser['role'] | undefined) ?? 'all')
+  const [limit, setLimit] = useState(initialUrl.limit)
+  const [cursor, setCursor] = useState<string | null>(initialUrl.cursor)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [editUser, setEditUser] = useState<AdminUser | null>(null)
   const [editValues, setEditValues] = useState({
@@ -75,32 +77,28 @@ export function UsersSection() {
   })
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const queryClient = useQueryClient()
-  const { data, isLoading, isFetching, error, refetch } = useAdminUsers()
+  const userParams = useMemo(() => ({ cursor, limit, query: deferredSearch || undefined, role: roleFilter, sort: 'created_at' as const, direction: 'desc' as const }), [cursor, deferredSearch, limit, roleFilter])
+  const { data, isLoading, isFetching, error, refetch } = useAdminUsersPage(userParams)
   const { data: promoCodesData, isLoading: promoCodesLoading } = useAmbassadorPromoCodes()
 
-  useEffect(() => {
-    if (!initialSearch) return
-    setSearchTerm((prev) => (prev ? prev : initialSearch))
-  }, [initialSearch])
-
   const users = data?.users ?? []
-
-  const filteredUsers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    if (!term) return users
-    return users.filter((user) =>
-      [
-        user.full_name,
-        user.email,
-        roleLabels[user.role],
-        user.phone,
-        user.group_name,
-        user.group_invite_code,
-      ]
-        .filter(Boolean)
-        .some((value) => value?.toLowerCase().includes(term)),
-    )
-  }, [searchTerm, users])
+  const filteredUsers = users
+  const resetPagination = () => { setCursor(null); setPreviousCursors([]) }
+  useEffect(() => { resetPagination() }, [deferredSearch])
+  useEffect(() => {
+    const next = writeOperationsListUrlState(searchParams, { cursor, sort: null, direction: null, limit, selectedId: null, filters: { role: roleFilter === 'all' ? '' : roleFilter } }, { filterIds: ['role'] })
+    if (next !== searchParams.toString()) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+  }, [cursor, limit, pathname, roleFilter, router, searchParams])
+  useEffect(() => {
+    const next = parseOperationsListUrlState(searchParams, { filterIds: ['role'] })
+    const nextRole = next.filters.role && next.filters.role in roleLabels ? next.filters.role as AdminUser['role'] : 'all'
+    const hasExternalStateChange = roleFilter !== nextRole || limit !== next.limit || cursor !== next.cursor
+    setRoleFilter((current) => current === nextRole ? current : nextRole)
+    setLimit((current) => current === next.limit ? current : next.limit)
+    setCursor((current) => current === next.cursor ? current : next.cursor)
+    if (hasExternalStateChange) setPreviousCursors([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const availablePromoCodes = useMemo(() => {
     const codes = promoCodesData?.codes ?? []
@@ -140,6 +138,7 @@ export function UsersSection() {
           ),
         }
       })
+      await queryClient.invalidateQueries({ queryKey: [...adminUsersQueryKey, 'page'] })
     } catch (err) {
       console.error('Erreur mise à jour rôle:', err)
       alert('Erreur lors de la mise à jour du rôle.')
@@ -182,6 +181,7 @@ export function UsersSection() {
           ),
         }
       })
+      await queryClient.invalidateQueries({ queryKey: [...adminUsersQueryKey, 'page'] })
       setEditUser(null)
     } catch (err) {
       console.error('Erreur mise à jour utilisateur:', err)
@@ -205,6 +205,7 @@ export function UsersSection() {
           users: previous.users.filter((item) => item.id !== user.id),
         }
       })
+      await queryClient.invalidateQueries({ queryKey: [...adminUsersQueryKey, 'page'] })
     } catch (err) {
       console.error('Erreur suppression utilisateur:', err)
       alert('Erreur lors de la suppression de l’utilisateur.')
@@ -230,10 +231,10 @@ export function UsersSection() {
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">Utilisateurs</h3>
             <p className="text-sm text-muted-foreground">
-              {users.length} utilisateur{users.length > 1 ? 's' : ''} enregistré{users.length > 1 ? 's' : ''}.
+              {data?.page?.totalCount ?? data?.total ?? 0} utilisateur{(data?.page?.totalCount ?? data?.total ?? 0) > 1 ? 's' : ''} correspondant{(data?.page?.totalCount ?? data?.total ?? 0) > 1 ? 's' : ''}.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
             {isFetching ? (
               <span className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 animate-spin" />
@@ -247,132 +248,51 @@ export function UsersSection() {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-1">
-            <Label>Recherche</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Nom, email, rôle…"
-                className="pl-9"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Utilisateur</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead>Groupe</TableHead>
-                <TableHead>Créé le</TableHead>
-                <TableHead>Dernière connexion</TableHead>
-                <TableHead className="w-[260px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    <Clock className="mx-auto mb-3 h-6 w-6 animate-spin" />
-                    Chargement des utilisateurs…
-                  </TableCell>
-                </TableRow>
-              ) : filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    Aucun utilisateur ne correspond à cette recherche.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">{user.full_name || user.email || 'Utilisateur'}</span>
-                        <span className="text-xs text-muted-foreground">{user.email || '—'}</span>
-                        {user.phone ? (
-                          <span className="text-xs text-muted-foreground">{user.phone}</span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <UserCog className="h-4 w-4 text-muted-foreground" />
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => handleRoleChange(user.id, value as AdminUser['role'])}
-                          disabled={updatingId === user.id}
-                        >
-                          <SelectTrigger className="h-8 w-[180px]">
-                            <SelectValue placeholder="Choisir un rôle" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">{roleLabels.user}</SelectItem>
-                            <SelectItem value="volunteer">{roleLabels.volunteer}</SelectItem>
-                            <SelectItem value="admin">{roleLabels.admin}</SelectItem>
-                            <SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm">{user.group_name || 'Aucun groupe'}</span>
-                        {user.group_invite_code ? (
-                          <span className="text-xs text-muted-foreground font-mono">{user.group_invite_code}</span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {formatDate(user.created_at)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {formatDate(user.last_sign_in_at)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(user)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Modifier
-                        </Button>
-                        {user.email ? (
-                          <Button asChild variant="outline" size="sm">
-                            <a href={`mailto:${user.email}`}>
-                              <Mail className="mr-2 h-4 w-4" />
-                              Email
-                            </a>
-                          </Button>
-                        ) : null}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(user)}
-                          disabled={deleteLoadingId === user.id}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {deleteLoadingId === user.id ? 'Suppression…' : 'Supprimer'}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <OperationsList
+          data={{ items: filteredUsers, nextCursor: data?.page?.nextCursor ?? null, total: data?.page?.totalCount }}
+          status={isLoading ? 'loading' : isFetching ? 'stale' : 'idle'}
+          errorMessage={undefined}
+          onRetry={() => void refetch()}
+          getItemId={(user) => user.id}
+          columns={[
+            { id: 'user', header: 'Utilisateur', cell: (user) => <><p className="truncate font-medium">{user.full_name || user.email || 'Utilisateur'}</p><p className="truncate text-xs text-muted-foreground">{user.email || '—'}</p>{user.phone ? <p className="truncate text-xs text-muted-foreground">{user.phone}</p> : null}</> },
+            { id: 'role', header: 'Rôle', cell: (user) => <Select value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as AdminUser['role'])} disabled={updatingId === user.id}><SelectTrigger className="h-8 w-full sm:w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user">{roleLabels.user}</SelectItem><SelectItem value="volunteer">{roleLabels.volunteer}</SelectItem><SelectItem value="admin">{roleLabels.admin}</SelectItem><SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem></SelectContent></Select> },
+            { id: 'group', header: 'Groupe', cell: (user) => <><p className="truncate">{user.group_name || 'Aucun groupe'}</p>{user.group_invite_code ? <p className="font-mono text-xs text-muted-foreground">{user.group_invite_code}</p> : null}</> },
+            { id: 'created', header: 'Créé le', cell: (user) => formatDate(user.created_at), hiddenByDefault: true },
+            { id: 'last-sign-in', header: 'Dernière connexion', cell: (user) => formatDate(user.last_sign_in_at), hiddenByDefault: true },
+          ] satisfies OperationsListColumn<AdminUser>[]}
+          search={searchTerm}
+          searchPlaceholder="Nom, email, rôle…"
+          onSearchChange={setSearchTerm}
+          filters={[{
+            id: 'role',
+            label: 'Rôle',
+            value: roleFilter,
+            options: [{ value: 'all', label: 'Tous' }, ...Object.entries(roleLabels).map(([value, label]) => ({ value, label }))],
+          }, {
+            id: 'limit',
+            label: 'Lignes',
+            value: String(limit),
+            options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })),
+          }]}
+          onFilterChange={(filterId, value) => {
+            resetPagination()
+            if (filterId === 'role') setRoleFilter((value || 'all') as AdminUser['role'] | 'all')
+            if (filterId === 'limit') setLimit(Number(value))
+          }}
+          rowActions={[
+            { id: 'edit', label: 'Modifier', onSelect: openEditDialog },
+            { id: 'email', label: 'Envoyer un email', onSelect: (user) => { if (user.email) window.location.href = `mailto:${user.email}` }, disabled: (user) => !user.email },
+            { id: 'delete', label: 'Supprimer', destructive: true, onSelect: handleDelete, disabled: (user) => deleteLoadingId === user.id },
+          ] satisfies OperationsListAction<AdminUser>[]}
+          pagination={{ cursor, previousCursors, nextCursor: data?.page?.nextCursor ?? null, total: data?.page?.totalCount, limit }}
+          onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => {
+            setCursor(nextCursor)
+            setPreviousCursors(nextPreviousCursors)
+          }}
+          itemLabel="utilisateur"
+          emptyState={<div className="py-10 text-center text-sm text-muted-foreground">Aucun utilisateur ne correspond à cette recherche.</div>}
+        />
       </CardContent>
 
       <Dialog open={Boolean(editUser)} onOpenChange={(open) => !open && setEditUser(null)}>

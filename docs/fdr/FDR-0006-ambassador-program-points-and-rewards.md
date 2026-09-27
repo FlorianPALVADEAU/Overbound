@@ -20,6 +20,14 @@ Ne pas déduire de ce tableau que les migrations sont appliquées en production 
 
 ## Decision
 
+### Décisions de reprise — 2026-09-21
+
+- Le programme de rewards est annuel : chaque attribution porte un `program_year` immuable, calculé à la date d'attribution/paiement dans le fuseau du programme. Une course future payée en décembre appartient donc à l'année civile de son paiement, pas à l'année de l'événement.
+- Chaque reward du programme annuel expire le **31 décembre à 23:59:59** dans le fuseau `Europe/Paris`. Dès le 1er janvier à 00:00, elle n'est plus réclamable mais reste visible dans l'historique de l'ambassadeur et dans les comparaisons annuelles.
+- Une reward peut être annulée puis rouverte. Ces transitions ne suppriment ni les dates historiques ni le motif : elles exigent une commande idempotente, un auteur et un audit métier append-only.
+- La conservation des événements d'audit métier est de **24 mois**. La purge est une opération séparée, vérifiable et ne doit jamais s'appuyer sur les logs HTTP bruts.
+- Ces décisions ne modifient pas les tables historiques globales. Elles seront appliquées via une migration d'extension après inventaire live des contraintes, RLS, fonctions et organisation propriétaire des données existantes.
+
 Overbound includes an **Ambassador Referral Program** where ambassadors earn points based on registrations they refer, unlock rewards at 10 levels, and earn extra tickets beyond level 10.
 
 **Points System**:

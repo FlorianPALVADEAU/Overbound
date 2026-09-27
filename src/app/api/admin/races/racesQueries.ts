@@ -18,6 +18,8 @@ export interface AdminRacePayload {
 interface RacesResponse {
   races: Race[]
 }
+export interface AdminRacesPageParams { cursor?: string | null; limit?: 25 | 50 | 100; query?: string; type?: Race['type']; sort?: 'created_at' | 'name' | 'difficulty' | 'distance_km'; direction?: 'asc' | 'desc' }
+export interface AdminRacesPageResponse extends RacesResponse { page: { limit: number; totalCount: number; nextCursor: string | null } }
 
 interface RaceResponse {
   race: Race
@@ -38,6 +40,19 @@ export const useAdminRaces = () =>
     queryKey: ADMIN_RACES_QUERY_KEY,
     queryFn: fetchAdminRaces,
   })
+
+export const useAdminRacesPage = (params: AdminRacesPageParams = {}) => useQuery<AdminRacesPageResponse, Error>({
+  queryKey: [...ADMIN_RACES_QUERY_KEY, 'page', params],
+  queryFn: async () => {
+    const search = new URLSearchParams({ paginated: 'true', limit: String(params.limit ?? 50), sort: params.sort ?? 'created_at', direction: params.direction ?? 'desc' })
+    if (params.cursor) search.set('cursor', params.cursor)
+    if (params.query?.trim()) search.set('query', params.query.trim())
+    if (params.type) search.set('type', params.type)
+    const response = await axiosClient.get<AdminRacesPageResponse>(`/admin/races?${search.toString()}`)
+    if (response.status !== 200) throw new Error('Erreur lors du chargement des courses')
+    return response.data
+  },
+})
 
 export const createAdminRace = async (
   payload: AdminRacePayload

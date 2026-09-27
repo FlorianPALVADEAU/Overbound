@@ -23,7 +23,10 @@ export interface AdminUser {
 interface AdminUsersResponse {
   users: AdminUser[]
   total: number
+  page?: { limit: number; totalCount: number; nextCursor: string | null }
 }
+
+export interface AdminUsersPage { users: AdminUser[]; total: number; page: NonNullable<AdminUsersResponse['page']> }
 
 export interface AmbassadorPromoCode {
   id: string
@@ -47,6 +50,31 @@ export const useAdminUsers = () =>
   useQuery<AdminUsersResponse, Error>({
     queryKey: ADMIN_USERS_QUERY_KEY,
     queryFn: fetchAdminUsers,
+  })
+
+export interface AdminUsersPageParams {
+  cursor?: string | null
+  limit?: number
+  query?: string
+  role?: AdminUser['role'] | 'all'
+  sort?: 'created_at' | 'last_sign_in_at' | 'full_name' | 'email' | 'role'
+  direction?: 'asc' | 'desc'
+}
+
+const fetchAdminUsersPage = async (params: AdminUsersPageParams = {}): Promise<AdminUsersPage> => {
+  const search = new URLSearchParams({ paginated: 'true' })
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') search.set(key, String(value))
+  }
+  const response = await axiosClient.get<AdminUsersResponse>(`/admin/users?${search}`)
+  if (response.status !== 200 || !response.data.page) throw new Error('Erreur lors du chargement des utilisateurs')
+  return { users: response.data.users ?? [], total: response.data.total ?? 0, page: response.data.page }
+}
+
+export const useAdminUsersPage = (params: AdminUsersPageParams = {}) =>
+  useQuery<AdminUsersPage, Error>({
+    queryKey: [...ADMIN_USERS_QUERY_KEY, 'page', params],
+    queryFn: () => fetchAdminUsersPage(params),
   })
 
 export const updateAdminUser = async (

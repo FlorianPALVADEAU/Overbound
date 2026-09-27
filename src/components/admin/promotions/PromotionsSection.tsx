@@ -1,25 +1,25 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/ui/AdminDataGrid'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
+import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
 import { PromotionFormDialog, type PromotionFormValues } from './PromotionFormDialog'
 import {
   adminPromotionsQueryKey,
   createAdminPromotion,
   deleteAdminPromotion,
   updateAdminPromotion,
-  useAdminPromotions,
+  useAdminPromotionsPage,
   type AdminPromotionPayload,
 } from '@/app/api/admin/promotions/promotionsQueries'
 import type { Promotion } from '@/types/Promotion'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -118,13 +118,27 @@ const statusBadgeConfig: Record<
 }
 
 export function PromotionsSection() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialUrl = useMemo(() => parseOperationsListUrlState(searchParams, { filterIds: ['status'] }), [searchParams])
   const queryClient = useQueryClient()
-  const {
-    data: promotions = [],
-    isLoading,
-    error,
-    isFetching,
-  } = useAdminPromotions()
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredSearch = useDeferredValue(searchTerm.trim())
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>((initialUrl.filters.status as StatusFilter | undefined) ?? 'all')
+  const [limit, setLimit] = useState(initialUrl.limit)
+  const [cursor, setCursor] = useState<string | null>(initialUrl.cursor)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const promotionParams = useMemo(() => ({
+    cursor,
+    limit,
+    query: deferredSearch || undefined,
+    status: statusFilter,
+    sort: 'starts_at' as const,
+    direction: 'desc' as const,
+  }), [cursor, deferredSearch, limit, statusFilter])
+  const { data: pageData, isLoading, isFetching, error } = useAdminPromotionsPage(promotionParams)
+  const promotions = pageData?.promotions ?? []
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
@@ -133,51 +147,43 @@ export function PromotionsSection() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const filteredPromotions = promotions
+  const resetPagination = () => {
+    setCursor(null)
+    setPreviousCursors([])
+  }
 
-  const filteredPromotions = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    const now = new Date()
+  useEffect(() => {
+    resetPagination()
+  }, [deferredSearch])
 
-    return promotions.filter((promotion) => {
-      const linkText = (promotion.link_text ?? '').toLowerCase()
-      const matchesSearch =
-        !term ||
-        promotion.title.toLowerCase().includes(term) ||
-        promotion.description.toLowerCase().includes(term) ||
-        linkText.includes(term)
+  useEffect(() => {
+    const next = writeOperationsListUrlState(searchParams, {
+      cursor,
+      sort: null,
+      direction: null,
+      limit,
+      selectedId: null,
+      filters: { status: statusFilter === 'all' ? '' : statusFilter },
+    }, { filterIds: ['status'] })
+    if (next !== searchParams.toString()) {
+      router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
+    }
+  }, [cursor, limit, pathname, router, searchParams, statusFilter])
 
-      if (!matchesSearch) {
-        return false
-      }
-
-      if (statusFilter === 'all') {
-        return true
-      }
-
-      const status = getPromotionStatus(promotion)
-
-      if (statusFilter === 'running') {
-        return status === 'running'
-      }
-      if (statusFilter === 'upcoming') {
-        return status === 'upcoming'
-      }
-      if (statusFilter === 'expired') {
-        return status === 'expired'
-      }
-      if (statusFilter === 'inactive') {
-        if (!promotion.is_active) {
-          return true
-        }
-        const endsAt = new Date(promotion.ends_at)
-        return Number.isNaN(endsAt.getTime()) ? false : endsAt < now
-      }
-
-      return true
-    })
-  }, [promotions, searchTerm, statusFilter])
+  useEffect(() => {
+    const next = parseOperationsListUrlState(searchParams, { filterIds: ['status'] })
+    const nextStatus = Object.prototype.hasOwnProperty.call(statusLabelMap, next.filters.status)
+      ? (next.filters.status as StatusFilter)
+      : 'all'
+    const hasExternalStateChange = statusFilter !== nextStatus || limit !== next.limit || cursor !== next.cursor
+    setStatusFilter((current) => current === nextStatus ? current : nextStatus)
+    setLimit((current) => current === next.limit ? current : next.limit)
+    setCursor((current) => current === next.cursor ? current : next.cursor)
+    if (hasExternalStateChange) setPreviousCursors([])
+    // URL changes from browser navigation should restore controlled list state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const handleCreateClick = () => {
     setDialogMode('create')
@@ -207,6 +213,7 @@ export function PromotionsSection() {
         if (!previous) return []
         return previous.filter((item) => item.id !== promotion.id)
       })
+      await queryClient.invalidateQueries({ queryKey: adminPromotionsQueryKey })
       setMessage({ type: 'success', text: 'Promotion supprimée avec succès' })
     } catch (err) {
       const text = axios.isAxiosError(err)
@@ -283,6 +290,7 @@ export function PromotionsSection() {
           if (!previous) return [created]
           return [created, ...previous]
         })
+        await queryClient.invalidateQueries({ queryKey: adminPromotionsQueryKey })
         setMessage({ type: 'success', text: 'Promotion créée avec succès' })
       } else if (selectedPromotion) {
         const updated = await updateAdminPromotion(selectedPromotion.id, payload)
@@ -290,6 +298,7 @@ export function PromotionsSection() {
           if (!previous) return [updated]
           return previous.map((item) => (item.id === updated.id ? updated : item))
         })
+        await queryClient.invalidateQueries({ queryKey: adminPromotionsQueryKey })
         setMessage({ type: 'success', text: 'Promotion mise à jour avec succès' })
       }
 
@@ -305,19 +314,20 @@ export function PromotionsSection() {
     }
   }
 
-  const columns: AdminDataGridColumn<Promotion>[] = [
+  const columns = useMemo<OperationsListColumn<Promotion>[]>(() => [
     {
-      key: 'title',
+      id: 'title',
       header: 'Promotion',
+      className: 'w-[250px] max-w-[250px]',
       cell: (promotion) => (
-        <div className="space-y-1">
-          <p className="font-medium">{promotion.title}</p>
-          <p className="text-sm text-muted-foreground">{promotion.description}</p>
+        <div className="min-w-0 space-y-1">
+          <p className="line-clamp-2 font-medium">{promotion.title}</p>
+          <p className="line-clamp-2 text-sm text-muted-foreground">{promotion.description}</p>
         </div>
       ),
     },
     {
-      key: 'type',
+      id: 'type',
       header: 'Type',
       cell: (promotion) => (
         <Badge variant={promotion.type === 'popup' ? 'secondary' : 'outline'}>
@@ -326,35 +336,38 @@ export function PromotionsSection() {
       ),
     },
     {
-      key: 'period',
+      id: 'period',
       header: 'Période',
+      className: 'w-[190px] max-w-[190px]',
       cell: (promotion) => (
-        <div className="text-sm text-muted-foreground">{formatPeriod(promotion)}</div>
+        <div className="text-sm leading-5 text-muted-foreground">{formatPeriod(promotion)}</div>
       ),
     },
     {
-      key: 'link',
+      id: 'link',
       header: 'Lien',
+      className: 'w-[220px] max-w-[220px]',
       cell: (promotion) => (
         <a
           href={promotion.link_url}
           target={/^https?:\/\//i.test(promotion.link_url) ? '_blank' : undefined}
           rel={/^https?:\/\//i.test(promotion.link_url) ? 'noopener noreferrer' : undefined}
-          className="text-sm text-primary underline-offset-2 hover:underline"
+          className="block line-clamp-2 break-all text-sm text-primary underline-offset-2 hover:underline"
         >
           {promotion.link_url}
         </a>
       ),
     },
     {
-      key: 'link_text',
+      id: 'link_text',
       header: 'Texte CTA',
+      className: 'w-[170px] max-w-[170px]',
       cell: (promotion) => (
-        <span className="text-sm font-medium text-muted-foreground">{promotion.link_text}</span>
+        <span className="line-clamp-2 text-sm font-medium text-muted-foreground">{promotion.link_text}</span>
       ),
     },
     {
-      key: 'status',
+      id: 'status',
       header: 'Statut',
       cell: (promotion) => {
         const status = getPromotionStatus(promotion)
@@ -370,27 +383,21 @@ export function PromotionsSection() {
         )
       },
     },
+  ], [])
+
+  const rowActions = useMemo<OperationsListAction<Promotion>[]>(() => [
+    { id: 'edit', label: 'Modifier', onSelect: handleEdit },
     {
-      key: 'actions',
-      header: '',
-      className: 'text-right',
-      cell: (promotion) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleEdit(promotion)}>
-            Modifier
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleDelete(promotion)}
-            disabled={deleteLoadingId === promotion.id}
-          >
-            {deleteLoadingId === promotion.id ? 'Suppression…' : 'Supprimer'}
-          </Button>
-        </div>
-      ),
+      id: 'delete',
+      label: 'Supprimer',
+      destructive: true,
+      disabled: (promotion) => deleteLoadingId === promotion.id,
+      onSelect: handleDelete,
     },
-  ]
+  // Action handlers only use stable React setters/query client; the loading id
+  // remains the sole dependency that changes the disabled state.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [deleteLoadingId])
 
   return (
     <div className="space-y-6">
@@ -415,43 +422,50 @@ export function PromotionsSection() {
         </Alert>
       ) : null}
 
-      <AdminDataGrid
-        data={filteredPromotions}
+      <OperationsList
+        data={{
+          items: filteredPromotions,
+          nextCursor: pageData?.page.nextCursor ?? null,
+          total: pageData?.page.totalCount,
+        }}
+        status={error ? 'error' : isLoading && !pageData ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={error instanceof Error ? error.message : 'Impossible de charger les promotions.'}
+        onRetry={() => window.location.reload()}
+        getItemId={(promotion) => promotion.id}
         columns={columns}
-        loading={isLoading}
-        fetching={isFetching}
-        emptyMessage="Aucune promotion pour le moment."
-        toolbar={
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher une promotion..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                <SelectTrigger className="sm:w-48">
-                  <SelectValue placeholder="Filtrer par statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(statusLabelMap).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleCreateClick} className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Nouvelle promotion
-            </Button>
-          </div>
-        }
+        filters={[{
+          id: 'status',
+          label: 'Statut',
+          value: statusFilter,
+          options: Object.entries(statusLabelMap).map(([value, label]) => ({ value, label })),
+        }, {
+          id: 'limit',
+          label: 'Lignes',
+          value: String(limit),
+          options: [25, 50, 100].map((value) => ({ value: String(value), label: String(value) })),
+        }]}
+        onFilterChange={(filterId, value) => {
+          resetPagination()
+          if (filterId === 'status') setStatusFilter((value || 'all') as StatusFilter)
+          if (filterId === 'limit') setLimit(Number(value))
+        }}
+        search={searchTerm}
+        searchPlaceholder="Rechercher une promotion…"
+        onSearchChange={setSearchTerm}
+        rowActions={rowActions}
+        pagination={{
+          cursor,
+          previousCursors,
+          nextCursor: pageData?.page.nextCursor ?? null,
+          total: pageData?.page.totalCount,
+          limit,
+        }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => {
+          setCursor(nextCursor)
+          setPreviousCursors(nextPreviousCursors)
+        }}
+        itemLabel="promotion"
+        emptyState={<div className="px-3 py-12 text-center text-sm text-muted-foreground">Aucune promotion pour le moment.</div>}
       />
 
       <PromotionFormDialog

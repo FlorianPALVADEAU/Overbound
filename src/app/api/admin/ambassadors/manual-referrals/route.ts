@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { getCurrentProgramYear } from '@/lib/ambassadors/rewardLifecycle'
 
 export const runtime = 'nodejs'
 
@@ -13,14 +14,10 @@ const payloadSchema = z.object({
   race_format: z.enum(['auto', 'open', 'ranked']).default('auto'),
 })
 
-const normalizeText = (value: string | null | undefined) => String(value || '').toLowerCase()
+const resolveRaceFormat = (operationsConfig: { departure_mode?: string } | null | undefined) =>
+  operationsConfig?.departure_mode === 'fixed' ? 'ranked' : 'open'
 
-const detectRaceFormat = (ticketName: string | null | undefined, raceName: string | null | undefined) => {
-  const merged = `${normalizeText(ticketName)} ${normalizeText(raceName)}`
-  if (merged.includes('ranked')) return 'ranked'
-  if (merged.includes('open')) return 'open'
-  return 'open'
-}
+const normalizeText = (value: string | null | undefined) => String(value || '').toLowerCase()
 
 async function handlePost(request: NextRequest) {
   try {
@@ -75,8 +72,14 @@ async function handlePost(request: NextRequest) {
         })
 
       if (manualInsertError) {
-        console.error('[admin ambassadors manual referral] insert manual referral error', manualInsertError)
-        return NextResponse.json({ error: 'Impossible d’ajouter le filleul manuel.' }, { status: 500 })
+        if (manualInsertError.code === '23505') {
+          // Another request recorded the same manual referral first. Continue
+          // to the points ledger, whose unique key provides the idempotence
+          // guarantee for the credit itself.
+        } else {
+          console.error('[admin ambassadors manual referral] insert manual referral error', manualInsertError)
+          return NextResponse.json({ error: 'Impossible d’ajouter le filleul manuel.' }, { status: 500 })
+        }
       }
     }
 
@@ -93,12 +96,12 @@ async function handlePost(request: NextRequest) {
     if (!existingPointEvent) {
       const { data: ticketRow } = await admin
         .from('tickets')
-        .select('name, race:races(name)')
+        .select('operations_config')
         .eq('id', registration.ticket_id)
         .maybeSingle()
 
       raceFormat = payload.race_format === 'auto'
-        ? detectRaceFormat(ticketRow?.name, (ticketRow as any)?.race?.name)
+        ? resolveRaceFormat(ticketRow?.operations_config)
         : payload.race_format
 
       const { error: insertPointEventError } = await admin
@@ -109,22 +112,43 @@ async function handlePost(request: NextRequest) {
           registration_id: registration.id,
           race_format: raceFormat,
           points: payload.points,
+          program_year: getCurrentProgramYear(),
         })
 
       if (insertPointEventError) {
+        // A concurrent request may have credited the same registration. The
+        // unique key is the source of truth; report it as idempotent instead
+        // of applying points twice.
+        if (insertPointEventError.code === '23505') {
+          return NextResponse.json({
+            success: true,
+            registration_id: registration.id,
+            email: registration.email,
+            points_credited: 0,
+            already_credited: true,
+          })
+        }
         console.error('[admin ambassadors manual referral] insert point event error', insertPointEventError)
         return NextResponse.json({ error: 'Impossible de créditer les points.' }, { status: 500 })
       }
 
-      const { data: currentPoints } = await admin
-        .from('ambassador_points')
-        .select('total_points, recruits_open, recruits_ranked')
+      // Recompute from the immutable events ledger instead of read-modify-
+      // writing an aggregate. This prevents lost updates when two manual
+      // referrals are credited at the same time.
+      const { data: pointEvents, error: pointEventsError } = await admin
+        .from('ambassador_points_events')
+        .select('points, race_format, program_year')
         .eq('ambassador_id', payload.ambassador_id)
-        .maybeSingle()
+        .eq('program_year', getCurrentProgramYear())
 
-      const nextTotal = Number(currentPoints?.total_points ?? 0) + payload.points
-      const nextOpen = Number(currentPoints?.recruits_open ?? 0) + (raceFormat === 'open' ? 1 : 0)
-      const nextRanked = Number(currentPoints?.recruits_ranked ?? 0) + (raceFormat === 'ranked' ? 1 : 0)
+      if (pointEventsError) {
+        console.error('[admin ambassadors manual referral] points ledger error', pointEventsError)
+        return NextResponse.json({ error: 'Impossible de recalculer les points.' }, { status: 500 })
+      }
+
+      const nextTotal = (pointEvents ?? []).reduce((sum, event) => sum + Number(event.points ?? 0), 0)
+      const nextOpen = (pointEvents ?? []).filter((event) => normalizeText(event.race_format) === 'open').length
+      const nextRanked = (pointEvents ?? []).filter((event) => normalizeText(event.race_format) === 'ranked').length
 
       const { data: rewardLevel, error: rewardLevelError } = await admin.rpc(
         'ambassador_reward_level_for_points',
@@ -137,17 +161,18 @@ async function handlePost(request: NextRequest) {
       }
 
       const { error: updatePointsError } = await admin
-        .from('ambassador_points')
+        .from('ambassador_points_years')
         .upsert(
           {
             ambassador_id: payload.ambassador_id,
+            program_year: getCurrentProgramYear(),
             total_points: nextTotal,
             recruits_open: nextOpen,
             recruits_ranked: nextRanked,
             current_reward_level: Number(rewardLevel ?? 0),
             updated_at: new Date().toISOString(),
           },
-          { onConflict: 'ambassador_id' },
+          { onConflict: 'ambassador_id,program_year' },
         )
 
       if (updatePointsError) {
@@ -155,7 +180,27 @@ async function handlePost(request: NextRequest) {
         return NextResponse.json({ error: 'Impossible de mettre à jour le total des points.' }, { status: 500 })
       }
 
-      await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: payload.ambassador_id })
+      const { error: legacyPointsError } = await admin
+        .from('ambassador_points')
+        .upsert({
+          ambassador_id: payload.ambassador_id,
+          total_points: nextTotal,
+          recruits_open: nextOpen,
+          recruits_ranked: nextRanked,
+          current_reward_level: Number(rewardLevel ?? 0),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'ambassador_id' })
+
+      if (legacyPointsError) {
+        console.error('[admin ambassadors manual referral] legacy points sync error', legacyPointsError)
+        return NextResponse.json({ error: 'Impossible de synchroniser les points.' }, { status: 500 })
+      }
+
+      const { error: rewardsError } = await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: payload.ambassador_id })
+      if (rewardsError) {
+        console.error('[admin ambassadors manual referral] ensure rewards error', rewardsError)
+        return NextResponse.json({ error: 'Impossible de synchroniser les récompenses.' }, { status: 500 })
+      }
       pointsCredited = payload.points
     }
 
@@ -178,4 +223,3 @@ async function handlePost(request: NextRequest) {
 export const POST = withRequestLogging(handlePost, {
   actionType: 'Ajout filleul manuel ambassadeur',
 })
-

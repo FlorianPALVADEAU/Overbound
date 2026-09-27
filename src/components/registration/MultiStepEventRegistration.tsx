@@ -358,7 +358,7 @@ export default function MultiStepEventRegistration({
               distanceMinKm: p.distanceMinKm,
               difficultyLevel: p.difficultyLevel || null,
             })),
-            upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+            upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
               upsellId,
               quantity: config.quantity,
               meta: config.meta || {},
@@ -439,7 +439,7 @@ export default function MultiStepEventRegistration({
         distanceMinKm: p.distanceMinKm,
         difficultyLevel: p.difficultyLevel || null,
       })),
-      upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
+      upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
         upsellId,
         quantity: config.quantity,
         meta: config.meta || {},

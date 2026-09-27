@@ -24,15 +24,15 @@ export function RaceCard({ race, onEdit, onDelete, isDeleting }: RaceCardProps) 
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0 space-y-3">
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-semibold truncate">{race.name}</h3>
-              <Badge variant="secondary">{race.type}</Badge>
-              <Badge variant="outline">{race.target_public}</Badge>
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h3 className="min-w-0 flex-1 truncate text-lg font-semibold">{race.name}</h3>
+              <Badge variant="secondary" className="shrink-0">{race.type}</Badge>
+              <Badge variant="outline" className="shrink-0">{race.target_public}</Badge>
             </div>
 
-            {race.description && <p className="text-sm text-muted-foreground">{race.description}</p>}
+            {race.description && <p className="line-clamp-2 text-sm text-muted-foreground">{race.description}</p>}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export function RaceCard({ race, onEdit, onDelete, isDeleting }: RaceCardProps) 
             )}
           </div>
 
-          <div className="flex items-center gap-2 ml-4">
+          <div className="ml-0 flex shrink-0 items-center gap-2 sm:ml-4">
             <Button variant="outline" size="sm" onClick={() => onEdit(race)}>
               <Edit className="h-4 w-4" />
             </Button>

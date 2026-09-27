@@ -37,13 +37,43 @@ export interface AdminAmbassadorReward {
   reward_level: number
   reward_name: string
   status: AmbassadorRewardStatus
+  program_year: number | null
   earned_at: string
+  expires_at: string | null
   claimed_at: string | null
   fulfilled_at: string | null
+  cancelled_at: string | null
+  cancellation_reason: string | null
 }
 
 export interface AdminAmbassadorsResponse {
   rewards: AdminAmbassadorReward[]
+}
+
+export interface AdminAmbassadorDetailResponse {
+  ambassador: { id: string; name: string; code: string | null; is_active: boolean }
+  yearly_points: Array<{
+    program_year: number
+    total_points: number
+    recruits_open: number
+    recruits_ranked: number
+    current_reward_level: number
+  }>
+  audit_events: Array<{
+    reward_id: string
+    action: 'cancelled' | 'reopened'
+    from_status: string
+    to_status: string
+    reason: string
+    occurred_at: string
+  }>
+  rewards: Array<AdminAmbassadorReward & {
+    program_year: number
+    expires_at: string
+    cancelled_at: string | null
+    cancellation_reason: string | null
+    is_expired: boolean
+  }>
 }
 
 const ADMIN_AMBASSADORS_QUERY_KEY = ['admin', 'ambassadors'] as const
@@ -56,6 +86,18 @@ export const useAdminAmbassadors = () =>
       if (response.status !== 200) {
         throw new Error('Erreur lors du chargement des ambassadeurs')
       }
+      return response.data
+    },
+  })
+
+export const useAdminAmbassadorDetail = (ambassadorId: string | null) =>
+  useQuery<AdminAmbassadorDetailResponse, Error>({
+    queryKey: ['admin', 'ambassadors', ambassadorId, 'detail'],
+    enabled: Boolean(ambassadorId),
+    queryFn: async () => {
+      const response = await axiosClient.get<AdminAmbassadorDetailResponse>(
+        `/admin/ambassadors/${ambassadorId}/detail`,
+      )
       return response.data
     },
   })
@@ -79,6 +121,24 @@ export const useUpdateAmbassadorReward = () => {
   })
 }
 
+export const useTransitionAmbassadorReward = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string
+      action: 'cancelled' | 'reopened'
+      reason: string
+      idempotency_key: string
+    }) => {
+      const response = await axiosClient.patch(`/admin/ambassadors/${payload.id}`, payload)
+      return response.data.reward
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADORS_QUERY_KEY })
+    },
+  })
+}
+
 export const adminAmbassadorsQueryKey = ADMIN_AMBASSADORS_QUERY_KEY
 
 export interface AdminAmbassadorPointsRow {
@@ -94,15 +154,20 @@ export interface AdminAmbassadorPointsRow {
 
 export interface AdminAmbassadorPointsResponse {
   ambassadors: AdminAmbassadorPointsRow[]
+  program_year: number
+  available_program_years: number[]
 }
 
 const ADMIN_AMBASSADOR_POINTS_QUERY_KEY = ['admin', 'ambassadors', 'points'] as const
+const adminAmbassadorPointsQueryKey = (year?: number | null) => [...ADMIN_AMBASSADOR_POINTS_QUERY_KEY, year ?? 'current'] as const
 
-export const useAdminAmbassadorPoints = () =>
+export const useAdminAmbassadorPoints = (year?: number | null) =>
   useQuery<AdminAmbassadorPointsResponse, Error>({
-    queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY,
+    queryKey: adminAmbassadorPointsQueryKey(year),
     queryFn: async () => {
-      const response = await axiosClient.get<AdminAmbassadorPointsResponse>('/admin/ambassadors/points')
+      const response = await axiosClient.get<AdminAmbassadorPointsResponse>('/admin/ambassadors/points', {
+        params: year ? { year } : undefined,
+      })
       if (response.status !== 200) {
         throw new Error('Erreur lors du chargement des points ambassadeurs')
       }
@@ -118,6 +183,9 @@ export const useUpdateAmbassadorPoints = () => {
       total_points: number
       recruits_open: number
       recruits_ranked: number
+      program_year?: number
+      reason: string
+      idempotency_key: string
     }) => {
       const response = await axiosClient.patch<{ points: AdminAmbassadorPointsRow }>(
         `/admin/ambassadors/points/${payload.ambassador_id}`,
@@ -125,6 +193,9 @@ export const useUpdateAmbassadorPoints = () => {
           total_points: payload.total_points,
           recruits_open: payload.recruits_open,
           recruits_ranked: payload.recruits_ranked,
+          program_year: payload.program_year,
+          reason: payload.reason,
+          idempotency_key: payload.idempotency_key,
         },
       )
       if (response.status !== 200) {
@@ -133,7 +204,7 @@ export const useUpdateAmbassadorPoints = () => {
       return response.data.points
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADOR_POINTS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'ambassadors', 'points'] })
       queryClient.invalidateQueries({ queryKey: ADMIN_AMBASSADORS_QUERY_KEY })
     },
   })

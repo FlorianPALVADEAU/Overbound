@@ -6,9 +6,6 @@ import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -31,7 +28,6 @@ import {
   ChevronRight,
   Clock,
   Download,
-  Filter,
   RotateCcw,
   SlidersHorizontal,
   Trash2,
@@ -50,6 +46,7 @@ import {
 } from '@/app/api/admin/registrations/registrationsQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
 import { formatClockTimeParis } from '@/lib/dateTime'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 
 interface RegistrationsSectionProps {
   eventId?: string
@@ -67,7 +64,7 @@ interface RegistrationStatsState {
 }
 
 const ALL_EVENTS_VALUE = '__all__'
-const PAGE_SIZE_OPTIONS = [50, 100, 250, 500]
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500]
 const DEFAULT_LIMIT = 100
 
 const formatDateTime = (value?: string | null) =>
@@ -131,6 +128,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   const [searchTerm, setSearchTerm] = useState('')
   const [eventFilter, setEventFilter] = useState<string>(ALL_EVENTS_VALUE)
+  const [ticketType, setTicketType] = useState<'all' | 'open' | 'ranked'>('all')
   const [pageSize, setPageSize] = useState(DEFAULT_LIMIT)
   const [pageIndex, setPageIndex] = useState(0)
   const [message, setMessage] = useState<MessageState | null>(null)
@@ -162,17 +160,19 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
   const params = useMemo(
     () => ({
       eventId: effectiveEventFilter !== ALL_EVENTS_VALUE ? effectiveEventFilter : undefined,
+      ticketType,
       searchTerm: searchTerm.trim() || undefined,
       limit: pageSize,
       offset: pageIndex * pageSize,
     }),
-    [effectiveEventFilter, searchTerm, pageSize, pageIndex]
+    [effectiveEventFilter, searchTerm, pageSize, pageIndex, ticketType]
   )
 
   const exportUrl = useMemo(() => {
     const search = new URLSearchParams()
     if (params.eventId) search.set('event_id', params.eventId)
     if (params.searchTerm) search.set('search_term', params.searchTerm)
+    if (params.ticketType && params.ticketType !== 'all') search.set('ticket_type', params.ticketType)
     search.set('format', 'csv')
     search.set('limit', '10000')
     return `/api/admin/registrations?${search.toString()}`
@@ -215,13 +215,6 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
     return snapshot
   }, [registrations, totalCount])
-
-  const activeFiltersCount = useMemo(() => {
-    let count = 0
-    if (!lockEventFilter && eventFilter !== ALL_EVENTS_VALUE) count += 1
-    if (searchTerm.trim()) count += 1
-    return count
-  }, [eventFilter, lockEventFilter, searchTerm])
 
   const handleViewDetails = (registration: AdminRegistration) => {
     setDetailsRegistration(registration)
@@ -280,6 +273,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
       setEventFilter(ALL_EVENTS_VALUE)
     }
     setSearchTerm('')
+    setTicketType('all')
     setPageIndex(0)
   }
 
@@ -293,6 +287,19 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   const initialLoading = isLoading && !data
   const alertVariant = message?.type === 'error' ? 'destructive' : 'default'
+
+  const columns: OperationsListColumn<AdminRegistration>[] = [
+    { id: 'participant', header: 'Participant', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{getParticipantName(registration)}</p><p className="truncate text-xs text-muted-foreground">{registration.email}</p>{registration.group?.name ? <p className="truncate text-xs text-muted-foreground">Groupe : {registration.group.name}</p> : null}</div> },
+    { id: 'event', header: 'Événement', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.event?.title ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{registration.event?.location ?? ''}</p></div> },
+    { id: 'ticket', header: 'Billet', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.ticket?.name ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount((registration.order as any)?.amount_per_registration ?? registration.order?.amount_total ?? null, registration.order?.currency ?? null)}</p></div> },
+    { id: 'presence', header: 'Présence', cell: (registration) => <Badge variant={registration.checked_in ? 'outline' : 'secondary'}>{registration.checked_in ? 'Check-in' : 'Non check-in'}</Badge> },
+    { id: 'created-at', header: 'Créé le', cell: (registration) => formatDateTime(registration.created_at), hiddenByDefault: true },
+  ]
+  const rowActions: OperationsListAction<AdminRegistration>[] = [
+    { id: 'manage', label: 'Gérer', onSelect: handleOperations },
+    { id: 'details', label: 'Détails', onSelect: handleViewDetails },
+    { id: 'delete', label: 'Supprimer', destructive: true, disabled: (registration) => deleteLoadingId === registration.id, onSelect: handleDeleteClick },
+  ]
 
   if (initialLoading) {
     return (
@@ -316,73 +323,6 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
       <UpsellSummaryPanel eventId={effectiveEventFilter !== ALL_EVENTS_VALUE ? effectiveEventFilter : undefined} />
 
-      <Card>
-        <CardContent className="space-y-4 p-4 md:p-6">
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-1 md:col-span-2">
-          <Label>Recherche</Label>
-          <Input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Email, événement, ticket…"
-          />
-        </div>
-
-        {lockEventFilter ? (
-          <div className="space-y-1">
-            <Label>Événement</Label>
-            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-              {events.find((eventOption) => eventOption.id === eventId)?.title ?? 'Événement sélectionné'}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            <Label>Événement</Label>
-            <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tous les événements" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_EVENTS_VALUE}>Tous les événements</SelectItem>
-                {events.map((eventOption) => (
-                  <SelectItem key={eventOption.id} value={eventOption.id}>
-                    {eventOption.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Filter className="h-4 w-4" />
-              <span>
-                {activeFiltersCount > 0
-                  ? `${activeFiltersCount} filtre${activeFiltersCount > 1 ? 's' : ''} actif${
-                      activeFiltersCount > 1 ? 's' : ''
-                    }`
-                  : 'Aucun filtre actif'}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <a href={exportUrl} target="_blank" rel="noopener noreferrer">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={resetFilters}>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Réinitialiser
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {message && (
         <Alert variant={alertVariant}>
           <AlertDescription>{message.text}</AlertDescription>
@@ -404,8 +344,40 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
+        <OperationsList
+          data={{ items: registrations, nextCursor: canNext ? String((pageIndex + 1) * pageSize) : null, total: totalCount }}
+          status={registrationsError ? 'error' : isLoading && !data ? 'loading' : isFetching ? 'stale' : 'idle'}
+          errorMessage={registrationsError ? 'Impossible de charger les inscriptions' : undefined}
+          onRetry={() => refetch()}
+          getItemId={(registration) => registration.id}
+          columns={columns}
+          search={searchTerm}
+          searchPlaceholder="Email, événement, billet…"
+          onSearchChange={setSearchTerm}
+          filters={[
+            ...(lockEventFilter ? [] : [{ id: 'event', label: 'Événement', value: eventFilter === ALL_EVENTS_VALUE ? '' : eventFilter, options: events.map((eventOption) => ({ value: eventOption.id, label: eventOption.title })) }]),
+            { id: 'ticket-type', label: 'Type de billet', value: ticketType === 'all' ? '' : ticketType, options: [{ value: 'open', label: 'OPEN' }, { value: 'ranked', label: 'RANKED' }] },
+            { id: 'page-size', label: 'Lignes', value: String(pageSize), options: PAGE_SIZE_OPTIONS.map((value) => ({ value: String(value), label: String(value) })) },
+          ]}
+          onFilterChange={(filterId, value) => {
+            if (filterId === 'event') setEventFilter(value || ALL_EVENTS_VALUE)
+            if (filterId === 'ticket-type') setTicketType((value || 'all') as typeof ticketType)
+            if (filterId === 'page-size') setPageSize(Number(value))
+            setPageIndex(0)
+          }}
+          rowActions={rowActions}
+          toolbarActions={<>
+            <Button variant="outline" size="sm" asChild><a href={exportUrl} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4" />Export CSV</a></Button>
+            <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="mr-2 h-4 w-4" />Réinitialiser</Button>
+          </>}
+          pagination={{ cursor: pageIndex > 0 ? String(pageIndex * pageSize) : null, previousCursors: Array.from({ length: pageIndex }, (_, index) => String(index * pageSize)), nextCursor: canNext ? String((pageIndex + 1) * pageSize) : null, total: totalCount, limit: pageSize }}
+          onPaginationChange={({ previousCursors }) => setPageIndex(previousCursors.length)}
+          itemLabel="inscription"
+        />
+
+        <div className="hidden">
+        <div className="min-w-0 overflow-hidden">
+          <Table className="table-fixed [&_td]:min-w-0 [&_td]:break-words [&_th]:truncate">
             <TableHeader>
               <TableRow>
                 <TableHead>Participant</TableHead>
@@ -636,6 +608,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
             </Button>
           </div>
         </div>
+        </div>
       </div>
 
       <RegistrationDetailsDialog
@@ -681,4 +654,3 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     </div>
   )
 }
-
