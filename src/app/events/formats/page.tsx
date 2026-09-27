@@ -15,28 +15,28 @@ const distanceFormats = [
     distance: '6 km · 20 obstacles',
     badge: { label: 'Sprint', className: 'bg-green-500/20 text-green-700' },
     description: 'Format explosif pour découvrir l’OCR ou revenir en force. Flow court, impact maximum.',
-    href: '/events',
+    href: '/races/origin',
   },
   {
     name: 'Horizon',
     distance: '12 km · 35 obstacles',
     badge: { label: 'Intermédiaire', className: 'bg-blue-500/20 text-blue-700' },
     description: 'Endurance + technique. Pour monter en puissance et travailler la gestion de course.',
-    href: '/events',
+    href: '/races/horizon',
   },
   {
     name: 'Ultra Arena',
     distance: '∞ km · ∞ obstacles',
     badge: { label: 'Élite', className: 'bg-amber-500 text-white' },
     description: 'Backyard OCR inédite. Élimination progressive, jusqu’au dernier debout.',
-    href: '/events',
+    href: '/races/ultra-arena',
   },
   {
     name: 'Tribal Kids',
     distance: '1 / 2 / 3 km',
     badge: { label: 'Famille', className: 'bg-purple-500/20 text-purple-700' },
     description: 'Parcours ludiques et sécurisés pour les 6-14 ans. Initiation à l’esprit OverBound.',
-    href: '/events',
+    href: '/races/tribal-kids',
   },
 ]
 
@@ -86,7 +86,6 @@ const difficulties = [
 ]
 
 export default function FormatsPage() {
-  notFound()
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
       <section className="relative isolate overflow-hidden py-20 sm:py-24">

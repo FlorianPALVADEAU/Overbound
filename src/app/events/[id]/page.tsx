@@ -11,17 +11,17 @@ import { Button } from '@/components/ui/button'
 import { Calendar, MapPin } from 'lucide-react'
 import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
 import { PricingTimeline } from '@/components/events/PricingTimeline'
-import { UltraArenaEventOver } from '@/components/events/ultra-arena/UltraArenaEventOver'
-import { UltraArenaHero } from '@/components/events/ultra-arena/UltraArenaHero'
-import { UltraArenaWhyDifferent } from '@/components/events/ultra-arena/UltraArenaWhyDifferent'
-import { UltraArenaProjection } from '@/components/events/ultra-arena/UltraArenaProjection'
-import { UltraArenaTestimonials } from '@/components/events/ultra-arena/UltraArenaTestimonials'
-import { UltraArenaComeTogether } from '@/components/events/ultra-arena/UltraArenaComeTogether'
-import { UltraArenaFormats } from '@/components/events/ultra-arena/UltraArenaFormats'
-import { UltraArenaReassurance } from '@/components/events/ultra-arena/UltraArenaReassurance'
-import { UltraArenaPricing } from '@/components/events/ultra-arena/UltraArenaPricing'
-import { UltraArenaFAQ } from '@/components/events/ultra-arena/UltraArenaFAQ'
-import { UltraArenaValidationStrip } from '@/components/events/ultra-arena/UltraArenaValidationStrip'
+import { UltraArenaEventOver } from '@/components/events/landing/UltraArenaEventOver'
+import { UltraArenaHero } from '@/components/events/landing/UltraArenaHero'
+import { UltraArenaWhyDifferent } from '@/components/events/landing/UltraArenaWhyDifferent'
+import { UltraArenaProjection } from '@/components/events/landing/UltraArenaProjection'
+import { UltraArenaTestimonials } from '@/components/events/landing/UltraArenaTestimonials'
+import { UltraArenaComeTogether } from '@/components/events/landing/UltraArenaComeTogether'
+import { UltraArenaFormats } from '@/components/events/landing/UltraArenaFormats'
+import { UltraArenaReassurance } from '@/components/events/landing/UltraArenaReassurance'
+import { UltraArenaPricing } from '@/components/events/landing/UltraArenaPricing'
+import { UltraArenaFAQ } from '@/components/events/landing/UltraArenaFAQ'
+import { UltraArenaValidationStrip } from '@/components/events/landing/UltraArenaValidationStrip'
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
@@ -66,7 +66,6 @@ export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const { data: session } = useSession()
   const { data, isLoading, error, refetch } = useEventDetail(params.id)
-  const isUltraArena = params.id === 'ultra-arena-2026'
 
   const salesStart = data?.event?.sales_start ?? null
   const eventStatus = data?.event?.status ?? null
@@ -106,7 +105,6 @@ export default function EventDetailPage() {
 
   const { trackEvent, showDesktopCta } = useEventAnalytics(
     data?.event,
-    isUltraArena,
     `/events/${params.id}`,
   )
 
@@ -248,9 +246,13 @@ export default function EventDetailPage() {
       ? Math.max(event.capacity - availableSpots, 0)
       : null
 
+  const raceGalleryImages = tickets
+    .flatMap((t) => (Array.isArray(t.race?.gallery_images) ? t.race.gallery_images : []))
+    .filter((url): url is string => typeof url === 'string' && url.length > 0)
+
   const galleryImages: string[] =
-    Array.isArray((event as any).gallery) && (event as any).gallery.length > 0
-      ? (event as any).gallery
+    raceGalleryImages.length > 0
+      ? raceGalleryImages
       : event.image_url
         ? [event.image_url]
         : []
@@ -266,6 +268,11 @@ export default function EventDetailPage() {
 
   const openTicket = findTicketByFormat('open')
   const rankedTicket = findTicketByFormat('ranked')
+  // Capability-based, not slug-based: any event selling both formats gets the
+  // full conversion landing (hero, formats comparison, pricing reveal, etc).
+  // An event with only one format, or none yet, falls through to the plain
+  // generic layout below.
+  const hasBothFormats = Boolean(openTicket && rankedTicket)
   const openFirstDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.firstDeparture)
   const openLastDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.lastDeparture)
   const rankedStartLabel = formatConfigTime(RANKED_START_CONFIG)
@@ -291,8 +298,10 @@ export default function EventDetailPage() {
   if (isEventOver) {
     return (
       <UltraArenaEventOver
+        eventTitle={event.title}
         formattedDate={formattedDate}
         location={event.location}
+        photosUrl={event.photos_url ?? null}
         notifyEmail={notifyEmail}
         notifyStatus={notifyStatus}
         notifyMessage={notifyMessage}
@@ -303,16 +312,18 @@ export default function EventDetailPage() {
   }
 
   // =========================================================================
-  // Ultra Arena 2026 — optimised conversion landing page
+  // Full conversion landing page — any event selling both OPEN and RANKED
   // =========================================================================
 
-  if (isUltraArena) {
+  if (hasBothFormats) {
     return (
       <main className="min-h-screen bg-background pb-24 text-foreground md:pb-0">
         {/* 1. HERO — promise first, price nowhere in sight */}
         <UltraArenaHero
+          eventTitle={event.title}
           formattedDate={formattedDate}
           location={event.location}
+          startingPriceLabel={lowestPrice !== null ? `Dès ${formatCurrency(lowestPrice)}` : null}
           statusLabel={getEventStatusLabel(event.status)}
           statusVariant={getEventStatusVariant(event.status)}
           isOnSale={isOnSale}
@@ -329,6 +340,13 @@ export default function EventDetailPage() {
             trackEvent('click_cta_hero', { cta_location: 'hero', cta_variant: 'register' })
             trackEvent('click_cta_primary', { cta_location: 'hero' })
           }}
+        />
+
+        {/* 2. VALIDATION STRIP — factual scarcity, real remaining spots */}
+        <UltraArenaValidationStrip
+          isOnSale={isOnSale}
+          registeredCount={registeredCount}
+          availableSpots={availableSpots}
         />
 
         {/* 3. WHY DIFFERENT — concept clarity */}
@@ -397,21 +415,7 @@ export default function EventDetailPage() {
           }}
         />
 
-        {/* 7.5 OBSTACLES — reuse homepage slider component */}
-        <ObstaclesOverview
-          eventId={params.id}
-          embedded
-          title="Les obstacles de l'Ultra Arena"
-          description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
-        />
-
-        {/* 7. REASSURANCE — practical info + location */}
-        <UltraArenaReassurance
-          location={event.location}
-          locationMapUrl={locationMapUrl}
-        />
-
-        {/* 8. PRICING — price revealed after full context */}
+        {/* 8. PRICING — price revealed right after formats, not buried at the end */}
         <UltraArenaPricing
           event={event}
           tickets={tickets}
@@ -447,6 +451,20 @@ export default function EventDetailPage() {
             trackEvent('click_cta_price', { cta_location: 'price_section' })
             trackEvent('click_cta_primary', { cta_location: 'price_section' })
           }}
+        />
+
+        {/* 7.5 OBSTACLES — reuse homepage slider component */}
+        <ObstaclesOverview
+          eventId={params.id}
+          embedded
+          title="Les obstacles de l'Ultra Arena"
+          description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
+        />
+
+        {/* 7. REASSURANCE — practical info + location */}
+        <UltraArenaReassurance
+          location={event.location}
+          locationMapUrl={locationMapUrl}
         />
 
         {/* 9. FAQ — lift final objections */}

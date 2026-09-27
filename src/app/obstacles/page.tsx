@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation'
+import ObstaclesPageContent from './_page-content'
 
 export default function ObstaclesPage() {
-  notFound()
+  return <ObstaclesPageContent />
 }

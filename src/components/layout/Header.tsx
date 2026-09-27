@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
+import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -73,6 +74,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const queryClient = useQueryClient()
+  const { data: featuredEventData } = useFeaturedEvent()
+  const featuredEvent = featuredEventData?.event
+  const featuredEventHref = featuredEvent ? `/events/${featuredEvent.slug}` : '/events/ultra-arena-2026'
+  const featuredEventRegisterHref = featuredEvent
+    ? `/events/${featuredEvent.slug}/register`
+    : '/events/ultra-arena-2026/register'
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false)
@@ -202,15 +209,38 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
             <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
-              <a
-                href="https://photo.capture-ai.fr/events/overbound-2026"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center gap-1.5 text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base"
+              <Link
+                href={featuredEventHref}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
               >
-                <CameraIcon className="h-4 w-4" />
-                photos édition 2026
-              </a>
+                Événement
+              </Link>
+
+              <Link
+                href="/events/formats"
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+              >
+                Formats
+              </Link>
+
+              <Link
+                href="/obstacles"
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+              >
+                Obstacles
+              </Link>
+
+              {featuredEvent?.photos_url ? (
+                <a
+                  href={featuredEvent.photos_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center gap-1.5 text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base"
+                >
+                  <CameraIcon className="h-4 w-4" />
+                  photos édition
+                </a>
+              ) : null}
 
               <Link
                 href="/volunteers"
@@ -350,13 +380,23 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>
                   {!user && (
-                    <Button
-                      size="sm"
-                      className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
-                      asChild
-                    >
-                      <Link href="/auth/register">S'inscrire</Link>
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm"
+                        asChild
+                      >
+                        <Link href={featuredEventRegisterHref}>Je m'inscris à une course</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
+                        asChild
+                      >
+                        <Link href="/auth/register">Créer un compte</Link>
+                      </Button>
+                    </>
                   )}
               </div>
             )}
@@ -383,17 +423,42 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
             <div className="space-y-1">
-              {/* Lien Photos édition 2026 mobile */}
-              <a
-                href="https://photo.capture-ai.fr/events/overbound-2026"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
+              <Link
+                href={featuredEventHref}
+                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
-                <CameraIcon className="h-4 w-4" />
-                Photos édition 2026
-              </a>
+                Événement
+              </Link>
+
+              <Link
+                href="/events/formats"
+                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                onClick={closeMobileMenu}
+              >
+                Formats
+              </Link>
+
+              <Link
+                href="/obstacles"
+                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                onClick={closeMobileMenu}
+              >
+                Obstacles
+              </Link>
+
+              {featuredEvent?.photos_url ? (
+                <a
+                  href={featuredEvent.photos_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
+                  onClick={closeMobileMenu}
+                >
+                  <CameraIcon className="h-4 w-4" />
+                  Photos édition
+                </a>
+              ) : null}
 
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
@@ -471,13 +536,25 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   </Button>
                 )}
                 {!user ? (
-                  <Button
-                    size="sm"
-                    asChild
-                    className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
-                  >
-                    <Link href="/auth/register" onClick={closeMobileMenu}>S&apos;inscrire</Link>
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="h-11 rounded-full"
+                    >
+                      <Link href={featuredEventRegisterHref} onClick={closeMobileMenu}>
+                        Je m&apos;inscris à une course
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      asChild
+                      className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
+                    >
+                      <Link href="/auth/register" onClick={closeMobileMenu}>Créer un compte</Link>
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button variant="outline" size="sm" asChild className="h-11 rounded-full">

@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 interface Props {
+  eventTitle: string
   formattedDate: string
   location: string
+  photosUrl: string | null
   notifyEmail: string
   notifyStatus: 'idle' | 'loading' | 'success' | 'error'
   notifyMessage: string | null
@@ -17,8 +19,10 @@ interface Props {
 }
 
 export function UltraArenaEventOver({
+  eventTitle,
   formattedDate,
   location,
+  photosUrl,
   notifyEmail,
   notifyStatus,
   notifyMessage,
@@ -54,7 +58,7 @@ export function UltraArenaEventOver({
           </div>
 
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
-            Ultra Arena 2026
+            {eventTitle}
           </p>
 
           <h1 className="mt-6 text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl">
@@ -66,22 +70,20 @@ export function UltraArenaEventOver({
             On prépare déjà la suite — et on revient encore plus fort pour la prochaine édition.
           </p>
 
-          <div className="mx-auto mt-8 max-w-md">
-            <Button
-              asChild
-              size="lg"
-              className="h-14 w-full rounded-2xl px-8 text-base font-bold shadow-lg shadow-primary/20"
-            >
-              <a
-                href="https://photo.capture-ai.fr/events/overbound-2026"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
+          {photosUrl ? (
+            <div className="mx-auto mt-8 max-w-md">
+              <Button
+                asChild
+                size="lg"
+                className="h-14 w-full rounded-2xl px-8 text-base font-bold shadow-lg shadow-primary/20"
               >
-                <Camera className="mr-2 h-5 w-5" />
-                Revivre l'édition en photos
-              </a>
-            </Button>
-          </div>
+                <a href={photosUrl} target="_blank" rel="noopener noreferrer nofollow">
+                  <Camera className="mr-2 h-5 w-5" />
+                  Revivre l'édition en photos
+                </a>
+              </Button>
+            </div>
+          ) : null}
 
           <div className="mx-auto mt-6 max-w-md rounded-2xl border border-border/60 bg-card/80 p-6 backdrop-blur">
             {!showForm ? (

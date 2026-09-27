@@ -21,6 +21,7 @@ export interface Event {
   external_url?: string | null
   description?: string | null
   image_url?: string | null
+  photos_url?: string | null
   created_at: Timestamp
   updated_at: Timestamp
 }

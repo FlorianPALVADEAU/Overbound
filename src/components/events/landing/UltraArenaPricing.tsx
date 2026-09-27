@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { PricingTimeline } from '@/components/events/PricingTimeline'
-import { UltraArenaTicketCards } from '@/components/events/ultra-arena/UltraArenaTicketCards'
+import { UltraArenaTicketCards } from '@/components/events/landing/UltraArenaTicketCards'
 import type { Event } from '@/types/Event'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 

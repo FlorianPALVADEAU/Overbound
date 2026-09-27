@@ -10,8 +10,10 @@ import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
 
 interface Props {
+  eventTitle: string
   formattedDate: string
   location: string
+  startingPriceLabel: string | null
   statusLabel: string
   statusVariant: 'default' | 'destructive' | 'secondary' | 'outline'
   isOnSale: boolean
@@ -23,8 +25,10 @@ interface Props {
 }
 
 export function UltraArenaHero({
+  eventTitle,
   formattedDate,
   location,
+  startingPriceLabel,
   statusLabel,
   statusVariant,
   isOnSale,
@@ -82,7 +86,7 @@ export function UltraArenaHero({
           {/* Left: Headline + facts */}
           <div className="min-w-0 space-y-7">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
-              Ultra Arena 2026
+              {eventTitle}
             </p>
 
             <h1 className="max-w-3xl text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
@@ -99,7 +103,7 @@ export function UltraArenaHero({
             </p>
 
             {/* Quick facts strip */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
               <div className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card/80 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
                 <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[10px]">
                   Date
@@ -118,6 +122,14 @@ export function UltraArenaHero({
                 </p>
                 <p className="mt-1 text-xs font-bold sm:text-sm">OPEN + RANKED</p>
               </div>
+              {startingPriceLabel ? (
+                <div className="min-w-0 overflow-hidden rounded-xl border border-primary/40 bg-primary/10 p-3 backdrop-blur sm:rounded-2xl sm:p-4">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-primary sm:text-[10px]">
+                    Prix
+                  </p>
+                  <p className="mt-1 text-xs font-bold leading-tight sm:text-sm">{startingPriceLabel}</p>
+                </div>
+              ) : null}
             </div>
 
             {isAnnounced && formattedSalesStart && (

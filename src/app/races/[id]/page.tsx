@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useRaceById } from '@/app/api/races/racesQueries'
 import { getFormatConfig, FORMAT_TEMPLATES } from '@/constants/raceFormats'
+import { RANKED_LAP_TIME_LIMITS_SUMMARY } from '@/constants/raceFormatRules'
 import Image from 'next/image'
 import Headings from '@/components/globals/Headings'
 import SubHeadings from '@/components/globals/SubHeadings'
@@ -140,11 +141,12 @@ export default function RaceDetailPage() {
   // Get format config
   const formatConfig = getFormatConfig(params.id, race.name, race.format_template)
 
-  // Detect race formats (keep for legacy compatibility with other sections)
-  const isUltraArena = params.id === 'ultra-arena'
-  const isTribalKids = params.id === 'tribal-kids'
-  const isOrigin = params.id === 'origin'
-  const isHorizon = params.id === 'horizon'
+  // Detect race formats from the resolved format config, never from the raw
+  // route id — the id is the race's UUID or slug, not a format template name.
+  const isUltraArena = formatConfig?.id === 'ultra-arena'
+  const isTribalKids = formatConfig?.id === 'tribal-kids'
+  const isOrigin = formatConfig?.id === 'origin'
+  const isHorizon = formatConfig?.id === 'horizon'
 
   // Build stats cards from format config or fallback to legacy data
   const statsCards = formatConfig
@@ -388,10 +390,9 @@ export default function RaceDetailPage() {
                     <div className="mt-6 grid gap-4 sm:grid-cols-3">
                       <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
                         <p className="text-xs uppercase tracking-wide text-amber-600">Format élimination</p>
-                        <p className="mt-1 text-base font-semibold text-foreground">1h par tour maximum</p>
+                        <p className="mt-1 text-base font-semibold text-foreground">Temps par tour décroissant</p>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          Pas d'arrivée en avance. Chaque tour démarre toutes les heures, peu importe quand tu reviens.
-                          Gère ta récupération.
+                          {RANKED_LAP_TIME_LIMITS_SUMMARY}. Gère ta récupération.
                         </p>
                       </div>
                       <div className="rounded-2xl bg-amber-500/5 p-4 ring-1 ring-amber-500/20">
@@ -731,58 +732,11 @@ export default function RaceDetailPage() {
               description='Découvrez comment ce format se positionne par rapport aux autres parcours Overbound'
               sx='text-black my-6'
             />
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse rounded-2xl bg-card overflow-hidden shadow-lg">
-                <thead>
-                  <tr className="bg-muted/50">
-                    <th className="p-4 text-left text-sm font-semibold text-foreground">Format</th>
-                    <th className="p-4 text-left text-sm font-semibold text-foreground">Distance</th>
-                    <th className="p-4 text-left text-sm font-semibold text-foreground">Intensité</th>
-                    <th className="p-4 text-left text-sm font-semibold text-foreground">Obstacles</th>
-                    <th className="p-4 text-left text-sm font-semibold text-foreground">Niveau requis</th>
-                    <th className="p-4 text-left text-sm font-semibold text-foreground">Temps estimé</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {FORMAT_TEMPLATES.filter(format => format.id !== 'ultra-arena').map((format) => {
-                    const isCurrentFormat = format.id === getFormatConfig(params.id, race.name, race.format_template)?.id
-                    return (
-                      <tr
-                        key={format.id}
-                        className={`border-t border-border ${isCurrentFormat ? 'bg-primary/5 ring-2 ring-primary/30' : 'hover:bg-muted/30'} transition`}
-                      >
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground">{format.name}</span>
-                            {isCurrentFormat && (
-                              <Badge variant="default" className="text-xs">Ce format</Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {format.statsCards.find(s => s.label === 'Distance')?.value || '-'}
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {format.statsCards.find(s => s.label === 'Intensité')?.value || '-'}
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {format.statsCards.find(s => s.label === 'Obstacles')?.value || '-'}
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {format.prerequisites ? `${format.prerequisites.fitnessLevel}/10` : '-'}
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {format.estimatedTimeMin && format.estimatedTimeMax
-                            ? `${format.estimatedTimeMin}-${format.estimatedTimeMax} min`
-                            : 'Variable'}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Button asChild variant="outline" className="rounded-full">
+              <Link href="/events/formats">
+                Voir le tableau comparatif complet des 4 formats
+              </Link>
+            </Button>
           </div>
         </section>
 

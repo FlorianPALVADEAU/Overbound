@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/hero_header_poster.jpg',
+        url: '/images/images/overbound-og-cover.jpg',
         width: 1200,
         height: 630,
         alt: 'Espace presse Overbound Race',
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Espace Presse | Overbound Race",
     description: "Kit média, contacts presse et partenariats Overbound Race.",
-    images: ['/images/hero_header_poster.jpg'],
+    images: ['/images/images/overbound-og-cover.jpg'],
   }
 };
 

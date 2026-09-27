@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import HeroHeader from '@/components/homepage/HeroHeader';
-import NextEvents from '@/components/homepage/NextEvents';
+import { FeaturedEventBar } from '@/components/homepage/FeaturedEventBar';
+import { ConceptExplainer } from '@/components/homepage/ConceptExplainer';
+import { HomeFormatsSection } from '@/components/homepage/HomeFormatsSection';
 import { HomeDeferredSections } from '@/components/homepage/HomeDeferredSections';
-import WhatsOverbound from '@/components/homepage/WhatsOverbound';
 import { PricingExplainer } from '@/components/pricing/PricingExplainer';
 import { metadata as baseMetadata } from './metadata';
 
@@ -25,8 +26,9 @@ export default function Home() {
   return (
     <div className="w-full h-full flex flex-col pb-20">
       <HeroHeader />
-      <WhatsOverbound />
-      <NextEvents />
+      <FeaturedEventBar />
+      <ConceptExplainer />
+      <HomeFormatsSection />
       {/* Pricing Explainer Section */}
       <section className="w-full px-4 py-12 sm:px-6 xl:px-32">
           <PricingExplainer />

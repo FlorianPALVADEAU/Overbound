@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/hero_header_poster.jpg',
+        url: '/images/images/overbound-og-cover.jpg',
         width: 1200,
         height: 630,
         alt: 'FAQ Overbound Race - Course à obstacles Paris 2026',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "FAQ | Overbound Race Paris 2026",
     description: "Questions fréquentes sur nos courses à obstacles Paris 2026 et backyard OCR.",
-    images: ['/images/hero_header_poster.jpg'],
+    images: ['/images/images/overbound-og-cover.jpg'],
   }
 };
 

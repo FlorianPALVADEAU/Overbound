@@ -1,11 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-
-const DistanceFormatsAndDifficulties = dynamic(
-  () => import('@/components/homepage/DistanceFormatsAndDifficulties'),
-  { ssr: false },
-)
+import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 
 const ObstaclesOverview = dynamic(
   () => import('@/components/homepage/ObstaclesOverview'),
@@ -33,10 +29,16 @@ const VolunteersAppeal = dynamic(
 )
 
 export function HomeDeferredSections() {
+  const { data } = useFeaturedEvent()
+  const featuredEventId = data?.event?.id
+
   return (
     <>
-      <DistanceFormatsAndDifficulties />
-      <ObstaclesOverview />
+      <ObstaclesOverview
+        eventId={featuredEventId}
+        title="Les obstacles"
+        description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
+      />
       <SocialProof />
       <CTASection />
       <FAQ />

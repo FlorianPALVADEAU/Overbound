@@ -37,6 +37,7 @@ export async function GET(
             target_public,
             distance_km,
             description,
+            gallery_images,
             obstacles:race_obstacles!race_obstacles_race_id_fkey(
               order_position,
               is_mandatory,
