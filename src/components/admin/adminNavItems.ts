@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Settings2,
   Dumbbell,
+  Sparkles,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 export interface AdminNavItem {
@@ -60,6 +61,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'logs', label: 'Logs', icon: ScrollText, href: '/dashboard/logs' },
   { value: 'emails', label: 'Emails', icon: Mail, href: '/dashboard?tab=emails' },
   { value: 'distribution-lists', label: 'Listes de diffusion', icon: List, href: '/dashboard/distribution-lists' },
+  { value: 'lucky-wheel', label: 'Lucky Wheel', icon: Sparkles, href: '/dashboard/lucky-wheel' },
 ]
 
 // Grouped navigation — used for sidebar collapsible menus
@@ -93,7 +95,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: 'Communication',
     icon: MessageSquare,
     items: [
-      ADMIN_NAV_ITEMS[15], ADMIN_NAV_ITEMS[16],
+      ADMIN_NAV_ITEMS[15], ADMIN_NAV_ITEMS[16], ADMIN_NAV_ITEMS[17],
     ],
   },
   {
