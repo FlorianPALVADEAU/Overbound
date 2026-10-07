@@ -716,6 +716,21 @@ export default function RaceDetailPage() {
       </section>
 
 
+      <section className='bg-transparent'>
+        <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
+          <SubHeadings
+            title='OPEN ou RANKED ?'
+            description='Découvre comment ce format se décline selon le mode de course choisi'
+            sx='text-black my-6'
+          />
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href="/events/formats">
+              Comparer les formats OPEN et RANKED
+            </Link>
+          </Button>
+        </div>
+      </section>
+
       <div className='relative bg-white'>
         <Image
           src='/images/decorations/mountain-vector.svg'
@@ -725,21 +740,6 @@ export default function RaceDetailPage() {
           className='relative w-screen -mt-1 rotate-180'
           priority
         />
-        <section className='bg-transparent'>
-          <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
-            <SubHeadings
-              title='Comparaison des formats'
-              description='Découvrez comment ce format se positionne par rapport aux autres parcours Overbound'
-              sx='text-black my-6'
-            />
-            <Button asChild variant="outline" className="rounded-full">
-              <Link href="/events/formats">
-                Voir le tableau comparatif complet des 4 formats
-              </Link>
-            </Button>
-          </div>
-        </section>
-
         {/* Progression Path Section */}
         {(() => {
           const formatConfig = getFormatConfig(params.id, race.name, race.format_template)

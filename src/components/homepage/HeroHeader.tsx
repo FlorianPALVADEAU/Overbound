@@ -90,7 +90,7 @@ export const HeroHeader = () => {
                         >
                             <Link href="/events/ultra-arena-2026/register">Je m'inscris maintenant</Link>
                         </Button>
-                        <p className="text-sm text-gray-300 italic">Déjà 50+ avis positifs récoltés !</p>
+                        <p className="text-sm text-gray-300 italic">Des centaines de coureurs ont déjà testé et adoré l'expérience !</p>
                     </div>
                 </div>
             </section>

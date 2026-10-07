@@ -17,7 +17,7 @@ const LuckyWheelWidget = dynamic(
  * URL param can be a slug or a UUID -- useEventDetail resolves either to
  * the real event, same lookup the event page itself uses. Everywhere
  * else, the site-wide featured event is used (same one the homepage's
- * FeaturedEventBar shows). /api/lucky-wheel/campaign requires a real
+ * NextEventSection shows). /api/lucky-wheel/campaign requires a real
  * event UUID, which both paths provide via event.id.
  */
 export function GlobalLuckyWheelWidget() {

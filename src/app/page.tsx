@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import HeroHeader from '@/components/homepage/HeroHeader';
-import { FeaturedEventBar } from '@/components/homepage/FeaturedEventBar';
+import { NextEventSection } from '@/components/homepage/NextEventSection';
 import { ConceptExplainer } from '@/components/homepage/ConceptExplainer';
 import { HomeFormatsSection } from '@/components/homepage/HomeFormatsSection';
 import { HomeDeferredSections } from '@/components/homepage/HomeDeferredSections';
@@ -26,7 +26,7 @@ export default function Home() {
   return (
     <div className="w-full h-full flex flex-col pb-20">
       <HeroHeader />
-      <FeaturedEventBar />
+      <NextEventSection />
       <ConceptExplainer />
       <HomeFormatsSection />
       {/* Pricing Explainer Section */}

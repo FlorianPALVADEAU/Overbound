@@ -24,6 +24,7 @@ export interface EventFormValues {
   title: string
   subtitle: string
   description: string
+  image_url: string
   date: string
   sales_start: string
   location: string
@@ -53,6 +54,7 @@ const DEFAULT_VALUES: EventFormValues = {
   title: '',
   subtitle: '',
   description: '',
+  image_url: '',
   date: '',
   sales_start: '',
   location: '',
@@ -175,6 +177,20 @@ export function EventFormDialog({
               onChange={(event) => handleChange('description', event.target.value)}
               placeholder="Description détaillée de l'événement"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image_url">Image de couverture (URL)</Label>
+            <Input
+              id="image_url"
+              type="url"
+              value={values.image_url}
+              onChange={(event) => handleChange('image_url', event.target.value)}
+              placeholder="https://..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Utilisée en fond sur la page événement et la section \"prochaine édition\" de l'accueil.
+            </p>
           </div>
 
           <div className="space-y-2">

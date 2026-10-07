@@ -21,7 +21,12 @@ const handlePut = async (
       image_url,
       video_url,
       difficulty,
-      type
+      type,
+      metric_label,
+      metric_value,
+      weight_male,
+      weight_female,
+      penalty
     } = body
 
     // Validation
@@ -52,6 +57,11 @@ const handlePut = async (
         video_url: video_url || null,
         difficulty: difficultyNum,
         type,
+        metric_label: metric_label || null,
+        metric_value: metric_value || null,
+        weight_male: weight_male || null,
+        weight_female: weight_female || null,
+        penalty: penalty || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)

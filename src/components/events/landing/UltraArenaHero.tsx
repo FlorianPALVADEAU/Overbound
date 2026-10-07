@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Mountain, Target, Users } from 'lucide-react'
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
+import { useParallax } from '@/hooks/useParallax'
 
 interface Props {
   eventTitle: string
@@ -20,6 +22,7 @@ interface Props {
   isAnnounced: boolean
   formattedSalesStart: string | null
   registerHref: string
+  eventImageUrl?: string | null
   onDiscoverClick: () => void
   onRegisterClick: () => void
 }
@@ -35,29 +38,49 @@ export function UltraArenaHero({
   isAnnounced,
   formattedSalesStart,
   registerHref,
+  eventImageUrl,
   onDiscoverClick,
   onRegisterClick,
 }: Props) {
+  const heroRef = useRef<HTMLElement>(null)
+  const parallax = useParallax(heroRef)
+
   return (
-    <section className="relative isolate overflow-hidden py-20 sm:py-24 lg:py-28">
+    <section ref={heroRef} className="relative isolate overflow-hidden py-20 sm:py-24 lg:py-28">
       {/* Background images */}
-      <div className="absolute inset-0">
-        <Image
-          src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
-          alt="Ultra Arena — intensité Overbound"
-          fill
-          sizes="100vw"
-          priority
-          className="hidden object-cover object-center opacity-35 lg:block"
-        />
-        <Image
-          src="/images/images/a-smiling-running-man-black-weared-sport.avif"
-          alt="Ultra Arena — runner Overbound"
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover object-[50%_8%] opacity-25 lg:hidden"
-        />
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0 -m-8 scale-110 will-change-transform"
+          style={{ transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0)` }}
+        >
+          {eventImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={eventImageUrl}
+              alt={eventTitle}
+              className="h-full w-full object-cover opacity-35"
+            />
+          ) : (
+            <>
+              <Image
+                src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
+                alt="Ultra Arena — intensité Overbound"
+                fill
+                sizes="100vw"
+                priority
+                className="hidden object-cover object-center opacity-35 lg:block"
+              />
+              <Image
+                src="/images/images/a-smiling-running-man-black-weared-sport.avif"
+                alt="Ultra Arena — runner Overbound"
+                fill
+                sizes="100vw"
+                priority
+                className="object-cover object-[50%_8%] opacity-25 lg:hidden"
+              />
+            </>
+          )}
+        </div>
         <div className="absolute inset-0 bg-linear-to-b from-background/20 via-background/82 to-background" />
       </div>
 

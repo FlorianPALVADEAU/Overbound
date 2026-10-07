@@ -385,23 +385,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link href="/auth/login">Se connecter</Link>
                 </Button>
                   {!user && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm"
-                        asChild
-                      >
-                        <Link href={featuredEventRegisterHref}>Je m'inscris à une course</Link>
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
-                        asChild
-                      >
-                        <Link href="/auth/register">Créer un compte</Link>
-                      </Button>
-                    </>
+                    <Button
+                      size="sm"
+                      className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
+                      asChild
+                    >
+                      <Link href={featuredEventRegisterHref}>Je m'inscris</Link>
+                    </Button>
                   )}
               </div>
             )}
@@ -541,25 +531,15 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   </Button>
                 )}
                 {!user ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="h-11 rounded-full"
-                    >
-                      <Link href={featuredEventRegisterHref} onClick={closeMobileMenu}>
-                        Je m&apos;inscris à une course
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      asChild
-                      className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
-                    >
-                      <Link href="/auth/register" onClick={closeMobileMenu}>Créer un compte</Link>
-                    </Button>
-                  </>
+                  <Button
+                    size="sm"
+                    asChild
+                    className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
+                  >
+                    <Link href={featuredEventRegisterHref} onClick={closeMobileMenu}>
+                      Je m&apos;inscris
+                    </Link>
+                  </Button>
                 ) : (
                   <>
                     <Button variant="outline" size="sm" asChild className="h-11 rounded-full">

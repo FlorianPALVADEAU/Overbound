@@ -1,10 +1,12 @@
 'use client'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import Headings from '@/components/globals/Headings'
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { isPublicObstacleVisible } from '@/lib/obstaclesVisibility'
-import { HeartHandshake } from 'lucide-react'
+import { HeartHandshake, ZoomIn } from 'lucide-react'
+import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
+import type { Obstacle } from '@/types/Obstacle'
 
 interface ObstaclesOverviewProps {
     eventId?: string
@@ -21,6 +23,7 @@ const ObstaclesOverview = ({
 }: ObstaclesOverviewProps) => {
 
     const { data, isLoading, isFetching } = useEventDetail(eventId)
+    const [selectedObstacle, setSelectedObstacle] = useState<Obstacle | null>(null)
 
     const obstacles = useMemo(() => {
         const tickets = (data?.event?.tickets as any[] | undefined) ?? []
@@ -104,24 +107,36 @@ const ObstaclesOverview = ({
                                         key={index} 
                                         className={embedded ? "pl-2 sm:pl-3 basis-[88%] sm:basis-[62%] lg:basis-[44%] xl:basis-[34%]" : "pl-2 sm:pl-3 md:pl-4 basis-[85%] sm:basis-[70%] md:basis-1/2 lg:basis-1/3 xl:basis-1/4"}
                                     >
-                                        <div className={embedded ? "relative h-56 sm:h-60 lg:h-64 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" : "relative h-64 sm:h-72 md:h-80 lg:h-84 xl:h-80 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedObstacle(obst)}
+                                            className={`group text-left w-full ${embedded ? "relative h-56 sm:h-60 lg:h-64 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" : "relative h-64 sm:h-72 md:h-80 lg:h-84 xl:h-80 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"}`}
+                                        >
                                             <img
                                                 src={obst.image_url || 'https://images.unsplash.com/photo-1598702631024-b282c0fd96b2?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'}
                                                 alt={obst.name}
                                                 className={`w-full h-full object-cover ${obst.image_url ? '' : 'blur-sm grayscale '}`}
                                                 loading="lazy"
                                             />
-                                            
+
                                             {/* Gradient overlay */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
-                                            
+
+                                            {/* Click affordance */}
+                                            <span className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition group-hover:bg-black/80">
+                                                <ZoomIn className="h-4 w-4" />
+                                            </span>
+
                                             {/* Obstacle info */}
                                             <div className={embedded ? "absolute bottom-0 left-0 right-0 p-3 text-white" : "absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-white"}>
                                                 <h3 className={embedded ? "font-semibold text-sm sm:text-base mb-1 line-clamp-2" : "font-semibold text-base sm:text-lg mb-1 line-clamp-2"}>
                                                     {obst.name}
                                                 </h3>
+                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-200">
+                                                    Voir les détails
+                                                </span>
                                             </div>
-                                        </div>
+                                        </button>
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
@@ -150,6 +165,7 @@ const ObstaclesOverview = ({
 
             </div>
             </div>
+            <ObstacleDetailDialog obstacle={selectedObstacle} onOpenChange={() => setSelectedObstacle(null)} />
         </section>
     )
 }

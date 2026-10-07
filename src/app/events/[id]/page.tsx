@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
@@ -28,6 +28,7 @@ import { getCurrentTicketPrice } from '@/lib/pricing'
 import { getCurrentPriceTier } from '@/types/EventPriceTier'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
+import { useParallax } from '@/hooks/useParallax'
 import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
 import { useEventAnalytics } from '@/hooks/events/useEventAnalytics'
 
@@ -72,6 +73,8 @@ export default function EventDetailPage() {
   const [notifyStatus, setNotifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null)
   const [openedFaqs, setOpenedFaqs] = useState<string[]>([])
+  const genericHeroRef = useRef<HTMLElement>(null)
+  const genericHeroParallax = useParallax(genericHeroRef)
 
   useEffect(() => {
     if (!salesStartDate || !isAnnounced) return
@@ -321,6 +324,7 @@ export default function EventDetailPage() {
           isAnnounced={isAnnounced}
           formattedSalesStart={formattedSalesStart}
           registerHref={registerHref()}
+          eventImageUrl={event.image_url}
           onDiscoverClick={() => {
             trackEvent('click_cta_hero_discover', { cta_location: 'hero' })
             trackEvent('click_cta_hero', { cta_location: 'hero', cta_variant: 'discover' })
@@ -520,14 +524,17 @@ export default function EventDetailPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="relative isolate overflow-hidden py-24 sm:py-28">
-        <div className="absolute inset-0">
+      <section ref={genericHeroRef} className="relative isolate overflow-hidden py-24 sm:py-28">
+        <div className="absolute inset-0 -m-6">
           {event.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={event.image_url}
               alt={event.title}
-              className="h-full w-full object-cover opacity-30"
+              className="h-full w-full scale-110 object-cover opacity-30 will-change-transform"
+              style={{
+                transform: `translate3d(${genericHeroParallax.x}px, ${genericHeroParallax.y}px, 0) scale(1.1)`,
+              }}
             />
           ) : (
             <div className="h-full w-full bg-linear-to-br from-background via-muted/40 to-background" />

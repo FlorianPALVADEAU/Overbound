@@ -353,7 +353,7 @@ const SocialProof = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative flex w-full flex-col items-center justify-center bg-background px-4 py-12 pt-40 sm:px-6 lg:px-8 xl:px-24"
+      className="relative flex w-full flex-col items-center justify-center bg-white px-4 py-12 pt-40 sm:px-6 lg:px-8 xl:px-24"
     >
       <Image
         src="/images/decorations/mountain-vector.svg"
