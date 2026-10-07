@@ -27,7 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // '/about/team',
     '/about/press',
     '/about/faq',
-    '/events',
+    // '/events', // notFound() until a second event exists — see FDR-0015 §14
     '/events/formats',
     '/obstacles',
     '/blog',
