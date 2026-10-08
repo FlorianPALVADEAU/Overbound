@@ -8,6 +8,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
+import { SectionEyebrow } from './SectionEyebrow'
+import { LANDING_X } from './layout'
 
 const FAQS = [
   {
@@ -60,9 +62,9 @@ export function UltraArenaFAQ({ openedFaqs, onFaqChange, isOnSale, registerHref 
     <section id="faq" className="relative isolate overflow-hidden bg-card/50 py-14 sm:py-16">
       <div className="pointer-events-none absolute -left-24 top-8 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 bottom-8 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
-      <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`${LANDING_X} relative z-10`}>
         <div className="mb-8 space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">FAQ</p>
+          <SectionEyebrow>FAQ</SectionEyebrow>
           <h2 className="text-3xl font-black tracking-tight sm:text-4xl">
             Les réponses avant de te lancer.
           </h2>

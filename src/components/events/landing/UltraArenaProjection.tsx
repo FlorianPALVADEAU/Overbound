@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SectionEyebrow } from './SectionEyebrow'
+import { LANDING_X } from './layout'
 
 const EXPERIENCE_POINTS = [
   'Intensité physique et mentale au rendez-vous',
@@ -38,7 +40,7 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
       <div className="absolute inset-0">
         <Image
           src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
-          alt="Ambiance Ultra Arena"
+          alt="Ambiance de l'événement"
           fill
           sizes="100vw"
           className="object-cover opacity-70"
@@ -46,17 +48,17 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
         <div className="absolute inset-0 bg-linear-to-b from-background/80 via-background/92 to-background" />
       </div>
 
-      <div className="container relative mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
+      <div className={`${LANDING_X} relative grid items-center gap-10 lg:grid-cols-2 lg:gap-14`}>
         {/* Left: Copy */}
         <div className="space-y-6">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Projection</p>
+          <SectionEyebrow>Projection</SectionEyebrow>
           <h2 className="text-3xl font-black tracking-tight sm:text-4xl">
             Imagine ton jour de course.
           </h2>
           <p className="text-muted-foreground sm:text-base">
             Départ dans une ambiance électrique. Boucle après boucle, obstacle après obstacle, tu sens
             l'effort monter — puis la satisfaction quand tu passes un cap. Solo, entre amis ou en équipe,
-            l'Ultra Arena s'adapte à ce que tu veux en vivre.
+            l'événement s'adapte à ce que tu veux en vivre.
           </p>
 
           <blockquote className="border-l-2 border-primary pl-4 text-sm italic text-muted-foreground">
@@ -100,7 +102,7 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
             <img
               key={src}
               src={src}
-              alt={`Ultra Arena — moment de course ${i + 1}`}
+              alt={`Moment de course ${i + 1}`}
               loading={i === 0 ? 'eager' : 'lazy'}
               className="h-44 w-full rounded-2xl object-cover ring-1 ring-border/50 sm:h-56"
             />

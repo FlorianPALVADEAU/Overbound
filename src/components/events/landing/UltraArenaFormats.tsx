@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RANKED_LAP_TIME_LIMITS_SUMMARY } from '@/constants/raceFormatRules'
+import { SectionEyebrow } from './SectionEyebrow'
+import { LANDING_X } from './layout'
 
 const OPEN_FOR_WHO = [
   "Tu découvres Overbound pour la 1ère fois",
@@ -57,9 +59,9 @@ export function UltraArenaFormats({
         />
         <div className="absolute inset-0 bg-linear-to-br from-background/92 via-background/95 to-background" />
       </div>
-      <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`${LANDING_X} relative z-10`}>
         <div className="mb-10 max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Formats</p>
+          <SectionEyebrow>Formats</SectionEyebrow>
           <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
             Choisis ton mode de jeu.
           </h2>

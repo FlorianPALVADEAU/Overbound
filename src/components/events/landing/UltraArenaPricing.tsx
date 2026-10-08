@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { PricingTimeline } from '@/components/events/PricingTimeline'
 import { UltraArenaTicketCards } from '@/components/events/landing/UltraArenaTicketCards'
+import { SectionEyebrow } from './SectionEyebrow'
 import type { Event } from '@/types/Event'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 
@@ -92,9 +93,7 @@ export function UltraArenaPricing({
     <section id="tarifs-inscription" className="py-16 sm:py-20">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">
-            Tarifs & inscription
-          </p>
+          <SectionEyebrow>Tarifs & inscription</SectionEyebrow>
           <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
             Tu sais ce que tu viens chercher.
             <br className="hidden sm:block" /> Prends ta place.

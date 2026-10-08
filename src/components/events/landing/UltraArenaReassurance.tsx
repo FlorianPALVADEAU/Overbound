@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
+import { SectionEyebrow } from './SectionEyebrow'
+import { LANDING_X } from './layout'
 
 const BADGES = [
   { icon: Shield, title: 'Sécurité encadrée', text: 'Règles terrain, staff et process de contrôle sur tout le parcours.' },
@@ -45,9 +47,9 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
 
   return (
     <section id="infos-pratiques" className="bg-muted/20 py-16 sm:py-20">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`${LANDING_X}`}>
         <div className="mb-10 max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Réassurance</p>
+          <SectionEyebrow>Réassurance</SectionEyebrow>
           <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
             Tu sais où tu mets les pieds.
           </h2>

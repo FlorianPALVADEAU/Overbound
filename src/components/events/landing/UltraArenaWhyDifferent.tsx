@@ -1,25 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { Target, Heart, Flame, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { SectionEyebrow } from './SectionEyebrow'
+import { LANDING_X } from './layout'
 
 const DIFFERENTIATORS = [
   {
-    icon: Target,
     title: 'Tu choisis ta difficulté',
     body: "À chaque obstacle, tu peux adapter ton niveau d'engagement. Tu progresses à ton rythme, sans subir un format figé qui ne te correspond pas.",
     detail: 'Pas d\'élimination forcée en OPEN.',
   },
   {
-    icon: Heart,
     title: 'Deux formats, un même terrain',
     body: "OPEN pour se dépasser à son rythme sans pression. RANKED pour la bataille et l'élimination progressive. Ton profil, ton choix.",
     detail: 'Même arène, deux ambiances différentes.',
   },
   {
-    icon: Flame,
     title: 'Intense du premier au dernier mètre',
     body: 'Obstacles, rythme, ambiance village et mental : tout est pensé pour que tu vives un vrai moment de dépassement — pas juste une course.',
     detail: "L'effort porte un sens. Pas juste de la douleur.",
@@ -35,11 +34,9 @@ interface Props {
 export function UltraArenaWhyDifferent({ isOnSale, registerHref, onCtaClick }: Props) {
   return (
     <section id="pourquoi-different" className="relative isolate overflow-hidden py-16 sm:py-20">
-      <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`${LANDING_X} relative z-10`}>
         <div className="mb-10 max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">
-            Pourquoi c'est différent
-          </p>
+          <SectionEyebrow>Pourquoi c&apos;est différent</SectionEyebrow>
           <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
             Pas une course standard.
             <br className="hidden sm:block" /> Une expérience à piloter.
@@ -51,15 +48,18 @@ export function UltraArenaWhyDifferent({ isOnSale, registerHref, onCtaClick }: P
         </div>
 
         <div className="grid gap-5 md:grid-cols-3">
-          {DIFFERENTIATORS.map(({ icon: Icon, title, body, detail }) => (
+          {DIFFERENTIATORS.map(({ title, body, detail }, index) => (
             <Card
               key={title}
               className="group relative overflow-hidden border-primary/15 bg-linear-to-br from-card/95 to-card/80 transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10"
             >
               <CardContent className="p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-                  <Icon className="h-6 w-6" />
-                </div>
+                <p
+                  aria-hidden
+                  className="mb-4 text-5xl font-black leading-none text-primary/35"
+                >
+                  {String(index + 1).padStart(2, '0')}
+                </p>
                 <h3 className="text-lg font-bold">{title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{body}</p>
                 <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">

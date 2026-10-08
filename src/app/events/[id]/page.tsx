@@ -1,43 +1,43 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, MapPin } from 'lucide-react'
-import EventTicketListWithRegistration from '@/components/events/EventTicketListWithRegistration'
-import { PricingTimeline } from '@/components/events/PricingTimeline'
 import { UltraArenaEventOver } from '@/components/events/landing/UltraArenaEventOver'
-import { UltraArenaHero } from '@/components/events/landing/UltraArenaHero'
+import { EventHero } from '@/components/events/landing/EventHero'
+import { EventTicketDepartures } from '@/components/events/landing/EventTicketDepartures'
+import { EventAnnouncedPanel } from '@/components/events/landing/EventAnnouncedPanel'
+import { EventFinalCta } from '@/components/events/landing/EventFinalCta'
+import VolunteersAppeal from '@/components/homepage/VolunteersAppeal'
+import { LANDING_BACKGROUNDS } from '@/components/events/landing/backgrounds'
+import { LandingBand } from '@/components/events/landing/LandingBand'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CheckCircle2 } from 'lucide-react'
+import { EventPerks } from '@/components/events/landing/EventPerks'
+import { EventGallery } from '@/components/events/landing/EventGallery'
+import { EventStickyCta } from '@/components/events/landing/EventStickyCta'
+import { UltraArenaValidationStrip } from '@/components/events/landing/UltraArenaValidationStrip'
 import { UltraArenaWhyDifferent } from '@/components/events/landing/UltraArenaWhyDifferent'
 import { UltraArenaProjection } from '@/components/events/landing/UltraArenaProjection'
 import { UltraArenaTestimonials } from '@/components/events/landing/UltraArenaTestimonials'
 import { UltraArenaComeTogether } from '@/components/events/landing/UltraArenaComeTogether'
-import { UltraArenaFormats } from '@/components/events/landing/UltraArenaFormats'
+import { FormatsComparison } from '@/components/events/landing/FormatsComparison'
 import { UltraArenaReassurance } from '@/components/events/landing/UltraArenaReassurance'
-import { UltraArenaPricing } from '@/components/events/landing/UltraArenaPricing'
 import { UltraArenaFAQ } from '@/components/events/landing/UltraArenaFAQ'
-import { UltraArenaValidationStrip } from '@/components/events/landing/UltraArenaValidationStrip'
 import ObstaclesOverview from '@/components/homepage/ObstaclesOverview'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { useSession } from '@/app/api/session/sessionQueries'
-import { getCurrentTicketPrice } from '@/lib/pricing'
-import { getCurrentPriceTier } from '@/types/EventPriceTier'
-import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
-import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
-import { useParallax } from '@/hooks/useParallax'
+import { buildEventLandingView, type LandingTicket } from '@/lib/events/eventLandingView'
 import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
+import { useOpenWavesOverview } from '@/hooks/events/useOpenWavesOverview'
+import { formatConfigTime } from '@/lib/events/eventLandingView'
+import { RANKED_START_CONFIG } from '@/lib/openSas'
 import { useEventAnalytics } from '@/hooks/events/useEventAnalytics'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-const formatConfigTime = (time: { hour: number; minute: number }) =>
-  `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
 
 const getCountdownParts = (target: Date, now: Date) => {
   const diff = Math.max(target.getTime() - now.getTime(), 0)
@@ -58,6 +58,7 @@ export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const { data: session } = useSession()
   const { data, isLoading, error, refetch } = useEventDetail(params.id)
+  const { data: waveOverview, isError: waveOverviewFailed } = useOpenWavesOverview(params.id)
 
   const salesStart = data?.event?.sales_start ?? null
   const eventStatus = data?.event?.status ?? null
@@ -73,8 +74,6 @@ export default function EventDetailPage() {
   const [notifyStatus, setNotifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null)
   const [openedFaqs, setOpenedFaqs] = useState<string[]>([])
-  const genericHeroRef = useRef<HTMLElement>(null)
-  const genericHeroParallax = useParallax(genericHeroRef)
 
   useEffect(() => {
     if (!salesStartDate || !isAnnounced) return
@@ -188,34 +187,33 @@ export default function EventDetailPage() {
   const { event, availableSpots, existingRegistration } = data
   const user = session?.user
 
-  const tickets =
-    (event.tickets as any[] | undefined)?.map((t) => ({
-      ...t,
-      race: t.race ?? undefined,
-    })) ?? []
+  const tickets = (event.tickets ?? []).map((t) => ({ ...t, race: t.race ?? undefined }))
+  const eventPriceTiers = event.price_tiers ?? []
 
-  const eventPriceTiers = (event as any).price_tiers || []
-  const activeTier = getCurrentPriceTier(eventPriceTiers)
-  const hasDiscount = activeTier && activeTier.discount_percentage > 0
-
-  const ticketPrices = tickets
-    .map((t) => getCurrentTicketPrice(t, eventPriceTiers))
-    .filter((p): p is number => typeof p === 'number')
-
-  const priceCurrency = tickets.find((t) => t.currency)?.currency ?? 'EUR'
-  const lowestPrice = ticketPrices.length > 0 ? Math.min(...ticketPrices) : null
-
-  const baseLowestPrice = (() => {
-    const bases = tickets
-      .map((t) => t.final_price_cents)
-      .filter((p): p is number => typeof p === 'number')
-    return bases.length > 0 ? Math.min(...bases) : null
-  })()
+  const view = buildEventLandingView({
+    tickets: tickets as unknown as LandingTicket[],
+    priceTiers: eventPriceTiers,
+    eventSlug: params.id,
+  })
+  const { lowestPriceCents, currency, hasBothFormats, galleryImages } = view
+  const registerHref = view.registerHref
+  const registerSlotHref = (ticketId: string, waveIndex?: number) =>
+    waveIndex ? `${registerHref(ticketId)}&wave=${waveIndex}` : registerHref(ticketId)
+  // Every register button is one click from the registration (the ticket is
+  // preselected when there is only one; otherwise the form picks the first and
+  // lets the visitor change it). Choosing a slot first is optional.
+  const ctaHref = registerHref(view.soleTicketId ?? undefined)
+  const ctaLabel = "Je m'inscris"
+  const wavesByTicket = waveOverview
+    ? Object.fromEntries(waveOverview.map((t) => [t.ticket_id, t.waves]))
+    : waveOverviewFailed
+      ? {}
+      : undefined
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: (priceCurrency || 'EUR').toUpperCase(),
+      currency: (currency || 'EUR').toUpperCase(),
       minimumFractionDigits: 2,
     }).format(value / 100)
 
@@ -225,11 +223,6 @@ export default function EventDetailPage() {
     month: 'long',
     year: 'numeric',
   })
-  const formattedTime = new Date(event.date).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-
   const formattedSalesStart = event.sales_start
     ? new Date(event.sales_start).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
     : null
@@ -239,57 +232,11 @@ export default function EventDetailPage() {
     typeof event.capacity === 'number' && Number.isFinite(event.capacity)
       ? Math.max(event.capacity - availableSpots, 0)
       : null
-
-  const raceGalleryImages = tickets
-    .flatMap((t) => (Array.isArray(t.race?.gallery_images) ? t.race.gallery_images : []))
-    .filter((url): url is string => typeof url === 'string' && url.length > 0)
-
-  const galleryImages: string[] =
-    raceGalleryImages.length > 0
-      ? raceGalleryImages
-      : event.image_url
-        ? [event.image_url]
-        : []
-
+  const startingPriceLabel = lowestPriceCents !== null ? `Dès ${formatCurrency(lowestPriceCents)}` : null
   const locationMapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=13&ie=UTF8&iwloc=&output=embed`
 
-  const findTicketByFormat = (format: 'open' | 'ranked') =>
-    tickets.find((t) => {
-      const raceType = String(t.race?.type ?? '').toLowerCase()
-      const raceName = String(t.race?.name ?? t.name ?? '').toLowerCase()
-      return raceType.includes(format) || raceName.includes(format)
-    })
-
-  const openTicket = findTicketByFormat('open')
-  const rankedTicket = findTicketByFormat('ranked')
-  // Capability-based, not slug-based: any event selling both formats gets the
-  // full conversion landing (hero, formats comparison, pricing reveal, etc).
-  // An event with only one format, or none yet, falls through to the plain
-  // generic layout below.
-  const hasBothFormats = Boolean(openTicket && rankedTicket)
-  const openFirstDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.firstDeparture)
-  const openLastDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.lastDeparture)
-  const rankedStartLabel = formatConfigTime(RANKED_START_CONFIG)
-  const departureSummary = openTicket && rankedTicket
-    ? `RANKED ${rankedStartLabel} · OPEN ${openFirstDepartureLabel}-${openLastDepartureLabel}`
-    : openTicket
-      ? `OPEN ${openFirstDepartureLabel}-${openLastDepartureLabel}`
-      : rankedTicket
-        ? `RANKED ${rankedStartLabel}`
-        : `Départ à ${formattedTime}`
-
-  const registerHref = (ticketId?: string) =>
-    ticketId
-      ? `/events/${params.id}/register?ticket=${ticketId}`
-      : `/events/${params.id}/register`
-
-  // =========================================================================
   // Event is over — inscriptions closed, show "see you next time" screen
-  // =========================================================================
-
-  const isEventOver = ['completed', 'closed', 'cancelled'].includes(event.status)
-
-  if (isEventOver) {
+  if (['completed', 'closed', 'cancelled'].includes(event.status)) {
     return (
       <UltraArenaEventOver
         eventTitle={event.title}
@@ -306,333 +253,182 @@ export default function EventDetailPage() {
   }
 
   // =========================================================================
-  // Full conversion landing page — any event selling both OPEN and RANKED
+  // Template: hero → tickets → story sections → formats → obstacles → infos → FAQ.
+  // Optional sections appear only if the event has what they need: the story
+  // sections and FAQ are written around OPEN vs RANKED, so they need both formats.
   // =========================================================================
 
-  if (hasBothFormats) {
-    return (
-      <main className="min-h-screen bg-background pb-24 text-foreground md:pb-0">
-        {/* 1. HERO — promise first, price nowhere in sight */}
-        <UltraArenaHero
-          eventTitle={event.title}
-          formattedDate={formattedDate}
-          location={event.location}
-          startingPriceLabel={lowestPrice !== null ? `Dès ${formatCurrency(lowestPrice)}` : null}
-          statusLabel={getEventStatusLabel(event.status)}
-          statusVariant={getEventStatusVariant(event.status)}
-          isOnSale={isOnSale}
-          isAnnounced={isAnnounced}
-          formattedSalesStart={formattedSalesStart}
-          registerHref={registerHref()}
-          eventImageUrl={event.image_url}
-          onDiscoverClick={() => {
-            trackEvent('click_cta_hero_discover', { cta_location: 'hero' })
-            trackEvent('click_cta_hero', { cta_location: 'hero', cta_variant: 'discover' })
-            trackEvent('click_cta_secondary', { cta_location: 'hero' })
-          }}
-          onRegisterClick={() => {
-            trackEvent('click_cta_hero_register', { cta_location: 'hero' })
-            trackEvent('click_cta_hero', { cta_location: 'hero', cta_variant: 'register' })
-            trackEvent('click_cta_primary', { cta_location: 'hero' })
-          }}
-        />
+  return (
+    <main className="min-h-screen bg-background pb-24 text-foreground md:pb-0">
+      <EventHero
+        title={event.title}
+        description={event.description}
+        eventDate={event.date}
+        location={event.location}
+        startingPriceLabel={startingPriceLabel}
+        availableSpots={availableSpots}
+        statusLabel={getEventStatusLabel(event.status)}
+        statusVariant={getEventStatusVariant(event.status)}
+        isOnSale={isOnSale}
+        formattedSalesStart={formattedSalesStart}
+        registerHref={ctaHref}
+        ctaLabel={ctaLabel}
+        imageUrl={event.image_url}
+        onRegisterClick={() => {
+          trackEvent('click_cta_hero_register', { cta_location: 'hero' })
+          trackEvent('click_cta_primary', { cta_location: 'hero' })
+        }}
+      />
 
-        {/* 2. VALIDATION STRIP — factual scarcity, real remaining spots */}
-        <UltraArenaValidationStrip
-          isOnSale={isOnSale}
-          registeredCount={registeredCount}
-          availableSpots={availableSpots}
-        />
-
-        {/* 3. WHY DIFFERENT — concept clarity */}
-        <UltraArenaWhyDifferent
-          isOnSale={isOnSale}
-          registerHref={registerHref()}
-          onCtaClick={() => {
-            trackEvent('click_cta_midpage', { cta_location: 'why_different' })
-            trackEvent('click_cta_secondary', { cta_location: 'why_different' })
-          }}
-        />
-
-        {/* 4. PROJECTION — emotional buy-in */}
-        <UltraArenaProjection
-          galleryImages={galleryImages}
-          isOnSale={isOnSale}
-          registerHref={registerHref()}
-          onCtaClick={() => {
-            trackEvent('click_cta_midpage', { cta_location: 'projection' })
-            trackEvent('click_cta_secondary', { cta_location: 'projection' })
-          }}
-        />
-
-        {/* 5. TESTIMONIALS — social proof before price reveal */}
-        <UltraArenaTestimonials
-          onVideoPlay={(id) =>
-            trackEvent('click_testimonial_video', { testimonial_id: id })
-          }
-          isOnSale={isOnSale}
-          registerHref={registerHref()}
-          onCtaClick={() => {
-            trackEvent('click_cta_midpage', { cta_location: 'participants' })
-            trackEvent('click_cta_secondary', { cta_location: 'participants' })
-          }}
-        />
-
-        {/* 6. COME TOGETHER — boost group conversion */}
-        <UltraArenaComeTogether
-          isOnSale={isOnSale}
-          registerHref={registerHref()}
-          onCtaClick={() => {
-            trackEvent('click_cta_midpage', { cta_location: 'group_section' })
-            trackEvent('click_cta_secondary', { cta_location: 'group_section' })
-          }}
-        />
-
-        {/* 7. FORMATS — help visitors self-select */}
-        <UltraArenaFormats
-          isOnSale={isOnSale}
-          openTicket={openTicket}
-          rankedTicket={rankedTicket}
-          registerHref={registerHref}
-          onOpenClick={() => {
-            trackEvent('click_format_open', { source: 'formats_section' })
-            trackEvent('select_format_open', { source: 'formats_section' })
-            trackEvent('click_cta_primary', { cta_location: 'formats_open' })
-          }}
-          onRankedClick={() => {
-            trackEvent('click_format_ranked', { source: 'formats_section' })
-            trackEvent('select_format_ranked', { source: 'formats_section' })
-            trackEvent('click_cta_primary', { cta_location: 'formats_ranked' })
-          }}
-          onMidCtaClick={() => {
-            trackEvent('click_cta_midpage', { cta_location: 'formats' })
-            trackEvent('click_cta_secondary', { cta_location: 'formats' })
-          }}
-        />
-
-        {/* 8. PRICING — price revealed right after formats, not buried at the end */}
-        <UltraArenaPricing
-          event={event}
-          tickets={tickets}
+      {/* Decision section right under the hero: price and departure per format */}
+      <LandingBand id="departs" variant="light" angled className="z-10">
+        <EventTicketDepartures
+          tickets={tickets as never}
           eventPriceTiers={eventPriceTiers}
-          availableSpots={availableSpots}
-          user={user ? { id: user.id, email: user.email ?? '' } : null}
-          existingRegistration={existingRegistration ?? null}
+          eventDate={event.date}
+          currency={currency}
           isOnSale={isOnSale}
-          isAnnounced={isAnnounced}
-          lowestPrice={lowestPrice}
-          baseLowestPrice={baseLowestPrice}
-          hasDiscount={!!hasDiscount}
-          priceCurrency={priceCurrency}
-          formatCurrency={formatCurrency}
-          formattedSalesStart={formattedSalesStart}
-          countdown={countdown}
-          notifyEmail={notifyEmail}
-          notifyStatus={notifyStatus}
-          notifyMessage={notifyMessage}
-          onNotifyEmailChange={setNotifyEmail}
-          onNotifySubmit={handleNotifySubmit}
-          onRegisterClick={({ ticketId, ticketName, raceType }) => {
+          wavesByTicket={wavesByTicket}
+          rankedLabel={formatConfigTime(RANKED_START_CONFIG)}
+          registerHref={registerSlotHref}
+          groupHref={(intent) => `${ctaHref}${ctaHref.includes('?') ? '&' : '?'}group=${intent}`}
+          onRegister={({ ticketId, ticketName, waveIndex }) => {
             trackEvent('click_price_section_register', {
-              cta_location: 'ticket_card',
+              cta_location: 'ticket_departure',
               ticket_id: ticketId,
               ticket_name: ticketName,
-              race_type: raceType ?? null,
+              wave_index: waveIndex,
             })
-            trackEvent('click_cta_primary', { cta_location: 'ticket_card' })
+            trackEvent('click_cta_primary', { cta_location: 'ticket_departure' })
           }}
-          onPriceSectionRegisterClick={() => {
-            trackEvent('click_price_section_register', { cta_location: 'price_section' })
-            trackEvent('click_cta_price', { cta_location: 'price_section' })
-            trackEvent('click_cta_primary', { cta_location: 'price_section' })
-          }}
+          notice={
+            <>
+              {isAnnounced ? (
+                <EventAnnouncedPanel
+                  formattedSalesStart={formattedSalesStart}
+                  countdown={countdown}
+                  notifyEmail={notifyEmail}
+                  notifyStatus={notifyStatus}
+                  notifyMessage={notifyMessage}
+                  onNotifyEmailChange={setNotifyEmail}
+                  onNotifySubmit={handleNotifySubmit}
+                />
+              ) : null}
+              {user && existingRegistration ? (
+                <Alert className="border-primary/30 bg-primary/5 text-primary">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertDescription>
+                    Tu as déjà une inscription active avec le billet "
+                    {existingRegistration.tickets?.[0]?.name ?? '—'}". Tu peux compléter une nouvelle
+                    inscription pour un autre format ou participant.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+            </>
+          }
         />
+        {hasBothFormats ? (
+          <UltraArenaValidationStrip
+            isOnSale={isOnSale}
+            registeredCount={registeredCount}
+            availableSpots={availableSpots}
+          />
+        ) : null}
+      </LandingBand>
 
-        {/* 7.5 OBSTACLES — reuse homepage slider component */}
-        <ObstaclesOverview
-          eventId={params.id}
-          embedded
-          title="Les obstacles de l'Ultra Arena"
-          description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
+      <LandingBand
+        id="perks"
+        backgroundSrc={LANDING_BACKGROUNDS.perks}
+        className="-mt-6 pt-6 sm:-mt-10 sm:pt-10"
+      >
+        <EventPerks />
+      </LandingBand>
+
+      {hasBothFormats ? (
+        <>
+          <UltraArenaWhyDifferent
+            isOnSale={isOnSale}
+            registerHref={ctaHref}
+            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'why_different' })}
+          />
+          <UltraArenaProjection
+            galleryImages={galleryImages}
+            isOnSale={isOnSale}
+            registerHref={ctaHref}
+            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'projection' })}
+          />
+          <UltraArenaTestimonials
+            onVideoPlay={(id) => trackEvent('click_testimonial_video', { testimonial_id: id })}
+            isOnSale={isOnSale}
+            registerHref={ctaHref}
+            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'participants' })}
+          />
+          <UltraArenaComeTogether
+            isOnSale={isOnSale}
+            registerHref={ctaHref}
+            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'group_section' })}
+          />
+        </>
+      ) : (
+        <EventGallery images={galleryImages} title={event.title} />
+      )}
+
+      {hasBothFormats ? (
+        <FormatsComparison
+          isOnSale={isOnSale}
+          openTicket={view.openTicket}
+          rankedTicket={view.rankedTicket}
+          registerHref={registerHref}
+          onOpenClick={() => trackEvent('select_format_open', { source: 'formats_section' })}
+          onRankedClick={() => trackEvent('select_format_ranked', { source: 'formats_section' })}
         />
+      ) : null}
 
-        {/* 7. REASSURANCE — practical info + location */}
-        <UltraArenaReassurance
-          location={event.location}
-          locationMapUrl={locationMapUrl}
-        />
+      <ObstaclesOverview
+        constrained
+        eventId={params.id}
+        title="Les obstacles"
+        description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
+      />
 
-        {/* 9. FAQ — lift final objections */}
+      <LandingBand backgroundSrc={LANDING_BACKGROUNDS.reassurance}>
+        <UltraArenaReassurance location={event.location} locationMapUrl={locationMapUrl} />
+      </LandingBand>
+
+      {hasBothFormats ? (
         <UltraArenaFAQ
           openedFaqs={openedFaqs}
           onFaqChange={handleFaqChange}
           isOnSale={isOnSale}
-          registerHref={registerHref()}
+          registerHref={ctaHref}
         />
+      ) : null}
 
-        {/* Sticky mobile CTA — appears only when inscriptions are open */}
-        {isOnSale ? (
-          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 p-3 backdrop-blur md:hidden">
-            <Button
-              asChild
-              className="h-12 w-full rounded-xl text-base font-semibold"
-              onClick={() => {
-                trackEvent('click_sticky_register', { cta_location: 'sticky_mobile' })
-                trackEvent('click_sticky_cta', { cta_location: 'sticky_mobile' })
-                trackEvent('click_cta_primary', { cta_location: 'sticky_mobile' })
-              }}
-            >
-              <Link href={registerHref()}>Je prends ma place</Link>
-            </Button>
-          </div>
-        ) : null}
+      {isOnSale ? (
+        <LandingBand className="border-t border-primary/40 bg-black">
+          <EventFinalCta
+            formattedDate={formattedDate}
+            href={ctaHref}
+            label={ctaLabel}
+            onClick={() => trackEvent('click_cta_primary', { cta_location: 'final_cta' })}
+          />
+        </LandingBand>
+      ) : null}
 
-        {/* Sticky desktop CTA — bottom-right popup, appears after scrolling past hero */}
-        {isOnSale ? (
-          <div
-            className={[
-              'fixed bottom-6 right-6 z-40 hidden md:flex',
-              'flex-col items-end gap-2',
-              'transition-all duration-300',
-              showDesktopCta
-                ? 'translate-y-0 opacity-100'
-                : 'translate-y-4 opacity-0 pointer-events-none',
-            ].join(' ')}
-          >
-            <div className="rounded-2xl border border-primary/30 bg-background/95 p-3 shadow-2xl backdrop-blur">
-              <Button
-                asChild
-                size="lg"
-                className="rounded-xl px-6 text-base font-semibold shadow-lg"
-                onClick={() => {
-                  trackEvent('click_sticky_register', { cta_location: 'sticky_desktop' })
-                  trackEvent('click_cta_primary', { cta_location: 'sticky_desktop' })
-                }}
-              >
-                <Link href={registerHref()}>Je prends ma place →</Link>
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </main>
-    )
-  }
+      <VolunteersAppeal />
 
-  // =========================================================================
-  // Generic event page (all non-Ultra-Arena events)
-  // =========================================================================
-
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <section ref={genericHeroRef} className="relative isolate overflow-hidden py-24 sm:py-28">
-        <div className="absolute inset-0 -m-6">
-          {event.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={event.image_url}
-              alt={event.title}
-              className="h-full w-full scale-110 object-cover opacity-30 will-change-transform"
-              style={{
-                transform: `translate3d(${genericHeroParallax.x}px, ${genericHeroParallax.y}px, 0) scale(1.1)`,
-              }}
-            />
-          ) : (
-            <div className="h-full w-full bg-linear-to-br from-background via-muted/40 to-background" />
-          )}
-          <div className="absolute inset-0 bg-linear-to-b from-background/20 via-background/75 to-background" />
-        </div>
-
-        <div className="container relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <Link href="/events/ultra-arena-2026">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mb-6 rounded-full border border-border/60 bg-background/70"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour aux événements
-            </Button>
-          </Link>
-
-          <Badge variant={getEventStatusVariant(event.status)}>{getEventStatusLabel(event.status)}</Badge>
-          <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl">{event.title}</h1>
-          <p className="mt-4 text-muted-foreground">
-            {event.description || 'Découvre toutes les infos de cet événement Overbound.'}
-          </p>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <Calendar className="mt-0.5 h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold">{formattedDate}</p>
-                    <p className="text-sm text-muted-foreground">{departureSummary}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold">{event.location}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {availableSpots > 0 ? 'Places disponibles' : 'Complet'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <p className="mt-5 text-sm text-muted-foreground">
-            Règlement officiel 2026 :{' '}
-            <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="underline">
-              consulter le PDF
-            </Link>
-            .
-          </p>
-        </div>
-      </section>
-
-      <section
-        id="tarifs-inscription"
-        className="container mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8"
-      >
-        {existingRegistration && user ? (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-primary">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>
-              Tu as déjà une inscription active avec le billet "
-              {existingRegistration.tickets?.[0]?.name || '—'}". Tu peux compléter une nouvelle
-              inscription pour un autre format ou participant.
-            </p>
-          </div>
-        ) : null}
-
-        {eventPriceTiers.length > 0 && tickets.length > 0 ? (
-          <div className="mb-8 rounded-2xl border border-primary/20 bg-card/80 p-6">
-            <PricingTimeline
-              ticket={tickets.reduce((min, t) =>
-                (t.final_price_cents ?? Infinity) < (min.final_price_cents ?? Infinity) ? t : min,
-                tickets[0]
-              )}
-              eventPriceTiers={eventPriceTiers}
-              currency={priceCurrency as 'eur' | 'usd' | 'gbp'}
-              eventDate={event.date}
-            />
-          </div>
-        ) : null}
-
-        <EventTicketListWithRegistration
-          event={event}
-          tickets={tickets}
-          availableSpots={availableSpots}
-          user={user ? { id: user.id, email: user.email ?? '' } : null}
-          eventPriceTiers={eventPriceTiers}
+      {isOnSale ? (
+        <EventStickyCta
+          registerHref={ctaHref}
+          label={ctaLabel}
+          priceLabel={startingPriceLabel}
+          visible={showDesktopCta}
+          onClick={(location) => {
+            trackEvent('click_sticky_register', { cta_location: location })
+            trackEvent('click_cta_primary', { cta_location: location })
+          }}
         />
-      </section>
+      ) : null}
     </main>
   )
 }

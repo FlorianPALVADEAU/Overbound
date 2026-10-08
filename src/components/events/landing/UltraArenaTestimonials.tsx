@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pause, Play, Star, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SectionEyebrow } from './SectionEyebrow'
 import {
   Carousel,
   CarouselContent,
@@ -13,6 +14,8 @@ import {
   type CarouselApi,
 } from '@/components/ui/carousel'
 import { testimonials, TestimonialType } from '@/datas/Testimonials'
+import { LANDING_X } from './layout'
+import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay'
 
 const getPosterUrl = (mediaUrl: string) => {
   const fileName = mediaUrl.split('/').pop()?.replace(/\.(webm|mp4)$/i, '')
@@ -167,6 +170,9 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
   const sectionRef = useRef<HTMLElement>(null)
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [canLoad, setCanLoad] = useState(false)
+  const [videoStarted, setVideoStarted] = useState(false)
+  // Rotation stops for good once a visitor starts a video.
+  useCarouselAutoplay(carouselApi, 5000, { paused: videoStarted })
 
   // Lazy-load media when section enters viewport
   useEffect(() => {
@@ -185,23 +191,15 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
     return () => observer.disconnect()
   }, [])
 
-  // Reset hover on slide change
-  useEffect(() => {
-    if (!carouselApi) return
-    // No-op — kept for potential future use
-  }, [carouselApi])
-
   // Only video testimonials (all 5 available)
   const videoTestimonials = testimonials.filter((t) => t.mediaUrl)
 
   return (
     <section ref={sectionRef} className="py-14 sm:py-16">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`${LANDING_X}`}>
         {/* Header */}
         <div className="mb-8 max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">
-            Ils en parlent mieux que nous
-          </p>
+          <SectionEyebrow>Ils en parlent mieux que nous</SectionEyebrow>
           <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
             Ils ont hésité. Puis ils ont pris leur place.
           </h2>
@@ -245,7 +243,10 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
                 <VideoCard
                   testimonial={t}
                   canLoad={canLoad}
-                  onPlay={(id) => onVideoPlay?.(id)}
+                  onPlay={(id) => {
+                    setVideoStarted(true)
+                    onVideoPlay?.(id)
+                  }}
                 />
               </CarouselItem>
             ))}

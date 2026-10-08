@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Users, Heart, User } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { SectionEyebrow } from './SectionEyebrow'
+import { LANDING_X } from './layout'
 
 interface Props {
   isOnSale: boolean
@@ -14,17 +15,14 @@ interface Props {
 
 const GROUP_OPTIONS = [
   {
-    icon: Users,
     title: 'Entre potes',
     body: 'Challenge, fun et souvenirs. Vous vous tirez vers le haut, tour après tour.',
   },
   {
-    icon: Heart,
     title: 'En couple',
     body: 'Une expérience à deux, intense et mémorable, loin des sorties classiques.',
   },
   {
-    icon: User,
     title: 'Solo',
     body: 'Tu viens seul, tu repars plus fort. C’est ton terrain de dépassement personnel.',
   },
@@ -42,9 +40,9 @@ export function UltraArenaComeTogether({ isOnSale, registerHref, onCtaClick }: P
           className="object-cover object-[center_40%] opacity-20"
         />
       </div>
-      <div className="container relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={`${LANDING_X} relative z-10`}>
         <div className="mb-8 max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Dynamique de groupe</p>
+          <SectionEyebrow>Dynamique de groupe</SectionEyebrow>
           <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Tu viens avec qui ?</h2>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
             Le choix t&apos;appartient. Ce qui compte: décider d&apos;y aller.
@@ -52,12 +50,15 @@ export function UltraArenaComeTogether({ isOnSale, registerHref, onCtaClick }: P
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {GROUP_OPTIONS.map(({ icon: Icon, title, body }) => (
+          {GROUP_OPTIONS.map(({ title, body }, index) => (
             <Card key={title} className="border-primary/15 bg-linear-to-br from-card/95 to-card/80">
               <CardContent className="p-6">
-                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
+                <p
+                  aria-hidden
+                  className="mb-4 text-5xl font-black leading-none text-primary/35"
+                >
+                  {String(index + 1).padStart(2, '0')}
+                </p>
                 <h3 className="text-lg font-bold">{title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{body}</p>
               </CardContent>
