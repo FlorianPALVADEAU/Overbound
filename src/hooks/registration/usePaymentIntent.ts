@@ -69,8 +69,6 @@ export function usePaymentIntent(
             email: p.email,
             firstName: p.firstName,
             lastName: p.lastName,
-            distanceIdealKm: p.distanceIdealKm,
-            distanceMinKm: p.distanceMinKm,
             difficultyLevel: p.difficultyLevel || null,
             selectedWaveIndex: p.selectedWaveIndex ?? null,
           })),

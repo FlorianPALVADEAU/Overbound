@@ -72,12 +72,21 @@ export function useRegistrationDraftSync(
       initializationKeyRef.current = key
 
       if (registrationDraft && registrationDraft.eventId === config.eventId) {
-        const selectionRecord: TicketSelections = {}
+        let selectionRecord: TicketSelections = {}
         registrationDraft.ticketSelections.forEach((selection) => {
           if (selection.quantity > 0) {
             selectionRecord[selection.ticketId] = selection.quantity
           }
         })
+        // A ticket chosen on the event page (?ticket=) wins over an older draft that
+        // does not include it; otherwise the click would appear to select nothing.
+        if (
+          initialTicketId &&
+          tickets.some((t) => t.id === initialTicketId) &&
+          !(selectionRecord[initialTicketId] > 0)
+        ) {
+          selectionRecord = { [initialTicketId]: 1 }
+        }
         if (suppressEmptySyncRef && Object.keys(selectionRecord).length > 0) {
           suppressEmptySyncRef.current = true
         }

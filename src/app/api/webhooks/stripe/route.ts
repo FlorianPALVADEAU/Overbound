@@ -84,8 +84,6 @@ export async function POST(request: NextRequest) {
         ticket_name,
         race_id,
         upsells: upsellsJson,
-        distance_ideal_km,
-        distance_min_km,
         participants: participantsJson,
         selected_wave_index,
       } = metadata
@@ -136,28 +134,6 @@ export async function POST(request: NextRequest) {
           console.warn('Could not parse upsells JSON:', upsellsJson)
         }
 
-        let participantDistances: { distanceIdealKm?: number; distanceMinKm?: number } = {}
-        if ((!distance_ideal_km || !distance_min_km) && participantsJson) {
-          try {
-            const parsed = JSON.parse(participantsJson)
-            if (Array.isArray(parsed) && parsed[0]) {
-              const first = parsed[0]
-              const ideal = Number(first.distanceIdealKm)
-              const min = Number(first.distanceMinKm)
-              participantDistances = {
-                distanceIdealKm: Number.isFinite(ideal) ? ideal : undefined,
-                distanceMinKm: Number.isFinite(min) ? min : undefined,
-              }
-            }
-          } catch (e) {
-            console.warn('Could not parse participants JSON:', participantsJson)
-          }
-        }
-
-        const parseDistance = (value: unknown) => {
-          const parsed = Number(value)
-          return Number.isFinite(parsed) ? parsed : null
-        }
 
         // Generate unique tokens
         const qrToken = uuidv4()
@@ -274,8 +250,6 @@ export async function POST(request: NextRequest) {
 
         const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name ?? null)
         const isRankedFormat = isRankedFormatTicket(ticket.name, ticket.race?.name ?? null)
-        const idealDistance = parseDistance(distance_ideal_km) ?? participantDistances.distanceIdealKm ?? null
-        const minDistance = parseDistance(distance_min_km) ?? participantDistances.distanceMinKm ?? null
 
         // Create registration
         const { data: registration, error: registrationError } = await admin
@@ -292,10 +266,10 @@ export async function POST(request: NextRequest) {
             approval_status: 'approved',
             race_id: race_id || null,
             promotional_code_id: registrationPromotionalCodeId,
-            // DB constraints require non-null positive distances; for non-OPEN formats
-            // we store a neutral placeholder and skip OPEN SAS logic.
-            distance_ideal_km: isOpenFormat ? idealDistance : 1,
-            distance_min_km: isOpenFormat ? minDistance : 1,
+            // The distance columns are NOT NULL with no default and are no longer
+            // collected: store the neutral placeholder.
+            distance_ideal_km: 1,
+            distance_min_km: 1,
           })
           .select()
           .single()

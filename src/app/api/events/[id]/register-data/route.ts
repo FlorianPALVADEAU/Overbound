@@ -32,6 +32,7 @@ export async function GET(
           max_participants,
           requires_document,
           document_types,
+          operations_config,
           race:races!tickets_race_id_fkey (
             id,
             name,

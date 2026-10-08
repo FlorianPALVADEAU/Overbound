@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { useRouter } from 'next/navigation'
-import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM, REGISTRATION_STEPS } from '@/constants/registration'
+import { REGULATION_VERSION, REGISTRATION_STEPS } from '@/constants/registration'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
-import { isOpenFormatTicket } from '@/lib/openSas'
+import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useParticipants } from '@/hooks/registration/useParticipants'
@@ -26,7 +26,8 @@ import ConfirmationStep from './ConfirmationStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
 import RegistrationPaymentBar from './RegistrationPaymentBar'
 import ParticipantSummarySidebar from './ParticipantSummarySidebar'
-import GroupJoinInline from './GroupJoinInline'
+import GroupPanel from './GroupPanel'
+import type { GroupIntent } from '@/lib/groups/invite'
 import InlineAuthStep from './InlineAuthStep'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -41,6 +42,9 @@ export default function MultiStepEventRegistration({
   user,
   availableSpots,
   initialTicketId = null,
+  initialWaveIndex = null,
+  groupIntent = null,
+  inviteCode = null,
 }: MultiStepEventRegistrationProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -60,6 +64,9 @@ export default function MultiStepEventRegistration({
   const [showValidationErrors, setShowValidationErrors] = useState(false)
   const [showInlineAuth, setShowInlineAuth] = useState(false)
   const pendingPaymentAfterAuthRef = useRef(false)
+  // Why the inline auth dialog is open: finishing a payment, or a group action.
+  const authReasonRef = useRef<'payment' | 'group'>('payment')
+  const [pendingGroupIntent, setPendingGroupIntent] = useState<GroupIntent | null>(null)
 
   // Default currency (needed before pricing hook)
   const defaultCurrency = useMemo(() => {
@@ -181,19 +188,7 @@ export default function MultiStepEventRegistration({
       const ticket = ticketMap[participant.ticketId]
       const isUniversalRace = ticket?.race?.is_universal ?? true
       const hasDifficultyIfNeeded = isUniversalRace || participant.difficultyLevel
-      const isOpenFormat = isOpenFormatTicket(ticket?.name, ticket?.race?.name)
-      const distanceMin = Number(participant.distanceMinKm)
-      const distanceIdeal = Number(participant.distanceIdealKm)
-      const hasDistances =
-        participant.distanceMinKm.trim() &&
-        participant.distanceIdealKm.trim() &&
-        Number.isFinite(distanceMin) &&
-        Number.isFinite(distanceIdeal) &&
-        distanceMin >= DISTANCE_MIN_KM &&
-        distanceMin <= DISTANCE_MAX_KM &&
-        distanceIdeal >= DISTANCE_MIN_KM &&
-        distanceIdeal <= DISTANCE_MAX_KM &&
-        distanceIdeal >= distanceMin
+      const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
       // A member of an already-anchored group never picks a SAS — the
       // anchor is forced server-side regardless (FDR-0005/FDR-0012 §3.3).
       const hasWaveSelectionIfNeeded = hasActiveGroupAnchor || Boolean(participant.selectedWaveIndex)
@@ -206,7 +201,7 @@ export default function MultiStepEventRegistration({
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
         hasDifficultyIfNeeded &&
-        (isOpenFormat ? hasDistances && hasWaveSelectionIfNeeded : true)
+        (usesWaveSelection ? hasWaveSelectionIfNeeded : true)
       )
     })
 
@@ -260,6 +255,16 @@ export default function MultiStepEventRegistration({
     suppressEmptyParticipantsSyncRef,
   )
 
+  // Apply the slot chosen on the event page once, to the participant holding that ticket
+  const initialWaveAppliedRef = useRef(false)
+  useEffect(() => {
+    if (initialWaveAppliedRef.current || !initialWaveIndex || !initialTicketId) return
+    const target = participants.find((p) => p.ticketId === initialTicketId)
+    if (!target) return
+    initialWaveAppliedRef.current = true
+    handleWaveSelection(target.id, initialWaveIndex)
+  }, [participants, initialWaveIndex, initialTicketId, handleWaveSelection])
+
   // Fire add-to-cart tracking once, as soon as at least one participant slot exists
   useEffect(() => {
     if (addToCartTrackedRef.current || totalParticipants === 0) return
@@ -310,6 +315,7 @@ export default function MultiStepEventRegistration({
     }
 
     if (!user) {
+      authReasonRef.current = 'payment'
       setShowInlineAuth(true)
       return
     }
@@ -354,8 +360,6 @@ export default function MultiStepEventRegistration({
               emergencyContactPhone: p.emergencyContactPhone,
               medicalInfo: p.medicalInfo,
               licenseNumber: p.licenseNumber,
-              distanceIdealKm: p.distanceIdealKm,
-              distanceMinKm: p.distanceMinKm,
               difficultyLevel: p.difficultyLevel || null,
             })),
             upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
@@ -435,8 +439,6 @@ export default function MultiStepEventRegistration({
         emergencyContactPhone: p.emergencyContactPhone,
         medicalInfo: p.medicalInfo,
         licenseNumber: p.licenseNumber,
-        distanceIdealKm: p.distanceIdealKm,
-        distanceMinKm: p.distanceMinKm,
         difficultyLevel: p.difficultyLevel || null,
       })),
       upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
@@ -474,8 +476,18 @@ export default function MultiStepEventRegistration({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  const handleGroupNeedsAuth = (intent: GroupIntent) => {
+    authReasonRef.current = 'group'
+    setPendingGroupIntent(intent)
+    setShowInlineAuth(true)
+  }
+
   const handleInlineAuthenticated = () => {
-    pendingPaymentAfterAuthRef.current = true
+    if (authReasonRef.current === 'group') {
+      setShowInlineAuth(false)
+    } else {
+      pendingPaymentAfterAuthRef.current = true
+    }
     // The page mounts this query keyed by whatever route param it received
     // (event slug or id), which this component doesn't know — match broadly
     // on the 'register-data' marker instead of reconstructing the exact key.
@@ -484,36 +496,6 @@ export default function MultiStepEventRegistration({
         query.queryKey[0] === 'events' && query.queryKey[2] === 'register-data',
     })
   }
-
-  const groupBanner = !user ? null : !myGroup ? (
-    <GroupJoinInline />
-  ) : myGroup.anchor_event_id === event.id && myGroup.anchor_start_time ? (
-    <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
-      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-      <AlertDescription className="text-xs leading-relaxed">
-        <p>
-          <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
-          ta vague de départ est déjà fixée par ton groupe :{' '}
-          <span className="font-semibold">{formatWaveStartTime(myGroup.anchor_start_time)}</span>.{' '}
-          Tous les membres inscrits à cet événement partiront ensemble. Le départ groupé concerne le format{' '}
-          <span className="font-semibold">OPEN</span>. En format{' '}
-          <span className="font-semibold">RANKED</span>, le départ est unique pour tous.
-        </p>
-      </AlertDescription>
-    </Alert>
-  ) : (
-    <Alert className="border-blue-500/40 bg-blue-500/10 text-blue-800 dark:text-blue-300">
-      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-      <AlertDescription className="text-xs leading-relaxed">
-        <p>
-          <span className="font-semibold">Groupe {myGroup.name} —</span>{' '}
-          tu es le premier membre à t&apos;inscrire à cet événement. Ta vague de départ sera automatiquement réservée pour tout le groupe. Le départ groupé concerne le format{' '}
-          <span className="font-semibold">OPEN</span>. En format{' '}
-          <span className="font-semibold">RANKED</span>, le départ est unique pour tous.
-        </p>
-      </AlertDescription>
-    </Alert>
-  )
 
   return (
     <section className="mx-auto w-full space-y-6 py-6 pb-24">
@@ -524,6 +506,15 @@ export default function MultiStepEventRegistration({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(320px,1fr)] lg:items-start">
         <div className="space-y-6">
+          <GroupPanel
+            user={user}
+            event={event}
+            group={myGroup}
+            intent={groupIntent ?? pendingGroupIntent}
+            inviteCode={inviteCode}
+            onNeedAuth={handleGroupNeedsAuth}
+          />
+
           <RegistrationSection
             index={1}
             title={REGISTRATION_STEPS[0].title}
@@ -538,7 +529,6 @@ export default function MultiStepEventRegistration({
               activeTier={activeTier}
               hasActiveDiscount={hasActiveDiscount}
               availableSpots={availableSpots}
-              groupBanner={groupBanner}
             />
           </RegistrationSection>
 
@@ -556,7 +546,6 @@ export default function MultiStepEventRegistration({
               onFieldChange={handleParticipantChange}
               onWaveSelect={handleWaveSelection}
               showErrors={showValidationErrors}
-              groupBanner={groupBanner}
               groupAnchor={
                 hasActiveGroupAnchor
                   ? { waveIndex: myGroup!.anchor_wave_index as number, startTime: myGroup!.anchor_start_time as string }

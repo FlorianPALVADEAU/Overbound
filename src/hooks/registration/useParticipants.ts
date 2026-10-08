@@ -35,8 +35,6 @@ export function useParticipants(
             emergencyContactPhone: '',
             medicalInfo: '',
             licenseNumber: '',
-            distanceIdealKm: '',
-            distanceMinKm: '',
             difficultyLevel: null as Participant['difficultyLevel'],
             selectedWaveIndex: null,
           }))
@@ -75,16 +73,10 @@ export function useParticipants(
       setParticipants((prev) =>
         prev.map((p) => {
           if (p.id !== participantId) return p
-          // A SAS choice made for a given distance range is no longer valid
-          // once that range changes — the previously selected wave might
-          // fall outside the new window (FDR-0012 §5.3).
-          const resetSelection =
-            (field === 'distanceIdealKm' || field === 'distanceMinKm') && p[field] !== value
-          return {
-            ...p,
-            [field]: value,
-            ...(resetSelection ? { selectedWaveIndex: null } : {}),
-          }
+          // A SAS choice (possibly preselected from the event page) is kept here:
+          // ParticipantForm drops it once the list for the new distances loads and no
+          // longer contains it (FDR-0012 §5.3), so a still-valid slot survives.
+          return { ...p, [field]: value }
         }),
       )
     },

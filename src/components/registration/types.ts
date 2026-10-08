@@ -1,3 +1,4 @@
+import type { GroupIntent } from '@/lib/groups/invite'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell, UpsellOptions } from '@/types/Upsell'
@@ -43,8 +44,6 @@ export type Participant = {
   emergencyContactPhone: string
   medicalInfo: string
   licenseNumber: string
-  distanceIdealKm: string
-  distanceMinKm: string
   difficultyLevel?: 'low' | 'mid' | 'hard' | null
   selectedWaveIndex?: number | null
 }
@@ -89,5 +88,11 @@ export interface MultiStepEventRegistrationProps {
   user: EventUser | null
   availableSpots: number
   initialTicketId?: string | null
+  /** Slot preselected from the event page; applied once to the first matching participant. */
+  initialWaveIndex?: number | null
+  /** Open a group action on arrival (?group=create|join). */
+  groupIntent?: GroupIntent | null
+  /** Group the visitor was invited to (?invite=CODE). */
+  inviteCode?: string | null
   eventPriceTiers?: EventPriceTier[]
 }
