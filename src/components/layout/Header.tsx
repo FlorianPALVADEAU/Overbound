@@ -99,10 +99,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   }
 
   const aboutDropdownItems: DropdownItemType[] = [
-    { name: 'Le concept', href: '/about/concept', icon: MedalIcon },
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
-    { name: 'Presse', href: '/about/press', icon: MapPinIcon },
+    { name: 'Partenaires & presse', href: '/about/partners', icon: MapPinIcon },
     { name: 'Contact', href: '/contact', icon: MapPinIcon },
   ]
 

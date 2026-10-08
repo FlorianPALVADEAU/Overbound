@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Youtube, Music2 } from 'lucide-react'
+import { Instagram, Music2 } from 'lucide-react'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 const LINK_GROUPS = [
@@ -16,15 +16,13 @@ const LINK_GROUPS = [
   {
     title: 'Partenaires',
     links: [
-      { label: 'Nos partenaires', href: '/about/partners' },
-      { label: 'Devenir sponsor', href: '/contact?subject=partenariat' },
-      { label: 'Presse', href: '/about/press' },
+      { label: 'Partenaires & presse', href: '/about/partners' },
+      { label: 'Devenir partenaire', href: '/about/partners#contacts' },
     ],
   },
   {
     title: 'La tribu',
     links: [
-      { label: 'Le concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
       // { label: "L'équipe", href: '/about/team' },
       { label: 'FAQ', href: '/about/faq' },
@@ -48,7 +46,6 @@ const LINK_GROUPS = [
 const SOCIAL_LINKS = [
   { label: 'Instagram', href: 'https://www.instagram.com/overbound.race/', icon: Instagram },
   { label: 'TikTok', href: 'https://www.tiktok.com/@overbound.race', icon: Music2 },
-  { label: 'YouTube', href: '#', icon: Youtube },
 ]
 
 export function Footer() {
@@ -79,7 +76,7 @@ export function Footer() {
           <p className='text-xs uppercase tracking-[0.6em] text-muted-foreground'>Tribu Overbound</p>
           <h2 className='text-3xl font-semibold sm:text-4xl md:text-5xl'>Plus qu’une course, une famille.</h2>
           <p className='text-base text-muted-foreground sm:max-w-2xl'>
-            Accède à ton compte, ouvre tes inscriptions Paris 2026, découvre le concept, la FAQ, notre histoire ou
+            Accède à ton compte, ouvre tes inscriptions Paris 2026, découvre les formats, la FAQ, notre histoire ou
             deviens bénévole. L’essentiel pour vivre l’expérience Overbound.
           </p>
         </div>

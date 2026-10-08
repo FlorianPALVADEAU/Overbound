@@ -96,7 +96,7 @@ function ContactCard({ contact, colorScheme }: { contact: ContactType; colorSche
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg">{contact.name}</CardTitle>
           {contact.link && (
-            <Link href={contact.link} target="_blank" rel="noopener noreferrer" className='cursor-pointer group'>
+            <Link href={contact.link} target="_blank" rel="noopener noreferrer" aria-label={`Ouvrir le lien de ${contact.name}`} className='group inline-flex size-11 cursor-pointer items-center justify-center'>
               <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
             </Link>
           )}
@@ -109,7 +109,7 @@ function ContactCard({ contact, colorScheme }: { contact: ContactType; colorSche
         {contact.mail && (
           <a
             href={`mailto:${contact.mail}`}
-            className="flex items-center gap-2 text-xs text-primary hover:underline"
+            className="flex min-h-11 items-center gap-2 break-all text-xs text-primary hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
             <Mail className="h-3 w-3" />

@@ -1,13 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Notre Histoire - Overbound Race | Créateurs du Backyard à Obstacles",
-  description: "Découvre l'histoire d'Overbound Race, créateur du premier backyard OCR au monde. De la vision à la Ultra Arena : comment nous révolutionnons la course à obstacles en France. Paris 2026.",
+  title: "Notre histoire | Overbound Race",
+  description: "Comment l'idée d'Overbound est née en août 2025 et comment elle est devenue, en septembre 2026, une course à obstacles ouverte à tous.",
   keywords: [
     "overbound histoire",
     "overbound race",
-    "création backyard OCR",
-    "backyard à obstacles origine",
     "course obstacles paris",
     "ultra arena histoire",
     "OCR innovant france",
@@ -16,8 +14,8 @@ export const metadata: Metadata = {
     canonical: 'https://overbound-race.com/about/our-story'
   },
   openGraph: {
-    title: "Notre Histoire | Overbound Race - Créateurs du Backyard à Obstacles",
-    description: "L'histoire d'Overbound : de la vision au premier backyard OCR au monde. Course à obstacles Paris 2026.",
+    title: "Notre histoire | Overbound Race",
+    description: "L'histoire d'Overbound : de l'idée à la première édition.",
     url: 'https://overbound-race.com/about/our-story',
     siteName: 'Overbound Race',
     images: [
@@ -34,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Notre Histoire | Overbound Race",
-    description: "Découvre comment Overbound a créé le premier backyard OCR au monde.",
+    description: "Comment Overbound est passé d'une idée à une course à obstacles.",
     images: ['/images/images/og-headband-chains.jpg'],
   }
 };

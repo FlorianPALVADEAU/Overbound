@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test'
 // §4/§5 (accueil, event landing, register) plus the three pages un-gated
 // in §6 (obstacles, formats) -- not the whole site, which is out of scope
 // for this harness's first pass.
-const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats', '/volunteers']
+const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats', '/volunteers', '/contact', '/about/our-story', '/about/partners', '/about/faq', '/about/credits']
 
 const MIN_TAP_TARGET_PX = 44
 
@@ -150,7 +150,7 @@ const STANDARD_HERO_ROUTES = [
   '/blog',
   '/about/our-story',
   '/about/partners',
-  '/about/press',
+  '/contact',
   '/about/credits',
   '/about/faq',
 ]
@@ -190,4 +190,13 @@ test('the event page hero is the one taller exception', async ({ page }) => {
   await page.goto('/events/formats')
   const standard = await measureHero(page, 'standard')
   expect(tall!.height).toBeGreaterThan(standard!.height)
+})
+
+// /contact is account-only: an anonymous visitor gets a login prompt and a
+// mailto fallback, never the form itself.
+test('/contact shows a login prompt instead of the form when signed out', async ({ page }) => {
+  await page.goto('/contact')
+  await expect(page.getByRole('heading', { name: 'Connecte-toi pour nous écrire' })).toBeVisible()
+  await expect(page.getByRole('main').getByRole('link', { name: 'Se connecter' })).toHaveAttribute('href', /\/auth\/login\?next=/)
+  await expect(page.locator('form')).toHaveCount(0)
 })

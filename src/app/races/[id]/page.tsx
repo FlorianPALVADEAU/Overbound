@@ -737,7 +737,7 @@ export default function RaceDetailPage() {
           alt='Décor montagne'
           width={1600}
           height={800}
-          className='relative w-screen -mt-1 rotate-180'
+          className='relative w-full -mt-1 rotate-180'
           priority
         />
         {/* Progression Path Section */}
@@ -1018,7 +1018,7 @@ export default function RaceDetailPage() {
           alt='Décor montagne'
           width={1600}
           height={800}
-          className='relative w-screen -mb-1'
+          className='relative w-full -mb-1'
           priority
         />
       </div>

@@ -62,20 +62,10 @@ export function EmailLayout({
                       </a>
                     </td>
                     <td style={styles.socialIcon}>
-                      <a href="https://tiktok.com/overbound.race" style={styles.socialLink}>
+                      <a href="https://www.tiktok.com/@overbound.race" style={styles.socialLink}>
                         <img
                           src={`${getEmailAssetsBaseUrl()}/images/decorations/tiktok-icon.png`}
                           alt="TikTok"
-                          width="20"
-                          height="20"
-                        />
-                      </a>
-                    </td>
-                    <td style={styles.socialIcon}>
-                      <a href="https://youtube.com/@overbound.race" style={styles.socialLink}>
-                        <img
-                          src={`${getEmailAssetsBaseUrl()}/images/decorations/youtube-icon.png`}
-                          alt="YouTube"
                           width="20"
                           height="20"
                         />

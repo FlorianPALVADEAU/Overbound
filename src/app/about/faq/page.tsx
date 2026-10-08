@@ -6,23 +6,21 @@ import { faqFallback } from '@/datas/faqFallback'
 import { FAQPageStructuredDataServer } from '@/components/seo/FAQStructuredData'
 
 export const metadata: Metadata = {
-  title: "FAQ Course à Obstacles Paris 2026 | Questions Fréquentes Overbound",
-  description: "Toutes les réponses sur les courses à obstacles Overbound Race Paris 2026 : inscriptions, formats (Origin, Horizon, Ultra Arena backyard), tarifs, équipement et préparation.",
+  title: "FAQ | Overbound Race",
+  description: "Billets, transferts, formats OPEN et RANKED, jour J : les réponses aux questions les plus fréquentes sur Overbound.",
   keywords: [
     "FAQ course obstacles",
     "questions course obstacles paris",
     "inscription overbound",
     "équipement OCR",
     "préparation course obstacles",
-    "backyard obstacles FAQ",
-    "ultra arena questions",
   ],
   alternates: {
     canonical: 'https://overbound-race.com/about/faq'
   },
   openGraph: {
-    title: "FAQ Course à Obstacles Paris 2026 | Overbound Race",
-    description: "Tout savoir sur les courses à obstacles Overbound : formats, inscriptions, backyard OCR et préparation.",
+    title: "FAQ | Overbound Race",
+    description: "Billets, transferts, formats OPEN et RANKED, jour J : les réponses aux questions fréquentes.",
     url: 'https://overbound-race.com/about/faq',
     siteName: 'Overbound Race',
     images: [
@@ -30,7 +28,7 @@ export const metadata: Metadata = {
         url: '/images/images/overbound-og-cover.jpg',
         width: 1200,
         height: 630,
-        alt: 'FAQ Overbound Race - Course à obstacles Paris 2026',
+        alt: 'FAQ Overbound Race',
       },
     ],
     locale: 'fr_FR',
@@ -38,8 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "FAQ | Overbound Race Paris 2026",
-    description: "Questions fréquentes sur nos courses à obstacles Paris 2026 et backyard OCR.",
+    title: "FAQ | Overbound Race",
+    description: "Billets, transferts, formats OPEN et RANKED, jour J : les réponses aux questions les plus fréquentes.",
     images: ['/images/images/overbound-og-cover.jpg'],
   }
 };

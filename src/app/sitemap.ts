@@ -22,11 +22,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Pages statiques principales
   const staticPages = [
     '',
-    '/about/concept',
     '/about/our-story',
     // '/about/team',
-    '/about/press',
     '/about/faq',
+    '/about/partners',
     // '/events', // notFound() until a second event exists — see FDR-0015 §14
     '/events/formats',
     '/obstacles',
