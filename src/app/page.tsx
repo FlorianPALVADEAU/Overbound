@@ -4,7 +4,6 @@ import { NextEventSection } from '@/components/homepage/NextEventSection';
 import { ConceptExplainer } from '@/components/homepage/ConceptExplainer';
 import { HomeFormatsSection } from '@/components/homepage/HomeFormatsSection';
 import { HomeDeferredSections } from '@/components/homepage/HomeDeferredSections';
-import { PricingExplainer } from '@/components/pricing/PricingExplainer';
 import { metadata as baseMetadata } from './metadata';
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com').replace(/\/$/, '')
@@ -29,10 +28,6 @@ export default function Home() {
       <NextEventSection />
       <ConceptExplainer />
       <HomeFormatsSection />
-      {/* Pricing Explainer Section */}
-      <section className="w-full px-4 py-12 sm:px-6 xl:px-32">
-          <PricingExplainer />
-      </section>
       <HomeDeferredSections />
     </div>
   );
