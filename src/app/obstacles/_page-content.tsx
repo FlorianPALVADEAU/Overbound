@@ -127,39 +127,23 @@ export default function ObstaclesPage() {
           </div>
         </section>
 
-        <section className="relative z-10 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-7xl rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md sm:p-4">
-            <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              Partenaires officiels
-            </div>
-            <div className="overflow-hidden rounded-xl border border-white/10">
-              <AnimatedBanner
-                images={PARTNERS_DATA.map((partner) => partner.logo)}
-                imageAltPrefix="Logo partenaire Overbound"
+        <section id="catalogue" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 pt-16 sm:px-6 lg:px-8 lg:pt-20">
+          <div className="mb-5 flex flex-col justify-center gap-6 sm:gap-8">
+            <div className="w-full space-y-2">
+              <label htmlFor="search" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                <Search className="h-4 w-4" />
+                Rechercher un obstacle
+              </label>
+              <Input
+                id="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Mur, Monkey bar, portés…"
+                className="h-12 border-white/15 bg-white/5 text-base text-white placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-primary/40"
               />
             </div>
-          </div>
-        </section>
 
-        <section id="catalogue" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 pt-16 sm:px-6 lg:px-8 lg:pt-20">
-          <div className="mb-10 flex flex-col justify-center gap-6 sm:gap-8">
-            <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
-              <div className="w-full max-w-xl space-y-2">
-                <label htmlFor="search" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                  <Search className="h-4 w-4" />
-                  Rechercher un obstacle
-                </label>
-                <Input
-                  id="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Mur de feu, Monkey bar, portés…"
-                  className="h-12 border-white/15 bg-white/5 text-base text-white placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-primary/40"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
+            {/* <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setTypeFilter('all')}
@@ -185,7 +169,7 @@ export default function ObstaclesPage() {
                   {OBSTACLE_TYPES[type] ?? type} ({count})
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
