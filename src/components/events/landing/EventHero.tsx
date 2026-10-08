@@ -1,11 +1,9 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useParallax } from '@/hooks/useParallax'
+import { HeroFrame } from '@/components/hero/HeroFrame'
 import { LANDING_X } from './layout'
 
 interface Props {
@@ -56,38 +54,16 @@ export function EventHero({
   imageUrl,
   onRegisterClick,
 }: Props) {
-  const heroRef = useRef<HTMLElement>(null)
-  // Overscan below (inset-y-44 = 176px) is larger than scroll + mouse travel (110 + 36),
-  // so the photo edge never shows.
-  const parallax = useParallax(heroRef, { scrollStrength: 110, mouseStrength: 36 })
-
   const date = new Date(eventDate)
   const day = date.toLocaleDateString('fr-FR', { day: 'numeric' })
   const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
 
   return (
-    <section ref={heroRef} className="relative isolate flex min-h-[88svh] flex-col justify-end overflow-hidden">
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute -inset-x-14 -inset-y-44 will-change-transform"
-          style={{ transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0)` }}
-        >
-          {imageUrl ? (
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <Image
-              src="/images/images/a-smiling-running-man-black-weared-sport.avif"
-              alt=""
-              fill
-              sizes="100vw"
-              priority
-              className="object-cover object-[50%_20%]"
-            />
-          )}
-        </div>
-        <div className="absolute inset-0 bg-linear-to-b from-black/45 via-black/30 to-background to-85%" />
-      </div>
-
+    <HeroFrame
+      variant="tall"
+      className="justify-end"
+      image={{ url: imageUrl, src: '/images/images/a-smiling-running-man-black-weared-sport.avif', position: '50% 20%' }}
+    >
       <div className={`${LANDING_X} pb-8 pt-32 sm:pb-12`}>
         <Badge variant={statusVariant} className="border border-primary/40 bg-black/40 text-primary backdrop-blur">
           {statusLabel}
@@ -140,6 +116,6 @@ export function EventHero({
           </div>
         </div>
       </div>
-    </section>
+    </HeroFrame>
   )
 }

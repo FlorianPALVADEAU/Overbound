@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 
 interface ParallaxOptions {
-  /** Max pixel offset from mouse movement, each axis. */
+  /** Max pixel offset from mouse movement, vertical axis. */
   mouseStrength?: number
+  /** Max pixel offset from mouse movement, horizontal axis. Kept low: sideways drift reads as violent. */
+  mouseStrengthX?: number
   /** Max pixel offset from scroll, applied on Y axis. */
   scrollStrength?: number
   /** Lerp factor per frame toward the target offset (0-1). Lower = smoother trailing. */
@@ -17,7 +19,8 @@ interface ParallaxOffset {
 }
 
 const DEFAULT_OPTIONS: Required<ParallaxOptions> = {
-  mouseStrength: 40,
+  mouseStrength: 30,
+  mouseStrengthX: 6,
   scrollStrength: 120,
   easing: 0.08,
 }
@@ -31,7 +34,7 @@ export function useParallax(
   containerRef: React.RefObject<HTMLElement | null>,
   options: ParallaxOptions = {}
 ): ParallaxOffset {
-  const { mouseStrength, scrollStrength, easing } = { ...DEFAULT_OPTIONS, ...options }
+  const { mouseStrength, mouseStrengthX, scrollStrength, easing } = { ...DEFAULT_OPTIONS, ...options }
   const [offset, setOffset] = useState<ParallaxOffset>({ x: 0, y: 0 })
   const targetRef = useRef<ParallaxOffset>({ x: 0, y: 0 })
   const currentRef = useRef<ParallaxOffset>({ x: 0, y: 0 })
@@ -87,7 +90,7 @@ export function useParallax(
       const relativeY = (event.clientY - rect.top) / rect.height - 0.5
       // Inverted: background drifts opposite the cursor, classic parallax depth cue.
       mouseOffsetRef.current = {
-        x: -relativeX * mouseStrength,
+        x: -relativeX * mouseStrengthX,
         y: -relativeY * mouseStrength,
       }
     }
@@ -110,7 +113,7 @@ export function useParallax(
       window.removeEventListener('scroll', handleScroll)
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
     }
-  }, [containerRef, containerReady, mouseStrength, scrollStrength, easing])
+  }, [containerRef, containerReady, mouseStrength, mouseStrengthX, scrollStrength, easing])
 
   return offset
 }

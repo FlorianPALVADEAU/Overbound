@@ -15,6 +15,7 @@ import { PARTNERS_DATA } from '@/datas/Partners'
 import { useFeaturedEvent } from '../api/events/featured/featuredEventQueries'
 import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
 import { OBSTACLE_TYPES, difficultyLabel } from '@/components/obstacles/obstacleLabels'
+import { PageHero } from '@/components/hero/PageHero'
 
 const ObstacleSkeleton = () => (
   <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -85,47 +86,27 @@ export default function ObstaclesPage() {
   return (
     <>
       <main className="relative min-h-screen bg-[#141414] text-white">
-        <section className="relative isolate overflow-hidden py-20 sm:py-24">
-          <div className="absolute inset-0">
-            <Image
-              src="/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif"
-              alt="Athlète Overbound franchissant un obstacle"
-              fill
-              sizes="100vw"
-              className="object-cover object-bottom"
-              priority
-            />
-            <div className="pointer-events-none absolute inset-0 bg-black/50" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-[#141414]" />
-          </div>
-          <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-20 sm:px-6 lg:px-8">
-            <div className="max-w-3xl space-y-6 text-center lg:text-left">
-              <span className="inline-flex items-center justify-center rounded-full bg-primary/20 px-4 py-2 text-xs font-black uppercase tracking-[0.3em] text-primary sm:text-sm">
-                Parcours Overbound
-              </span>
-              <h1 className="text-balance break-words text-3xl font-black tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-                Les obstacles qui t&apos;attendent sur la boucle
-              </h1>
-              <p className="text-base leading-relaxed text-neutral-300 sm:text-lg">
-                Murs, portés, suspensions, obstacles aquatiques… chaque module est noté selon sa
-                difficulté et sa dominante physique. Tu les retrouveras tous, tour après tour.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button asChild size="lg" className="h-12 w-full sm:w-auto">
-                  <Link href="#catalogue">Voir le catalogue</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="h-12 w-full border-white/30 bg-transparent text-white hover:bg-white/10 sm:w-auto"
-                >
-                  <Link href={featuredEventHref}>Voir la prochaine édition</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <PageHero
+          image={{ src: '/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif', alt: 'Athlète Overbound franchissant un obstacle', position: '50% 100%' }}
+          eyebrow="Parcours Overbound"
+          title="Les obstacles qui t'attendent sur la boucle"
+          description="Chaque module est noté selon sa difficulté et sa dominante physique."
+          actions={
+            <>
+              <Button asChild size="lg" className="h-12 w-full sm:w-auto">
+                <Link href="#catalogue">Voir le catalogue</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="h-12 w-full border-white/30 bg-transparent text-white hover:bg-white/10 sm:w-auto"
+              >
+                <Link href={featuredEventHref}>Voir la prochaine édition</Link>
+              </Button>
+            </>
+          }
+        />
 
         <section id="catalogue" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 pt-16 sm:px-6 lg:px-8 lg:pt-20">
           <div className="mb-5 flex flex-col justify-center gap-6 sm:gap-8">

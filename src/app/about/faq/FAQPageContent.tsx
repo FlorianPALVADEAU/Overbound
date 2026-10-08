@@ -16,6 +16,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { PageHero } from '@/components/hero/PageHero'
 import RichText from '@/components/RichText'
 import type { PortableTextBlock } from '@portabletext/types'
 
@@ -197,37 +198,28 @@ const Header = ({
   searchTerm: string
   setSearchTerm: (value: string) => void
 }) => (
-  <section className="relative overflow-hidden bg-white">
-    <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#26AA26]/10 via-transparent to-transparent" />
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:flex-row lg:items-center lg:gap-16 lg:py-24">
-      <div className="flex-1 space-y-6 text-center lg:text-left">
-        <span className="inline-flex items-center gap-2 rounded-full bg-[#26AA26]/10 px-4 py-1 text-sm font-semibold uppercase tracking-wide text-[#26AA26]">
-          <ShieldCheck className="h-4 w-4" />
-          FAQ officielle Overbound
-        </span>
-        <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl lg:text-6xl">
-          Toutes les réponses pour vivre l’expérience Overbound sereinement
-        </h1>
-        <p className="text-base leading-relaxed text-gray-600 sm:text-lg">
-          Inscriptions, documents, préparation, logistique ou vie de la tribu : nous avons rassemblé les questions qui reviennent le plus souvent.
-        </p>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              type="search"
-              placeholder="Rechercher une question (ex. transfert de billet, horaires…)"
-              className="w-full rounded-full border border-gray-200 bg-white px-12 py-3 text-sm text-gray-700 shadow-sm outline-none transition focus:border-[#26AA26] focus:ring-2 focus:ring-[#26AA26]/40"
-            />
-          </div>
-          <Button asChild variant="outline" className="h-12 rounded-full border-[#26AA26] text-[#26AA26] hover:bg-[#26AA26]/10">
-            <Link href="#inscriptions">Explorer les thèmes</Link>
-          </Button>
+  <>
+    <PageHero
+      image={{ src: '/images/images/a-sunny-mood-with-runners-ready-to-go.avif', alt: 'Coureurs Overbound prêts à partir' }}
+      eyebrow="FAQ officielle Overbound"
+      title="Toutes tes réponses avant le jour J"
+      description="Inscriptions, préparation, logistique : les questions les plus fréquentes."
+      actions={
+        <div className="relative w-full max-w-xl">
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            type="search"
+            aria-label="Rechercher une question"
+            placeholder="Rechercher une question…"
+            className="min-h-12 w-full rounded-full border border-gray-200 bg-white px-12 py-3 text-sm text-gray-700 shadow-sm outline-none transition focus:border-[#26AA26] focus:ring-2 focus:ring-[#26AA26]/40"
+          />
         </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-4 rounded-3xl bg-white/80 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+      }
+    />
+    <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+      <div className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-xl sm:p-8">
         <h2 className="text-lg font-semibold text-gray-900">Sommaire express</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {highlightTopics.map((topic) => (
@@ -255,8 +247,8 @@ const Header = ({
           </span>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </>
 )
 
 const SearchResults = ({

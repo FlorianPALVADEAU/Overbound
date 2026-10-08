@@ -17,6 +17,7 @@ import {
   ExternalLink,
   Download,
 } from 'lucide-react'
+import { PageHero } from '@/components/hero/PageHero'
 
 const SPONSORING_PDF_URL = '/images/brand/Overbound – Dossier Sponsoring 2026.pdf'
 
@@ -70,62 +71,28 @@ const PRESS_CONTACTS = [
 export default function PressPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
-      {/* Hero */}
-      <section className="relative isolate overflow-hidden py-40 sm:py-44">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/images/a-photograph-in-action.avif"
-            alt="Photographe en action lors d'un événement Overbound"
-            fill
-            sizes="100vw"
-            className="object-cover object-center"
-            priority
-          />
-          <div className="pointer-events-none absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/10 via-background/60 to-background" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-background via-background/90 to-transparent" />
-        </div>
-        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl space-y-6 text-center lg:text-left animate-fade-in-up animate-duration-700">
-            <span className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary shadow-sm shadow-primary/10 sm:text-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-              </span>
-              Espace Presse
-            </span>
-            <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
-              Médias & Ressources
-            </h1>
-            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
-              Tout ce dont vous avez besoin pour couvrir Overbound : visuels, contacts, chiffres clés et communiqués.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/25">
-                <a href={SPONSORING_PDF_URL} download>
-                  <Download className="mr-2 h-5 w-5" />
-                  Dossier Sponsoring 2026
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 border-primary text-primary hover:bg-primary/10">
-                <Link href="mailto:press@overbound-race.com">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Contacter la presse
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-        <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
-          <Image
-            src='/images/decorations/mountain-vector.svg'
-            alt='Décor montagne'
-            width={1600}
-            height={800}
-            className='w-[220%] max-w-none sm:w-[170%] md:w-[140%]'
-          />
-        </div>
-      </section>
+      <PageHero
+        image={{ src: '/images/images/a-photograph-in-action.avif', alt: "Photographe en action lors d'un événement Overbound" }}
+        eyebrow="Espace presse"
+        title="Médias & Ressources"
+        description="Visuels, contacts, chiffres clés et communiqués."
+        actions={
+          <>
+            <Button asChild size="lg" className="h-12 w-full shadow-lg shadow-primary/25 sm:w-auto">
+              <a href={SPONSORING_PDF_URL} download>
+                <Download className="mr-2 h-5 w-5" />
+                Dossier Sponsoring 2026
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="h-12 w-full border-primary text-primary hover:bg-primary/10 sm:w-auto">
+              <Link href="mailto:press@overbound-race.com">
+                <Mail className="mr-2 h-4 w-4" />
+                Contacter la presse
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Chiffres clés */}
       {/* <section className="relative overflow-hidden py-16 sm:py-20">
