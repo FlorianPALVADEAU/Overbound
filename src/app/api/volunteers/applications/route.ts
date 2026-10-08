@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { PersonName } from '@/lib/volunteers/shared/PersonName'
 import {
   sendVolunteerApplicationConfirmationEmail,
   sendVolunteerApplicationEmail,
@@ -21,11 +22,8 @@ const toOptionalTrimmed = <T extends z.ZodTypeAny>(schema: T) =>
   )
 
 const applicationSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(2, { message: 'Le nom est requis.' })
-    .max(120, { message: 'Le nom est trop long.' }),
+  firstName: z.string().trim().min(2, { message: 'Le prénom est requis.' }).max(60, { message: 'Le prénom est trop long.' }),
+  lastName: z.string().trim().min(2, { message: 'Le nom est requis.' }).max(60, { message: 'Le nom est trop long.' }),
   email: z
     .string()
     .trim()
@@ -78,7 +76,12 @@ export async function POST(request: Request) {
       )
     }
 
-    const data = parsed.data
+    const name = PersonName.create(parsed.data.firstName, parsed.data.lastName)
+    if (!name) {
+      return NextResponse.json({ error: 'Prénom ou nom invalide.' }, { status: 422 })
+    }
+
+    const data = { ...parsed.data, fullName: name.fullName }
     const submittedAt = new Date()
 
     const supabase = await createSupabaseServer()

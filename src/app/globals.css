@@ -167,3 +167,17 @@
 .animate-lucky-wheel-breathe {
   animation: luckyWheelBreathe 1.8s ease-in-out infinite;
 }
+
+@keyframes stamp {
+  0% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(0.92);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}

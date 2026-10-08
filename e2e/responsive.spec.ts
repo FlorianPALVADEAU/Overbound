@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test'
 // §4/§5 (accueil, event landing, register) plus the three pages un-gated
 // in §6 (obstacles, formats) -- not the whole site, which is out of scope
 // for this harness's first pass.
-const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats']
+const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats', '/volunteers']
 
 const MIN_TAP_TARGET_PX = 44
 
