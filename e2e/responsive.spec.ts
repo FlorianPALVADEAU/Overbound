@@ -139,3 +139,55 @@ for (const route of ROUTES) {
     })
   })
 }
+
+// Every hero banner shares one height (HeroFrame, variant "standard"); only the
+// event page is deliberately taller. Measured on the rendered page, per viewport.
+const STANDARD_HERO_ROUTES = [
+  '/events/formats',
+  '/obstacles',
+  '/volunteers',
+  '/bootcamps',
+  '/blog',
+  '/about/our-story',
+  '/about/partners',
+  '/about/press',
+  '/about/credits',
+  '/about/faq',
+]
+
+const measureHero = (page: Page, kind: 'standard' | 'tall') =>
+  page.evaluate((k) => {
+    const el = document.querySelector<HTMLElement>(`[data-hero="${k}"]`)
+    if (!el) return null
+    return { height: el.getBoundingClientRect().height, clipped: el.scrollHeight - el.clientHeight }
+  }, kind)
+
+test('standard heroes share the same height on every page', async ({ page }) => {
+  test.setTimeout(180_000)
+  const heights: Record<string, number> = {}
+  const missing: string[] = []
+  const clippedContent: string[] = []
+  for (const route of STANDARD_HERO_ROUTES) {
+    await page.goto(route)
+    const hero = await measureHero(page, 'standard')
+    if (!hero) {
+      missing.push(route)
+      continue
+    }
+    heights[route] = hero.height
+    if (hero.clipped > 1) clippedContent.push(`${route} (+${hero.clipped}px)`)
+  }
+  expect(missing, `no [data-hero="standard"] on: ${missing.join(', ')}`).toEqual([])
+  expect(clippedContent, 'hero content taller than the hero').toEqual([])
+  const values = Object.values(heights)
+  expect(Math.max(...values) - Math.min(...values), `hero heights differ: ${JSON.stringify(heights)}`).toBeLessThanOrEqual(1)
+})
+
+test('the event page hero is the one taller exception', async ({ page }) => {
+  await page.goto('/events/ultra-arena-2026')
+  const tall = await measureHero(page, 'tall')
+  test.skip(tall === null, 'no event data in this environment')
+  await page.goto('/events/formats')
+  const standard = await measureHero(page, 'standard')
+  expect(tall!.height).toBeGreaterThan(standard!.height)
+})
