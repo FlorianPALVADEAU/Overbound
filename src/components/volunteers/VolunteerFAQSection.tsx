@@ -2,51 +2,13 @@
 
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
-import { client } from '@/sanity/lib/client'
-import { FAQsQuery } from '@/sanity/lib/queries'
-import type { QuestionType } from '@/types/Question'
+import { byCategory, useFaqQuestions } from '@/hooks/faq/useFaqQuestions'
 import Headings from '../globals/Headings'
 import { Button } from '../ui/button'
 import { FAQQuestionCard } from '../homepage/FAQQuestionCard'
 
-const mapQuestion = (item: any): QuestionType => ({
-  id: item._id ?? item.id ?? '',
-  title: item.title ?? '',
-  category: item.category ?? 'general',
-  shortAnswer: item.shortAnswer ?? '',
-  answer: Array.isArray(item.answer) ? item.answer : [],
-  relatedLinks: Array.isArray(item.relatedLinks) ? item.relatedLinks : [],
-})
-
-const fetchVolunteerFAQs = async (): Promise<QuestionType[]> => {
-  try {
-    const res = await client.fetch(FAQsQuery)
-    return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'volunteers')
-  } catch (error) {
-    const message = error instanceof Error ? error.message : ''
-
-    if (message.includes('project user not found')) {
-      const publicClient = client.withConfig({ token: undefined, useCdn: true })
-      const res = await publicClient.fetch(FAQsQuery)
-      return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'volunteers')
-    }
-
-    throw error
-  }
-}
-
 export const VolunteerFAQSection = () => {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<QuestionType[]>({
-    queryKey: ['faq', 'volunteers'],
-    queryFn: fetchVolunteerFAQs,
-    retry: 1,
-  })
+  const { data, isLoading, isError, error } = useFaqQuestions(byCategory('volunteers'))
 
   const volunteerQuestions = useMemo(() => (Array.isArray(data) ? data : []), [data])
 

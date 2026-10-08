@@ -2,7 +2,7 @@ import type { PortableTextBlock } from '@portabletext/types'
 import type { FAQDocument } from '@/app/about/faq/FAQPageContent'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
-const block = (text: string): PortableTextBlock => ({
+export const block = (text: string): PortableTextBlock => ({
   _key: text.slice(0, 16).replace(/\s+/g, '-'),
   _type: 'block',
   markDefs: [],

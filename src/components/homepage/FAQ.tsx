@@ -2,51 +2,13 @@
 
 import { useMemo } from 'react'
 import Headings from '../globals/Headings'
-import { useQuery } from '@tanstack/react-query'
-import { client } from '@/sanity/lib/client'
-import { FAQsQuery } from '@/sanity/lib/queries'
-import { QuestionType } from '@/types/Question'
+import { byCategory, useFaqQuestions } from '@/hooks/faq/useFaqQuestions'
 import { Button } from '../ui/button'
 import Link from 'next/link'
 import { FAQQuestionCard } from './FAQQuestionCard'
 
-const mapQuestion = (item: any): QuestionType => ({
-  id: item._id ?? item.id ?? '',
-  title: item.title ?? '',
-  category: item.category ?? 'general',
-  shortAnswer: item.shortAnswer ?? '',
-  answer: Array.isArray(item.answer) ? item.answer : [],
-  relatedLinks: Array.isArray(item.relatedLinks) ? item.relatedLinks : [],
-})
-
-const fetchGeneralFAQs = async (): Promise<QuestionType[]> => {
-  try {
-    const res = await client.fetch(FAQsQuery)
-    return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'general')
-  } catch (error) {
-    const message = error instanceof Error ? error.message : ''
-
-    if (message.includes('project user not found')) {
-      const publicClient = client.withConfig({ token: undefined, useCdn: true })
-      const res = await publicClient.fetch(FAQsQuery)
-      return (Array.isArray(res) ? res : []).map(mapQuestion).filter((item) => item.category === 'general')
-    }
-
-    throw error
-  }
-}
-
 const FAQ = () => {
-  const {
-    data: questions,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<QuestionType[]>({
-    queryKey: ['faq', 'general'],
-    queryFn: fetchGeneralFAQs,
-    retry: 1,
-  })
+  const { data: questions, isLoading, isError, error } = useFaqQuestions(byCategory('general'))
 
   const generalFAQs = useMemo(() => (Array.isArray(questions) ? questions : []), [questions])
   const showEmptyState = !isLoading && !isError && generalFAQs.length === 0
