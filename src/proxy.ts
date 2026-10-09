@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { middleware as authMiddleware } from './middlewares/authMiddleware'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const canonicalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL
   const isProduction = process.env.VERCEL_ENV === 'production'
 
