@@ -42,6 +42,11 @@ export function TransferConsentDialog({ ticket, onConfirm, onCancel }: TransferC
           <li>Dès qu&apos;elle a signé, elle devient seule titulaire : ton QR code ne fonctionne plus.</li>
           <li>Transfert possible jusqu&apos;à la veille de l&apos;événement, une seule fois par dossard.</li>
           <li>Revente au-dessus du prix payé interdite : un dossard revendu peut être annulé.</li>
+          {ticket?.flexible_refund ? (
+            <li className="font-semibold text-foreground">
+              Ce billet a l&apos;option billet flexible : elle est perdue dès que le billet est transféré.
+            </li>
+          ) : null}
           <li>
             Si Overbound annule l&apos;événement, le remboursement est versé à l&apos;acheteur d&apos;origine. Les frais de
             transfert ne sont pas remboursés.

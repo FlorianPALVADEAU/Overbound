@@ -13,13 +13,14 @@ interface TicketWalletProps {
   transferStateFor: (registrationId: string) => TransferUiState
   onOpenQr: (ticket: AccountRegistrationItem) => void
   onTransfer: (ticket: AccountRegistrationItem) => void
+  onCancel?: (ticket: AccountRegistrationItem) => void
 }
 
 /**
  * Every bib of one event. On a phone: a scroll-snap row (next bib peeking,
  * swipe or drag). From tablet up: a plain grid, nothing to slide.
  */
-export function TicketWallet({ tickets, context, transferStateFor, onOpenQr, onTransfer }: TicketWalletProps) {
+export function TicketWallet({ tickets, context, transferStateFor, onOpenQr, onTransfer, onCancel }: TicketWalletProps) {
   const { ref, index, onScroll, scrollTo, dragHandlers } = useSnapIndex()
   const many = tickets.length > 1
 
@@ -46,6 +47,7 @@ export function TicketWallet({ tickets, context, transferStateFor, onOpenQr, onT
               transferState={transferStateFor(ticket.registration_id)}
               onOpenQr={onOpenQr}
               onTransfer={onTransfer}
+              onCancel={onCancel}
             />
           </div>
         ))}

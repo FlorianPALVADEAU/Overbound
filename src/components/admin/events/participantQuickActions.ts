@@ -9,11 +9,16 @@ export type ParticipantQuickActionState = {
 }
 
 /**
- * A SAS action is available only when the current ticket supports waves.
+ * A SAS action is available only when the current ticket supports waves; nothing
+ * can be changed on a cancelled (refunded) bib.
  */
 export function getParticipantQuickActionState(
   participant: EventParticipantRow,
 ): ParticipantQuickActionState {
+  if (participant.registration.cancelledAt) {
+    const cancelled = { disabled: true, reason: 'Billet annulé et remboursé' }
+    return { ticket: cancelled, wave: cancelled }
+  }
   return {
     ticket: participant.ticket.id
       ? { disabled: false }

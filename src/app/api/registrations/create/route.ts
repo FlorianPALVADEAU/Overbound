@@ -10,6 +10,7 @@ import * as QRCode from 'qrcode'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { keepHealthDataWithConsent } from '@/lib/legal/healthData'
 import { fingerprintWaiver } from '@/lib/legal/waiverDocument'
+import { FLEXIBLE_TICKET_FEE_CENTS, parseNumberList } from '@/lib/tickets/flexibleTicket'
 import { captureException } from '@/lib/sentry'
 import {
   formatWaveStartTime,
@@ -449,6 +450,12 @@ export async function POST(request: NextRequest) {
     }
     let groupAnchorAlreadySet = groupAnchorWaveIndex !== null
 
+    // Server-computed at PaymentIntent creation and paid for: never trusted from the request body.
+    const flexibleParticipantIndices = new Set(
+      isFreeOrder ? [] : parseNumberList(paymentIntent.metadata.flexible_participants),
+    )
+    const paidTicketPrices = isFreeOrder ? [] : parseNumberList(paymentIntent.metadata.ticket_prices)
+
     for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
       if (!ticket) {
@@ -494,6 +501,8 @@ export async function POST(request: NextRequest) {
           // collected: store the neutral placeholder.
           distance_ideal_km: 1,
           distance_min_km: 1,
+          flexible_refund: flexibleParticipantIndices.has(index),
+          paid_ticket_cents: isFreeOrder ? 0 : (paidTicketPrices[index] ?? null),
         })
         .select()
         .single()
@@ -808,8 +817,21 @@ export async function POST(request: NextRequest) {
             total: number
           }>
 
-        const receiptItems = [...ticketItems, ...upsellItems]
-        const subtotalCents = ticketSubtotal + upsellSubtotal
+        // The receipt must add up to what was charged: list the flexible option on its own line.
+        const flexibleCount = flexibleParticipantIndices.size
+        const flexibleItems =
+          flexibleCount > 0
+            ? [
+                {
+                  description: 'Option billet flexible',
+                  quantity: flexibleCount,
+                  unitPrice: toMajor(FLEXIBLE_TICKET_FEE_CENTS),
+                  total: toMajor(FLEXIBLE_TICKET_FEE_CENTS * flexibleCount),
+                },
+              ]
+            : []
+        const receiptItems = [...ticketItems, ...upsellItems, ...flexibleItems]
+        const subtotalCents = ticketSubtotal + upsellSubtotal + FLEXIBLE_TICKET_FEE_CENTS * flexibleCount
         const discountCents = discountApplied > 0 ? discountApplied : 0
         const totalCents = paymentIntent.amount ?? Math.max(subtotalCents - discountCents, 0)
 

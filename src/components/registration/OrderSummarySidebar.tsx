@@ -159,6 +159,12 @@ export default function OrderSummarySidebar({
             <span>Options</span>
             <span>{formatPrice(summaryPricing.upsellTotal, summaryPricing.currency)}</span>
           </div>
+          {summaryPricing.flexibleTotal ? (
+            <div className="flex items-center justify-between text-sm">
+              <span>Billet flexible</span>
+              <span>{formatPrice(summaryPricing.flexibleTotal, summaryPricing.currency)}</span>
+            </div>
+          ) : null}
           {summaryPricing.discountAmount > 0 ? (
             <div className="flex items-center justify-between text-sm text-emerald-600">
               <span className="font-mono font-medium">

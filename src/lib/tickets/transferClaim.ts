@@ -57,6 +57,8 @@ export const buildHandOverUpdate = (context: HandOverContext) => ({
   claim_status: 'claimed' as const,
   is_affiliated: true,
   guarantor_user_id: context.previousHolderId,
+  // The "billet flexible" refund belongs to the buyer: a transferred bib loses it.
+  flexible_refund: false,
 })
 
 interface SignatureContext {

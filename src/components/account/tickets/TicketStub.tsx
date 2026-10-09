@@ -1,5 +1,6 @@
-import { CheckIcon, QrCodeIcon, SendIcon } from 'lucide-react'
+import { CheckIcon, QrCodeIcon, RotateCcwIcon, SendIcon } from 'lucide-react'
 import { UserAvatar } from '@/components/account/UserAvatar'
+import { formatLongDate, formatPrice } from '@/lib/account/format'
 import { canShowTicketQr, getEventPhase, getTransferState } from '@/lib/account/tickets'
 import { cn } from '@/lib/utils'
 import type { AccountRegistrationItem } from '@/types/AccountRegistration'
@@ -12,6 +13,8 @@ interface TicketStubProps {
   transferState: 'idle' | 'copied' | 'pending'
   onOpenQr: (ticket: AccountRegistrationItem) => void
   onTransfer: (ticket: AccountRegistrationItem) => void
+  /** Cancel a "billet flexible" bib; only offered while a refund is possible. */
+  onCancel?: (ticket: AccountRegistrationItem) => void
   className?: string
 }
 
@@ -20,7 +23,7 @@ interface TicketStubProps {
  * number is assigned), the participant and practical facts sit under the
  * tear-off line, and the two actions are labelled buttons.
  */
-export function TicketStub({ ticket, context, transferState, onOpenQr, onTransfer, className }: TicketStubProps) {
+export function TicketStub({ ticket, context, transferState, onOpenQr, onTransfer, onCancel, className }: TicketStubProps) {
   const { now } = context
   const identity = context.identify(ticket)
   const holder = describeHolder(ticket, identity)
@@ -29,6 +32,8 @@ export function TicketStub({ ticket, context, transferState, onOpenQr, onTransfe
   const qrAvailable = canShowTicketQr(ticket, now)
   const transfer = getTransferState(ticket, now)
   const bib = bibLabel(ticket.bib_number)
+  const refundLabel = formatPrice(ticket.flexible_refund_amount_cents ?? null, ticket.currency)
+  const refundDeadline = formatLongDate(ticket.flexible_refund_deadline ?? null)
 
   const status = ticket.checked_in
     ? { label: 'Présent', tone: 'text-emerald-700' }
@@ -115,6 +120,30 @@ export function TicketStub({ ticket, context, transferState, onOpenQr, onTransfe
           </div>
         ) : transfer.closedByDeadline ? (
           <p className="text-xs text-background/50">Transfert clos : possible jusqu&apos;à la veille de l&apos;événement.</p>
+        ) : null}
+        {ticket.flexible_refund ? (
+          <div className="rounded-xl bg-background/10 p-3">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-background/60">
+              <RotateCcwIcon className="size-3.5" />
+              Billet flexible
+            </p>
+            {onCancel && refundLabel ? (
+              <>
+                <p className="mt-1 text-sm text-background/80">
+                  Remboursable sans justificatif{refundDeadline ? ` jusqu'au ${refundDeadline}` : ''}.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onCancel(ticket)}
+                  className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-background px-3 text-sm font-bold text-foreground active:scale-[0.98]"
+                >
+                  Me faire rembourser {refundLabel}
+                </button>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-background/60">Le délai de remboursement est dépassé.</p>
+            )}
+          </div>
         ) : null}
       </div>
     </article>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { MapPinIcon } from 'lucide-react'
 import { Eyebrow } from '@/components/account/AccountScreen'
+import { useFlexibleRefund } from '@/hooks/account/useFlexibleRefund'
 import { useTicketTransfer } from '@/hooks/account/useTicketTransfer'
 import { buildMapsUrl, formatLongDate } from '@/lib/account/format'
 import {
@@ -13,6 +14,7 @@ import {
   getEventPhase,
   type EventTicketGroup,
 } from '@/lib/account/tickets'
+import { FlexibleCancelDialog } from './FlexibleCancelDialog'
 import { TicketQrSheet } from './TicketQrSheet'
 import { TransferConsentDialog } from './TransferConsentDialog'
 import { TicketWallet } from './TicketWallet'
@@ -30,6 +32,7 @@ export function EventTickets({ group, context }: EventTicketsProps) {
   const { now } = context
   const { transfer, stateFor, error: transferError, consentTicket, confirmConsent, cancelConsent } = useTicketTransfer()
   const [openId, setOpenId] = useState<string | null>(null)
+  const refund = useFlexibleRefund()
 
   const phase = getEventPhase(group.date, now)
   const days = getDaysUntilEvent(group.date, now)
@@ -77,6 +80,7 @@ export function EventTickets({ group, context }: EventTicketsProps) {
         transferStateFor={stateFor}
         onOpenQr={(ticket) => setOpenId(ticket.registration_id)}
         onTransfer={transfer}
+        onCancel={refund.requestCancel}
       />
 
       {transferError ? (
@@ -87,6 +91,13 @@ export function EventTickets({ group, context }: EventTicketsProps) {
 
       <TicketQrSheet tickets={qrTickets} openId={openId} context={context} onOpenChange={setOpenId} />
       <TransferConsentDialog ticket={consentTicket} onConfirm={confirmConsent} onCancel={cancelConsent} />
+      <FlexibleCancelDialog
+        ticket={refund.ticket}
+        pending={refund.pending}
+        error={refund.error}
+        onConfirm={refund.confirm}
+        onClose={refund.close}
+      />
     </div>
   )
 }

@@ -43,6 +43,7 @@ export async function GET() {
     .from('registrations')
     .select('*', { count: 'exact', head: true })
     .eq('event_id', featured.id)
+    .is('cancelled_at', null)
 
   const availableSpots = Math.max((featured.capacity || 0) - (totalRegistrations || 0), 0)
 

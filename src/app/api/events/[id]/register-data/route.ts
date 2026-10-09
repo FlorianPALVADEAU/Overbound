@@ -68,6 +68,7 @@ export async function GET(
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', event.id)
+      .is('cancelled_at', null)
 
     const availableSpots = Math.max((event.capacity || 0) - (totalRegistrations || 0), 0)
 
@@ -78,6 +79,7 @@ export async function GET(
       .select('ticket_id')
       .eq('event_id', event.id)
       .in('ticket_id', ticketIds)
+      .is('cancelled_at', null)
 
     // Count registrations per ticket
     const registrationCountsByTicket: Record<string, number> = {}

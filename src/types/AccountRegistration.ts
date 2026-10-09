@@ -16,6 +16,11 @@ export interface AccountRegistrationItem {
   race_format?: 'open' | 'ranked' | null
   /** The transfer fee was paid: the hand-over link can be shared. */
   transfer_unlocked?: boolean
+  /** Bib bought with the "billet flexible" option. */
+  flexible_refund?: boolean
+  /** Amount refunded if cancelled now; null when cancellation is not (or no longer) possible. */
+  flexible_refund_amount_cents?: number | null
+  flexible_refund_deadline?: string | null
   order_id?: string | null
   checked_in: boolean
   claim_status: string

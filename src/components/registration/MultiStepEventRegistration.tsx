@@ -130,6 +130,7 @@ export default function MultiStepEventRegistration({
     appliedPromos,
     eventPriceTiers,
     null,
+    participants.filter((participant) => participant.flexible === true).length,
   )
 
   const {

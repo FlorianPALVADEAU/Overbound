@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { CheckIcon, ChevronRightIcon, DownloadIcon, SendIcon, TicketIcon } from 'lucide-react'
+import { CheckIcon, ChevronRightIcon, DownloadIcon, RotateCcwIcon, SendIcon, TicketIcon } from 'lucide-react'
 import { AccountDataBoundary, type AuthenticatedAccountData } from '@/components/account/AccountDataBoundary'
 import { AccountScreen, Eyebrow } from '@/components/account/AccountScreen'
 import { Button } from '@/components/ui/button'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { useFlexibleRefund } from '@/hooks/account/useFlexibleRefund'
 import { useTicketTransfer, type TransferUiState } from '@/hooks/account/useTicketTransfer'
 import { formatLongDate } from '@/lib/account/format'
 import {
@@ -18,6 +19,7 @@ import {
 } from '@/lib/account/tickets'
 import { cn } from '@/lib/utils'
 import type { AccountRegistrationItem } from '@/types/AccountRegistration'
+import { FlexibleCancelDialog } from './FlexibleCancelDialog'
 import { TicketQrSheet } from './TicketQrSheet'
 import { TransferConsentDialog } from './TransferConsentDialog'
 import { bibLabel, createTicketContext, describeHolder, getTicketFacts, type TicketContext } from './ticketPresentation'
@@ -32,9 +34,10 @@ interface TicketRowProps {
   transferState: TransferUiState
   onOpenQr: (ticket: AccountRegistrationItem) => void
   onTransfer: (ticket: AccountRegistrationItem) => void
+  onCancel: (ticket: AccountRegistrationItem) => void
 }
 
-function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer }: TicketRowProps) {
+function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer, onCancel }: TicketRowProps) {
   const { now } = context
   const qrAvailable = canShowTicketQr(ticket, now)
   const transfer = getTransferState(ticket, now)
@@ -87,6 +90,16 @@ function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer }: Tic
           {transferState === 'copied' ? 'Copié' : transfer.unlocked ? 'Envoyer' : 'Transférer'}
         </button>
       ) : null}
+      {ticket.flexible_refund_amount_cents != null ? (
+        <button
+          type="button"
+          onClick={() => onCancel(ticket)}
+          className="flex min-h-11 items-center gap-1.5 self-center rounded-lg px-2 text-xs font-bold text-primary"
+        >
+          <RotateCcwIcon className="size-4" />
+          Rembourser
+        </button>
+      ) : null}
     </li>
   )
 }
@@ -94,6 +107,7 @@ function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer }: Tic
 function EventTicketList({ group, context }: { group: EventTicketGroup; context: TicketContext }) {
   const { now } = context
   const { transfer, stateFor, error: transferError, consentTicket, confirmConsent, cancelConsent } = useTicketTransfer()
+  const refund = useFlexibleRefund()
   const [openId, setOpenId] = useState<string | null>(() => {
     const requested = readRequestedTicketId()
     return group.tickets.some((ticket) => ticket.registration_id === requested) ? requested : null
@@ -117,6 +131,7 @@ function EventTicketList({ group, context }: { group: EventTicketGroup; context:
             transferState={stateFor(ticket.registration_id)}
             onOpenQr={(selected) => setOpenId(selected.registration_id)}
             onTransfer={transfer}
+            onCancel={refund.requestCancel}
           />
         ))}
       </ul>
@@ -146,6 +161,13 @@ function EventTicketList({ group, context }: { group: EventTicketGroup; context:
 
       <TicketQrSheet tickets={qrTickets} openId={openId} context={context} onOpenChange={setOpenId} />
       <TransferConsentDialog ticket={consentTicket} onConfirm={confirmConsent} onCancel={cancelConsent} />
+      <FlexibleCancelDialog
+        ticket={refund.ticket}
+        pending={refund.pending}
+        error={refund.error}
+        onConfirm={refund.confirm}
+        onClose={refund.close}
+      />
     </section>
   )
 }

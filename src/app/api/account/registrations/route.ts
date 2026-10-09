@@ -6,6 +6,7 @@ import { pickProviderAvatar } from '@/lib/account/avatar'
 import { processAccountEngagementEmails } from '@/lib/email/engagement'
 import { parseParticipantFromSignature } from '@/lib/account/participant'
 import { listUnlockedRegistrationIds } from '@/lib/tickets/ticketTransfers'
+import { getFlexibleRefundEligibility, type FlexibleRefundSubject } from '@/lib/tickets/flexibleTicket'
 import type { AccountParticipant } from '@/types/AccountRegistration'
 
 export const runtime = 'nodejs'
@@ -186,6 +187,8 @@ export async function GET(request: Request) {
         order_id: string | null
         requires_document: boolean
         document_types: string[]
+        cancelled: boolean
+        refund: FlexibleRefundSubject | null
       }
     >()
 
@@ -206,7 +209,15 @@ export async function GET(request: Request) {
           assignment_constraint_breached,
           bib_number,
           race_format,
-          order_id
+          order_id,
+          user_id,
+          guarantor_user_id,
+          checked_in,
+          flexible_refund,
+          paid_ticket_cents,
+          cancelled_at,
+          event:events(date),
+          order:orders(user_id)
         `,
         )
         .in('id', registrationIds)
@@ -234,6 +245,17 @@ export async function GET(request: Request) {
             order_id: row.order_id ?? null,
             requires_document: false,
             document_types: [],
+            cancelled: Boolean(row.cancelled_at),
+            refund: {
+              flexible_refund: Boolean(row.flexible_refund),
+              paid_ticket_cents: typeof row.paid_ticket_cents === 'number' ? row.paid_ticket_cents : null,
+              cancelled_at: row.cancelled_at ?? null,
+              checked_in: Boolean(row.checked_in),
+              user_id: row.user_id ?? null,
+              guarantor_user_id: row.guarantor_user_id ?? null,
+              order_user_id: firstRelation<{ user_id: string | null }>(row.order)?.user_id ?? null,
+              event_date: firstRelation<{ date: string | null }>(row.event)?.date ?? null,
+            },
           })
         }
       }
@@ -265,7 +287,7 @@ export async function GET(request: Request) {
 
     const now = new Date()
 
-    const registrationsWithQr = await Promise.all(
+    const allRegistrations = await Promise.all(
       (registrations ?? []).map(async (registration) => {
         const meta = registrationMetaMap.get(registration.registration_id) ?? {
           transfer_token: null,
@@ -284,7 +306,11 @@ export async function GET(request: Request) {
           order_id: null,
           requires_document: false,
           document_types: [],
+          cancelled: false,
+          refund: null,
         }
+
+        const refundEligibility = meta.refund ? getFlexibleRefundEligibility(meta.refund, user.id, now) : null
 
         const qrCodeDataUrl =
           registration.qr_code_token && registration.qr_code_token.length > 0
@@ -309,6 +335,10 @@ export async function GET(request: Request) {
           order_id: meta.order_id,
           participant: participantByRegistration.get(registration.registration_id) ?? null,
           transfer_unlocked: unlockedTransfers.has(registration.registration_id),
+          cancelled: meta.cancelled,
+          flexible_refund: Boolean(meta.refund?.flexible_refund),
+          flexible_refund_amount_cents: refundEligibility?.eligible ? refundEligibility.amountCents : null,
+          flexible_refund_deadline: refundEligibility?.eligible ? refundEligibility.deadline.toISOString() : null,
           requires_document: false,
           required_document_types: [],
           uploaded_document_types: [],
@@ -320,6 +350,9 @@ export async function GET(request: Request) {
         }
       }),
     )
+
+    // A bib cancelled under the flexible option is gone for its holder (the refund email is the trace).
+    const registrationsWithQr = allRegistrations.filter((registration) => !registration.cancelled)
 
     const totalEvents = registrationsWithQr.length
     const checkedInEvents = registrationsWithQr.filter((entry) => entry.checked_in).length

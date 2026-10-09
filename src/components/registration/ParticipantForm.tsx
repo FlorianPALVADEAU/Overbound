@@ -8,6 +8,7 @@ import { Ticket as TicketIcon } from 'lucide-react'
 import { isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 import { HEALTH_DATA_CONSENT_LABEL, needsHealthDataConsent } from '@/lib/legal/healthData'
+import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
 import type { EventTicket, Participant } from './types'
 
@@ -234,7 +235,27 @@ export default function ParticipantForm({
             </div>
           ) : null}
         </div>
+        <div className="flex items-start gap-3 rounded-lg border p-3 md:col-span-2">
+          <Checkbox
+            id={`${participant.id}-flexible`}
+            checked={participant.flexible === true}
+            onCheckedChange={(checked) => onFieldChange(participant.id, 'flexible', checked === true)}
+          />
+          <Label htmlFor={`${participant.id}-flexible`} className="space-y-1 font-normal leading-relaxed">
+            <span className="block text-sm font-semibold">
+              Billet flexible (+{formatFlexibleFee()})
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Annulable depuis ton espace jusqu&apos;à {FLEXIBLE_REFUND_DEADLINE_DAYS} jours avant l&apos;événement, sans
+              justificatif : le prix du billet est remboursé. Les frais de l&apos;option ne sont pas remboursés, et
+              l&apos;option est perdue si le billet est transféré.
+            </span>
+          </Label>
+        </div>
       </div>
     </div>
   )
 }
+
+const formatFlexibleFee = () =>
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(FLEXIBLE_TICKET_FEE_CENTS / 100)

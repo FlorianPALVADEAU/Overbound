@@ -17,6 +17,7 @@ describe('buildHandOverUpdate', () => {
       claim_status: 'claimed',
       is_affiliated: true,
       guarantor_user_id: 'old-user',
+      flexible_refund: false,
     })
   })
 })

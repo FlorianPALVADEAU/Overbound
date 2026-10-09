@@ -57,7 +57,7 @@ export const WAIVER_CLAUSES: readonly WaiverClause[] = [
   },
   {
     id: '9',
-    text: 'L’inscription à une activité de loisir à date déterminée est exclue du droit de rétractation (article L221-28 12° du Code de la consommation). L’inscription n’est pas remboursable à mon initiative. Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine dans les conditions des CGV. Le dossard peut être transféré jusqu’à la veille de l’événement, dans les conditions de l’article 8 des CGV.',
+    text: 'L’inscription à une activité de loisir à date déterminée est exclue du droit de rétractation (article L221-28 12° du Code de la consommation). L’inscription n’est pas remboursable à mon initiative, sauf si elle comporte l’option « billet flexible » (article 10 des CGV). Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine dans les conditions des CGV. Le dossard peut être transféré jusqu’à la veille de l’événement, dans les conditions de l’article 8 des CGV.',
   },
   {
     id: '10',

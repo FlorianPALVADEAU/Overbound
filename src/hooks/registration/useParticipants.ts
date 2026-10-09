@@ -35,6 +35,7 @@ export function useParticipants(
             emergencyContactPhone: '',
             medicalInfo: '',
             healthDataConsent: false,
+            flexible: false,
             licenseNumber: '',
             selectedWaveIndex: null,
           }))

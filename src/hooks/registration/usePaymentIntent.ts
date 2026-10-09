@@ -35,10 +35,13 @@ export function usePaymentIntent(
     setPricing(null)
   }, [])
 
-  // Reset when promo or upsells change
+  // Which bibs carry the flexible option changes the amount: a new PaymentIntent is needed.
+  const flexibleSelectionKey = participants.map((participant) => (participant.flexible ? '1' : '0')).join('')
+
+  // Reset when promo, upsells or the flexible option change
   useEffect(() => {
     resetPaymentIntent()
-  }, [appliedPromos, selectedUpsells, resetPaymentIntent])
+  }, [appliedPromos, selectedUpsells, flexibleSelectionKey, resetPaymentIntent])
 
   const ensurePaymentIntent = useCallback(async () => {
     if (!user) {
@@ -70,6 +73,7 @@ export function usePaymentIntent(
             firstName: p.firstName,
             lastName: p.lastName,
             selectedWaveIndex: p.selectedWaveIndex ?? null,
+            flexible: p.flexible === true,
           })),
           upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
             upsellId,

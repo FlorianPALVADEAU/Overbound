@@ -45,6 +45,8 @@ export type Participant = {
   medicalInfo: string
   /** Explicit consent (art. 9 GDPR) to keep `medicalInfo`; optional so drafts saved before it still load. */
   healthDataConsent?: boolean
+  /** "Billet flexible" option: refundable without justification until J-7. */
+  flexible?: boolean
   licenseNumber: string
   selectedWaveIndex?: number | null
 }
@@ -68,6 +70,8 @@ export type AppliedPromo = Pick<
 export interface PricingSummary {
   ticketTotal: number
   upsellTotal: number
+  /** Total of the "billet flexible" options; absent in pricing computed before the option existed. */
+  flexibleTotal?: number
   discountAmount: number
   totalDue: number
   currency: string
