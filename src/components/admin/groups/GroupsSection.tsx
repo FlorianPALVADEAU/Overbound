@@ -1,5 +1,6 @@
 'use client'
 
+import { UserAvatar } from '@/components/account/UserAvatar'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Crown, Clock, Trash2, RefreshCw, Plus, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -503,9 +504,12 @@ export function GroupsSection() {
                 const isCaptain = member.profile_id === editingGroup?.captain_id
                 return (
                   <div key={member.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border p-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{getMemberLabel(member)}</p>
-                      <p className="text-xs text-muted-foreground">{member.email ?? `Utilisateur #${member.profile_id.slice(0, 8)}`}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <UserAvatar src={member.avatar_url} name={member.full_name} email={member.email} className="size-9 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{getMemberLabel(member)}</p>
+                        <p className="text-xs text-muted-foreground">{member.email ?? `Utilisateur #${member.profile_id.slice(0, 8)}`}</p>
+                      </div>
                     </div>
                     {isCaptain ? (
                       <span className="text-xs text-amber-600 flex items-center gap-1"><Crown className="h-3.5 w-3.5" />Capitaine</span>

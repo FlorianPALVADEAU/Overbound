@@ -22,6 +22,7 @@ import SupportContactConfirmationEmail from '@/emails/SupportContactConfirmation
 import PopupSubscribeConfirmationEmail from '@/emails/PopupSubscribeConfirmationEmail'
 import LuckyWheelRewardEmail from '@/emails/LuckyWheelRewardEmail'
 import LuckyWheelReminderEmail from '@/emails/LuckyWheelReminderEmail'
+import { TransferHandedOverEmail, TransferReceivedEmail } from '@/emails/TicketTransferEmail'
 import { renderEmail } from '@/lib/email/render'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
@@ -628,4 +629,52 @@ export async function sendLuckyWheelReminderEmail(params: {
       : `N'oublie pas : ${params.rewardName}`,
     html,
   })
+}
+
+const SUPPORT_REPLY_TO = 'contact@overbound-race.com'
+
+/** Proof of a bib hand-over for the new holder, with a durable copy of the waiver they signed. */
+export async function sendTransferReceivedEmail(params: {
+  to: string
+  participantName: string
+  eventTitle: string
+  eventDate: string
+  signedAt: string
+  documentVersion: string
+  documentSha256: string
+  waiverText: string
+  accountUrl: string
+}) {
+  const { to, ...props } = params
+  const html = await renderEmail(TransferReceivedEmail(props))
+  const result = await resend.emails.send({
+    from: FORMAL_FROM,
+    to,
+    replyTo: SUPPORT_REPLY_TO,
+    subject: `Ton dossard ${params.eventTitle} est à ton nom`,
+    html,
+  })
+  if (result.error) throw new Error(result.error.message)
+  return result
+}
+
+/** Tells the former holder that the bib left their account. */
+export async function sendTransferHandedOverEmail(params: {
+  to: string
+  holderName: string
+  eventTitle: string
+  eventDate: string
+  claimedAt: string
+}) {
+  const { to, ...props } = params
+  const html = await renderEmail(TransferHandedOverEmail(props))
+  const result = await resend.emails.send({
+    from: FORMAL_FROM,
+    to,
+    replyTo: SUPPORT_REPLY_TO,
+    subject: `Ton billet ${params.eventTitle} a été récupéré`,
+    html,
+  })
+  if (result.error) throw new Error(result.error.message)
+  return result
 }

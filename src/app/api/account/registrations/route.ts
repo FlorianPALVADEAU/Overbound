@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
+import { pickProviderAvatar } from '@/lib/account/avatar'
 import { processAccountEngagementEmails } from '@/lib/email/engagement'
+import { parseParticipantFromSignature } from '@/lib/account/participant'
+import { listUnlockedRegistrationIds } from '@/lib/tickets/ticketTransfers'
+import type { AccountParticipant } from '@/types/AccountRegistration'
 
 export const runtime = 'nodejs'
 
@@ -57,14 +61,15 @@ export async function GET(request: Request) {
 
     const { data: profileData } = await admin
       .from('profiles')
-      .select('full_name, phone, date_of_birth, marketing_opt_in, role')
+      .select('full_name, phone, date_of_birth, marketing_opt_in, role, avatar_url')
       .eq('id', user.id)
       .single()
     const profile =
       profileData !== null
         ? {
             ...profileData,
-            avatar_url: (user.user_metadata as Record<string, any> | undefined)?.avatar_url ?? null,
+            // The stored photo (uploaded, or copied from Google at login) wins over raw provider metadata.
+            avatar_url: profileData.avatar_url ?? pickProviderAvatar(user.user_metadata),
           }
         : null
 
@@ -177,6 +182,8 @@ export async function GET(request: Request) {
         distance_min_km: number | null
         assignment_constraint_breached: boolean | null
         bib_number: number | null
+        race_format: 'open' | 'ranked' | null
+        order_id: string | null
         requires_document: boolean
         document_types: string[]
       }
@@ -197,7 +204,9 @@ export async function GET(request: Request) {
           distance_ideal_km,
           distance_min_km,
           assignment_constraint_breached,
-          bib_number
+          bib_number,
+          race_format,
+          order_id
         `,
         )
         .in('id', registrationIds)
@@ -221,12 +230,38 @@ export async function GET(request: Request) {
               ? row.assignment_constraint_breached
               : null,
             bib_number: typeof row.bib_number === 'number' ? row.bib_number : null,
+            race_format: row.race_format === 'open' || row.race_format === 'ranked' ? row.race_format : null,
+            order_id: row.order_id ?? null,
             requires_document: false,
             document_types: [],
           })
         }
       }
     }
+
+    // Identity typed at checkout lives in the signed waiver; read only the identity fields.
+    const participantByRegistration = new Map<string, AccountParticipant>()
+    if (registrationIds.length > 0) {
+      const { data: signatureRows, error: signatureError } = await admin
+        .from('registration_signatures')
+        .select('registration_id, signature_data')
+        .in('registration_id', registrationIds)
+        // Oldest first: a transfer's signature (newer) must win over the buyer's.
+        .order('signed_at', { ascending: true })
+
+      if (signatureError) {
+        console.error('[account api] registration signatures error', signatureError)
+      }
+      for (const row of (signatureRows ?? []) as Array<{ registration_id: string; signature_data: string | null }>) {
+        const participant = parseParticipantFromSignature(row.signature_data)
+        if (participant) participantByRegistration.set(row.registration_id, participant)
+      }
+    }
+
+    const unlockedTransfers = await listUnlockedRegistrationIds(admin, registrationIds).catch((unlockedError) => {
+      console.error('[account api] ticket transfers error', unlockedError)
+      return new Set<string>()
+    })
 
     const now = new Date()
 
@@ -245,6 +280,8 @@ export async function GET(request: Request) {
           distance_min_km: null,
           assignment_constraint_breached: null,
           bib_number: null,
+          race_format: null,
+          order_id: null,
           requires_document: false,
           document_types: [],
         }
@@ -268,6 +305,10 @@ export async function GET(request: Request) {
           distance_min_km: meta.distance_min_km,
           assignment_constraint_breached: meta.assignment_constraint_breached,
           bib_number: meta.bib_number,
+          race_format: meta.race_format,
+          order_id: meta.order_id,
+          participant: participantByRegistration.get(registration.registration_id) ?? null,
+          transfer_unlocked: unlockedTransfers.has(registration.registration_id),
           requires_document: false,
           required_document_types: [],
           uploaded_document_types: [],

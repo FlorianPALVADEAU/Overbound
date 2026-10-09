@@ -17,6 +17,11 @@ import {
 } from '@/lib/openSas'
 import { assignSelectedWaveToRegistration, SelectedWaveUnavailableError } from '@/lib/selectedWaveAssignment'
 import { markLuckyWheelAllocationRedeemed } from '@/lib/luckyWheel/redemption'
+import {
+  TICKET_TRANSFER_METADATA_TYPE,
+  unlockTransferFromCheckout,
+  type CompletedCheckoutSession,
+} from '@/lib/tickets/ticketTransfers'
 
 export const runtime = 'nodejs'
 
@@ -46,8 +51,24 @@ export async function POST(request: NextRequest) {
   const admin = supabaseAdmin()
 
   switch (event.type) {
+    case 'checkout.session.completed': {
+      // Paid ticket transfer (unlocks the hand-over link); other Checkout flows are not handled here.
+      const session = event.data.object as Stripe.Checkout.Session
+      if (session.metadata?.type !== TICKET_TRANSFER_METADATA_TYPE) break
+      try {
+        const outcome = await unlockTransferFromCheckout(admin, session as unknown as CompletedCheckoutSession)
+        console.log('Ticket transfer checkout processed:', session.id, outcome)
+      } catch (transferError) {
+        console.error('Error processing ticket transfer checkout:', transferError)
+        return new Response('Error processing ticket transfer', { status: 500 })
+      }
+      break
+    }
+
     case 'payment_intent.succeeded': {
       const paymentIntent = event.data.object as Stripe.PaymentIntent
+      // A transfer fee payment carries no registration data; its Checkout Session event does the work.
+      if (paymentIntent.metadata?.type === TICKET_TRANSFER_METADATA_TYPE) break
       let metadata = paymentIntent.metadata || {}
       let sessionCustomerEmail: string | null = null
 

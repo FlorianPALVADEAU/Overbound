@@ -22,7 +22,13 @@ export interface AdminGroupMemberRow {
 
 export interface HydratedAdminGroup extends AdminGroupRow {
   anchor_initialized_from_profile_name: string | null
-  members: Array<AdminGroupMemberRow & { full_name: string | null; email: string | null }>
+  members: Array<
+    AdminGroupMemberRow & {
+      full_name: string | null
+      email: string | null
+      avatar_url: string | null
+    }
+  >
 }
 
 export interface AdminAuthUserLike {
@@ -33,10 +39,11 @@ export interface AdminAuthUserLike {
 export function hydrateAdminGroups(
   groupsRows: readonly AdminGroupRow[] = [],
   membersRows: readonly AdminGroupMemberRow[] = [],
-  profilesRows: ReadonlyArray<{ id: string; full_name: string | null }> = [],
+  profilesRows: ReadonlyArray<{ id: string; full_name: string | null; avatar_url?: string | null }> = [],
   authUsers: readonly AdminAuthUserLike[] = [],
 ): { groups: HydratedAdminGroup[]; memberProfileIds: string[] } {
   const profileMap = new Map(profilesRows.map((profile) => [profile.id, profile.full_name ?? null]))
+  const avatarMap = new Map(profilesRows.map((profile) => [profile.id, profile.avatar_url ?? null]))
   const emailMap = new Map(authUsers.map((user) => [user.id, user.email ?? null]))
   const membersByGroup = new Map<string, HydratedAdminGroup['members']>()
 
@@ -46,6 +53,7 @@ export function hydrateAdminGroups(
       ...member,
       full_name: profileMap.get(member.profile_id) ?? null,
       email: emailMap.get(member.profile_id) ?? null,
+      avatar_url: avatarMap.get(member.profile_id) ?? null,
     })
     membersByGroup.set(member.group_id, groupMembers)
   }

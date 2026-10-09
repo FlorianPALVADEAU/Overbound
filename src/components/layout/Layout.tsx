@@ -2,6 +2,7 @@
 
 import { ReactNode, useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import { usePathname } from 'next/navigation'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PromotionsBanner } from './PromotionsBanner'
@@ -25,6 +26,8 @@ const PopupPromotion = dynamic(
 export function Layout({ children }: LayoutProps) {
   const { data, isLoading } = useSession()
   const queryClient = useQueryClient()
+  // The account area has its own fixed bottom navigation; the site footer would sit underneath it on mobile.
+  const isAccountArea = usePathname()?.startsWith('/account') ?? false
   const supabase = createSupabaseBrowser()
 
   const seedSessionCache = useCallback((session: Session | null) => {
@@ -120,7 +123,9 @@ export function Layout({ children }: LayoutProps) {
         />
         <PromotionsBanner />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <div className={isAccountArea ? 'hidden md:block' : undefined}>
+          <Footer />
+        </div>
         <CookieConsentBanner />
         {/* Popup promotion for non-authenticated users */}
         <PopupPromotion isAuthenticated={!!data?.user} />

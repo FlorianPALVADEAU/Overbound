@@ -5,228 +5,134 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { Loader2, CheckCircle2, XCircle, Mail, Bell, Settings } from 'lucide-react'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 import { NOTIFICATION_PREFERENCE_TOGGLES, DIGEST_FREQUENCY_OPTIONS } from '@/types/NotificationPreferences'
 import type { DigestFrequency } from '@/types/NotificationPreferences'
 
-interface PreferencesFormProps {
-  userId: string
-  userName: string
-  initialPreferences: {
-    marketing_opt_in: boolean
-  }
+type LocalPreferences = {
+  events_announcements: boolean
+  price_alerts: boolean
+  news_blog: boolean
+  volunteers_opportunities: boolean
+  partner_offers: boolean
+  digest_frequency: DigestFrequency
 }
 
-export default function PreferencesForm({
-  userId,
-  userName,
-  initialPreferences,
-}: PreferencesFormProps) {
+const DEFAULT_PREFERENCES: LocalPreferences = {
+  events_announcements: false,
+  price_alerts: false,
+  news_blog: false,
+  volunteers_opportunities: false,
+  partner_offers: false,
+  digest_frequency: 'immediate',
+}
+
+const SAVED_FEEDBACK_MS = 3000
+
+/** Marketing email choices. Transactional emails (tickets, security) are always sent. */
+export default function PreferencesForm() {
   const router = useRouter()
   const { preferences, isLoading: isFetchingPrefs, fetchPreferences, updatePreferences } = useNotificationPreferences()
 
-  const [localPreferences, setLocalPreferences] = useState({
-    events_announcements: false,
-    price_alerts: false,
-    news_blog: false,
-    volunteers_opportunities: false,
-    partner_offers: false,
-    digest_frequency: 'immediate' as DigestFrequency,
-  })
+  const [local, setLocal] = useState<LocalPreferences>(DEFAULT_PREFERENCES)
+  const [isSaving, setIsSaving] = useState(false)
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState('')
-
-  // Fetch preferences on mount
   useEffect(() => {
     fetchPreferences()
   }, [fetchPreferences])
 
-  // Update local state when preferences are fetched
   useEffect(() => {
-    if (preferences) {
-      setLocalPreferences({
-        events_announcements: preferences.events_announcements,
-        price_alerts: preferences.price_alerts,
-        news_blog: preferences.news_blog,
-        volunteers_opportunities: preferences.volunteers_opportunities,
-        partner_offers: preferences.partner_offers,
-        digest_frequency: preferences.digest_frequency,
-      })
-    }
+    if (!preferences) return
+    setLocal({
+      events_announcements: preferences.events_announcements,
+      price_alerts: preferences.price_alerts,
+      news_blog: preferences.news_blog,
+      volunteers_opportunities: preferences.volunteers_opportunities,
+      partner_offers: preferences.partner_offers,
+      digest_frequency: preferences.digest_frequency,
+    })
   }, [preferences])
 
-  const handleTogglePreference = (key: keyof typeof localPreferences, value: boolean) => {
-    if (key === 'digest_frequency') return // Don't allow boolean for digest_frequency
+  const hasChanges = preferences
+    ? (Object.keys(local) as Array<keyof LocalPreferences>).some((key) => local[key] !== preferences[key])
+    : false
 
-    setLocalPreferences((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
-
-  const handleDigestFrequencyChange = (value: DigestFrequency) => {
-    setLocalPreferences((prev) => ({
-      ...prev,
-      digest_frequency: value,
-    }))
-  }
-
-  const handleSave = async () => {
-    setIsLoading(true)
-    setSaveStatus('idle')
-    setErrorMessage('')
-
+  const save = async () => {
+    setIsSaving(true)
+    setStatus(null)
     try {
-      const result = await updatePreferences(localPreferences)
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update preferences')
-      }
-
-      setSaveStatus('success')
+      const result = await updatePreferences(local)
+      if (!result.success) throw new Error(result.error || 'Impossible d’enregistrer tes préférences.')
+      setStatus({ type: 'success', message: 'Préférences enregistrées.' })
       router.refresh()
-
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setSaveStatus('idle')
-      }, 3000)
+      setTimeout(() => setStatus(null), SAVED_FEEDBACK_MS)
     } catch (error) {
       console.error('Save preferences error:', error)
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Une erreur est survenue'
-      )
-      setSaveStatus('error')
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Une erreur est survenue.' })
     } finally {
-      setIsLoading(false)
+      setIsSaving(false)
     }
   }
 
-  const hasChanges = preferences
-    ? Object.keys(localPreferences).some(
-        (key) => localPreferences[key as keyof typeof localPreferences] !== preferences[key as keyof typeof preferences]
-      )
-    : false
-
-  const anyMarketingEnabled =
-    localPreferences.events_announcements ||
-    localPreferences.price_alerts ||
-    localPreferences.news_blog ||
-    localPreferences.volunteers_opportunities ||
-    localPreferences.partner_offers
+  const disabled = isSaving || isFetchingPrefs
 
   return (
     <div className="space-y-6">
-      {/* Marketing preferences toggles */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Mail className="w-5 h-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">Types de communications</h3>
-        </div>
-
+      <ul>
         {NOTIFICATION_PREFERENCE_TOGGLES.map((toggle) => (
-          <div
-            key={toggle.key}
-            className="flex items-start justify-between space-x-4 p-4 border rounded-lg hover:bg-muted/30 transition-colors"
-          >
-            <div className="flex-1 space-y-1">
-              <Label
-                htmlFor={toggle.key}
-                className="text-base font-medium cursor-pointer"
-              >
+          <li key={toggle.key} className="flex min-h-16 items-center justify-between gap-4 border-t border-border py-3 first:border-t-0">
+            <div className="min-w-0">
+              <Label htmlFor={toggle.key} className="text-base font-semibold">
                 {toggle.label}
               </Label>
-              <p className="text-sm text-muted-foreground">
-                {toggle.description}
-              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{toggle.description}</p>
             </div>
             <Switch
               id={toggle.key}
-              checked={localPreferences[toggle.key]}
-              onCheckedChange={(checked) => handleTogglePreference(toggle.key, checked)}
-              disabled={isLoading || isFetchingPrefs}
+              checked={local[toggle.key]}
+              onCheckedChange={(checked) => setLocal((previous) => ({ ...previous, [toggle.key]: checked }))}
+              disabled={disabled}
             />
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <Separator />
-
-      {/* Transactional emails info */}
-      <div className="p-4 border rounded-lg bg-muted/30">
-        <div className="flex items-center gap-2 mb-2">
-          <Settings className="w-4 h-4 text-muted-foreground" />
-          <Label className="text-base font-semibold">
-            Emails transactionnels
-          </Label>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Vous continuerez toujours à recevoir les emails importants liés à vos inscriptions :
-        </p>
-        <ul className="text-sm text-muted-foreground mt-2 ml-6 list-disc space-y-1">
-          <li>Confirmations d'inscription aux événements</li>
-          <li>Billets et informations pratiques</li>
-          <li>Notifications de sécurité du compte</li>
-        </ul>
-      </div>
-
-      {/* Save status messages */}
-      {saveStatus === 'success' && (
-        <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 dark:text-green-200">
-            Vos préférences ont été enregistrées avec succès !
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {saveStatus === 'error' && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            {errorMessage || 'Une erreur est survenue lors de la sauvegarde.'}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Save button */}
-      <div className="flex gap-3">
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges || isLoading || isFetchingPrefs}
-          className="flex-1"
+      <div className="space-y-2 border-t border-border pt-5">
+        <Label className="text-base font-semibold">Fréquence</Label>
+        <Select
+          value={local.digest_frequency}
+          onValueChange={(value) => setLocal((previous) => ({ ...previous, digest_frequency: value as DigestFrequency }))}
+          disabled={disabled}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Enregistrement...
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Enregistrer les modifications
-            </>
-          )}
-        </Button>
+          <SelectTrigger className="h-12 w-full text-base">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DIGEST_FREQUENCY_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Unsubscribe all option */}
-      <div className="pt-4 border-t">
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium text-foreground mb-2">
-            Vous souhaitez vous désabonner de tous les emails marketing ?
-          </p>
-          <p>
-            Vous pouvez désactiver toutes les options ci-dessus et choisir "Jamais" comme fréquence,
-            ou utiliser le lien de désabonnement présent dans chaque email que nous vous envoyons.
-          </p>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Tu recevras toujours les emails liés à tes inscriptions : confirmations, billets, infos pratiques, sécurité du compte.
+        Chaque email marketing contient aussi un lien de désinscription.
+      </p>
+
+      {status ? (
+        <p role="status" className={status.type === 'error' ? 'text-sm text-destructive' : 'text-sm font-medium text-primary'}>
+          {status.message}
+        </p>
+      ) : null}
+
+      <Button onClick={save} disabled={!hasChanges || disabled} className="h-12 w-full text-base font-bold">
+        {isSaving ? 'Enregistrement…' : 'Enregistrer'}
+      </Button>
     </div>
   )
 }

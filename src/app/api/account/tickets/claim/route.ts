@@ -1,7 +1,18 @@
+import { randomUUID } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { isTicketTransferAllowed } from '@/lib/tickets/transferPolicy'
+import { consumeTransfer, isTransferUnlocked } from '@/lib/tickets/ticketTransfers'
+import { parseTransferToken } from '@/lib/tickets/transferToken'
+import { notifyTransferParties, redactFormerHolderWaiver } from '@/lib/tickets/transferAftermath'
+import { fingerprintWaiver } from '@/lib/legal/waiverDocument'
+import {
+  buildHandOverUpdate,
+  buildTransferSignatureRecord,
+  claimSubmissionSchema,
+  isAdultAt,
+} from '@/lib/tickets/transferClaim'
 
 export const runtime = 'nodejs'
 
@@ -21,7 +32,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
     }
 
-    const token = request.nextUrl.searchParams.get('token')?.trim()
+    const token = parseTransferToken(request.nextUrl.searchParams.get('token'))
     if (!token) {
       return NextResponse.json({ error: 'Lien invalide.' }, { status: 400 })
     }
@@ -62,6 +73,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    if (!(await isTransferUnlocked(admin, registration.id))) {
+      return NextResponse.json(
+        { error: 'Ce lien n’est pas encore actif : le titulaire doit d’abord régler le transfert.' },
+        { status: 403 },
+      )
+    }
+
     return NextResponse.json({ registration: { ...registration, event, ticket } })
   } catch (error) {
     console.error('[claim] detail unexpected error', error)
@@ -80,11 +98,17 @@ const handlePost = async (request: NextRequest) => {
       return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
     }
 
-    const body = await request.json().catch(() => ({}))
-    const token = typeof body?.token === 'string' ? body.token.trim() : ''
-
+    const parsed = claimSubmissionSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Informations ou signature incomplètes.' }, { status: 400 })
+    }
+    const submission = parsed.data
+    const token = parseTransferToken(submission.token)
     if (!token) {
       return NextResponse.json({ error: 'Lien invalide.' }, { status: 400 })
+    }
+    if (!isAdultAt(submission.participant.birthDate, new Date())) {
+      return NextResponse.json({ error: 'Le participant doit être majeur (18 ans révolus).' }, { status: 422 })
     }
 
     const admin = supabaseAdmin()
@@ -97,10 +121,13 @@ const handlePost = async (request: NextRequest) => {
           user_id,
           transfer_token,
           claim_status,
+          email,
+          qr_code_token,
           is_affiliated,
+          guarantor_user_id,
           event_id,
           ticket_id,
-          event:events(date)
+          event:events(title, date)
         `,
       )
       .eq('transfer_token', token)
@@ -132,22 +159,87 @@ const handlePost = async (request: NextRequest) => {
       )
     }
 
-    const { error: updateError } = await admin
+    if (!(await isTransferUnlocked(admin, registration.id))) {
+      return NextResponse.json(
+        { error: 'Ce lien n’est pas encore actif : le titulaire doit d’abord régler le transfert.' },
+        { status: 403 },
+      )
+    }
+
+    // Matching on the token makes the hand-over atomic: only one concurrent claimant can win.
+    const { data: transferred, error: updateError } = await admin
       .from('registrations')
-      .update({
-        user_id: user.id,
-        email: user.email,
-        transfer_token: null,
-        claim_status: 'claimed',
-        is_affiliated: true,
-        guarantor_user_id: registration.user_id,
-      })
+      .update(
+        buildHandOverUpdate({
+          newHolderId: user.id,
+          newHolderEmail: user.email,
+          previousHolderId: registration.user_id,
+          newQrToken: randomUUID(),
+        }),
+      )
       .eq('id', registration.id)
+      .eq('transfer_token', token)
+      .select('id')
 
     if (updateError) {
       console.error('[claim] update error', updateError)
       return NextResponse.json({ error: 'Impossible de transférer ce billet.' }, { status: 500 })
     }
+    if (!transferred || transferred.length === 0) {
+      return NextResponse.json({ error: 'Ce lien a déjà été utilisé.' }, { status: 409 })
+    }
+
+    // The buyer's waiver does not cover the new holder: store a fresh one. If that fails, give the bib back.
+    const now = new Date()
+    const document = fingerprintWaiver()
+    const { error: signatureError } = await admin.from('registration_signatures').insert(
+      buildTransferSignatureRecord(submission, {
+        registrationId: registration.id,
+        signerUserId: user.id,
+        signerEmail: user.email,
+        previousHolderId: registration.user_id,
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+        userAgent: request.headers.get('user-agent'),
+        now,
+        document,
+      }),
+    )
+    if (signatureError) {
+      console.error('[claim] signature insert error', signatureError)
+      await admin
+        .from('registrations')
+        .update({
+          user_id: registration.user_id,
+          email: registration.email,
+          qr_code_token: registration.qr_code_token,
+          transfer_token: token,
+          claim_status: registration.claim_status,
+          is_affiliated: registration.is_affiliated,
+          guarantor_user_id: registration.guarantor_user_id,
+        })
+        .eq('id', registration.id)
+      return NextResponse.json({ error: 'Impossible d’enregistrer ta signature. Réessaie.' }, { status: 500 })
+    }
+
+    await consumeTransfer(admin, registration.id, user.id).catch((consumeError) => {
+      console.error('[claim] could not mark transfer as claimed', consumeError)
+    })
+
+    await redactFormerHolderWaiver(admin, registration.id, now).catch((redactError) => {
+      console.error('[claim] could not redact the former holder safety data', redactError)
+    })
+
+    await notifyTransferParties({
+      admin,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? request.nextUrl.origin,
+      event: { title: event?.title ?? null, date: event?.date ?? null },
+      newHolder: { email: user.email, firstName: submission.participant.firstName, lastName: submission.participant.lastName },
+      formerHolder: { userId: registration.user_id, fallbackEmail: registration.email },
+      document,
+      now,
+    }).catch((notifyError) => {
+      console.error('[claim] could not notify the transfer parties', notifyError)
+    })
 
     return NextResponse.json({ success: true, registrationId: registration.id })
   } catch (error) {

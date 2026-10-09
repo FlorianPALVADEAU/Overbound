@@ -171,7 +171,7 @@ export async function GET(request: Request) {
     const { data: profilesRows } = profileIds.length
       ? await admin
           .from('profiles')
-          .select('id, full_name')
+          .select('id, full_name, avatar_url')
           .in('id', profileIds)
       : { data: [] }
 
