@@ -11,6 +11,8 @@ import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useParticipants } from '@/hooks/registration/useParticipants'
+import { useStickyWhenFits } from '@/hooks/registration/useStickyWhenFits'
+import { cn } from '@/lib/utils'
 import { useUpsells } from '@/hooks/registration/useUpsells'
 import { usePromoCode } from '@/hooks/registration/usePromoCode'
 import { useRegistrationPricing } from '@/hooks/registration/useRegistrationPricing'
@@ -93,6 +95,8 @@ export default function MultiStepEventRegistration({
     suppressEmptyParticipantsSyncRef,
   )
   const needsGroupAttestation = participants.length > 1
+  // 80px = lg:top-20: the summary column sticks only while it fits on screen (no nested scrollbar).
+  const summaryColumn = useStickyWhenFits<HTMLElement>(80)
 
   const {
     selectedUpsells,
@@ -604,7 +608,10 @@ export default function MultiStepEventRegistration({
           </RegistrationSection>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+        <aside
+          ref={summaryColumn.ref}
+          className={cn('min-w-0 space-y-4 lg:self-start', summaryColumn.fits && 'lg:sticky lg:top-20')}
+        >
           <OrderSummarySidebar
             selectedTicketSlots={selectedTicketSlots}
             ticketMap={ticketMap}
