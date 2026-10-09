@@ -43,6 +43,8 @@ export type Participant = {
   emergencyContactName: string
   emergencyContactPhone: string
   medicalInfo: string
+  /** Explicit consent (art. 9 GDPR) to keep `medicalInfo`; optional so drafts saved before it still load. */
+  healthDataConsent?: boolean
   licenseNumber: string
   selectedWaveIndex?: number | null
 }

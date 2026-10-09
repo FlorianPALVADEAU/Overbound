@@ -8,7 +8,7 @@ interface ParticipantsStepProps {
   eventId: string
   participants: Participant[]
   ticketMap: Record<string, EventTicket>
-  onFieldChange: (participantId: string, field: keyof Participant, value: string) => void
+  onFieldChange: (participantId: string, field: keyof Participant, value: string | boolean) => void
   onWaveSelect: (participantId: string, waveIndex: number | null) => void
   showErrors: boolean
   groupBanner?: ReactNode

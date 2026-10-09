@@ -27,6 +27,8 @@ export default function TicketEmail({
   qrUrl: string
   manageUrl: string
 }) {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://overbound-race.com'
+
   return (
     <EmailLayout preview={`Ton billet OverBound — ${eventTitle}`}>
       {/* Hero Image */}
@@ -128,11 +130,20 @@ export default function TicketEmail({
           </Text>
         ) : null}
         <Text style={styles.footerText}>
-          Règlement officiel Overbound 2026 :{' '}
-          <Link href={OFFICIAL_RULEBOOK_PDF_PATH} style={styles.link}>
-            consulter le PDF
+          Ta participation est soumise à la décharge de responsabilité signée lors de la commande. Si quelqu&apos;un
+          t&apos;a inscrit, il l&apos;a acceptée en ton nom : lis-la avant l&apos;événement.{' '}
+          <Link href={`${siteUrl}/decharge`} style={styles.link}>
+            Lire la décharge
           </Link>
-          .
+          {' · '}
+          <Link href={`${siteUrl}${OFFICIAL_RULEBOOK_PDF_PATH}`} style={styles.link}>
+            Règlement officiel (PDF)
+          </Link>
+          {' · '}
+          <Link href={`${siteUrl}/cgv`} style={styles.link}>
+            CGV
+          </Link>
+          . Une pièce d&apos;identité te sera demandée au retrait du dossard.
         </Text>
       </Section>
     </EmailLayout>

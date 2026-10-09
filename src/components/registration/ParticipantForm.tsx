@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -6,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Ticket as TicketIcon } from 'lucide-react'
 import { isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
+import { HEALTH_DATA_CONSENT_LABEL, needsHealthDataConsent } from '@/lib/legal/healthData'
 import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
 import type { EventTicket, Participant } from './types'
 
@@ -14,7 +16,7 @@ interface ParticipantFormProps {
   participant: Participant
   index: number
   ticket: EventTicket | undefined
-  onFieldChange: (participantId: string, field: keyof Participant, value: string) => void
+  onFieldChange: (participantId: string, field: keyof Participant, value: string | boolean) => void
   onWaveSelect: (participantId: string, waveIndex: number | null) => void
   showErrors: boolean
   groupAnchor: { waveIndex: number; startTime: string } | null
@@ -218,6 +220,19 @@ export default function ParticipantForm({
             onChange={(e) => onFieldChange(participant.id, 'medicalInfo', e.target.value)}
             placeholder="Allergies, traitement en cours, etc."
           />
+          {needsHealthDataConsent(participant.medicalInfo) ? (
+            <div className="flex items-start gap-3 pt-1">
+              <Checkbox
+                id={`${participant.id}-health-consent`}
+                checked={participant.healthDataConsent === true}
+                onCheckedChange={(checked) => onFieldChange(participant.id, 'healthDataConsent', checked === true)}
+                className={showErrors && !participant.healthDataConsent ? 'border-destructive' : ''}
+              />
+              <Label htmlFor={`${participant.id}-health-consent`} className="text-xs font-normal leading-relaxed text-muted-foreground">
+                {HEALTH_DATA_CONSENT_LABEL} Sans cet accord, ces informations ne sont pas enregistrées.
+              </Label>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

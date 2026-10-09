@@ -8,6 +8,8 @@ import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import * as QRCode from 'qrcode'
 import { REGULATION_VERSION } from '@/constants/registration'
+import { keepHealthDataWithConsent } from '@/lib/legal/healthData'
+import { fingerprintWaiver } from '@/lib/legal/waiverDocument'
 import { captureException } from '@/lib/sentry'
 import {
   formatWaveStartTime,
@@ -48,6 +50,7 @@ const participantSchema = z.object({
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
   medicalInfo: z.string().optional(),
+  healthDataConsent: z.boolean().optional(),
   licenseNumber: z.string().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
 })
@@ -68,7 +71,12 @@ const createRegistrationBodySchema = z.object({
   signatureImage: z.string().nullable().default(null),
   signatureMetadata: z.record(z.string(), z.any()).default({}),
   disclaimer: z
-    .object({ read: z.boolean(), accepted: z.boolean(), rulebookAccepted: z.boolean().optional() })
+    .object({
+      read: z.boolean(),
+      accepted: z.boolean(),
+      rulebookAccepted: z.boolean().optional(),
+      groupAttestation: z.boolean().optional(),
+    })
     .default({ read: false, accepted: false, rulebookAccepted: false }),
   freeOrderMetadata: z.record(z.string(), z.string()).nullable().optional(),
 })
@@ -612,6 +620,8 @@ export async function POST(request: NextRequest) {
       createdRegistrations.push({ registration, ticket, participant, participantName })
 
       if (signatureImage) {
+        // Text actually served by this deployment; stored so the signed wording can be proven later.
+        const signedDocument = fingerprintWaiver()
         const signatureRecord = {
           registration_id: registration.id,
           regulation_version: typeof signatureMetadata?.regulationVersion === 'string'
@@ -630,10 +640,12 @@ export async function POST(request: NextRequest) {
         birthDate: participant.birthDate,
         emergencyContactName: participant.emergencyContactName,
         emergencyContactPhone: participant.emergencyContactPhone,
-        medicalInfo: participant.medicalInfo,
+        medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
+        healthDataConsent: participant.healthDataConsent === true,
         licenseNumber: participant.licenseNumber,
       },
             disclaimer,
+            document: signedDocument,
           }),
         }
 

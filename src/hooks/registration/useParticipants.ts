@@ -34,6 +34,7 @@ export function useParticipants(
             emergencyContactName: '',
             emergencyContactPhone: '',
             medicalInfo: '',
+            healthDataConsent: false,
             licenseNumber: '',
             selectedWaveIndex: null,
           }))
@@ -68,7 +69,7 @@ export function useParticipants(
   }, [user])
 
   const handleParticipantChange = useCallback(
-    (participantId: string, field: keyof Participant, value: string) => {
+    (participantId: string, field: keyof Participant, value: string | boolean) => {
       setParticipants((prev) =>
         prev.map((p) => {
           if (p.id !== participantId) return p

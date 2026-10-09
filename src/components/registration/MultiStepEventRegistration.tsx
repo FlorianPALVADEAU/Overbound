@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { useRouter } from 'next/navigation'
 import { REGULATION_VERSION, REGISTRATION_STEPS } from '@/constants/registration'
+import { needsHealthDataConsent } from '@/lib/legal/healthData'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 
@@ -60,6 +61,8 @@ export default function MultiStepEventRegistration({
   const [disclaimerRead, setDisclaimerRead] = useState(false)
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
   const [rulebookAccepted, setRulebookAccepted] = useState(false)
+  // A buyer registering other people vouches for their acceptance of the waiver (porte-fort, art. 1204 C. civ.).
+  const [groupAttestation, setGroupAttestation] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
   const [showInlineAuth, setShowInlineAuth] = useState(false)
@@ -89,6 +92,7 @@ export default function MultiStepEventRegistration({
     user,
     suppressEmptyParticipantsSyncRef,
   )
+  const needsGroupAttestation = participants.length > 1
 
   const {
     selectedUpsells,
@@ -198,12 +202,17 @@ export default function MultiStepEventRegistration({
         participant.birthDate.trim() &&
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
+        (!needsHealthDataConsent(participant.medicalInfo) || participant.healthDataConsent === true) &&
         (usesWaveSelection ? hasWaveSelectionIfNeeded : true)
       )
     })
 
   const isConfirmationStepValid =
-    disclaimerRead && disclaimerAccepted && rulebookAccepted && Boolean(signatureImage)
+    disclaimerRead &&
+    disclaimerAccepted &&
+    rulebookAccepted &&
+    (!needsGroupAttestation || groupAttestation) &&
+    Boolean(signatureImage)
 
   // Draft sync still persists a step index for restore purposes even though
   // the UI no longer gates on it; keep it stable at 0.
@@ -317,11 +326,12 @@ export default function MultiStepEventRegistration({
       return
     }
 
-    if (!disclaimerRead || !disclaimerAccepted || !rulebookAccepted || !signatureImage) {
+    const groupAttestationMissing = needsGroupAttestation && !groupAttestation
+    if (!disclaimerRead || !disclaimerAccepted || !rulebookAccepted || groupAttestationMissing || !signatureImage) {
       setShowValidationErrors(true)
       setSubmissionMessage({
         type: 'error',
-        text: !disclaimerRead || !disclaimerAccepted || !rulebookAccepted
+        text: !disclaimerRead || !disclaimerAccepted || !rulebookAccepted || groupAttestationMissing
           ? 'Merci de lire et accepter la décharge ainsi que le règlement officiel.'
           : 'Merci de dessiner votre signature pour valider.',
       })
@@ -356,6 +366,7 @@ export default function MultiStepEventRegistration({
               emergencyContactName: p.emergencyContactName,
               emergencyContactPhone: p.emergencyContactPhone,
               medicalInfo: p.medicalInfo,
+              healthDataConsent: p.healthDataConsent === true,
               licenseNumber: p.licenseNumber,
             })),
             upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
@@ -374,6 +385,7 @@ export default function MultiStepEventRegistration({
               read: disclaimerRead,
               accepted: disclaimerAccepted,
               rulebookAccepted,
+              groupAttestation: needsGroupAttestation ? groupAttestation : undefined,
             },
             freeOrderMetadata: 'freeOrderMetadata' in paymentData ? paymentData.freeOrderMetadata : {},
           }
@@ -434,6 +446,7 @@ export default function MultiStepEventRegistration({
         emergencyContactName: p.emergencyContactName,
         emergencyContactPhone: p.emergencyContactPhone,
         medicalInfo: p.medicalInfo,
+        healthDataConsent: p.healthDataConsent === true,
         licenseNumber: p.licenseNumber,
       })),
       upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
@@ -454,6 +467,7 @@ export default function MultiStepEventRegistration({
         read: disclaimerRead,
         accepted: disclaimerAccepted,
         rulebookAccepted,
+        groupAttestation: needsGroupAttestation ? groupAttestation : undefined,
       },
     }
 
@@ -583,6 +597,8 @@ export default function MultiStepEventRegistration({
               onDisclaimerAcceptedChange={setDisclaimerAccepted}
               onRulebookAcceptedChange={setRulebookAccepted}
               onSignatureChange={setSignatureImage}
+              groupAttestation={needsGroupAttestation ? groupAttestation : undefined}
+              onGroupAttestationChange={setGroupAttestation}
             />
           </RegistrationSection>
         </div>
