@@ -86,7 +86,7 @@ const WhichDistanceForMe: React.FC = () => {
                             <h3 className="text-xl font-semibold mb-4">Prêt à découvrir votre défi ?</h3>
                             <Button
                                 size="lg"
-                                className="w-full h-12 text-base transition-all duration-300 hover:scale-105"
+                                className="w-full h-12 whitespace-normal text-base transition-all duration-300 hover:scale-105"
                                 onClick={() => setFormStarted(true)}
                             >
                                 Commencer le questionnaire

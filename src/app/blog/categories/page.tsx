@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
-const heroImage = `${siteUrl}/images/hero_header_poster.jpg`
+const heroImage = `${siteUrl}/images/images/overbound-og-cover.jpg`
 
 export const metadata: Metadata = {
   title: 'Catégories Blog OCR | Course à Obstacles Paris 2026 - Overbound Race',
@@ -50,7 +50,7 @@ export default async function BlogCategoriesIndex() {
       <section className="relative isolate overflow-hidden py-14 sm:py-16">
         <div className="absolute inset-0">
           <Image
-            src="/images/hero_header_poster.jpg"
+            src="/images/images/overbound-og-cover.jpg"
             alt="Catégories du blog OverBound"
             fill
             sizes="100vw"

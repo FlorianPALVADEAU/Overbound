@@ -14,6 +14,7 @@ const {
   sendMetaCapiEventMock,
   markResendContactAsRegisteredMock,
   assignOpenWaveToRegistrationMock,
+  unlockTransferFromCheckoutMock,
 } = vi.hoisted(() => ({
   constructEventMock: vi.fn(),
   checkoutSessionsListMock: vi.fn(),
@@ -27,6 +28,7 @@ const {
   sendMetaCapiEventMock: vi.fn(),
   markResendContactAsRegisteredMock: vi.fn(),
   assignOpenWaveToRegistrationMock: vi.fn(),
+  unlockTransferFromCheckoutMock: vi.fn(),
 }))
 
 vi.mock('stripe', () => ({
@@ -72,6 +74,11 @@ vi.mock('@/lib/openSas', async () => {
     ...actual,
     assignOpenWaveToRegistration: assignOpenWaveToRegistrationMock,
   }
+})
+
+vi.mock('@/lib/tickets/ticketTransfers', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/tickets/ticketTransfers')>('@/lib/tickets/ticketTransfers')
+  return { ...actual, unlockTransferFromCheckout: unlockTransferFromCheckoutMock }
 })
 
 process.env.STRIPE_SECRET_KEY = 'sk_test_xxx'
@@ -333,6 +340,49 @@ describe('POST /api/webhooks/stripe', () => {
 
     expect(response.status).toBe(200)
     expect(text).toBe('ok')
+  })
+
+  describe('ticket transfer fee', () => {
+    const transferSession = { id: 'cs_1', payment_status: 'paid', metadata: { type: 'ticket_transfer', registration_id: 'reg1' } }
+
+    it('unlocks the transfer when its Checkout Session completes', async () => {
+      constructEventMock.mockReturnValue({ id: 'evt_t', type: 'checkout.session.completed', data: { object: transferSession } })
+      supabaseAdminMock.mockReturnValue(createAdmin())
+      unlockTransferFromCheckoutMock.mockResolvedValue('unlocked')
+
+      const response = await POST(createRequest())
+
+      expect(response.status).toBe(200)
+      expect(unlockTransferFromCheckoutMock).toHaveBeenCalledWith(expect.anything(), transferSession)
+    })
+
+    it('answers 500 so Stripe retries when unlocking fails', async () => {
+      constructEventMock.mockReturnValue({ id: 'evt_t', type: 'checkout.session.completed', data: { object: transferSession } })
+      supabaseAdminMock.mockReturnValue(createAdmin())
+      unlockTransferFromCheckoutMock.mockRejectedValue(new Error('db down'))
+
+      expect((await POST(createRequest())).status).toBe(500)
+    })
+
+    it('ignores Checkout Sessions that are not transfers', async () => {
+      constructEventMock.mockReturnValue({ id: 'evt_o', type: 'checkout.session.completed', data: { object: { id: 'cs_2', metadata: {} } } })
+      supabaseAdminMock.mockReturnValue(createAdmin())
+
+      expect((await POST(createRequest())).status).toBe(200)
+      expect(unlockTransferFromCheckoutMock).not.toHaveBeenCalled()
+    })
+
+    it('does not treat the fee PaymentIntent as a registration payment', async () => {
+      constructEventMock.mockReturnValue(buildPaymentIntentEvent({ type: 'ticket_transfer', user_id: '', event_id: '', ticket_id: '' }))
+      const admin = createAdmin()
+      const fromSpy = vi.spyOn(admin, 'from')
+      supabaseAdminMock.mockReturnValue(admin)
+
+      const response = await POST(createRequest())
+
+      expect(response.status).toBe(200)
+      expect(fromSpy).not.toHaveBeenCalled()
+    })
   })
 
   it('returns 500 when registration creation fails after the order was created', async () => {

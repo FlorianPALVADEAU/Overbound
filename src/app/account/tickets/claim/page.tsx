@@ -3,12 +3,26 @@
 import Link from 'next/link'
 import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { CalendarIcon, MapPinIcon } from 'lucide-react'
+import { MapPinIcon } from 'lucide-react'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useClaimDetails } from '@/app/api/account/tickets/claim/claimQueries'
-import { ClaimTicketButton } from '@/components/account/ClaimTicketButton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AccountScreen, Eyebrow } from '@/components/account/AccountScreen'
+import { ClaimTicketForm } from '@/components/account/ClaimTicketForm'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatLongDate } from '@/lib/account/format'
+
+function ClaimMessage({ title, message, children }: { title: string; message?: string; children?: React.ReactNode }) {
+  return (
+    <AccountScreen narrow>
+      <div className="space-y-4 py-10">
+        <h1 className="text-balance text-[2rem] font-black leading-tight tracking-tight">{title}</h1>
+        {message ? <p className="text-muted-foreground">{message}</p> : null}
+        {children}
+      </div>
+    </AccountScreen>
+  )
+}
 
 function ClaimTicketPageInner() {
   const searchParams = useSearchParams()
@@ -24,119 +38,70 @@ function ClaimTicketPageInner() {
   }, [session?.user, sessionLoading, router, token])
 
   if (!token) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto max-w-2xl px-6 py-12">
-          <Card>
-            <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              Lien de transfert invalide.
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    )
+    return <ClaimMessage title="Lien de transfert invalide" message="Demande à la personne qui t'a envoyé le billet de te renvoyer le lien." />
   }
 
   if (isLoading || sessionLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
-        <div className="text-sm text-muted-foreground">Chargement du billet…</div>
-      </main>
+      <AccountScreen narrow>
+        <div className="space-y-4" aria-busy="true" aria-label="Chargement du billet">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-14 w-full" />
+        </div>
+      </AccountScreen>
     )
   }
 
   if (error) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto max-w-2xl px-6 py-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Billet introuvable</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-muted-foreground">
-              <p>{error.message}</p>
-              <div className="flex gap-2">
-                <Link href="/account/tickets">
-                  <Button variant="outline">Retour à mes billets</Button>
-                </Link>
-                <Button onClick={() => refetch()}>Réessayer</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <ClaimMessage title="Billet introuvable" message={error.message}>
+        <div className="flex gap-3">
+          <Button onClick={() => refetch()} className="h-11 px-5">Réessayer</Button>
+          <Button asChild variant="outline" className="h-11 px-5">
+            <Link href="/account">Mes billets</Link>
+          </Button>
         </div>
-      </main>
+      </ClaimMessage>
     )
   }
 
-  if (!data?.registration) {
-    return null
-  }
-
-  const registration = data.registration
-  const eventDate = registration.event?.date ? new Date(registration.event.date) : null
-  const formattedEventDate = eventDate
-    ? eventDate.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
-    : null
+  const registration = data?.registration
+  if (!registration) return null
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto max-w-2xl px-6 py-12">
-        <Card>
-          <CardHeader>
-            <CardTitle>Récupérer un billet</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="rounded-lg border bg-card p-4">
-              <h2 className="text-lg font-semibold">{registration.event?.title ?? 'Événement'}</h2>
-              <p className="text-sm text-muted-foreground">{registration.ticket?.name}</p>
-              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                {formattedEventDate ? (
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" />
-                    <span>{formattedEventDate}</span>
-                  </div>
-                ) : null}
-                {registration.event?.location ? (
-                  <div className="flex items-center gap-2">
-                    <MapPinIcon className="h-4 w-4" />
-                    <span>{registration.event.location}</span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+    <AccountScreen narrow>
+      <header>
+        <Eyebrow className="text-primary">Un billet t&apos;attend</Eyebrow>
+        <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight">
+          {registration.event?.title ?? 'Événement'}
+        </h1>
+        <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+          {registration.ticket?.name ? <p className="font-semibold text-foreground">{registration.ticket.name}</p> : null}
+          {registration.event?.date ? <p className="first-letter:uppercase">{formatLongDate(registration.event.date)}</p> : null}
+          {registration.event?.location ? (
+            <p className="flex items-center gap-1.5">
+              <MapPinIcon className="size-3.5" />
+              {registration.event.location}
+            </p>
+          ) : null}
+        </div>
+      </header>
 
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <p>
-                En récupérant ce billet, il sera associé à ton compte Overbound et apparaîtra dans ta
-                liste de billets. Le titulaire actuel recevra une notification de transfert.
-              </p>
-              <ClaimTicketButton token={token} />
-            </div>
-
-            <div className="flex gap-2">
-              <Link href="/account/tickets">
-                <Button variant="outline">Retour à mes billets</Button>
-              </Link>
-              <Link href="/events/ultra-arena-2026">
-                <Button variant="ghost">Parcourir les événements</Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="mt-8 space-y-6">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Pour récupérer ce billet, tu renseignes tes informations, tu relis la décharge et le règlement, puis tu signes.
+          La signature de la personne qui te l&apos;a transmis ne couvre pas ta participation.
+        </p>
+        <ClaimTicketForm token={token} />
       </div>
-    </main>
+    </AccountScreen>
   )
 }
 
 export default function ClaimTicketPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
-          <div className="text-sm text-muted-foreground">Chargement du billet…</div>
-        </main>
-      }
-    >
+    <Suspense fallback={null}>
       <ClaimTicketPageInner />
     </Suspense>
   )

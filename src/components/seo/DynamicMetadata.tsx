@@ -14,7 +14,7 @@ export function DynamicMetadata({ title, description, keywords, image, url }: Dy
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const fullTitle = `${title} | Overbound Race`
   const fullUrl = url ? `${siteUrl}${url}` : siteUrl
-  const imageUrl = image ? `${siteUrl}${image}` : `${siteUrl}/images/hero_header_poster.jpg`
+  const imageUrl = image ? `${siteUrl}${image}` : `${siteUrl}/images/images/overbound-og-cover.jpg`
 
   return (
     <Head>

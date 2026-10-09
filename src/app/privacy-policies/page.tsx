@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '10/02/2026'
+const lastUpdated = '09/10/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet de la politique' },
@@ -39,7 +39,8 @@ const paragraphs = {
     "Elle complète les Conditions Générales d’Utilisation disponibles à l’adresse https://overbound-race.com/cgu et s’applique à toutes les interactions avec Overbound, qu’elles soient numériques ou lors des événements physiques organisés ou opérés par Overbound.",
   ],
   responsable: [
-    'Responsable de traitement : Overbound SASU, société par actions simplifiée unipersonnelle au capital de 5 000 €, dont le siège social est situé 105 Rue de la Brèche du Houx, 78760 Jouars-Pontchartrain, France.',
+    'Responsable de traitement : Palvadeau Organisation, société par actions simplifiée unipersonnelle au capital de 5 000 €, immatriculée au RCS de Versailles sous le numéro 992 578 229, exploitant la marque Overbound, dont le siège social est situé 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain, France.',
+    'Délégué à la protection des données : Overbound n’a pas désigné de DPO, cette désignation n’étant pas obligatoire au regard de ses traitements (article 37 du RGPD). Toute question est traitée à l’adresse ci-dessous.',
     'Contact principal : contact@overbound-race.com',
     'Téléphone : +33 (0)6 52 26 60 54',
   ],
@@ -48,6 +49,9 @@ const paragraphs = {
     'Coordonnées : adresse postale, adresse email, numéro de téléphone.',
     'Données de compte : identifiant, mots de passe hashés, préférences linguistiques.',
     'Données d’inscription événementielle : format choisi, numéro de dossard, historique des participations.',
+    'Données de sécurité : nom et téléphone d’un contact d’urgence (personne tierce, que le participant s’engage à prévenir) et, uniquement avec le consentement exprès du participant, informations de santé utiles aux secours (allergie, traitement…).',
+    'Preuve d’acceptation : signature manuscrite dessinée à l’écran, date et heure, adresse IP, navigateur, version et empreinte numérique (SHA-256) du texte de la décharge signée.',
+    'Transfert de dossard : identité du cédant et du bénéficiaire, date du transfert, paiement des frais de transfert.',
     'Données financières : informations de paiement traitées par Stripe (quatre derniers chiffres de la carte, token de paiement), factures et historiques de transaction.',
     'Données techniques : logs de connexion, adresse IP, device, navigateur, zones horodatées, cookies.',
     'Données de performance : chronométrage, classements, statistiques de course, notes et feedbacks.',
@@ -56,6 +60,10 @@ const paragraphs = {
   finalites: [
     'Gestion des comptes utilisateurs et authentification – Base légale : exécution du contrat (art. 6(1)(b) RGPD).',
     'Inscription aux événements, gestion des dossards et suivi opérationnel – Base légale : exécution du contrat.',
+    'Transfert de dossard entre deux personnes et information des deux parties – Base légale : exécution du contrat.',
+    'Informations de santé transmises aux secours en cas d’intervention – Base légale : consentement explicite du participant (art. 9(2)(a) RGPD), retirable à tout moment ; sans ce consentement, aucune information de santé n’est conservée.',
+    'Contact d’urgence – Base légale : intérêt légitime (sécurité des participants).',
+    'Conservation de la décharge signée et des preuves de transfert, pour se défendre en cas de réclamation – Base légale : intérêt légitime (constatation, exercice ou défense de droits en justice).',
     'Gestion de la billetterie, paiement, facturation – Base légale : exécution du contrat et obligation légale (obligation comptable).',
     'Communication d’informations relatives aux événements, newsletters partenaires, offres commerciales – Base légale : consentement explicite ou intérêt légitime (relation clients).',
     'Analyse statistique et amélioration des services (fréquentation, performances, satisfaction) – Base légale : intérêt légitime.',
@@ -72,6 +80,8 @@ const paragraphs = {
   duree: [
     'Compte utilisateur : durée d’activité du compte + 3 ans à compter de la dernière interaction pour relances marketing (intérêt légitime).',
     'Données relatives aux événements (inscriptions, factures) : 10 ans conformément aux obligations comptables et contractuelles.',
+    'Décharges signées et preuves de transfert (identité, signature, date, adresse IP) : 10 ans après l’événement, durée de prescription d’une action en réparation d’un dommage corporel (article 2226 du Code civil).',
+    'Informations de santé et contact d’urgence : supprimés automatiquement 30 jours après l’événement, ou dès le transfert du dossard pour l’ancien titulaire.',
     'Documents PPS ou autorisations parentales : durée de l’événement + 1 an, puis archivage sécurisé ou suppression.',
     'Logs techniques : 12 mois maximum.',
     'Cookies : durée maximale de 13 mois, préférences de consentement conservées 6 mois.',
@@ -85,14 +95,14 @@ const paragraphs = {
     'Droit à la limitation : geler temporairement une partie des traitements en cas de contestation.',
     'Droit à la portabilité : recevoir les données fournies dans un format structuré, couramment utilisé et lisible par machine.',
     'Droit de retirer son consentement : retirer à tout moment son consentement aux traitements reposant sur celui-ci (newsletters, cookies marketing).',
-    'Modalités : envoyer un email à contact@overbound-race.com ou un courrier à Overbound – DPO, 24 rue du Faubourg Saint-Martin, 75010 Paris. Réponse sous 30 jours.',
+    'Modalités : envoyer un email à contact@overbound-race.com ou un courrier à Palvadeau Organisation (Overbound), 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain. Réponse sous un mois (article 12 du RGPD).',
   ],
   securite: [
-    'Infrastructure hébergée sur Vercel (UE) et Supabase (UE) avec chiffrement des données en transit (TLS 1.2+) et au repos (AES-256).',
-    'Contrôles d’accès stricts, gestion des rôles, authentification à facteurs multiples pour les administrateurs.',
-    'Journalisation des actions sensibles, systèmes de détection d’intrusion, politiques de sauvegarde quotidienne.',
-    'Audit de sécurité annuel et programme de bug bounty privé. Signalement des vulnérabilités à contact@overbound-race.com.',
-    'Plan de réponse aux incidents incluant notification à la CNIL dans les 72 heures et information des personnes concernées lorsque le risque est élevé.',
+    'Base de données hébergée dans l’Union européenne (Supabase), chiffrement des données en transit (TLS) et au repos.',
+    'Accès aux données des participants réservé aux comptes disposant du rôle administrateur ; règles d’accès appliquées au niveau de la base de données (Row Level Security).',
+    'Journalisation des actions sensibles réalisées depuis l’interface d’administration (modification d’inscriptions, transferts).',
+    'Signalement des vulnérabilités à contact@overbound-race.com.',
+    'En cas de violation de données, notification à la CNIL dans les 72 heures et information des personnes concernées lorsque le risque est élevé (articles 33 et 34 du RGPD).',
   ],
   transferts: [
     "Certains sous-traitants (Stripe Payments Europe Limited, Vercel Inc., Resend Technologies, LLC, Google) sont situés hors de l’UE (États-Unis). Les transferts sont encadrés par des clauses contractuelles types (CCT) approuvées par la Commission européenne et, le cas échéant, des mesures complémentaires (chiffrement, pseudonymisation).",
@@ -161,8 +171,8 @@ export default function PrivacyPolicyPage() {
               Pour toute question, écrivez à{' '}
               <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
                 contact@overbound-race.com
-              </Link>{' '}
-              ou contactez notre DPO.
+              </Link>
+              .
             </div>
           </div>
 

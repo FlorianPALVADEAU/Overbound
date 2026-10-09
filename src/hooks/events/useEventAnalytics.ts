@@ -7,13 +7,13 @@ type AnalyticsPayload = Record<string, string | number | boolean | null | undefi
 type EventForAnalytics = Event & { tickets?: Ticket[] | null }
 
 /**
- * Ultra Arena landing page analytics: dataLayer/gtag/fbq mirroring, page view,
+ * Event landing page analytics: dataLayer/gtag/fbq mirroring, page view,
  * scroll depth, pricing section visibility, and the sticky desktop CTA
- * visibility flag (driven by the same scroll listener pattern).
+ * visibility flag (driven by the same scroll listener pattern). Runs for
+ * any event page, not just the historical Ultra Arena landing.
  */
 export const useEventAnalytics = (
   event: EventForAnalytics | undefined,
-  isUltraArena: boolean,
   eventPath: string,
 ) => {
   const [showDesktopCta, setShowDesktopCta] = useState(false)
@@ -87,7 +87,7 @@ export const useEventAnalytics = (
 
   // Page view
   useEffect(() => {
-    if (!isUltraArena || !event) return
+    if (!event) return
     trackEvent('page_view_event_landing', {
       page_path: eventPath,
       has_price: trackedLowestPrice !== null,
@@ -96,12 +96,10 @@ export const useEventAnalytics = (
       page_path: eventPath,
       content_type: 'event',
     })
-  }, [isUltraArena, event, trackedLowestPrice, eventPath, trackEvent])
+  }, [event, trackedLowestPrice, eventPath, trackEvent])
 
   // Scroll depth
   useEffect(() => {
-    if (!isUltraArena) return
-
     let tracked25 = false
     let tracked50 = false
     let tracked90 = false
@@ -131,20 +129,18 @@ export const useEventAnalytics = (
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
-  }, [isUltraArena, trackEvent])
+  }, [trackEvent])
 
   // Desktop sticky CTA — show after scrolling past the hero (~400px)
   useEffect(() => {
-    if (!isUltraArena) return
     const onScroll = () => setShowDesktopCta(window.scrollY > 400)
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
-  }, [isUltraArena])
+  }, [])
 
   // Pricing section visibility (decision zone)
   useEffect(() => {
-    if (!isUltraArena) return
     const target = document.getElementById('tarifs-inscription')
     if (!target) return
     let fired = false
@@ -159,7 +155,7 @@ export const useEventAnalytics = (
     )
     observer.observe(target)
     return () => observer.disconnect()
-  }, [isUltraArena, trackEvent])
+  }, [trackEvent])
 
   return { trackEvent, showDesktopCta }
 }

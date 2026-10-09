@@ -1,15 +1,17 @@
 
 export const COMPANY_INFO = {
-  legalName: 'Overbound SASU',
+  // Registered name (RCS, AXA certificate); Overbound is the trade name it operates under.
+  legalName: 'Palvadeau Organisation',
+  tradeName: 'Overbound',
   legalForm: 'Société par Actions Simplifiée Unipersonnelle',
   capital: '5000 €',
 
   address: {
     street: '105 rue de la brèche du houx',
     city: 'Jouars-Pontchartrain',
-    zipCode: '78350',
+    zipCode: '78760',
     country: 'France',
-    full: '105 rue de la brèche du houx, Jouars-Pontchartrain, France',
+    full: '105 rue de la brèche du houx, 78760 Jouars-Pontchartrain, France',
   },
 
   rcs: {
@@ -58,12 +60,28 @@ export const COMPANY_INFO = {
     },
   },
 
-  // DPO (Délégué à la Protection des Données)
-  dpo: {
-    name: 'Cabinet LexData',
-    address: '12 rue d\'Uzès, 75002 Paris',
-    email: 'dpo@overbound-race.com',
+  /**
+   * Organiser liability insurance (art. L321-1 Code du sport), from the AXA certificate
+   * dated 2026-09-10. Participants must be told its existence, scope and limits
+   * (Cass. 1re civ., 28 janv. 2026, n° 24-20.866). Update for every new policy period.
+   */
+  insurance: {
+    insurer: 'AXA France IARD',
+    product: 'Responsabilité Civile Prestataire',
+    policyNumber: '0000011530476604',
+    validFrom: '11/09/2026',
+    validUntil: '01/01/2027',
+    coveredActivities: 'promotion et organisation de la manifestation sportive Overbound ; restauration et vente de boissons réalisées par des sous-traitants',
+    limits: [
+      { label: 'Tous dommages confondus (corporels, matériels et immatériels consécutifs)', amount: '9 000 000 € par année d’assurance' },
+      { label: 'dont dommages corporels', amount: '9 000 000 € par année d’assurance' },
+      { label: 'dont dommages matériels et immatériels consécutifs', amount: '1 200 000 € par année d’assurance' },
+      { label: 'Dommages immatériels non consécutifs', amount: '150 000 € par année d’assurance' },
+      { label: 'Dommages aux biens confiés', amount: '150 000 € par sinistre' },
+      { label: 'Atteinte accidentelle à l’environnement', amount: '1 000 000 € par année d’assurance' },
+    ],
   },
+
 
   mediation: {
     name: 'CM2C - Centre de médiation de la consommation des conciliateurs de justice',

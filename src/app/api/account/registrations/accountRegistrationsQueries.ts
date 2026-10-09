@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { SessionProfile, SessionUser } from '@/app/api/session/sessionQueries'
-import type { AccountRegistrationItem } from '@/components/account/AccountRegistrationsList'
+import type { AccountRegistrationItem } from '@/types/AccountRegistration'
 import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
 export interface AccountRegistrationsResponse {

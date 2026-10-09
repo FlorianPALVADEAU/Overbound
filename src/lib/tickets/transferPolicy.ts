@@ -18,3 +18,12 @@ export const isTicketTransferAllowed = (
   if (!deadline) return false
   return now.getTime() <= deadline.getTime()
 }
+
+/** Fee the current holder pays to unlock the hand-over of a bib (charged once per transfer). */
+export const TICKET_TRANSFER_FEE_CENTS = 699
+export const TICKET_TRANSFER_CURRENCY = 'eur'
+
+export const formatTransferFee = (amountCents: number) =>
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: TICKET_TRANSFER_CURRENCY.toUpperCase() }).format(
+    amountCents / 100,
+  )

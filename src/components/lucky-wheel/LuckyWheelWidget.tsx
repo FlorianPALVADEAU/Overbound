@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti'
 import { useLuckyWheelTrigger, type LuckyWheelTriggerRules } from '@/hooks/lucky-wheel/use-lucky-wheel-trigger'
 import { useLuckyWheelSpin } from '@/hooks/lucky-wheel/use-lucky-wheel-spin'
 import { trackLuckyWheelEvent } from '@/lib/luckyWheel/analytics'
+import { usePopupSlot } from '@/components/popups/PopupArbiterProvider'
 import { LuckyWheelEntryForm } from './LuckyWheelEntryForm'
 import { LuckyWheelWheel, type WheelSegment } from './LuckyWheelWheel'
 import { LuckyWheelResult } from './LuckyWheelResult'
@@ -25,8 +26,9 @@ type CampaignState = {
   rewards: WheelSegment[]
 }
 
-// FDR-0014 §12.1/§12.3/§18: orchestrator. Lazy-loaded (dynamic import) from
-// the event page -- see events/[id]/page.tsx. A failure at any step (fetch,
+// FDR-0014 §12.1/§12.3/§18: orchestrator. Lazy-loaded (dynamic import) by
+// GlobalLuckyWheelWidget, only on routes allowlisted in
+// src/lib/luckyWheel/placement.ts. A failure at any step (fetch,
 // entry, spin) never blocks the rest of the page or the purchase tunnel:
 // the widget just stops rendering.
 //
@@ -101,9 +103,14 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
     alreadyTriggered: alreadyParticipated,
   })
 
+  // FDR-0015 §7.3 layer 1: only one automatic popup per session -- if
+  // PopupPromotion already claimed the slot, this widget never opens even
+  // though its own trigger condition was met.
+  const requestPopupSlot = usePopupSlot('lucky-wheel')
+
   useEffect(() => {
-    if (shouldOpen) setIsOpen(true)
-  }, [shouldOpen])
+    if (shouldOpen && requestPopupSlot('lucky-wheel')) setIsOpen(true)
+  }, [shouldOpen, requestPopupSlot])
 
   useEffect(() => {
     if (isOpen && campaign) {
@@ -190,6 +197,10 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
       <div
         role="dialog"
         aria-modal="true"
+        // Accessible name, stable across the form and result screens (the
+        // visible h2 only exists on the form screen). Also the hook the
+        // placement e2e spec selects on.
+        aria-label="Roue de la fortune"
         // max-h-[75vh] on mobile (product feedback 2026-09-22: popup must
         // never exceed 3/4 of the screen height), relaxed on sm+ where the
         // two-column layout is much shorter. overflow-y-auto so any

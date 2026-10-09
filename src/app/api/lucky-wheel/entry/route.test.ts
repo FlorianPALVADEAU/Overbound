@@ -31,13 +31,14 @@ function buildRequest(body: unknown) {
 }
 
 function campaignQuery(row: typeof ACTIVE_CAMPAIGN_ROW | null) {
-  // Chainable stub: every filter method (.eq/.lte/.gte/.limit) returns the
-  // same object so the mock doesn't need to hard-code an exact call count
-  // or order.
+  // Chainable stub: every filter method (.eq/.lte/.gte/.order/.limit)
+  // returns the same object so the mock doesn't need to hard-code an
+  // exact call count or order.
   const chain: any = {
     eq: () => chain,
     lte: () => chain,
     gte: () => chain,
+    order: () => chain,
     limit: () => chain,
     maybeSingle: async () => ({ data: row, error: null }),
   }

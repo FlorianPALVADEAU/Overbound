@@ -1,21 +1,11 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getMarketingPreferencesProfile } from '@/lib/preferences/profile'
 import PreferencesForm from '@/components/preferences/PreferencesForm'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Info } from 'lucide-react'
+import { AccountScreen, Eyebrow } from '@/components/account/AccountScreen'
 
 export default async function PreferencesPage() {
   const supabase = await createClient()
-
-  // Check if user is authenticated
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -24,73 +14,22 @@ export default async function PreferencesPage() {
     redirect('/auth/login?next=/preferences')
   }
 
-  // Get user profile with marketing preferences
-  const profile = await getMarketingPreferencesProfile(supabase, user.id)
-
-  if (!profile) {
-    return (
-      <div className="container max-w-4xl mx-auto py-10">
-        <Alert variant="destructive">
-          <AlertDescription>
-            Impossible de charger vos préférences. Veuillez réessayer plus tard.
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-
   return (
-    <div className="container max-w-4xl mx-auto py-10 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Préférences d'emails
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Gérez vos préférences de communication et abonnements
-        </p>
-      </div>
+    <AccountScreen narrow>
+      <header className="mb-8">
+        <Eyebrow>Mon compte</Eyebrow>
+        <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight">Préférences d&apos;emails</h1>
+        <p className="mt-3 text-muted-foreground">Choisis ce que tu veux recevoir. Appliqué immédiatement.</p>
+      </header>
 
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          Ces préférences ne concernent que les emails marketing. Vous
-          continuerez à recevoir les emails transactionnels importants
-          (confirmations, billets, informations pratiques).
-        </AlertDescription>
-      </Alert>
+      <PreferencesForm />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Communications marketing</CardTitle>
-          <CardDescription>
-            Choisissez les types de communications que vous souhaitez recevoir
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PreferencesForm
-            userId={profile.id}
-            userName={profile.full_name || ''}
-            initialPreferences={{
-              marketing_opt_in: profile.marketing_opt_in || false,
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      <div className="text-sm text-muted-foreground">
-        <p>
-          <strong>Protection de vos données :</strong> Nous respectons votre vie
-          privée et ne partageons jamais vos informations avec des tiers. Vos
-          préférences sont appliquées immédiatement.
-        </p>
-        <p className="mt-2">
-          Pour plus d'informations, consultez notre{' '}
-          <a href="/privacy-policies" className="text-primary hover:underline">
-            politique de confidentialité
-          </a>
-          .
-        </p>
-      </div>
-    </div>
+      <p className="mt-10 border-t border-border pt-5 text-sm text-muted-foreground">
+        Tes données ne sont jamais partagées avec des tiers.{' '}
+        <Link href="/privacy-policies" className="font-semibold text-foreground underline-offset-4 hover:underline">
+          Politique de confidentialité
+        </Link>
+      </p>
+    </AccountScreen>
   )
 }

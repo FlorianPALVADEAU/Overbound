@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Youtube, Music2 } from 'lucide-react'
+import { Instagram, Music2 } from 'lucide-react'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 
 const LINK_GROUPS = [
@@ -8,23 +8,21 @@ const LINK_GROUPS = [
     title: 'Événements',
     links: [
       { label: 'Ultra Arena 2026', href: '/events/ultra-arena-2026' },
-      // { label: 'Les formats', href: '/events/formats' },
-      // { label: 'Les obstacles', href: '/obstacles' },
+      { label: 'Les formats', href: '/events/formats' },
+      { label: 'Les obstacles', href: '/obstacles' },
       { label: 'Devenir bénévole', href: '/volunteers' },
     ],
   },
   {
     title: 'Partenaires',
     links: [
-      { label: 'Nos partenaires', href: '/about/partners' },
-      { label: 'Devenir sponsor', href: '/contact?subject=partenariat' },
-      { label: 'Presse', href: '/about/press' },
+      { label: 'Partenaires & presse', href: '/about/partners' },
+      { label: 'Devenir partenaire', href: '/about/partners#contacts' },
     ],
   },
   {
     title: 'La tribu',
     links: [
-      { label: 'Le concept', href: '/about/concept' },
       { label: 'Notre histoire', href: '/about/our-story' },
       // { label: "L'équipe", href: '/about/team' },
       { label: 'FAQ', href: '/about/faq' },
@@ -48,7 +46,6 @@ const LINK_GROUPS = [
 const SOCIAL_LINKS = [
   { label: 'Instagram', href: 'https://www.instagram.com/overbound.race/', icon: Instagram },
   { label: 'TikTok', href: 'https://www.tiktok.com/@overbound.race', icon: Music2 },
-  { label: 'YouTube', href: '#', icon: Youtube },
 ]
 
 export function Footer() {
@@ -67,7 +64,7 @@ export function Footer() {
         </span>
 
         <div className='relative z-10 space-y-4 px-6 text-center sm:text-left sm:px-6 xl:px-32'>
-          <Link href="/" className="flex items-center justify-center sm:justify-start">
+          <Link href="/" className="flex min-h-11 items-center justify-center sm:justify-start">
             <Image
               src="/images/brand/totem_logo_white.png"
               alt="OverBound Logo"
@@ -79,7 +76,7 @@ export function Footer() {
           <p className='text-xs uppercase tracking-[0.6em] text-muted-foreground'>Tribu Overbound</p>
           <h2 className='text-3xl font-semibold sm:text-4xl md:text-5xl'>Plus qu’une course, une famille.</h2>
           <p className='text-base text-muted-foreground sm:max-w-2xl'>
-            Accède à ton compte, ouvre tes inscriptions Paris 2026, découvre le concept, la FAQ, notre histoire ou
+            Accède à ton compte, ouvre tes inscriptions Paris 2026, découvre les formats, la FAQ, notre histoire ou
             deviens bénévole. L’essentiel pour vivre l’expérience Overbound.
           </p>
         </div>
@@ -90,8 +87,15 @@ export function Footer() {
               <h3 className='text-sm font-semibold uppercase tracking-[0.35em] text-foreground/70'>{group.title}</h3>
               <ul className='space-y-2'>
                 {group.links.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className='inline-flex font-medium transition hover:text-primary'>
+                  // -my-3 pulls the <li>'s own extra height back out of the
+                  // list's flow, so space-y-2 between items reads the same
+                  // as before -- only the link's own tap target (below)
+                  // grows, never the visible list rhythm (FDR-0015 §10).
+                  <li key={link.href} className='-my-3'>
+                    <Link
+                      href={link.href}
+                      className='inline-flex min-h-11 min-w-11 items-center py-3 font-medium transition hover:text-primary'
+                    >
                       {link.label}
                     </Link>
                   </li>
@@ -104,7 +108,11 @@ export function Footer() {
         <div className='-mt-4 relative z-10 flex flex-col gap-6 px-6 pb-12 text-center text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-left xl:px-32'>
           <div className='flex flex-wrap items-center justify-center gap-4 sm:justify-start'>
             {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
-              <Link key={label} href={href} className='flex items-center gap-2 transition hover:text-primary'>
+              <Link
+                key={label}
+                href={href}
+                className='-my-3.5 flex min-h-11 min-w-11 items-center justify-center gap-2 py-3.5 transition hover:text-primary'
+              >
                 <Icon className='h-4 w-4' />
                 <span className='hidden text-sm font-medium sm:inline'>{label}</span>
               </Link>

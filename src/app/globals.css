@@ -98,6 +98,20 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Tailwind v4 n'applique plus cursor:pointer aux boutons : on le rétablit pour
+     tout élément cliquable. Les classes cursor-* (utilities) restent prioritaires. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="switch"],
+  [role="menuitem"],
+  summary,
+  select,
+  a[href],
+  label[for],
+  input:is([type="checkbox"], [type="radio"], [type="submit"], [type="button"], [type="range"]):not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 @keyframes volunteerPulseWave {
@@ -166,4 +180,18 @@
 
 .animate-lucky-wheel-breathe {
   animation: luckyWheelBreathe 1.8s ease-in-out infinite;
+}
+
+@keyframes stamp {
+  0% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(0.92);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
 }

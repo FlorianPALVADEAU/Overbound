@@ -86,7 +86,12 @@ const handlePost = async (request: NextRequest) => {
       image_url,
       video_url,
       difficulty,
-      type
+      type,
+      metric_label,
+      metric_value,
+      weight_male,
+      weight_female,
+      penalty
     } = body
 
     // Validation
@@ -116,7 +121,12 @@ const handlePost = async (request: NextRequest) => {
         image_url: image_url || null,
         video_url: video_url || null,
         difficulty: difficultyNum,
-        type
+        type,
+        metric_label: metric_label || null,
+        metric_value: metric_value || null,
+        weight_male: weight_male || null,
+        weight_female: weight_female || null,
+        penalty: penalty || null
       })
       .select()
       .single()

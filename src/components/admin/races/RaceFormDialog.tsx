@@ -215,8 +215,7 @@ export function RaceFormDialog({
                 Format universel
               </Label>
               <p className="text-xs text-muted-foreground">
-                Activer pour les courses sans variantes (Kids, Backyard). Désactiver pour les courses multi-formats
-                (Primal/Fury/Ultra Hardcore).
+                Activer pour les courses sans variantes (Kids, Backyard).
               </p>
             </div>
           </div>

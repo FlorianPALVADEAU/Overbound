@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { ShieldAlert } from 'lucide-react'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_SUMMARY, WAIVER_TITLE } from '@/constants/waiver'
 
 interface ConfirmationStepProps {
   disclaimerRead: boolean
@@ -17,6 +18,11 @@ interface ConfirmationStepProps {
   onDisclaimerAcceptedChange: (checked: boolean) => void
   onRulebookAcceptedChange: (checked: boolean) => void
   onSignatureChange: (image: string | null) => void
+  /** Defined only when the order covers other participants: the buyer must vouch for them. */
+  groupAttestation?: boolean
+  onGroupAttestationChange?: (checked: boolean) => void
+  /** Checkout signs before paying; a transfer signs to take over an existing bib. */
+  context?: 'purchase' | 'transfer'
 }
 
 export default function ConfirmationStep({
@@ -29,7 +35,12 @@ export default function ConfirmationStep({
   onDisclaimerAcceptedChange,
   onRulebookAcceptedChange,
   onSignatureChange,
+  context = 'purchase',
+  groupAttestation,
+  onGroupAttestationChange,
 }: ConfirmationStepProps) {
+  const showGroupAttestation = groupAttestation !== undefined
+  const showGroupAttestationError = showErrors && showGroupAttestation && !groupAttestation
   const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false)
   const showDisclaimerReadError = showErrors && !disclaimerRead
   const showDisclaimerAcceptedError = showErrors && !disclaimerAccepted
@@ -48,13 +59,9 @@ export default function ConfirmationStep({
         </p>
         <div className="space-y-3">
           <div className="rounded-xl border border-primary/35 bg-primary/5 p-4 text-sm leading-relaxed shadow-sm">
-            <p className="font-medium text-foreground">
-              En vous inscrivant, vous reconnaissez les risques d&apos;une course d&apos;obstacles, vous
-              renoncez à recours contre Overbound dans les limites légales, et vous autorisez
-              l&apos;utilisation de votre image dans le cadre de l&apos;événement.
-            </p>
+            <p className="font-medium text-foreground">{WAIVER_SUMMARY}</p>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Billets non remboursables.{' '}
+              Billets non remboursables à ton initiative, remboursés à l&apos;acheteur si Overbound annule.{' '}
               <a href="/cgv#annulation-participant" className="underline underline-offset-2 hover:text-foreground">
                 Consulter les CGV
               </a>
@@ -77,88 +84,25 @@ export default function ConfirmationStep({
 
             {isDisclaimerExpanded ? (
               <div className="mt-4 max-h-80 space-y-3 overflow-y-auto rounded-md border border-primary/20 bg-background/70 p-3 text-xs leading-relaxed">
-                <p className="font-semibold uppercase">
-                  Décharge de responsabilité, renonciation au droit de poursuivre et autorisation d&apos;utilisation d&apos;image du participant - Overbound
-                </p>
-                <p>
-                  En contrepartie de mon droit à participer à la course et aux activités connexes
-                  Overbound, je reconnais, comprends et accepte les points suivants.
-                </p>
-                <p>
-                  1. Je reconnais que la participation à une course d&apos;obstacles comporte des risques
-                  importants, incluant notamment chutes, entorses, fractures, blessures liées à la
-                  chaleur, au froid, à l&apos;eau, à des obstacles, à des véhicules, à des animaux, à des
-                  insectes, à des plantes, ainsi qu&apos;un risque de blessure grave, invalidité, paralysie
-                  ou décès.
-                </p>
-                <p>
-                  2. J&apos;assume volontairement et en connaissance de cause l&apos;ensemble de ces risques,
-                  connus et inconnus, y compris ceux pouvant résulter d&apos;une négligence d&apos;un tiers.
-                </p>
-                <p>
-                  3. Je m&apos;engage à respecter toutes les règles de sécurité, les consignes des équipes
-                  Overbound et le règlement de l&apos;événement. En cas de danger inhabituel, je m&apos;engage à
-                  interrompre ma participation et à en informer immédiatement l&apos;organisation.
-                </p>
-                <p>
-                  4. Pour moi-même et mes ayants droit, je décharge et m&apos;engage à ne pas poursuivre
-                  Overbound, ses dirigeants, salariés, bénévoles, partenaires, sponsors, prestataires,
-                  propriétaires des sites et toute entité liée à l&apos;organisation, pour toute blessure,
-                  dommage, invalidité, décès, perte ou casse de biens, dans les limites autorisées par
-                  la loi applicable.
-                </p>
-                <p>
-                  5. J&apos;atteste être apte physiquement à participer, ne pas présenter de contre-indication
-                  médicale connue, et avoir pris connaissance des exigences physiques de l&apos;événement.
-                </p>
-                <p>
-                  5bis. <span className="font-semibold">Je certifie être majeur(e) (18 ans révolus).</span>{' '}
-                  La participation à cette édition est strictement réservée aux personnes majeures. Les
-                  inscriptions de mineurs ne seront pas acceptées. La prochaine édition Overbound
-                  sera ouverte aux participants mineurs accompagnés d&apos;un responsable légal.
-                </p>
-                <p>
-                  6. J&apos;autorise l&apos;administration des premiers secours et de tout traitement médical
-                  d&apos;urgence jugé nécessaire, et j&apos;accepte d&apos;en assumer les conséquences et coûts.
-                </p>
-                <p>
-                  7. Je reconnais qu&apos;Overbound n&apos;est pas responsable de la perte, du vol, de la casse
-                  ou de la dégradation de mes effets personnels.
-                </p>
-                <p>
-                  8. Je reconnais que les frais d&apos;inscription sont soumis aux conditions tarifaires et
-                  de remboursement indiquées sur la plateforme Overbound. Je reconnais que l&apos;inscription
-                  à une activité sportive datée est exclue du droit de rétractation et qu&apos;aucun remboursement,
-                  avoir ni compensation volontaire n&apos;est accordé, sous réserve des droits impératifs prévus par la
-                  loi applicable. Le transfert de dossard est possible uniquement dans les délais autorisés,
-                  notamment jusqu&apos;à la veille de l&apos;événement.
-                </p>
-                <p>
-                  9. Overbound peut reporter, modifier ou annuler un événement pour des raisons de
-                  sécurité, météo, force majeure, contraintes administratives, sanitaires ou techniques.
-                  Les modalités applicables dans ces cas sont celles publiées dans les CGU/CGV et le
-                  règlement de l&apos;événement.
-                </p>
-                <p>
-                  10. J&apos;autorise gratuitement Overbound à capter et utiliser mon nom, image, voix,
-                  performance, photographie et vidéo, sur tout support, pour la promotion et la
-                  communication des événements, sans limitation géographique ni de durée, et sans
-                  compensation financière.
-                </p>
-                <p>
-                  11. Cette autorisation inclut la diffusion par les partenaires médias et commerciaux
-                  d&apos;Overbound dans le cadre de la promotion de l&apos;événement et de la marque.
-                </p>
-                <p>
-                  12. En validant mon inscription, je confirme avoir lu et accepté le règlement de course,
-                  les CGU/CGV Overbound et les obligations liées au dossard, au chronométrage et au
-                  matériel fourni.
-                </p>
+                <p className="font-semibold uppercase">{WAIVER_TITLE}</p>
+                <p>{WAIVER_INTRO}</p>
+                {WAIVER_CLAUSES.map((clause) => (
+                  <p key={clause.id}>
+                    {clause.id}. {clause.text}
+                  </p>
+                ))}
                 <p className="text-muted-foreground">
-                  Documents utiles :
-                  {' '}
+                  Documents utiles :{' '}
                   <a className="underline" href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" rel="noreferrer">
-                    Règlement officiel Overbound 2026 (PDF)
+                    Règlement officiel Overbound (PDF)
+                  </a>
+                  {' · '}
+                  <a className="underline" href="/cgv" target="_blank" rel="noreferrer">
+                    CGV
+                  </a>
+                  {' · '}
+                  <a className="underline" href="/privacy-policies" target="_blank" rel="noreferrer">
+                    Politique de confidentialité
                   </a>
                 </p>
               </div>
@@ -224,14 +168,37 @@ export default function ConfirmationStep({
                   htmlFor="disclaimer-accepted"
                   className={`text-sm leading-relaxed ${showDisclaimerAcceptedError ? 'text-destructive' : ''}`}
                 >
-                  J&apos;accepte sans réserve les conditions ci-dessus et je renonce à tout recours contre
-                  Overbound. <span className="text-destructive">*</span>
+                  J&apos;accepte la décharge ci-dessus.{' '}
+                  <span className="text-destructive">*</span>
                 </Label>
                 {showDisclaimerAcceptedError && (
                   <p className="text-xs text-destructive">Ce champ est obligatoire.</p>
                 )}
               </div>
             </div>
+            {showGroupAttestation ? (
+              <div
+                className={`flex items-start gap-3 rounded-md p-2 -m-2 ${showGroupAttestationError ? 'bg-destructive/10' : ''}`}
+              >
+                <Checkbox
+                  id="group-attestation"
+                  checked={groupAttestation === true}
+                  onCheckedChange={(checked) => onGroupAttestationChange?.(checked === true)}
+                  className={showGroupAttestationError ? 'border-destructive' : ''}
+                />
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="group-attestation"
+                    className={`text-sm leading-relaxed ${showGroupAttestationError ? 'text-destructive' : ''}`}
+                  >
+                    J&apos;inscris d&apos;autres personnes : j&apos;atteste agir avec leur accord, leur avoir transmis la
+                    décharge, le règlement et les CGV, et je me porte fort de leur acceptation.{' '}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  {showGroupAttestationError && <p className="text-xs text-destructive">Ce champ est obligatoire.</p>}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -254,13 +221,17 @@ export default function ConfirmationStep({
               Veuillez dessiner votre signature pour continuer.
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Pour courir ensemble dans le même SAS, tous les participants doivent être inscrits dans
-            une seule commande.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Une fois cette étape validée, vous serez redirigé vers la page de paiement sécurisé Stripe.
-          </p>
+          {context === 'purchase' ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Pour courir ensemble dans le même SAS, tous les participants doivent être inscrits dans
+                une seule commande.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Une fois cette étape validée, vous serez redirigé vers la page de paiement sécurisé Stripe.
+              </p>
+            </>
+          ) : null}
         </div>
       </div>
     </div>

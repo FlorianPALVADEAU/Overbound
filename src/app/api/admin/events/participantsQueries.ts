@@ -15,6 +15,8 @@ export interface EventParticipantRow {
     claimStatus: string | null
     approvalStatus: string | null
     checkedIn: boolean
+    /** Set when the bib was cancelled and refunded (flexible option); the bib no longer runs. */
+    cancelledAt?: string | null
     createdAt: string
   }
   ticket: {

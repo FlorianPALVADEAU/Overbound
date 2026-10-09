@@ -53,6 +53,7 @@ export interface AdminEventPayload {
   title: string
   subtitle?: string | null
   description?: string | null
+  image_url?: string | null
   date: string
   sales_start?: string | null
   location: string

@@ -15,6 +15,7 @@ import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
 import Link from 'next/link'
 import { filterUpcoming, filterPast } from '@/lib/bootcamps/bootcampFilters'
+import { PageHero } from '@/components/hero/PageHero'
 
 export default function BootcampsPage() {
   const { data: session } = useSession()
@@ -29,42 +30,17 @@ export default function BootcampsPage() {
 
   return (
     <main className="relative min-h-screen bg-white text-foreground">
-      {/* Hero */}
-      <section className="relative isolate overflow-hidden py-20 sm:py-24">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif"
-            alt="Bootcamp Overbound"
-            fill
-            sizes="100vw"
-            className="object-cover object-center"
-            priority
-          />
-          <div className="pointer-events-none absolute inset-0 bg-background/15 backdrop-blur-[3px]" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
-        </div>
-
-        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-20 sm:px-6 lg:px-8">
-          <div className="max-w-3xl space-y-6 text-center lg:text-left">
-            <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm">
-              Prépare-toi avec Overbound
-            </span>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-              Nos Bootcamps
-            </h1>
-            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Des sessions d'entraînement encadrées par l'équipe Overbound pour te préparer au mieux à la course.
-              Foncier, technique, mental — on t'emmène jusqu'au départ dans les meilleures conditions.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button asChild size="lg" className="h-12 w-full sm:w-auto">
-                <Link href="#bootcamps">Voir les sessions</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        image={{ src: '/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif', alt: 'Bootcamp Overbound' }}
+        eyebrow="Prépare-toi avec Overbound"
+        title="Nos Bootcamps"
+        description="Des sessions encadrées par l'équipe Overbound : foncier, technique, mental."
+        actions={
+          <Button asChild size="lg" className="h-12 w-full sm:w-auto">
+            <Link href="#bootcamps">Voir les sessions</Link>
+          </Button>
+        }
+      />
 
       {/* Bannière partenaires */}
       <section className="relative z-20 -mt-10 px-4 sm:px-6 lg:px-8 bg-background">

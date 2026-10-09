@@ -32,6 +32,7 @@ type RegistrationRow = {
   created_at: string
   start_time: string | null
   wave_index: number | null
+  cancelled_at: string | null
 }
 
 const sanitizeSearchTerm = (value: string) => value.replace(/[%,().]/g, ' ').replace(/\s+/g, ' ').trim()
@@ -94,7 +95,7 @@ export async function GET(
     let registrationsQuery = admin
       .from('registrations')
       .select(
-        'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index',
+        'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index, cancelled_at',
         { count: 'exact' },
       )
       .eq('event_id', eventId)
@@ -194,6 +195,8 @@ export async function GET(
           approvalStatus: registration.approval_status,
           checkedIn: registration.checked_in,
           createdAt: registration.created_at,
+          // Soft-cancelled bibs (flexible refund) stay listed so admins see what happened.
+          cancelledAt: registration.cancelled_at,
         },
         ticket: {
           id: registration.ticket_id,

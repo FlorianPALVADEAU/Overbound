@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '15/09/2026'
+const lastUpdated = '09/10/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et champ d’application' },
@@ -55,11 +55,11 @@ const paragraphs = {
     '« Partenaires » : prestataires tiers intervenant dans le cadre des événements (chronométrage, sécurité, restauration, équipementiers, assurances, solutions de paiement).',
   ],
   mentionsLegales: [
-    'Éditeur : Overbound SASU, société par actions simplifiée au capital de 5000 €, immatriculée au RCS de Versailles sous le numéro 992 578 229, ayant son siège social au 105 rue de la brèche du houx, Jouars-Pontchartrain, France',
+    'Éditeur : Palvadeau Organisation, société par actions simplifiée unipersonnelle au capital de 5 000 €, exploitant la marque Overbound, immatriculée au RCS de Versailles sous le numéro 992 578 229, ayant son siège social au 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain, France.',
     'Numéro de TVA intracommunautaire : FR84 992578229.',
     'Directeur de la publication : Florian Palvadeau, Président.',
     'Email de contact : contact@overbound-race.com – Téléphone : +33 (0)6 52 26 60 54.',
-    'Hébergement : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis. Sauvegarde des données déportée sur les instances Supabase (Supabase Inc., 970 Toa Payoh North #07-04, Singapour).',
+    'Hébergement : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis (site). Base de données : Supabase Inc., instance hébergée dans l’Union européenne.',
     'Support client : contact@overbound-race.com du lundi au vendredi, 9h00 – 18h00 (CET).',
   ],
   accesPlateforme: [
@@ -100,9 +100,9 @@ const paragraphs = {
   ],
   annulation: [
     "Conformément à l’article L221-28 12° du Code de la consommation, les inscriptions à une activité sportive datée sont exclues du droit de rétractation (service de loisirs à une date déterminée).",
-    "Les inscriptions sont définitives : Overbound n’accorde aucun remboursement, avoir ni compensation volontaire, quelle que soit la raison invoquée par le participant.",
-    "Overbound propose cependant une option de transfert de dossard gratuite jusqu’à la veille de l’événement (J-1), sous réserve que le bénéficiaire remplisse les conditions de participation et accepte le règlement applicable.",
-    "Après J-1, aucun transfert n’est garanti. En cas d’annulation, de report ou de modification de l’événement, Overbound n’accorde aucun remboursement, avoir ni compensation à titre commercial, sans préjudice des droits impératifs prévus par la loi applicable.",
+    "Les inscriptions sont définitives : aucun remboursement n’est accordé lorsque le participant ne peut plus participer.",
+    "Le dossard peut être transféré une fois, jusqu’à la veille de l’événement (J-1), moyennant des frais de transfert payés par le cédant ; le bénéficiaire renseigne son identité et signe personnellement la décharge (CGV, article 8).",
+    "Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine ; en cas de report, le billet reste valable ou peut être remboursé sur demande. Les modalités complètes figurent à l’article 9 des CGV.",
   ],
   conditionsCourse: [
     "Chaque participant certifie disposer d’une condition physique adaptée à la pratique d’une course à obstacles et s’engage à respecter les consignes de sécurité transmises par l’organisation.",
@@ -135,7 +135,7 @@ const paragraphs = {
     "La base légale principale est le contrat (inscriptions) et l’intérêt légitime (sécurisation, lutte contre la fraude). Le consentement est requis pour les communications marketing et cookies non essentiels.",
     "Chaque utilisateur dispose des droits d’accès, rectification, effacement, limitation, opposition, portabilité (art. 15 à 22 RGPD). La demande se fait à contact@overbound-race.com avec justificatif d’identité.",
     "En cas de violation de données, Overbound notifiera la CNIL sous 72h et informera les utilisateurs concernés si nécessaire.",
-    "Délégué à la protection des données (DPO) : Cabinet LexData, 12 rue d’Uzès, 75002 Paris – dpo@overbound-race.com.",
+    "Overbound n’a pas désigné de délégué à la protection des données, cette désignation n’étant pas obligatoire au regard de ses traitements (article 37 du RGPD). Contact : contact@overbound-race.com.",
   ],
   cookies: [
     "Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, session) ainsi que des cookies de performance (Google Analytics) soumis à consentement.",
@@ -143,8 +143,8 @@ const paragraphs = {
     "Les navigateurs permettent également de paramétrer l’acceptation ou le refus des cookies. Le refus peut dégrader certaines fonctionnalités.",
   ],
   securite: [
-    "Overbound applique les bonnes pratiques de sécurité (authentification JWT, chiffrement TLS, sauvegardes quotidiennes).",
-    "Un programme de bug bounty privé est ouvert aux chercheurs en sécurité ; tout signalement doit être envoyé à contact@overbound-race.com avec une description et, si possible, un proof-of-concept.",
+    "Overbound applique des mesures de sécurité adaptées : authentification des comptes, chiffrement des échanges (TLS), base de données hébergée dans l’Union européenne avec règles d’accès par utilisateur.",
+    "Toute vulnérabilité peut être signalée à contact@overbound-race.com avec une description et, si possible, les étapes pour la reproduire.",
     "Les tests de charge ou d’intrusion non autorisés sont interdits. En cas d’impact significatif, Overbound se réserve le droit d’engager des poursuites.",
   ],
   forceMajeure: [
@@ -154,19 +154,19 @@ const paragraphs = {
   modifications: [
     "Overbound peut modifier les présentes CGU à tout moment pour les adapter aux évolutions légales, techniques ou fonctionnelles de la Plateforme.",
     "Les utilisateurs seront informés au moins 15 jours avant l’entrée en vigueur des nouvelles CGU via email ou notification. L’utilisation continue de la Plateforme après cette date vaut acceptation des modifications.",
-    "En cas de refus, l’utilisateur peut fermer son compte en écrivant à goodbye@overbound-race.com. Les obligations antérieures demeure applicables.",
+    "En cas de refus, l’utilisateur peut fermer son compte en écrivant à contact@overbound-race.com. Les obligations antérieures demeure applicables.",
   ],
   loi: [
     "Les CGU sont soumises au droit français. En cas de différend, les parties rechercheront une solution amiable dans un délai de 30 jours.",
-    "À défaut d’accord, le litige pourra être porté devant les tribunaux compétents du ressort de la Cour d’appel de Paris. Pour les consommateurs, conformément à l’article R. 631-3 du Code de la consommation, la juridiction compétente est celle du domicile du défendeur ou du lieu d’exécution de la prestation.",
+    "À défaut d’accord, le litige pourra être porté devant les tribunaux compétents. Pour les consommateurs, conformément à l’article R. 631-3 du Code de la consommation, la juridiction compétente est celle du domicile du défendeur ou du lieu d’exécution de la prestation.",
     "Médiation de la consommation : l’Utilisateur consommateur peut recourir gratuitement au service de médiation CM2C (Centre de médiation de la consommation des conciliateurs de justice) – 14 rue Saint Jean, 75017 Paris – cm2c.net.",
   ],
   contact: [
     "Support général : contact@overbound-race.com",
-    "Service inscriptions & billetterie : support@overbound-race.com",
+    "Service inscriptions & billetterie : contact@overbound-race.com",
     "Partenariats & sponsoring : partners@overbound-race.com",
     "Presse : press@overbound-race.com",
-    "Adresse postale : Overbound SAS – Service clients – 24 rue du Faubourg Saint-Martin, 75010 Paris",
+    "Adresse postale : Palvadeau Organisation (Overbound) – 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain",
   ],
 }
 

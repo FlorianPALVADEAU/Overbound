@@ -10,6 +10,11 @@ export interface AdminObstaclePayload {
   video_url?: string | null
   difficulty: number
   type: Obstacle['type']
+  metric_label?: string | null
+  metric_value?: string | null
+  weight_male?: string | null
+  weight_female?: string | null
+  penalty?: string | null
 }
 
 interface ObstaclesResponse {

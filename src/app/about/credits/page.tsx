@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Heart, Camera, Users, Briefcase, Coffee, Sparkles, Mail, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { PageHero } from '@/components/hero/PageHero'
 
 type ContactType = {
   name: string
@@ -95,7 +96,7 @@ function ContactCard({ contact, colorScheme }: { contact: ContactType; colorSche
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg">{contact.name}</CardTitle>
           {contact.link && (
-            <Link href={contact.link} target="_blank" rel="noopener noreferrer" className='cursor-pointer group'>
+            <Link href={contact.link} target="_blank" rel="noopener noreferrer" aria-label={`Ouvrir le lien de ${contact.name}`} className='group inline-flex size-11 cursor-pointer items-center justify-center'>
               <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
             </Link>
           )}
@@ -108,7 +109,7 @@ function ContactCard({ contact, colorScheme }: { contact: ContactType; colorSche
         {contact.mail && (
           <a
             href={`mailto:${contact.mail}`}
-            className="flex items-center gap-2 text-xs text-primary hover:underline"
+            className="flex min-h-11 items-center gap-2 break-all text-xs text-primary hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
             <Mail className="h-3 w-3" />
@@ -123,46 +124,12 @@ function ContactCard({ contact, colorScheme }: { contact: ContactType; colorSche
 export default function CreditsPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
-      {/* Hero Section */}
-      <section className='relative isolate overflow-hidden py-20 sm:py-24'>
-        <div className='absolute inset-0'>
-          <Image
-            src={"/images/images/overbound-headband-on-chains-with-grass-in-background.avif"}
-            alt='Crédits Overbound'
-            fill
-            sizes='100vw'
-            className='object-cover object-center'
-            priority
-          />
-          <div className='pointer-events-none absolute inset-0 bg-background/5 backdrop-blur-[3px]' />
-          <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/15 via-background/70 to-background' />
-          <div className='pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent' />
-        </div>
-        <div className='py-50 relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
-          <div className='max-w-3xl space-y-6 text-center lg:text-left'>
-            <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm'>
-              Crédits
-            </span>
-            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
-              Merci à tous ceux qui rendent Overbound possible
-            </h1>
-            <p className='text-base leading-relaxed text-muted-foreground sm:text-lg'>
-              Overbound n&apos;existerait pas sans le soutien, l&apos;aide et la confiance de nombreuses personnes.
-              Cette page leur est dédiée.
-            </p>
-          </div>
-        </div>
-        <div className='pointer-events-none absolute inset-x-0 bottom-[-10%] flex justify-center opacity-70'>
-          <Image
-            src='/images/decorations/mountain-vector.svg'
-            alt='Décor montagne'
-            width={1600}
-            height={800}
-            className='w-[220%] max-w-none sm:w-[170%] md:w-[140%]'
-            priority
-          />
-        </div>
-      </section>
+      <PageHero
+        image={{ src: '/images/images/overbound-headband-on-chains-with-grass-in-background.avif', alt: 'Crédits Overbound' }}
+        eyebrow="Crédits"
+        title="Merci à tous ceux qui rendent Overbound possible"
+        description="Cette page est dédiée à ceux qui nous soutiennent."
+      />
 
       {/* Fondateur */}
       <section className="relative z-10 py-16 sm:py-20">
@@ -328,7 +295,7 @@ export default function CreditsPage() {
           alt='Illustration montagne'
           width={1200}
           height={600}
-          className='z-1 pointer-events-none absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-screen max-w-none -translate-x-1/2'
+          className='z-1 pointer-events-none absolute -top-10 lg:top-[-1%] rotate-180 left-1/2 w-full max-w-none -translate-x-1/2'
         />
         <Image
           src="/images/decorations/wall-texture.png"
@@ -360,7 +327,7 @@ export default function CreditsPage() {
           alt='Illustration montagne'
           width={1200}
           height={600}
-          className='z-1 pointer-events-none absolute bottom-[-1%] left-1/2 w-screen max-w-none -translate-x-1/2'
+          className='z-1 pointer-events-none absolute bottom-[-1%] left-1/2 w-full max-w-none -translate-x-1/2'
         />
       </section>
     </main>

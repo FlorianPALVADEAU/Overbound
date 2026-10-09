@@ -7,27 +7,17 @@ export type SelectableWave = {
 }
 
 /**
- * SAS OPEN a participant can pick from, filtered server-side by their
- * declared distance range (FDR-0012). Refetches whenever the distance
- * inputs change; the list is a UX convenience only — the real check
- * happens again server-side at registration creation.
+ * Open departure slots (SAS) of a ticket with places left. The choice is free:
+ * it does not depend on any other field. The real capacity check happens again
+ * server-side at registration creation.
  */
-export function useSelectableOpenWaves(
-  eventId: string,
-  ticketId: string | undefined,
-  distanceIdealKm: string,
-  distanceMinKm: string,
-  enabled: boolean,
-) {
+export function useSelectableOpenWaves(eventId: string, ticketId: string | undefined, enabled: boolean) {
   const [waves, setWaves] = useState<SelectableWave[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const ideal = Number(distanceIdealKm)
-    const min = Number(distanceMinKm)
-
-    if (!enabled || !ticketId || !Number.isFinite(ideal) || !Number.isFinite(min) || ideal < min) {
+    if (!enabled || !ticketId) {
       setWaves([])
       return
     }
@@ -36,13 +26,7 @@ export function useSelectableOpenWaves(
     setIsLoading(true)
     setError(null)
 
-    const params = new URLSearchParams({
-      distanceIdealKm: String(ideal),
-      distanceMinKm: String(min),
-      ticketId,
-    })
-
-    fetch(`/api/events/${eventId}/open-waves/selectable?${params.toString()}`)
+    fetch(`/api/events/${eventId}/open-waves/selectable?ticketId=${encodeURIComponent(ticketId)}`)
       .then(async (response) => {
         if (!response.ok) {
           const body = await response.json().catch(() => ({}))
@@ -63,7 +47,7 @@ export function useSelectableOpenWaves(
     return () => {
       cancelled = true
     }
-  }, [eventId, ticketId, distanceIdealKm, distanceMinKm, enabled])
+  }, [eventId, ticketId, enabled])
 
   return { waves, isLoading, error }
 }

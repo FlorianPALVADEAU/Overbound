@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
+import { pickProviderAvatar } from '@/lib/account/avatar'
 
 export async function GET(request: Request) {
   try {
@@ -22,14 +23,15 @@ export async function GET(request: Request) {
 
     const { data: profileData } = await admin
       .from('profiles')
-      .select('full_name, phone, date_of_birth, marketing_opt_in, role')
+      .select('full_name, phone, date_of_birth, marketing_opt_in, role, avatar_url')
       .eq('id', user.id)
       .single()
     const profile =
       profileData !== null
         ? {
             ...profileData,
-            avatar_url: (user.user_metadata as Record<string, any> | undefined)?.avatar_url ?? null,
+            // The stored photo (uploaded, or copied from Google at login) wins over raw provider metadata.
+            avatar_url: profileData.avatar_url ?? pickProviderAvatar(user.user_metadata),
           }
         : null
 

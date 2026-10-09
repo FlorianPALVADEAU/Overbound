@@ -34,6 +34,7 @@ function createAdminMock() {
 
   const registrationQuery: any = {
     eq: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
     ilike: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),

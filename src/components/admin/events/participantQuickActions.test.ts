@@ -26,4 +26,13 @@ describe('getParticipantQuickActionState', () => {
     expect(state.ticket).toEqual({ disabled: true, reason: 'Aucun billet attribué' })
     expect(state.wave.disabled).toBe(false)
   })
+
+  it('blocks every action on a cancelled and refunded bib', () => {
+    const cancelled = participant('wave')
+    cancelled.registration.cancelledAt = '2026-10-09T10:00:00Z'
+    const state = getParticipantQuickActionState(cancelled)
+
+    expect(state.ticket).toEqual({ disabled: true, reason: 'Billet annulé et remboursé' })
+    expect(state.wave).toEqual({ disabled: true, reason: 'Billet annulé et remboursé' })
+  })
 })

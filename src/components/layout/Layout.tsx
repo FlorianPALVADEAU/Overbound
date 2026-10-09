@@ -2,6 +2,8 @@
 
 import { ReactNode, useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import { usePathname, useSelectedLayoutSegment } from 'next/navigation'
+import { MaintenanceBanner } from './MaintenanceBanner'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PromotionsBanner } from './PromotionsBanner'
@@ -10,6 +12,8 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { CookieConsentBanner } from '@/components/consent/CookieConsentBanner'
 import type { Session } from '@supabase/supabase-js'
+import { PopupArbiterProvider } from '@/components/popups/PopupArbiterProvider'
+import { GlobalLuckyWheelWidget } from '@/components/lucky-wheel/GlobalLuckyWheelWidget'
 
 interface LayoutProps {
   children: ReactNode
@@ -23,6 +27,10 @@ const PopupPromotion = dynamic(
 export function Layout({ children }: LayoutProps) {
   const { data, isLoading } = useSession()
   const queryClient = useQueryClient()
+  // The account area has its own fixed bottom navigation; the site footer would sit underneath it on mobile.
+  const isAccountArea = usePathname()?.startsWith('/account') ?? false
+  // Segment (not URL): the maintenance screen is served by a rewrite, so the URL is the visitor's original one.
+  const isMaintenanceScreen = useSelectedLayoutSegment() === 'maintenance'
   const supabase = createSupabaseBrowser()
 
   const seedSessionCache = useCallback((session: Session | null) => {
@@ -107,20 +115,31 @@ export function Layout({ children }: LayoutProps) {
     return () => subscription.unsubscribe()
   }, [supabase, seedSessionCache, syncPostAuthData, queryClient])
 
+  if (isMaintenanceScreen) return <>{children}</>
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header
-        user={data?.user ?? null}
-        profile={data?.profile ?? null}
-        alerts={data?.alerts ?? null}
-        isLoading={isLoading}
-      />
-      <PromotionsBanner />
-      <main className="flex-1">{children}</main>
-      <Footer />
-      <CookieConsentBanner />
-      {/* Popup promotion for non-authenticated users */}
-      <PopupPromotion isAuthenticated={!!data?.user} />
-    </div>
+    <PopupArbiterProvider>
+      <div className="flex min-h-screen flex-col">
+        <MaintenanceBanner isAdmin={data?.profile?.role === 'admin'} />
+        <Header
+          user={data?.user ?? null}
+          profile={data?.profile ?? null}
+          alerts={data?.alerts ?? null}
+          isLoading={isLoading}
+        />
+        <PromotionsBanner />
+        <main className="flex-1">{children}</main>
+        <div className={isAccountArea ? 'hidden md:block' : undefined}>
+          <Footer />
+        </div>
+        <CookieConsentBanner />
+        {/* Popup promotion for non-authenticated users */}
+        <PopupPromotion isAuthenticated={!!data?.user} />
+        {/* FDR-0015 §7.1: Lucky Wheel is site-wide, not just on event pages
+            -- it resolves its own event from context (the current event
+            page, or the featured event elsewhere). */}
+        <GlobalLuckyWheelWidget />
+      </div>
+    </PopupArbiterProvider>
   )
 }

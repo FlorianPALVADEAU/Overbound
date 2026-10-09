@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
+import type { EventPriceTier } from '@/types/EventPriceTier'
 
 export interface EventDetailResponse {
-  event: Event & { tickets?: Ticket[] }
+  event: Event & { tickets?: Ticket[]; price_tiers?: EventPriceTier[] }
   availableSpots: number
   existingRegistration: {
     id: string

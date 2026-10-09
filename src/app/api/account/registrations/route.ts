@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import QRCode from 'qrcode'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
+import { pickProviderAvatar } from '@/lib/account/avatar'
 import { processAccountEngagementEmails } from '@/lib/email/engagement'
+import { parseParticipantFromSignature } from '@/lib/account/participant'
+import { listUnlockedRegistrationIds } from '@/lib/tickets/ticketTransfers'
+import { getFlexibleRefundEligibility, type FlexibleRefundSubject } from '@/lib/tickets/flexibleTicket'
+import type { AccountParticipant } from '@/types/AccountRegistration'
 
 export const runtime = 'nodejs'
 
@@ -32,7 +37,6 @@ const normalizeDirectRegistration = (row: any) => {
     registration_created_at: row.created_at ?? null,
     ticket_id: row.ticket_id ?? null,
     ticket_name: ticket?.name ?? null,
-    difficulty_level: row.difficulty_level ?? null,
     event_id: row.event_id ?? null,
     event_title: event?.title ?? null,
     event_date: event?.date ?? null,
@@ -58,14 +62,15 @@ export async function GET(request: Request) {
 
     const { data: profileData } = await admin
       .from('profiles')
-      .select('full_name, phone, date_of_birth, marketing_opt_in, role')
+      .select('full_name, phone, date_of_birth, marketing_opt_in, role, avatar_url')
       .eq('id', user.id)
       .single()
     const profile =
       profileData !== null
         ? {
             ...profileData,
-            avatar_url: (user.user_metadata as Record<string, any> | undefined)?.avatar_url ?? null,
+            // The stored photo (uploaded, or copied from Google at login) wins over raw provider metadata.
+            avatar_url: profileData.avatar_url ?? pickProviderAvatar(user.user_metadata),
           }
         : null
 
@@ -106,7 +111,6 @@ export async function GET(request: Request) {
           created_at,
           ticket_id,
           event_id,
-          difficulty_level,
           ticket:tickets(name),
           event:events(title, date, location),
           order:orders(status, amount_total, currency, invoice_url, created_at)
@@ -128,8 +132,7 @@ export async function GET(request: Request) {
               created_at,
               ticket_id,
               event_id,
-              difficulty_level,
-              ticket:tickets(name),
+                  ticket:tickets(name),
               event:events(title, date, location),
               order:orders(status, amount_total, currency, invoice_url, created_at)
             `,
@@ -180,8 +183,12 @@ export async function GET(request: Request) {
         distance_min_km: number | null
         assignment_constraint_breached: boolean | null
         bib_number: number | null
+        race_format: 'open' | 'ranked' | null
+        order_id: string | null
         requires_document: boolean
         document_types: string[]
+        cancelled: boolean
+        refund: FlexibleRefundSubject | null
       }
     >()
 
@@ -200,7 +207,17 @@ export async function GET(request: Request) {
           distance_ideal_km,
           distance_min_km,
           assignment_constraint_breached,
-          bib_number
+          bib_number,
+          race_format,
+          order_id,
+          user_id,
+          guarantor_user_id,
+          checked_in,
+          flexible_refund,
+          paid_ticket_cents,
+          cancelled_at,
+          event:events(date),
+          order:orders(user_id)
         `,
         )
         .in('id', registrationIds)
@@ -224,16 +241,53 @@ export async function GET(request: Request) {
               ? row.assignment_constraint_breached
               : null,
             bib_number: typeof row.bib_number === 'number' ? row.bib_number : null,
+            race_format: row.race_format === 'open' || row.race_format === 'ranked' ? row.race_format : null,
+            order_id: row.order_id ?? null,
             requires_document: false,
             document_types: [],
+            cancelled: Boolean(row.cancelled_at),
+            refund: {
+              flexible_refund: Boolean(row.flexible_refund),
+              paid_ticket_cents: typeof row.paid_ticket_cents === 'number' ? row.paid_ticket_cents : null,
+              cancelled_at: row.cancelled_at ?? null,
+              checked_in: Boolean(row.checked_in),
+              user_id: row.user_id ?? null,
+              guarantor_user_id: row.guarantor_user_id ?? null,
+              order_user_id: firstRelation<{ user_id: string | null }>(row.order)?.user_id ?? null,
+              event_date: firstRelation<{ date: string | null }>(row.event)?.date ?? null,
+            },
           })
         }
       }
     }
 
+    // Identity typed at checkout lives in the signed waiver; read only the identity fields.
+    const participantByRegistration = new Map<string, AccountParticipant>()
+    if (registrationIds.length > 0) {
+      const { data: signatureRows, error: signatureError } = await admin
+        .from('registration_signatures')
+        .select('registration_id, signature_data')
+        .in('registration_id', registrationIds)
+        // Oldest first: a transfer's signature (newer) must win over the buyer's.
+        .order('signed_at', { ascending: true })
+
+      if (signatureError) {
+        console.error('[account api] registration signatures error', signatureError)
+      }
+      for (const row of (signatureRows ?? []) as Array<{ registration_id: string; signature_data: string | null }>) {
+        const participant = parseParticipantFromSignature(row.signature_data)
+        if (participant) participantByRegistration.set(row.registration_id, participant)
+      }
+    }
+
+    const unlockedTransfers = await listUnlockedRegistrationIds(admin, registrationIds).catch((unlockedError) => {
+      console.error('[account api] ticket transfers error', unlockedError)
+      return new Set<string>()
+    })
+
     const now = new Date()
 
-    const registrationsWithQr = await Promise.all(
+    const allRegistrations = await Promise.all(
       (registrations ?? []).map(async (registration) => {
         const meta = registrationMetaMap.get(registration.registration_id) ?? {
           transfer_token: null,
@@ -248,9 +302,15 @@ export async function GET(request: Request) {
           distance_min_km: null,
           assignment_constraint_breached: null,
           bib_number: null,
+          race_format: null,
+          order_id: null,
           requires_document: false,
           document_types: [],
+          cancelled: false,
+          refund: null,
         }
+
+        const refundEligibility = meta.refund ? getFlexibleRefundEligibility(meta.refund, user.id, now) : null
 
         const qrCodeDataUrl =
           registration.qr_code_token && registration.qr_code_token.length > 0
@@ -271,6 +331,14 @@ export async function GET(request: Request) {
           distance_min_km: meta.distance_min_km,
           assignment_constraint_breached: meta.assignment_constraint_breached,
           bib_number: meta.bib_number,
+          race_format: meta.race_format,
+          order_id: meta.order_id,
+          participant: participantByRegistration.get(registration.registration_id) ?? null,
+          transfer_unlocked: unlockedTransfers.has(registration.registration_id),
+          cancelled: meta.cancelled,
+          flexible_refund: Boolean(meta.refund?.flexible_refund),
+          flexible_refund_amount_cents: refundEligibility?.eligible ? refundEligibility.amountCents : null,
+          flexible_refund_deadline: refundEligibility?.eligible ? refundEligibility.deadline.toISOString() : null,
           requires_document: false,
           required_document_types: [],
           uploaded_document_types: [],
@@ -282,6 +350,9 @@ export async function GET(request: Request) {
         }
       }),
     )
+
+    // A bib cancelled under the flexible option is gone for its holder (the refund email is the trace).
+    const registrationsWithQr = allRegistrations.filter((registration) => !registration.cancelled)
 
     const totalEvents = registrationsWithQr.length
     const checkedInEvents = registrationsWithQr.filter((entry) => entry.checked_in).length

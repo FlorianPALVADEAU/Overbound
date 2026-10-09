@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { checkCampaignActivationConflicts } from '@/lib/luckyWheel/campaignConflictsServer'
 
 const campaignSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
@@ -65,9 +66,34 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
     }
 
     const admin = supabaseAdmin()
+    const sanitized = sanitizePayload(payload)
+
+    // FDR-0015 §7.3 layers 2/3: see the create route for the full rationale.
+    let warnings: Awaited<ReturnType<typeof checkCampaignActivationConflicts>> = []
+    if (sanitized.enabled && !sanitized.paused) {
+      const conflicts = await checkCampaignActivationConflicts({
+        admin,
+        candidateId: id,
+        eventIds: payload.event_ids,
+        startsAt: payload.starts_at,
+        endsAt: payload.ends_at,
+      })
+      const blocking = conflicts.find((c) => c.severity === 'refuse')
+      if (blocking && blocking.kind === 'campaign') {
+        return NextResponse.json(
+          {
+            error: `Chevauche la campagne "${blocking.conflict.name}" déjà active sur un événement partagé`,
+            conflict: blocking,
+          },
+          { status: 409 },
+        )
+      }
+      warnings = conflicts.filter((c) => c.severity === 'warn')
+    }
+
     const { data: campaign, error: updateError } = await admin
       .from('lucky_wheel_campaigns')
-      .update(sanitizePayload(payload))
+      .update(sanitized)
       .eq('id', id)
       .select()
       .single()
@@ -87,7 +113,7 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
 
     const data = await fetchCampaign(campaign.id)
 
-    return NextResponse.json({ campaign: data })
+    return NextResponse.json({ campaign: data, warnings })
   } catch (error) {
     console.error('Erreur PUT lucky wheel campaign:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

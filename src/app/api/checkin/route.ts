@@ -234,6 +234,7 @@ export async function GET(req: Request) {
           )
         )
       `)
+      .is('cancelled_at', null)
       .order('created_at', { ascending: false })
 
     if (eventId) {

@@ -36,6 +36,11 @@ function buildFormValues(obstacle?: Obstacle): ObstacleFormValues {
       video_url: '',
       difficulty: '5',
       type: 'force',
+      metric_label: '',
+      metric_value: '',
+      weight_male: '',
+      weight_female: '',
+      penalty: '',
     }
   }
 
@@ -46,6 +51,11 @@ function buildFormValues(obstacle?: Obstacle): ObstacleFormValues {
     video_url: obstacle.video_url || '',
     difficulty: obstacle.difficulty.toString(),
     type: obstacle.type,
+    metric_label: obstacle.metric_label || '',
+    metric_value: obstacle.metric_value || '',
+    weight_male: obstacle.weight_male || '',
+    weight_female: obstacle.weight_female || '',
+    penalty: obstacle.penalty || '',
   }
 }
 
@@ -148,6 +158,11 @@ export function ObstaclesSection() {
       video_url: values.video_url || null,
       difficulty,
       type: values.type,
+      metric_label: values.metric_label || null,
+      metric_value: values.metric_value || null,
+      weight_male: values.weight_male || null,
+      weight_female: values.weight_female || null,
+      penalty: values.penalty || null,
     }
 
     try {

@@ -69,6 +69,10 @@ function createAdmin(options: {
         }
         let isListQuery = false
         const selectQuery = {
+          is() {
+            isListQuery = true
+            return selectQuery
+          },
           order() {
             isListQuery = true
             return selectQuery

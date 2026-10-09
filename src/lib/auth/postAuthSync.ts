@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { syncProviderAvatar } from '@/lib/account/avatarStorage'
 import {
   DEFAULT_MARKETING_LIST_SLUGS,
   mapSlugsToAudienceIds,
@@ -237,6 +238,7 @@ async function linkEmailSubscriptionsToUser(user: User, profile: ProfileRow | nu
 export async function runPostAuthSync(user: User) {
   const profile = await ensureProfile(user)
   await linkEmailSubscriptionsToUser(user, profile)
+  await syncProviderAvatar(supabaseAdmin(), user.id, user.user_metadata)
 
   // Keep Resend in sync for every authenticated account so account emails are always present.
   if (user.email) {

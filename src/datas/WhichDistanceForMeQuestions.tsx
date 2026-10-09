@@ -1,5 +1,4 @@
 
-import { FORMAT_LEVELS } from '@/constants/formatLevels'
 
 export interface QuestionOption {
   label: string
@@ -34,7 +33,7 @@ export interface FinalResult {
 }
 
 export type QuestionId = 'q1' | 'q2' | 'q3' | 'q4' | 'd1' | 'd2' | 'd3'
-export type ResultId = 'format_initiation' | 'format_folie' | 'format_royale' | 'difficulty_standard' | 'difficulty_guerrier' | 'difficulty_legende'
+export type ResultId = 'format_initiation' | 'format_folie' | 'format_royale'
 
 export const questionsData: QuestionnaireData = {
     "questions": [
@@ -78,7 +77,7 @@ export const questionsData: QuestionnaireData = {
             "id": "d1",
             "question": "Quelle est ta motivation principale pour cette course ?",
             "options": [
-                { "label": "Découvrir l'expérience et m'amuser", "next": "difficulty_standard" },
+                { "label": "Découvrir l'expérience et m'amuser", "next": "format_initiation" },
                 { "label": "Me challenger sérieusement", "next": "d2" },
                 { "label": "Prouver que je peux repousser mes limites", "next": "d3" }
             ]
@@ -87,16 +86,16 @@ export const questionsData: QuestionnaireData = {
             "id": "d2",
             "question": "Veux-tu que les obstacles soient plus exigeants et parfois obligatoires ?",
             "options": [
-                { "label": "Oui, je veux un vrai test", "next": "difficulty_guerrier" },
-                { "label": "Non, je préfère rester flexible", "next": "difficulty_standard" }
+                { "label": "Oui, je veux un vrai test", "next": "format_folie" },
+                { "label": "Non, je préfère rester flexible", "next": "format_initiation" }
             ]
         },
         {
             "id": "d3",
             "question": "Es-tu prêt à risquer l'échec si tu ne passes pas certains obstacles ?",
             "options": [
-                { "label": "Oui, je veux l'expérience la plus dure possible", "next": "difficulty_legende" },
-                { "label": "Pas forcément, mais je veux un vrai challenge", "next": "difficulty_guerrier" }
+                { "label": "Oui, je veux l'expérience la plus dure possible", "next": "format_royale" },
+                { "label": "Pas forcément, mais je veux un vrai challenge", "next": "format_folie" }
             ]
         }
     ],
@@ -115,21 +114,6 @@ export const questionsData: QuestionnaireData = {
             "name": "Ultra Arena",
             "description": "Une backyard OCR. Le défi ultime, réservé à ceux qui veulent repousser leurs limites et vivre une aventure hors norme.",
             "icon": "👑"
-        },
-        "difficulty_standard": {
-            "name": FORMAT_LEVELS.low.name,
-            "description": "Une expérience accessible où les obstacles sont franchissables ou adaptables. Parfait pour découvrir la course en toute sérénité.",
-            "icon": "⭐"
-        },
-        "difficulty_guerrier": {
-            "name": FORMAT_LEVELS.mid.name,
-            "description": "Un défi relevé : obstacles plus exigeants, parfois obligatoires, avec une intensité accrue. Pour les compétiteurs motivés.",
-            "icon": "⚔️"
-        },
-        "difficulty_legende": {
-            "name": FORMAT_LEVELS.hard.name,
-            "description": "L'épreuve ultime : tous les obstacles sont obligatoires, aucun compromis. Réservé à ceux qui veulent prouver leur détermination totale.",
-            "icon": "🏆"
         }
     }
 };

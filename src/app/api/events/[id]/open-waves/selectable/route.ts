@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { getSelectableWaveWindow } from '@/lib/openSas'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
 
 /**
- * Public: SAS OPEN a participant can pick from, filtered by their declared
- * distance range (FDR-0012). Open, non-full waves inside the window only —
- * this list is a UX convenience; the real check happens again server-side
- * at registration creation (assign_selected_wave_to_registration).
+ * Public: the departure slots (SAS) of a ticket that still have places.
+ * The choice is free — it depends on no other field. This list is a UX
+ * convenience; the real check happens again server-side at registration
+ * creation (assign_selected_wave_to_registration).
  */
 export async function GET(
   request: Request,
@@ -17,12 +16,10 @@ export async function GET(
 ) {
   const { id } = await params
   const url = new URL(request.url)
-  const distanceIdealKm = Number(url.searchParams.get('distanceIdealKm'))
-  const distanceMinKm = Number(url.searchParams.get('distanceMinKm'))
   const ticketId = z.string().uuid().safeParse(url.searchParams.get('ticketId'))
 
-  if (!ticketId.success || !Number.isFinite(distanceIdealKm) || !Number.isFinite(distanceMinKm) || distanceIdealKm < distanceMinKm) {
-    return NextResponse.json({ error: 'Distances invalides.' }, { status: 400 })
+  if (!ticketId.success) {
+    return NextResponse.json({ error: 'Billet invalide.' }, { status: 400 })
   }
 
   const admin = supabaseAdmin()
@@ -30,7 +27,7 @@ export async function GET(
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
   const { data: event, error: eventError } = await admin
     .from('events')
-    .select('id, date')
+    .select('id')
     .eq(isUUID ? 'id' : 'slug', id)
     .single()
 
@@ -64,16 +61,8 @@ export async function GET(
     return NextResponse.json({ error: 'Impossible de récupérer les SAS' }, { status: 500 })
   }
 
-  const window = getSelectableWaveWindow(event.date, distanceIdealKm, distanceMinKm)
-  const windowStartMs = window.start.getTime()
-  const windowEndMs = window.end.getTime()
-
   const selectable = (waves ?? [])
     .filter((wave) => (wave.assigned_count ?? 0) < (wave.capacity ?? 0))
-    .filter((wave) => {
-      const startMs = new Date(wave.start_time).getTime()
-      return startMs >= windowStartMs && startMs <= windowEndMs
-    })
     .map((wave) => ({
       wave_index: wave.wave_index,
       start_time: wave.start_time,

@@ -8,6 +8,7 @@ import BlogArticleItem from "@/components/blog/BlogArticleItem";
 import BlogFilters from "@/components/blog/BlogFilters";
 import { useBlogPosts, useBlogCategories } from "@/app/api/blog/blogQueries";
 import { BlogGridSkeleton, BlogFiltersSkeleton } from "@/components/blog/BlogSkeleton";
+import { PageHero } from '@/components/hero/PageHero'
 
 export default function BlogIndex() {
   return (
@@ -130,48 +131,21 @@ function BlogPageFallback() {
 
 function BlogHero() {
   return (
-    <section className="relative isolate overflow-hidden py-16 sm:py-20">
-      <div className="absolute inset-0">
-        <Image
-          src="/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.avif"
-          alt="OverBound Blog"
-          fill
-          sizes="100vw"
-          className="object-cover"
-          style={{ objectPosition: '50% 30%' }}
-          priority
-        />
-        <div className="pointer-events-none absolute inset-0 bg-background/40 backdrop-blur-[2px]" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
-      </div>
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 my-20">
-        <div className="max-w-3xl space-y-3">
-          <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm">
-            La tribu OverBound
-          </span>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Conseils, actus et coulisses
-          </h1>
-          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Entraînement, nutrition, préparation et histoires qui font vibrer
-            nos courses. Tout pour progresser et kiffer sur les obstacles.
-          </p>
-          <div className="flex gap-3">
-            <Link
-              href="/blog/categories"
-              className="px-4 py-2 rounded-full border text-sm hover:bg-background/50"
-            >
-              Voir les catégories
-            </Link>
-            <Link
-              href="/blog/auteurs"
-              className="px-4 py-2 rounded-full border text-sm hover:bg-background/50"
-            >
-              Nos auteurs
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
+    <PageHero
+      image={{ src: '/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.avif', alt: 'OverBound Blog', position: '50% 30%' }}
+      eyebrow="La tribu OverBound"
+      title="Conseils, actus et coulisses"
+      description="Entraînement, nutrition, préparation et histoires de la tribu."
+      actions={
+        <>
+          <Link href="/blog/categories" className="inline-flex min-h-11 items-center rounded-full border px-4 text-sm hover:bg-background/50">
+            Voir les catégories
+          </Link>
+          <Link href="/blog/auteurs" className="inline-flex min-h-11 items-center rounded-full border px-4 text-sm hover:bg-background/50">
+            Nos auteurs
+          </Link>
+        </>
+      }
+    />
   );
 }

@@ -191,6 +191,7 @@ export const fetchTierRegistrationCounts = async (supabase: SupabaseSessionClien
     .from('registrations')
     .select('event_price_tier_id')
     .eq('event_id', eventId)
+    .is('cancelled_at', null)
 
   const counts: Record<string, number> = {}
   for (const row of registrations || []) {
@@ -328,6 +329,7 @@ export const ensureAvailability = async (
     .from('registrations')
     .select('*', { count: 'exact', head: true })
     .eq('event_id', eventId)
+    .is('cancelled_at', null)
 
   return existingRegistrationsCount || 0
 }

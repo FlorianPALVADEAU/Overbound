@@ -1,3 +1,4 @@
+import type { GroupIntent } from '@/lib/groups/invite'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell, UpsellOptions } from '@/types/Upsell'
@@ -42,10 +43,11 @@ export type Participant = {
   emergencyContactName: string
   emergencyContactPhone: string
   medicalInfo: string
+  /** Explicit consent (art. 9 GDPR) to keep `medicalInfo`; optional so drafts saved before it still load. */
+  healthDataConsent?: boolean
+  /** "Billet flexible" option: refundable without justification until J-7. */
+  flexible?: boolean
   licenseNumber: string
-  distanceIdealKm: string
-  distanceMinKm: string
-  difficultyLevel?: 'low' | 'mid' | 'hard' | null
   selectedWaveIndex?: number | null
 }
 
@@ -68,6 +70,8 @@ export type AppliedPromo = Pick<
 export interface PricingSummary {
   ticketTotal: number
   upsellTotal: number
+  /** Total of the "billet flexible" options; absent in pricing computed before the option existed. */
+  flexibleTotal?: number
   discountAmount: number
   totalDue: number
   currency: string
@@ -89,5 +93,11 @@ export interface MultiStepEventRegistrationProps {
   user: EventUser | null
   availableSpots: number
   initialTicketId?: string | null
+  /** Slot preselected from the event page; applied once to the first matching participant. */
+  initialWaveIndex?: number | null
+  /** Open a group action on arrival (?group=create|join). */
+  groupIntent?: GroupIntent | null
+  /** Group the visitor was invited to (?invite=CODE). */
+  inviteCode?: string | null
   eventPriceTiers?: EventPriceTier[]
 }

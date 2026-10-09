@@ -28,7 +28,7 @@ export const FAQQuestionCard = ({ question, loading, error }: { question: Questi
         <>
           <button
             type='button'
-            className='flex w-full cursor-pointer items-center justify-between gap-4 text-left'
+            className='flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 text-left'
           >
             <h3 className='text-lg font-semibold text-white sm:text-xl'>{question.title}</h3>
             <ArrowDown

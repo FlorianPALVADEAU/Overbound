@@ -15,6 +15,7 @@ export interface TicketRaceSummary {
   target_public: string
   distance_km: number | null
   is_universal?: boolean
+  gallery_images?: string[] | null
 }
 
 export type TicketDepartureMode = 'none' | 'wave' | 'fixed'

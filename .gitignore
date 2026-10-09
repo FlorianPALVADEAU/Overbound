@@ -12,6 +12,10 @@ node_modules
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/e2e/**/*-snapshots/*-actual.png
+/e2e/**/*-snapshots/*-diff.png
 
 # next.js
 /.next/
@@ -49,3 +53,6 @@ supabase/.db-dumps/
 
 # sql
 scripts/sql/*.sql
+
+# claude
+.claude/settings.local.json

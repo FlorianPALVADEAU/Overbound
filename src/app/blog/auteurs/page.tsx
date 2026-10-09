@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
-const heroImage = `${siteUrl}/images/hero_header_poster.jpg`
+const heroImage = `${siteUrl}/images/images/overbound-og-cover.jpg`
 
 export const metadata: Metadata = {
   title: 'Auteurs Blog OCR | Course à Obstacles Paris 2026 - Overbound Race',

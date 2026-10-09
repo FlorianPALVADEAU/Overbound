@@ -21,6 +21,13 @@ const nextConfig: NextConfig = {
   compiler: {
     styledComponents: true,
   },
+  // /about/concept described the first-edition backyard format; formats now live on /events/formats.
+  async redirects() {
+    return [
+      { source: '/about/concept', destination: '/events/formats', permanent: true },
+      { source: '/about/press', destination: '/about/partners', permanent: true },
+    ]
+  },
 }
 
 // Wrap with Sentry config

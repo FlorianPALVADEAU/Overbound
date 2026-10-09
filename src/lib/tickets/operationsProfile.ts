@@ -1,4 +1,5 @@
 import type { TicketOperationsConfig } from '@/types/Ticket'
+import { isOpenFormatTicket } from '@/lib/openSas'
 
 export type TicketOperationsStatus = 'configured' | 'unconfigured'
 
@@ -57,4 +58,20 @@ export function ticketChangeDepartureDescription(profile: TicketOperationsProfil
   if (profile.departureMode === 'wave') return 'Un départ par SAS sera attribué selon les règles de l’événement.'
   if (profile.departureMode === 'fixed') return 'Le départ fixe défini pour ce billet sera appliqué.'
   return 'Aucun départ ne sera attribué.'
+}
+
+/**
+ * Whether a participant must pick a departure slot (SAS) when registering.
+ * The ticket's explicit configuration decides. Only a ticket with no
+ * operational configuration at all falls back to the legacy OPEN naming, so
+ * older events keep working until their tickets are configured.
+ */
+export function ticketUsesWaveSelection(ticket: {
+  name?: string | null
+  race?: { name?: string | null } | null
+  operations_config?: TicketOperationsConfig | Record<string, unknown> | null
+}): boolean {
+  const { departureMode } = resolveTicketOperationsProfile(ticket.operations_config)
+  if (departureMode) return departureMode === 'wave'
+  return isOpenFormatTicket(ticket.name, ticket.race?.name)
 }

@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
+import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -73,6 +74,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const queryClient = useQueryClient()
+  const { data: featuredEventData } = useFeaturedEvent()
+  const featuredEvent = featuredEventData?.event
+  const featuredEventHref = featuredEvent ? `/events/${featuredEvent.slug}` : '/events/ultra-arena-2026'
+  const featuredEventRegisterHref = featuredEvent
+    ? `/events/${featuredEvent.slug}/register`
+    : '/events/ultra-arena-2026/register'
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false)
@@ -92,10 +99,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   }
 
   const aboutDropdownItems: DropdownItemType[] = [
-    { name: 'Le concept', href: '/about/concept', icon: MedalIcon },
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
-    { name: 'Presse', href: '/about/press', icon: MapPinIcon },
+    { name: 'Partenaires & presse', href: '/about/partners', icon: MapPinIcon },
     { name: 'Contact', href: '/contact', icon: MapPinIcon },
   ]
 
@@ -138,7 +144,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const userNavigation: NavigationItemType[] = user ? [
     { name: 'Mon compte', href: '/account', icon: UserIcon },
-    { name: 'Mon groupe', href: '/account?tab=group', icon: UsersIcon },
+    { name: 'Mon groupe', href: '/account/group', icon: UsersIcon },
     { name: 'Mes billets', href: '/account/tickets', icon: CreditCardIcon },
     ...(hasDashboardAccess ? [
       { name: isVolunteer && !isAdmin ? 'Espace bénévole' : 'Administration', href: '/dashboard', icon: SettingsIcon },
@@ -187,8 +193,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         <div className="w-full relative flex h-14 sm:h-16 items-center justify-between">
           
           {/* Logo - responsive text visibility */}
-          <div className="flex items-between z-10">
-            <Link href="/" className="flex items-center space-x-2">
+          <div className="flex items-between z-10 py-2 pr-2">
+            {/* py-2 pr-2 on the wrapping div above (not negative-margined,
+                since the logo sits flush against the header's left edge
+                and can't grow further left) plus p-2 here grows the tap
+                target toward 44px on every remaining side without
+                overflowing the row (FDR-0015 §10). */}
+            <Link href="/" className="flex items-center space-x-2 p-2">
               <Image
                 src="/images/brand/totem_logo_white.png"
                 alt="OverBound Logo"
@@ -202,15 +213,38 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           <div className="absolute flex w-full h-full items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
             <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
-              <a
-                href="https://photo.capture-ai.fr/events/overbound-2026"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center gap-1.5 text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base"
+              <Link
+                href={featuredEventHref}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
               >
-                <CameraIcon className="h-4 w-4" />
-                photos édition 2026
-              </a>
+                Événement
+              </Link>
+
+              <Link
+                href="/events/formats"
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+              >
+                Formats
+              </Link>
+
+              <Link
+                href="/obstacles"
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+              >
+                Obstacles
+              </Link>
+
+              {featuredEvent?.photos_url ? (
+                <a
+                  href={featuredEvent.photos_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center gap-1.5 text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base"
+                >
+                  <CameraIcon className="h-4 w-4" />
+                  photos édition
+                </a>
+              ) : null}
 
               <Link
                 href="/volunteers"
@@ -355,7 +389,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
                       asChild
                     >
-                      <Link href="/auth/register">S'inscrire</Link>
+                      <Link href={featuredEventRegisterHref}>Je m'inscris</Link>
                     </Button>
                   )}
               </div>
@@ -367,7 +401,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="h-8 w-8 p-0"
+                className="h-11 w-11 p-0"
               >
                 {mobileMenuOpen ? (
                   <XIcon className="h-5 w-5" />
@@ -383,17 +417,42 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
             <div className="space-y-1">
-              {/* Lien Photos édition 2026 mobile */}
-              <a
-                href="https://photo.capture-ai.fr/events/overbound-2026"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="flex w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
+              <Link
+                href={featuredEventHref}
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
-                <CameraIcon className="h-4 w-4" />
-                Photos édition 2026
-              </a>
+                Événement
+              </Link>
+
+              <Link
+                href="/events/formats"
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                onClick={closeMobileMenu}
+              >
+                Formats
+              </Link>
+
+              <Link
+                href="/obstacles"
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                onClick={closeMobileMenu}
+              >
+                Obstacles
+              </Link>
+
+              {featuredEvent?.photos_url ? (
+                <a
+                  href={featuredEvent.photos_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
+                  onClick={closeMobileMenu}
+                >
+                  <CameraIcon className="h-4 w-4" />
+                  Photos édition
+                </a>
+              ) : null}
 
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
@@ -402,7 +461,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       onClick={() =>
                         setMobileDropdownOpen((current) => (current === item.name ? null : item.name))
                       }
-                      className="flex w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-[#26AA26]"
+                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-[#26AA26]"
                     >
                       <span>{item.name}</span>
                       <ChevronDownIcon
@@ -417,7 +476,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            className="block w-full px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                            className="flex min-h-11 w-full items-center px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
                             onClick={closeMobileMenu}
                           >
                             {subItem.name}
@@ -430,7 +489,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                     onClick={closeMobileMenu}
                   >
                     {item.name}
@@ -441,7 +500,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Devenir bénévole mobile */}
               <Link
                 href="/volunteers"
-                className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                 onClick={closeMobileMenu}
               >
                 Devenir bénévole
@@ -450,7 +509,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Bootcamps mobile */}
               <Link
                 href="/bootcamps"
-                className="block w-full px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
                 onClick={closeMobileMenu}
               >
                 Bootcamps
@@ -476,7 +535,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     asChild
                     className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
                   >
-                    <Link href="/auth/register" onClick={closeMobileMenu}>S&apos;inscrire</Link>
+                    <Link href={featuredEventRegisterHref} onClick={closeMobileMenu}>
+                      Je m&apos;inscris
+                    </Link>
                   </Button>
                 ) : (
                   <>

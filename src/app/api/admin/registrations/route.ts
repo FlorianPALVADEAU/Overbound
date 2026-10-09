@@ -106,6 +106,7 @@ interface DocumentMeta {
   assignment_constraint_breached: boolean | null
   bib_number: number | null
   race_format: 'open' | 'ranked' | null
+  cancelled_at: string | null
   documents_count: 0
   required_documents_count: 0
   uploaded_document_types: never[]
@@ -543,6 +544,7 @@ export async function GET(request: Request) {
       assignment_constraint_breached: boolean | null
       bib_number: number | null
       race_format: 'open' | 'ranked' | null
+      cancelled_at: string | null
       ticket: TicketSummary | TicketSummary[] | null
       event: EventSummary | EventSummary[] | null
       order: Pick<OrderSummary, 'id' | 'amount_total' | 'currency' | 'status'> | Pick<OrderSummary, 'id' | 'amount_total' | 'currency' | 'status'>[] | null
@@ -568,6 +570,7 @@ export async function GET(request: Request) {
           assignment_constraint_breached,
           bib_number,
           race_format,
+          cancelled_at,
           ticket:tickets(id, name, distance_km),
           event:events(id, title, date, location),
           order:orders(id, amount_total, currency, status)
@@ -602,6 +605,7 @@ export async function GET(request: Request) {
           assignment_constraint_breached: row.assignment_constraint_breached ?? null,
           bib_number: row.bib_number ?? null,
           race_format: row.race_format ?? null,
+          cancelled_at: row.cancelled_at ?? null,
           documents_count: 0,
           required_documents_count: 0,
           uploaded_document_types: [],
@@ -706,6 +710,7 @@ export async function GET(request: Request) {
         assignment_constraint_breached: meta?.assignment_constraint_breached ?? row.assignment_constraint_breached ?? null,
         bib_number: meta?.bib_number ?? row.bib_number ?? null,
         race_format: meta?.race_format ?? row.race_format ?? null,
+        cancelled_at: meta?.cancelled_at ?? null,
         documents_count: 0,
         required_documents_count: 0,
         uploaded_document_types: [],

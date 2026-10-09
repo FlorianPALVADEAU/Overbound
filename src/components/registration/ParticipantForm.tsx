@@ -1,12 +1,14 @@
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Ticket as TicketIcon } from 'lucide-react'
-import { FORMAT_LEVELS, type FormatLevelId } from '@/constants/formatLevels'
-import { DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
-import { isOpenFormatTicket, isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
+import { isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
+import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
+import { HEALTH_DATA_CONSENT_LABEL, needsHealthDataConsent } from '@/lib/legal/healthData'
+import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
 import type { EventTicket, Participant } from './types'
 
@@ -15,7 +17,7 @@ interface ParticipantFormProps {
   participant: Participant
   index: number
   ticket: EventTicket | undefined
-  onFieldChange: (participantId: string, field: keyof Participant, value: string) => void
+  onFieldChange: (participantId: string, field: keyof Participant, value: string | boolean) => void
   onWaveSelect: (participantId: string, waveIndex: number | null) => void
   showErrors: boolean
   groupAnchor: { waveIndex: number; startTime: string } | null
@@ -31,29 +33,15 @@ export default function ParticipantForm({
   showErrors,
   groupAnchor,
 }: ParticipantFormProps) {
-  const isUniversalRace = ticket?.race?.is_universal ?? true
-  const isOpenFormat = isOpenFormatTicket(ticket?.name, ticket?.race?.name)
+  const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
   const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
   const { waves: selectableWaves, isLoading: wavesLoading, error: wavesError } = useSelectableOpenWaves(
     eventId,
     ticket?.id,
-    participant.distanceIdealKm,
-    participant.distanceMinKm,
-    isOpenFormat && !groupAnchor,
+    usesWaveSelection && !groupAnchor,
   )
   const errorClass = 'border-destructive focus-visible:ring-destructive'
   const hasError = (value: string) => showErrors && !value.trim()
-  const distanceMinValue = Number(participant.distanceMinKm)
-  const distanceIdealValue = Number(participant.distanceIdealKm)
-  const distanceMinMissing = showErrors && !participant.distanceMinKm.trim()
-  const distanceIdealMissing = showErrors && !participant.distanceIdealKm.trim()
-  const distanceRangeError = (value: number) =>
-    Number.isFinite(value) && (value < DISTANCE_MIN_KM || value > DISTANCE_MAX_KM)
-  const distanceOrderError = showErrors &&
-    Number.isFinite(distanceMinValue) &&
-    Number.isFinite(distanceIdealValue) &&
-    distanceIdealValue < distanceMinValue
-
   const requiredMessage = 'Ce champ est obligatoire.'
 
   return (
@@ -68,59 +56,6 @@ export default function ParticipantForm({
         ) : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {!isUniversalRace && (
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor={`${participant.id}-difficulty`} className="flex items-center gap-2">
-              Niveau de difficulté <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={participant.difficultyLevel || ''}
-              onValueChange={(value) =>
-                onFieldChange(participant.id, 'difficultyLevel', value as FormatLevelId)
-              }
-            >
-              <SelectTrigger
-                id={`${participant.id}-difficulty`}
-                className={showErrors && !participant.difficultyLevel ? errorClass : ''}
-              >
-                <SelectValue placeholder="Choisissez votre niveau de difficulté" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
-                    <span className="font-medium">{FORMAT_LEVELS.low.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      - Obstacles classiques accessibles
-                    </span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="mid">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <span className="font-medium">{FORMAT_LEVELS.mid.name}</span>
-                    <span className="text-xs text-muted-foreground">- Obstacles exigeants</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="hard">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <span className="font-medium">{FORMAT_LEVELS.hard.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      - Obstacles extrêmes + lests
-                    </span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Même parcours, 3 défis différents. Innovation mondiale Overbound.
-            </p>
-            {showErrors && !participant.difficultyLevel ? (
-              <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
-            ) : null}
-          </div>
-        )}
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-firstName`} className="flex items-center gap-2">
             Prénom <span className="text-destructive">*</span>
@@ -220,77 +155,8 @@ export default function ParticipantForm({
             <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
           ) : null}
         </div>
-        {isOpenFormat ? (
+        {usesWaveSelection ? (
           <>
-            <div className="space-y-2">
-              <Label htmlFor={`${participant.id}-distance-min`} className="flex items-center gap-2">
-                Distance minimale (km) <span className="text-destructive">*</span>
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                La distance que vous êtes sûr de faire.
-              </p>
-              <Input
-                id={`${participant.id}-distance-min`}
-                type="number"
-                min={DISTANCE_MIN_KM}
-                max={DISTANCE_MAX_KM}
-                step={1}
-                value={participant.distanceMinKm}
-                onChange={(e) => onFieldChange(participant.id, 'distanceMinKm', e.target.value)}
-                placeholder="10"
-                required
-                className={
-                  distanceMinMissing || distanceRangeError(distanceMinValue) || distanceOrderError
-                    ? errorClass
-                    : ''
-                }
-              />
-              {distanceMinMissing ? (
-                <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${participant.id}-distance-ideal`} className="flex items-center gap-2">
-                Distance idéale (km) <span className="text-destructive">*</span>
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                La distance que vous aimeriez atteindre.
-              </p>
-              <Input
-                id={`${participant.id}-distance-ideal`}
-                type="number"
-                min={DISTANCE_MIN_KM}
-                max={DISTANCE_MAX_KM}
-                step={1}
-                value={participant.distanceIdealKm}
-                onChange={(e) => onFieldChange(participant.id, 'distanceIdealKm', e.target.value)}
-                placeholder="20"
-                required
-                className={
-                  distanceIdealMissing || distanceRangeError(distanceIdealValue) || distanceOrderError
-                    ? errorClass
-                    : ''
-                }
-              />
-              {distanceIdealMissing ? (
-                <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
-              ) : null}
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <p className="text-xs text-muted-foreground">
-                Ces infos déterminent les SAS de départ que tu peux choisir.
-              </p>
-              {distanceOrderError ? (
-                <p className="text-xs text-destructive font-medium">
-                  La distance idéale doit être supérieure ou égale à la distance minimale.
-                </p>
-              ) : null}
-              {(distanceRangeError(distanceMinValue) || distanceRangeError(distanceIdealValue)) ? (
-                <p className="text-xs text-destructive font-medium">
-                  La distance doit être comprise entre {DISTANCE_MIN_KM} et {DISTANCE_MAX_KM} km.
-                </p>
-              ) : null}
-            </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor={`${participant.id}-wave`} className="flex items-center gap-2">
                 SAS de départ <span className="text-destructive">*</span>
@@ -304,7 +170,7 @@ export default function ParticipantForm({
                   <Select
                     value={participant.selectedWaveIndex ? String(participant.selectedWaveIndex) : ''}
                     onValueChange={(value) => onWaveSelect(participant.id, Number(value))}
-                    disabled={!distanceMinValue || !distanceIdealValue || wavesLoading}
+                    disabled={wavesLoading}
                   >
                     <SelectTrigger
                       id={`${participant.id}-wave`}
@@ -314,11 +180,9 @@ export default function ParticipantForm({
                         placeholder={
                           wavesLoading
                             ? 'Chargement des SAS...'
-                            : !distanceMinValue || !distanceIdealValue
-                              ? 'Renseigne tes distances d’abord'
-                              : selectableWaves.length === 0
-                                ? 'Aucun SAS disponible pour ces distances'
-                                : 'Choisis ton SAS de départ'
+                            : selectableWaves.length === 0
+                              ? 'Aucun SAS disponible'
+                              : 'Choisis ton SAS de départ'
                         }
                       />
                     </SelectTrigger>
@@ -357,8 +221,41 @@ export default function ParticipantForm({
             onChange={(e) => onFieldChange(participant.id, 'medicalInfo', e.target.value)}
             placeholder="Allergies, traitement en cours, etc."
           />
+          {needsHealthDataConsent(participant.medicalInfo) ? (
+            <div className="flex items-start gap-3 pt-1">
+              <Checkbox
+                id={`${participant.id}-health-consent`}
+                checked={participant.healthDataConsent === true}
+                onCheckedChange={(checked) => onFieldChange(participant.id, 'healthDataConsent', checked === true)}
+                className={showErrors && !participant.healthDataConsent ? 'border-destructive' : ''}
+              />
+              <Label htmlFor={`${participant.id}-health-consent`} className="text-xs font-normal leading-relaxed text-muted-foreground">
+                {HEALTH_DATA_CONSENT_LABEL} Sans cet accord, ces informations ne sont pas enregistrées.
+              </Label>
+            </div>
+          ) : null}
+        </div>
+        <div className="flex items-start gap-3 rounded-lg border p-3 md:col-span-2">
+          <Checkbox
+            id={`${participant.id}-flexible`}
+            checked={participant.flexible === true}
+            onCheckedChange={(checked) => onFieldChange(participant.id, 'flexible', checked === true)}
+          />
+          <Label htmlFor={`${participant.id}-flexible`} className="space-y-1 font-normal leading-relaxed">
+            <span className="block text-sm font-semibold">
+              Billet flexible (+{formatFlexibleFee()})
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Annulable depuis ton espace jusqu&apos;à {FLEXIBLE_REFUND_DEADLINE_DAYS} jours avant l&apos;événement, sans
+              justificatif : le prix du billet est remboursé. Les frais de l&apos;option ne sont pas remboursés, et
+              l&apos;option est perdue si le billet est transféré.
+            </span>
+          </Label>
         </div>
       </div>
     </div>
   )
 }
+
+const formatFlexibleFee = () =>
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(FLEXIBLE_TICKET_FEE_CENTS / 100)

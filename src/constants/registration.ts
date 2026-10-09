@@ -1,11 +1,10 @@
 import type { StepKey } from '@/components/registration/types'
 
 export const REGISTRATION_STORAGE_KEY = 'overbound-registration-cart'
-export const REGULATION_VERSION = '2026-06'
+/** Version of the waiver in `./waiver.ts`; bump it whenever that wording changes. */
+export const REGULATION_VERSION = '2026-10'
 export const OFFICIAL_RULEBOOK_PDF_PATH = '/documents/reglementation-officielle-overbound-6-2026.pdf'
 export const DEFAULT_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-export const DISTANCE_MIN_KM = 1
-export const DISTANCE_MAX_KM = 60
 
 export const REGISTRATION_STEPS: Array<{ id: StepKey; title: string; description: string }> = [
   { id: 'tickets', title: 'Billets', description: 'Choisissez les formats et quantités souhaités.' },

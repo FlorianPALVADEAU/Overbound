@@ -20,6 +20,11 @@ import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { serializeUtmParams } from '@/lib/attribution/utm'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
+import {
+  FLEXIBLE_TICKET_FEE_CENTS,
+  allocatePaidTicketPrices,
+  serializeNumberList,
+} from '@/lib/tickets/flexibleTicket'
 
 export const runtime = 'nodejs'
 
@@ -180,6 +185,8 @@ export async function POST(request: NextRequest) {
     let ticketSubtotal = 0
     let baseTicketSubtotal = 0
     const openTicketUnitPrices: number[] = []
+    // Price of each participant's ticket (tier applied), in participant order.
+    const unitPricesByParticipant: number[] = []
 
     for (const [index, entry] of participantEntries.entries()) {
       const ticket = ticketById.get(entry.ticketId)
@@ -205,6 +212,7 @@ export async function POST(request: NextRequest) {
       const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
       const unitPrice = Math.round(finalPrice * discountMultiplier)
       ticketSubtotal += unitPrice
+      unitPricesByParticipant[index] = unitPrice
 
       if (isOpenFormatTicket(ticket.name)) {
         openTicketUnitPrices.push(unitPrice)
@@ -230,6 +238,8 @@ export async function POST(request: NextRequest) {
     const upsellSubtotalsById = getUpsellSubtotalsById(upsells, upsellMap)
 
     let discountAmount = 0
+    // Part of `discountAmount` that reduces tickets (not upsells): spread over bibs for refunds.
+    let ticketScopedDiscountAmount = 0
     const appliedPromos: Array<{
       id: string
       code: string
@@ -339,6 +349,7 @@ export async function POST(request: NextRequest) {
         const singleOpenTicketPrice = openTicketUnitPrices[0]
         const promoDiscountAmount = calculatePromoForSubtotal(singleOpenTicketPrice)
         discountAmount += Math.max(0, promoDiscountAmount)
+        ticketScopedDiscountAmount += Math.max(0, promoDiscountAmount)
         if (promoDiscountAmount > 0) {
           appliedPromos.push({
             id: promo.id,
@@ -361,6 +372,7 @@ export async function POST(request: NextRequest) {
       }
 
       discountAmount += Math.max(0, Math.min(promoDiscountAmount, ticketSubtotal))
+      ticketScopedDiscountAmount += Math.max(0, Math.min(promoDiscountAmount, ticketSubtotal))
 
       if (promoDiscountAmount <= 0) {
         continue
@@ -377,7 +389,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0)
+    // "Billet flexible" is chosen per participant; it is never discounted (FDR: refund option).
+    const flexibleParticipantIndices = participants.flatMap((participant: { flexible?: unknown }, index: number) =>
+      participant?.flexible === true ? [index] : [],
+    )
+    const flexibleTotal = flexibleParticipantIndices.length * FLEXIBLE_TICKET_FEE_CENTS
+    const paidTicketPrices = allocatePaidTicketPrices(
+      unitPricesByParticipant.map((price) => price ?? 0),
+      ticketScopedDiscountAmount,
+    )
+
+    const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0) + flexibleTotal
 
     const currency = ticketCurrencyMap.values().next().value || 'eur'
 
@@ -397,6 +419,7 @@ export async function POST(request: NextRequest) {
         pricing: {
           ticketTotal: ticketSubtotal,
           upsellTotal: upsellSubtotal,
+          flexibleTotal: 0,
           discountAmount,
           totalDue: 0,
           currency,
@@ -434,6 +457,9 @@ export async function POST(request: NextRequest) {
         fbp: fbp || '',
         fbc: fbc || '',
         utm_params: utmMetadata,
+        // Read back by /api/registrations/create: which bibs paid the flexible option, and what each bib cost.
+        flexible_participants: serializeNumberList(flexibleParticipantIndices),
+        ticket_prices: serializeNumberList(paidTicketPrices),
         event_source_url:
           request.headers.get('referer') ??
           request.headers.get('origin') ??
@@ -474,6 +500,7 @@ export async function POST(request: NextRequest) {
       pricing: {
         ticketTotal: ticketSubtotal,
         upsellTotal: upsellSubtotal,
+        flexibleTotal,
         discountAmount,
         totalDue: totalAmount,
         currency,

@@ -33,6 +33,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Seul le capitaine peut déléguer le rôle' }, { status: 403 })
     }
 
+    if (new_captain_id === user.id) {
+      return NextResponse.json({ error: 'Tu es déjà capitaine' }, { status: 400 })
+    }
+
     const { data: targetMember } = await admin
       .from('group_members')
       .select('id')
@@ -44,19 +48,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Ce membre n\'appartient pas au groupe' }, { status: 400 })
     }
 
-    // Transfer: demote old captain, promote new one
-    await admin
-      .from('group_members')
-      .update({ role: 'member' })
-      .eq('group_id', id)
-      .eq('profile_id', user.id)
-
-    await admin
-      .from('group_members')
-      .update({ role: 'captain' })
-      .eq('group_id', id)
-      .eq('profile_id', new_captain_id)
-
+    // `groups.captain_id` is what the app trusts to decide who is captain, so it moves first;
+    // the member roles follow and a failure there is logged rather than left half-done silently.
     const { error } = await admin
       .from('groups')
       .update({ captain_id: new_captain_id, updated_at: new Date().toISOString() })
@@ -64,6 +57,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (error) {
       return NextResponse.json({ error: 'Erreur délégation' }, { status: 500 })
+    }
+
+    const roleUpdates = await Promise.all([
+      admin.from('group_members').update({ role: 'member' }).eq('group_id', id).eq('profile_id', user.id),
+      admin.from('group_members').update({ role: 'captain' }).eq('group_id', id).eq('profile_id', new_captain_id),
+    ])
+    for (const { error: roleError } of roleUpdates) {
+      if (roleError) console.error('[groups/[id]/delegate] member role update failed', roleError)
     }
 
     return NextResponse.json({ ok: true })

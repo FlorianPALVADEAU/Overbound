@@ -16,7 +16,7 @@ export interface Race {
   target_public: TargetPublic
   distance_km: number | null
   description?: string | null
-  is_universal: boolean // True for single-format races (Kids, Backyard), false for multi-format (Primal/Fury/Ultra Hardcore)
+  is_universal: boolean // True for single-format races (Kids, Backyard), false for multi-format
   format_template?: string | null
   estimated_time_min?: number | null
   estimated_time_max?: number | null

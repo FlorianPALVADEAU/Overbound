@@ -14,6 +14,7 @@ import {
   isOpenTicketPromoCode,
 } from '@/lib/registration'
 import { isOpenFormatTicket } from '@/lib/openSas'
+import { FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 
 export function useRegistrationPricing(
   tickets: EventTicket[],
@@ -24,6 +25,7 @@ export function useRegistrationPricing(
   appliedPromos: AppliedPromo[],
   eventPriceTiers: EventPriceTier[],
   serverPricing: PricingSummary | null,
+  flexibleCount = 0,
 ) {
   const defaultCurrency = useMemo(() => {
     const first = tickets.find((t) => t.currency)?.currency
@@ -139,20 +141,24 @@ export function useRegistrationPricing(
     return juoffExtraDiscount > 0
   }, [appliedPromos, baseTicketSubtotal, firstOpenTicketPrice, tierDiscountAmount, ticketSubtotal])
 
+  // Never discounted by promo codes (same rule as /api/stripe/create-payment-intent).
+  const flexibleTotal = flexibleCount * FLEXIBLE_TICKET_FEE_CENTS
+
   const totalDue = useMemo(
-    () => Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0),
-    [ticketSubtotal, upsellSubtotal, discountAmount],
+    () => Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0) + flexibleTotal,
+    [ticketSubtotal, upsellSubtotal, discountAmount, flexibleTotal],
   )
 
   const computedPricing: PricingSummary = useMemo(
     () => ({
       ticketTotal: ticketSubtotal,
       upsellTotal: upsellSubtotal,
+      flexibleTotal,
       discountAmount,
       totalDue,
       currency: defaultCurrency,
     }),
-    [defaultCurrency, discountAmount, ticketSubtotal, totalDue, upsellSubtotal],
+    [defaultCurrency, discountAmount, flexibleTotal, ticketSubtotal, totalDue, upsellSubtotal],
   )
 
   const summaryPricing = serverPricing ?? computedPricing

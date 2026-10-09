@@ -21,13 +21,14 @@ describe('GET /api/admin/groups pagination', () => {
     const memberChain: any = { eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: [{ id: 'm', group_id: GROUP, profile_id: PROFILE, role: 'captain', joined_at: '2026-01-01' }], error: null }) }
     const globalMembersChain: any = { eq: vi.fn().mockResolvedValue({ data: [{ profile_id: PROFILE }], error: null }) }
     let groupMemberCalls = 0
-    const admin = { from: vi.fn((table: string) => table === 'groups' ? { select: vi.fn().mockReturnValue(chain) } : table === 'group_members' ? { select: vi.fn().mockReturnValue(++groupMemberCalls === 1 ? globalMembersChain : memberChain) } : { select: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: [{ id: PROFILE, full_name: 'Camille' }], error: null }) }) }), auth: { admin: { listUsers: vi.fn().mockResolvedValue({ data: { users: [{ id: PROFILE, email: 'camille@example.com' }] } }) } } }
+    const admin = { from: vi.fn((table: string) => table === 'groups' ? { select: vi.fn().mockReturnValue(chain) } : table === 'group_members' ? { select: vi.fn().mockReturnValue(++groupMemberCalls === 1 ? globalMembersChain : memberChain) } : table === 'registrations' ? { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: [{ user_id: PROFILE, event_id: 'event-1', cancelled_at: '2026-10-01T10:00:00Z' }], error: null }) }) }) } : { select: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: [{ id: PROFILE, full_name: 'Camille' }], error: null }) }) }), auth: { admin: { listUsers: vi.fn().mockResolvedValue({ data: { users: [{ id: PROFILE, email: 'camille@example.com' }] } }) } } }
     supabaseAdminMock.mockReturnValue(admin)
     const response = await GET(new Request('http://localhost/api/admin/groups?paginated=true&limit=25'))
     const body = await response.json()
     expect(response.status).toBe(200)
     expect(body.page).toMatchObject({ limit: 25, totalCount: 1, nextCursor: null })
     expect(body.memberProfileIds).toEqual([PROFILE])
+    expect(body.groups[0].members[0]).toMatchObject({ profile_id: PROFILE, refunded_at: '2026-10-01T10:00:00Z' })
   })
 
   it('rejects invalid cursor before database access', async () => {

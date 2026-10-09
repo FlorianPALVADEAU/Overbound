@@ -31,6 +31,31 @@ export function ObstaclePreviewDialog({ obstacle, open, onOpenChange }: Obstacle
         <div className="space-y-4">
           {obstacle.description && <p className="text-sm text-muted-foreground">{obstacle.description}</p>}
 
+          {(obstacle.metric_label || obstacle.weight_male || obstacle.weight_female || obstacle.penalty) && (
+            <div className="grid gap-2 rounded border p-3 text-sm">
+              <p className="font-medium">Spécifications</p>
+              {obstacle.metric_label && obstacle.metric_value ? (
+                <p className="text-muted-foreground">
+                  {obstacle.metric_label} : {obstacle.metric_value}
+                </p>
+              ) : null}
+              {(obstacle.weight_male || obstacle.weight_female) ? (
+                <p className="text-muted-foreground">
+                  Charge :{' '}
+                  {[
+                    obstacle.weight_male ? `${obstacle.weight_male} (H)` : null,
+                    obstacle.weight_female ? `${obstacle.weight_female} (F)` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              ) : null}
+              {obstacle.penalty ? (
+                <p className="text-muted-foreground">Pénalité : {obstacle.penalty}</p>
+              ) : null}
+            </div>
+          )}
+
           {(obstacle.image_url || obstacle.video_url) && (
             <div className="grid gap-4">
               {obstacle.image_url && (

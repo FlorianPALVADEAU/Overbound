@@ -1,8 +1,9 @@
 import type { PortableTextBlock } from '@portabletext/types'
 import type { FAQDocument } from '@/app/about/faq/FAQPageContent'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { OPEN_FORMAT_RULES, RANKED_FORMAT_RULES, RANKED_LAP_TIME_LIMITS_SUMMARY, SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 
-const block = (text: string): PortableTextBlock => ({
+export const block = (text: string): PortableTextBlock => ({
   _key: text.slice(0, 16).replace(/\s+/g, '-'),
   _type: 'block',
   markDefs: [],
@@ -38,180 +39,155 @@ const bulletList = (items: string[]): PortableTextBlock[] =>
 export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-general-what-is-overbound',
-    title: 'Qu’est-ce que l’expérience Overbound ?',
-    shortAnswer: 'Un parcours immersif mêlant course, obstacles naturels et esprit de cohésion.',
+    title: 'C’est quoi Overbound ?',
+    shortAnswer: `Une course à obstacles sur une boucle d’environ ${SHARED_FORMAT_RULES.loopKm} km, à répéter autant de fois que tu veux ou peux.`,
     answer: [
       block(
-        'Overbound est une course à obstacles nouvelle génération qui combine endurance, franchissements techniques et immersion en pleine nature.',
-      ),
-      block(
-        'Chaque édition propose différents formats (Sprint, Enduro, Team) pour s’adapter à ton niveau et t’offrir un véritable rite de passage moderne.',
-      ),
-      block(
-        'Tu rejoins une communauté de passionnés qui recherchent le dépassement de soi et le partage. Prépare-toi à repousser tes limites, avec un encadrement professionnel et une ambiance mémorable.',
+        `Overbound est une course à obstacles sur une boucle d’environ ${SHARED_FORMAT_RULES.loopKm} km. Tu choisis ton niveau de défi sur le même parcours : OPEN pour courir à ton rythme, RANKED pour la compétition.`,
       ),
     ],
     category: 'general',
-    relatedLinks: [
-      { label: 'Découvrir Overbound', href: '/about' },
-      { label: 'Voir les prochaines courses', href: '/events/ultra-arena-2026' },
-    ],
+    order: 1,
+    relatedLinks: [{ label: 'Voir les formats', href: '/events/formats' }],
   },
   {
-    _id: 'fallback-general-overview',
-    title: 'Comment finaliser mon inscription à une course Overbound ?',
-    shortAnswer: 'Crée ton compte, choisis ta course et valide ton paiement en quelques étapes.',
+    _id: 'fallback-general-open-ranked',
+    title: 'Quelle différence entre OPEN et RANKED ?',
+    shortAnswer: 'OPEN : tu choisis ton créneau et ton rythme. RANKED : départ unique, tours chronométrés.',
     answer: [
       block(
-        'Pour finaliser ton inscription, connecte-toi à ton espace Overbound, choisis la course à laquelle tu veux participer et suis les étapes guidées.',
+        `En OPEN, tu choisis un créneau de départ entre ${OPEN_FORMAT_RULES.firstSasDeparture} et ${OPEN_FORMAT_RULES.lastSasDeparture} et tu enchaînes les tours à ton rythme, jusqu’à la fermeture du parcours à ${OPEN_FORMAT_RULES.courseClosing}.`,
       ),
       block(
-        'Une fois ton billet sélectionné, complète les informations participants, signe le règlement et valide ton paiement.',
-      ),
-      ...bulletList([
-        '1. Sélectionne la date et le format de course qui te correspond.',
-        '2. Renseigne les informations participants et ajoute les options (assurance, pack photos).',
-        '3. Valide le paiement pour recevoir ton billet et ton QR code.',
-      ]),
-      block(
-        'Dès que tout est validé, tu reçois un e-mail de confirmation avec ton QR code d’accès et les informations logistiques pour préparer ton défi.',
+        `En RANKED, le départ est unique à ${RANKED_FORMAT_RULES.departure} et chaque tour est chronométré : ${RANKED_LAP_TIME_LIMITS_SUMMARY}. Un tour hors délai met fin à ta course.`,
       ),
     ],
+    category: 'general',
+    order: 2,
+    relatedLinks: [{ label: 'Comparer les formats', href: '/events/formats' }],
+  },
+  {
+    _id: 'fallback-general-next-edition',
+    title: 'Quand a lieu la prochaine édition ?',
+    shortAnswer: 'Elle n’est pas encore annoncée.',
+    answer: [
+      block(
+        'La prochaine édition n’est pas encore annoncée. Les dates et l’ouverture de la billetterie seront communiquées sur nos réseaux sociaux.',
+      ),
+    ],
+    category: 'general',
+    order: 3,
+    relatedLinks: [{ label: 'Nous suivre sur Instagram', href: 'https://www.instagram.com/overbound.race/' }],
+  },
+  {
+    _id: 'fallback-inscriptions-how',
+    title: 'Comment m’inscrire ?',
+    shortAnswer: 'Crée ton compte, choisis ton billet, renseigne les participants et paie en ligne.',
+    answer: [
+      block('Connecte-toi à ton compte, puis choisis l’événement et ton billet. Ensuite :'),
+      ...bulletList([
+        'Renseigne les informations de chaque participant.',
+        'Choisis ton créneau de départ si tu es en OPEN.',
+        'Accepte le règlement, puis valide le paiement.',
+      ]),
+      block('Tu reçois ensuite un e-mail de confirmation avec ton billet et son QR code.'),
+    ],
     category: 'inscriptions',
+    order: 1,
+    relatedLinks: [{ label: 'Mon compte', href: '/account' }],
+  },
+  {
+    _id: 'fallback-inscriptions-transfert',
+    title: 'Puis-je transférer mon billet à quelqu’un ?',
+    shortAnswer: 'Oui, jusqu’à la veille de l’événement, pour 6,99 € de frais de transfert.',
+    answer: [
+      block(
+        'Depuis ton espace billets, touche « Transférer », accepte les conditions et règle les frais de transfert (6,99 €). Tu reçois ensuite un lien à envoyer à la personne qui reprend ta place.',
+      ),
+      block(
+        'Elle se connecte, renseigne son identité et signe elle-même la décharge : sa signature remplace la tienne et le dossard passe à son nom. Ton QR code ne fonctionne plus.',
+      ),
+      block('Le transfert est possible une fois par dossard, jusqu’à la veille de l’événement. La revente au-dessus du prix payé est interdite.'),
+    ],
+    category: 'inscriptions',
+    order: 2,
     relatedLinks: [
-      { label: 'Créer mon compte', href: '/account' },
-      { label: 'Consulter les formats', href: '/trainings/what-race-for-me' },
+      { label: 'Mes billets', href: '/account/tickets' },
+      { label: 'CGV', href: '/cgv#transfert' },
     ],
   },
   {
     _id: 'fallback-inscriptions-annulation',
     title: 'Puis-je annuler ou me faire rembourser ?',
-    shortAnswer: 'Les billets ne sont ni remboursables, ni échangeables contre un avoir.',
+    shortAnswer: 'Oui avec l’option billet flexible (jusqu’à J-7), sinon seulement si Overbound annule.',
     answer: [
       block(
-        'Les inscriptions Overbound concernent une activité sportive datée et ne bénéficient pas du droit de rétractation de 14 jours.',
+        'Une inscription concerne une activité sportive datée : le droit de rétractation de 14 jours ne s’applique pas, et aucun remboursement n’est accordé si tu ne peux plus venir.',
       ),
-      ...bulletList([
-        'Aucun remboursement, avoir ni compensation volontaire n’est accordé, quelle que soit la raison invoquée.',
-        'Le transfert de dossard reste possible jusqu’à la veille de l’événement, dans les conditions prévues par les CGV.',
-        'Après J-1, aucun transfert n’est garanti.',
-      ]),
       block(
-        'Cette politique s’applique sans préjudice des droits impératifs prévus par la loi applicable.',
+        'Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine. En cas de report, ton billet reste valable ou tu peux demander le remboursement.',
       ),
+      block(
+        'Avec l’option billet flexible (8,90 € par billet, à cocher à la commande), tu peux annuler depuis ton espace jusqu’à 7 jours avant l’événement, sans justificatif : le prix du billet t’est remboursé, hors frais de l’option.',
+      ),
+      block('Tu peux aussi transférer ton billet jusqu’à la veille de l’événement.'),
     ],
     category: 'inscriptions',
-    relatedLinks: [
-      { label: 'Lire les CGV', href: '/cgv#annulation-participant' },
-      { label: 'Gérer mes billets', href: '/account/tickets' },
-    ],
-  },
-  {
-    _id: 'fallback-inscriptions-transfert',
-    title: 'Puis-je transférer mon billet à quelqu’un ?',
-    shortAnswer: 'Oui, gratuitement jusqu’à la veille de l’événement depuis ton espace billets.',
-    answer: [
-      block(
-        'Depuis ton espace billets, copie le lien de transfert et envoie-le à la personne qui récupère ta place.',
-      ),
-      block(
-        'Le bénéficiaire doit se connecter, compléter ses informations et accepter le règlement de l’événement avant que le billet soit associé à son compte.',
-      ),
-      block(
-        'Le transfert est possible jusqu’à la veille de l’événement. Après cette date, il n’est plus garanti pour des raisons d’organisation.',
-      ),
-    ],
-    category: 'inscriptions',
-    relatedLinks: [
-      { label: 'Gérer mes billets', href: '/account/tickets' },
-      { label: 'Lire les CGV', href: '/cgv#transfert' },
-    ],
+    order: 3,
+    relatedLinks: [{ label: 'CGV', href: '/cgv#annulation-participant' }],
   },
   {
     _id: 'fallback-preparation-training',
-    title: 'Comment me préparer physiquement pour Overbound ?',
-    shortAnswer: 'Travaille ton cardio, ta force fonctionnelle et ta technique d’obstacle grâce à nos programmes.',
+    title: 'Comment me préparer ?',
+    shortAnswer: 'Cardio, renforcement et un peu de grip, sur quelques semaines.',
     answer: [
-      block(
-        'Nos coachs recommandent un mix de courses longues, de fractionné et de renforcement fonctionnel (gainage, tractions, pompes).',
-      ),
+      block('Un mélange de course à pied, de fractionné et de renforcement (gainage, tractions, pompes) suffit pour débuter.'),
       ...bulletList([
-        'Planifie 3 à 4 séances par semaine sur 8 semaines.',
-        'Combine course à pied, HIIT et travail de grip.',
-        'Test chaque mois ta capacité à franchir une série d’obstacles (suspension, mur, portés).',
+        '3 à 4 séances par semaine pendant environ 8 semaines.',
+        'Alterner sorties longues, fractionné et travail de grip.',
+        'Enchaîner de temps en temps plusieurs boucles de 2 km pour t’habituer à la répétition.',
       ]),
-      block(
-        'Retrouve des plans détaillés dans ton espace coureur et sur l’application Overbound Training.',
-      ),
     ],
     category: 'preparation',
-    relatedLinks: [
-      { label: 'Programme 8 semaines', href: '/trainings/what-race-for-me' },
-      { label: 'Télécharger l’app Training', href: '/app' },
-    ],
+    order: 1,
+    relatedLinks: [{ label: 'Quel format pour moi ?', href: '/events/formats' }],
   },
   {
     _id: 'fallback-logistique-arrivee',
-    title: 'Quels sont les horaires et consignes le jour de la course ?',
-    shortAnswer: 'Arrive 60 minutes avant ton créneau pour le retrait du dossard, le briefing et l’échauffement.',
+    title: 'Quand arriver le jour de la course ?',
+    shortAnswer: 'Environ une heure avant ton départ.',
     answer: [
       block(
-        'Nous t’invitons à arriver au moins 1 heure avant ton horaire de vague. Dirige-toi directement vers le village départ où nos bénévoles t’accueilleront.',
+        'Arrive au moins 1 heure avant ton départ pour le retrait du dossard, le briefing et l’échauffement. Une consigne est disponible sur place pour tes affaires (2 € par sac).',
       ),
-      block(
-        'Le bracelet et le dossard sont remis sur place. Une consigne sécurisée est à ta disposition pour tes effets personnels (2 € par sac).',
-      ),
-      block(
-        'Un échauffement collectif est animé 20 minutes avant chaque départ. Les briefing sécurité et parcours sont obligatoires pour accéder à la ligne de départ.',
-      ),
+      block('Le briefing sécurité est obligatoire pour accéder à la ligne de départ.'),
     ],
     category: 'logistique',
-    relatedLinks: [
-      { label: 'Guide du participant', href: '/documents/guide-participant.pdf' },
-      { label: 'Règlement officiel 2026', href: OFFICIAL_RULEBOOK_PDF_PATH },
-      { label: 'Plan du village', href: '/about/faq#logistique' },
-    ],
+    order: 1,
+    relatedLinks: [{ label: 'Règlement officiel', href: OFFICIAL_RULEBOOK_PDF_PATH }],
   },
   {
     _id: 'fallback-apres-course-media',
-    title: 'Comment récupérer mes photos et vidéos après la course ?',
-    shortAnswer: 'Un lien personnalisé est envoyé sous 72 h avec tout ton contenu média.',
+    title: 'Comment récupérer mes photos ?',
+    shortAnswer: 'Un lien personnel t’est envoyé par e-mail sous 72 h.',
     answer: [
       block(
-        'Nos photographes couvrent chaque obstacle clé et la ligne d’arrivée. Ton QR code permet d’associer automatiquement les images à ton profil.',
-      ),
-      block(
-        'Tu reçois sous 72 heures un e-mail avec le lien vers ta galerie personnelle. Les packs médias sont gratuits pour les formats Élite et Pack VIP.',
-      ),
-      block(
-        'Tu peux partager tes meilleures photos directement sur les réseaux ou les télécharger en HD pour les imprimer.',
+        'Ton QR code permet d’associer automatiquement les photos à ton profil. Tu reçois sous 72 heures un e-mail avec le lien vers tes photos.',
       ),
     ],
     category: 'apres-course',
-    relatedLinks: [
-      { label: 'Accéder à ma galerie', href: 'https://media.overbound.com' },
-      { label: 'Upgrader vers le pack média', href: '/shop/media-pack' },
-    ],
+    order: 1,
   },
   {
     _id: 'fallback-presse-contact',
-    title: 'Je suis média ou partenaire, à qui dois-je m’adresser ?',
-    shortAnswer: 'Notre pôle relations médias répond sous 24 h et t’oriente vers les bons contacts.',
+    title: 'Je suis journaliste ou partenaire potentiel : qui contacter ?',
+    shortAnswer: 'press@overbound-race.com pour la presse, partners@overbound-race.com pour les partenariats.',
     answer: [
-      block(
-        'Les journalistes, influenceurs et partenaires peuvent contacter directement le pôle presse via press@overbound-race.com.',
-      ),
-      block(
-        'Nous proposons des accréditations média, des kits visuels, ainsi que des immersions sur nos parcours pour créer des contenus exclusifs.',
-      ),
-      block(
-        'Pour une collaboration marque ou un partenariat local, décris-nous ton projet et nous te recontactons avec une proposition détaillée.',
-      ),
+      block('Presse : press@overbound-race.com. Partenariats et sponsoring : partners@overbound-race.com.'),
+      block('Le dossier de sponsoring 2026 est téléchargeable sur la page Partenaires & presse.'),
     ],
     category: 'presse',
-    relatedLinks: [
-      { label: 'Kit presse complet', href: '/documents/kit-presse.zip' },
-      { label: 'Demander une accréditation', href: '/contact' },
-    ],
+    order: 1,
+    relatedLinks: [{ label: 'Partenaires & presse', href: '/about/partners' }],
   },
 ]

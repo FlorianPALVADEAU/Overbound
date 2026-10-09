@@ -54,24 +54,27 @@ export async function GET() {
 
     const profileIds = (membersRows || []).map((m: any) => m.profile_id as string)
     const { data: profilesRows } = profileIds.length > 0
-      ? await admin.from('profiles').select('id, full_name').in('id', profileIds)
+      ? await admin.from('profiles').select('id, full_name, avatar_url').in('id', profileIds)
       : { data: [] }
 
     const profileMap = new Map<string, string | null>()
-    for (const p of (profilesRows || []) as Array<{ id: string; full_name: string | null }>) {
+    const avatarMap = new Map<string, string | null>()
+    for (const p of (profilesRows || []) as Array<{ id: string; full_name: string | null; avatar_url: string | null }>) {
       profileMap.set(p.id, p.full_name)
+      avatarMap.set(p.id, p.avatar_url)
     }
 
-    const { data: authUsersRows } = profileIds.length > 0
-      ? await admin.auth.admin.listUsers()
-      : { data: { users: [] } }
-
+    // Emails are only a display fallback for members without a name. Looking them up one by
+    // one avoids listing every user of the platform (and its 50-user default page, which
+    // silently dropped members of larger groups).
     const emailMap = new Map<string, string | null>()
-    for (const u of (authUsersRows as any)?.users ?? []) {
-      if (profileIds.includes(u.id)) {
-        emailMap.set(u.id, u.email ?? null)
-      }
-    }
+    const unnamedIds = profileIds.filter((profileId) => !profileMap.get(profileId))
+    await Promise.all(
+      unnamedIds.map(async (profileId) => {
+        const { data } = await admin.auth.admin.getUserById(profileId)
+        emailMap.set(profileId, data.user?.email ?? null)
+      }),
+    )
 
     const members: GroupMember[] = (membersRows || []).map((m: any) => ({
       id: m.id,
@@ -80,6 +83,7 @@ export async function GET() {
       joined_at: m.joined_at,
       full_name: profileMap.get(m.profile_id) ?? null,
       email: emailMap.get(m.profile_id) ?? null,
+      avatar_url: avatarMap.get(m.profile_id) ?? null,
     }))
 
     const group: Group = {

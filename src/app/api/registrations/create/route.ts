@@ -1,3 +1,4 @@
+import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -6,7 +7,10 @@ import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import * as QRCode from 'qrcode'
-import { REGULATION_VERSION, DISTANCE_MIN_KM, DISTANCE_MAX_KM } from '@/constants/registration'
+import { REGULATION_VERSION } from '@/constants/registration'
+import { keepHealthDataWithConsent } from '@/lib/legal/healthData'
+import { fingerprintWaiver } from '@/lib/legal/waiverDocument'
+import { FLEXIBLE_TICKET_FEE_CENTS, parseNumberList } from '@/lib/tickets/flexibleTicket'
 import { captureException } from '@/lib/sentry'
 import {
   formatWaveStartTime,
@@ -47,10 +51,8 @@ const participantSchema = z.object({
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
   medicalInfo: z.string().optional(),
+  healthDataConsent: z.boolean().optional(),
   licenseNumber: z.string().optional(),
-  distanceIdealKm: z.union([z.string(), z.number()]).optional(),
-  distanceMinKm: z.union([z.string(), z.number()]).optional(),
-  difficultyLevel: z.enum(['low', 'mid', 'hard']).nullable().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
 })
 
@@ -70,7 +72,12 @@ const createRegistrationBodySchema = z.object({
   signatureImage: z.string().nullable().default(null),
   signatureMetadata: z.record(z.string(), z.any()).default({}),
   disclaimer: z
-    .object({ read: z.boolean(), accepted: z.boolean(), rulebookAccepted: z.boolean().optional() })
+    .object({
+      read: z.boolean(),
+      accepted: z.boolean(),
+      rulebookAccepted: z.boolean().optional(),
+      groupAttestation: z.boolean().optional(),
+    })
     .default({ read: false, accepted: false, rulebookAccepted: false }),
   freeOrderMetadata: z.record(z.string(), z.string()).nullable().optional(),
 })
@@ -443,6 +450,12 @@ export async function POST(request: NextRequest) {
     }
     let groupAnchorAlreadySet = groupAnchorWaveIndex !== null
 
+    // Server-computed at PaymentIntent creation and paid for: never trusted from the request body.
+    const flexibleParticipantIndices = new Set(
+      isFreeOrder ? [] : parseNumberList(paymentIntent.metadata.flexible_participants),
+    )
+    const paidTicketPrices = isFreeOrder ? [] : parseNumberList(paymentIntent.metadata.ticket_prices)
+
     for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
       if (!ticket) {
@@ -450,30 +463,10 @@ export async function POST(request: NextRequest) {
       }
 
       const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name ?? null)
+      // Slot selection follows the ticket's explicit configuration, not its name.
+      const usesWaveSelection = ticketUsesWaveSelection(ticket)
       const isRankedFormat = isRankedFormatTicket(ticket.name, ticket.race?.name ?? null)
-      const distanceIdealRaw = String(participant.distanceIdealKm ?? '').trim()
-      const distanceMinRaw = String(participant.distanceMinKm ?? '').trim()
-      const distanceIdeal = Number(distanceIdealRaw)
-      const distanceMin = Number(distanceMinRaw)
-
-      if (isOpenFormat) {
-        if (!distanceIdealRaw || !distanceMinRaw || !Number.isFinite(distanceIdeal) || !Number.isFinite(distanceMin)) {
-          return NextResponse.json({ error: 'Distances participant invalides.' }, { status: 422 })
-        }
-
-        if (distanceIdeal < distanceMin) {
-          return NextResponse.json({ error: 'Distance idéale inférieure à la distance minimale.' }, { status: 422 })
-        }
-
-        if (
-          distanceIdeal < DISTANCE_MIN_KM ||
-          distanceIdeal > DISTANCE_MAX_KM ||
-          distanceMin < DISTANCE_MIN_KM ||
-          distanceMin > DISTANCE_MAX_KM
-        ) {
-          return NextResponse.json({ error: 'Distances participant hors limite.' }, { status: 422 })
-        }
-
+      if (usesWaveSelection) {
         // A member of an already-anchored group never chooses their SAS
         // (FDR-0005 anchor always wins) — only an unanchored participant
         // must submit an explicit selection (FDR-0012 §3.2).
@@ -504,11 +497,12 @@ export async function POST(request: NextRequest) {
           approval_status: 'approved',
           race_id: ticket.race?.id || null,
           promotional_code_id: registrationPromotionalCodeId,
-          difficulty_level: participant.difficultyLevel || null,
-          // DB constraints require non-null positive distances; for non-OPEN formats
-          // we store a neutral placeholder and skip OPEN SAS logic.
-          distance_ideal_km: isOpenFormat ? distanceIdeal : 1,
-          distance_min_km: isOpenFormat ? distanceMin : 1,
+          // The distance columns are NOT NULL with no default and are no longer
+          // collected: store the neutral placeholder.
+          distance_ideal_km: 1,
+          distance_min_km: 1,
+          flexible_refund: flexibleParticipantIndices.has(index),
+          paid_ticket_cents: isFreeOrder ? 0 : (paidTicketPrices[index] ?? null),
         })
         .select()
         .single()
@@ -555,7 +549,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (isOpenFormat) {
+      if (usesWaveSelection) {
         let assignment: SelectedWaveAssignment
         try {
           if (groupAnchorWaveIndex !== null) {
@@ -635,6 +629,8 @@ export async function POST(request: NextRequest) {
       createdRegistrations.push({ registration, ticket, participant, participantName })
 
       if (signatureImage) {
+        // Text actually served by this deployment; stored so the signed wording can be proven later.
+        const signedDocument = fingerprintWaiver()
         const signatureRecord = {
           registration_id: registration.id,
           regulation_version: typeof signatureMetadata?.regulationVersion === 'string'
@@ -653,12 +649,12 @@ export async function POST(request: NextRequest) {
         birthDate: participant.birthDate,
         emergencyContactName: participant.emergencyContactName,
         emergencyContactPhone: participant.emergencyContactPhone,
-        medicalInfo: participant.medicalInfo,
+        medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
+        healthDataConsent: participant.healthDataConsent === true,
         licenseNumber: participant.licenseNumber,
-        distanceIdealKm: participant.distanceIdealKm,
-        distanceMinKm: participant.distanceMinKm,
       },
             disclaimer,
+            document: signedDocument,
           }),
         }
 
@@ -821,8 +817,21 @@ export async function POST(request: NextRequest) {
             total: number
           }>
 
-        const receiptItems = [...ticketItems, ...upsellItems]
-        const subtotalCents = ticketSubtotal + upsellSubtotal
+        // The receipt must add up to what was charged: list the flexible option on its own line.
+        const flexibleCount = flexibleParticipantIndices.size
+        const flexibleItems =
+          flexibleCount > 0
+            ? [
+                {
+                  description: 'Option billet flexible',
+                  quantity: flexibleCount,
+                  unitPrice: toMajor(FLEXIBLE_TICKET_FEE_CENTS),
+                  total: toMajor(FLEXIBLE_TICKET_FEE_CENTS * flexibleCount),
+                },
+              ]
+            : []
+        const receiptItems = [...ticketItems, ...upsellItems, ...flexibleItems]
+        const subtotalCents = ticketSubtotal + upsellSubtotal + FLEXIBLE_TICKET_FEE_CENTS * flexibleCount
         const discountCents = discountApplied > 0 ? discountApplied : 0
         const totalCents = paymentIntent.amount ?? Math.max(subtotalCents - discountCents, 0)
 

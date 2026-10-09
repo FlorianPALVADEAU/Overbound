@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Contact Overbound Race | Course à Obstacles Paris 2026",
-  description: "Contacte le support Overbound Race : inscriptions, modifications de dossard, documents et partenariats. Course à obstacles Paris 2026, backyard OCR.",
+  title: "Contact Overbound Race | Course à obstacles",
+  description: "Contacte le support Overbound Race : inscriptions, modifications de dossard, documents et partenariats. Course à obstacles Paris 2026.",
   keywords: [
     "contact overbound",
     "support course obstacles",
@@ -15,13 +15,13 @@ export const metadata: Metadata = {
     canonical: 'https://overbound-race.com/contact'
   },
   openGraph: {
-    title: "Contact Overbound Race | Course à Obstacles Paris 2026",
-    description: "Notre équipe support t'accompagne. Course à obstacles Paris 2026, backyard OCR.",
+    title: "Contact Overbound Race | Course à obstacles",
+    description: "Notre équipe support t'accompagne. Course à obstacles Paris 2026.",
     url: 'https://overbound-race.com/contact',
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/hero_header_poster.jpg',
+        url: '/images/images/overbound-og-cover.jpg',
         width: 1200,
         height: 630,
         alt: 'Contact Overbound Race',
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Contact | Overbound Race",
-    description: "Service support pour la course à obstacles Paris 2026 et le backyard OCR.",
-    images: ['/images/hero_header_poster.jpg'],
+    description: "Service support pour la course à obstacles Paris 2026.",
+    images: ['/images/images/overbound-og-cover.jpg'],
   }
 };
 
