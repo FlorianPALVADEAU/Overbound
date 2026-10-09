@@ -37,8 +37,19 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
       },
-  projects: Object.entries(VIEWPORTS).map(([name, viewport]) => ({
-    name,
-    use: { viewport },
-  })),
+  projects: [
+    // The responsive contract runs once per viewport in the matrix.
+    ...Object.entries(VIEWPORTS).map(([name, viewport]) => ({
+      name,
+      testMatch: /responsive\.spec\.ts$/,
+      use: { viewport },
+    })),
+    // Behaviour specs (e.g. Lucky Wheel placement) run once: their
+    // assertions don't depend on viewport, so 12x would only add time.
+    {
+      name: 'functional-desktop-1280x800',
+      testIgnore: /responsive\.spec\.ts$/,
+      use: { viewport: VIEWPORTS['desktop-1280x800'] },
+    },
+  ],
 })

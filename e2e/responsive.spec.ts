@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { disableAutomaticPopups, freezeHeroVideo } from './support/popups'
 
 // FDR-0015 §10: the responsive contract, checked by machine on every key
 // route across the viewport matrix (playwright.config.ts), rather than
@@ -15,6 +16,14 @@ import { expect, test, type Page } from '@playwright/test'
 const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats', '/volunteers', '/contact', '/about/our-story', '/about/partners', '/about/faq', '/about/credits']
 
 const MIN_TAP_TARGET_PX = 44
+
+// Popups depend on live campaigns and timers, and the hero video on an idle
+// delay: left alone, they change the page from run to run and make the
+// assertions and snapshots flaky.
+test.beforeEach(async ({ page }) => {
+  await disableAutomaticPopups(page)
+  await freezeHeroVideo(page)
+})
 
 const assertNoHorizontalScroll = async (page: Page) => {
   const overflow = await page.evaluate(() => {
