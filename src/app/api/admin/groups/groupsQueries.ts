@@ -10,6 +10,8 @@ export interface AdminGroupMember {
   full_name: string | null
   email: string | null
   avatar_url?: string | null
+  /** Latest refund date when every bib of the member was cancelled and refunded. */
+  refunded_at?: string | null
 }
 
 export interface AdminGroup {

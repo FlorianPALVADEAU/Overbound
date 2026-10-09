@@ -175,6 +175,18 @@ export async function GET(request: Request) {
           .in('id', profileIds)
       : { data: [] }
 
+    // Bibs of the members, to flag the ones whose tickets were all refunded.
+    const { data: registrationsRows, error: registrationsError } = profileIds.length
+      ? await admin
+          .from('registrations')
+          .select('user_id, event_id, cancelled_at')
+          .eq('organization_id', auth.organizationId)
+          .in('user_id', profileIds)
+      : { data: [], error: null }
+    if (registrationsError) {
+      console.error('[admin groups] registrations fetch error', registrationsError)
+    }
+
     const { data: usersData } = profileIds.length
       ? await admin.auth.admin.listUsers({ page: 1, perPage: 5000 })
       : { data: { users: [] } }
@@ -184,6 +196,7 @@ export async function GET(request: Request) {
       membersRows ?? [],
       profilesRows ?? [],
       usersData?.users ?? [],
+      registrationsRows ?? [],
     )
 
     if (!isPaginated) return NextResponse.json({ groups, total: groups.length })

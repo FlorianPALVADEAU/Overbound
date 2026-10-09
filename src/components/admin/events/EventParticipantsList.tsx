@@ -14,6 +14,7 @@ import {
   writeParticipantUrlState,
 } from './participantUrlState'
 import { Badge } from '@/components/ui/badge'
+import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
 import { Button } from '@/components/ui/button'
 import {
   OperationsList,
@@ -179,7 +180,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     {
       id: 'status',
       header: 'Statut',
-      cell: (participant) => <div className="flex flex-wrap gap-1">{participant.registration.cancelledAt ? <Badge variant="destructive" title={`Annulé et remboursé le ${new Date(participant.registration.cancelledAt).toLocaleDateString('fr-FR')}`}>Annulé · remboursé</Badge> : <Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge>}<Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div>,
+      cell: (participant) => <div className="flex flex-wrap gap-1">{participant.registration.cancelledAt ? <RefundedBadge cancelledAt={participant.registration.cancelledAt} /> : <Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge>}<Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div>,
     },
     {
       id: 'ticket',

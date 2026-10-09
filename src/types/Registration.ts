@@ -51,6 +51,8 @@ export interface Registration {
   assignment_constraint_breached?: boolean | null
   bib_number?: number | null
   race_format?: 'open' | 'ranked' | null
+  /** Set when the bib was cancelled and refunded (billet flexible). */
+  cancelled_at?: Timestamp | null
 }
 
 export interface RegistrationDocument {

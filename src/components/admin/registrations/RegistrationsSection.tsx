@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -292,11 +293,11 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
     { id: 'participant', header: 'Participant', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{getParticipantName(registration)}</p><p className="truncate text-xs text-muted-foreground">{registration.email}</p>{registration.group?.name ? <p className="truncate text-xs text-muted-foreground">Groupe : {registration.group.name}</p> : null}</div> },
     { id: 'event', header: 'Événement', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.event?.title ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{registration.event?.location ?? ''}</p></div> },
     { id: 'ticket', header: 'Billet', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.ticket?.name ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount((registration.order as any)?.amount_per_registration ?? registration.order?.amount_total ?? null, registration.order?.currency ?? null)}</p></div> },
-    { id: 'presence', header: 'Présence', cell: (registration) => <Badge variant={registration.checked_in ? 'outline' : 'secondary'}>{registration.checked_in ? 'Check-in' : 'Non check-in'}</Badge> },
+    { id: 'presence', header: 'Présence', cell: (registration) => registration.cancelled_at ? <RefundedBadge cancelledAt={registration.cancelled_at} /> : <Badge variant={registration.checked_in ? 'outline' : 'secondary'}>{registration.checked_in ? 'Check-in' : 'Non check-in'}</Badge> },
     { id: 'created-at', header: 'Créé le', cell: (registration) => formatDateTime(registration.created_at), hiddenByDefault: true },
   ]
   const rowActions: OperationsListAction<AdminRegistration>[] = [
-    { id: 'manage', label: 'Gérer', onSelect: handleOperations },
+    { id: 'manage', label: 'Gérer', onSelect: handleOperations, disabled: (registration) => Boolean(registration.cancelled_at) },
     { id: 'details', label: 'Détails', onSelect: handleViewDetails },
     { id: 'delete', label: 'Supprimer', destructive: true, disabled: (registration) => deleteLoadingId === registration.id, onSelect: handleDeleteClick },
   ]
@@ -493,7 +494,9 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1.5">
-                        {registration.checked_in ? (
+                        {registration.cancelled_at ? (
+                          <RefundedBadge cancelledAt={registration.cancelled_at} />
+                        ) : registration.checked_in ? (
                           <Badge variant="outline" className="border-emerald-200 text-emerald-600">
                             Check-in
                           </Badge>
@@ -509,6 +512,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                       <div className="flex justify-end gap-2">
                         <Button
                           size="sm"
+                          disabled={Boolean(registration.cancelled_at)}
                           onClick={() => handleOperations(registration)}
                         >
                           <SlidersHorizontal className="mr-2 h-4 w-4" />
