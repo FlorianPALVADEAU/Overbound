@@ -186,8 +186,6 @@ export default function MultiStepEventRegistration({
     participants.length === totalParticipants &&
     participants.every((participant) => {
       const ticket = ticketMap[participant.ticketId]
-      const isUniversalRace = ticket?.race?.is_universal ?? true
-      const hasDifficultyIfNeeded = isUniversalRace || participant.difficultyLevel
       const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
       // A member of an already-anchored group never picks a SAS — the
       // anchor is forced server-side regardless (FDR-0005/FDR-0012 §3.3).
@@ -200,7 +198,6 @@ export default function MultiStepEventRegistration({
         participant.birthDate.trim() &&
         participant.emergencyContactName.trim() &&
         participant.emergencyContactPhone.trim() &&
-        hasDifficultyIfNeeded &&
         (usesWaveSelection ? hasWaveSelectionIfNeeded : true)
       )
     })
@@ -360,7 +357,6 @@ export default function MultiStepEventRegistration({
               emergencyContactPhone: p.emergencyContactPhone,
               medicalInfo: p.medicalInfo,
               licenseNumber: p.licenseNumber,
-              difficultyLevel: p.difficultyLevel || null,
             })),
             upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
               upsellId,
@@ -439,7 +435,6 @@ export default function MultiStepEventRegistration({
         emergencyContactPhone: p.emergencyContactPhone,
         medicalInfo: p.medicalInfo,
         licenseNumber: p.licenseNumber,
-        difficultyLevel: p.difficultyLevel || null,
       })),
       upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
         upsellId,

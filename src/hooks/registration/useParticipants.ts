@@ -35,7 +35,6 @@ export function useParticipants(
             emergencyContactPhone: '',
             medicalInfo: '',
             licenseNumber: '',
-            difficultyLevel: null as Participant['difficultyLevel'],
             selectedWaveIndex: null,
           }))
         next = [...next, ...newParticipants]

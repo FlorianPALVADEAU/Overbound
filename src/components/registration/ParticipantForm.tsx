@@ -4,7 +4,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Ticket as TicketIcon } from 'lucide-react'
-import { FORMAT_LEVELS, type FormatLevelId } from '@/constants/formatLevels'
 import { isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
@@ -31,7 +30,6 @@ export default function ParticipantForm({
   showErrors,
   groupAnchor,
 }: ParticipantFormProps) {
-  const isUniversalRace = ticket?.race?.is_universal ?? true
   const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
   const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
   const { waves: selectableWaves, isLoading: wavesLoading, error: wavesError } = useSelectableOpenWaves(
@@ -55,59 +53,6 @@ export default function ParticipantForm({
         ) : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {!isUniversalRace && (
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor={`${participant.id}-difficulty`} className="flex items-center gap-2">
-              Niveau de difficulté <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={participant.difficultyLevel || ''}
-              onValueChange={(value) =>
-                onFieldChange(participant.id, 'difficultyLevel', value as FormatLevelId)
-              }
-            >
-              <SelectTrigger
-                id={`${participant.id}-difficulty`}
-                className={showErrors && !participant.difficultyLevel ? errorClass : ''}
-              >
-                <SelectValue placeholder="Choisissez votre niveau de difficulté" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
-                    <span className="font-medium">{FORMAT_LEVELS.low.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      - Obstacles classiques accessibles
-                    </span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="mid">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <span className="font-medium">{FORMAT_LEVELS.mid.name}</span>
-                    <span className="text-xs text-muted-foreground">- Obstacles exigeants</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="hard">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <span className="font-medium">{FORMAT_LEVELS.hard.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      - Obstacles extrêmes + lests
-                    </span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Même parcours, 3 défis différents. Innovation mondiale Overbound.
-            </p>
-            {showErrors && !participant.difficultyLevel ? (
-              <p className="text-xs text-destructive font-medium">{requiredMessage}</p>
-            ) : null}
-          </div>
-        )}
         <div className="space-y-2">
           <Label htmlFor={`${participant.id}-firstName`} className="flex items-center gap-2">
             Prénom <span className="text-destructive">*</span>

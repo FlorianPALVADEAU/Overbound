@@ -4,7 +4,6 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { calculateCurrentPrice } from '@/types/EventPriceTier'
 import type { EventPriceTier } from '@/types/EventPriceTier'
-import { FORMAT_LEVELS } from '@/constants/formatLevels'
 import { formatPrice, joinName } from '@/lib/registration'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type {
@@ -88,10 +87,6 @@ export default function OrderSummarySidebar({
                   ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
                   : ticket.final_price_cents
 
-              const isUniversalRace = ticket?.race?.is_universal ?? true
-              const difficultyLevel = participant?.difficultyLevel
-              const difficultyConfig = difficultyLevel ? FORMAT_LEVELS[difficultyLevel] : null
-
               return (
                 <div key={`${ticketId}-${index}`} className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5">
@@ -101,13 +96,6 @@ export default function OrderSummarySidebar({
                         {joinName(participant.firstName, participant.lastName)}
                       </p>
                     ) : null}
-                    {!isUniversalRace && difficultyConfig && (
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="outline" className={`text-xs ${difficultyConfig.badgeClass}`}>
-                          {difficultyConfig.name}
-                        </Badge>
-                      </div>
-                    )}
                     {showActiveTierDiscount && activeTier && ticket.final_price_cents && (
                       <p className="text-xs text-green-600 font-semibold">
                         -{activeTier.discount_percentage}% ({activeTier.name})

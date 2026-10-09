@@ -69,7 +69,6 @@ export function usePaymentIntent(
             email: p.email,
             firstName: p.firstName,
             lastName: p.lastName,
-            difficultyLevel: p.difficultyLevel || null,
             selectedWaveIndex: p.selectedWaveIndex ?? null,
           })),
           upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({

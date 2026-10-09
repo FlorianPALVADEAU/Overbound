@@ -11,7 +11,6 @@ import type { NotificationPreference } from './NotificationPreference'
 import type { Order } from './Order'
 import type { Ticket } from './Ticket'
 import type { Upsell } from './Upsell'
-import type { FormatLevelId } from '@/constants/formatLevels'
 
 export interface Registration {
   id: UUID
@@ -39,7 +38,6 @@ export interface Registration {
   affiliation_token?: string | null
   affiliation_deadline?: Timestamp | null
   is_affiliated: boolean
-  difficulty_level?: FormatLevelId | null
   distance_ideal_km?: number | null
   distance_min_km?: number | null
   start_time?: Timestamp | null

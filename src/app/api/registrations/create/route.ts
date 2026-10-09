@@ -49,7 +49,6 @@ const participantSchema = z.object({
   emergencyContactPhone: z.string().optional(),
   medicalInfo: z.string().optional(),
   licenseNumber: z.string().optional(),
-  difficultyLevel: z.enum(['low', 'mid', 'hard']).nullable().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
 })
 
@@ -483,7 +482,6 @@ export async function POST(request: NextRequest) {
           approval_status: 'approved',
           race_id: ticket.race?.id || null,
           promotional_code_id: registrationPromotionalCodeId,
-          difficulty_level: participant.difficultyLevel || null,
           // The distance columns are NOT NULL with no default and are no longer
           // collected: store the neutral placeholder.
           distance_ideal_km: 1,

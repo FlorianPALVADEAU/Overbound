@@ -32,7 +32,6 @@ const normalizeDirectRegistration = (row: any) => {
     registration_created_at: row.created_at ?? null,
     ticket_id: row.ticket_id ?? null,
     ticket_name: ticket?.name ?? null,
-    difficulty_level: row.difficulty_level ?? null,
     event_id: row.event_id ?? null,
     event_title: event?.title ?? null,
     event_date: event?.date ?? null,
@@ -106,7 +105,6 @@ export async function GET(request: Request) {
           created_at,
           ticket_id,
           event_id,
-          difficulty_level,
           ticket:tickets(name),
           event:events(title, date, location),
           order:orders(status, amount_total, currency, invoice_url, created_at)
@@ -128,8 +126,7 @@ export async function GET(request: Request) {
               created_at,
               ticket_id,
               event_id,
-              difficulty_level,
-              ticket:tickets(name),
+                  ticket:tickets(name),
               event:events(title, date, location),
               order:orders(status, amount_total, currency, invoice_url, created_at)
             `,
