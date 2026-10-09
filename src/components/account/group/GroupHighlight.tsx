@@ -19,13 +19,16 @@ function MemberAvatars({ group }: { group: Group }) {
 
   return (
     <ul className="flex -space-x-2" aria-label="Membres du groupe">
-      {shown.map((member) => (
-        <li key={member.id} title={member.full_name ?? member.email ?? undefined}>
+      {shown.map((member, index) => (
+        <li key={member.id} className="relative" style={{ zIndex: index }} title={member.full_name ?? member.email ?? undefined}>
           <UserAvatar src={member.avatar_url} name={member.full_name} email={member.email} className="size-10 border-2 border-background" />
         </li>
       ))}
       {hidden > 0 ? (
-        <li className="flex size-10 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-bold">
+        <li
+          className="relative flex size-10 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-bold"
+          style={{ zIndex: shown.length }}
+        >
           +{hidden}
         </li>
       ) : null}
