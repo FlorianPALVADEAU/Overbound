@@ -23,6 +23,7 @@ export const ADMIN_TAB_VALUES = [
   'emails',
   'distribution-lists',
   'volunteers',
+  'maintenance',
 ] as const
 
 export type AdminTabValue = (typeof ADMIN_TAB_VALUES)[number]

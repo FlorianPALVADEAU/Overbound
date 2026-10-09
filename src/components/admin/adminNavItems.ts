@@ -22,6 +22,7 @@ import {
   Dumbbell,
   Sparkles,
   ClipboardList,
+  Construction,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 export interface AdminNavItem {
@@ -64,6 +65,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { value: 'distribution-lists', label: 'Listes de diffusion', icon: List, href: '/dashboard/distribution-lists' },
   { value: 'lucky-wheel', label: 'Lucky Wheel', icon: Sparkles, href: '/dashboard/lucky-wheel' },
   { value: 'volunteers', label: 'Bénévoles', icon: ClipboardList, href: '/dashboard/volunteers', requiresEventContext: true },
+  { value: 'maintenance', label: 'Maintenance', icon: Construction, href: '/dashboard/maintenance' },
 ]
 
 // Grouped navigation — used for sidebar collapsible menus
@@ -104,6 +106,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     id: 'system',
     label: 'Système',
     icon: Settings2,
-    items: [ADMIN_NAV_ITEMS[14]],
+    items: [ADMIN_NAV_ITEMS[14], ADMIN_NAV_ITEMS[19]],
   },
 ]

@@ -1,5 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { readMaintenanceSettings } from '@/lib/maintenance/settings'
+import { isMaintenanceExemptPath, MAINTENANCE_PATH } from '@/lib/maintenance/policy'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -42,6 +44,27 @@ export async function middleware(request: NextRequest) {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
+
+  // Global maintenance: everybody except admins gets the maintenance screen (503) or a 503 JSON on the API.
+  const maintenance = await readMaintenanceSettings(supabase)
+  if (maintenance.enabled && !isMaintenanceExemptPath(request.nextUrl.pathname)) {
+    let isAdmin = false
+    if (user) {
+      const { data: roleRow } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      isAdmin = roleRow?.role === 'admin'
+    }
+
+    if (!isAdmin) {
+      const headers = { 'Retry-After': '3600', 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store' }
+      if (request.nextUrl.pathname.startsWith('/api')) {
+        return NextResponse.json({ error: 'Maintenance en cours', code: 'MAINTENANCE' }, { status: 503, headers })
+      }
+      const rewriteUrl = request.nextUrl.clone()
+      rewriteUrl.pathname = MAINTENANCE_PATH
+      rewriteUrl.search = ''
+      return NextResponse.rewrite(rewriteUrl, { status: 503, headers })
+    }
+  }
 
   // Do not force-log users out on transient auth backend failures.
   if (userError) {

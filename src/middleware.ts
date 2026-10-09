@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { middleware as authMiddleware } from './src/middlewares/authMiddleware'
+import { middleware as authMiddleware } from './middlewares/authMiddleware'
 
 export function middleware(request: NextRequest) {
   const canonicalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL

@@ -2,7 +2,8 @@
 
 import { ReactNode, useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSelectedLayoutSegment } from 'next/navigation'
+import { MaintenanceBanner } from './MaintenanceBanner'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PromotionsBanner } from './PromotionsBanner'
@@ -28,6 +29,8 @@ export function Layout({ children }: LayoutProps) {
   const queryClient = useQueryClient()
   // The account area has its own fixed bottom navigation; the site footer would sit underneath it on mobile.
   const isAccountArea = usePathname()?.startsWith('/account') ?? false
+  // Segment (not URL): the maintenance screen is served by a rewrite, so the URL is the visitor's original one.
+  const isMaintenanceScreen = useSelectedLayoutSegment() === 'maintenance'
   const supabase = createSupabaseBrowser()
 
   const seedSessionCache = useCallback((session: Session | null) => {
@@ -112,9 +115,12 @@ export function Layout({ children }: LayoutProps) {
     return () => subscription.unsubscribe()
   }, [supabase, seedSessionCache, syncPostAuthData, queryClient])
 
+  if (isMaintenanceScreen) return <>{children}</>
+
   return (
     <PopupArbiterProvider>
       <div className="flex min-h-screen flex-col">
+        <MaintenanceBanner isAdmin={data?.profile?.role === 'admin'} />
         <Header
           user={data?.user ?? null}
           profile={data?.profile ?? null}
