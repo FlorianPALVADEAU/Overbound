@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
+import { resolveGroupOrganizationId } from '@/lib/groups/organization'
 
 const createGroupBodySchema = z.object({
   name: z.string().trim().min(1, 'Nom de groupe requis'),
@@ -35,9 +36,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Vous appartenez déjà à un groupe' }, { status: 409 })
     }
 
+    // Without an organization the group would never show up in the admin screens.
+    const organizationId = await resolveGroupOrganizationId(admin, user.id)
+    if (!organizationId) {
+      console.warn('[groups] no organization resolved for new group', { userId: user.id })
+    }
+
     const { data: group, error: groupError } = await admin
       .from('groups')
-      .insert({ name: name.trim(), captain_id: user.id })
+      .insert({ name: name.trim(), captain_id: user.id, organization_id: organizationId })
       .select('id, invite_code')
       .single()
 
@@ -48,7 +55,7 @@ export async function POST(request: Request) {
 
     const { error: memberError } = await admin
       .from('group_members')
-      .insert({ group_id: group.id, profile_id: user.id, role: 'captain' })
+      .insert({ group_id: group.id, profile_id: user.id, role: 'captain', organization_id: organizationId })
 
     if (memberError) {
       console.error('[groups] insert captain member error', memberError)

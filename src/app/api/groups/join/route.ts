@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     const { data: group, error: groupError } = await admin
       .from('groups')
-      .select('id, name, anchor_event_id, anchor_wave_index, anchor_start_time')
+      .select('id, name, organization_id, anchor_event_id, anchor_wave_index, anchor_start_time')
       .eq('invite_code', invite_code.trim().toUpperCase())
       .maybeSingle()
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     const { error: memberError } = await admin
       .from('group_members')
-      .insert({ group_id: group.id, profile_id: user.id, role: 'member' })
+      .insert({ group_id: group.id, profile_id: user.id, role: 'member', organization_id: group.organization_id })
 
     if (memberError) {
       console.error('[groups/join] insert error', memberError)
