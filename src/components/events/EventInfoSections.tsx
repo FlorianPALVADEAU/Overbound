@@ -276,9 +276,9 @@ const sections: InfoSection[] = [
     content: (
       <div className="space-y-3">
         <p>
-          Les inscriptions sont définitives et aucun remboursement, avoir ni compensation volontaire n'est accordé.
-          Le transfert de dossard reste possible gratuitement jusqu'à la veille de l'événement depuis l'espace
-          billets.
+          Les inscriptions ne sont pas remboursables si tu ne peux plus venir ; si Overbound annule l'événement,
+          l'acheteur est remboursé. Le dossard peut être transféré jusqu'à la veille de l'événement depuis l'espace
+          billets, pour 6,99 € de frais : la personne qui le reçoit signe elle-même la décharge.
         </p>
         <p className="text-sm text-muted-foreground">
           Cette politique s'applique sans préjudice des droits impératifs prévus par la loi applicable.

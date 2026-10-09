@@ -99,12 +99,15 @@ export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-inscriptions-transfert',
     title: 'Puis-je transférer mon billet à quelqu’un ?',
-    shortAnswer: 'Oui, gratuitement, jusqu’à la veille de l’événement.',
+    shortAnswer: 'Oui, jusqu’à la veille de l’événement, pour 6,99 € de frais de transfert.',
     answer: [
       block(
-        'Depuis ton espace billets, copie le lien de transfert et envoie-le à la personne qui reprend ta place. Elle se connecte, complète ses informations et accepte le règlement.',
+        'Depuis ton espace billets, touche « Transférer », accepte les conditions et règle les frais de transfert (6,99 €). Tu reçois ensuite un lien à envoyer à la personne qui reprend ta place.',
       ),
-      block('Le transfert est possible jusqu’à la veille de l’événement. Après, il n’est plus garanti.'),
+      block(
+        'Elle se connecte, renseigne son identité et signe elle-même la décharge : sa signature remplace la tienne et le dossard passe à son nom. Ton QR code ne fonctionne plus.',
+      ),
+      block('Le transfert est possible une fois par dossard, jusqu’à la veille de l’événement. La revente au-dessus du prix payé est interdite.'),
     ],
     category: 'inscriptions',
     order: 2,
@@ -116,12 +119,18 @@ export const faqFallback: FAQDocument[] = [
   {
     _id: 'fallback-inscriptions-annulation',
     title: 'Puis-je annuler ou me faire rembourser ?',
-    shortAnswer: 'Non. Les billets ne sont ni remboursables ni échangeables contre un avoir.',
+    shortAnswer: 'Oui avec l’option billet flexible (jusqu’à J-7), sinon seulement si Overbound annule.',
     answer: [
       block(
-        'Une inscription concerne une activité sportive datée : le droit de rétractation de 14 jours ne s’applique pas. Aucun remboursement ni avoir n’est accordé, quelle que soit la raison.',
+        'Une inscription concerne une activité sportive datée : le droit de rétractation de 14 jours ne s’applique pas, et aucun remboursement n’est accordé si tu ne peux plus venir.',
       ),
-      block('Tu peux en revanche transférer ton billet jusqu’à la veille de l’événement.'),
+      block(
+        'Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine. En cas de report, ton billet reste valable ou tu peux demander le remboursement.',
+      ),
+      block(
+        'Avec l’option billet flexible (8,90 € par billet, à cocher à la commande), tu peux annuler depuis ton espace jusqu’à 7 jours avant l’événement, sans justificatif : le prix du billet t’est remboursé, hors frais de l’option.',
+      ),
+      block('Tu peux aussi transférer ton billet jusqu’à la veille de l’événement.'),
     ],
     category: 'inscriptions',
     order: 3,
