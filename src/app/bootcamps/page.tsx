@@ -111,7 +111,7 @@ export default function BootcampsPage() {
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-muted-foreground">Sessions passées</h2>
                 </div>
-                <div className="flex flex-col gap-4 opacity-60">
+                <div className="flex flex-col gap-4 opacity-75">
                   {past.map((bootcamp) => (
                     <BootcampCard
                       key={bootcamp.id}
