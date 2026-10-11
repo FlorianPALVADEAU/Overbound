@@ -24,14 +24,9 @@ export const VolunteerFAQSection = () => {
           title='Questions des bénévoles'
           lead='Toutes les réponses pour savoir comment se vit l’expérience côté tribu organisatrice.'
         />
-            <Link href='/about/faq'>
-              <Button
-                variant='outline'
-                className='min-h-11 w-full border-2 border-primary text-sm font-semibold text-primary transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/30 sm:h-11 sm:w-44 sm:text-base md:h-12 md:w-48'
-              >
-                Voir tout
-              </Button>
-            </Link>
+        <Button asChild variant='outline' size='cta' className='w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground lg:w-auto'>
+          <Link href='/about/faq'>Voir tout</Link>
+        </Button>
       </div>
 
       <div className='grid w-full grid-cols-1 gap-6 md:grid-cols-2'>
