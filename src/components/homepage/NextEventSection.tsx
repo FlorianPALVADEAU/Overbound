@@ -51,7 +51,7 @@ export function NextEventSection() {
       </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-16 sm:px-6 sm:py-20 xl:px-32">
-        <span className="inline-flex w-fit items-center rounded-full bg-primary px-4 py-1.5 text-xs font-black uppercase tracking-[0.28em] text-white">
+        <span className="inline-flex w-fit items-center rounded-full bg-primary px-4 py-1.5 text-xs font-black uppercase tracking-[0.28em] text-primary-foreground">
           Prochaine édition
         </span>
 
@@ -69,7 +69,7 @@ export function NextEventSection() {
             {event.location}
           </span>
           {lowestPrice !== null ? (
-            <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-black text-white">
+            <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-black text-primary-foreground">
               Dès {(lowestPrice / 100).toLocaleString('fr-FR', { style: 'currency', currency })}
             </span>
           ) : null}
@@ -82,7 +82,7 @@ export function NextEventSection() {
 
         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
           {isOnSale ? (
-            <Button asChild size="lg" className="h-12 w-full bg-red-600 hover:bg-red-700 sm:w-auto">
+            <Button asChild size="lg" className="h-12 w-full bg-red-700 text-white hover:bg-red-800 sm:w-auto">
               <Link href={registerHref}>Je m&apos;inscris</Link>
             </Button>
           ) : (

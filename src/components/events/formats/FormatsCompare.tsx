@@ -7,7 +7,7 @@ import { COMPARE_ROWS, type FormatKey } from './content'
 
 const TABS = [
   { key: 'open', label: 'OPEN', Icon: Heart, active: 'bg-blue-600 text-white' },
-  { key: 'ranked', label: 'RANKED', Icon: Swords, active: 'bg-amber-600 text-white' },
+  { key: 'ranked', label: 'RANKED', Icon: Swords, active: 'bg-amber-700 text-white' },
 ] as const
 
 /** Mobile: one format at a time behind a switch. Desktop: both side by side. */
@@ -50,7 +50,7 @@ export function FormatsCompare() {
           <div className="flex items-center gap-2 bg-blue-500/10 px-5 py-4 text-blue-600">
             <Heart className="h-4 w-4" aria-hidden /> OPEN
           </div>
-          <div className="flex items-center gap-2 bg-amber-500/10 px-5 py-4 text-amber-600">
+          <div className="flex items-center gap-2 bg-amber-500/10 px-5 py-4 text-amber-800">
             <Swords className="h-4 w-4" aria-hidden /> RANKED
           </div>
         </div>

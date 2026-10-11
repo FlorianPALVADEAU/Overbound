@@ -72,13 +72,13 @@ export default function MentionsLegalesPage() {
             <div className="mt-4 space-y-2">
               <p>
                 <strong>Email général :</strong>{' '}
-                <Link href={`mailto:${COMPANY_INFO.emails.general}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.emails.general}`} className="text-primary underline">
                   {COMPANY_INFO.emails.general}
                 </Link>
               </p>
               <p>
                 <strong>Email support :</strong>{' '}
-                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary underline">
                   {COMPANY_INFO.emails.support}
                 </Link>
               </p>
@@ -105,7 +105,7 @@ export default function MentionsLegalesPage() {
                     href={COMPANY_INFO.hosting.web.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     {COMPANY_INFO.hosting.web.website}
                   </Link>
@@ -121,7 +121,7 @@ export default function MentionsLegalesPage() {
                     href={COMPANY_INFO.hosting.database.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     {COMPANY_INFO.hosting.database.website}
                   </Link>
@@ -164,14 +164,14 @@ export default function MentionsLegalesPage() {
             <p className="mt-4">
               Pour en savoir plus sur la collecte et le traitement de vos données personnelles, veuillez consulter
               notre{' '}
-              <Link href="/privacy-policies" className="text-primary hover:underline">
+              <Link href="/privacy-policies" className="text-primary underline">
                 Politique de confidentialité
               </Link>
               .
             </p>
             <p className="mt-4">
               Pour en savoir plus sur l'utilisation des cookies sur notre site, veuillez consulter notre{' '}
-              <Link href="/cookies" className="text-primary hover:underline">
+              <Link href="/cookies" className="text-primary underline">
                 Politique de cookies
               </Link>
               .
@@ -183,11 +183,11 @@ export default function MentionsLegalesPage() {
             <h2 className="text-2xl font-bold">Conditions générales</h2>
             <p className="mt-4">
               Pour connaître les conditions d'utilisation de notre plateforme, veuillez consulter nos{' '}
-              <Link href="/cgu" className="text-primary hover:underline">
+              <Link href="/cgu" className="text-primary underline">
                 Conditions Générales d'Utilisation
               </Link>{' '}
               et nos{' '}
-              <Link href="/cgv" className="text-primary hover:underline">
+              <Link href="/cgv" className="text-primary underline">
                 Conditions Générales de Vente
               </Link>
               .
@@ -199,7 +199,7 @@ export default function MentionsLegalesPage() {
             <h2 className="text-2xl font-bold">Litiges et réclamations</h2>
             <p className="mt-4">
               En cas de litige ou de réclamation, nous vous invitons à nous contacter en priorité à l'adresse{' '}
-              <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+              <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary underline">
                 {COMPANY_INFO.contact.email}
               </Link>
               .

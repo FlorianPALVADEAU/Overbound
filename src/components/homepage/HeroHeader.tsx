@@ -86,7 +86,7 @@ export const HeroHeader = () => {
                     <div className="flex flex-col items-start gap-2">
                         <Button
                             asChild
-                            className="w-full sm:w-48 md:w-48 lg:w-64 h-12 sm:h-12 md:h-12 lg:h-16 bg-red-600 hover:bg-red-700 text-lg sm:text-xl font-semibold"
+                            className="w-full sm:w-48 md:w-48 lg:w-64 h-12 sm:h-12 md:h-12 lg:h-16 bg-red-700 text-white hover:bg-red-800 text-lg sm:text-xl font-semibold"
                         >
                             <Link href="/events/ultra-arena-2026/register">Je m'inscris maintenant</Link>
                         </Button>

@@ -17,8 +17,7 @@ export const FAQQuestionCard = ({ question, loading, error }: { question: Questi
 
   return (
     <div
-      onClick={toggle}
-      className={`w-full cursor-pointer rounded-2xl border p-6 transition-colors duration-300 hover:border-neutral-500 ${
+      className={`w-full rounded-2xl border p-6 transition-colors duration-300 hover:border-neutral-500 ${
         isOpen ? 'border-[#26AA26]/70 bg-neutral-800/60 shadow-lg shadow-[#26AA26]/10 hover:border-primary' : 'border-neutral-700 bg-transparent'
       }`}
     >
@@ -28,6 +27,8 @@ export const FAQQuestionCard = ({ question, loading, error }: { question: Questi
         <>
           <button
             type='button'
+            onClick={toggle}
+            aria-expanded={isOpen}
             className='flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 text-left'
           >
             <h3 className='text-lg font-semibold text-white sm:text-xl'>{question.title}</h3>

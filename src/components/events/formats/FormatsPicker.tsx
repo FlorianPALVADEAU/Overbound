@@ -96,7 +96,7 @@ export function FormatsPicker({ eventHref }: Props) {
             {eventHref ? (
               <Link
                 href={eventHref}
-                className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-black text-white sm:inline-flex"
+                className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-black text-primary-foreground sm:inline-flex"
               >
                 Je m&apos;inscris
               </Link>
