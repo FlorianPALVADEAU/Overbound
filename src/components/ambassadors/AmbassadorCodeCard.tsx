@@ -22,7 +22,7 @@ export function AmbassadorCodeCard({ code, copyFeedback, onCopy, onShare }: Amba
             </p>
             {code ? (
               <>
-                <p className="break-all text-2xl font-black tracking-[0.2em] text-primary sm:text-4xl sm:tracking-[0.3em]">
+                <p className="break-all text-2xl font-bold tracking-label text-primary sm:text-4xl sm:tracking-eyebrow">
                   {code}
                 </p>
                 <p className="mt-2 max-w-sm text-xs text-muted-foreground">

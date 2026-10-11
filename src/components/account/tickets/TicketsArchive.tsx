@@ -52,7 +52,7 @@ function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer, onCan
 
   const body = (
     <>
-      <span className="flex w-[4.5rem] shrink-0 items-center text-4xl font-black leading-none tracking-tighter tabular-nums">
+      <span className="flex w-[4.5rem] shrink-0 items-center text-4xl font-bold leading-none tracking-tighter tabular-nums">
         {bib ?? <TicketIcon className="size-7 text-muted-foreground" aria-hidden />}
       </span>
       <span className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer, onCan
         <span className="block truncate text-xs text-muted-foreground">{details.join(' · ')}</span>
       </span>
       {status ? (
-        <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        <span className="flex items-center gap-1 text-label font-bold uppercase tracking-wider text-muted-foreground">
           {ticket.checked_in ? <CheckIcon className="size-3.5 text-primary" strokeWidth={3} /> : null}
           {status}
         </span>
@@ -118,7 +118,7 @@ function EventTicketList({ group, context }: { group: EventTicketGroup; context:
   return (
     <section className="border-t border-border pt-5">
       <header className="mb-2">
-        <h2 className="text-2xl font-black leading-tight tracking-tight">{group.title}</h2>
+        <h2 className="text-2xl font-display font-bold uppercase leading-tight tracking-tight">{group.title}</h2>
         <p className="mt-0.5 text-sm text-muted-foreground first-letter:uppercase">{formatLongDate(group.date)}</p>
       </header>
 
@@ -181,7 +181,7 @@ function TicketsArchiveContent({ user, profile, registrations }: AuthenticatedAc
     <AccountScreen>
       <header className="mb-8">
         <Eyebrow>Mes billets</Eyebrow>
-        <h1 className="mt-2 text-[2.5rem] font-black leading-[0.95] tracking-tight">Tous mes dossards</h1>
+        <h1 className="mt-2 text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight">Tous mes dossards</h1>
       </header>
 
       {groups.length === 0 ? (

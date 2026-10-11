@@ -188,7 +188,7 @@ export default function ResetPasswordUpdatePage() {
             ) : null}
 
             {!sessionAvailable ? (
-              <div className="rounded-2xl border border-dashed border-[#26AA26]/40 bg-[#26AA26]/10 p-4 text-sm text-[#1b5a1b]">
+              <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/10 p-4 text-sm text-primary">
                 <p className="font-semibold">Ton lien est expiré.</p>
                 <p className="mt-1">
                   Demande un nouvel email de réinitialisation pour obtenir un lien valide.
@@ -196,7 +196,7 @@ export default function ResetPasswordUpdatePage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="mt-3 h-10 border-[#26AA26] text-[#26AA26] hover:bg-[#26AA26]/10"
+                  className="mt-3 h-10 border-primary text-primary hover:bg-primary/10"
                 >
                   <Link href="/auth/reset">Envoyer un nouveau lien</Link>
                 </Button>

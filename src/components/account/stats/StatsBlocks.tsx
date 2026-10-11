@@ -4,8 +4,8 @@ import { Eyebrow } from '@/components/account/AccountScreen'
 export function Kpi({ value, label }: { value: ReactNode; label: string }) {
   return (
     <div>
-      <p className="text-4xl font-black leading-none tracking-tighter tabular-nums md:text-5xl">{value}</p>
-      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="text-4xl font-bold leading-none tracking-tighter tabular-nums md:text-5xl">{value}</p>
+      <p className="mt-2 text-label font-semibold uppercase text-muted-foreground">{label}</p>
     </div>
   )
 }
@@ -23,7 +23,7 @@ export function SectionHeading({ eyebrow, title, detail }: { eyebrow: string; ti
   return (
     <header className="mb-6">
       <Eyebrow className="text-primary">{eyebrow}</Eyebrow>
-      <h2 className="mt-1 text-balance text-3xl font-black leading-tight tracking-tight md:text-4xl">{title}</h2>
+      <h2 className="mt-1 text-balance text-3xl font-display font-bold uppercase leading-tight tracking-tight md:text-4xl">{title}</h2>
       {detail ? <p className="mt-1 text-sm text-muted-foreground first-letter:uppercase">{detail}</p> : null}
     </header>
   )

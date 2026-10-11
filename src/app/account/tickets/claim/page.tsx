@@ -16,7 +16,7 @@ function ClaimMessage({ title, message, children }: { title: string; message?: s
   return (
     <AccountScreen narrow>
       <div className="space-y-4 py-10">
-        <h1 className="text-balance text-[2rem] font-black leading-tight tracking-tight">{title}</h1>
+        <h1 className="text-balance text-title font-display font-bold uppercase leading-tight tracking-tight">{title}</h1>
         {message ? <p className="text-muted-foreground">{message}</p> : null}
         {children}
       </div>
@@ -73,7 +73,7 @@ function ClaimTicketPageInner() {
     <AccountScreen narrow>
       <header>
         <Eyebrow className="text-primary">Un billet t&apos;attend</Eyebrow>
-        <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight">
+        <h1 className="mt-2 text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight">
           {registration.event?.title ?? 'Événement'}
         </h1>
         <div className="mt-3 space-y-1 text-sm text-muted-foreground">

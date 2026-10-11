@@ -93,7 +93,7 @@ export default function GroupPanel({ user, event, group, intent, inviteCode, onN
 
     return (
       <div ref={ref} className={shell}>
-        <p className="text-base font-black">
+        <p className="text-base font-bold">
           {group.name} <span className="font-semibold text-muted-foreground">· {group.members.length} membre{group.members.length > 1 ? 's' : ''}</span>
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -124,7 +124,7 @@ export default function GroupPanel({ user, event, group, intent, inviteCode, onN
       <div ref={ref} className={shell}>
         {!user ? (
           <>
-            <p className="text-base font-black">On t’invite dans un groupe.</p>
+            <p className="text-base font-bold">On t’invite dans un groupe.</p>
             <p className="mt-1 text-sm text-muted-foreground">Connecte-toi pour le rejoindre, sans quitter cette page.</p>
             <Button type="button" className="mt-4 h-12 w-full rounded-xl font-bold" onClick={() => onNeedAuth('join')}>
               Rejoindre le groupe
@@ -132,7 +132,7 @@ export default function GroupPanel({ user, event, group, intent, inviteCode, onN
           </>
         ) : preview.data ? (
           <>
-            <p className="text-base font-black">
+            <p className="text-base font-bold">
               {preview.data.captain.full_name ?? 'Un ami'} t’invite dans « {preview.data.name} ».
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -160,7 +160,7 @@ export default function GroupPanel({ user, event, group, intent, inviteCode, onN
   // ---- No group yet ----
   return (
     <div ref={ref} className={shell}>
-      <p className="text-base font-black">Tu viens avec des potes ?</p>
+      <p className="text-base font-bold">Tu viens avec des potes ?</p>
       <p className="mt-1 text-sm text-muted-foreground">Un groupe, c’est le même départ pour tout le monde.</p>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">

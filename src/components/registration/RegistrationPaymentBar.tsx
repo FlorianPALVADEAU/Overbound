@@ -60,7 +60,7 @@ export default function RegistrationPaymentBar({
             <div className="text-lg font-semibold leading-tight">
               {formatPrice(summaryPricing.totalDue, summaryPricing.currency)}
             </div>
-            <div className="group relative mt-1 flex w-fit flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] leading-snug text-muted-foreground lg:ml-auto lg:justify-end">
+            <div className="group relative mt-1 flex w-fit flex-wrap items-center gap-x-1 gap-y-0.5 text-label leading-snug text-muted-foreground lg:ml-auto lg:justify-end">
               <span>Billets non remboursables</span>
               <CircleHelp
                 className="h-3.5 w-3.5 cursor-help"

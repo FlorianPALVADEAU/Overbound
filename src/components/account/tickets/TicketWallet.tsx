@@ -31,7 +31,7 @@ export function TicketWallet({ tickets, context, transferStateFor, onOpenQr, onT
         onScroll={many ? onScroll : undefined}
         {...(many ? dragHandlers : {})}
         className={cn(
-          '-mx-5 flex gap-3 px-5 md:mx-0 md:grid md:grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] md:gap-4 md:overflow-visible md:px-0',
+          '-mx-5 flex gap-3 px-5 md:mx-0 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0',
           many &&
             'snap-x snap-mandatory overflow-x-auto scroll-px-5 pb-1 [scrollbar-width:none] md:snap-none md:pb-0 [&::-webkit-scrollbar]:hidden',
         )}
@@ -39,7 +39,7 @@ export function TicketWallet({ tickets, context, transferStateFor, onOpenQr, onT
         {tickets.map((ticket) => (
           <div
             key={ticket.registration_id}
-            className={cn('snap-center md:w-auto md:max-w-[20rem]', many ? 'w-[82%] shrink-0 select-none sm:w-[20rem]' : 'w-full')}
+            className={cn('h-full snap-center md:w-auto', many ? 'w-[82%] shrink-0 select-none sm:w-[20rem]' : 'w-full')}
           >
             <TicketStub
               ticket={ticket}

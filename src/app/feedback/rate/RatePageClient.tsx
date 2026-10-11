@@ -51,12 +51,12 @@ export function RatePageClient() {
   }, [searchParams])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center tone-light bg-background text-foreground">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
         {status === 'loading' && (
           <div>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
               Enregistrement de votre avis...
             </h1>
           </div>
@@ -79,10 +79,10 @@ export function RatePageClient() {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-foreground mb-4">
               Merci pour ton avis !
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Ton retour nous aide à améliorer continuellement l&apos;expérience
               Overbound pour tous nos participants.
             </p>
@@ -95,7 +95,7 @@ export function RatePageClient() {
               </Link>
               <Link
                 href="/"
-                className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg transition-colors"
+                className="block w-full bg-muted hover:bg-muted/70 text-foreground font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Retour à l&apos;accueil
               </Link>
@@ -120,10 +120,10 @@ export function RatePageClient() {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-foreground mb-4">
               Oups, une erreur est survenue
             </h1>
-            <p className="text-gray-600 mb-6">{errorMessage}</p>
+            <p className="text-muted-foreground mb-6">{errorMessage}</p>
             <a
               href="/contact"
               className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"

@@ -58,8 +58,8 @@ export function FormatDonut({ counts }: { counts: FormatCounts }) {
           </PieChart>
         </ChartContainer>
         <p className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-black leading-none tabular-nums">{total}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">dossards</span>
+          <span className="text-3xl font-bold leading-none tabular-nums">{total}</span>
+          <span className="text-label font-semibold uppercase tracking-wider text-muted-foreground">dossards</span>
         </p>
       </div>
       <ul className="space-y-2">
@@ -107,10 +107,10 @@ export function CompletionRing({ value, total }: { value: number; total: number 
         </RadialBarChart>
       </ChartContainer>
       <p className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black leading-none tabular-nums">
+        <span className="text-3xl font-bold leading-none tabular-nums">
           {value}/{total}
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">inscrits</span>
+        <span className="text-label font-semibold uppercase tracking-wider text-muted-foreground">inscrits</span>
       </p>
     </div>
   )
@@ -141,7 +141,7 @@ const SAMPLE_CONFIG = { value: { label: 'Valeur', color: 'var(--primary)' } } sa
 function SampleHeadline({ value, unit, caption }: { value: string; unit: string; caption: string }) {
   return (
     <div className="mb-3">
-      <p className="text-4xl font-black leading-none tracking-tighter tabular-nums">
+      <p className="text-4xl font-bold leading-none tracking-tighter tabular-nums">
         {value} <span className="text-lg font-bold text-muted-foreground">{unit}</span>
       </p>
       <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-primary">{caption}</p>

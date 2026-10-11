@@ -337,7 +337,7 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
                     currency: registrationDraft.summary.currency.toUpperCase(),
                   })}</span>
                 </div>
-                <div className="group relative flex w-fit flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] leading-snug text-muted-foreground">
+                <div className="group relative flex w-fit flex-wrap items-center gap-x-1 gap-y-0.5 text-label leading-snug text-muted-foreground">
                   <span>Billets non remboursables</span>
                   <CircleHelp
                     className="h-3.5 w-3.5 cursor-help"

@@ -18,7 +18,7 @@ export function ComingSoon({ title, hint, children }: ComingSoonProps) {
         {children}
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/25 px-6 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary ring-1 ring-primary/30">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-label font-bold uppercase tracking-wider text-primary ring-1 ring-primary/30">
           <SparklesIcon className="size-3" />
           Bientôt
         </span>

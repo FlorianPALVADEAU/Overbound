@@ -54,7 +54,7 @@ function ProfileContent({ user, profile }: AuthenticatedAccountData) {
         />
         <div className="min-w-0">
           <Eyebrow>Mon compte</Eyebrow>
-          <h1 className="truncate text-2xl font-black leading-tight tracking-tight">{profile?.full_name || 'Athlète'}</h1>
+          <h1 className="truncate text-2xl font-display font-bold uppercase leading-tight tracking-tight">{profile?.full_name || 'Athlète'}</h1>
           <p className="truncate text-sm text-muted-foreground">{user.email}</p>
         </div>
       </header>

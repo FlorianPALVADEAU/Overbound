@@ -28,8 +28,8 @@ export default function TicketSelectionStep({
 }: TicketSelectionStepProps) {
   return (
     <div className="space-y-4">
-      <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300">
-        <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      <Alert className="border-amber-500/40 bg-amber-500/10 text-foreground">
+        <UserX className="h-4 w-4 text-amber-500" />
         <AlertDescription className="text-xs leading-relaxed">
           <span className="font-semibold">Réservé aux personnes majeures (18 ans et plus).</span>
           {' '}Les mineurs ne sont pas autorisés à participer à cette édition.

@@ -49,7 +49,7 @@ export function GroupEmpty({ fullName }: { fullName: string | null | undefined }
     <div className="space-y-10">
       <header>
         <Eyebrow>Mon groupe</Eyebrow>
-        <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight">Partez ensemble.</h1>
+        <h1 className="mt-2 text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight">Partez ensemble.</h1>
         <p className="mt-3 text-muted-foreground">
           Même groupe, même SAS de départ pour tous les participants OPEN. Collègues, club, potes : un code suffit.
         </p>

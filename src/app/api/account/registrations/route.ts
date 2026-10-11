@@ -7,9 +7,25 @@ import { processAccountEngagementEmails } from '@/lib/email/engagement'
 import { parseParticipantFromSignature } from '@/lib/account/participant'
 import { listUnlockedRegistrationIds } from '@/lib/tickets/ticketTransfers'
 import { getFlexibleRefundEligibility, type FlexibleRefundSubject } from '@/lib/tickets/flexibleTicket'
+import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
+import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 import type { AccountParticipant } from '@/types/AccountRegistration'
 
 export const runtime = 'nodejs'
+
+/** A ticket with a fixed departure (FDR-0013) carries it in its operations config; used while the registration has none. */
+const fixedStartTime = (config: unknown): string | null => {
+  const profile = resolveTicketOperationsProfile(config as Record<string, unknown> | null)
+  const value = (config as { fixed_start_time?: unknown } | null)?.fixed_start_time
+  return profile.departureMode === 'fixed' && typeof value === 'string' ? value : null
+}
+
+/** `registrations.race_format` is only filled once a bib is assigned; until then the ticket name decides. */
+const inferRaceFormat = (ticketName: string | null | undefined): 'open' | 'ranked' | null => {
+  if (isRankedFormatTicket(ticketName)) return 'ranked'
+  if (isOpenFormatTicket(ticketName)) return 'open'
+  return null
+}
 
 const normalizeViewRegistration = (row: any) => ({
   ...row,
@@ -217,6 +233,7 @@ export async function GET(request: Request) {
           paid_ticket_cents,
           cancelled_at,
           event:events(date),
+          ticket:tickets(operations_config),
           order:orders(user_id)
         `,
         )
@@ -230,7 +247,7 @@ export async function GET(request: Request) {
             transfer_token: row.transfer_token ?? null,
             approval_status: 'approved',
             document_url: null,
-            start_time: row.start_time ?? null,
+            start_time: row.start_time ?? fixedStartTime(firstRelation<{ operations_config: unknown }>(row.ticket)?.operations_config),
             wave_index: typeof row.wave_index === 'number' ? row.wave_index : null,
             wave_capacity: typeof row.wave_capacity === 'number' ? row.wave_capacity : null,
             wave_position: typeof row.wave_position === 'number' ? row.wave_position : null,
@@ -331,7 +348,7 @@ export async function GET(request: Request) {
           distance_min_km: meta.distance_min_km,
           assignment_constraint_breached: meta.assignment_constraint_breached,
           bib_number: meta.bib_number,
-          race_format: meta.race_format,
+          race_format: meta.race_format ?? inferRaceFormat((registration as { ticket_name?: string | null }).ticket_name),
           order_id: meta.order_id,
           participant: participantByRegistration.get(registration.registration_id) ?? null,
           transfer_unlocked: unlockedTransfers.has(registration.registration_id),

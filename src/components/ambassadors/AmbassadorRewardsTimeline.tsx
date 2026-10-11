@@ -73,7 +73,7 @@ export function AmbassadorRewardsTimeline({ levels, totalPoints, nextRewardLevel
 
                     <span
                       className={cn(
-                        'text-[10px] font-bold tabular-nums',
+                        'text-label font-bold tabular-nums',
                         state === 'unlocked' && 'text-primary',
                         state === 'current' && 'text-primary',
                         state === 'locked' && 'text-muted-foreground/40',
@@ -84,7 +84,7 @@ export function AmbassadorRewardsTimeline({ levels, totalPoints, nextRewardLevel
 
                     <p
                       className={cn(
-                        'text-center text-[10px] leading-snug break-words',
+                        'text-center text-label leading-snug break-words',
                         state === 'unlocked' && 'font-semibold text-foreground',
                         state === 'current' && 'font-bold text-primary',
                         state === 'locked' && 'text-muted-foreground/45',
@@ -94,17 +94,17 @@ export function AmbassadorRewardsTimeline({ levels, totalPoints, nextRewardLevel
                     </p>
 
                     {state === 'unlocked' && (
-                      <span className="text-[9px] font-semibold uppercase tracking-wide text-emerald-600">
+                      <span className="text-label font-semibold uppercase tracking-wide text-emerald-600">
                         ✓ Débloqué
                       </span>
                     )}
                     {state === 'current' && (
-                      <span className="animate-pulse text-[9px] font-semibold uppercase tracking-wide text-primary">
+                      <span className="animate-pulse text-label font-semibold uppercase tracking-wide text-primary">
                         En cours…
                       </span>
                     )}
                     {state === 'locked' && (
-                      <span className="text-[9px] uppercase tracking-wide text-muted-foreground/35">
+                      <span className="text-label uppercase tracking-wide text-muted-foreground/35">
                         −{tier.points_required - totalPoints} pts
                       </span>
                     )}
