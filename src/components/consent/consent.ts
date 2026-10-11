@@ -5,15 +5,24 @@ export const CONSENT_EVENT = 'overbound:consent'
 // consentement valable indéfiniment. 12 mois retenu ici (FDR-0009 §2.6).
 const CONSENT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000
 
-export type ConsentState = {
+export type ConsentChoices = {
+  /** Audience measurement (Google Analytics, Google Tag Manager) and session replay. */
   analytics: boolean
+  /** Advertising measurement (Meta Pixel and server-side conversions). */
+  marketing: boolean
+}
+
+export type ConsentState = ConsentChoices & {
   updatedAt: string
 }
 
 const safeParse = (value: string | null) => {
   if (!value) return null
   try {
-    return JSON.parse(value) as ConsentState
+    const parsed = JSON.parse(value) as Partial<ConsentState>
+    // A choice recorded before the analytics/marketing split cannot be read as consent to marketing: ask again.
+    if (typeof parsed.analytics !== 'boolean' || typeof parsed.marketing !== 'boolean') return null
+    return parsed as ConsentState
   } catch {
     return null
   }
@@ -36,10 +45,11 @@ export const readConsent = (): ConsentState | null => {
   return consent
 }
 
-export const writeConsent = (analytics: boolean) => {
+export const writeConsent = ({ analytics, marketing }: ConsentChoices) => {
   if (typeof window === 'undefined') return
   const payload: ConsentState = {
     analytics,
+    marketing,
     updatedAt: new Date().toISOString(),
   }
   window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload))
@@ -48,7 +58,7 @@ export const writeConsent = (analytics: boolean) => {
   fetch('/api/consent/log', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ analyticsAccepted: analytics }),
+    body: JSON.stringify({ analyticsAccepted: analytics, marketingAccepted: marketing }),
     keepalive: true,
   }).catch(() => {
     // Best-effort server-side proof; never block the banner on network failure.
