@@ -375,8 +375,8 @@ const SocialProof = () => {
               ))}
             </CarouselContent>
             <div className="hidden md:block">
-              <CarouselPrevious className="left-4 top-auto bottom-4 bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
-              <CarouselNext className="left-16 right-auto top-auto bottom-4 bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
+              <CarouselPrevious className="left-4 top-auto bottom-4 border-border bg-card text-foreground shadow-lg hover:bg-muted cursor-pointer" />
+              <CarouselNext className="left-16 right-auto top-auto bottom-4 border-border bg-card text-foreground shadow-lg hover:bg-muted cursor-pointer" />
             </div>
           </Carousel>
 

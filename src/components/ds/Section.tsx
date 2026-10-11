@@ -49,16 +49,24 @@ interface Props {
   children: ReactNode
 }
 
-/** Dark mountain silhouette on the top and bottom edges of a band. Heights stay
- * below the spacing scale padding, so content never touches the peaks. */
+/** Height of the mountain edge; also reserved as extra padding (EdgeSpacer), so
+ * the gap between content and the peaks matches the spacing scale. */
+// z-10 + negative margins slide the silhouette over half of the neighbours' own
+// padding (they are dark too), so the dark gap beside the peaks stays balanced.
+const EDGE_HEIGHT_VAR =
+  'z-10 -my-[calc(var(--edge-h)/2)] [--edge-h:2.5rem] sm:[--edge-h:3.5rem] lg:[--edge-h:5rem]'
+
+/** Dark mountain silhouette on the top and bottom edges of a band. */
 function MountainEdges() {
   return (
     <>
-      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -top-px h-10 rotate-180 bg-surface-base sm:h-14 lg:h-20" />
-      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -bottom-px h-10 bg-surface-base sm:h-14 lg:h-20" />
+      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -top-px h-(--edge-h) rotate-180 bg-surface-base" />
+      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -bottom-px h-(--edge-h) bg-surface-base" />
     </>
   )
 }
+
+const EdgeSpacer = () => <div aria-hidden className="h-(--edge-h)" />
 
 export function Section({
   tone = 'default',
@@ -79,6 +87,7 @@ export function Section({
         TONE_CLASS[tone],
         SECTION_SPACING[spacing],
         edge === 'angled' && ANGLED_CLASS,
+        edge === 'mountain' && EDGE_HEIGHT_VAR,
         className,
       )}
     >
@@ -89,7 +98,9 @@ export function Section({
         </div>
       ) : null}
       {edge === 'mountain' ? <MountainEdges /> : null}
+      {edge === 'mountain' ? <EdgeSpacer /> : null}
       {children}
+      {edge === 'mountain' ? <EdgeSpacer /> : null}
     </section>
   )
 }
