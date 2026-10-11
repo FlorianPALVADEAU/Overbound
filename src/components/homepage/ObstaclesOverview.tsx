@@ -1,6 +1,6 @@
 'use client'
 import React, { useMemo, useState } from 'react'
-import Headings from '@/components/globals/Headings'
+import { Container, Section, SectionHeader } from '@/components/ds'
 import { CardCarousel } from '@/components/shared/CardCarousel'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { isPublicObstacleVisible } from '@/lib/obstaclesVisibility'
@@ -58,31 +58,18 @@ const ObstaclesOverview = ({
     }, [data])
 
     return (
-        <section 
-            className={
-                embedded
-                    ? "w-full py-12 sm:py-16"
-                    : constrained
-                        ? "w-full py-16 sm:py-20"
-                        : "w-full items-center justify-center gap-8 sm:gap-12 md:gap-16 lg:gap-20 xl:gap-24 py-12 sm:py-16 md:py-20 pt-20 sm:pt-28 md:pt-32 lg:pt-36 xl:pt-40 px-4 sm:px-6 md:px-8 lg:px-16 xl:px-32"
-            }
-            style={embedded ? undefined : {backgroundColor: '#141414'}}
-        >
-            <div className={embedded || constrained ? 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8' : 'mx-auto w-full max-w-[1800px]'}>
-            <div className='w-auto h-full flex flex-col justify-center items-center gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-7 md:mb-8'>
-                <Headings
-                    title={title}
-                    description={description}
-                    sx='mb-4 sm:mb-6 md:mb-8'
-                />
+        <Section spacing={embedded ? "compact" : "default"}>
+            <Container>
+                <div className="flex h-full w-auto flex-col items-center justify-center gap-6">
+                    <SectionHeader title={title} lead={description} flush className="max-w-none self-start" />
 
-                <div className='flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 sm:px-5 sm:py-4 max-w-2xl w-full mb-6 sm:mb-8'>
-                    <HeartHandshake className='mt-0.5 h-5 w-5 flex-none text-[#26AA26]' />
-                    <p className='text-sm leading-relaxed text-neutral-300'>
-                        <strong className='text-white'>Adapté aux femmes :</strong> chaque obstacle propose une
-                        variante ajustée (hauteur, prise, charge) pour progresser en confiance, à son rythme.
-                    </p>
-                </div>
+                    <div className="flex w-full max-w-2xl items-start gap-3 rounded-2xl border border-border bg-foreground/5 px-4 py-4 sm:px-6">
+                        <HeartHandshake className="mt-0.5 h-5 w-5 flex-none text-primary" />
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            <strong className="text-foreground">Adapté aux femmes :</strong> chaque obstacle propose une
+                            variante ajustée (hauteur, prise, charge) pour progresser en confiance, à son rythme.
+                        </p>
+                    </div>
 
                 {(isLoading || isFetching) ? (
                     <div className="w-full">
@@ -92,7 +79,7 @@ const ObstaclesOverview = ({
                                     key={i}
                                     className={embedded ? "shrink-0 w-[88%] sm:w-[60%] lg:w-[42%]" : "shrink-0 w-[85%] sm:w-[70%] md:w-1/2 lg:w-1/3 xl:w-1/4"}
                                 >
-                                    <div className={embedded ? "h-56 sm:h-60 bg-neutral-700 rounded-lg sm:rounded-xl animate-pulse" : "h-64 sm:h-72 md:h-80 bg-neutral-700 rounded-lg sm:rounded-xl animate-pulse"}></div>
+                                    <div className={embedded ? "h-56 sm:h-60 bg-muted rounded-2xl animate-pulse" : "h-64 sm:h-72 md:h-80 bg-muted rounded-2xl animate-pulse"}></div>
                                 </div>
                             ))}
                         </div>
@@ -110,7 +97,7 @@ const ObstaclesOverview = ({
                             <button
                                 type="button"
                                 onClick={() => setSelectedObstacle(obst)}
-                                className={`group text-left w-full ${embedded ? "relative h-56 sm:h-60 lg:h-64 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" : "relative h-64 sm:h-72 md:h-80 lg:h-84 xl:h-80 rounded-lg sm:rounded-xl overflow-hidden bg-neutral-800 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"}`}
+                                className={`group text-left w-full ${embedded ? "relative h-56 sm:h-60 lg:h-64 rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" : "relative h-64 sm:h-72 md:h-80 lg:h-84 xl:h-80 rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"}`}
                             >
                                 <img
                                     src={obst.image_url || 'https://images.unsplash.com/photo-1598702631024-b282c0fd96b2?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'}
@@ -118,15 +105,15 @@ const ObstaclesOverview = ({
                                     className={`w-full h-full object-cover ${obst.image_url ? '' : 'blur-sm grayscale '}`}
                                     loading="lazy"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
-                                <span className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition group-hover:bg-black/80">
+                                <div className="absolute inset-0 bg-linear-to-t from-surface-deep/70 via-surface-deep/10 to-transparent"></div>
+                                <span className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-deep/60 text-foreground backdrop-blur-sm transition group-hover:bg-surface-deep/80">
                                     <ZoomIn className="h-4 w-4" />
                                 </span>
-                                <div className={embedded ? "absolute bottom-0 left-0 right-0 p-3 text-white" : "absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-white"}>
+                                <div className={embedded ? "absolute bottom-0 left-0 right-0 p-3 text-foreground" : "absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-foreground"}>
                                     <h3 className={embedded ? "font-semibold text-sm sm:text-base mb-1 line-clamp-2" : "font-semibold text-base sm:text-lg mb-1 line-clamp-2"}>
                                         {obst.name}
                                     </h3>
-                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-200">
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground/80">
                                         Voir les détails
                                     </span>
                                 </div>
@@ -135,10 +122,10 @@ const ObstaclesOverview = ({
                     />
                 )}
 
-            </div>
-            </div>
+                </div>
+            </Container>
             <ObstacleDetailDialog obstacle={selectedObstacle} onOpenChange={() => setSelectedObstacle(null)} />
-        </section>
+        </Section>
     )
 }
 

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +44,8 @@ interface Props {
   backgroundSrc?: string
   id?: string
   className?: string
+  /** For effects that track the band itself (e.g. parallax). */
+  ref?: Ref<HTMLElement>
   children: ReactNode
 }
 
@@ -65,10 +67,12 @@ export function Section({
   backgroundSrc,
   id,
   className,
+  ref,
   children,
 }: Props) {
   return (
     <section
+      ref={ref}
       id={id}
       className={cn(
         'relative isolate scroll-mt-4 overflow-hidden',

@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
-    <div className="w-full h-full flex flex-col pb-20">
+    <div className="flex h-full w-full flex-col">
       <HeroHeader />
       <NextEventSection />
       <ConceptExplainer />

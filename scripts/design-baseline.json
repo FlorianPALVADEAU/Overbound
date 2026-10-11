@@ -262,52 +262,6 @@
     "font-black": 1,
     "container-width": 1
   },
-  "src/components/homepage/AnimatedBanner.tsx": {
-    "raw-gray": 1
-  },
-  "src/components/homepage/ConceptExplainer.tsx": {
-    "raw-gray": 8,
-    "arbitrary-tracking": 6,
-    "font-black": 9,
-    "container-width": 1
-  },
-  "src/components/homepage/FAQ.tsx": {
-    "arbitrary-hex": 4,
-    "raw-gray": 1
-  },
-  "src/components/homepage/FAQQuestionCard.tsx": {
-    "arbitrary-hex": 5,
-    "raw-gray": 6
-  },
-  "src/components/homepage/HeroHeader.tsx": {
-    "raw-gray": 1,
-    "font-black": 1,
-    "raw-red": 2
-  },
-  "src/components/homepage/NextEventSection.tsx": {
-    "raw-gray": 1,
-    "arbitrary-tracking": 1,
-    "font-black": 3,
-    "raw-red": 2,
-    "container-width": 1
-  },
-  "src/components/homepage/ObstaclesOverview.tsx": {
-    "arbitrary-hex": 1,
-    "raw-gray": 6,
-    "container-width": 1
-  },
-  "src/components/homepage/RelevantBlogArticles.tsx": {
-    "arbitrary-hex": 3
-  },
-  "src/components/homepage/SocialProof.tsx": {
-    "raw-gray": 17,
-    "arbitrary-font-size": 3
-  },
-  "src/components/homepage/VolunteersAppeal.tsx": {
-    "raw-gray": 6,
-    "arbitrary-tracking": 2,
-    "font-black": 4
-  },
   "src/components/layout/MaintenanceBanner.tsx": {
     "raw-red": 1
   },

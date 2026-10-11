@@ -4,6 +4,8 @@ import { Button } from "../ui/button";
 import Link from "next/link";
 import AnimatedBanner from "./AnimatedBanner";
 import { PARTNERS_DATA } from "@/datas/Partners";
+import { Container, DISPLAY_TITLE } from "@/components/ds";
+import { cn } from "@/lib/utils";
 
 export const HeroHeader = () => {
     const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
@@ -48,7 +50,7 @@ export const HeroHeader = () => {
 
     return (
         <>
-            <section className="relative w-full h-[75vh] overflow-hidden">
+            <section className="relative h-[75vh] min-h-[28rem] w-full overflow-hidden">
                 {shouldLoadVideo ? (
                     <video
                         autoPlay
@@ -57,7 +59,7 @@ export const HeroHeader = () => {
                         playsInline
                         preload="metadata"
                         poster="/images/hero_header_poster.avif"
-                        className="absolute top-0 left-0 w-full h-full object-cover"
+                        className="absolute left-0 top-0 h-full w-full object-cover"
                     >
                         <source src="/videos/hero_header_video.webm" type="video/webm" />
                         <source src="/videos/hero_header_video.mp4" type="video/mp4" />
@@ -65,34 +67,29 @@ export const HeroHeader = () => {
                     </video>
                 ) : (
                     <div
-                        className="absolute top-0 left-0 w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: "url('/images/hero_header_poster.avif')" }}
+                        className="absolute left-0 top-0 h-full w-full bg-cover bg-center"
+                        style={{ backgroundImage: "url(/images/hero_header_poster.avif)" }}
                     />
                 )}
 
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 bg-surface-deep/40" />
 
-                {/* Container responsive qui garde ton design desktop */}
-                <div className="relative z-10 flex flex-col items-start justify-center gap-8 h-full text-center text-white px-4 sm:px-6 md:px-8 lg:px-32">
+                <Container className="relative z-10 flex h-full flex-col items-start justify-center gap-8">
                     <div>
-                        <h1 className="text-4xl md:text-7xl font-black mb-4 text-left">
-                            Relève le défi ultime.
-                        </h1>
-                        <p className="text-lg md:text-2xl max-w-2xl mb-6 text-left">
-                            La première course d'obstacles format backyard au monde. La limite, c'est toi. 
+                        <h1 className={cn(DISPLAY_TITLE, "mb-4 text-display-xl")}>Relève le défi ultime.</h1>
+                        <p className="mb-6 max-w-2xl text-lead text-foreground/90">
+                            La première course d&apos;obstacles format backyard au monde. La limite, c&apos;est toi.
                         </p>
                     </div>
-                    <div className="flex flex-col items-start gap-2">
-                        <Button
-                            asChild
-                            className="w-full sm:w-48 md:w-48 lg:w-64 h-12 sm:h-12 md:h-12 lg:h-16 bg-red-600 hover:bg-red-700 text-lg sm:text-xl font-semibold"
-                        >
-                            <Link href="/events/ultra-arena-2026/register">Je m'inscris maintenant</Link>
+                    <div className="flex flex-col items-start gap-3">
+                        <Button asChild size="hero" className="w-full sm:w-auto">
+                            <Link href="/events/ultra-arena-2026/register">Je m&apos;inscris maintenant</Link>
                         </Button>
-                        <p className="text-sm text-gray-300 italic">Des centaines de coureurs ont déjà testé et adoré l'expérience !</p>
+                        <p className="text-sm italic text-muted-foreground">
+                            Des centaines de coureurs ont déjà testé et adoré l&apos;expérience !
+                        </p>
                     </div>
-                </div>
+                </Container>
             </section>
             <AnimatedBanner
                 images={PARTNERS_DATA.map(partner => partner.logo)}

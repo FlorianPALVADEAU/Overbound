@@ -2,8 +2,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Pause, Play, Star, Volume2, VolumeX } from 'lucide-react'
-import Headings from '../globals/Headings'
-import SubHeadings from '../globals/SubHeadings'
 import { Button } from '../ui/button'
 import {
   testimonials,
@@ -12,7 +10,7 @@ import {
 } from '@/datas/Testimonials'
 import AnimatedBanner from './AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
-import Image from 'next/image'
+import { Container, Section, SectionHeader } from '@/components/ds'
 import {
   Carousel,
   CarouselContent,
@@ -182,7 +180,7 @@ const SocialProof = () => {
       <Star
         key={index}
         className={`h-4 w-4 ${
-          index < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+          index < rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
         }`}
       />
     ))
@@ -194,7 +192,7 @@ const SocialProof = () => {
     let videoRef: HTMLVideoElement | null = null
 
     return (
-      <div className="relative flex h-full max-h-160 flex-col overflow-hidden rounded-2xl bg-gray-900 shadow-xl">
+      <div className="relative flex h-full max-h-160 flex-col overflow-hidden rounded-2xl bg-surface-deep shadow-xl">
         <div
           className="relative w-full flex-1 min-h-90 overflow-hidden sm:min-h-100"
           onMouseEnter={() => setHoveredVideo(videoId)}
@@ -228,7 +226,7 @@ const SocialProof = () => {
           <div className={`absolute inset-0 transition-all duration-300 ${
             activeVideoId === videoId
               ? 'bg-transparent'
-              : 'bg-black/40 hover:bg-black/30'
+              : 'bg-surface-deep/40 hover:bg-surface-deep/30'
           }`} />
 
           {/* Play/Pause button - only visible on hover */}
@@ -276,26 +274,26 @@ const SocialProof = () => {
           )}
         </div>
 
-        <div className="absolute bottom-8 left-1/2 w-[92%] max-w-150 -translate-x-1/2 rounded-xl bg-white/95 p-4.5 shadow-xl sm:p-5.5">
+        <div className="absolute bottom-8 left-1/2 w-[92%] max-w-150 -translate-x-1/2 rounded-xl bg-card/95 p-4 text-card-foreground shadow-xl sm:p-5">
           <div className="mb-3 flex flex-wrap items-center gap-2">
               {renderStars(testimonial.rating)}
-            <span className="text-xs font-medium text-gray-700 sm:text-sm">
+            <span className="text-xs font-medium text-muted-foreground sm:text-sm">
               {testimonial.rating}/5
             </span>
           </div>
-          <p className="mb-3 line-clamp-6 text-sm leading-relaxed text-gray-900 sm:text-base">
+          <p className="mb-3 line-clamp-6 text-sm leading-relaxed text-foreground sm:text-base">
             "{testimonial.comment}"
           </p>
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <h4 className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
+              <h4 className="truncate text-xs font-semibold text-foreground sm:text-sm">
                 {testimonial.name}
               </h4>
-              <p className="text-[11px] text-gray-500 sm:text-xs">
+              <p className="text-xs text-muted-foreground">
                 {testimonial.age} ans • {testimonial.location}
               </p>
             </div>
-            <div className="ml-2 shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
+            <div className="ml-2 shrink-0 rounded-full bg-primary/15 px-2 py-1 text-xs font-medium text-primary">
               ✓ Vérifié
             </div>
           </div>
@@ -307,30 +305,30 @@ const SocialProof = () => {
   const renderCommentBlock = (testimonial: TestimonialType) => (
     <div
       key={testimonial.id}
-      className="rounded-xl border border-gray-100 bg-white/95 p-4 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-5"
+      className="rounded-xl border border-border bg-card/95 p-4 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-5"
     >
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {renderStars(testimonial.rating)}
-        <span className="text-xs font-medium text-gray-700 sm:text-sm">
+        <span className="text-xs font-medium text-muted-foreground sm:text-sm">
           {testimonial.rating}/5
         </span>
       </div>
       <blockquote
-        className="mb-4 text-sm leading-relaxed text-gray-800 sm:text-base sm:leading-relaxed line-clamp-5"
+        className="mb-4 line-clamp-5 text-sm leading-relaxed text-foreground sm:text-base"
         title={testimonial.comment}
       >
         “{testimonial.comment}”
       </blockquote>
       <div className="flex items-center justify-between">
         <div className="min-w-0">
-          <h4 className="truncate text-sm font-semibold text-gray-900 sm:text-base">
+          <h4 className="truncate text-sm font-semibold text-foreground sm:text-base">
             {testimonial.name}
           </h4>
-          <p className="text-xs text-gray-500 sm:text-sm">
+          <p className="text-xs text-muted-foreground sm:text-sm">
             {testimonial.age} ans • {testimonial.location}
           </p>
         </div>
-        <div className="ml-2 shrink-0 rounded-full bg-green-100 px-2 py-1 text-[11px] font-medium text-green-700">
+        <div className="ml-2 shrink-0 rounded-full bg-primary/15 px-2 py-1 text-xs font-medium text-primary">
           ✓ Vérifié
         </div>
       </div>
@@ -338,12 +336,12 @@ const SocialProof = () => {
   )
 
   const renderCommentSlide = (group: TestimonialType[]) => (
-    <div className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-primary/40 bg-linear-to-br from-white to-slate-50/80 p-4 shadow-xl sm:p-6">
+    <div className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-primary/40 bg-linear-to-br from-card to-muted/80 p-4 shadow-xl sm:p-6">
       <div className="flex flex-1 flex-col gap-5">
         {group.map((item) => renderCommentBlock(item))}
       </div>
       {group.length === 1 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-white/80 p-4 text-center text-xs font-medium uppercase tracking-wide text-gray-400 sm:p-5 sm:text-sm">
+        <div className="rounded-xl border border-dashed border-border bg-card/80 p-4 text-center text-xs font-medium uppercase text-muted-foreground sm:p-5 sm:text-sm">
           Ajoute ton témoignage après ta course
         </div>
       ) : null}
@@ -351,85 +349,45 @@ const SocialProof = () => {
   )
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative flex w-full flex-col items-center justify-center bg-white px-4 py-12 pt-40 sm:px-6 lg:px-8 xl:px-24"
-    >
-      <Image
-        src="/images/decorations/mountain-vector.svg"
-        alt="Background"
-        className="pointer-events-none absolute -top-2 right-0 w-full rotate-180 object-cover object-center"
-        height={600}
-        width={600}
-      />
+    <Section ref={sectionRef} tone="light" edge="mountain">
+      <Container>
+        <SectionHeader
+          title="Ils ont relevé le défi"
+          lead="Découvrez les témoignages de nos participants qui ont vécu l'expérience Overbound"
+        />
 
-      <Headings
-        title="Ils ont relevé le défi"
-        description="Découvrez les témoignages de nos participants qui ont vécu l'expérience Overbound"
-        sx="mb-10 text-black"
-      />
+        <div className="relative z-10 flex w-full flex-col items-center gap-16">
+          <Carousel
+            className="w-full"
+            opts={{ align: 'start', loop: false }}
+            setApi={setCarouselApi}
+          >
+            <CarouselContent className="-ml-2 sm:-ml-3 md:-ml-4 md:pb-20">
+              {slides.map((slide) => (
+                <CarouselItem
+                  key={slide.id}
+                  className="basis-[95%] pl-2 sm:pl-3 md:pl-4 md:basis-1/2 xl:basis-1/3 h-135 sm:h-140 lg:h-150"
+                >
+                  {slide.type === 'video'
+                    ? renderVideoSlide(slide.data)
+                    : renderCommentSlide(slide.data)}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="hidden md:block">
+              <CarouselPrevious className="left-4 top-auto bottom-4 bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
+              <CarouselNext className="left-16 right-auto top-auto bottom-4 bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
+            </div>
+          </Carousel>
 
-      <div className="relative z-10 flex w-full flex-col items-center gap-18 lg:gap-22">
-        <Carousel
-          className="w-full"
-          opts={{ align: 'start', loop: false }}
-          setApi={setCarouselApi}
-        >
-          <CarouselContent className="-ml-2 sm:-ml-3 md:-ml-4 md:pb-20">
-            {slides.map((slide) => (
-              <CarouselItem
-                key={slide.id}
-                className="basis-[95%] pl-2 sm:pl-3 md:pl-4 md:basis-1/2 xl:basis-1/3 h-135 sm:h-140 lg:h-150"
-              >
-                {slide.type === 'video'
-                  ? renderVideoSlide(slide.data)
-                  : renderCommentSlide(slide.data)}
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <div className="hidden md:block">
-            <CarouselPrevious className="left-4 top-auto bottom-4 bg-primary text-black border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
-            <CarouselNext className="left-16 right-auto top-auto bottom-4 bg-primary text-black border-primary hover:bg-primary/90 shadow-lg cursor-pointer" />
+          <div className="max-w-full pt-10">
+            <AnimatedBanner
+              images={PARTNERS_DATA.map((partner) => partner.logo)}
+            />
           </div>
-        </Carousel>
-
-        <div className="max-w-full pt-10">
-          <AnimatedBanner
-            images={PARTNERS_DATA.map((partner) => partner.logo)}
-          />
         </div>
-
-        {/* <div className="flex w-full flex-col items-start justify-start gap-4 mt-6">
-          <SubHeadings title="Overbound, en chiffres" sx='text-black' />
-          <div className="flex w-full flex-col items-center justify-center gap-6 sm:flex-row sm:justify-between sm:gap-4">
-            <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg sm:h-56 sm:w-[30%]">
-              <div className="mb-2 text-4xl font-bold text-blue-600 sm:text-5xl">
-                1
-              </div>
-              <div className="text-sm text-gray-600 sm:text-base">
-                Tribu en or
-              </div>
-            </div>
-            <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg sm:h-56 sm:w-[30%]">
-              <div className="mb-2 text-4xl font-bold text-green-600 sm:text-5xl">
-                4.8/5
-              </div>
-              <div className="text-sm text-gray-600 sm:text-base">
-                Note moyenne
-              </div>
-            </div>
-            <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg sm:h-56 sm:w-[30%]">
-              <div className="mb-2 text-4xl font-bold text-purple-600 sm:text-5xl">
-                98%
-              </div>
-              <div className="text-sm text-gray-600 sm:text-base">
-                Recommandent l'expérience
-              </div>
-            </div>
-          </div>
-        </div> */}
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }
 

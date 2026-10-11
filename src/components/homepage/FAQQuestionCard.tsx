@@ -18,28 +18,28 @@ export const FAQQuestionCard = ({ question, loading, error }: { question: Questi
   return (
     <div
       onClick={toggle}
-      className={`w-full cursor-pointer rounded-2xl border p-6 transition-colors duration-300 hover:border-neutral-500 ${
-        isOpen ? 'border-[#26AA26]/70 bg-neutral-800/60 shadow-lg shadow-[#26AA26]/10 hover:border-primary' : 'border-neutral-700 bg-transparent'
+      className={`w-full cursor-pointer rounded-2xl border p-6 transition-colors duration-300 ease-standard hover:border-foreground/40 ${
+        isOpen ? 'border-primary/70 bg-card/60 shadow-lg shadow-primary/10 hover:border-primary' : 'border-border bg-transparent'
       }`}
     >
       {loading || error ? (
-        <Skeleton className='h-6 w-full rounded-md bg-neutral-700' />
+        <Skeleton className='h-6 w-full rounded-md bg-muted' />
       ) : (
         <>
           <button
             type='button'
             className='flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 text-left'
           >
-            <h3 className='text-lg font-semibold text-white sm:text-xl'>{question.title}</h3>
+            <h3 className='text-lg font-semibold text-foreground sm:text-xl'>{question.title}</h3>
             <ArrowDown
-              className={`h-6 w-6 flex-shrink-0 text-gray-400 transition-transform duration-300 hover:text-primary ${
+              className={`h-6 w-6 shrink-0 text-muted-foreground transition-transform duration-300 hover:text-primary ${
                 isOpen ? 'rotate-180 text-primary' : 'rotate-0'
               }`}
               aria-hidden='true'
             />
           </button>
           {isOpen ? (
-            <div className='mt-3 space-y-3 text-sm leading-relaxed text-gray-300 sm:text-base'>
+            <div className='mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground sm:text-base'>
               {question.answer && question.answer.length > 0 ? (
                 <RichText value={question.answer} />
               ) : null}
@@ -51,7 +51,7 @@ export const FAQQuestionCard = ({ question, loading, error }: { question: Questi
                       href={link.href || '#'}
                       target='_blank'
                       rel='noopener noreferrer'
-                      className='inline-flex items-center gap-1 rounded-full border border-[#26AA26]/40 px-3 py-1 text-[#26AA26] underline-offset-4 hover:bg-[#26AA26]/10 hover:underline'
+                      className='inline-flex items-center gap-1 rounded-full border border-primary/40 px-3 py-1 text-primary underline-offset-4 hover:bg-primary/10 hover:underline'
                     >
                       ↗ {link.label || 'Lien utile'}
                     </Link>
