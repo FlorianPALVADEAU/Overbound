@@ -397,15 +397,6 @@
     "arbitrary-tracking": 2,
     "font-black": 4
   },
-  "src/components/layout/Footer.tsx": {
-    "arbitrary-tracking": 2,
-    "font-black": 1
-  },
-  "src/components/layout/Header.tsx": {
-    "arbitrary-hex": 7,
-    "arbitrary-font-size": 2,
-    "raw-red": 4
-  },
   "src/components/layout/MaintenanceBanner.tsx": {
     "raw-red": 1
   },

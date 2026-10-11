@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Oswald, Saira_Condensed } from 'next/font/google'
 import { ArrowRight } from 'lucide-react'
 import { Container, Eyebrow, Pill, Section, SectionHeader, StatRow } from '@/components/ds'
 import { DISPLAY_TITLE } from '@/components/ds/SectionHeader'
@@ -14,16 +13,6 @@ export const metadata: Metadata = {
   title: 'Design system',
   robots: { index: false, follow: false },
 }
-
-// Candidates for the display face, compared side by side (decision in P0).
-const oswald = Oswald({ subsets: ['latin'], weight: '700', variable: '--font-candidate-oswald' })
-const saira = Saira_Condensed({ subsets: ['latin'], weight: '700', variable: '--font-candidate-saira' })
-
-const FONT_CANDIDATES = [
-  { name: 'Barlow Condensed (actuelle)', family: 'var(--font-display-face)' },
-  { name: 'Oswald', family: 'var(--font-candidate-oswald)' },
-  { name: 'Saira Condensed', family: 'var(--font-candidate-saira)' },
-]
 
 const TYPE_SCALE = [
   { token: 'text-display-xl', usage: 'H1 hero événement', sample: 'Ultra Arena', display: true },
@@ -70,7 +59,7 @@ export default function DesignSystemPage() {
   if (process.env.VERCEL_ENV === 'production') notFound()
 
   return (
-    <div className={cn(oswald.variable, saira.variable)}>
+    <div>
       <Section spacing="spacious">
         <Container>
           <SectionHeader
@@ -85,23 +74,11 @@ export default function DesignSystemPage() {
 
       <Section spacing="compact">
         <Container className="space-y-12">
-          <Block title="Police display — candidates">
-            <div className="grid gap-6 md:grid-cols-3">
-              {FONT_CANDIDATES.map(({ name, family }) => (
-                <Card key={name} variant="info" className="px-6">
-                  <p className="text-label font-semibold uppercase text-subtle">{name}</p>
-                  <p className="text-display-md font-bold uppercase" style={{ fontFamily: family }}>
-                    Dépasse-toi
-                  </p>
-                  <p className="text-title font-bold uppercase" style={{ fontFamily: family }}>
-                    12 sept. 2026 · 355 places
-                  </p>
-                  <p className="text-sm text-muted-foreground" style={{ fontFamily: family }}>
-                    ÉÈÀÇ œ « Île de loisirs » 0123456789
-                  </p>
-                </Card>
-              ))}
-            </div>
+          <Block title="Police display — Barlow Condensed 700">
+            <p className={cn(DISPLAY_TITLE, 'text-display-md')}>Dépasse-toi · 12 sept. 2026 · 355 places</p>
+            <p className="mt-2 font-display text-title font-bold uppercase text-muted-foreground">
+              ÉÈÀÇ œ « Île de loisirs » 0123456789
+            </p>
           </Block>
 
           <Block title="Échelle typographique">
