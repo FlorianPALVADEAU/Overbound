@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Layout } from "@/components/layout/Layout";
 import ClientProviders from '@/components/ClientProviders'
@@ -16,6 +16,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Display face for titles and figures (docs/design/design-system.md).
+const displayFace = Barlow_Condensed({
+  variable: "--font-display-face",
+  subsets: ["latin"],
+  weight: "700",
 });
 
 export const metadata: Metadata = {
@@ -96,7 +103,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${displayFace.variable} antialiased`}
       >
         {/* Structured Data - valid in body */}
         <OrganizationStructuredDataServer />

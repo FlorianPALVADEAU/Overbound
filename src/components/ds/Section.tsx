@@ -1,0 +1,91 @@
+import type { ReactNode } from 'react'
+import Image from 'next/image'
+import { cn } from '@/lib/utils'
+
+/**
+ * Full-bleed band that gives every page its rhythm (docs/design/design-system.md).
+ * Generalizes the event-page LandingBand: same tones, plus a deep tone for the
+ * final call to action, a fixed vertical spacing scale and the mountain edge.
+ */
+export type SectionTone = 'default' | 'deep' | 'light' | 'primary'
+export type SectionSpacing = 'none' | 'compact' | 'default' | 'spacious'
+export type SectionEdge = 'none' | 'angled' | 'mountain'
+
+const TONE_CLASS: Record<SectionTone, string> = {
+  default: 'bg-background text-foreground',
+  deep: 'bg-surface-deep text-foreground',
+  light: 'tone-light bg-background text-foreground',
+  primary: 'tone-primary bg-primary text-primary-foreground',
+}
+
+const OVERLAY_CLASS: Record<SectionTone, string> = {
+  default: 'bg-background/85',
+  deep: 'bg-surface-deep/90',
+  light: 'bg-background/90',
+  primary: 'bg-primary/80 mix-blend-multiply',
+}
+
+export const SECTION_SPACING: Record<SectionSpacing, string> = {
+  none: '',
+  compact: 'py-12 sm:py-16',
+  default: 'py-16 sm:py-20 lg:py-24',
+  spacious: 'py-20 sm:py-28',
+}
+
+// The diagonal (1.5rem, 2.5rem from sm) stays inside the spacing scale padding.
+const ANGLED_CLASS =
+  '[clip-path:polygon(0_1.5rem,100%_0,100%_calc(100%-1.5rem),0_100%)] sm:[clip-path:polygon(0_2.5rem,100%_0,100%_calc(100%-2.5rem),0_100%)]'
+
+interface Props {
+  tone?: SectionTone
+  spacing?: SectionSpacing
+  edge?: SectionEdge
+  /** Photo behind the content, with a tinted overlay that keeps text readable. */
+  backgroundSrc?: string
+  id?: string
+  className?: string
+  children: ReactNode
+}
+
+/** Dark mountain silhouette on the top and bottom edges of a band. Heights stay
+ * below the spacing scale padding, so content never touches the peaks. */
+function MountainEdges() {
+  return (
+    <>
+      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -top-px h-8 rotate-180 bg-surface-base sm:h-12 lg:h-16" />
+      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -bottom-px h-8 bg-surface-base sm:h-12 lg:h-16" />
+    </>
+  )
+}
+
+export function Section({
+  tone = 'default',
+  spacing = 'default',
+  edge = 'none',
+  backgroundSrc,
+  id,
+  className,
+  children,
+}: Props) {
+  return (
+    <section
+      id={id}
+      className={cn(
+        'relative isolate scroll-mt-4 overflow-hidden',
+        TONE_CLASS[tone],
+        SECTION_SPACING[spacing],
+        edge === 'angled' && ANGLED_CLASS,
+        className,
+      )}
+    >
+      {backgroundSrc ? (
+        <div className="absolute inset-0 -z-10" aria-hidden>
+          <Image src={backgroundSrc} alt="" fill sizes="100vw" className="object-cover" />
+          <div className={cn('absolute inset-0', OVERLAY_CLASS[tone])} />
+        </div>
+      ) : null}
+      {edge === 'mountain' ? <MountainEdges /> : null}
+      {children}
+    </section>
+  )
+}

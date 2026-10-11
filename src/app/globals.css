@@ -41,6 +41,46 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Design system (docs/design/design-system.md) — surfaces and text levels */
+  --color-surface-base: var(--surface-base);
+  --color-surface-deep: var(--surface-deep);
+  --color-subtle: var(--subtle);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Design system scales (docs/design/design-system.md). Static values, so a
+   plain @theme block: every token below becomes a Tailwind utility. */
+@theme {
+  /* Type scale — fluid sizes, no jump between breakpoints (FDR-0015 §10.2) */
+  --text-display-xl: clamp(2.75rem, 11vw, 8.5rem);
+  --text-display-xl--line-height: 0.88;
+  --text-display-xl--letter-spacing: -0.01em;
+  --text-display-lg: clamp(2.25rem, 6vw, 4.5rem);
+  --text-display-lg--line-height: 0.95;
+  --text-display-lg--letter-spacing: -0.005em;
+  --text-display-md: clamp(1.875rem, 4vw, 3rem);
+  --text-display-md--line-height: 1;
+  --text-display-md--letter-spacing: 0;
+  --text-title: clamp(1.25rem, 2vw, 1.5rem);
+  --text-title--line-height: 1.15;
+  --text-lead: clamp(1rem, 1.2vw, 1.125rem);
+  --text-lead--line-height: 1.6;
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.24em;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-label--letter-spacing: 0.2em;
+
+  --tracking-eyebrow: 0.24em;
+  --tracking-label: 0.2em;
+
+  --shadow-glow: 0 10px 30px -10px oklch(0.58 0.17 142 / 0.35);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 :root {
@@ -88,6 +128,49 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.58 0.17 142);
+
+  /* Design system additions */
+  /* Site base dark, never remapped by .tone-light: used by the mountain edge. */
+  --surface-base: rgb(20 20 20);
+  /* Deepest band: final CTA, footer. */
+  --surface-deep: oklch(0.1 0 0);
+  /* Third text level: labels, captions (between muted-foreground and borders). */
+  --subtle: oklch(1 0 0 / 55%);
+  /* Red reserved for the registration CTA in the header. Not for errors. */
+  --signal: oklch(0.577 0.245 27.325);
+  --signal-foreground: oklch(1 0 0);
+}
+
+/* Light band: remaps the tokens in place, so every child keeps using the
+   normal semantic classes (bg-card, text-muted-foreground...). */
+.tone-light {
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.42 0 0);
+  --secondary: oklch(0.94 0 0);
+  --secondary-foreground: oklch(0.16 0 0);
+  --border: oklch(0 0 0 / 14%);
+  --input: oklch(0 0 0 / 16%);
+  --primary: oklch(0.5 0.17 142);
+  --subtle: oklch(0 0 0 / 55%);
+}
+
+/* Green band: white text levels on the primary color. */
+.tone-primary {
+  --foreground: oklch(1 0 0);
+  --muted-foreground: oklch(1 0 0 / 80%);
+  --subtle: oklch(1 0 0 / 70%);
+}
+
+/* Mountain edge (brand signature): the silhouette is a CSS mask, so its color
+   always follows the --surface-base token instead of a hard-coded fill. */
+.edge-mountain {
+  mask-image: url('/images/decorations/mountain-vector.svg');
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
 }
 
 
@@ -193,5 +276,15 @@
   }
   100% {
     transform: scale(1);
+  }
+}
+
+/* Respect the OS "reduce motion" setting for every custom animation
+   (FDR-0015 §10.6). */
+@media (prefers-reduced-motion: reduce) {
+  .volunteer-wave,
+  .animate-scroll,
+  .animate-lucky-wheel-breathe {
+    animation: none;
   }
 }
