@@ -76,12 +76,6 @@
   "src/app/decharge/page.tsx": {
     "font-black": 1
   },
-  "src/app/events/_page-content.tsx": {
-    "raw-gray": 6,
-    "arbitrary-tracking": 3,
-    "raw-red": 3,
-    "container-width": 2
-  },
   "src/app/events/[id]/register/payment/PaymentClient.tsx": {
     "arbitrary-font-size": 1
   },
@@ -90,11 +84,17 @@
     "raw-red": 1,
     "dark-variant": 6
   },
-  "src/app/feedback/rate/page.tsx": {
-    "raw-gray": 2
+  "src/app/events/_page-content.tsx": {
+    "raw-gray": 6,
+    "arbitrary-tracking": 3,
+    "raw-red": 3,
+    "container-width": 2
   },
   "src/app/feedback/rate/RatePageClient.tsx": {
     "raw-gray": 9
+  },
+  "src/app/feedback/rate/page.tsx": {
+    "raw-gray": 2
   },
   "src/app/maintenance/page.tsx": {
     "font-black": 1
@@ -131,6 +131,9 @@
   },
   "src/app/unsubscribe/success/page.tsx": {
     "dark-variant": 4
+  },
+  "src/components/RichText.tsx": {
+    "raw-gray": 3
   },
   "src/components/account/AccountNav.tsx": {
     "arbitrary-font-size": 1,
@@ -195,13 +198,13 @@
     "arbitrary-tracking": 1,
     "font-black": 2
   },
-  "src/components/account/tickets/TicketsArchive.tsx": {
-    "arbitrary-font-size": 2,
-    "font-black": 3
-  },
   "src/components/account/tickets/TicketStub.tsx": {
     "arbitrary-font-size": 7,
     "arbitrary-tracking": 3,
+    "font-black": 3
+  },
+  "src/components/account/tickets/TicketsArchive.tsx": {
+    "arbitrary-font-size": 2,
     "font-black": 3
   },
   "src/components/ambassadors/AmbassadorBonusTickets.tsx": {
@@ -240,12 +243,12 @@
     "dark-variant": 1,
     "container-width": 1
   },
+  "src/components/events/EventTicketListWithRegistration.tsx": {
+    "dark-variant": 2
+  },
   "src/components/events/EventlistDisplay.tsx": {
     "arbitrary-tracking": 2,
     "container-width": 1
-  },
-  "src/components/events/EventTicketListWithRegistration.tsx": {
-    "dark-variant": 2
   },
   "src/components/events/PricingTimeline.tsx": {
     "arbitrary-hex": 6,
@@ -261,6 +264,10 @@
     "arbitrary-tracking": 1,
     "font-black": 1,
     "container-width": 1
+  },
+  "src/components/layout/Footer.tsx": {
+    "arbitrary-tracking": 2,
+    "font-black": 1
   },
   "src/components/layout/MaintenanceBanner.tsx": {
     "raw-red": 1
@@ -297,9 +304,6 @@
   },
   "src/components/registration/TicketSelectionStep.tsx": {
     "dark-variant": 2
-  },
-  "src/components/RichText.tsx": {
-    "raw-gray": 3
   },
   "src/components/shared/CardCarousel.tsx": {
     "arbitrary-hex": 6,
