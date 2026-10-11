@@ -51,13 +51,13 @@ export function UltraArenaFormats({
     <section id="formats" className="relative isolate overflow-hidden py-16 sm:py-20">
       <div className="absolute inset-0">
         <Image
-          src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
+          src="/images/obstacles/log-carry1.avif"
           alt=""
           fill
           sizes="100vw"
-          className="object-cover opacity-70"
+          className="object-cover opacity-100"
         />
-        <div className="absolute inset-0 bg-linear-to-br from-background/92 via-background/95 to-background" />
+        <div className="absolute inset-0 bg-linear-to-br from-background/75 via-background/55 to-background" />
       </div>
       <div className={`${LANDING_X} relative z-10`}>
         <div className="mb-10 max-w-2xl">

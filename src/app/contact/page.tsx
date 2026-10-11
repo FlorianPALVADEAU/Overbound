@@ -18,7 +18,7 @@ export default function ContactPage() {
     <main className="w-full bg-background">
       <PageHero
         image={{
-          src: '/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.avif',
+          src: '/images/obstacles/tire-drag.avif',
           alt: 'Discussion en cercle lors d’un échauffement Overbound',
         }}
         eyebrow="Contact"

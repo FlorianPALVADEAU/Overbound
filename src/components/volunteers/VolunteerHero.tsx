@@ -25,7 +25,7 @@ export function VolunteerHero() {
     <>
     <PageHero
       id="top"
-      image={{ src: '/images/images/a-group-of-friend-celebrating-after-a-race.avif', alt: 'Un groupe d’amis célébrant ensemble après une course Overbound' }}
+      image={{ src: '/images/images/P1090801.avif', alt: 'Un groupe d’amis célébrant ensemble après une course Overbound' }}
       eyebrow="Bénévoles Overbound"
       title={
         <>

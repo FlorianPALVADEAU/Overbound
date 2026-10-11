@@ -31,7 +31,7 @@ export default function BootcampsPage() {
   return (
     <main className="relative min-h-screen bg-white text-foreground">
       <PageHero
-        image={{ src: '/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif', alt: 'Bootcamp Overbound' }}
+        image={{ src: '/images/obstacles/tire-flip.avif', alt: 'Bootcamp Overbound' }}
         eyebrow="Prépare-toi avec Overbound"
         title="Nos Bootcamps"
         description="Des sessions encadrées par l'équipe Overbound : foncier, technique, mental."

@@ -51,7 +51,7 @@ const CTA = () => {
         {/* Image de fond responsive */}
         <div className='absolute inset-0 w-full h-full'>
             <Image
-                src='/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif'
+                src='/images/images/P1102323.avif'
                 alt="Coureurs Overbound franchissant un obstacle avec des troncs d'arbres"
                 fill
                 sizes='100vw'

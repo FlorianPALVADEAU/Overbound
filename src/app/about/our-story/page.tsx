@@ -5,13 +5,14 @@ import { SectionEyebrow } from '@/components/events/landing/SectionEyebrow'
 import { Button } from '@/components/ui/button'
 
 const IMG = '/images/images/'
+const IMGObstacle = '/images/obstacles/'
 
 const CHAPTERS = [
   {
     when: 'Août 2025',
     title: 'L’idée',
     text: 'Une boucle d’environ 2 km. Des obstacles à porter, à grimper, à ramper. Et deux façons de la vivre : OPEN, à ton rythme, ou RANKED, chrono en main.',
-    image: { src: `${IMG}young-man-carrying-wooden-logs.avif`, alt: 'Coureur portant des troncs de bois' },
+    image: { src: `${IMG}monkey-bars.avif`, alt: 'Coureur portant des troncs de bois' },
   },
   {
     when: 'Novembre 2025',
@@ -23,15 +24,15 @@ const CHAPTERS = [
     when: '12 septembre 2026',
     title: 'Le premier départ',
     text: 'À l’Île de loisirs de Saint-Quentin-en-Yvelines, Overbound prend vie. Troncs sur les épaules, chaînes autour du cou, sourires à chaque tour. Un franc succès.',
-    image: { src: `${IMG}a-group-of-friend-celebrating-after-a-race.avif`, alt: 'Groupe d’amis qui célèbrent après la course' },
+    image: { src: `${IMG}benevoles-47.avif`, alt: 'Groupe d’amis qui célèbrent après la course' },
   },
 ]
 
 const MOSAIC = [
-  { src: `${IMG}rope-climbing.avif`, alt: 'Participant grimpant à la corde' },
-  { src: `${IMG}young-lady-smiling-in-the-grass.avif`, alt: 'Participante souriante dans l’herbe' },
-  { src: `${IMG}two-sporty-mens-staring-at-the-camera-with-pride.avif`, alt: 'Deux sportifs fiers face à la caméra' },
-  { src: `${IMG}a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif`, alt: 'Vague de coureurs portant des troncs' },
+  { src: `${IMGObstacle}monkey-bars.avif`, alt: 'Participant grimpant à la corde' },
+  { src: `${IMG}P1091298.avif`, alt: 'Participante souriante dans l’herbe' },
+  { src: `${IMGObstacle}log-carry-end.avif`, alt: 'Deux sportifs fiers face à la caméra' },
+  { src: `${IMGObstacle}barbels.avif`, alt: 'Vague de coureurs portant des troncs' },
 ]
 
 const VALUES = [
@@ -44,7 +45,7 @@ export default function OurStoryPage() {
   return (
     <main className="w-full bg-background text-foreground">
       <PageHero
-        image={{ src: `${IMG}two-sporty-mens-staring-at-the-camera-with-pride.avif`, alt: 'Deux sportifs fiers face à la caméra' }}
+        image={{ src: `${IMG}finish-line-2runners.avif`, alt: 'Deux sportifs fiers face à la caméra' }}
         eyebrow="Notre histoire"
         title="Une idée, une boucle, une tribu"
         description="Août 2025 : une envie. Septembre 2026 : une ligne de départ."
@@ -68,11 +69,11 @@ export default function OurStoryPage() {
         </div>
         <div className="relative aspect-4/5 overflow-hidden rounded-xl">
           <Image
-            src={`${IMG}young-man-carrying-a-log-on-his-shoulder.avif`}
+            src={`${IMG}florian-and-sourath.avif`}
             alt="Coureur portant un tronc sur l’épaule"
             fill
             sizes="(min-width: 1024px) 40vw, 100vw"
-            className="object-cover"
+            className="object-cover transform scale-150"
           />
         </div>
       </section>
