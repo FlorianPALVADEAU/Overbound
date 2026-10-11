@@ -45,7 +45,7 @@ export function StickyApplyBar() {
         }}
         tabIndex={visible ? 0 : -1}
         aria-hidden={!visible}
-        className="pointer-events-auto inline-flex min-h-12 w-full max-w-md items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-black text-primary-foreground shadow-xl shadow-black/50 transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="pointer-events-auto inline-flex min-h-12 w-full max-w-md items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-bold text-primary-foreground shadow-xl shadow-black/50 transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         Postuler comme bénévole
         <ArrowRight className="h-4 w-4" aria-hidden />

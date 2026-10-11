@@ -5,7 +5,8 @@ import { Download } from 'lucide-react'
 import { PageHero } from '@/components/hero/PageHero'
 import { Button } from '@/components/ui/button'
 import { PARTNERS_DATA } from '@/datas/Partners'
-import { Eyebrow } from '@/components/ds'
+import { Eyebrow, containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Partenaires & presse | Overbound Race',
@@ -83,7 +84,7 @@ export default function PartnersPage() {
         }
       />
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+      <section className={cn(containerClass(), 'py-14 sm:py-20')}>
         <Eyebrow>Nos partenaires</Eyebrow>
         <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {PARTNERS_DATA.map((partner) => {
@@ -120,12 +121,12 @@ export default function PartnersPage() {
       </section>
 
       <section className="border-y bg-muted/30">
-        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+        <div className={cn(containerClass(), 'py-14 sm:py-20')}>
           <Eyebrow>Pourquoi s’associer</Eyebrow>
           <dl className="mt-8 grid gap-8 sm:grid-cols-2">
             {BENEFITS.map((benefit) => (
               <div key={benefit.title} className="space-y-2">
-                <dt className="text-xl font-black">{benefit.title}</dt>
+                <dt className={cn(DISPLAY_TITLE, 'text-title')}>{benefit.title}</dt>
                 <dd className="text-foreground/80">{benefit.text}</dd>
               </div>
             ))}
@@ -142,12 +143,12 @@ export default function PartnersPage() {
         </div>
       </section>
 
-      <section id="contacts" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+      <section id="contacts" className={cn(containerClass(), 'scroll-mt-24 py-14 sm:py-20')}>
         <Eyebrow>Contacts</Eyebrow>
         <ul className="mt-8 grid gap-8 sm:grid-cols-2">
           {CONTACTS.map((contact) => (
             <li key={contact.email} className="space-y-1">
-              <p className="text-xl font-black">{contact.label}</p>
+              <p className={cn(DISPLAY_TITLE, 'text-title')}>{contact.label}</p>
               <p className="text-foreground/80">{contact.note}</p>
               <a
                 href={`mailto:${contact.email}`}

@@ -7,7 +7,7 @@ import { DEFAULT_MISSION, podCatalog } from '@/lib/volunteers/shared/Pod'
 import { cn } from '@/lib/utils'
 import { ApplicationForm } from './ApplicationForm'
 import { PodMap } from './PodMap'
-import { SectionHeading } from './SectionHeading'
+import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/ds'
 import { VolunteerBib } from './VolunteerBib'
 
 const podCard = (checked: boolean) =>
@@ -45,14 +45,14 @@ export function VolunteerApply() {
 
   return (
     <>
-      <section id="postes" className="scroll-mt-20 bg-background py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 xl:px-0">
-          <SectionHeading eyebrow="Ton poste" title="Choisis ton poste" />
+      <Section id="postes">
+        <Container>
+          <SectionHeader eyebrow="Ton poste" title="Choisis ton poste" />
 
-          <div className="mt-10 grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-14">
+          <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-14">
           <figure className="hidden lg:block">
             <PodMap selected={values.mission} onSelect={(title) => setValue('mission', title)} />
-            <figcaption className="mt-3 text-sm text-gray-400">
+            <figcaption className="mt-3 text-sm text-muted-foreground">
               Plan indicatif du parcours. Les numéros correspondent aux postes de la liste.
             </figcaption>
           </figure>
@@ -72,12 +72,12 @@ export function VolunteerApply() {
                       onChange={() => setValue('mission', pod.title)}
                       className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     />
-                    <span className="block text-lg font-black text-white">
+                    <span className={cn(DISPLAY_TITLE, 'block text-title')}>
                       <span className="hidden text-primary lg:inline">{index + 1}. </span>
                       {pod.title}
                     </span>
                     {pod.description ? (
-                      <span className="mt-1 block text-sm text-gray-300">{pod.description}</span>
+                      <span className="mt-1 block text-sm text-muted-foreground">{pod.description}</span>
                     ) : null}
                   </label>
                 )
@@ -91,22 +91,19 @@ export function VolunteerApply() {
                   onChange={() => setValue('mission', DEFAULT_MISSION)}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
-                <span className="block text-lg font-black text-white">Je laisse l’équipe décider</span>
+                <span className={cn(DISPLAY_TITLE, 'block text-title')}>Je laisse l’équipe décider</span>
               </label>
             </div>
           </fieldset>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
-      <section id="candidature" className="scroll-mt-16 bg-neutral-100 py-16 text-neutral-950 sm:py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 xl:px-0">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">Candidature</p>
-          <h2 className="mt-3 text-balance wrap-break-word text-5xl font-black leading-[0.95] sm:text-7xl lg:text-8xl">
-            Postule maintenant
-          </h2>
+      <Section id="candidature" tone="light" edge="mountain">
+        <Container>
+          <SectionHeader eyebrow="Candidature" title="Postule maintenant" />
 
-          <div className="mt-10 grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:mt-14 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-14">
+          <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:mt-14 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-14">
             <div className="mx-auto hidden w-full min-w-0 max-w-sm lg:sticky lg:top-28 lg:block">
               <VolunteerBib
                 name={`${values.firstName} ${values.lastName}`.trim()}
@@ -116,12 +113,12 @@ export function VolunteerApply() {
               />
             </div>
 
-            <div className="min-w-0 rounded-2xl bg-neutral-900 p-5 text-white shadow-2xl shadow-black/30 sm:p-8">
+            <div className="tone-dark min-w-0 rounded-2xl bg-card p-5 text-foreground shadow-2xl shadow-black/30 sm:p-8">
               <ApplicationForm application={application} />
             </div>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
     </>
   )
 }

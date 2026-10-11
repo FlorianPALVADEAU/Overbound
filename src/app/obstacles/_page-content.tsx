@@ -16,6 +16,8 @@ import { useFeaturedEvent } from '../api/events/featured/featuredEventQueries'
 import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
 import { OBSTACLE_TYPES, difficultyLabel } from '@/components/obstacles/obstacleLabels'
 import { PageHero } from '@/components/hero/PageHero'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const ObstacleSkeleton = () => (
   <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -72,10 +74,10 @@ export default function ObstaclesPage() {
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#141414] px-6 text-center">
+      <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
         <div className="space-y-4">
           <Zap className="mx-auto h-10 w-10 text-primary" />
-          <p className="text-sm text-neutral-300">
+          <p className="text-sm text-muted-foreground">
             Impossible de charger les obstacles pour le moment. Réessaie dans quelques minutes.
           </p>
         </div>
@@ -85,7 +87,7 @@ export default function ObstaclesPage() {
 
   return (
     <>
-      <main className="relative min-h-screen bg-[#141414] text-white">
+      <main className="relative min-h-screen bg-background text-white">
         <PageHero
           image={{ src: '/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif', alt: 'Athlète Overbound franchissant un obstacle', position: '50% 100%' }}
           eyebrow="Parcours Overbound"
@@ -108,10 +110,10 @@ export default function ObstaclesPage() {
           }
         />
 
-        <section id="catalogue" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 pt-16 sm:px-6 lg:px-8 lg:pt-20">
+        <section id="catalogue" className={cn(containerClass(), 'relative z-10 pb-16 pt-16 lg:pt-20')}>
           <div className="mb-5 flex flex-col justify-center gap-6 sm:gap-8">
             <div className="w-full space-y-2">
-              <label htmlFor="search" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <label htmlFor="search" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <Search className="h-4 w-4" />
                 Rechercher un obstacle
               </label>
@@ -120,7 +122,7 @@ export default function ObstaclesPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Mur, Monkey bar, portés…"
-                className="h-12 border-white/15 bg-white/5 text-base text-white placeholder:text-neutral-500 focus-visible:border-primary focus-visible:ring-primary/40"
+                className="h-12 border-white/15 bg-white/5 text-base text-white placeholder:text-subtle focus-visible:border-primary focus-visible:ring-primary/40"
               />
             </div>
 
@@ -131,7 +133,7 @@ export default function ObstaclesPage() {
                 className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   typeFilter === 'all'
                     ? 'border-primary bg-primary text-white'
-                    : 'border-white/15 bg-white/5 text-neutral-300 hover:border-white/30 hover:text-white'
+                    : 'border-white/15 bg-white/5 text-muted-foreground hover:border-white/30 hover:text-white'
                 }`}
               >
                 Tous ({totalObstacles})
@@ -144,7 +146,7 @@ export default function ObstaclesPage() {
                   className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     typeFilter === type
                       ? 'border-primary bg-primary text-white'
-                      : 'border-white/15 bg-white/5 text-neutral-300 hover:border-white/30 hover:text-white'
+                      : 'border-white/15 bg-white/5 text-muted-foreground hover:border-white/30 hover:text-white'
                   }`}
                 >
                   {OBSTACLE_TYPES[type] ?? type} ({count})
@@ -164,7 +166,7 @@ export default function ObstaclesPage() {
                   key={obstacle.id}
                   type="button"
                   onClick={() => setSelectedObstacle(obstacle)}
-                  className="group relative h-72 overflow-hidden rounded-2xl bg-neutral-800 text-left shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-primary/20"
+                  className="group relative h-72 overflow-hidden rounded-2xl bg-card text-left shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-primary/20"
                 >
                   {obstacle.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -174,8 +176,8 @@ export default function ObstaclesPage() {
                       className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-800">
-                      <Zap className="h-12 w-12 text-neutral-600" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-card">
+                      <Zap className="h-12 w-12 text-subtle" />
                     </div>
                   )}
 
@@ -195,16 +197,16 @@ export default function ObstaclesPage() {
                   </div>
 
                   <div className="absolute inset-x-0 bottom-0 space-y-2 p-5">
-                    <h3 className="text-xl font-black text-white">{obstacle.name}</h3>
+                    <h3 className="text-xl font-bold text-white">{obstacle.name}</h3>
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                      <span className="rounded-full bg-white/15 px-2.5 py-1 text-label font-semibold uppercase text-white">
                         {OBSTACLE_TYPES[obstacle.type] ?? obstacle.type}
                       </span>
-                      <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                      <span className="rounded-full bg-white/15 px-2.5 py-1 text-label font-semibold uppercase text-white">
                         {difficultyLabel(obstacle.difficulty)}
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-neutral-200">
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
                       Voir les détails
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                     </span>
@@ -215,8 +217,8 @@ export default function ObstaclesPage() {
 
           {!isLoading && filteredObstacles.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
-              <BadgeInfo className="mx-auto mb-4 h-10 w-10 text-neutral-400" />
-              <p className="text-sm text-neutral-300">
+              <BadgeInfo className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
                 Aucun obstacle ne correspond à ta recherche. Ajuste les filtres pour voir tout le
                 catalogue.
               </p>
@@ -224,14 +226,14 @@ export default function ObstaclesPage() {
           ) : null}
         </section>
 
-        <section className="relative z-10 border-t border-white/10 bg-[#0d0d0d] py-16 sm:py-20">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
+        <section className="relative z-10 border-t border-white/10 bg-surface-deep py-16 sm:py-20">
+          <div className={cn(containerClass(), 'flex flex-col gap-8')}>
             <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
               <div className="space-y-4 text-center lg:text-left">
-                <h2 className="text-2xl font-black sm:text-3xl md:text-4xl">
+                <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
                   Envie de tester ces obstacles en conditions réelles ?
                 </h2>
-                <p className="text-sm leading-relaxed text-neutral-300 sm:text-base">
+                <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
                   Inscris-toi à une course Overbound ou participe à nos sessions d&apos;entraînement
                   encadrées pour maîtriser chaque franchissement.
                 </p>

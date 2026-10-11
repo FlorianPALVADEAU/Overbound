@@ -8,6 +8,8 @@ import { PageHero } from '@/components/hero/PageHero'
 import RichText from '@/components/RichText'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Input } from '@/components/ui/input'
+import { containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export type FAQDocument = {
   _id: string
@@ -122,7 +124,7 @@ export default function FAQPageContent({ faqs }: { faqs: FAQDocument[] }) {
         }
       />
 
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16 lg:px-8">
+      <div className={cn(containerClass(), 'grid gap-10 py-12 sm:py-16 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16')}>
         {term ? null : (
           <nav aria-label="Thèmes" className="hidden lg:block">
             <ul className="sticky top-28 space-y-1 text-sm">
@@ -160,7 +162,7 @@ export default function FAQPageContent({ faqs }: { faqs: FAQDocument[] }) {
             <div className="space-y-14">
               {sections.map((section) => (
                 <section key={section.value} id={section.value} className="scroll-mt-28 space-y-4">
-                  <h2 className="text-2xl font-black tracking-tight sm:text-3xl">{categoryTitle(section.value)}</h2>
+                  <h2 className={cn(DISPLAY_TITLE, 'text-title')}>{categoryTitle(section.value)}</h2>
                   <Answers faqs={section.items} />
                 </section>
               ))}

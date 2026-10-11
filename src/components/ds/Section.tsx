@@ -83,7 +83,7 @@ export function Section({
       ref={ref}
       id={id}
       className={cn(
-        'relative isolate scroll-mt-4 overflow-hidden',
+        'relative isolate scroll-mt-4 overflow-clip',
         TONE_CLASS[tone],
         SECTION_SPACING[spacing],
         edge === 'angled' && ANGLED_CLASS,

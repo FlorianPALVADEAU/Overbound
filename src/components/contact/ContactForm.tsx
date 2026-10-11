@@ -13,6 +13,7 @@ import {
   formatFileSize,
   useContactForm,
 } from '@/hooks/contact/useContactForm'
+import { DISPLAY_TITLE } from '@/components/ds'
 
 export function ContactForm() {
   const form = useContactForm()
@@ -25,7 +26,7 @@ export function ContactForm() {
   if (!form.userId) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-black tracking-tight">Connecte-toi pour nous écrire</h2>
+        <h2 className={cn(DISPLAY_TITLE, 'text-title')}>Connecte-toi pour nous écrire</h2>
         <p className="max-w-prose text-foreground/80">
           Le formulaire est réservé aux comptes Overbound. Tu peux aussi nous écrire directement à{' '}
           <a href="mailto:contact@overbound-race.com" className="font-semibold text-primary underline">

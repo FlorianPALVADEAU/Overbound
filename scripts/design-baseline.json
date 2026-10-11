@@ -1,20 +1,4 @@
 {
-  "src/app/about/credits/page.tsx": {
-    "container-width": 6
-  },
-  "src/app/about/faq/FAQPageContent.tsx": {
-    "font-black": 1,
-    "container-width": 1
-  },
-  "src/app/about/our-story/page.tsx": {
-    "arbitrary-tracking": 1,
-    "font-black": 5,
-    "container-width": 4
-  },
-  "src/app/about/partners/page.tsx": {
-    "font-black": 2,
-    "container-width": 3
-  },
   "src/app/account/tickets/claim/page.tsx": {
     "arbitrary-font-size": 2,
     "font-black": 2
@@ -56,9 +40,7 @@
     "container-width": 1
   },
   "src/app/bootcamps/page.tsx": {
-    "arbitrary-font-size": 1,
-    "arbitrary-tracking": 1,
-    "container-width": 3
+    "container-width": 1
   },
   "src/app/cgu/page.tsx": {
     "arbitrary-tracking": 1,
@@ -66,9 +48,6 @@
   },
   "src/app/cgv/page.tsx": {
     "dark-variant": 1
-  },
-  "src/app/contact/page.tsx": {
-    "container-width": 1
   },
   "src/app/cookies/page.tsx": {
     "dark-variant": 5
@@ -84,35 +63,17 @@
     "raw-red": 1,
     "dark-variant": 6
   },
-  "src/app/events/_page-content.tsx": {
-    "raw-gray": 6,
-    "arbitrary-tracking": 3,
-    "raw-red": 3,
-    "container-width": 2
+  "src/app/feedback/rate/page.tsx": {
+    "raw-gray": 2
   },
   "src/app/feedback/rate/RatePageClient.tsx": {
     "raw-gray": 9
-  },
-  "src/app/feedback/rate/page.tsx": {
-    "raw-gray": 2
   },
   "src/app/maintenance/page.tsx": {
     "font-black": 1
   },
   "src/app/mentions-legales/page.tsx": {
     "dark-variant": 1
-  },
-  "src/app/not-found.tsx": {
-    "arbitrary-hex": 4,
-    "raw-gray": 3,
-    "container-width": 1
-  },
-  "src/app/obstacles/_page-content.tsx": {
-    "arbitrary-hex": 3,
-    "raw-gray": 12,
-    "arbitrary-font-size": 2,
-    "font-black": 2,
-    "container-width": 2
   },
   "src/app/preferences/page.tsx": {
     "arbitrary-font-size": 1,
@@ -123,7 +84,6 @@
     "font-black": 1
   },
   "src/app/races/[id]/page.tsx": {
-    "font-black": 2,
     "container-width": 1
   },
   "src/app/unsubscribe/[token]/page.tsx": {
@@ -131,9 +91,6 @@
   },
   "src/app/unsubscribe/success/page.tsx": {
     "dark-variant": 4
-  },
-  "src/components/RichText.tsx": {
-    "raw-gray": 3
   },
   "src/components/account/AccountNav.tsx": {
     "arbitrary-font-size": 1,
@@ -198,13 +155,13 @@
     "arbitrary-tracking": 1,
     "font-black": 2
   },
+  "src/components/account/tickets/TicketsArchive.tsx": {
+    "arbitrary-font-size": 2,
+    "font-black": 3
+  },
   "src/components/account/tickets/TicketStub.tsx": {
     "arbitrary-font-size": 7,
     "arbitrary-tracking": 3,
-    "font-black": 3
-  },
-  "src/components/account/tickets/TicketsArchive.tsx": {
-    "arbitrary-font-size": 2,
     "font-black": 3
   },
   "src/components/ambassadors/AmbassadorBonusTickets.tsx": {
@@ -236,19 +193,16 @@
   "src/components/blog/RecentBlogTeaser.tsx": {
     "arbitrary-hex": 3
   },
-  "src/components/contact/ContactForm.tsx": {
-    "font-black": 1
-  },
   "src/components/events/EventInfoSections.tsx": {
     "dark-variant": 1,
     "container-width": 1
   },
-  "src/components/events/EventTicketListWithRegistration.tsx": {
-    "dark-variant": 2
-  },
   "src/components/events/EventlistDisplay.tsx": {
     "arbitrary-tracking": 2,
     "container-width": 1
+  },
+  "src/components/events/EventTicketListWithRegistration.tsx": {
+    "dark-variant": 2
   },
   "src/components/events/PricingTimeline.tsx": {
     "arbitrary-hex": 6,
@@ -281,19 +235,10 @@
     "raw-gray": 2,
     "arbitrary-font-size": 1
   },
-  "src/components/obstacles/ObstacleDetailDialog.tsx": {
-    "arbitrary-hex": 1,
-    "raw-gray": 6,
-    "arbitrary-font-size": 1,
-    "font-black": 1
-  },
   "src/components/pricing/PricingExplainer.tsx": {
     "arbitrary-tracking": 1
   },
   "src/components/promotions/PopupPromotion.tsx": {
-    "raw-red": 1
-  },
-  "src/components/races/EventsForRaceButton.tsx": {
     "raw-red": 1
   },
   "src/components/registration/GroupPanel.tsx": {
@@ -305,54 +250,11 @@
   "src/components/registration/TicketSelectionStep.tsx": {
     "dark-variant": 2
   },
+  "src/components/RichText.tsx": {
+    "raw-gray": 3
+  },
   "src/components/shared/CardCarousel.tsx": {
     "arbitrary-hex": 6,
     "raw-gray": 1
-  },
-  "src/components/volunteers/ApplicationForm.tsx": {
-    "raw-gray": 12,
-    "font-black": 3
-  },
-  "src/components/volunteers/PodMap.tsx": {
-    "raw-gray": 2,
-    "arbitrary-font-size": 1,
-    "font-black": 2
-  },
-  "src/components/volunteers/SectionHeading.tsx": {
-    "raw-gray": 1,
-    "arbitrary-tracking": 1,
-    "font-black": 2
-  },
-  "src/components/volunteers/StickyApplyBar.tsx": {
-    "font-black": 1
-  },
-  "src/components/volunteers/VolunteerApply.tsx": {
-    "raw-gray": 6,
-    "arbitrary-tracking": 1,
-    "font-black": 4,
-    "container-width": 2
-  },
-  "src/components/volunteers/VolunteerBib.tsx": {
-    "raw-gray": 9,
-    "arbitrary-font-size": 3,
-    "arbitrary-tracking": 5,
-    "font-black": 9
-  },
-  "src/components/volunteers/VolunteerDay.tsx": {
-    "raw-gray": 3,
-    "arbitrary-tracking": 1,
-    "font-black": 3,
-    "container-width": 1
-  },
-  "src/components/volunteers/VolunteerFAQSection.tsx": {
-    "arbitrary-hex": 4
-  },
-  "src/components/volunteers/VolunteerHero.tsx": {
-    "arbitrary-font-size": 1
-  },
-  "src/components/volunteers/VolunteerPerks.tsx": {
-    "raw-gray": 2,
-    "font-black": 2,
-    "container-width": 1
   }
 }

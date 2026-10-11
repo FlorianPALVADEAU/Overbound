@@ -25,6 +25,8 @@ import EventlistDisplay from '@/components/events/EventlistDisplay'
 import NeedHelpChoosingYourFormat from '@/components/homepage/NeedHelpChoosingYourFormat'
 import Headings from '@/components/globals/Headings'
 import { PricingExplainer } from '@/components/pricing/PricingExplainer'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
   const renderEventTicket = (ticket: TicketType | null, selectedEvent: EventWithTickets) => {
   const eventPriceTiers = selectedEvent.price_tiers || []
@@ -152,13 +154,13 @@ const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
 }
 
 const EVENT_STATUS_STYLES: Record<EventStatus, string> = {
-  draft: 'border-slate-200 bg-slate-50 text-slate-600',
+  draft: 'border-border bg-muted text-muted-foreground',
   announced: 'border-indigo-200 bg-indigo-50 text-indigo-700',
   on_sale: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   sold_out: 'border-amber-200 bg-amber-50 text-amber-700',
-  cancelled: 'border-red-200 bg-red-50 text-red-700',
+  cancelled: 'border-destructive/30 bg-destructive/10 text-destructive',
   completed: 'border-blue-200 bg-blue-50 text-blue-700',
-  closed: 'border-gray-200 bg-gray-50 text-gray-700'
+  closed: 'border-border bg-muted text-muted-foreground'
 }
 
 const formatEventDateLong = (value: string) => {
@@ -217,7 +219,7 @@ const formatDistance = (distance: number | null) => {
 const getDifficultyColor = (difficulty: number) => {
   if (difficulty <= 3) return 'bg-green-100 text-green-800'
   if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
+  return 'bg-destructive/10 text-destructive'
 }
 
 const startOfToday = () => {
@@ -313,9 +315,9 @@ export default function EventsPage() {
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-b from-background/10 via-background/60 to-background' />
           <div className='pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-background via-background/90 to-transparent' />
         </div>
-        <div className='relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8'>
+        <div className={cn(containerClass(), 'relative z-10 flex flex-col gap-10')}>
           <div className='max-w-3xl space-y-6 text-center lg:text-left animate-fade-in-up animate-duration-700'>
-            <span className='inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary shadow-sm shadow-primary/10 sm:text-sm'>
+            <span className='inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-5 py-2 text-xs font-semibold uppercase tracking-eyebrow text-primary shadow-sm shadow-primary/10 sm:text-sm'>
               <span className='relative flex h-2 w-2'>
                 <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75' />
                 <span className='relative inline-flex h-2 w-2 rounded-full bg-primary' />
@@ -350,7 +352,7 @@ export default function EventsPage() {
         <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-muted/40 to-primary/5' />
         <div className='pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl' />
         <div className='pointer-events-none absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl' />
-        <div className="relative container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className={cn(containerClass(), 'relative')}>
           <PricingExplainer />
         </div>
       </section>
@@ -368,7 +370,7 @@ export default function EventsPage() {
 
       <div className="relative w-full py-24 sm:py-32 lg:py-40 bg-white px-4 sm:px-6 xl:px-32">
         <div className='space-y-4 text-center sm:text-left pb-10'>
-          <span className='inline-flex items-center justify-center gap-2 rounded-full bg-primary/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+          <span className='inline-flex items-center justify-center gap-2 rounded-full bg-primary/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-eyebrow text-primary sm:text-sm'>
             <Calendar className='h-3.5 w-3.5' />
             Calendrier Overbound
           </span>
@@ -386,7 +388,7 @@ export default function EventsPage() {
         <section id="carte" className="mb-12">
 
           {isError && (
-            <div className="mb-10 rounded-2xl border border-red-200 bg-red-50 p-6 text-left text-red-700">
+            <div className="mb-10 rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-left text-destructive">
               Une erreur est survenue lors du chargement des événements : {error?.message}
             </div>
           )}
@@ -624,7 +626,7 @@ export default function EventsPage() {
 
         <div className='mt-16'>
           <div className='space-y-4 text-center sm:text-left pb-8'>
-            <span className='inline-flex items-center justify-center gap-2 rounded-full bg-primary/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+            <span className='inline-flex items-center justify-center gap-2 rounded-full bg-primary/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-eyebrow text-primary sm:text-sm'>
               <MapPin className='h-3.5 w-3.5' />
               Toutes les courses
             </span>

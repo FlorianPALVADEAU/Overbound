@@ -2,7 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
 import { Button } from '@/components/ui/button'
-import { Eyebrow } from '@/components/ds'
+import { Eyebrow, containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const IMG = '/images/images/'
 const IMGObstacle = '/images/obstacles/'
@@ -51,10 +52,10 @@ export default function OurStoryPage() {
         description="Août 2025 : une envie. Septembre 2026 : une ligne de départ."
       />
 
-      <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16 lg:px-8">
+      <section className={cn(containerClass(), 'grid gap-10 py-14 sm:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16')}>
         <div className="space-y-6">
           <Eyebrow>Le fondateur</Eyebrow>
-          <h2 className="text-balance text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+          <h2 className={cn(DISPLAY_TITLE, 'text-display-md')}>
             « Je voulais une course où personne ne se sent de trop. »
           </h2>
           <div className="space-y-4 text-base leading-relaxed text-foreground/80 sm:text-lg">
@@ -79,15 +80,15 @@ export default function OurStoryPage() {
       </section>
 
       <section className="border-y bg-muted/30">
-        <div className="mx-auto w-full max-w-6xl space-y-16 px-4 py-14 sm:px-6 sm:py-24 lg:space-y-24 lg:px-8">
+        <div className={cn(containerClass(), 'space-y-16 py-14 sm:py-24 lg:space-y-24')}>
           {CHAPTERS.map((chapter, index) => (
             <article
               key={chapter.when}
               className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16"
             >
               <div className={index % 2 === 1 ? 'lg:order-2' : undefined}>
-                <p className="text-sm font-bold uppercase tracking-[0.28em] text-primary">{chapter.when}</p>
-                <h3 className="mt-3 text-balance text-4xl font-black tracking-tight sm:text-6xl">{chapter.title}</h3>
+                <p className="text-eyebrow font-semibold uppercase text-primary">{chapter.when}</p>
+                <h3 className={cn(DISPLAY_TITLE, 'mt-3 text-display-md')}>{chapter.title}</h3>
                 <p className="mt-5 max-w-prose text-base leading-relaxed text-foreground/80 sm:text-lg">
                   {chapter.text}
                 </p>
@@ -106,8 +107,8 @@ export default function OurStoryPage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-24 lg:px-8">
-        <p className="text-balance text-center text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+      <section className={cn(containerClass(), 'py-14 sm:py-24')}>
+        <p className={cn(DISPLAY_TITLE, 'text-center text-display-md')}>
           Ici, le seul adversaire, <span className="text-primary">c’est toi-même.</span>
         </p>
         <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -126,7 +127,7 @@ export default function OurStoryPage() {
         <dl className="mt-16 grid gap-8 sm:grid-cols-3">
           {VALUES.map((value) => (
             <div key={value.title} className="space-y-2">
-              <dt className="text-xl font-black">{value.title}</dt>
+              <dt className={cn(DISPLAY_TITLE, 'text-title')}>{value.title}</dt>
               <dd className="text-foreground/80">{value.text}</dd>
             </div>
           ))}
@@ -134,9 +135,9 @@ export default function OurStoryPage() {
       </section>
 
       <section className="border-t bg-muted/30">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-14 sm:px-6 sm:py-20 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className={cn(containerClass(), 'flex flex-col gap-6 py-14 sm:py-20 lg:flex-row lg:items-center lg:justify-between')}>
           <div className="max-w-xl space-y-2">
-            <h2 className="text-balance text-3xl font-black tracking-tight sm:text-4xl">La suite s’écrit avec toi</h2>
+            <h2 className={cn(DISPLAY_TITLE, 'text-display-md')}>La suite s’écrit avec toi</h2>
             <p className="text-foreground/80">
               La prochaine édition n’est pas encore annoncée. Suis-nous pour être prévenu en premier.
             </p>

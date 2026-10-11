@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Heart, Camera, Users, Briefcase, Coffee, Sparkles, Mail, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 type ContactType = {
   name: string
@@ -133,7 +135,7 @@ export default function CreditsPage() {
 
       {/* Fondateur */}
       <section className="relative z-10 py-16 sm:py-20">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className={containerClass()}>
           <div className="text-center space-y-4 mb-12">
             <Badge className="bg-primary/20 text-primary border-primary/40">
               <Sparkles className="h-4 w-4 mr-2" />
@@ -174,7 +176,7 @@ export default function CreditsPage() {
       {/* Équipe & Contributeurs */}
       {teamMembers.length > 0 && (
         <section className="relative z-10 py-16 sm:py-20 bg-muted/30">
-          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className={containerClass()}>
             <div className="text-center space-y-4 mb-12">
               <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/40">
                 <Users className="h-4 w-4 mr-2" />
@@ -201,7 +203,7 @@ export default function CreditsPage() {
       {/* Investisseurs */}
       {investors.length > 0 && (
         <section className="relative z-10 py-16 sm:py-20">
-          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className={containerClass()}>
             <div className="text-center space-y-4 mb-12">
               <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/40">
                 <Briefcase className="h-4 w-4 mr-2" />
@@ -231,7 +233,7 @@ export default function CreditsPage() {
       {/* Partenaires */}
       {partners.length > 0 && (
         <section className="relative z-10 py-16 sm:py-20 bg-muted/30">
-          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className={containerClass()}>
             <div className="text-center space-y-4 mb-12">
               <Badge className="bg-purple-500/20 text-purple-600 border-purple-500/40">
                 <Coffee className="h-4 w-4 mr-2" />
@@ -261,7 +263,7 @@ export default function CreditsPage() {
       {/* Photographes & Créateurs */}
       {photographers.length > 0 && (
         <section className="relative z-10 py-16 sm:py-20">
-          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className={containerClass()}>
             <div className="text-center space-y-4 mb-12">
               <Badge className="bg-pink-500/20 text-pink-600 border-pink-500/40">
                 <Camera className="h-4 w-4 mr-2" />
@@ -304,7 +306,7 @@ export default function CreditsPage() {
           height={400}
           className="w-full h-full absolute top-0 left-0 object-cover opacity-80"
         />
-        <div className="py-50 container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className={cn(containerClass(), 'py-50 relative z-10')}>
           <div className="text-center space-y-6 max-w-3xl mx-auto">
             <Badge className="bg-background/80 text-foreground border-border">
               <Heart className="h-4 w-4 mr-2" />

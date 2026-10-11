@@ -15,6 +15,8 @@ import Image from 'next/image'
 import Headings from '@/components/globals/Headings'
 import SubHeadings from '@/components/globals/SubHeadings'
 import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
+import { DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 interface RaceEvent {
   id: string
@@ -243,7 +245,7 @@ export default function RaceDetailPage() {
                   ) : null}
                 </div>
 
-                <h1 className="text-5xl font-black tracking-tight text-foreground md:text-6xl">{race.name}</h1>
+                <h1 className={cn(DISPLAY_TITLE, 'text-display-lg')}>{race.name}</h1>
                 {isUltraArena ? (
                   <div className="mt-4 space-y-3">
                     <Badge className="bg-amber-500 text-white font-bold text-sm">
@@ -763,7 +765,7 @@ export default function RaceDetailPage() {
                   sx='text-black my-6'
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
                   {/* From Formats */}
                   <div className="space-y-4">
                     <p className="text-sm uppercase tracking-wide text-muted-foreground text-center mb-4">
@@ -807,7 +809,7 @@ export default function RaceDetailPage() {
                       </Badge>
                     </div>
                     <div className="rounded-2xl border-2 border-primary bg-card p-8 shadow-lg text-center">
-                      <h3 className="text-2xl font-black text-foreground mb-2">
+                      <h3 className={cn(DISPLAY_TITLE, 'mb-2 text-title')}>
                         {race.name}
                       </h3>
                       {race.distance_km && (

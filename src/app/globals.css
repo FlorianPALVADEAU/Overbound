@@ -158,6 +158,22 @@
   --subtle: oklch(0 0 0 / 55%);
 }
 
+/* Dark panel inside a light band: puts back the default dark tokens. */
+.tone-dark {
+  --background: rgb(20 20 20);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0.12 0 0);
+  --card-foreground: oklch(1 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --primary: oklch(0.58 0.17 142);
+  --subtle: oklch(1 0 0 / 55%);
+}
+
 /* Green band: white text levels on the primary color. */
 .tone-primary {
   --foreground: oklch(1 0 0);
@@ -290,3 +306,4 @@
     animation: none;
   }
 }
+

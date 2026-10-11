@@ -13,7 +13,7 @@ const SheetList = () => (
   <dl className="min-w-0 divide-y divide-border/60 rounded-2xl border border-primary/15 bg-card/85 px-5 shadow-2xl shadow-black/15 backdrop-blur">
     {SHEET.map((row) => (
       <div key={row.label} className="flex items-baseline justify-between gap-4 py-3.5">
-        <dt className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{row.label}</dt>
+        <dt className="text-label font-semibold uppercasest text-muted-foreground">{row.label}</dt>
         <dd className="min-w-0 text-right text-sm font-bold wrap-break-word">{row.value}</dd>
       </div>
     ))}
