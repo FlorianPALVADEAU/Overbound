@@ -16,7 +16,7 @@ import { useFeaturedEvent } from '../api/events/featured/featuredEventQueries'
 import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
 import { OBSTACLE_TYPES, difficultyLabel } from '@/components/obstacles/obstacleLabels'
 import { PageHero } from '@/components/hero/PageHero'
-import { containerClass } from '@/components/ds'
+import { Container, Section, DISPLAY_TITLE } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 const ObstacleSkeleton = () => (
@@ -87,7 +87,7 @@ export default function ObstaclesPage() {
 
   return (
     <>
-      <main className="relative min-h-screen bg-background text-white">
+      <main className="relative min-h-screen bg-background text-foreground">
         <PageHero
           image={{ src: '/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif', alt: 'Athlète Overbound franchissant un obstacle', position: '50% 100%' }}
           eyebrow="Parcours Overbound"
@@ -95,14 +95,14 @@ export default function ObstaclesPage() {
           description="Chaque module est noté selon sa difficulté et sa dominante physique."
           actions={
             <>
-              <Button asChild size="lg" className="h-12 w-full sm:w-auto">
+              <Button asChild size="cta" className="w-full sm:w-auto">
                 <Link href="#catalogue">Voir le catalogue</Link>
               </Button>
               <Button
                 asChild
-                variant="outline"
-                size="lg"
-                className="h-12 w-full border-white/30 bg-transparent text-white hover:bg-white/10 sm:w-auto"
+                variant="outline-on-photo"
+                size="cta"
+                className="w-full sm:w-auto"
               >
                 <Link href={featuredEventHref}>Voir la prochaine édition</Link>
               </Button>
@@ -110,7 +110,8 @@ export default function ObstaclesPage() {
           }
         />
 
-        <section id="catalogue" className={cn(containerClass(), 'relative z-10 pb-16 pt-16 lg:pt-20')}>
+        <Section id="catalogue">
+          <Container>
           <div className="mb-5 flex flex-col justify-center gap-6 sm:gap-8">
             <div className="w-full space-y-2">
               <label htmlFor="search" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -197,7 +198,7 @@ export default function ObstaclesPage() {
                   </div>
 
                   <div className="absolute inset-x-0 bottom-0 space-y-2 p-5">
-                    <h3 className="text-xl font-bold text-white">{obstacle.name}</h3>
+                    <h3 className={cn(DISPLAY_TITLE, 'text-title text-white')}>{obstacle.name}</h3>
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-full bg-white/15 px-2.5 py-1 text-label font-semibold uppercase text-white">
                         {OBSTACLE_TYPES[obstacle.type] ?? obstacle.type}
@@ -216,7 +217,7 @@ export default function ObstaclesPage() {
           </div>
 
           {!isLoading && filteredObstacles.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
+            <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
               <BadgeInfo className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 Aucun obstacle ne correspond à ta recherche. Ajuste les filtres pour voir tout le
@@ -224,13 +225,14 @@ export default function ObstaclesPage() {
               </p>
             </div>
           ) : null}
-        </section>
+          </Container>
+        </Section>
 
-        <section className="relative z-10 border-t border-white/10 bg-surface-deep py-16 sm:py-20">
-          <div className={cn(containerClass(), 'flex flex-col gap-8')}>
+        <Section tone="deep" spacing="spacious" className="border-t border-primary/40">
+          <Container className="flex flex-col gap-8">
             <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
               <div className="space-y-4 text-center lg:text-left">
-                <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
+                <h2 className={cn(DISPLAY_TITLE, 'text-display-md')}>
                   Envie de tester ces obstacles en conditions réelles ?
                 </h2>
                 <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
@@ -239,21 +241,21 @@ export default function ObstaclesPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <Button asChild size="lg" className="h-12 w-full sm:w-auto">
+                <Button asChild size="cta" className="w-full sm:w-auto">
                   <Link href={featuredEventHref}>Voir la prochaine édition</Link>
                 </Button>
                 <Button
                   asChild
-                  variant="outline"
-                  size="lg"
-                  className="h-12 w-full border-white/30 bg-transparent text-white hover:bg-white/10 sm:w-auto"
+                  variant="outline-on-photo"
+                  size="cta"
+                  className="w-full sm:w-auto"
                 >
                   <Link href="/contact">Contacter le support</Link>
                 </Button>
               </div>
             </div>
-          </div>
-        </section>
+          </Container>
+        </Section>
       </main>
 
       <ObstacleDetailDialog obstacle={selectedObstacle} onOpenChange={() => setSelectedObstacle(null)} />

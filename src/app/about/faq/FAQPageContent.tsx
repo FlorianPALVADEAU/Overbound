@@ -8,7 +8,7 @@ import { PageHero } from '@/components/hero/PageHero'
 import RichText from '@/components/RichText'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Input } from '@/components/ui/input'
-import { containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { DISPLAY_TITLE, Container, Section } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 export type FAQDocument = {
@@ -124,7 +124,8 @@ export default function FAQPageContent({ faqs }: { faqs: FAQDocument[] }) {
         }
       />
 
-      <div className={cn(containerClass(), 'grid gap-10 py-12 sm:py-16 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16')}>
+      <Section>
+      <Container className="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16">
         {term ? null : (
           <nav aria-label="Thèmes" className="hidden lg:block">
             <ul className="sticky top-28 space-y-1 text-sm">
@@ -176,7 +177,8 @@ export default function FAQPageContent({ faqs }: { faqs: FAQDocument[] }) {
             </div>
           )}
         </div>
-      </div>
+      </Container>
+      </Section>
     </main>
   )
 }

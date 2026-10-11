@@ -214,11 +214,6 @@
   "src/components/globals/SubHeadings.tsx": {
     "raw-gray": 1
   },
-  "src/components/hero/PageHero.tsx": {
-    "arbitrary-tracking": 1,
-    "font-black": 1,
-    "container-width": 1
-  },
   "src/components/layout/Footer.tsx": {
     "arbitrary-tracking": 2,
     "font-black": 1
