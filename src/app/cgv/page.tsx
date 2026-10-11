@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 import { TICKET_TRANSFER_FEE_CENTS, formatTransferFee } from '@/lib/tickets/transferPolicy'
 import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
+import { Container, Section } from '@/components/ds'
+import { LegalHeader } from '@/components/legal/LegalHeader'
 
 const formatFlexibleFee = () =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(FLEXIBLE_TICKET_FEE_CENTS / 100)
@@ -40,20 +42,19 @@ const toc = [
 
 export default function CGVPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Conditions Générales de Vente
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Conditions applicables à l'achat de billets et inscriptions aux événements Overbound
-          </p>
-          <p className="text-sm text-muted-foreground">
+    <main className="min-h-screen bg-background text-foreground">
+      <LegalHeader
+        title="Conditions Générales de Vente"
+        lead="Conditions applicables à l'achat de billets et inscriptions aux événements Overbound"
+        size="page"
+        updated={
+          <>
             Dernière mise à jour : <time dateTime="2026-10-09">{lastUpdated}</time>
-          </p>
-        </div>
+          </>
+        }
+      />
+      <Section spacing="compact">
+      <Container size="page">
 
         <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
           {/* Table of contents */}
@@ -76,7 +77,7 @@ export default function CGVPage() {
           </aside>
 
           {/* Content */}
-          <div className="prose prose-sm max-w-none dark:prose-invert sm:prose lg:prose-lg">
+          <div className="prose-overbound">
             {/* 1. Objet */}
             <section id="intro" className="mb-12">
               <h2 className="text-2xl font-bold">1. Objet et acceptation</h2>
@@ -536,7 +537,8 @@ export default function CGVPage() {
             </div>
           </div>
         </div>
-      </div>
+      </Container>
+      </Section>
     </main>
   )
 }

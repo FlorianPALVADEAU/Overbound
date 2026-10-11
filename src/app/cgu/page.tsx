@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { containerClass } from '@/components/ds'
+import { LegalHeader } from '@/components/legal/LegalHeader'
 
 export const metadata: Metadata = {
   title: "Conditions Générales d'Utilisation (CGU) | Overbound Race",
@@ -173,20 +175,15 @@ const paragraphs = {
 export default function CGUPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="bg-gradient-to-b from-background via-muted/60 to-background py-20">
-        <div className="container mx-auto max-w-5xl px-6">
-          <p className="text-sm uppercase tracking-[0.3em] text-primary">Conditions Générales d’Utilisation</p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight lg:text-5xl">Cadre légal & obligations de la communauté Overbound</h1>
-          <p className="mt-6 max-w-3xl text-lg text-muted-foreground">
-            Cette page rassemble l’ensemble des dispositions contractuelles qui gouvernent l’accès à la plateforme Overbound, la participation
-            à nos événements sportifs, et l’utilisation des services digitaux associés. Nous vous invitons à les lire attentivement.
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground/80">Dernière mise à jour : {lastUpdated}</p>
-        </div>
-      </section>
+      <LegalHeader
+        eyebrow="Conditions Générales d’Utilisation"
+        title="Cadre légal & obligations de la communauté Overbound"
+        lead="Cette page rassemble l’ensemble des dispositions contractuelles qui gouvernent l’accès à la plateforme Overbound, la participation à nos événements sportifs, et l’utilisation des services digitaux associés. Nous vous invitons à les lire attentivement."
+        updated={<>Dernière mise à jour : {lastUpdated}</>}
+      />
 
       <section className="border-t border-border bg-background py-16">
-        <div className="container mx-auto max-w-5xl px-6">
+        <div className={containerClass()}>
           <div className="rounded-3xl border border-border bg-muted/40 p-6 text-sm text-muted-foreground shadow-lg shadow-primary/10">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Sommaire détaillé</h2>
             <p className="mt-2 text-xs text-muted-foreground/80">

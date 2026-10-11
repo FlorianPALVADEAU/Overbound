@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield, CheckCircle2, Settings } from 'lucide-react'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 import { ConsentReset } from '@/components/consent/ConsentReset'
+import { Container, Section } from '@/components/ds'
+import { LegalHeader } from '@/components/legal/LegalHeader'
 
 const lastUpdated = '10/02/2026'
 
@@ -60,21 +62,22 @@ const COOKIE_CATEGORIES = [
 
 export default function CookiesPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Politique de Cookies</h1>
-          <p className="text-lg text-muted-foreground">
-            Comment nous utilisons les cookies et technologies similaires sur Overbound
-          </p>
-          <p className="text-sm text-muted-foreground">
+    <main className="min-h-screen bg-background text-foreground">
+      <LegalHeader
+        title="Politique de Cookies"
+        lead="Comment nous utilisons les cookies et technologies similaires sur Overbound"
+        size="prose"
+        updated={
+          <>
             Dernière mise à jour : <time dateTime="2026-02-10">{lastUpdated}</time>
-          </p>
-        </div>
+          </>
+        }
+      />
+      <Section spacing="compact">
+      <Container size="prose">
 
         {/* Introduction */}
-        <div className="prose prose-sm mb-12 max-w-none dark:prose-invert sm:prose lg:prose-lg">
+        <div className="prose-overbound mb-12">
           <section className="mb-12">
             <h2 className="text-2xl font-bold">Qu'est-ce qu'un cookie ?</h2>
             <p>
@@ -171,7 +174,7 @@ export default function CookiesPage() {
         </div>
 
         {/* Cookie management */}
-        <div className="prose prose-sm mb-12 max-w-none dark:prose-invert sm:prose lg:prose-lg">
+        <div className="prose-overbound mb-12">
           <section className="mb-12">
             <h2 className="text-2xl font-bold">Comment gérer les cookies ?</h2>
 
@@ -192,8 +195,8 @@ export default function CookiesPage() {
               </li>
             </ul>
 
-            <div className="my-6 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950/30">
-              <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+            <div className="my-6 rounded-lg border border-primary/30 bg-primary/10 p-4">
+              <p className="text-sm font-medium text-foreground">
                 ⚠️ Attention : Le blocage des cookies strictement nécessaires empêchera le bon fonctionnement du site,
                 notamment la connexion à votre compte et le processus de paiement.
               </p>
@@ -293,7 +296,8 @@ export default function CookiesPage() {
             </li>
           </ul>
         </div>
-      </div>
+      </Container>
+      </Section>
     </main>
   )
 }

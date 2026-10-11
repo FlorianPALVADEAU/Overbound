@@ -19,41 +19,8 @@
   "src/app/auth/reset/update/page.tsx": {
     "arbitrary-hex": 6
   },
-  "src/app/blog/auteur/[slug]/page.tsx": {
-    "container-width": 2
-  },
-  "src/app/blog/auteurs/page.tsx": {
-    "raw-gray": 1
-  },
-  "src/app/blog/categorie/[slug]/page.tsx": {
-    "container-width": 2
-  },
-  "src/app/blog/categories/page.tsx": {
-    "container-width": 2
-  },
-  "src/app/blog/page.tsx": {
-    "container-width": 2
-  },
-  "src/app/blog/post/[slug]/page.tsx": {
-    "raw-gray": 7,
-    "dark-variant": 16,
-    "container-width": 1
-  },
   "src/app/bootcamps/page.tsx": {
     "container-width": 1
-  },
-  "src/app/cgu/page.tsx": {
-    "arbitrary-tracking": 1,
-    "font-black": 1
-  },
-  "src/app/cgv/page.tsx": {
-    "dark-variant": 1
-  },
-  "src/app/cookies/page.tsx": {
-    "dark-variant": 5
-  },
-  "src/app/decharge/page.tsx": {
-    "font-black": 1
   },
   "src/app/events/[id]/register/payment/PaymentClient.tsx": {
     "arbitrary-font-size": 1
@@ -69,28 +36,12 @@
   "src/app/feedback/rate/RatePageClient.tsx": {
     "raw-gray": 9
   },
-  "src/app/maintenance/page.tsx": {
-    "font-black": 1
-  },
-  "src/app/mentions-legales/page.tsx": {
-    "dark-variant": 1
-  },
   "src/app/preferences/page.tsx": {
     "arbitrary-font-size": 1,
     "font-black": 1
   },
-  "src/app/privacy-policies/page.tsx": {
-    "arbitrary-tracking": 1,
-    "font-black": 1
-  },
   "src/app/races/[id]/page.tsx": {
     "container-width": 1
-  },
-  "src/app/unsubscribe/[token]/page.tsx": {
-    "dark-variant": 2
-  },
-  "src/app/unsubscribe/success/page.tsx": {
-    "dark-variant": 4
   },
   "src/components/account/AccountNav.tsx": {
     "arbitrary-font-size": 1,
@@ -184,15 +135,6 @@
   "src/components/ambassadors/AmbassadorRewardsTimeline.tsx": {
     "arbitrary-font-size": 5
   },
-  "src/components/blog/BlogFilters.tsx": {
-    "container-width": 1
-  },
-  "src/components/blog/BlogSkeleton.tsx": {
-    "container-width": 1
-  },
-  "src/components/blog/RecentBlogTeaser.tsx": {
-    "arbitrary-hex": 3
-  },
   "src/components/events/EventInfoSections.tsx": {
     "dark-variant": 1,
     "container-width": 1
@@ -244,9 +186,6 @@
   },
   "src/components/registration/TicketSelectionStep.tsx": {
     "dark-variant": 2
-  },
-  "src/components/RichText.tsx": {
-    "raw-gray": 3
   },
   "src/components/shared/CardCarousel.tsx": {
     "arbitrary-hex": 6,

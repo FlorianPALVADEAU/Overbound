@@ -54,7 +54,7 @@ export default async function BlogAuthorsIndex() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={urlFor(a.avatar).width(56).height(56).url()} alt="" className="w-14 h-14 rounded-full" />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-gray-200" />
+              <div className="w-14 h-14 rounded-full bg-muted" />
             )}
             <div className="flex-1">
               <Link href={`/blog/auteur/${a.slug}`} className="font-semibold">

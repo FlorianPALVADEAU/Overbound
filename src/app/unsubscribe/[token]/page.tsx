@@ -106,9 +106,9 @@ export default function UnsubscribePage() {
           )}
 
           {status === 'success' && userName && (
-            <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+            <Alert className="border-primary/30 bg-primary/10">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
+              <AlertDescription className="text-foreground">
                 Merci {userName}. Votre préférence a été enregistrée.
                 <br />
                 <span className="text-sm">

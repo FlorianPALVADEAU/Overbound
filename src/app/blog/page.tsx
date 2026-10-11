@@ -9,6 +9,8 @@ import BlogFilters from "@/components/blog/BlogFilters";
 import { useBlogPosts, useBlogCategories } from "@/app/api/blog/blogQueries";
 import { BlogGridSkeleton, BlogFiltersSkeleton } from "@/components/blog/BlogSkeleton";
 import { PageHero } from '@/components/hero/PageHero'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export default function BlogIndex() {
   return (
@@ -55,7 +57,7 @@ function BlogPageContent() {
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
       <BlogHero />
 
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className={cn(containerClass(), 'py-16')}>
         {/* Search and Filters Section */}
         {categoriesLoading ? (
           <BlogFiltersSkeleton />
@@ -121,7 +123,7 @@ function BlogPageFallback() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
       <BlogHero />
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className={cn(containerClass(), 'py-16')}>
         <BlogFiltersSkeleton />
         <BlogGridSkeleton />
       </div>

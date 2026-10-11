@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
 import type { Metadata } from 'next'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export const revalidate = 60
 
@@ -88,11 +90,11 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
           <div className="absolute inset-0 bg-background/45" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
+        <div className={cn(containerClass(), 'relative z-10')}>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Catégorie:&nbsp;{category.title}</h1>
         </div>
       </section>
-      <div className="max-w-6xl mx-auto px-6 py-20">
+      <div className={cn(containerClass(), 'py-20')}>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {items?.map((p: any) => (
           <BlogArticleItem key={p._id} post={p} />

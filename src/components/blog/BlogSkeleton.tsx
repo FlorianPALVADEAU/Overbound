@@ -49,7 +49,7 @@ export function BlogFiltersSkeleton() {
   return (
     <div className="mb-12 space-y-8">
       {/* Search Bar and Category Filter Skeleton */}
-      <div className="mx-auto max-w-6xl">
+      <div className="w-full">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Bar Skeleton */}
           <div className="flex-1 h-12 bg-muted rounded-xl animate-pulse" />

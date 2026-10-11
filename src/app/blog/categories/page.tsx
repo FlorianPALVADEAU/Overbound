@@ -3,6 +3,8 @@ import { categoriesWithCountsQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export const revalidate = 300
 
@@ -60,7 +62,7 @@ export default async function BlogCategoriesIndex() {
           <div className="absolute inset-0 bg-background/40" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
+        <div className={cn(containerClass(), 'relative z-10')}>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Catégories</h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
             Explore nos thématiques pour trouver plus vite les conseils et les actus qui t’intéressent.
@@ -68,7 +70,7 @@ export default async function BlogCategoriesIndex() {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6">
+      <div className={containerClass()}>
         <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((c: any, index: number) => (
             <li

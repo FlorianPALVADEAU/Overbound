@@ -43,7 +43,7 @@ export default async function MaintenancePage() {
         <Image src="/images/brand/totem_logo_white.png" alt="Overbound" width={64} height={64} priority className="h-auto w-14 sm:w-16" />
 
         <div className="max-w-3xl">
-          <h1 className="text-balance break-words text-[clamp(2.75rem,10vw,7rem)] font-black uppercase leading-[0.92] tracking-tight">
+          <h1 className="text-balance break-words text-[clamp(2.75rem,10vw,7rem)] font-display font-bold uppercase leading-[0.92] tracking-tight">
             Retour
             <br />
             bientôt.

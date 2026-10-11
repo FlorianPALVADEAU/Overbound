@@ -5,6 +5,8 @@ import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
 import { urlFor } from '@/sanity/lib/image'
 import type { Metadata } from 'next'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export const revalidate = 60
 
@@ -89,7 +91,7 @@ export default async function BlogAuthorPage({ params, searchParams }: { params:
           <div className="absolute inset-0 bg-background/45" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
+        <div className={cn(containerClass(), 'relative z-10')}>
           <h1 className="text-3xl font-bold mb-2">Auteur: {author.name}</h1>
           {author.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -98,7 +100,7 @@ export default async function BlogAuthorPage({ params, searchParams }: { params:
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6">
+      <div className={containerClass()}>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {items?.map((p: any) => (
