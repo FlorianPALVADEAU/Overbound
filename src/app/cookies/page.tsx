@@ -6,7 +6,7 @@ import { Shield, CheckCircle2, Settings } from 'lucide-react'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 import { ConsentReset } from '@/components/consent/ConsentReset'
 
-const lastUpdated = '10/02/2026'
+const lastUpdated = '11/10/2026'
 
 const COOKIE_CATEGORIES = [
   {
@@ -14,7 +14,8 @@ const COOKIE_CATEGORIES = [
     title: 'Cookies strictement nécessaires',
     icon: Shield,
     required: true,
-    description: 'Ces cookies sont indispensables au fonctionnement du site et ne peuvent pas être désactivés.',
+    description:
+      'Ces cookies sont indispensables au fonctionnement du site et ne peuvent pas être désactivés. Ils ne nécessitent pas de consentement.',
     cookies: [
       {
         name: 'sb-*-auth-token',
@@ -30,28 +31,83 @@ const COOKIE_CATEGORIES = [
         duration: 'Session',
         type: 'Cookie HTTP',
       },
+      {
+        name: 'overbound-consent',
+        purpose: 'Mémoriser ton choix sur les cookies (les choix, la date ; un justificatif est conservé côté serveur avec une adresse IP tronquée)',
+        provider: 'Overbound',
+        duration: '12 mois',
+        type: 'LocalStorage',
+      },
+      {
+        name: 'Paramètres de campagne (utm_*)',
+        purpose: 'Savoir quelle campagne t’a amené sur le site, uniquement pour nos statistiques internes de commande',
+        provider: 'Overbound',
+        duration: '30 jours',
+        type: 'LocalStorage',
+      },
     ],
   },
   {
-    id: 'performance',
-    title: 'Cookies de performance',
+    id: 'monitoring',
+    title: 'Suivi des erreurs (sans consentement)',
+    icon: Settings,
+    required: true,
+    description:
+      'Nous détectons les erreurs techniques pour les corriger. Cette mesure est anonyme : aucune adresse IP ni donnée de profil n’est transmise, et aucune session n’est enregistrée sans ton accord.',
+    cookies: [
+      {
+        name: 'Sentry (erreurs et performances)',
+        purpose: 'Détecter et corriger les erreurs techniques du site',
+        provider: 'Sentry (monitoring, hébergé dans l’Union européenne)',
+        duration: 'Aucun cookie déposé',
+        type: 'Requêtes techniques',
+      },
+    ],
+  },
+  {
+    id: 'analytics',
+    title: 'Mesure d’audience (avec consentement)',
     icon: Settings,
     required: false,
     description:
-      'Ces cookies nous permettent de suivre les erreurs et améliorer la performance du site. Ils ne collectent pas d\'informations personnellement identifiables.',
+      'Ces traceurs mesurent la fréquentation et les parcours pour améliorer le site. Ils ne sont chargés qu’après ton accord.',
     cookies: [
-      {
-        name: 'sentry-*',
-        purpose: 'Suivi des erreurs et monitoring des performances',
-        provider: 'Sentry (monitoring)',
-        duration: '1 an',
-        type: 'Cookie HTTP + LocalStorage',
-      },
       {
         name: '_ga, _ga_*',
         purpose: 'Mesure d’audience et statistiques d’usage du site',
         provider: 'Google Analytics',
         duration: '13 mois',
+        type: 'Cookie HTTP',
+      },
+      {
+        name: 'Google Tag Manager',
+        purpose: 'Chargement des balises de mesure',
+        provider: 'Google',
+        duration: 'Session',
+        type: 'Script',
+      },
+      {
+        name: 'Enregistrement de session',
+        purpose: 'Rejouer certaines sessions pour comprendre un bug. Tous les textes saisis et médias sont masqués',
+        provider: 'Sentry Session Replay',
+        duration: 'Session',
+        type: 'SessionStorage',
+      },
+    ],
+  },
+  {
+    id: 'marketing',
+    title: 'Publicité (avec consentement)',
+    icon: Settings,
+    required: false,
+    description:
+      'Ces traceurs mesurent l’efficacité de nos campagnes publicitaires sur Facebook et Instagram. Ils ne sont chargés qu’après ton accord. Sans accord, aucun achat n’est transmis à Meta.',
+    cookies: [
+      {
+        name: '_fbp, _fbc',
+        purpose: 'Mesurer les conversions de nos publicités Meta et transmettre à Meta tes achats (email chiffré, adresse IP, navigateur)',
+        provider: 'Meta Platforms Ireland (Meta Pixel et API de conversions)',
+        duration: '3 mois',
         type: 'Cookie HTTP',
       },
     ],
@@ -91,19 +147,25 @@ export default function CookiesPage() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold">Comment utilisons-nous les cookies ?</h2>
             <p>
-              Chez Overbound, nous utilisons un nombre minimal de cookies, uniquement pour assurer le bon
-              fonctionnement du site et améliorer votre expérience. Nous ne déployons{' '}
-              <strong>aucun cookie publicitaire ou de tracking marketing</strong>.
+              Chez Overbound, nous utilisons un nombre minimal de cookies. Les cookies de mesure d’audience et de
+              publicité ne sont déposés <strong>qu’avec votre accord</strong>, finalité par finalité, et vous pouvez les
+              refuser sans conséquence sur votre inscription.
             </p>
-            <p>Nos cookies sont classés en deux catégories :</p>
+            <p>Nos cookies et traceurs sont classés en quatre catégories :</p>
             <ul>
               <li>
                 <strong>Cookies strictement nécessaires :</strong> Indispensables au fonctionnement du site
                 (authentification, paiement sécurisé). Ces cookies ne nécessitent pas votre consentement.
               </li>
               <li>
-                <strong>Cookies de performance :</strong> Nous aident à détecter et corriger les erreurs techniques.
-                Ces cookies sont déposés uniquement avec votre consentement.
+                <strong>Suivi des erreurs :</strong> Anonyme, sans cookie, pour corriger les erreurs techniques.
+              </li>
+              <li>
+                <strong>Mesure d’audience :</strong> Google Analytics, Google Tag Manager, enregistrement de session
+                masqué. Uniquement avec votre consentement.
+              </li>
+              <li>
+                <strong>Publicité :</strong> Meta Pixel et API de conversions. Uniquement avec votre consentement.
               </li>
             </ul>
           </section>
@@ -215,7 +277,7 @@ export default function CookiesPage() {
                 <strong>Cookies de session :</strong> Supprimés automatiquement à la fermeture de votre navigateur
               </li>
               <li>
-                <strong>Cookies persistants :</strong> Conservés pour une durée déterminée (de 7 jours à 1 an maximum)
+                <strong>Cookies persistants :</strong> Conservés pour une durée déterminée (de 7 jours à 13 mois maximum)
               </li>
             </ul>
             <p>
@@ -227,14 +289,14 @@ export default function CookiesPage() {
             <h2 className="text-2xl font-bold">Technologies similaires</h2>
             <p>En plus des cookies, nous utilisons des technologies de stockage local (LocalStorage) pour :</p>
             <ul>
-              <li>Conserver vos préférences d'affichage (thème sombre/clair)</li>
+              <li>Mémoriser votre choix de consentement et la campagne qui vous a amené sur le site</li>
               <li>Améliorer les performances en mettant en cache certaines données</li>
-              <li>Détecter et diagnostiquer les erreurs techniques (Sentry)</li>
-              <li>Enregistrer votre choix de consentement aux cookies d’audience</li>
+              <li>Détecter et diagnostiquer les erreurs techniques de façon anonyme (Sentry)</li>
+              <li>Enregistrer votre choix de consentement aux cookies d’audience et de publicité</li>
             </ul>
             <p>
               Ces données sont stockées localement sur votre appareil et ne sont pas transmises à des tiers, sauf pour
-              le service de monitoring d'erreurs (Sentry).
+              le service de suivi d'erreurs (Sentry) et, si vous les avez acceptés, les services de mesure d’audience et de publicité.
             </p>
           </section>
 
@@ -254,12 +316,16 @@ export default function CookiesPage() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold">Contact</h2>
             <p>
+              Vous pouvez retirer votre consentement à tout moment depuis la section « Gérer mes préférences » ci-dessus
+              ou le lien « Gérer mes cookies » en bas de chaque page. Votre choix est renouvelé tous les 12 mois.
+            </p>
+            <p>
               Pour toute question concernant notre utilisation des cookies, vous pouvez nous contacter à l'adresse{' '}
-              <Link href={`mailto:${COMPANY_INFO.emails.privacy}`} className="text-primary hover:underline">
+              <Link href={`mailto:${COMPANY_INFO.emails.privacy}`} className="text-primary underline">
                 {COMPANY_INFO.emails.privacy}
               </Link>{' '}
               ou consulter notre{' '}
-              <Link href="/privacy-policies" className="text-primary hover:underline">
+              <Link href="/privacy-policies" className="text-primary underline">
                 Politique de confidentialité
               </Link>
               .
@@ -272,22 +338,22 @@ export default function CookiesPage() {
           <h3 className="mb-4 font-semibold">Documents complémentaires</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/privacy-policies" className="text-primary hover:underline">
+              <Link href="/privacy-policies" className="text-primary underline">
                 Politique de confidentialité
               </Link>
             </li>
             <li>
-              <Link href="/cgu" className="text-primary hover:underline">
+              <Link href="/cgu" className="text-primary underline">
                 Conditions Générales d'Utilisation (CGU)
               </Link>
             </li>
             <li>
-              <Link href="/cgv" className="text-primary hover:underline">
+              <Link href="/cgv" className="text-primary underline">
                 Conditions Générales de Vente (CGV)
               </Link>
             </li>
             <li>
-              <Link href="/mentions-legales" className="text-primary hover:underline">
+              <Link href="/mentions-legales" className="text-primary underline">
                 Mentions légales
               </Link>
             </li>

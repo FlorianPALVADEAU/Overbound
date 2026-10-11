@@ -37,6 +37,8 @@ const LINK_GROUPS = [
       { label: 'CGV', href: '/cgv' },
       { label: 'Confidentialité', href: '/privacy-policies' },
       { label: 'Cookies', href: '/cookies' },
+      { label: 'Gérer mes cookies', href: '/cookies#preferences' },
+      { label: 'Supprimer mes données', href: '/privacy-policies#droits' },
       { label: 'Règlement officiel', href: OFFICIAL_RULEBOOK_PDF_PATH },
       { label: 'Crédits', href: '/about/credits' },
     ],
@@ -119,7 +121,7 @@ export function Footer() {
             ))}
           </div>
           <p className='text-sm'>&copy; {new Date().getFullYear()} Overbound. Tous droits réservés.</p>
-          <p className='text-sm text-muted-foreground/80'>
+          <p className='text-sm text-muted-foreground'>
             Fait avec la sueur et le cœur, par des passionnés.
           </p>
         </div>

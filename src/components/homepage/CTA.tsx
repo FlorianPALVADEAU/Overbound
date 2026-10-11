@@ -41,7 +41,7 @@ const CTA = () => {
             </div>
             <Button
                 asChild
-                className='min-h-11 w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer'
+                className='min-h-11 w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold bg-amber-700 hover:bg-amber-800 text-white cursor-pointer'
                 variant='default'
             >
                 <Link href={registerHref}>Je m'inscris maintenant</Link>

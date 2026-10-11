@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Script from 'next/script'
+import * as Sentry from '@sentry/nextjs'
 import { CONSENT_EVENT, readConsent } from './consent'
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -9,12 +10,14 @@ const GTM_CONTAINER_ID = process.env.NEXT_PUBLIC_GTM_CONTAINER_ID
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
 
 export function AnalyticsScripts() {
-  const [hasConsent, setHasConsent] = useState(false)
+  const [analyticsConsent, setAnalyticsConsent] = useState(false)
+  const [marketingConsent, setMarketingConsent] = useState(false)
 
   useEffect(() => {
     const updateConsent = () => {
       const consent = readConsent()
-      setHasConsent(consent?.analytics === true)
+      setAnalyticsConsent(consent?.analytics === true)
+      setMarketingConsent(consent?.marketing === true)
     }
 
     updateConsent()
@@ -23,11 +26,16 @@ export function AnalyticsScripts() {
     return () => window.removeEventListener(CONSENT_EVENT, updateConsent)
   }, [])
 
-  if (!hasConsent) return null
+  // Session replay records what people type and click: it only starts once audience measurement is accepted,
+  // with every text and media masked. Error monitoring itself runs without it (see instrumentation-client.ts).
+  useEffect(() => {
+    if (!analyticsConsent) return
+    Sentry.addIntegration(Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true }))
+  }, [analyticsConsent])
 
   return (
     <>
-      {GA_MEASUREMENT_ID && (
+      {analyticsConsent && GA_MEASUREMENT_ID && (
         <>
           <Script
             strategy="afterInteractive"
@@ -46,7 +54,7 @@ export function AnalyticsScripts() {
         </>
       )}
 
-      {GTM_CONTAINER_ID && (
+      {analyticsConsent && GTM_CONTAINER_ID && (
         <Script id="gtm-base" strategy="afterInteractive">
           {`
             (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -58,7 +66,7 @@ export function AnalyticsScripts() {
         </Script>
       )}
 
-      {META_PIXEL_ID && (
+      {marketingConsent && META_PIXEL_ID && (
         <>
           <Script id="meta-pixel-base" strategy="afterInteractive">
             {`

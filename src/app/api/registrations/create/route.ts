@@ -52,7 +52,6 @@ const participantSchema = z.object({
   emergencyContactPhone: z.string().optional(),
   medicalInfo: z.string().optional(),
   healthDataConsent: z.boolean().optional(),
-  licenseNumber: z.string().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
 })
 
@@ -651,7 +650,6 @@ export async function POST(request: NextRequest) {
         emergencyContactPhone: participant.emergencyContactPhone,
         medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
         healthDataConsent: participant.healthDataConsent === true,
-        licenseNumber: participant.licenseNumber,
       },
             disclaimer,
             document: signedDocument,

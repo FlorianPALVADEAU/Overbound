@@ -101,7 +101,7 @@ export function OperationsListTable<T>({
                     </div>
                   ))}
                 </div>
-                <div onClick={(event) => event.stopPropagation()}>{renderActions(item, itemId)}</div>
+                <div role="presentation" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>{renderActions(item, itemId)}</div>
               </div>
             </div>
           )

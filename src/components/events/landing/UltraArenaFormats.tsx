@@ -147,7 +147,7 @@ export function UltraArenaFormats({
                 {isOnSale ? (
                   <Button
                     asChild
-                    className="w-full bg-amber-600 text-white hover:bg-amber-700"
+                    className="w-full bg-amber-700 text-white hover:bg-amber-800"
                     onClick={onRankedClick}
                   >
                     <Link href={registerHref(rankedTicket?.id)}>Je choisis RANKED</Link>

@@ -41,7 +41,7 @@ const VolunteersAppeal = () => {
                 key={patch.label}
                 className={cn(
                   'absolute animate-in zoom-in-50 fade-in fill-mode-backwards duration-500',
-                  'bg-primary px-3 py-1.5 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-black/40 sm:text-sm',
+                  'bg-primary px-3 py-1.5 text-xs font-black uppercase tracking-wide text-primary-foreground shadow-lg shadow-black/40 sm:text-sm',
                   'outline-1 -outline-offset-3 outline-dashed outline-white/60',
                   patch.className,
                 )}

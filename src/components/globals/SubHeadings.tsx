@@ -16,7 +16,7 @@ const SubHeadings = ({ title, description, cta, sx }: SubHeadingsProps) => {
                 </h2>
                 {
                     description && (
-                        <p className='text-md sm:text-lg lg:text-xl text-gray-600 font-light -mt-1'>
+                        <p className='text-md sm:text-lg lg:text-xl text-gray-400 [.text-black_&]:text-gray-600 font-light -mt-1'>
                             {description}
                         </p>
                     )

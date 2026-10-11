@@ -386,7 +386,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   {!user && (
                     <Button
                       size="sm"
-                      className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-600 hover:bg-red-700"
+                      className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-700 text-white hover:bg-red-800"
                       asChild
                     >
                       <Link href={featuredEventRegisterHref}>Je m'inscris</Link>

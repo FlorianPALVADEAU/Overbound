@@ -211,7 +211,7 @@ function RegisterInner() {
         <section className="flex items-center justify-center px-6 py-8 lg:px-14">
           <div className="w-full max-w-lg space-y-6">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary/80">Overbound</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">Overbound</p>
               <h1 className="text-4xl font-black uppercase leading-none">
                 {isVerificationStep ? 'Vérifie ton email' : 'Créer un compte'}
               </h1>
@@ -230,7 +230,7 @@ function RegisterInner() {
                       disabled={loading}
                       autoComplete="name"
                       placeholder="Jean Dupont"
-                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-500"
+                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
                     />
                   </div>
 
@@ -244,7 +244,7 @@ function RegisterInner() {
                       disabled={loading}
                       autoComplete="email"
                       placeholder="vous@exemple.com"
-                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-500"
+                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
                     />
                   </div>
 
@@ -259,7 +259,7 @@ function RegisterInner() {
                         disabled={loading}
                         autoComplete="new-password"
                         placeholder="••••••••"
-                        className="h-11 border-zinc-700 bg-zinc-900/40 pr-10 text-white placeholder:text-zinc-500"
+                        className="h-11 border-zinc-700 bg-zinc-900/40 pr-10 text-white placeholder:text-zinc-400"
                       />
                       <button
                         type="button"
@@ -282,15 +282,16 @@ function RegisterInner() {
                       disabled={loading}
                       autoComplete="new-password"
                       placeholder="••••••••"
-                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-500"
+                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
                     />
                   </div>
 
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-400">
                     En vous connectant, vous acceptez nos{' '}
-                    <Link href="/cgu" className="text-primary underline-offset-4 hover:underline">conditions d’utilisation</Link>
+                    <Link href="/cgu" className="text-primary underline-offset-4 underline">conditions d’utilisation</Link>
                     {' '}et notre{' '}
-                    <Link href="/privacy-policies" className="text-primary underline-offset-4 hover:underline">politique de confidentialité</Link>.
+                    <Link href="/privacy-policies" className="text-primary underline-offset-4 underline">politique de confidentialité</Link>.
+                    Tu peux demander la suppression de ton compte et de tes données à tout moment depuis ton profil.
                   </p>
 
                   <Button
@@ -318,7 +319,7 @@ function RegisterInner() {
                       <div className="w-full border-t border-zinc-800" />
                     </div>
                     <div className="relative flex justify-center">
-                      <span className="bg-[#0b0c0e] px-3 text-xs uppercase tracking-wide text-zinc-500">ou</span>
+                      <span className="bg-[#0b0c0e] px-3 text-xs uppercase tracking-wide text-zinc-400">ou</span>
                     </div>
                   </div>
                   <Button
@@ -446,7 +447,7 @@ function RegisterInner() {
                       : '/auth/login'
                   })()
                 }
-                className="text-primary underline-offset-4 hover:underline"
+                className="text-primary underline-offset-4 underline"
               >
                 Se connecter
               </Link>

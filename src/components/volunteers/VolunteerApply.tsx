@@ -101,7 +101,7 @@ export function VolunteerApply() {
 
       <section id="candidature" className="scroll-mt-16 bg-neutral-100 py-16 text-neutral-950 sm:py-24 lg:py-32">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 xl:px-0">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-neutral-500">Candidature</p>
+          <p className="text-sm font-black uppercase tracking-[0.3em] text-neutral-600">Candidature</p>
           <h2 className="mt-3 text-balance wrap-break-word text-5xl font-black leading-[0.95] sm:text-7xl lg:text-8xl">
             Postule maintenant
           </h2>

@@ -130,7 +130,7 @@ export default function ObstaclesPage() {
                 onClick={() => setTypeFilter('all')}
                 className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   typeFilter === 'all'
-                    ? 'border-primary bg-primary text-white'
+                    ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-white/15 bg-white/5 text-neutral-300 hover:border-white/30 hover:text-white'
                 }`}
               >
@@ -143,7 +143,7 @@ export default function ObstaclesPage() {
                   onClick={() => setTypeFilter(type)}
                   className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     typeFilter === type
-                      ? 'border-primary bg-primary text-white'
+                      ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-white/15 bg-white/5 text-neutral-300 hover:border-white/30 hover:text-white'
                   }`}
                 >
@@ -182,7 +182,7 @@ export default function ObstaclesPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
                   <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-2">
-                    <Badge className="border-0 bg-primary text-white">
+                    <Badge className="border-0 bg-primary text-primary-foreground">
                       <Star className="mr-1 h-3 w-3" />
                       {obstacle.difficulty}/10
                     </Badge>

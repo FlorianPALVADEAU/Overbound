@@ -68,10 +68,9 @@ export default [
       'react-hooks/refs': 'off',
       'react-hooks/exhaustive-deps': 'warn',
       'jsx-a11y/no-autofocus': 'off',
-      'jsx-a11y/label-has-associated-control': 'off',
-      'jsx-a11y/click-events-have-key-events': 'off',
-      'jsx-a11y/no-static-element-interactions': 'off',
       'jsx-a11y/media-has-caption': 'off',
+      // Crashes on some JSX (eslint-plugin-jsx-a11y traverseChildren); axe-core covers label association in e2e.
+      'jsx-a11y/label-has-associated-control': 'off',
     },
   },
   {

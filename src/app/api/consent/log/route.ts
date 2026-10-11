@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { anonymizeIp } from '@/lib/consent/anonymizeIp'
 
 const consentLogBodySchema = z.object({
   analyticsAccepted: z.boolean(),
+  marketingAccepted: z.boolean(),
 })
 
 export async function POST(request: NextRequest) {
@@ -19,10 +21,10 @@ export async function POST(request: NextRequest) {
     const admin = supabaseAdmin()
     const { error } = await admin.from('cookie_consent_logs').insert({
       analytics_accepted: parsed.data.analyticsAccepted,
-      ip_address:
-        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-        request.headers.get('x-real-ip') ??
-        null,
+      marketing_accepted: parsed.data.marketingAccepted,
+      ip_address: anonymizeIp(
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null,
+      ),
       user_agent: request.headers.get('user-agent'),
       user_id: user?.id ?? null,
     })

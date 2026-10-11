@@ -19,7 +19,6 @@ export type RegistrationParticipant = {
   emergencyContactName: string
   emergencyContactPhone: string
   medicalInfo: string
-  licenseNumber: string
 }
 
 export type RegistrationUpsellSelection = {

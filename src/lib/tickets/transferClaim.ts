@@ -87,7 +87,6 @@ export const buildTransferSignatureRecord = (submission: ClaimSubmission, contex
       ...submission.participant,
       medicalInfo: keepHealthDataWithConsent(submission.participant.medicalInfo, submission.participant.healthDataConsent),
       email: context.signerEmail ?? '',
-      licenseNumber: '',
     },
     disclaimer: submission.disclaimer,
     document: context.document,

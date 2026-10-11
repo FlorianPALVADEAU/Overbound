@@ -64,13 +64,13 @@ export function CardCarousel<T>({
         <div className={navVisibilityClassName}>
           <CarouselPrevious
             className={cn(
-              'top-auto border-[#26AA26] bg-[#26AA26] text-white shadow-lg hover:bg-[#1e8a1e]',
+              'top-auto border-[#26AA26] bg-[#26AA26] text-primary-foreground shadow-lg hover:bg-[#1e8a1e]',
               roomy ? 'bottom-1 left-0 size-11' : 'bottom-4 left-4',
             )}
           />
           <CarouselNext
             className={cn(
-              'right-auto top-auto border-[#26AA26] bg-[#26AA26] text-white shadow-lg hover:bg-[#1e8a1e]',
+              'right-auto top-auto border-[#26AA26] bg-[#26AA26] text-primary-foreground shadow-lg hover:bg-[#1e8a1e]',
               roomy ? 'bottom-1 left-14 size-11' : 'bottom-4 left-16',
             )}
           />
