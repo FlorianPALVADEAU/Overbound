@@ -372,7 +372,6 @@ export default function MultiStepEventRegistration({
               emergencyContactPhone: p.emergencyContactPhone,
               medicalInfo: p.medicalInfo,
               healthDataConsent: p.healthDataConsent === true,
-              licenseNumber: p.licenseNumber,
             })),
             upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
               upsellId,
@@ -452,7 +451,6 @@ export default function MultiStepEventRegistration({
         emergencyContactPhone: p.emergencyContactPhone,
         medicalInfo: p.medicalInfo,
         healthDataConsent: p.healthDataConsent === true,
-        licenseNumber: p.licenseNumber,
       })),
       upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
         upsellId,

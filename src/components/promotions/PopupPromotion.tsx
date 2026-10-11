@@ -325,7 +325,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
 
               <p className="text-xs text-muted-foreground text-center">
                 En t'inscrivant, tu acceptes de recevoir nos emails marketing.
-                Tu peux te désinscrire à tout moment.
+                Tu peux te désinscrire à tout moment et demander la suppression de tes données (voir notre{' '}
+                <a href="/privacy-policies#droits" className="underline underline-offset-2">politique de confidentialité</a>).
               </p>
             </form>
           </>

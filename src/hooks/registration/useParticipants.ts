@@ -36,7 +36,6 @@ export function useParticipants(
             medicalInfo: '',
             healthDataConsent: false,
             flexible: false,
-            licenseNumber: '',
             selectedWaveIndex: null,
           }))
         next = [...next, ...newParticipants]

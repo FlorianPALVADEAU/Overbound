@@ -7,6 +7,7 @@ import { AccountDataBoundary, type AuthenticatedAccountData } from '@/components
 import { AccountLinkRow } from '@/components/account/AccountLinkRow'
 import { AccountScreen, AccountSection, Eyebrow } from '@/components/account/AccountScreen'
 import { ProfileForm } from '@/components/account/profile/ProfileForm'
+import { DeleteAccountSection } from '@/components/account/profile/DeleteAccountSection'
 import PreferencesForm from '@/components/preferences/PreferencesForm'
 import { AvatarUploader } from '@/components/account/profile/AvatarUploader'
 import { storagePathFromPublicUrl } from '@/lib/account/avatar'
@@ -77,6 +78,10 @@ function ProfileContent({ user, profile }: AuthenticatedAccountData) {
 
           <AccountSection className={spaces.length === 0 ? 'border-t-0 pt-0' : undefined}>
             <EmailPreferences />
+          </AccountSection>
+
+          <AccountSection>
+            <DeleteAccountSection />
           </AccountSection>
 
           <AccountSection>

@@ -93,7 +93,7 @@ const paragraphs = {
     "Respecter la réglementation en matière de traitement des données personnelles des participants rapportées via la Plateforme.",
   ],
   tarifsPaiements: [
-    "Les prix affichés sont exprimés en euros TTC et comprennent, sauf mention contraire, les frais de dossier Overbound. Des frais de paiement peuvent être ajoutés selon la méthode utilisée (CB, SEPA).",
+    "Les prix affichés sont exprimés en euros TTC et comprennent, sauf mention contraire, les frais de dossier Overbound.",
     "Les transactions sont opérées via des prestataires sécurisés (Stripe Payments Europe, Redwood City, USA) et bénéficient du chiffrement SSL/TLS. Overbound ne conserve aucun numéro de carte bancaire.",
     "Une facture électronique est délivrée à chaque Participant ; elle reste accessible depuis l’espace personnel. Les organisations peuvent obtenir une facture pro sur demande (contact@overbound-race.com).",
     "En cas de paiement échelonné, le défaut de paiement entraîne l’annulation de l’inscription après relance restée infructueuse sous 7 jours.",
@@ -181,7 +181,7 @@ export default function CGUPage() {
             Cette page rassemble l’ensemble des dispositions contractuelles qui gouvernent l’accès à la plateforme Overbound, la participation
             à nos événements sportifs, et l’utilisation des services digitaux associés. Nous vous invitons à les lire attentivement.
           </p>
-          <p className="mt-4 text-sm text-muted-foreground/80">Dernière mise à jour : {lastUpdated}</p>
+          <p className="mt-4 text-sm text-muted-foreground">Dernière mise à jour : {lastUpdated}</p>
         </div>
       </section>
 
@@ -189,7 +189,7 @@ export default function CGUPage() {
         <div className="container mx-auto max-w-5xl px-6">
           <div className="rounded-3xl border border-border bg-muted/40 p-6 text-sm text-muted-foreground shadow-lg shadow-primary/10">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Sommaire détaillé</h2>
-            <p className="mt-2 text-xs text-muted-foreground/80">
+            <p className="mt-2 text-xs text-muted-foreground">
               Cliquez sur une section pour y accéder directement. Vous pouvez revenir en haut via le bouton « Retour haut de page » disponible
               en bas de chaque bloc.
             </p>
@@ -206,13 +206,13 @@ export default function CGUPage() {
             </div>
             <div className="mt-4 rounded-2xl bg-card/80 p-4 text-xs text-muted-foreground">
               Besoin d’une version PDF ? Écrivez à{' '}
-              <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
+              <Link href="mailto:contact@overbound-race.com" className="text-primary underline">
                 contact@overbound-race.com
               </Link>{' '}
               en indiquant « Demande CGU ».
               <br />
               Règlement officiel Overbound 2026 :{' '}
-              <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="text-primary hover:underline">
+              <Link href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" className="text-primary underline">
                 consulter le PDF
               </Link>
               .
@@ -277,7 +277,7 @@ function Section({ id, title, paragraphs: paragraphsList, bulletList }: SectionP
         </ul>
       ) : null}
       <div className="flex justify-end">
-        <a href="#intro" className="text-xs font-medium text-primary hover:underline">
+        <a href="#intro" className="text-xs font-medium text-primary underline">
           Retour haut de page
         </a>
       </div>
