@@ -68,10 +68,13 @@ export async function middleware(request: NextRequest) {
 
   // Do not force-log users out on transient auth backend failures.
   if (userError) {
-    console.warn('[auth middleware] getUser failed', {
-      path: request.nextUrl.pathname,
-      message: userError.message,
-    })
+    // A visitor without a session is the normal anonymous case, not a failure: stay silent.
+    if (userError.name !== 'AuthSessionMissingError') {
+      console.warn('[auth middleware] getUser failed', {
+        path: request.nextUrl.pathname,
+        message: userError.message,
+      })
+    }
     return supabaseResponse
   }
 
