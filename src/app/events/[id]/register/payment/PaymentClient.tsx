@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import EmbeddedStripeCheckout from '@/components/EmbeddedStripeCheckout'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,7 @@ interface PaymentClientProps {
 
 export default function PaymentClient({ event, tickets, upsells, userEmail }: PaymentClientProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -92,6 +94,10 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
         throw new Error(errorBody.error || 'Erreur lors de la finalisation de l\'inscription')
       }
       const payload = await response.json().catch(() => ({}))
+
+      // The account feed is cached for 2 min and was loaded before this purchase:
+      // drop it so the new bibs show up on arrival instead of after a manual reload.
+      await queryClient.invalidateQueries({ queryKey: ['account'] })
 
       setMessage({
         type: 'success',

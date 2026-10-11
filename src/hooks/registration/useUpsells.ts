@@ -92,7 +92,9 @@ export function useUpsells(
           nextMeta = { ...(existing?.meta || {}), assignments: filtered }
         }
 
-        if (nextQuantity === 0 && Object.keys(nextMeta).length === 0) {
+        // A deselected option leaves the cart: a zero-quantity entry (photos keep
+        // an empty assignments list) would reach the API and fail its validation.
+        if (nextQuantity === 0) {
           if (!existing) return previous
           const { [upsellId]: _removed, ...rest } = previous
           return rest
