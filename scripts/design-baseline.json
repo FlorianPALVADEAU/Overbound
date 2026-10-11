@@ -90,10 +90,6 @@
     "raw-red": 1,
     "dark-variant": 6
   },
-  "src/app/events/formats/page.tsx": {
-    "arbitrary-hex": 1,
-    "font-black": 8
-  },
   "src/app/feedback/rate/page.tsx": {
     "raw-gray": 2
   },
@@ -250,91 +246,6 @@
   },
   "src/components/events/EventTicketListWithRegistration.tsx": {
     "dark-variant": 2
-  },
-  "src/components/events/formats/FormatsCompare.tsx": {
-    "font-black": 2
-  },
-  "src/components/events/formats/FormatsJourney.tsx": {
-    "font-black": 1
-  },
-  "src/components/events/formats/FormatsPicker.tsx": {
-    "font-black": 4
-  },
-  "src/components/events/formats/FormatsStickyCta.tsx": {
-    "font-black": 1
-  },
-  "src/components/events/landing/EventAnnouncedPanel.tsx": {
-    "arbitrary-font-size": 1
-  },
-  "src/components/events/landing/EventFinalCta.tsx": {
-    "arbitrary-tracking": 1,
-    "font-black": 2
-  },
-  "src/components/events/landing/EventHero.tsx": {
-    "arbitrary-font-size": 1,
-    "arbitrary-tracking": 1,
-    "font-black": 6
-  },
-  "src/components/events/landing/EventPerks.tsx": {
-    "arbitrary-font-size": 1,
-    "arbitrary-tracking": 1,
-    "font-black": 3
-  },
-  "src/components/events/landing/EventTicketDepartures.tsx": {
-    "arbitrary-font-size": 1,
-    "font-black": 5
-  },
-  "src/components/events/landing/LandingBand.tsx": {
-    "dark-variant": 2
-  },
-  "src/components/events/landing/layout.ts": {
-    "container-width": 1
-  },
-  "src/components/events/landing/SectionEyebrow.tsx": {
-    "arbitrary-tracking": 2
-  },
-  "src/components/events/landing/UltraArenaComeTogether.tsx": {
-    "font-black": 2
-  },
-  "src/components/events/landing/UltraArenaEventOver.tsx": {
-    "arbitrary-tracking": 1,
-    "font-black": 1
-  },
-  "src/components/events/landing/UltraArenaFAQ.tsx": {
-    "font-black": 1
-  },
-  "src/components/events/landing/UltraArenaFormats.tsx": {
-    "font-black": 3
-  },
-  "src/components/events/landing/UltraArenaHero.tsx": {
-    "arbitrary-font-size": 8,
-    "arbitrary-tracking": 1,
-    "font-black": 1,
-    "container-width": 1
-  },
-  "src/components/events/landing/UltraArenaPricing.tsx": {
-    "arbitrary-font-size": 1,
-    "font-black": 2,
-    "container-width": 1
-  },
-  "src/components/events/landing/UltraArenaProjection.tsx": {
-    "font-black": 1
-  },
-  "src/components/events/landing/UltraArenaReassurance.tsx": {
-    "font-black": 1,
-    "dark-variant": 1
-  },
-  "src/components/events/landing/UltraArenaTestimonials.tsx": {
-    "raw-gray": 6,
-    "arbitrary-font-size": 2,
-    "font-black": 1
-  },
-  "src/components/events/landing/UltraArenaTicketCards.tsx": {
-    "arbitrary-font-size": 1,
-    "font-black": 1
-  },
-  "src/components/events/landing/UltraArenaWhyDifferent.tsx": {
-    "font-black": 2
   },
   "src/components/events/PricingTimeline.tsx": {
     "arbitrary-hex": 6,

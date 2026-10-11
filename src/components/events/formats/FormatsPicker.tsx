@@ -31,7 +31,7 @@ export function FormatsPicker({ eventHref }: Props) {
     <form onSubmit={onSubmit} className="space-y-8">
       {PICKER_QUESTIONS.map((q, index) => (
         <fieldset key={q.id} className="space-y-3">
-          <legend className="text-lg font-black">
+          <legend className="text-lg font-semibold">
             <span className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground">
               {index + 1}
             </span>
@@ -71,7 +71,7 @@ export function FormatsPicker({ eventHref }: Props) {
         <button
           type="submit"
           disabled={!complete}
-          className="min-h-12 cursor-pointer rounded-xl bg-primary px-6 text-base font-black text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+          className="min-h-12 cursor-pointer rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
         >
           Voir mon format
         </button>
@@ -90,13 +90,13 @@ export function FormatsPicker({ eventHref }: Props) {
         {result ? (
           <div className="rounded-2xl border border-primary/30 bg-card p-5">
             <p className="text-sm text-muted-foreground">D&apos;après tes réponses, ton format est</p>
-            <p className={cn('mt-1 text-4xl font-black', result === 'open' ? 'text-blue-600' : 'text-amber-600')}>
+            <p className={cn('mt-1 font-display text-display-md font-bold uppercase', result === 'open' ? 'text-blue-600' : 'text-amber-600')}>
               {result.toUpperCase()}
             </p>
             {eventHref ? (
               <Link
                 href={eventHref}
-                className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-black text-white sm:inline-flex"
+                className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground sm:inline-flex"
               >
                 Je m&apos;inscris
               </Link>

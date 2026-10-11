@@ -50,9 +50,9 @@ export function EventAnnouncedPanel({
               { value: padTwo(countdown.minutes), label: 'Minutes' },
               { value: padTwo(countdown.seconds), label: 'Secondes' },
             ].map(({ value, label }) => (
-              <div key={label} className="rounded-lg bg-muted px-2 py-3">
-                <p className="text-lg font-bold">{value}</p>
-                <p className="text-[10px] uppercase">{label}</p>
+              <div key={label} className="rounded-xl bg-muted px-2 py-3">
+                <p className="font-display text-2xl font-bold leading-none">{value}</p>
+                <p className="mt-1 text-label uppercase text-subtle">{label}</p>
               </div>
             ))}
           </div>

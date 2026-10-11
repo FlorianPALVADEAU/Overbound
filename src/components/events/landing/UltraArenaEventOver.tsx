@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft, Camera, Instagram, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Container, Section, DISPLAY_TITLE, Eyebrow } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 interface Props {
   eventTitle: string
@@ -33,7 +35,7 @@ export function UltraArenaEventOver({
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="relative isolate overflow-hidden py-20 sm:py-28">
+      <Section spacing="spacious">
         <div className="absolute inset-0">
           <img
             src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
@@ -43,29 +45,28 @@ export function UltraArenaEventOver({
           <div className="absolute inset-0 bg-linear-to-b from-background/40 via-background/90 to-background" />
         </div>
 
-        <div className="container relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+        <Container size="prose" className="relative z-10 text-center">
           <div className="mb-8 flex justify-center">
-            <Link href="/">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full border border-border/60 bg-background/75 px-5 text-muted-foreground backdrop-blur hover:bg-background/90 hover:text-foreground"
-              >
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="min-h-11 rounded-full border border-border/60 bg-background/75 px-5 text-muted-foreground backdrop-blur hover:bg-background/90 hover:text-foreground"
+            >
+              <Link href="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour à l'accueil
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
-            {eventTitle}
-          </p>
+          <Eyebrow>{eventTitle}</Eyebrow>
 
-          <h1 className="mt-6 text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl">
+          <h1 className={cn(DISPLAY_TITLE, 'mt-6 text-display-lg')}>
             Merci d'avoir été aussi nombreux à repousser vos limites.
           </h1>
 
-          <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
+          <p className="mx-auto mt-6 max-w-xl text-lead text-muted-foreground">
             L'édition {formattedDate} à {location} est terminée et les inscriptions sont closes.
             On prépare déjà la suite — et on revient encore plus fort pour la prochaine édition.
           </p>
@@ -74,8 +75,8 @@ export function UltraArenaEventOver({
             <div className="mx-auto mt-8 max-w-md">
               <Button
                 asChild
-                size="lg"
-                className="h-14 w-full rounded-2xl px-8 text-base font-bold shadow-lg shadow-primary/20"
+                size="hero"
+                className="w-full shadow-lg shadow-primary/20"
               >
                 <a href={photosUrl} target="_blank" rel="noopener noreferrer nofollow">
                   <Camera className="mr-2 h-5 w-5" />
@@ -91,7 +92,7 @@ export function UltraArenaEventOver({
                 <p className="text-sm font-semibold">
                   Sois prévenu·e en premier de l'ouverture de la prochaine édition
                 </p>
-                <Button size="lg" className="h-12 w-full rounded-xl text-base font-bold" onClick={() => setShowForm(true)}>
+                <Button size="cta" className="w-full" onClick={() => setShowForm(true)}>
                   <Mail className="mr-2 h-4 w-4" />
                   Être prévenu·e
                 </Button>
@@ -113,8 +114,8 @@ export function UltraArenaEventOver({
                 />
                 <Button
                   type="submit"
-                  size="lg"
-                  className="h-12 w-full rounded-xl text-base font-bold"
+                  size="cta"
+                  className="w-full"
                   disabled={notifyStatus === 'loading'}
                 >
                   {notifyStatus === 'loading' ? 'Envoi…' : 'Me prévenir'}
@@ -137,8 +138,8 @@ export function UltraArenaEventOver({
               Suivre sur Instagram
             </a>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
     </main>
   )
 }

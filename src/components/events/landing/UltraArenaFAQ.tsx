@@ -8,8 +8,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
-import { SectionEyebrow } from './SectionEyebrow'
-import { LANDING_X } from './layout'
+import { Container, Section, SectionHeader } from '@/components/ds'
 
 const FAQS = [
   {
@@ -59,19 +58,15 @@ interface Props {
 
 export function UltraArenaFAQ({ openedFaqs, onFaqChange, isOnSale, registerHref }: Props) {
   return (
-    <section id="faq" className="relative isolate overflow-hidden bg-card/50 py-14 sm:py-16">
+    <Section id="faq" className="bg-card/50">
       <div className="pointer-events-none absolute -left-24 top-8 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 bottom-8 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
-      <div className={`${LANDING_X} relative z-10`}>
-        <div className="mb-8 space-y-2">
-          <SectionEyebrow>FAQ</SectionEyebrow>
-          <h2 className="text-3xl font-black tracking-tight sm:text-4xl">
-            Les réponses avant de te lancer.
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Les dernières questions avant de cliquer sur "Je prends ma place".
-          </p>
-        </div>
+      <Container className="relative z-10">
+        <SectionHeader
+          eyebrow="FAQ"
+          title="Les réponses avant de te lancer."
+          lead='Les dernières questions avant de cliquer sur "Je prends ma place".'
+        />
 
         <Accordion
           type="multiple"
@@ -101,20 +96,20 @@ export function UltraArenaFAQ({ openedFaqs, onFaqChange, isOnSale, registerHref 
           </p>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
             {isOnSale ? (
-              <Button asChild size="lg" className="h-12 rounded-xl px-8 text-base font-semibold">
+              <Button asChild size="cta">
                 <Link href={registerHref}>Je prends ma place</Link>
               </Button>
             ) : (
-              <Button asChild size="lg" variant="outline" className="h-12 rounded-xl px-8">
-                <a href="#tarifs-inscription">Voir les tarifs</a>
+              <Button asChild size="cta" variant="outline">
+                <a href="#departs">Voir les tarifs</a>
               </Button>
             )}
-            <Button asChild size="lg" variant="ghost" className="h-12 rounded-xl px-8">
-              <a href="#tarifs-inscription">Voir tous les formats en détail</a>
+            <Button asChild size="cta" variant="ghost">
+              <a href="#formats">Voir tous les formats en détail</a>
             </Button>
           </div>
         </div>
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }

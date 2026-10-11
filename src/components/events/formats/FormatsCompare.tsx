@@ -26,7 +26,7 @@ export function FormatsCompare() {
               aria-selected={active === key}
               onClick={() => setActive(key)}
               className={cn(
-                'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-black transition-colors',
+                'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-colors',
                 active === key ? activeClass : 'text-muted-foreground',
               )}
             >
@@ -45,7 +45,7 @@ export function FormatsCompare() {
       </div>
 
       <div className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card md:block">
-        <div className="grid grid-cols-[10rem_1fr_1fr] border-b border-border/70 text-sm font-black uppercase tracking-wider">
+        <div className="grid grid-cols-[10rem_1fr_1fr] border-b border-border/70 font-display text-base font-bold uppercase">
           <div />
           <div className="flex items-center gap-2 bg-blue-500/10 px-5 py-4 text-blue-600">
             <Heart className="h-4 w-4" aria-hidden /> OPEN

@@ -11,7 +11,7 @@ import { EventAnnouncedPanel } from '@/components/events/landing/EventAnnouncedP
 import { EventFinalCta } from '@/components/events/landing/EventFinalCta'
 import VolunteersAppeal from '@/components/homepage/VolunteersAppeal'
 import { LANDING_BACKGROUNDS } from '@/components/events/landing/backgrounds'
-import { LandingBand } from '@/components/events/landing/LandingBand'
+import { Section } from '@/components/ds'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle2 } from 'lucide-react'
 import { EventPerks } from '@/components/events/landing/EventPerks'
@@ -281,7 +281,7 @@ export default function EventDetailPage() {
       />
 
       {/* Decision section right under the hero: price and departure per format */}
-      <LandingBand id="departs" variant="light" angled className="z-10">
+      <Section id="departs" tone="light" edge="angled" className="z-10">
         <EventTicketDepartures
           tickets={tickets as never}
           eventPriceTiers={eventPriceTiers}
@@ -334,15 +334,16 @@ export default function EventDetailPage() {
             availableSpots={availableSpots}
           />
         ) : null}
-      </LandingBand>
+      </Section>
 
-      <LandingBand
+      {/* Slides under the angled band above: extra top padding = the overlap */}
+      <Section
         id="perks"
         backgroundSrc={LANDING_BACKGROUNDS.perks}
-        className="-mt-6 pt-6 sm:-mt-10 sm:pt-10"
+        className="-mt-6 pt-22 sm:-mt-10 sm:pt-30 lg:pt-34"
       >
         <EventPerks />
-      </LandingBand>
+      </Section>
 
       {hasBothFormats ? (
         <>
@@ -391,9 +392,9 @@ export default function EventDetailPage() {
         description="Un aperçu concret des ateliers qui vont tester ton grip, ton cardio et ton mental."
       />
 
-      <LandingBand backgroundSrc={LANDING_BACKGROUNDS.reassurance}>
+      <Section id="infos-pratiques" backgroundSrc={LANDING_BACKGROUNDS.reassurance}>
         <UltraArenaReassurance location={event.location} locationMapUrl={locationMapUrl} />
-      </LandingBand>
+      </Section>
 
       {hasBothFormats ? (
         <UltraArenaFAQ
@@ -405,14 +406,14 @@ export default function EventDetailPage() {
       ) : null}
 
       {isOnSale ? (
-        <LandingBand className="border-t border-primary/40 bg-black">
+        <Section tone="deep" spacing="spacious" className="border-t border-primary/40">
           <EventFinalCta
             formattedDate={formattedDate}
             href={ctaHref}
             label={ctaLabel}
             onClick={() => trackEvent('click_cta_primary', { cta_location: 'final_cta' })}
           />
-        </LandingBand>
+        </Section>
       ) : null}
 
       <VolunteersAppeal />

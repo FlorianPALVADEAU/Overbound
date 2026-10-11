@@ -1,8 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
-import { SectionEyebrow } from '@/components/events/landing/SectionEyebrow'
 import { Button } from '@/components/ui/button'
+import { Eyebrow } from '@/components/ds'
 
 const IMG = '/images/images/'
 const IMGObstacle = '/images/obstacles/'
@@ -53,7 +53,7 @@ export default function OurStoryPage() {
 
       <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16 lg:px-8">
         <div className="space-y-6">
-          <SectionEyebrow>Le fondateur</SectionEyebrow>
+          <Eyebrow>Le fondateur</Eyebrow>
           <h2 className="text-balance text-3xl font-black leading-tight tracking-tight sm:text-5xl">
             « Je voulais une course où personne ne se sent de trop. »
           </h2>

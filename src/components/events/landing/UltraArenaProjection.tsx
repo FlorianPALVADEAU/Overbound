@@ -4,8 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SectionEyebrow } from './SectionEyebrow'
-import { LANDING_X } from './layout'
+import { Container, Section, SectionHeader } from '@/components/ds'
 
 const EXPERIENCE_POINTS = [
   'Intensité physique et mentale au rendez-vous',
@@ -35,7 +34,7 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
       : DEFAULT_IMAGES
 
   return (
-    <section className="relative overflow-hidden py-16 sm:py-20">
+    <Section>
       {/* Atmospheric background */}
       <div className="absolute inset-0">
         <Image
@@ -48,18 +47,21 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
         <div className="absolute inset-0 bg-linear-to-b from-background/80 via-background/92 to-background" />
       </div>
 
-      <div className={`${LANDING_X} relative grid items-center gap-10 lg:grid-cols-2 lg:gap-14`}>
+      <Container className="relative grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
         {/* Left: Copy */}
         <div className="space-y-6">
-          <SectionEyebrow>Projection</SectionEyebrow>
-          <h2 className="text-3xl font-black tracking-tight sm:text-4xl">
-            Imagine ton jour de course.
-          </h2>
-          <p className="text-muted-foreground sm:text-base">
-            Départ dans une ambiance électrique. Boucle après boucle, obstacle après obstacle, tu sens
-            l'effort monter — puis la satisfaction quand tu passes un cap. Solo, entre amis ou en équipe,
-            l'événement s'adapte à ce que tu veux en vivre.
-          </p>
+          <SectionHeader
+            eyebrow="Projection"
+            title="Imagine ton jour de course."
+            lead={
+              <>
+                Départ dans une ambiance électrique. Boucle après boucle, obstacle après obstacle, tu sens
+                l'effort monter — puis la satisfaction quand tu passes un cap. Solo, entre amis ou en équipe,
+                l'événement s'adapte à ce que tu veux en vivre.
+              </>
+            }
+            flush
+          />
 
           <blockquote className="border-l-2 border-primary pl-4 text-sm italic text-muted-foreground">
             "Tu repars épuisé, fier, et avec envie de revenir. C'est ça, l'Overbound."
@@ -108,7 +110,7 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
             />
           ))}
         </div>
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }

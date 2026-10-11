@@ -3,9 +3,6 @@
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
 import { Button } from '@/components/ui/button'
-import { LandingBand } from '@/components/events/landing/LandingBand'
-import { SectionEyebrow } from '@/components/events/landing/SectionEyebrow'
-import { LANDING_X } from '@/components/events/landing/layout'
 import { FormatsCompare } from '@/components/events/formats/FormatsCompare'
 import { FormatsJourney } from '@/components/events/formats/FormatsJourney'
 import { FormatsPicker } from '@/components/events/formats/FormatsPicker'
@@ -20,6 +17,8 @@ import { SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { formatPrice, getCurrentTicketPrice } from '@/lib/pricing'
+import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const BG = {
   hero: '/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif',
@@ -59,7 +58,7 @@ export default function FormatsPage() {
               {HERO_FACTS.map((fact) => (
                 <li
                   key={fact}
-                  className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary"
+                  className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-label font-semibold uppercase text-primary"
                 >
                   {fact}
                 </li>
@@ -69,7 +68,7 @@ export default function FormatsPage() {
         }
         actions={
           eventHref ? (
-            <Button asChild size="lg" className="min-h-12 w-full px-8 text-base font-black sm:w-auto">
+            <Button asChild size="hero" className="w-full sm:w-auto">
               <Link href={eventHref}>{ctaLabel}</Link>
             </Button>
           ) : !isLoading ? (
@@ -78,61 +77,55 @@ export default function FormatsPage() {
         }
       />
 
-      <LandingBand variant="light" angled className="z-10">
-        <div className={`${LANDING_X} py-6 sm:py-8`}>
-          <SectionEyebrow>En un coup d&apos;œil</SectionEyebrow>
-          <h2 className="mb-6 mt-2 text-3xl font-black tracking-tight">Comparer les formats</h2>
+      <Section tone="light" edge="angled" className="z-10">
+        <Container>
+          <SectionHeader eyebrow={<>En un coup d&apos;œil</>} title="Comparer les formats" />
           <FormatsCompare />
-        </div>
-      </LandingBand>
+        </Container>
+      </Section>
 
-      <LandingBand backgroundSrc={BG.journey} className="-mt-6 pt-6 sm:-mt-10 sm:pt-10">
-        <div className={`${LANDING_X} py-12 sm:py-16`}>
-          <SectionEyebrow>Le déroulé</SectionEyebrow>
-          <h2 className="mb-8 mt-2 text-3xl font-black tracking-tight">Comment se passe ta journée</h2>
+      {/* Slides under the angled band above: extra top padding = the overlap */}
+      <Section backgroundSrc={BG.journey} className="-mt-6 pt-22 sm:-mt-10 sm:pt-30 lg:pt-34">
+        <Container>
+          <SectionHeader eyebrow="Le déroulé" title="Comment se passe ta journée" />
           <div className="grid gap-6 lg:grid-cols-2">
             <FormatsJourney title="OPEN" tone="open" steps={OPEN_JOURNEY} />
             <FormatsJourney title="RANKED" tone="ranked" steps={RANKED_JOURNEY} />
           </div>
-        </div>
-      </LandingBand>
+        </Container>
+      </Section>
 
-      <LandingBand variant="light">
-        <div className={`${LANDING_X} max-w-3xl py-12 sm:py-16`}>
-          <SectionEyebrow>Pas sûr ?</SectionEyebrow>
-          <h2 className="mb-8 mt-2 text-3xl font-black tracking-tight">Trouve ton format en 3 questions</h2>
+      <Section tone="light">
+        <Container size="prose">
+          <SectionHeader eyebrow="Pas sûr ?" title="Trouve ton format en 3 questions" />
           <FormatsPicker eventHref={eventHref} />
-        </div>
-      </LandingBand>
+        </Container>
+      </Section>
 
-      <LandingBand>
-        <div className={`${LANDING_X} max-w-4xl py-12 sm:py-16`}>
-          <SectionEyebrow>Infos pratiques</SectionEyebrow>
-          <h2 className="mb-6 mt-2 text-3xl font-black tracking-tight">Valable pour les deux formats</h2>
+      <Section>
+        <Container size="prose">
+          <SectionHeader eyebrow="Infos pratiques" title="Valable pour les deux formats" />
           <FormatsPractical />
-        </div>
-      </LandingBand>
+        </Container>
+      </Section>
 
-      <LandingBand className="border-t border-border/60 bg-[#141414]">
-        <div className={`${LANDING_X} py-12 sm:py-16`}>
-          <SectionEyebrow>FAQ</SectionEyebrow>
-          <h2 className="mb-6 mt-2 text-3xl font-black tracking-tight">Questions fréquentes</h2>
+      <Section className="border-t border-border">
+        <Container>
+          <SectionHeader eyebrow="FAQ" title="Questions fréquentes" />
           <FormatsFaq />
-        </div>
-      </LandingBand>
+        </Container>
+      </Section>
 
       {eventHref ? (
         <>
-          <LandingBand className="border-t border-primary/40 bg-black">
-            <div className={`${LANDING_X} py-12 text-center sm:py-16`}>
-              <h2 className="text-balance text-3xl font-black tracking-tight sm:text-4xl">
-                Ton format est choisi. Prends ta place.
-              </h2>
-              <Button asChild size="lg" className="mt-6 min-h-12 w-full px-8 text-base font-black sm:w-auto">
+          <Section tone="deep" spacing="spacious" className="border-t border-primary/40">
+            <Container className="flex flex-col items-center gap-6 text-center">
+              <h2 className={cn(DISPLAY_TITLE, 'max-w-3xl text-display-lg')}>Ton format est choisi. Prends ta place.</h2>
+              <Button asChild size="hero" className="w-full sm:w-auto">
                 <Link href={eventHref}>{ctaLabel}</Link>
               </Button>
-            </div>
-          </LandingBand>
+            </Container>
+          </Section>
           <FormatsStickyCta href={eventHref} label={ctaLabel} />
         </>
       ) : null}

@@ -1,6 +1,6 @@
 import { CardCarousel } from '@/components/shared/CardCarousel'
-import { LANDING_X } from './layout'
-import { SectionEyebrow } from './SectionEyebrow'
+import { Container, DISPLAY_TITLE, Pill, SectionHeader } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 interface Perk {
   title: string
@@ -20,13 +20,10 @@ const PERKS: Perk[] = [
 /** What the entry includes and the options offered at registration, as a slider. */
 export function EventPerks() {
   return (
-    <div className={`${LANDING_X} py-16 sm:py-20`}>
-      <SectionEyebrow>Ce que tu gagnes</SectionEyebrow>
-      <h2 className="mt-2 text-balance text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-        Tu repars avec bien plus qu&apos;un dossard.
-      </h2>
+    <Container>
+      <SectionHeader eyebrow="Ce que tu gagnes" title="Tu repars avec bien plus qu&apos;un dossard." flush />
 
-      <div className="mt-10">
+      <div className="mt-10 sm:mt-12">
         <CardCarousel
           items={PERKS}
           getKey={(perk) => perk.title}
@@ -36,33 +33,28 @@ export function EventPerks() {
           itemClassName="pl-3 basis-[82%] sm:basis-[48%] lg:basis-[32%]"
           renderItem={({ title, text, tag }, index) => (
             <div
-              className={`flex h-full min-h-64 flex-col justify-between rounded-2xl border p-6 backdrop-blur-sm sm:p-7 ${
-                tag === 'Inclus' ? 'border-primary/50 bg-black/55' : 'border-dashed border-white/25 bg-black/40'
-              }`}
+              className={cn(
+                'flex h-full min-h-64 flex-col justify-between rounded-2xl border p-6 backdrop-blur-sm',
+                tag === 'Inclus' ? 'border-primary/50 bg-surface-deep/60' : 'border-dashed border-foreground/25 bg-surface-deep/40',
+              )}
             >
               <div className="flex items-start justify-between">
                 <span
                   aria-hidden
-                  className="text-6xl font-black leading-none text-primary/35"
+                  className="font-display text-6xl font-bold leading-none text-primary/35"
                 >
                   {String(index + 1).padStart(2, '0')}
                 </span>
-                <span
-                  className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${
-                    tag === 'Inclus' ? 'bg-primary text-primary-foreground' : 'border border-white/30 text-white/80'
-                  }`}
-                >
-                  {tag}
-                </span>
+                <Pill variant={tag === 'Inclus' ? 'tag' : 'tag-muted'}>{tag}</Pill>
               </div>
               <div className="mt-8 min-w-0">
-                <p className="text-xl font-black uppercase tracking-tight">{title}</p>
+                <p className={cn(DISPLAY_TITLE, 'text-title')}>{title}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{text}</p>
               </div>
             </div>
           )}
         />
       </div>
-    </div>
+    </Container>
   )
 }

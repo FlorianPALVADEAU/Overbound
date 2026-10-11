@@ -141,7 +141,7 @@ export const useEventAnalytics = (
 
   // Pricing section visibility (decision zone)
   useEffect(() => {
-    const target = document.getElementById('tarifs-inscription')
+    const target = document.getElementById('departs')
     if (!target) return
     let fired = false
     const observer = new IntersectionObserver(

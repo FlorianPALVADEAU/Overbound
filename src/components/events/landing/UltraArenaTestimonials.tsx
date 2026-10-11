@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pause, Play, Star, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SectionEyebrow } from './SectionEyebrow'
 import {
   Carousel,
   CarouselContent,
@@ -14,8 +13,9 @@ import {
   type CarouselApi,
 } from '@/components/ui/carousel'
 import { testimonials, TestimonialType } from '@/datas/Testimonials'
-import { LANDING_X } from './layout'
 import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay'
+import { Container, SectionHeader, SECTION_SPACING } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const getPosterUrl = (mediaUrl: string) => {
   const fileName = mediaUrl.split('/').pop()?.replace(/\.(webm|mp4)$/i, '')
@@ -26,7 +26,7 @@ const renderStars = (rating: number) =>
   Array.from({ length: 5 }, (_, i) => (
     <Star
       key={i}
-      className={`h-3.5 w-3.5 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+      className={`h-3.5 w-3.5 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
     />
   ))
 
@@ -70,7 +70,7 @@ function VideoCard({
   }
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-gray-900 shadow-xl">
+    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-surface-deep shadow-xl">
       {/* Video area */}
       <div
         className="relative min-h-72 w-full flex-1 overflow-hidden sm:min-h-80"
@@ -133,24 +133,24 @@ function VideoCard({
       </div>
 
       {/* Comment overlay card */}
-      <div className="absolute bottom-5 left-1/2 w-[90%] -translate-x-1/2 rounded-xl bg-white/95 p-4 shadow-xl">
+      <div className="absolute bottom-5 left-1/2 w-[90%] -translate-x-1/2 tone-light rounded-xl bg-card/95 p-4 text-card-foreground shadow-xl">
         <div className="mb-2 flex items-center gap-1.5">
           {renderStars(testimonial.rating)}
-          <span className="text-xs font-medium text-gray-600">{testimonial.rating}/5</span>
+          <span className="text-xs font-medium text-muted-foreground">{testimonial.rating}/5</span>
         </div>
         {testimonial.comment && (
-          <p className="mb-3 line-clamp-3 text-sm leading-snug text-gray-900">
+          <p className="mb-3 line-clamp-3 text-sm leading-snug text-foreground">
             "{testimonial.comment}"
           </p>
         )}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-gray-900">{testimonial.name}</p>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-xs font-semibold text-foreground">{testimonial.name}</p>
+            <p className="text-xs text-muted-foreground">
               {testimonial.age} ans • {testimonial.location}
             </p>
           </div>
-          <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">
+          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
             ✓ Vérifié
           </span>
         </div>
@@ -166,7 +166,7 @@ interface Props {
   onCtaClick?: () => void
 }
 
-export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, registerHref = '#tarifs-inscription', onCtaClick }: Props) {
+export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, registerHref = '#departs', onCtaClick }: Props) {
   const sectionRef = useRef<HTMLElement>(null)
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [canLoad, setCanLoad] = useState(false)
@@ -195,17 +195,16 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
   const videoTestimonials = testimonials.filter((t) => t.mediaUrl)
 
   return (
-    <section ref={sectionRef} className="py-14 sm:py-16">
-      <div className={`${LANDING_X}`}>
+    <section ref={sectionRef} className={cn('relative', SECTION_SPACING.default)}>
+      <Container>
         {/* Header */}
-        <div className="mb-8 max-w-2xl">
-          <SectionEyebrow>Ils en parlent mieux que nous</SectionEyebrow>
-          <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Ils ont hésité. Puis ils ont pris leur place.
-          </h2>
-          <p className="text-md font-medium text-white/60">
-            Comme toi, ils ne savaient pas à quoi s&apos;attendre.
-          </p>
+        <div className="mb-10 max-w-2xl sm:mb-12">
+          <SectionHeader
+            eyebrow="Ils en parlent mieux que nous"
+            title="Ils ont hésité. Puis ils ont pris leur place."
+            lead={<>Comme toi, ils ne savaient pas à quoi s&apos;attendre.</>}
+            flush
+          />
           <div className="mt-3 flex items-center gap-3">
             <div className="flex items-center gap-1">
               {renderStars(5)}
@@ -217,11 +216,11 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
           </div>
           <div className="mt-4">
             {isOnSale ? (
-              <Button asChild size="lg" className="h-11 rounded-xl px-6 text-sm font-semibold" onClick={onCtaClick}>
+              <Button asChild size="cta" onClick={onCtaClick}>
                 <Link href={registerHref}>Je m&apos;inscris maintenant</Link>
               </Button>
             ) : (
-              <Button asChild size="lg" variant="outline" className="h-11 rounded-xl px-6 text-sm" onClick={onCtaClick}>
+              <Button asChild size="cta" variant="outline" onClick={onCtaClick}>
                 <a href="#formats">Voir si c&apos;est pour moi</a>
               </Button>
             )}
@@ -256,7 +255,7 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
             <CarouselNext className="bottom-4 left-16 right-auto top-auto cursor-pointer border-primary bg-green-500 shadow-lg hover:bg-green-500/90" />
           </div>
         </Carousel>
-      </div>
+      </Container>
     </section>
   )
 }
