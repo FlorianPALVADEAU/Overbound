@@ -166,9 +166,11 @@
 }
 
 /* Mountain edge (brand signature): the silhouette is a CSS mask, so its color
-   always follows the --surface-base token instead of a hard-coded fill. */
+   always follows the --surface-base token instead of a hard-coded fill.
+   mountain-edge.svg is the same shape with preserveAspectRatio="none": without
+   it the browser keeps the 1920:149 ratio and centers a narrow shape in the band. */
 .edge-mountain {
-  mask-image: url('/images/decorations/mountain-vector.svg');
+  mask-image: url('/images/decorations/mountain-edge.svg');
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
 }

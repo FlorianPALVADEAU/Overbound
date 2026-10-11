@@ -54,8 +54,8 @@ interface Props {
 function MountainEdges() {
   return (
     <>
-      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -top-px h-8 rotate-180 bg-surface-base sm:h-12 lg:h-16" />
-      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -bottom-px h-8 bg-surface-base sm:h-12 lg:h-16" />
+      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -top-px h-10 rotate-180 bg-surface-base sm:h-14 lg:h-20" />
+      <div aria-hidden className="edge-mountain pointer-events-none absolute inset-x-0 -bottom-px h-10 bg-surface-base sm:h-14 lg:h-20" />
     </>
   )
 }

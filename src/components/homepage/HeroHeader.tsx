@@ -6,9 +6,14 @@ import AnimatedBanner from "./AnimatedBanner";
 import { PARTNERS_DATA } from "@/datas/Partners";
 import { Container, DISPLAY_TITLE } from "@/components/ds";
 import { cn } from "@/lib/utils";
+import { useFeaturedEvent } from "@/app/api/events/featured/featuredEventQueries";
 
 export const HeroHeader = () => {
     const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+    const { data: featured } = useFeaturedEvent();
+    const registerHref = featured?.event
+        ? `/events/${featured.event.slug}/register`
+        : "/events/ultra-arena-2026/register";
 
     useEffect(() => {
         const isMobileViewport = window.matchMedia("(max-width: 768px)").matches;
@@ -83,7 +88,7 @@ export const HeroHeader = () => {
                     </div>
                     <div className="flex flex-col items-start gap-3">
                         <Button asChild size="hero" className="w-full sm:w-auto">
-                            <Link href="/events/ultra-arena-2026/register">Je m&apos;inscris maintenant</Link>
+                            <Link href={registerHref}>Je m&apos;inscris maintenant</Link>
                         </Button>
                         <p className="text-sm italic text-muted-foreground">
                             Des centaines de coureurs ont déjà testé et adoré l&apos;expérience !
