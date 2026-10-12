@@ -45,6 +45,8 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
           placeholder="ton@email.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={error ? 'lucky-wheel-error' : undefined}
           disabled={submitting}
         />
       </div>
@@ -97,7 +99,7 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
         />
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p id="lucky-wheel-error" role="alert" className="text-sm text-destructive">{error}</p>}
 
       <Button
         type="submit"

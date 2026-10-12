@@ -128,6 +128,11 @@ export function PurchaseCelebration({
       timers.push(window.setTimeout(() => setPhase('done'), DONE_AT - REVEAL_AT))
     }
     skipRef.current = () => finish(true)
+    // Keyboard users skip with Escape, Enter or Space (the overlay has no focusable control).
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') skipRef.current?.()
+    }
+    window.addEventListener('keydown', onKeyDown)
 
     timers.push(window.setTimeout(() => setLogoOn(true), LOGO_START))
     timers.push(window.setTimeout(() => finish(false), REVEAL_AT))
@@ -135,6 +140,7 @@ export function PurchaseCelebration({
     return () => {
       finished = true
       timers.forEach(window.clearTimeout)
+      window.removeEventListener('keydown', onKeyDown)
     }
   }, [])
 
@@ -317,8 +323,8 @@ export function PurchaseCelebration({
               animation: 'ob-light-pulse 1.4s ease-in-out infinite',
             }}
           />
-          <span className="absolute bottom-6 text-xs uppercase tracking-eyebrow text-white/40">
-            Touche pour passer
+          <span className="absolute bottom-6 text-xs uppercase tracking-eyebrow text-white/70">
+            Touche ou Échap pour passer
           </span>
         </div>
       ) : null}

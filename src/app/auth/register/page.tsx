@@ -211,7 +211,7 @@ function RegisterInner() {
         <section className="flex items-center justify-center px-6 py-8 lg:px-14">
           <div className="w-full max-w-lg space-y-6">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-label text-primary/80">Overbound</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-label text-primary">Overbound</p>
               <h1 className="text-4xl font-display font-bold uppercase uppercase leading-none">
                 {isVerificationStep ? 'Vérifie ton email' : 'Créer un compte'}
               </h1>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { usePromotions } from '@/app/api/promotions/promotionsQueries'
 import { Button } from '../ui/button'
 
@@ -13,6 +13,10 @@ const isExternalLink = (url: string) => /^https?:\/\//i.test(url)
 export function PromotionsBanner() {
   const { data: promotions = [], isLoading, isError } = usePromotions()
   const [activeIndex, setActiveIndex] = useState(0)
+  // WCAG 2.2.2: rotation stops while hovered or focused, can be paused by
+  // the visitor, and never starts under prefers-reduced-motion.
+  const [holding, setHolding] = useState(false)
+  const [paused, setPaused] = useState(false)
 
   // Filter only banner promotions
   const items = useMemo(() => {
@@ -21,7 +25,10 @@ export function PromotionsBanner() {
   const hasMultiple = items.length > 1
 
   useEffect(() => {
-    if (!hasMultiple) {
+    if (!hasMultiple || holding || paused) {
+      return
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return
     }
 
@@ -33,7 +40,7 @@ export function PromotionsBanner() {
     }, AUTO_SLIDE_INTERVAL_MS)
 
     return () => clearInterval(timer)
-  }, [items.length, hasMultiple])
+  }, [items.length, hasMultiple, holding, paused])
 
   useEffect(() => {
     if (activeIndex >= items.length) {
@@ -58,25 +65,32 @@ export function PromotionsBanner() {
       className="relative border-b border-border bg-white"
       role="region"
       aria-label="Promotions en cours"
+      onPointerEnter={() => setHolding(true)}
+      onPointerLeave={() => setHolding(false)}
+      onFocus={() => setHolding(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setHolding(false)
+      }}
     >
       <div className="relative w-full">
         <div className="overflow-hidden">
           <div
-            className="flex transition-transform duration-500 ease-in-out"
+            className="flex motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-in-out"
             style={{ transform: `translateX(-${activeIndex * 100}%)` }}
           >
-            {items.map((promotion) => {
+            {items.map((promotion, index) => {
               const title = promotion.title?.trim()
               const description = promotion.description?.trim()
               const linkLabel = promotion.link_text?.trim() || "Découvrir l'offre"
 
               return (
-                <div key={promotion.id} className="w-full shrink-0">
+                // Off-screen slides leave the tab order and the accessibility tree.
+                <div key={promotion.id} className="w-full shrink-0" inert={index !== activeIndex}>
                   <Link
                     href={promotion.link_url}
                     target={isExternalLink(promotion.link_url) ? '_blank' : undefined}
                     rel={isExternalLink(promotion.link_url) ? 'noopener noreferrer' : undefined}
-                    className="flex h-full flex-col items-center justify-center px-4 py-2 text-center text-sm font-semibold uppercase tracking-wide text-black transition hover:brightness-110"
+                    className={`flex h-full flex-col items-center justify-center py-2 ${hasMultiple ? 'px-12' : 'px-4'} text-center text-sm font-semibold uppercase tracking-wide text-black transition hover:brightness-110`}
                   >
                     {title ? <span className="leading-tight font-bold text-sm lg:text-base">{title}</span> : null}
                     <div className="flex gap-2" >
@@ -98,6 +112,14 @@ export function PromotionsBanner() {
 
         {hasMultiple ? (
           <>
+            <button
+              type="button"
+              onClick={() => setPaused((current) => !current)}
+              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-black/70 hover:text-black lg:right-14"
+              aria-label={paused ? 'Reprendre le défilement des promotions' : 'Mettre en pause le défilement des promotions'}
+            >
+              {paused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+            </button>
             <Button
               type="button"
               onClick={handlePrev}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { usePromotions } from '@/app/api/promotions/promotionsQueries'
 import { isPopupPromotion } from '@/types/Promotion'
 import type { Promotion, PopupConfig } from '@/types/Promotion'
@@ -93,19 +94,6 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
     }
     setIsOpen(false)
   }, [activePopup])
-
-  useEffect(() => {
-    if (!isOpen || !activePopup?.popup_config?.backdrop_dismissible) return
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleClose()
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isOpen, activePopup, handleClose])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -201,32 +189,29 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   const validationError = getPopupSubscribeValidationError({ fullName, email })
   const canSubmit = !isSubmitting && !validationError
 
+  const errorId = error ? 'popup-error' : undefined
+
+  // Radix Dialog: focus trap, initial focus, focus return and Escape. Escape
+  // always closes, even when backdrop clicks are disabled, so keyboard users
+  // are never stuck (WCAG 2.1.2).
   return (
-    <>
-      {isOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6">
-          <div
-            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
-            onClick={() => {
-              if (config.backdrop_dismissible) {
-                handleClose()
-              }
+    <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => { if (!open) handleClose() }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm sm:p-6">
+          <DialogPrimitive.Content
+            aria-describedby={isSuccess ? 'popup-success-text' : 'popup-description'}
+            onPointerDownOutside={(event) => {
+              if (!config.backdrop_dismissible) event.preventDefault()
             }}
-            aria-hidden="true"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
             className="relative z-[10001] w-full max-w-5xl overflow-hidden rounded-lg border border-border/80 bg-background p-6 shadow-[0_30px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/15 backdrop-blur-sm"
           >
         {config.show_close_button && !isSuccess && (
-          <button
-            onClick={handleClose}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+          <DialogPrimitive.Close
+            className="absolute right-2 top-2 inline-flex size-11 items-center justify-center rounded-xl opacity-70 transition-opacity hover:opacity-100"
             aria-label="Fermer"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X className="h-4 w-4" aria-hidden="true" />
+          </DialogPrimitive.Close>
         )}
 
         {config.background_image_url && (
@@ -237,22 +222,22 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
         )}
 
         {isSuccess ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <CheckCircle2 className="h-16 w-16 text-green-600 mb-4" />
-            <h2 className="text-2xl font-bold mb-2">
+          <div role="status" className="flex flex-col items-center justify-center py-8 text-center">
+            <CheckCircle2 className="h-16 w-16 text-green-600 mb-4" aria-hidden="true" />
+            <DialogPrimitive.Title className="text-2xl font-bold mb-2">
               {config.success_message || 'Merci !'}
-            </h2>
-            <p className="text-base text-muted-foreground">
+            </DialogPrimitive.Title>
+            <p id="popup-success-text" className="text-base text-muted-foreground">
               Tu vas recevoir un email de confirmation très bientôt.
             </p>
           </div>
         ) : (
           <>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">
+              <DialogPrimitive.Title className="text-2xl font-bold">
                 {config.form_title}
-              </h2>
-              <p className="text-base text-muted-foreground">
+              </DialogPrimitive.Title>
+              <p id="popup-description" className="text-base text-muted-foreground">
                 {config.form_description}
               </p>
             </div>
@@ -269,6 +254,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                  aria-invalid={Boolean(error) || undefined}
+                  aria-describedby={errorId}
                   disabled={isSubmitting}
                   autoComplete="given-name"
                 />
@@ -285,6 +272,8 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  aria-invalid={Boolean(error) || undefined}
+                  aria-describedby={errorId}
                   disabled={isSubmitting}
                   autoComplete="email"
                 />
@@ -303,7 +292,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
               </div>
 
               {error && (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                <div id="popup-error" role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
                   {error}
                 </div>
               )}
@@ -315,7 +304,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                     Inscription en cours...
                   </>
                 ) : (
@@ -331,9 +320,9 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
             </form>
           </>
         )}
-          </div>
-        </div>
-      )}
-    </>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Overlay>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
 }
