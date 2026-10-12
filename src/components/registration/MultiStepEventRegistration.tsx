@@ -11,7 +11,6 @@ import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useParticipants } from '@/hooks/registration/useParticipants'
-import { useStickyWhenFits } from '@/hooks/registration/useStickyWhenFits'
 import { cn } from '@/lib/utils'
 import { useUpsells } from '@/hooks/registration/useUpsells'
 import { usePromoCode } from '@/hooks/registration/usePromoCode'
@@ -27,8 +26,7 @@ import ParticipantsStep from './ParticipantsStep'
 import OptionsStep from './OptionsStep'
 import ConfirmationStep from './ConfirmationStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
-import RegistrationPaymentBar from './RegistrationPaymentBar'
-import ParticipantSummarySidebar from './ParticipantSummarySidebar'
+import RegistrationPaymentBar, { PayButton } from './RegistrationPaymentBar'
 import GroupPanel from './GroupPanel'
 import type { GroupIntent } from '@/lib/groups/invite'
 import InlineAuthStep from './InlineAuthStep'
@@ -96,13 +94,12 @@ export default function MultiStepEventRegistration({
   )
   const needsGroupAttestation = participants.length > 1
   // 80px = lg:top-20: the summary column sticks only while it fits on screen (no nested scrollbar).
-  const summaryColumn = useStickyWhenFits<HTMLElement>(80)
 
   const {
     selectedUpsells,
     setSelectedUpsells,
     handleUpsellChange,
-    handleUpsellAssignmentToggle,
+    handlePhotoPackToggle,
     handleUpsellSizeChange,
     upsellSummaryItems,
   } = useUpsells(upsells, selectedTicketSlots, participants, defaultCurrency)
@@ -518,14 +515,14 @@ export default function MultiStepEventRegistration({
   }
 
   return (
-    <section className="mx-auto w-full space-y-6 py-6 pb-24">
+    <section className="mx-auto w-full space-y-8 pb-28 pt-6 lg:pb-12">
       <RegistrationHeader
         event={event}
         availableSpots={availableSpots}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(320px,1fr)] lg:items-start">
-        <div className="space-y-6">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start xl:gap-12">
+        <div className="min-w-0 space-y-6">
           <GroupPanel
             user={user}
             event={event}
@@ -535,89 +532,87 @@ export default function MultiStepEventRegistration({
             onNeedAuth={handleGroupNeedsAuth}
           />
 
-          <RegistrationSection
-            index={1}
-            title={REGISTRATION_STEPS[0].title}
-            description={REGISTRATION_STEPS[0].description}
-            isComplete={isTicketsStepValid}
-          >
-            <TicketSelectionStep
-              tickets={tickets}
-              ticketSelections={ticketSelections}
-              onTicketQuantityChange={handleTicketQuantityChange}
-              defaultCurrency={defaultCurrency}
-              activeTier={activeTier}
-              hasActiveDiscount={hasActiveDiscount}
-              availableSpots={availableSpots}
-            />
-          </RegistrationSection>
+          <div className="divide-y divide-border">
+            <RegistrationSection
+              index={1}
+              title="Tes billets"
+              isComplete={isTicketsStepValid}
+            >
+              <TicketSelectionStep
+                tickets={tickets}
+                ticketSelections={ticketSelections}
+                onTicketQuantityChange={handleTicketQuantityChange}
+                defaultCurrency={defaultCurrency}
+                activeTier={activeTier}
+                hasActiveDiscount={hasActiveDiscount}
+                availableSpots={availableSpots}
+              />
+            </RegistrationSection>
 
-          <RegistrationSection
-            index={2}
-            title={REGISTRATION_STEPS[1].title}
-            description={REGISTRATION_STEPS[1].description}
-            isComplete={totalParticipants > 0 && isParticipantsStepValid}
-            sectionRef={participantsSectionRef}
-          >
-            <ParticipantsStep
-              eventId={event.id}
-              participants={participants}
-              ticketMap={ticketMap}
-              onFieldChange={handleParticipantChange}
-              onWaveSelect={handleWaveSelection}
-              showErrors={showValidationErrors}
-              groupAnchor={
-                hasActiveGroupAnchor
-                  ? { waveIndex: myGroup!.anchor_wave_index as number, startTime: myGroup!.anchor_start_time as string }
-                  : null
-              }
-            />
-          </RegistrationSection>
+            {totalParticipants > 0 ? (
+              <RegistrationSection
+                index={2}
+                title={totalParticipants > 1 ? 'Les participants' : 'Le participant'}
+                isComplete={totalParticipants > 0 && isParticipantsStepValid}
+                sectionRef={participantsSectionRef}
+              >
+                <ParticipantsStep
+                  eventId={event.id}
+                  participants={participants}
+                  ticketMap={ticketMap}
+                  onFieldChange={handleParticipantChange}
+                  onWaveSelect={handleWaveSelection}
+                  showErrors={showValidationErrors}
+                  groupAnchor={
+                    hasActiveGroupAnchor
+                      ? { waveIndex: myGroup!.anchor_wave_index as number, startTime: myGroup!.anchor_start_time as string }
+                      : null
+                  }
+                />
+              </RegistrationSection>
+            ) : null}
 
-          <RegistrationSection
-            index={3}
-            title={REGISTRATION_STEPS[2].title}
-            description={REGISTRATION_STEPS[2].description}
-            optional
-          >
-            <OptionsStep
-              upsells={upsells}
-              selectedUpsells={selectedUpsells}
-              selectedTicketSlots={selectedTicketSlots}
-              participants={participants}
-              defaultCurrency={defaultCurrency}
-              onQuantityChange={handleUpsellChange}
-              onSizeChange={handleUpsellSizeChange}
-              onAssignmentToggle={handleUpsellAssignmentToggle}
-            />
-          </RegistrationSection>
+            {totalParticipants > 0 && upsells.length > 0 ? (
+              <RegistrationSection index={3} title="Options" optional>
+                <OptionsStep
+                  upsells={upsells}
+                  selectedUpsells={selectedUpsells}
+                  selectedTicketSlots={selectedTicketSlots}
+                  participants={participants}
+                  defaultCurrency={defaultCurrency}
+                  onQuantityChange={handleUpsellChange}
+                  onSizeChange={handleUpsellSizeChange}
+                  onPhotoPackToggle={handlePhotoPackToggle}
+                />
+              </RegistrationSection>
+            ) : null}
 
-          <RegistrationSection
-            index={4}
-            title={REGISTRATION_STEPS[3].title}
-            description={REGISTRATION_STEPS[3].description}
-            isComplete={isConfirmationStepValid}
-          >
-            <ConfirmationStep
-              disclaimerRead={disclaimerRead}
-              disclaimerAccepted={disclaimerAccepted}
-              rulebookAccepted={rulebookAccepted}
-              signatureImage={signatureImage}
-              showErrors={showValidationErrors}
-              onDisclaimerReadChange={setDisclaimerRead}
-              onDisclaimerAcceptedChange={setDisclaimerAccepted}
-              onRulebookAcceptedChange={setRulebookAccepted}
-              onSignatureChange={setSignatureImage}
-              groupAttestation={needsGroupAttestation ? groupAttestation : undefined}
-              onGroupAttestationChange={setGroupAttestation}
-            />
-          </RegistrationSection>
+            {totalParticipants > 0 ? (
+              <RegistrationSection
+                index={upsells.length > 0 ? 4 : 3}
+                title="Décharge et signature"
+                isComplete={isConfirmationStepValid}
+              >
+                <ConfirmationStep
+                  disclaimerRead={disclaimerRead}
+                  disclaimerAccepted={disclaimerAccepted}
+                  rulebookAccepted={rulebookAccepted}
+                  signatureImage={signatureImage}
+                  showErrors={showValidationErrors}
+                  onDisclaimerReadChange={setDisclaimerRead}
+                  onDisclaimerAcceptedChange={setDisclaimerAccepted}
+                  onRulebookAcceptedChange={setRulebookAccepted}
+                  onSignatureChange={setSignatureImage}
+                  groupAttestation={needsGroupAttestation ? groupAttestation : undefined}
+                  onGroupAttestationChange={setGroupAttestation}
+                />
+              </RegistrationSection>
+            ) : null}
+          </div>
         </div>
 
-        <aside
-          ref={summaryColumn.ref}
-          className={cn('min-w-0 space-y-4 lg:self-start', summaryColumn.fits && 'lg:sticky lg:top-20')}
-        >
+        {/* Always in view while the form scrolls; scrolls on its own if taller than the screen. */}
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto">
           <OrderSummarySidebar
             selectedTicketSlots={selectedTicketSlots}
             ticketMap={ticketMap}
@@ -635,11 +630,15 @@ export default function MultiStepEventRegistration({
             onValidatePromo={validatePromoCode}
             onRemovePromo={removePromo}
             submissionMessage={submissionMessage}
-          />
-
-          <ParticipantSummarySidebar
-            participants={participants}
-            ticketMap={ticketMap}
+            payAction={
+              <PayButton
+                className="w-full"
+                isCreatingPaymentIntent={isCreatingPaymentIntent}
+                isAuthPending={showInlineAuth}
+                isFormComplete={isTicketsStepValid && isParticipantsStepValid && isConfirmationStepValid}
+                onPayment={handleProceedToPayment}
+              />
+            }
           />
         </aside>
       </div>

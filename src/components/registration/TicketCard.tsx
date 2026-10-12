@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge'
-import { Ticket as TicketIcon, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { calculateCurrentPrice } from '@/types/EventPriceTier'
@@ -39,20 +38,17 @@ export default function TicketCard({
   return (
     <div
       className={cn(
-        'rounded-lg border p-4 transition-colors',
+        'rounded-2xl border p-5 transition-colors',
         isSoldOut
-          ? 'opacity-60 bg-muted/50'
+          ? 'border-border bg-muted opacity-60'
           : isSelected
-            ? 'border-primary bg-primary/5'
-            : 'border-border',
+            ? 'border-primary bg-card ring-1 ring-primary'
+            : 'border-border bg-card',
       )}
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex-1 space-y-1.5">
-          <div className="flex items-center gap-2 text-base font-semibold">
-            <TicketIcon
-              className={cn('h-4 w-4', isSoldOut ? 'text-muted-foreground' : 'text-primary')}
-            />
+          <div className="flex items-center gap-2 text-lg font-semibold">
             {ticket.name}
             {isSoldOut && (
               <Badge variant="destructive" className="ml-1">
@@ -63,12 +59,6 @@ export default function TicketCard({
           {ticket.description && (
             <p className="text-sm text-muted-foreground">{ticket.description}</p>
           )}
-          {ticket.race?.distance_km ? (
-            <Badge variant="outline" className="gap-1">
-              <Users className="h-3 w-3" />
-              {ticket.race.distance_km} km
-            </Badge>
-          ) : null}
           {isSoldOut && (
             <p className="text-xs font-medium text-destructive">
               Complet — plus aucune place disponible.

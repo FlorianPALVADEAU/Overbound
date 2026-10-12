@@ -34,3 +34,41 @@ describe('useUpsells: deselecting an option', () => {
     expect(result.current.selectedUpsells.patch.quantity).toBe(2)
   })
 })
+
+describe('useUpsells: photo packs per participant', () => {
+  const participants = [
+    { id: 'p1', ticketId: 'ticket-1', firstName: 'Camille', lastName: 'Martin' },
+    { id: 'p2', ticketId: 'ticket-1', firstName: 'Sam', lastName: 'Durand' },
+  ] as never
+  const slots = ['ticket-1', 'ticket-1']
+
+  it('keeps quantity equal to the number of ticked participants', () => {
+    const { result } = renderHook(() => useUpsells(UPSELLS, slots, participants, 'eur'))
+
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', true))
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', true))
+    expect(result.current.selectedUpsells.photos.quantity).toBe(2)
+
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', false))
+    expect(result.current.selectedUpsells.photos.quantity).toBe(1)
+
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', false))
+    expect(result.current.selectedUpsells.photos).toBeUndefined()
+  })
+
+  it('never offers more packs than tickets', () => {
+    const { result } = renderHook(() => useUpsells(UPSELLS, ['ticket-1'], participants, 'eur'))
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', true))
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', true))
+    expect(result.current.selectedUpsells.photos.quantity).toBe(1)
+  })
+
+  it('summarises a photo pack with names, never with ticket ids', () => {
+    const { result } = renderHook(() => useUpsells(UPSELLS, slots, participants, 'eur'))
+    act(() => result.current.handlePhotoPackToggle('photos', 'ticket-1', true))
+
+    const details = result.current.upsellSummaryItems.flatMap((item) => item.details).join(' | ')
+    expect(details).toContain('Camille Martin')
+    expect(details).not.toMatch(/ticket-1|assignments/i)
+  })
+})

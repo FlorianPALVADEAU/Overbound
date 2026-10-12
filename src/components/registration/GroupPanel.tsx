@@ -32,7 +32,7 @@ interface Props {
   onNeedAuth: (intent: GroupIntent) => void
 }
 
-const shell = 'scroll-mt-24 rounded-2xl border border-primary/50 bg-primary/10 p-4 sm:p-5'
+const shell = 'scroll-mt-24 rounded-2xl border border-border p-5'
 
 /**
  * Group actions inside the registration, no trip to the account page:
@@ -160,22 +160,19 @@ export default function GroupPanel({ user, event, group, intent, inviteCode, onN
   // ---- No group yet ----
   return (
     <div ref={ref} className={shell}>
-      <p className="text-base font-bold">Tu viens avec des potes ?</p>
-      <p className="mt-1 text-sm text-muted-foreground">Un groupe, c’est le même départ pour tout le monde.</p>
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Button type="button" className="h-12 rounded-xl font-bold" disabled={busy} onClick={create}>
-          {createGroup.isPending ? 'Création…' : 'Créer mon groupe'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 rounded-xl font-semibold"
-          disabled={busy}
-          onClick={openJoin}
-        >
-          J’ai un code d’invitation
-        </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-base font-semibold">Tu viens avec des potes ?</p>
+          <p className="text-sm text-muted-foreground">Un groupe, c’est le même départ pour tout le monde.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" className="h-11" disabled={busy} onClick={create}>
+            {createGroup.isPending ? 'Création…' : 'Créer un groupe'}
+          </Button>
+          <Button type="button" variant="ghost" className="h-11" disabled={busy} onClick={openJoin}>
+            J’ai un code
+          </Button>
+        </div>
       </div>
 
       {mode === 'join' && user ? (

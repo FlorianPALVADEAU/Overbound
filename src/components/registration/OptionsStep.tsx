@@ -1,5 +1,3 @@
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Gift } from 'lucide-react'
 import type { EventUpsell, Participant, SelectedUpsellState } from './types'
 import UpsellCard from './UpsellCard'
 
@@ -11,7 +9,7 @@ interface OptionsStepProps {
   defaultCurrency: string
   onQuantityChange: (upsellId: string, quantity: number) => void
   onSizeChange: (upsellId: string, index: number, size: string) => void
-  onAssignmentToggle: (upsellId: string, ticketId: string, checked: boolean) => void
+  onPhotoPackToggle: (upsellId: string, ticketId: string, checked: boolean) => void
 }
 
 export default function OptionsStep({
@@ -22,24 +20,10 @@ export default function OptionsStep({
   defaultCurrency,
   onQuantityChange,
   onSizeChange,
-  onAssignmentToggle,
+  onPhotoPackToggle,
 }: OptionsStepProps) {
   return (
-    <div className="space-y-4">
-      {upsells.length === 0 ? (
-        <Alert>
-          <Gift className="h-4 w-4" />
-          <AlertDescription>Pas d'options additionnelles disponibles pour cet événement.</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {upsells.length > 0 && selectedTicketSlots.length === 0 ? (
-        <Alert>
-          <Gift className="h-4 w-4" />
-          <AlertDescription>Ajoutez au moins un billet avant de choisir des options.</AlertDescription>
-        </Alert>
-      ) : null}
-
+    <div className="space-y-3">
       {upsells.map((upsell) => (
         <UpsellCard
           key={upsell.id}
@@ -50,7 +34,7 @@ export default function OptionsStep({
           defaultCurrency={defaultCurrency}
           onQuantityChange={onQuantityChange}
           onSizeChange={onSizeChange}
-          onAssignmentToggle={onAssignmentToggle}
+          onPhotoPackToggle={onPhotoPackToggle}
         />
       ))}
     </div>

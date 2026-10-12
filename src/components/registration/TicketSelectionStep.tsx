@@ -1,5 +1,3 @@
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertTriangle, UserX } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import type { EventTicket } from './types'
@@ -27,15 +25,8 @@ export default function TicketSelectionStep({
   groupBanner,
 }: TicketSelectionStepProps) {
   return (
-    <div className="space-y-4">
-      <Alert className="border-amber-500/40 bg-amber-500/10 text-foreground">
-        <UserX className="h-4 w-4 text-amber-500" />
-        <AlertDescription className="text-xs leading-relaxed">
-          <span className="font-semibold">Réservé aux personnes majeures (18 ans et plus).</span>
-          {' '}Les mineurs ne sont pas autorisés à participer à cette édition.
-          La prochaine édition sera ouverte aux mineurs accompagnés.
-        </AlertDescription>
-      </Alert>
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Réservé aux personnes majeures (18 ans et plus).</p>
       {groupBanner}
 
       {tickets.map((ticket) => (
@@ -50,14 +41,11 @@ export default function TicketSelectionStep({
         />
       ))}
 
-      <Alert variant="destructive" className="mt-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          {availableSpots > 0
-            ? "Places limitées sur l'événement. Dépêchez-vous !"
-            : "L'événement affiche complet. Vous pouvez rejoindre la liste d'attente."}
-        </AlertDescription>
-      </Alert>
+      {availableSpots <= 0 ? (
+        <p className="text-sm font-medium text-destructive">
+          L&apos;événement affiche complet. Tu peux rejoindre la liste d&apos;attente.
+        </p>
+      ) : null}
     </div>
   )
 }

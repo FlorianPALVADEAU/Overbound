@@ -139,6 +139,38 @@ export function useUpsells(
     [upsells],
   )
 
+  /**
+   * One photo pack per ticket holder: ticking a participant adds a pack for
+   * them, unticking removes it. The quantity always equals the number of packs.
+   */
+  const handlePhotoPackToggle = useCallback(
+    (upsellId: string, ticketId: string, checked: boolean) => {
+      setSelectedUpsells((previous) => {
+        const upsell = upsells.find((u) => u.id === upsellId)
+        if (!upsell || upsell.type !== 'photos') return previous
+        const current: string[] = Array.isArray(previous[upsellId]?.meta?.assignments)
+          ? (previous[upsellId]!.meta!.assignments as string[])
+          : []
+        const max = getUpsellQuantityLimit(upsell.type, selectedTicketSlots.length)
+
+        let next = current
+        if (checked) {
+          if (current.length < max) next = [...current, ticketId]
+        } else {
+          const at = current.indexOf(ticketId)
+          if (at >= 0) next = [...current.slice(0, at), ...current.slice(at + 1)]
+        }
+        if (next === current) return previous
+        if (next.length === 0) {
+          const { [upsellId]: _removed, ...rest } = previous
+          return rest
+        }
+        return { ...previous, [upsellId]: { quantity: next.length, meta: { assignments: next } } }
+      })
+    },
+    [upsells, selectedTicketSlots],
+  )
+
   const handleUpsellSizeChange = useCallback(
     (upsellId: string, index: number, size: string) => {
       setSelectedUpsells((previous) => {
@@ -211,12 +243,14 @@ export function useUpsells(
               ? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() || `Participant #${index + 1}`
               : `Participant #${index + 1}`
           })
-          details.push(`Attribué à: ${labels.join(', ')}`)
+          details.push(`Pour : ${labels.join(', ')}`)
         }
       }
       if (meta && typeof meta === 'object') {
         Object.entries(meta).forEach(([key, value]) => {
           if (value === null || value === undefined) return
+          // Internal bookkeeping (ticket ids): the human-readable line is built above.
+          if (key === 'assignments') return
           if (key === 'sizes' && Array.isArray(value)) {
             const formatted = value.filter((s): s is string => typeof s === 'string' && s.length > 0)
             if (formatted.length > 0) details.push(`Tailles : ${formatted.join(', ')}`)
@@ -254,6 +288,7 @@ export function useUpsells(
     setSelectedUpsells,
     handleUpsellChange,
     handleUpsellAssignmentToggle,
+    handlePhotoPackToggle,
     handleUpsellSizeChange,
     upsellSummaryItems,
   }
