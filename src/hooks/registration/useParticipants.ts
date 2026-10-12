@@ -17,7 +17,6 @@ const emptyParticipant = (position: number, ticketId: string, buyer: EventUser |
     medicalInfo: '',
     healthDataConsent: false,
     flexible: false,
-    licenseNumber: '',
     selectedWaveIndex: null,
   }
 }

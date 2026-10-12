@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '09/10/2026'
+const lastUpdated = '11/10/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet de la politique' },
@@ -75,7 +75,7 @@ const paragraphs = {
   destinataires: [
     'Personnel habilité d’Overbound (équipes opérationnelles, support, marketing, finance) soumis à une clause de confidentialité.',
     'Organisateurs partenaires et prestataires logistiques (sécurité, chronométrage, bénévoles) pour les besoins de l’événement.',
-    'Sous-traitants techniques : Vercel (hébergement), Supabase (base de données), Stripe (paiement), Resend (emails transactionnels), Sanity (CMS), Google Analytics (mesure d’audience), Sentry (monitoring).',
+    'Sous-traitants techniques : Vercel (hébergement), Supabase (base de données), Stripe (paiement), Resend (emails transactionnels), Sanity (CMS), Google Analytics et Google Tag Manager (mesure d’audience, avec consentement), Meta (mesure publicitaire, avec consentement), Sentry (suivi des erreurs).',
     'Autorités administratives ou judiciaires lorsqu’une obligation légale l’impose (réquisitions, enquêtes, lutte contre la fraude).',
     "Sponsors et partenaires commerciaux dans le cadre d'opérations marketing, uniquement si l’utilisateur a donné son consentement explicite.",
   ],
@@ -86,13 +86,13 @@ const paragraphs = {
     'Informations de santé et contact d’urgence : supprimés automatiquement 30 jours après l’événement, ou dès le transfert du dossard pour l’ancien titulaire.',
     'Documents PPS ou autorisations parentales : durée de l’événement + 1 an, puis archivage sécurisé ou suppression.',
     'Logs techniques : 12 mois maximum.',
-    'Cookies : durée maximale de 13 mois, préférences de consentement conservées 6 mois.',
+    'Cookies : durée maximale de 13 mois. Choix de consentement renouvelé tous les 12 mois ; justificatif de consentement (choix, date, adresse IP tronquée) conservé 13 mois.',
     'Images et contenus médiatiques : 5 ans, ou suppression anticipée sur demande justifiée.',
   ],
   droits: [
     'Droit d’accès : obtenir confirmation que des données sont traitées, accéder à leur contenu et en recevoir une copie.',
     'Droit de rectification : corriger, compléter ou mettre à jour des données inexactes ou incomplètes.',
-    'Droit d’effacement (« droit à l’oubli ») : supprimer des données lorsque leur conservation n’est plus justifiée, dans la limite des obligations légales.',
+    'Droit d’effacement (« droit à l’oubli ») : supprimer des données lorsque leur conservation n’est plus justifiée, dans la limite des obligations légales. Pour un compte connecté, la demande se fait directement depuis Mon compte > Profil > « Supprimer mon compte et mes données ». Les données liées à un paiement (factures) sont conservées 10 ans par obligation comptable, puis supprimées.',
     'Droit d’opposition : s’opposer à tout moment aux traitements fondés sur l’intérêt légitime (marketing, profilage léger).',
     'Droit à la limitation : geler temporairement une partie des traitements en cas de contestation.',
     'Droit à la portabilité : recevoir les données fournies dans un format structuré, couramment utilisé et lisible par machine.',
@@ -115,7 +115,7 @@ const paragraphs = {
     'Les données relatives aux mineurs sont traitées avec une vigilance renforcée : accès restreint, durée de conservation limitée à 3 ans, suppression sur simple demande du représentant légal.',
   ],
   cookies: [
-    'Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, maintien de session), ainsi que des cookies de mesure d’audience (Google Analytics) soumis au consentement.',
+    'Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, maintien de session), ainsi que, uniquement avec le consentement de l’utilisateur et finalité par finalité, des traceurs de mesure d’audience (Google Analytics, Google Tag Manager) et de publicité (Meta Pixel et API de conversions Meta).',
     'Le consentement est géré via notre bandeau de cookies : l’utilisateur peut modifier ses préférences à tout moment via la page Politique Cookies.',
     'Pour plus de détails, consulter la Politique Cookies : https://overbound-race.com/cookies.',
   ],
@@ -150,7 +150,7 @@ export default function PrivacyPolicyPage() {
         <div className={containerClass()}>
           <div className="rounded-3xl border border-border bg-muted/40 p-6 text-sm text-muted-foreground shadow-lg shadow-primary/10">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Sommaire</h2>
-            <p className="mt-2 text-xs text-muted-foreground/80">
+            <p className="mt-2 text-xs text-muted-foreground">
               Naviguez facilement dans la politique grâce à ces ancres. Vous pouvez revenir en haut via « Retour haut de page » à la fin de chaque section.
             </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -166,7 +166,7 @@ export default function PrivacyPolicyPage() {
             </div>
             <div className="mt-4 rounded-2xl bg-card/80 p-4 text-xs text-muted-foreground">
               Pour toute question, écrivez à{' '}
-              <Link href="mailto:contact@overbound-race.com" className="text-primary hover:underline">
+              <Link href="mailto:contact@overbound-race.com" className="text-primary underline">
                 contact@overbound-race.com
               </Link>
               .
@@ -225,7 +225,7 @@ function Section({ id, title, paragraphs: list, bulletList }: SectionProps) {
         </ul>
       ) : null}
       <div className="flex justify-end">
-        <a href="#intro" className="text-xs font-medium text-primary hover:underline">
+        <a href="#intro" className="text-xs font-medium text-primary underline">
           Retour haut de page
         </a>
       </div>

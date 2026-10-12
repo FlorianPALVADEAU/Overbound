@@ -4,5 +4,5 @@
  */
 export const LANDING_BACKGROUNDS = {
   perks: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
-  reassurance: '/images/images/a-sunny-mood-with-runners-ready-to-go.avif',
+  reassurance: '/images/obstacles/barbels.avif',
 } as const

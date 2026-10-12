@@ -14,7 +14,6 @@ export const registrationParticipantSchema = z.object({
   emergencyContactPhone: z.string().optional(),
   medicalInfo: z.string().optional(),
   healthDataConsent: z.boolean().optional(),
-  licenseNumber: z.string().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
 })
 

@@ -52,8 +52,15 @@ export const buildMetaUserData = (userData?: MetaUserDataInput) => {
   return Object.keys(payload).length > 0 ? payload : undefined
 }
 
+/**
+ * Meta's browser identifiers (_fbp / _fbc) exist only when the visitor accepted the Meta Pixel, and the checkout
+ * forwards them to us. Without one, there is no marketing consent to rely on, so nothing is sent to Meta.
+ */
+export const hasMarketingConsentSignal = (userData?: MetaUserDataInput) => Boolean(userData?.fbp || userData?.fbc)
+
 export const sendMetaCapiEvent = async (input: SendMetaCapiEventInput) => {
   if (!META_DATASET_ID || !META_ACCESS_TOKEN) return
+  if (!hasMarketingConsentSignal(input.userData)) return
 
   const userData = buildMetaUserData(input.userData)
 

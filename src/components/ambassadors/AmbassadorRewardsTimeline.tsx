@@ -54,7 +54,7 @@ export function AmbassadorRewardsTimeline({ levels, totalPoints, nextRewardLevel
                         className={cn(
                           'relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-300',
                           state === 'unlocked' &&
-                            'border-primary bg-primary text-white shadow-lg shadow-primary/25',
+                            'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25',
                           state === 'current' &&
                             'border-primary bg-background text-primary ring-4 ring-primary/10',
                           state === 'locked' &&

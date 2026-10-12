@@ -47,7 +47,6 @@ export type Participant = {
   healthDataConsent?: boolean
   /** "Billet flexible" option: refundable without justification until J-7. */
   flexible?: boolean
-  licenseNumber: string
   selectedWaveIndex?: number | null
 }
 

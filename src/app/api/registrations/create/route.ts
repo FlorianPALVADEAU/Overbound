@@ -624,7 +624,6 @@ export async function POST(request: NextRequest) {
         emergencyContactPhone: participant.emergencyContactPhone,
         medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
         healthDataConsent: participant.healthDataConsent === true,
-        licenseNumber: participant.licenseNumber,
       },
             disclaimer,
             document: signedDocument,

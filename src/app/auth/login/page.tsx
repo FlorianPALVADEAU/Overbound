@@ -159,9 +159,9 @@ function LoginInner() {
 
               <p className="text-xs text-subtle">
                 En vous connectant, vous acceptez nos{' '}
-                <Link href="/cgu" className="text-primary underline-offset-4 hover:underline">conditions d’utilisation</Link>
+                <Link href="/cgu" className="text-primary underline-offset-4 underline">conditions d’utilisation</Link>
                 {' '}et notre{' '}
-                <Link href="/privacy-policies" className="text-primary underline-offset-4 hover:underline">politique de confidentialité</Link>.
+                <Link href="/privacy-policies" className="text-primary underline-offset-4 underline">politique de confidentialité</Link>.
               </p>
 
               <Button
@@ -240,7 +240,7 @@ function LoginInner() {
 
             <div className="text-center text-sm text-muted-foreground">
               Pas encore de compte ?{' '}
-              <Link href="/auth/register" className="text-primary underline-offset-4 hover:underline">Créer un compte</Link>
+              <Link href="/auth/register" className="text-primary underline-offset-4 underline">Créer un compte</Link>
             </div>
 
           </div>

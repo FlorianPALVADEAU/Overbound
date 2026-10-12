@@ -35,7 +35,6 @@ export const buildRegistrationRequest = (draft: SignedDraft, payment: PaymentRef
     emergencyContactPhone: participant.emergencyContactPhone,
     medicalInfo: participant.medicalInfo,
     healthDataConsent: participant.healthDataConsent === true,
-    licenseNumber: participant.licenseNumber,
     selectedWaveIndex: participant.selectedWaveIndex ?? null,
   })),
   upsells: draftUpsellRequest(draft),

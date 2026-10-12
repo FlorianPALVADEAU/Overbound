@@ -15,7 +15,6 @@ export const participant = (overrides: Partial<Participant> = {}): Participant =
   medicalInfo: '',
   healthDataConsent: false,
   flexible: false,
-  licenseNumber: '',
   selectedWaveIndex: 3,
   ...overrides,
 })

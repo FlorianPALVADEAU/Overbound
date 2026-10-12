@@ -254,7 +254,7 @@ export function ConceptExplainer() {
             <svg
               viewBox="-30 -40 1076 694"
               className="h-auto w-full"
-              role="img"
+              role="group"
               aria-label="Plan du parcours Overbound : une boucle avec 10 obstacles numérotés, du départ en bas à gauche dans le sens des aiguilles d'une montre"
             >
               <path

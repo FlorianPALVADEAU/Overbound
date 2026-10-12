@@ -185,7 +185,7 @@ export default function ObstaclesPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
                   <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-2">
-                    <Badge className="border-0 bg-primary text-white">
+                    <Badge className="border-0 bg-primary text-primary-foreground">
                       <Star className="mr-1 h-3 w-3" />
                       {obstacle.difficulty}/10
                     </Badge>

@@ -288,9 +288,10 @@ function RegisterInner() {
 
                   <p className="text-xs text-subtle">
                     En vous connectant, vous acceptez nos{' '}
-                    <Link href="/cgu" className="text-primary underline-offset-4 hover:underline">conditions d’utilisation</Link>
+                    <Link href="/cgu" className="text-primary underline-offset-4 underline">conditions d’utilisation</Link>
                     {' '}et notre{' '}
-                    <Link href="/privacy-policies" className="text-primary underline-offset-4 hover:underline">politique de confidentialité</Link>.
+                    <Link href="/privacy-policies" className="text-primary underline-offset-4 underline">politique de confidentialité</Link>.
+                    Tu peux demander la suppression de ton compte et de tes données à tout moment depuis ton profil.
                   </p>
 
                   <Button
@@ -446,7 +447,7 @@ function RegisterInner() {
                       : '/auth/login'
                   })()
                 }
-                className="text-primary underline-offset-4 hover:underline"
+                className="text-primary underline-offset-4 underline"
               >
                 Se connecter
               </Link>

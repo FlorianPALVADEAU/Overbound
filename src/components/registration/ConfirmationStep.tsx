@@ -126,6 +126,8 @@ export default function ConfirmationStep({
                 <a className="underline" href="/privacy-policies" target="_blank" rel="noreferrer">
                   Politique de confidentialité
                 </a>
+                . Tu peux demander l’accès, la rectification ou la suppression de tes données à tout moment depuis ton
+                compte.
               </p>
             </div>
           ) : null}

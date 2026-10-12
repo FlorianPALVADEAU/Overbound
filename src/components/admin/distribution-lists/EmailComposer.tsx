@@ -236,14 +236,13 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
             <Label>Listes de distribution *</Label>
             <div className="grid gap-2 sm:grid-cols-2">
               {activeLists.map((list) => (
-                <div
+                <label
                   key={list.id}
                   className={`flex items-start space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                     formData.listIds.includes(list.id)
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
-                  onClick={() => handleListToggle(list.id)}
                 >
                   <input
                     type="checkbox"
@@ -265,7 +264,7 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
                       </p>
                     )}
                   </div>
-                </div>
+                </label>
               ))}
             </div>
 

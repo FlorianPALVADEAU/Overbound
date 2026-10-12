@@ -84,7 +84,7 @@ export default function CGVPage() {
               <p>
                 Les présentes Conditions Générales de Vente (ci-après « CGV ») régissent la vente de billets et
                 d'inscriptions aux événements sportifs proposés sur la plateforme Overbound accessible à l'adresse{' '}
-                <Link href="/" className="text-primary hover:underline">
+                <Link href="/" className="text-primary underline">
                   https://overbound-race.com
                 </Link>
                 .
@@ -122,7 +122,7 @@ export default function CGVPage() {
                 </p>
                 <p>
                   <strong>Contact :</strong>{' '}
-                  <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+                  <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary underline">
                     {COMPANY_INFO.contact.email}
                   </Link>{' '}
                   – Tél : {COMPANY_INFO.contact.phone}
@@ -212,7 +212,7 @@ export default function CGVPage() {
               <p>
                 <strong>Facturation :</strong> Une facture électronique est délivrée et accessible depuis l'espace
                 personnel. Les organisations peuvent demander une facture professionnelle à{' '}
-                <Link href={`mailto:${COMPANY_INFO.emails.billing}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.emails.billing}`} className="text-primary underline">
                   {COMPANY_INFO.emails.billing}
                 </Link>
                 .
@@ -285,7 +285,7 @@ export default function CGVPage() {
               <p>
                 <strong>8.7 Après la veille de l'événement.</strong> Aucun transfert n'est possible, sauf accord écrit
                 exceptionnel d'Overbound. Pour toute difficulté, contactez{' '}
-                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary underline">
                   {COMPANY_INFO.emails.support}
                 </Link>
                 .
@@ -306,7 +306,7 @@ export default function CGVPage() {
                 <strong>9.2 Report.</strong> En cas de report à une autre date, l'inscription reste valable pour la
                 nouvelle date sans démarche. L'acheteur d'origine qui ne souhaite pas participer à la nouvelle date
                 peut demander le remboursement dans les 30 jours suivant l'annonce du report, par email à{' '}
-                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary underline">
                   {COMPANY_INFO.emails.support}
                 </Link>
                 .
@@ -445,7 +445,7 @@ export default function CGVPage() {
               <p>
                 Cette assurance indemnise les victimes des dommages dont Overbound est responsable, dans les limites et
                 conditions du contrat. L'attestation d'assurance est communiquée sur simple demande à{' '}
-                <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary underline">
                   {COMPANY_INFO.contact.email}
                 </Link>
                 .
@@ -468,7 +468,7 @@ export default function CGVPage() {
               <h2 className="text-2xl font-bold">13. Litiges et médiation</h2>
               <p>
                 <strong>Réclamation :</strong> Toute réclamation doit être adressée en priorité par email à{' '}
-                <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary hover:underline">
+                <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary underline">
                   {COMPANY_INFO.contact.email}
                 </Link>
                 . Overbound s'engage à répondre dans un délai de 7 jours ouvrés.
@@ -488,7 +488,7 @@ export default function CGVPage() {
                     href={COMPANY_INFO.mediation.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline"
+                    className="text-primary underline"
                   >
                     {COMPANY_INFO.mediation.website.replace('https://', '')}
                   </Link>
@@ -514,22 +514,22 @@ export default function CGVPage() {
               <h3 className="mb-4 font-semibold">Documents complémentaires</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/cgu" className="text-primary hover:underline">
+                  <Link href="/cgu" className="text-primary underline">
                     Conditions Générales d'Utilisation (CGU)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy-policies" className="text-primary hover:underline">
+                  <Link href="/privacy-policies" className="text-primary underline">
                     Politique de confidentialité
                   </Link>
                 </li>
                 <li>
-                  <Link href="/mentions-legales" className="text-primary hover:underline">
+                  <Link href="/mentions-legales" className="text-primary underline">
                     Mentions légales
                   </Link>
                 </li>
                 <li>
-                  <Link href="/cookies" className="text-primary hover:underline">
+                  <Link href="/cookies" className="text-primary underline">
                     Politique de cookies
                   </Link>
                 </li>
