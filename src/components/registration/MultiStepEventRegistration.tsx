@@ -410,8 +410,14 @@ export default function MultiStepEventRegistration({
             return
           }
 
+          const freeResult = await freeResponse.json().catch(() => ({}))
+          const freeRegistrationId = Array.isArray(freeResult?.registrations) ? freeResult.registrations[0] : null
           clearRegistrationDraft()
-          router.replace('/account/tickets')
+          router.replace(
+            freeRegistrationId
+              ? `/events/${event.slug}/success?registration_id=${freeRegistrationId}`
+              : '/account/tickets',
+          )
           return
         }
 

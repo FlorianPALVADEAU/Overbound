@@ -104,10 +104,13 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
         text: '🎉 Paiement confirmé ! Redirection en cours vers la page de confirmation.',
       })
 
-      setTimeout(() => {
-        clearRegistrationDraft()
-        router.replace('/account/tickets')
-      }, 1200)
+      const registrationId = Array.isArray(payload?.registrations) ? payload.registrations[0] : null
+      router.replace(
+        registrationId
+          ? `/events/${event.slug}/success?registration_id=${registrationId}`
+          : '/account/tickets',
+      )
+      clearRegistrationDraft()
     } catch (err) {
       console.error('Erreur finalisation inscription:', err)
       setMessage({
