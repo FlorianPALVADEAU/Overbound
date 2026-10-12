@@ -109,7 +109,7 @@ export async function GET(request: Request) {
             height: '100%',
             display: 'flex',
             background:
-              'linear-gradient(0deg, rgba(249,115,22,0.7) 0%, rgba(220,38,38,0.35) 18%, rgba(5,6,7,0) 48%)',
+              'linear-gradient(0deg, rgba(5,6,7,0.7) 0%, rgba(5,6,7,0) 48%)',
           }}
         />
         <div

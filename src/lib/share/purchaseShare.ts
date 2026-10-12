@@ -9,7 +9,7 @@ export const buildShareUrl = (origin: string, eventSlug: string): string =>
   `${origin.replace(/\/+$/, '')}/events/${encodeURIComponent(eventSlug)}?${SHARE_UTM}`
 
 export const buildShareText = (eventTitle: string): string =>
-  `Je suis inscrit·e à ${eventTitle} ! Rejoins-moi sur la ligne de départ 🔥`
+  `Je suis inscrit·e à ${eventTitle} ! Rejoins-moi sur la ligne de départ`
 
 export type SocialNetwork = 'whatsapp' | 'x' | 'reddit' | 'facebook'
 

@@ -30,13 +30,9 @@ const NETWORK_LABELS: Record<SocialNetwork, string> = {
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-const rand = (min: number, max: number) => min + Math.random() * (max - min)
-
-// Scene timeline (ms): spotlight fades in, flames fly in every direction, the
-// totem charges at the camera and roars (shakes), then the stage fades out and
-// the card turns to face the viewer.
-const FLAMES_START = 350
-const FLAMES_END = 2900
+// Scene timeline (ms): spotlight fades in, the totem charges at the camera and
+// fades in smoothly, then the stage fades out, the card turns to face the viewer
+// and one confetti burst goes off.
 const LOGO_START = 600
 const REVEAL_AT = 3100
 const BURST_AT = 3500
@@ -48,49 +44,24 @@ const STAGE_CSS = `
 @keyframes ob-stage-in { from { opacity: 0 } to { opacity: 1 } }
 @keyframes ob-light-pulse { 0%,100% { transform: scale(1); opacity: .9 } 50% { transform: scale(1.12); opacity: 1 } }
 @keyframes ob-roar {
-  0%   { transform: translate(0,0) scale(.12) rotate(0); opacity: 0; filter: drop-shadow(0 0 0 rgba(249,115,22,0)) }
-  30%  { transform: translate(0,0) scale(1.05) rotate(0); opacity: 1; filter: drop-shadow(0 0 40px rgba(249,115,22,.9)) }
-  36%  { transform: translate(-10px,6px) scale(1.12) rotate(-2.5deg) }
-  42%  { transform: translate(12px,-8px) scale(1.18) rotate(2.5deg) }
-  48%  { transform: translate(-14px,-4px) scale(1.14) rotate(-3deg) }
-  54%  { transform: translate(10px,8px) scale(1.22) rotate(2deg) }
-  60%  { transform: translate(-12px,-8px) scale(1.18) rotate(-2.5deg) }
-  66%  { transform: translate(14px,4px) scale(1.24) rotate(3deg) }
-  72%  { transform: translate(-8px,8px) scale(1.2) rotate(-2deg) }
-  78%  { transform: translate(8px,-6px) scale(1.26) rotate(2deg); opacity: 1; filter: drop-shadow(0 0 70px rgba(249,115,22,1)) }
-  88%  { transform: translate(0,0) scale(1.36) rotate(0); opacity: 1; filter: drop-shadow(0 0 90px rgba(249,115,22,1)); animation-timing-function: cubic-bezier(.55,0,1,.45) }
-  100% { transform: translate(0,0) scale(.1) rotate(0); opacity: 0; filter: drop-shadow(0 0 0 rgba(249,115,22,0)) }
+  0%   { transform: scale(.7); opacity: 0; animation-timing-function: cubic-bezier(.16,1,.3,1) }
+  20%  { transform: scale(1.1); opacity: 1; animation-timing-function: ease-in-out }
+  30%  { transform: scale(.98); animation-timing-function: ease-in-out }
+  38%  { transform: scale(1); animation-timing-function: ease-in-out }
+  80%  { transform: scale(1.08); opacity: 1; animation-timing-function: cubic-bezier(.5,0,.75,0) }
+  100% { transform: scale(1.4); opacity: 0 }
+}
+@keyframes ob-tremor {
+  0%,100% { transform: translate(0,0) rotate(0) }
+  25%     { transform: translate(1.5px,-1px) rotate(.25deg) }
+  50%     { transform: translate(-1px,1.5px) rotate(-.2deg) }
+  75%     { transform: translate(-1.5px,-.5px) rotate(.15deg) }
 }
 `
 
-const makeFlames = async () => {
-  const { default: confetti } = await import('canvas-confetti')
-  const small = confetti.shapeFromText({ text: '🔥', scalar: 2.5 })
-  const big = confetti.shapeFromText({ text: '🔥', scalar: 4.5 })
-  return { confetti, small, big }
-}
+const loadConfetti = async () => (await import('canvas-confetti')).default
 
-type Flames = Awaited<ReturnType<typeof makeFlames>>
-
-// Flames fly out in every direction, some rising, some falling.
-const fireFlames = ({ confetti, small, big }: Flames) => {
-  const useBig = Math.random() > 0.55
-  confetti({
-    particleCount: Math.round(rand(4, 9)),
-    angle: rand(0, 360),
-    spread: rand(40, 90),
-    startVelocity: rand(25, 60),
-    gravity: rand(-0.15, 0.6),
-    drift: rand(-1.2, 1.2),
-    ticks: Math.round(rand(110, 190)),
-    origin: { x: rand(0.02, 0.98), y: rand(0.3, 1.05) },
-    shapes: [useBig ? big : small],
-    scalar: useBig ? 4.5 : 2.5,
-    flat: true,
-    zIndex: 1000,
-    disableForReducedMotion: true,
-  })
-}
+type Confetti = Awaited<ReturnType<typeof loadConfetti>>
 
 export function PurchaseCelebration({
   registrationId,
@@ -118,25 +89,24 @@ export function PurchaseCelebration({
     }
 
     const timers: number[] = []
-    let flameTimer: number | undefined
-    let flames: Flames | null = null
+    let confetti: Confetti | null = null
     let finished = false
 
-    void makeFlames().then((loaded) => {
-      flames = loaded
+    void loadConfetti().then((loaded) => {
+      confetti = loaded
     })
 
     const scrollToCard = () =>
       cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
     const burst = () => {
-      if (!flames) return
-      flames.confetti({
+      if (!confetti) return
+      confetti({
         particleCount: 170,
         spread: 110,
         startVelocity: 48,
         origin: { x: 0.5, y: 0.5 },
-        colors: ['#26AA26', '#86efac', '#facc15', '#f97316', '#ffffff'],
+        colors: ['#26AA26', '#86efac', '#ffffff'],
         zIndex: 1000,
         disableForReducedMotion: true,
       })
@@ -146,7 +116,6 @@ export function PurchaseCelebration({
       if (finished) return
       finished = true
       timers.forEach(window.clearTimeout)
-      window.clearInterval(flameTimer)
       setLogoOn(false)
       if (instant) {
         setPhase('done')
@@ -160,19 +129,12 @@ export function PurchaseCelebration({
     }
     skipRef.current = () => finish(true)
 
-    timers.push(
-      window.setTimeout(() => {
-        flameTimer = window.setInterval(() => flames && fireFlames(flames), 90)
-      }, FLAMES_START),
-    )
-    timers.push(window.setTimeout(() => window.clearInterval(flameTimer), FLAMES_END))
     timers.push(window.setTimeout(() => setLogoOn(true), LOGO_START))
     timers.push(window.setTimeout(() => finish(false), REVEAL_AT))
 
     return () => {
       finished = true
       timers.forEach(window.clearTimeout)
-      window.clearInterval(flameTimer)
     }
   }, [])
 
@@ -254,7 +216,7 @@ export function PurchaseCelebration({
           className="pointer-events-none absolute -inset-x-8 -inset-y-12 -z-10"
           style={{
             background:
-              'radial-gradient(closest-side, rgba(38,170,38,.40), rgba(249,115,22,.14) 60%, transparent 100%)',
+              'radial-gradient(closest-side, rgba(38,170,38,.40), rgba(38,170,38,.14) 60%, transparent 100%)',
             opacity: revealed ? 1 : 0,
             transition: 'opacity 1400ms ease-out',
           }}
@@ -341,11 +303,11 @@ export function PurchaseCelebration({
           }}
         >
           <style>{STAGE_CSS}</style>
-          {/* Warm light from below + pulsing centre light */}
+          {/* Light from below + pulsing centre light */}
           <div
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-1/2"
-            style={{ background: 'linear-gradient(0deg, rgba(249,115,22,.30), transparent)' }}
+            style={{ background: 'linear-gradient(0deg, rgba(38,170,38,.30), transparent)' }}
           />
           <div
             aria-hidden
@@ -361,19 +323,28 @@ export function PurchaseCelebration({
         </div>
       ) : null}
 
-      {/* Own layer above the confetti canvas (z 1000): flames and confetti pass behind the totem. */}
+      {/* Own layer above the confetti canvas (z 1000): confetti passes behind the totem. */}
       {logoOn ? (
         <div
           aria-hidden
           className="pointer-events-none fixed inset-0 z-[1100] flex items-center justify-center"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/brand/totem_logo_white.png"
-            alt=""
-            className="w-[46vmin] max-w-sm"
-            style={{ animation: 'ob-roar 2.5s cubic-bezier(.2,.8,.2,1) forwards' }}
-          />
+          <div
+            className="w-[46vmin] max-w-sm will-change-transform"
+            style={{
+              animation: 'ob-roar 2.5s linear forwards',
+              filter: 'drop-shadow(0 0 48px rgba(38,170,38,.55))',
+            }}
+          >
+            {/* Very light tremor on its own layer, starts once the entry bounce settles. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/brand/totem_logo_white.png"
+              alt=""
+              className="w-full"
+              style={{ animation: 'ob-tremor 120ms linear 800ms infinite' }}
+            />
+          </div>
         </div>
       ) : null}
     </section>
