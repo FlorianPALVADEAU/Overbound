@@ -4,7 +4,7 @@ import { Container, Section, SectionHeader } from '@/components/ds'
 import { CardCarousel } from '@/components/shared/CardCarousel'
 import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { isPublicObstacleVisible } from '@/lib/obstaclesVisibility'
-import { HeartHandshake, ZoomIn } from 'lucide-react'
+import { ZoomIn } from 'lucide-react'
 import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
 import type { Obstacle } from '@/types/Obstacle'
 
@@ -63,13 +63,10 @@ const ObstaclesOverview = ({
                 <div className="flex h-full w-auto flex-col items-center justify-center gap-6">
                     <SectionHeader title={title} lead={description} flush className="max-w-none self-start" />
 
-                    <div className="flex w-full max-w-2xl items-start gap-3 rounded-2xl border border-border bg-foreground/5 px-4 py-4 sm:px-6">
-                        <HeartHandshake className="mt-0.5 h-5 w-5 flex-none text-primary" />
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                            <strong className="text-foreground">Adapté aux femmes :</strong> chaque obstacle propose une
-                            variante ajustée (hauteur, prise, charge) pour progresser en confiance, à son rythme.
-                        </p>
-                    </div>
+                    <p className="-mt-2 flex flex-col gap-0.5 self-start border-l-2 border-primary pl-3 text-xs leading-snug text-muted-foreground sm:-mt-4 sm:flex-row sm:items-baseline sm:gap-2 sm:rounded-full sm:border sm:border-border sm:bg-foreground/5 sm:px-3 sm:py-1.5">
+                        <span className="shrink-0 font-semibold text-foreground">Adapté aux femmes</span>
+                        <span>Chaque obstacle a une variante ajustée (hauteur, prise, charge).</span>
+                    </p>
 
                 {(isLoading || isFetching) ? (
                     <div className="w-full">
