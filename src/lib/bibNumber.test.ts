@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { assignBibNumber, transferBibNumber, BibCapacityExhaustedError } from './bibNumber'
+import { assignBibNumber, transferBibNumber, getBibRange, BibCapacityExhaustedError } from './bibNumber'
 
 const buildAdmin = (rpcImpl: (...args: any[]) => any) => ({
   rpc: vi.fn(rpcImpl),
@@ -14,7 +14,7 @@ describe('assignBibNumber', () => {
       eventId: 'event-1',
       registrationId: 'reg-1',
       raceFormat: 'open',
-      maxBibNumber: 500,
+      bibRange: { min: 1001, max: 6000 },
     })
 
     expect(result).toBe(42)
@@ -22,7 +22,8 @@ describe('assignBibNumber', () => {
       p_event_id: 'event-1',
       p_registration_id: 'reg-1',
       p_race_format: 'open',
-      p_max_number: 500,
+      p_min_number: 1001,
+      p_max_number: 6000,
     })
   })
 
@@ -37,7 +38,7 @@ describe('assignBibNumber', () => {
         eventId: 'event-1',
         registrationId: 'reg-1',
         raceFormat: 'ranked',
-        maxBibNumber: 10,
+        bibRange: { min: 1, max: 10 },
       }),
     ).rejects.toBeInstanceOf(BibCapacityExhaustedError)
   })
@@ -51,7 +52,7 @@ describe('assignBibNumber', () => {
         eventId: 'event-1',
         registrationId: 'reg-1',
         raceFormat: 'open',
-        maxBibNumber: 10,
+        bibRange: { min: 1, max: 10 },
       }),
     ).rejects.toThrow('connection reset')
   })
@@ -66,7 +67,7 @@ describe('transferBibNumber', () => {
       registrationId: 'reg-1',
       eventId: 'event-1',
       targetFormat: 'open',
-      maxBibNumber: 500,
+      bibRange: { min: 1001, max: 6000 },
     })
 
     expect(result).toBe(7)
@@ -74,7 +75,8 @@ describe('transferBibNumber', () => {
       p_registration_id: 'reg-1',
       p_event_id: 'event-1',
       p_target_format: 'open',
-      p_max_number: 500,
+      p_min_number: 1001,
+      p_max_number: 6000,
     })
   })
 
@@ -89,8 +91,31 @@ describe('transferBibNumber', () => {
         registrationId: 'reg-1',
         eventId: 'event-1',
         targetFormat: 'ranked',
-        maxBibNumber: 10,
+        bibRange: { min: 1, max: 10 },
       }),
     ).rejects.toBeInstanceOf(BibCapacityExhaustedError)
+  })
+})
+
+describe('getBibRange', () => {
+  const event = { capacity: 6000, ranked_bib_capacity: 1000 }
+
+  it('RANKED prend 1..ranked, OPEN prend ranked+1..capacité totale', () => {
+    expect(getBibRange(event, 'ranked')).toEqual({ min: 1, max: 1000 })
+    expect(getBibRange(event, 'open')).toEqual({ min: 1001, max: 6000 })
+  })
+
+  it('OPEN prend toute la plage quand aucun RANKED n\'est réservé', () => {
+    expect(getBibRange({ capacity: 300, ranked_bib_capacity: null }, 'open')).toEqual({ min: 1, max: 300 })
+    expect(getBibRange({ capacity: 300, ranked_bib_capacity: null }, 'ranked')).toBeNull()
+  })
+
+  it('renvoie null si la capacité est absente, ou si ranked dépasse le total', () => {
+    expect(getBibRange({ capacity: 0, ranked_bib_capacity: 10 }, 'open')).toBeNull()
+    expect(getBibRange({ capacity: 100, ranked_bib_capacity: 150 }, 'ranked')).toBeNull()
+  })
+
+  it('renvoie null pour OPEN quand RANKED consomme toute la capacité', () => {
+    expect(getBibRange({ capacity: 100, ranked_bib_capacity: 100 }, 'open')).toBeNull()
   })
 })

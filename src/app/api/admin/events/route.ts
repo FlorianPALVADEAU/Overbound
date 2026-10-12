@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { isRankedCapacityWithinTotal, parseBibCapacity } from '@/lib/events/bibCapacity'
 import {
   adminEventDirectionSchema,
   adminEventSortSchema,
@@ -144,6 +145,7 @@ const handlePost = async (request: NextRequest) => {
       sales_start,
       location,
       capacity,
+      ranked_bib_capacity,
       status,
       external_provider,
       external_event_id,
@@ -155,6 +157,14 @@ const handlePost = async (request: NextRequest) => {
       return NextResponse.json(
         { error: 'Champs obligatoires manquants' },
         { status: 400 }
+      )
+    }
+
+    const totalCapacity = parseInt(capacity) || 0
+    if (!isRankedCapacityWithinTotal(totalCapacity, parseBibCapacity(ranked_bib_capacity))) {
+      return NextResponse.json(
+        { error: 'Les dossards RANKED ne peuvent pas dépasser la capacité totale.' },
+        { status: 400 },
       )
     }
 
@@ -172,6 +182,7 @@ const handlePost = async (request: NextRequest) => {
         sales_start: sales_start ? new Date(sales_start).toISOString() : null,
         location,
         capacity: parseInt(capacity) || 0,
+        ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
         status: status || 'draft',
         external_provider: external_provider || null,
         external_event_id: external_event_id || null,

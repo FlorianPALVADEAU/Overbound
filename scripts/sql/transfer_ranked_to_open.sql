@@ -47,7 +47,8 @@ DECLARE
   r record;
   t_open record;
   g_anchor record;
-  v_open_bib_capacity integer;
+  v_bib_min integer;
+  v_bib_max integer;
   v_assignment json;
   v_new_bib integer;
 BEGIN
@@ -66,7 +67,8 @@ BEGIN
     race.name AS race_name,
     race.distance_km AS race_distance_km,
     evt.date AS event_date,
-    evt.open_bib_capacity AS event_open_bib_capacity
+    evt.ranked_bib_capacity AS event_ranked_bib_capacity,
+    evt.capacity AS event_capacity
   INTO r
   FROM registrations reg
   JOIN tickets t ON t.id = reg.ticket_id
@@ -161,9 +163,11 @@ BEGIN
     RAISE EXCEPTION 'Registration % has no group anchor on this event: v_wave_index must be set to the participant''s chosen SAS before running this script (FDR-0012)', r.id;
   END IF;
 
-  v_open_bib_capacity := r.event_open_bib_capacity;
-  IF v_open_bib_capacity IS NULL OR v_open_bib_capacity <= 0 THEN
-    RAISE EXCEPTION 'Event % has no open_bib_capacity configured; cannot assign an OPEN bib number', r.event_id;
+  -- Plage unique : OPEN = ranked_bib_capacity + 1 .. events.capacity
+  v_bib_min := COALESCE(r.event_ranked_bib_capacity, 0) + 1;
+  v_bib_max := r.event_capacity;
+  IF v_bib_max IS NULL OR v_bib_min > v_bib_max THEN
+    RAISE EXCEPTION 'Event % has no OPEN bib range (ranked=%, capacity=%); cannot assign an OPEN bib number', r.event_id, r.event_ranked_bib_capacity, r.event_capacity;
   END IF;
 
   RAISE NOTICE 'Registration=% user=% event=%', r.id, r.user_id, r.event_id;
@@ -219,7 +223,8 @@ BEGIN
     p_registration_id := r.id,
     p_event_id := r.event_id,
     p_target_format := 'open',
-    p_max_number := v_open_bib_capacity
+    p_min_number := v_bib_min,
+    p_max_number := v_bib_max
   );
 
   SELECT reg.start_time, reg.wave_index, reg.bib_number

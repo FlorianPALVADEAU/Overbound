@@ -7,6 +7,29 @@ export class BibCapacityExhaustedError extends Error {
   }
 }
 
+export interface BibRange {
+  min: number
+  max: number
+}
+
+/**
+ * Plage unique par événement : RANKED = 1..ranked_bib_capacity, OPEN =
+ * ranked_bib_capacity+1..events.capacity. Renvoie null si la plage du format
+ * est vide ou incohérente (capacité non configurée, ranked > capacité totale).
+ */
+export const getBibRange = (
+  event: { capacity?: number | null; ranked_bib_capacity?: number | null },
+  format: RaceFormat,
+): BibRange | null => {
+  const total = event.capacity ?? 0
+  const ranked = event.ranked_bib_capacity ?? 0
+  if (!Number.isInteger(total) || total <= 0 || !Number.isInteger(ranked) || ranked < 0 || ranked > total) {
+    return null
+  }
+  const range = format === 'ranked' ? { min: 1, max: ranked } : { min: ranked + 1, max: total }
+  return range.min <= range.max ? range : null
+}
+
 const isCapacityExhausted = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
   return message.includes('BIB_CAPACITY_EXHAUSTED')
@@ -24,19 +47,20 @@ export const assignBibNumber = async ({
   eventId,
   registrationId,
   raceFormat,
-  maxBibNumber,
+  bibRange,
 }: {
   admin: any
   eventId: string
   registrationId: string
   raceFormat: RaceFormat
-  maxBibNumber: number
+  bibRange: BibRange
 }): Promise<number> => {
   const { data, error } = await admin.rpc('assign_bib_number', {
     p_event_id: eventId,
     p_registration_id: registrationId,
     p_race_format: raceFormat,
-    p_max_number: maxBibNumber,
+    p_min_number: bibRange.min,
+    p_max_number: bibRange.max,
   })
 
   if (error) {
@@ -60,19 +84,20 @@ export const transferBibNumber = async ({
   registrationId,
   eventId,
   targetFormat,
-  maxBibNumber,
+  bibRange,
 }: {
   admin: any
   registrationId: string
   eventId: string
   targetFormat: RaceFormat
-  maxBibNumber: number
+  bibRange: BibRange
 }): Promise<number> => {
   const { data, error } = await admin.rpc('transfer_bib_number', {
     p_registration_id: registrationId,
     p_event_id: eventId,
     p_target_format: targetFormat,
-    p_max_number: maxBibNumber,
+    p_min_number: bibRange.min,
+    p_max_number: bibRange.max,
   })
 
   if (error) {

@@ -69,7 +69,7 @@ const EVENT_ROW = {
   title: 'Ultra Arena',
   date: '2026-09-12T06:00:00.000Z',
   location: 'SQY',
-  open_bib_capacity: 5000,
+  capacity: 6000,
   ranked_bib_capacity: 1000,
   price_tiers: [],
 }
