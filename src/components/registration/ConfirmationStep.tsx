@@ -165,7 +165,7 @@ export default function ConfirmationStep({
           <p className="text-base font-semibold">
             Ta signature <span className="text-destructive" aria-hidden>*</span>
           </p>
-          <p className="text-sm text-muted-foreground">Dessine-la avec ton doigt ou ta souris.</p>
+          
         </div>
         <div className={`rounded-lg ${showSignatureError ? 'ring-2 ring-destructive ring-offset-2 ring-offset-background' : ''}`}>
           <SignaturePad onChange={onSignatureChange} />

@@ -4,23 +4,23 @@ import UpsellCard from './UpsellCard'
 interface OptionsStepProps {
   upsells: EventUpsell[]
   selectedUpsells: SelectedUpsellState
-  selectedTicketSlots: string[]
   participants: Participant[]
   defaultCurrency: string
-  onQuantityChange: (upsellId: string, quantity: number) => void
-  onSizeChange: (upsellId: string, index: number, size: string) => void
-  onPhotoPackToggle: (upsellId: string, ticketId: string, checked: boolean) => void
+  onSetForParticipant: (upsellId: string, participantId: string, quantity: number, size?: string) => void
+  onSetForAll: (upsellId: string, quantity: number) => void
+  onClear: (upsellId: string) => void
+  onSizeForAll: (upsellId: string, size: string) => void
 }
 
 export default function OptionsStep({
   upsells,
   selectedUpsells,
-  selectedTicketSlots,
   participants,
   defaultCurrency,
-  onQuantityChange,
-  onSizeChange,
-  onPhotoPackToggle,
+  onSetForParticipant,
+  onSetForAll,
+  onClear,
+  onSizeForAll,
 }: OptionsStepProps) {
   return (
     <div className="space-y-3">
@@ -29,12 +29,12 @@ export default function OptionsStep({
           key={upsell.id}
           upsell={upsell}
           selection={selectedUpsells[upsell.id]}
-          selectedTicketSlots={selectedTicketSlots}
           participants={participants}
           defaultCurrency={defaultCurrency}
-          onQuantityChange={onQuantityChange}
-          onSizeChange={onSizeChange}
-          onPhotoPackToggle={onPhotoPackToggle}
+          onSetForParticipant={onSetForParticipant}
+          onSetForAll={onSetForAll}
+          onClear={onClear}
+          onSizeForAll={onSizeForAll}
         />
       ))}
     </div>

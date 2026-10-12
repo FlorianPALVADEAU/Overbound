@@ -8,29 +8,35 @@ interface SignaturePadProps {
   height?: number
 }
 
-export default function SignaturePad({ onChange, height = 220 }: SignaturePadProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
+export default function SignaturePad({ onChange, height = 180 }: SignaturePadProps) {
+  const wrapRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawing = useRef(false)
   const contextRef = useRef<CanvasRenderingContext2D | null>(null)
-  const dimensionsRef = useRef({ width: 600, height })
+  const dimensionsRef = useRef({ width: 300, height })
   const blankSnapshotRef = useRef<string | null>(null)
+  const widthRef = useRef(0)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
 
   useEffect(() => {
     const canvas = canvasRef.current
-    const container = containerRef.current
-    if (!canvas || !container) return
+    const wrap = wrapRef.current
+    if (!canvas || !wrap) return
 
-    const resizeCanvas = () => {
+    // Sized to the box it sits in, and redrawn only when that width changes: on
+    // phones the browser bars sliding in and out resize the window, which must
+    // not wipe a signature.
+    const fit = () => {
+      const width = Math.floor(wrap.clientWidth)
+      if (width === 0 || width === widthRef.current) return
+      const hadSignature = widthRef.current !== 0
+      widthRef.current = width
+
       const ratio = window.devicePixelRatio || 1
-      const width = container.offsetWidth || 600
-      const adjustedHeight = height
-      dimensionsRef.current = { width, height: adjustedHeight }
-
+      dimensionsRef.current = { width, height }
       canvas.width = width * ratio
-      canvas.height = adjustedHeight * ratio
-      canvas.style.width = `${width}px`
-      canvas.style.height = `${adjustedHeight}px`
+      canvas.height = height * ratio
 
       const context = canvas.getContext('2d')
       if (!context) return
@@ -39,18 +45,18 @@ export default function SignaturePad({ onChange, height = 220 }: SignaturePadPro
       context.scale(ratio, ratio)
       context.lineCap = 'round'
       context.lineJoin = 'round'
-      context.lineWidth = 2
-      context.strokeStyle = 'hsl(var(--foreground))'
+      context.lineWidth = 2.5
+      context.strokeStyle = '#111111'
       context.fillStyle = 'white'
-      context.fillRect(0, 0, width, adjustedHeight)
+      context.fillRect(0, 0, width, height)
       blankSnapshotRef.current = canvas.toDataURL('image/png')
+      if (hadSignature) onChangeRef.current(null)
     }
 
-    resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
-    return () => {
-      window.removeEventListener('resize', resizeCanvas)
-    }
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(wrap)
+    return () => observer.disconnect()
   }, [height])
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -104,20 +110,21 @@ export default function SignaturePad({ onChange, height = 220 }: SignaturePadPro
   }
 
   return (
-    <div ref={containerRef} className="space-y-3">
-      <div className="rounded-lg border border-muted bg-white shadow-sm">
+    <div className="w-full min-w-0 space-y-2">
+      <div ref={wrapRef} className="w-full overflow-hidden rounded-xl border border-border bg-white">
         <canvas
           ref={canvasRef}
-          className="w-full touch-none"
+          style={{ height, width: '100%' }}
+          className="block touch-none"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={endDrawing}
           onPointerLeave={endDrawing}
         />
       </div>
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Signature manuscrite : utilisez votre souris ou votre doigt pour signer.</span>
-        <Button type="button" variant="outline" size="sm" onClick={clearCanvas}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted-foreground">Signe avec ton doigt ou ta souris.</span>
+        <Button type="button" variant="outline" className="h-11 shrink-0" onClick={clearCanvas}>
           Effacer
         </Button>
       </div>

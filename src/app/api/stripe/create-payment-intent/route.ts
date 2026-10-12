@@ -20,6 +20,7 @@ import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { serializeUtmParams } from '@/lib/attribution/utm'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
+import { validateUpsellAssignments } from '@/lib/upsells/assignments'
 import {
   FLEXIBLE_TICKET_FEE_CENTS,
   allocatePaidTicketPrices,
@@ -233,6 +234,13 @@ export async function POST(request: NextRequest) {
       participants.length,
     )
     if (upsellQuantityError) return respondJson({ error: upsellQuantityError }, 422)
+
+    const upsellAssignmentError = validateUpsellAssignments(
+      upsells,
+      new Map(Array.from(upsellMap.values()).map((upsell) => [upsell.id, upsell])),
+      participants.length,
+    )
+    if (upsellAssignmentError) return respondJson({ error: upsellAssignmentError }, 422)
 
     const upsellSubtotal = getUpsellSubtotal(upsells, upsellMap)
     const upsellSubtotalsById = getUpsellSubtotalsById(upsells, upsellMap)

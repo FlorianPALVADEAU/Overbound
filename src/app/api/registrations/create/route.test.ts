@@ -153,8 +153,11 @@ function createAdmin(
     rpcOverrides?: Record<string, (...args: any[]) => Promise<{ data?: unknown; error: unknown }>>
     ticketRows?: Array<Record<string, unknown>>
     groupRow?: Record<string, unknown> | null
+    upsellRows?: Array<Record<string, unknown>>
+    upsellInserts?: Array<Record<string, unknown>>
   } = {},
 ) {
+  let registrationCount = 0
   const eventRow = { ...EVENT_ROW, ...overrides.eventOverrides }
   const ticketRows = overrides.ticketRows ?? [RANKED_TICKET_ROW]
 
@@ -191,7 +194,7 @@ function createAdmin(
       if (table === 'upsells') {
         return {
           select() {
-            return { eq() { return { or: async () => ({ data: [], error: null }) } } }
+            return { eq() { return { or: async () => ({ data: overrides.upsellRows ?? [], error: null }) } } }
           },
         }
       }
@@ -218,7 +221,7 @@ function createAdmin(
               select() {
                 return {
                   single: async () => ({
-                    data: { id: 'reg-1', email: payload.email, ...payload },
+                    data: { id: `reg-${++registrationCount}`, email: payload.email, ...payload },
                     error: null,
                   }),
                 }
@@ -232,6 +235,14 @@ function createAdmin(
       }
       if (table === 'registration_signatures') {
         return { insert: async () => ({ error: null }) }
+      }
+      if (table === 'registration_upsells') {
+        return {
+          insert: async (rows: Array<Record<string, unknown>>) => {
+            overrides.upsellInserts?.push(...rows)
+            return { error: null }
+          },
+        }
       }
       throw new Error(`Unexpected table: ${table}`)
     },
@@ -384,6 +395,73 @@ describe('POST /api/registrations/create', () => {
     expect(body.success).toBe(true)
     expect(sendTicketEmailMock).toHaveBeenCalledTimes(1)
     expect(sendReceiptEmailMock).toHaveBeenCalledTimes(1)
+  })
+
+  describe('options chosen per participant', () => {
+    const TSHIRT = { id: 'tshirt-1', name: 'T-shirt', type: 'tshirt', price_cents: 1200, currency: 'eur' }
+    const twoParticipants = [
+      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com' },
+      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com' },
+    ]
+    const paidIntent = {
+      id: 'pi_1',
+      status: 'succeeded',
+      amount: 5000,
+      currency: 'eur',
+      metadata: {},
+      payment_method_types: ['card'],
+    }
+
+    it('stores each option on the registration of the participant who takes it', async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(paidIntent)
+      const upsellInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ upsellRows: [TSHIRT], upsellInserts }))
+
+      const response = await POST(
+        jsonRequest(
+          baseBody({
+            ticketSelections: [{ ticketId: 'ticket-1', quantity: 2 }],
+            participants: twoParticipants,
+            upsells: [
+              {
+                upsellId: 'tshirt-1',
+                quantity: 1,
+                meta: { assignments: [{ participantIndex: 1, quantity: 1, size: 'L' }] },
+              },
+            ],
+          }),
+        ),
+      )
+
+      expect(response.status).toBe(200)
+      // Bob is the second participant: his registration is the second one created.
+      expect(upsellInserts).toEqual([
+        expect.objectContaining({ registration_id: 'reg-2', quantity: 1, meta: { sizes: ['L'] } }),
+      ])
+    })
+
+    it('rejects a distribution that does not add up, before creating anything', async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(paidIntent)
+      const upsellInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ upsellRows: [TSHIRT], upsellInserts }))
+
+      const response = await POST(
+        jsonRequest(
+          baseBody({
+            ticketSelections: [{ ticketId: 'ticket-1', quantity: 2 }],
+            participants: twoParticipants,
+            upsells: [
+              { upsellId: 'tshirt-1', quantity: 2, meta: { assignments: [{ participantIndex: 0, quantity: 1 }] } },
+            ],
+          }),
+        ),
+      )
+
+      expect(response.status).toBe(422)
+      expect(upsellInserts).toEqual([])
+    })
   })
 
   it('assigns a bib number via the atomic RPC for a RANKED registration', async () => {

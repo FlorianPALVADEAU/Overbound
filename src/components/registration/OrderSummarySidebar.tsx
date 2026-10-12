@@ -57,6 +57,25 @@ export default function OrderSummarySidebar({
   const showActiveTierDiscount = hasActiveDiscount && !isTierDiscountOverriddenByPromo
   const row = 'flex items-start justify-between gap-3'
 
+  // Same ticket bought several times reads as one line: "7 × OPEN", not seven.
+  const ticketGroups = selectedTicketSlots.reduce<Array<{ ticket: EventTicket; count: number; names: string[] }>>(
+    (groups, ticketId, index) => {
+      const ticket = ticketMap[ticketId]
+      if (!ticket) return groups
+      const participant = participants[index]
+      const name = participant ? joinName(participant.firstName, participant.lastName) : ''
+      const existing = groups.find((group) => group.ticket.id === ticket.id)
+      if (existing) {
+        existing.count += 1
+        if (name) existing.names.push(name)
+      } else {
+        groups.push({ ticket, count: 1, names: name ? [name] : [] })
+      }
+      return groups
+    },
+    [],
+  )
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <h2 className="text-lg font-semibold">Ta commande</h2>
@@ -65,23 +84,28 @@ export default function OrderSummarySidebar({
         {selectedTicketSlots.length === 0 ? (
           <p className="text-muted-foreground">Choisis un billet pour commencer.</p>
         ) : (
-          selectedTicketSlots.map((ticketId, index) => {
-            const ticket = ticketMap[ticketId]
-            const participant = participants[index]
-            if (!ticket) return null
-
-            const ticketPrice =
+          ticketGroups.map((group) => {
+            const { ticket, count, names } = group
+            const unit =
               activeTier && ticket.final_price_cents
                 ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
                 : ticket.final_price_cents
             const currency = (ticket.currency || defaultCurrency).toLowerCase()
+            const shown = names.slice(0, 3).join(', ')
+            const hidden = names.length - 3
 
             return (
-              <div key={`${ticketId}-${index}`} className={row}>
+              <div key={ticket.id} className={row}>
                 <div className="min-w-0">
-                  <p className="font-medium">{ticket.name}</p>
-                  {participant?.firstName || participant?.lastName ? (
-                    <p className="text-xs text-muted-foreground">{joinName(participant.firstName, participant.lastName)}</p>
+                  <p className="font-medium">
+                    {count > 1 ? `${count} × ` : ''}
+                    {ticket.name}
+                  </p>
+                  {names.length > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {shown}
+                      {hidden > 0 ? ` et ${hidden} autre${hidden > 1 ? 's' : ''}` : ''}
+                    </p>
                   ) : null}
                   {showActiveTierDiscount && activeTier && ticket.final_price_cents ? (
                     <p className="text-xs font-semibold text-primary">
@@ -91,9 +115,9 @@ export default function OrderSummarySidebar({
                 </div>
                 <div className="text-right">
                   {showActiveTierDiscount && ticket.final_price_cents ? (
-                    <p className="text-xs text-muted-foreground line-through">{formatPrice(ticket.final_price_cents, currency)}</p>
+                    <p className="text-xs text-muted-foreground line-through">{formatPrice(ticket.final_price_cents * count, currency)}</p>
                   ) : null}
-                  <p className="font-medium">{ticketPrice ? formatPrice(ticketPrice, currency) : '—'}</p>
+                  <p className="font-medium">{unit ? formatPrice(unit * count, currency) : '—'}</p>
                 </div>
               </div>
             )

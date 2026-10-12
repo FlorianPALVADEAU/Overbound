@@ -13,6 +13,7 @@ import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useParticipants } from '@/hooks/registration/useParticipants'
 import { cn } from '@/lib/utils'
 import { useUpsells } from '@/hooks/registration/useUpsells'
+import { buildUpsellRequest } from '@/lib/upsells/assignments'
 import { usePromoCode } from '@/hooks/registration/usePromoCode'
 import { useRegistrationPricing } from '@/hooks/registration/useRegistrationPricing'
 import { usePaymentIntent } from '@/hooks/registration/usePaymentIntent'
@@ -93,14 +94,14 @@ export default function MultiStepEventRegistration({
     suppressEmptyParticipantsSyncRef,
   )
   const needsGroupAttestation = participants.length > 1
-  // 80px = lg:top-20: the summary column sticks only while it fits on screen (no nested scrollbar).
 
   const {
     selectedUpsells,
     setSelectedUpsells,
-    handleUpsellChange,
-    handlePhotoPackToggle,
-    handleUpsellSizeChange,
+    setUpsellForParticipant,
+    setUpsellForAll,
+    clearUpsell,
+    setUpsellSizeForAll,
     upsellSummaryItems,
   } = useUpsells(upsells, selectedTicketSlots, participants, defaultCurrency)
 
@@ -371,11 +372,7 @@ export default function MultiStepEventRegistration({
               healthDataConsent: p.healthDataConsent === true,
               licenseNumber: p.licenseNumber,
             })),
-            upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
-              upsellId,
-              quantity: config.quantity,
-              meta: config.meta || {},
-            })),
+            upsells: buildUpsellRequest(selectedUpsells, participants.map((p) => p.id)),
             promoCodes: appliedPromos.map((promo) => promo.code),
             ambassadorReferralCode: ambassadorReferralCode ?? null,
             signatureImage,
@@ -457,11 +454,7 @@ export default function MultiStepEventRegistration({
         healthDataConsent: p.healthDataConsent === true,
         licenseNumber: p.licenseNumber,
       })),
-      upsells: Object.entries(selectedUpsells).filter(([, config]) => config.quantity > 0).map(([upsellId, config]) => ({
-        upsellId,
-        quantity: config.quantity,
-        meta: config.meta || {},
-      })),
+      upsells: buildUpsellRequest(selectedUpsells, participants.map((p) => p.id)),
       promoCodes: appliedPromos.map((promo) => promo.code),
       ambassadorReferralCode: ambassadorReferralCode ?? null,
       groupId: myGroup?.id ?? null,
@@ -577,12 +570,12 @@ export default function MultiStepEventRegistration({
                 <OptionsStep
                   upsells={upsells}
                   selectedUpsells={selectedUpsells}
-                  selectedTicketSlots={selectedTicketSlots}
                   participants={participants}
                   defaultCurrency={defaultCurrency}
-                  onQuantityChange={handleUpsellChange}
-                  onSizeChange={handleUpsellSizeChange}
-                  onPhotoPackToggle={handlePhotoPackToggle}
+                  onSetForParticipant={setUpsellForParticipant}
+                  onSetForAll={setUpsellForAll}
+                  onClear={clearUpsell}
+                  onSizeForAll={setUpsellSizeForAll}
                 />
               </RegistrationSection>
             ) : null}

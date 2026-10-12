@@ -15,6 +15,7 @@ import type { Ticket } from '@/types/Ticket'
 import type { Upsell } from '@/types/Upsell'
 import { useRegistrationStore } from '@/store/useRegistrationStore'
 import { UpsellImagePreview } from '@/components/registration/UpsellImagePreview'
+import { buildUpsellRequest, readAssignments } from '@/lib/upsells/assignments'
 
 interface EventTicket extends Ticket {}
 
@@ -23,6 +24,14 @@ interface PaymentClientProps {
   tickets: EventTicket[]
   upsells: Upsell[]
   userEmail: string
+}
+
+const sizesLabel = (meta: Record<string, any> | undefined) => {
+  const counts = new Map<string, number>()
+  readAssignments(meta).forEach((assignment) => {
+    if (assignment.size) counts.set(assignment.size, (counts.get(assignment.size) ?? 0) + assignment.quantity)
+  })
+  return Array.from(counts, ([size, count]) => (count > 1 ? `${size} ×${count}` : size)).join(', ')
 }
 
 export default function PaymentClient({ event, tickets, upsells, userEmail }: PaymentClientProps) {
@@ -76,7 +85,11 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
           userId: registrationDraft.userId,
           ticketSelections: registrationDraft.ticketSelections,
           participants: registrationDraft.participants.map(({ id: _id, ...participant }) => participant),
-          upsells: registrationDraft.upsells,
+          // The draft keeps who takes what by participant id; the API wants their position in the order.
+          upsells: buildUpsellRequest(
+            Object.fromEntries(registrationDraft.upsells.map((item) => [item.upsellId, { quantity: item.quantity, meta: item.meta }])),
+            registrationDraft.participants.map((participant) => participant.id),
+          ),
           promoCodes: registrationDraft.promoCodes || [],
           ambassadorReferralCode: registrationDraft.ambassadorReferralCode,
           groupId: registrationDraft.groupId ?? null,
@@ -289,8 +302,8 @@ export default function PaymentClient({ event, tickets, upsells, userEmail }: Pa
                           <UpsellImagePreview src={upsell.image_url} alt={upsell.name} className="h-14 w-14" />
                           <div className="space-y-0.5">
                             <p className="font-medium">{item.quantity} × {upsell.name}</p>
-                            {item.meta?.size ? (
-                              <p className="text-xs text-muted-foreground">Taille {item.meta.size}</p>
+                            {sizesLabel(item.meta) ? (
+                              <p className="text-xs text-muted-foreground">Tailles : {sizesLabel(item.meta)}</p>
                             ) : null}
                           </div>
                         </div>

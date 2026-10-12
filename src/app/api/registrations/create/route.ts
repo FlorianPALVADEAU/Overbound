@@ -30,6 +30,7 @@ import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
+import { readRequestAssignments, validateUpsellAssignments } from '@/lib/upsells/assignments'
 
 export const runtime = 'nodejs'
 
@@ -324,6 +325,15 @@ export async function POST(request: NextRequest) {
     )
     if (upsellQuantityError) {
       return NextResponse.json({ error: upsellQuantityError }, { status: 422 })
+    }
+
+    const upsellAssignmentError = validateUpsellAssignments(
+      upsells,
+      new Map(Array.from(upsellMap.values()).map((upsell) => [upsell.id, upsell])),
+      participants.length,
+    )
+    if (upsellAssignmentError) {
+      return NextResponse.json({ error: upsellAssignmentError }, { status: 422 })
     }
 
     const upsellSubtotal = upsells.reduce((accumulator: number, item: { upsellId: string; quantity: number }) => {
@@ -675,22 +685,36 @@ export async function POST(request: NextRequest) {
 
     if (upsells && upsells.length > 0 && createdRegistrations.length > 0) {
       const referenceRegistration = createdRegistrations[0].registration
+      // Each option is stored on the registration of the participant who takes it.
+      // Selections without assignments (older clients) stay attached to the first one.
       const upsellRecords = upsells
-        .map((item) => {
+        .flatMap((item) => {
           const upsell = upsellMap.get(item.upsellId)
           const quantity = Number(item.quantity || 0)
-          if (!upsell) return null
-          if (!Number.isFinite(quantity) || quantity <= 0) return null
-          return {
-            registration_id: referenceRegistration.id,
+          if (!upsell) return []
+          if (!Number.isFinite(quantity) || quantity <= 0) return []
+          const base = {
             name: upsell.name,
             price_cents: upsell.price_cents,
-            quantity,
             currency: upsell.currency || paymentIntent.currency,
-            meta: item.meta ?? null,
           }
+          const assignments = readRequestAssignments(item.meta)
+          if (assignments === null || assignments.length === 0) {
+            return [{ ...base, registration_id: referenceRegistration.id, quantity, meta: item.meta ?? null }]
+          }
+          return assignments.flatMap((assignment) => {
+            const target = createdRegistrations[assignment.participantIndex]?.registration
+            if (!target) return []
+            return [
+              {
+                ...base,
+                registration_id: target.id,
+                quantity: assignment.quantity,
+                meta: assignment.size ? { sizes: [assignment.size] } : null,
+              },
+            ]
+          })
         })
-        .filter(Boolean)
 
       if (upsellRecords.length > 0) {
         const { error: upsellError } = await admin

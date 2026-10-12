@@ -9,6 +9,7 @@ import type {
   TicketSelections,
 } from '@/components/registration/types'
 import { readUtmParams } from '@/lib/attribution/utm'
+import { buildUpsellRequest } from '@/lib/upsells/assignments'
 
 export function usePaymentIntent(
   event: Event,
@@ -75,11 +76,7 @@ export function usePaymentIntent(
             selectedWaveIndex: p.selectedWaveIndex ?? null,
             flexible: p.flexible === true,
           })),
-          upsells: Object.entries(selectedUpsells).map(([upsellId, config]) => ({
-            upsellId,
-            quantity: config.quantity,
-            meta: config.meta || {},
-          })),
+          upsells: buildUpsellRequest(selectedUpsells, participants.map((p) => p.id)),
           promoCodes: appliedPromos.map((promo) => promo.code),
           ambassadorReferralCode,
           utmParams: readUtmParams(),
