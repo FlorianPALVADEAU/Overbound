@@ -44,7 +44,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
 
   if (isLoading) {
     return (
-      <div aria-label="Chargement du contexte événement" className="flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground">
+      <div aria-label="Chargement du contexte événement" className="flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Chargement des événements…
       </div>
@@ -76,10 +76,10 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
   }
 
   return (
-    <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+    <div className="space-y-2 rounded-2xl border border-border bg-card p-3 sm:space-y-3 sm:p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contexte événement</p>
+        <div className="hidden min-w-0 sm:block">
+          <p className="text-label font-semibold uppercase text-subtle">Contexte événement</p>
           <p className="truncate text-sm font-medium">
             {selectedEvent ? selectedEvent.title : hasAmbiguousContext ? 'Sélection requise' : 'Aucun événement sélectionné'}
           </p>
@@ -88,7 +88,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
           <span className="sr-only">Événement à administrer</span>
           <select
             aria-label="Événement à administrer"
-            className="min-h-10 min-w-0 flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring lg:w-[24rem] lg:flex-none"
+            className="min-h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring lg:w-96 lg:flex-none"
             value={selectedEvent?.id ?? EMPTY_EVENT_VALUE}
             onChange={(event) => {
               const params = new URLSearchParams(window.location.search)
@@ -126,7 +126,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
       </div>
 
       {selectedEvent ? (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="hidden flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:flex">
           <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatEventDate(selectedEvent)}</span>
           <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</span>
           <span>{statusLabel(selectedEvent.status)}</span>
@@ -137,7 +137,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Button asChild size="sm" variant="secondary" disabled={!selectedEvent}>
           <Link href={selectedEvent ? `/dashboard/events/${selectedEvent.id}/participants` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
             Participants <ChevronRight className="ml-1 h-4 w-4" />

@@ -22,7 +22,7 @@ function formatCurrency(value: number | null | undefined, currency: Ticket['curr
 
 export function TicketCard({ ticket, onEdit, onDelete, isDeleting }: TicketCardProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0 space-y-3">

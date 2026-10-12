@@ -5,6 +5,7 @@ import type { AmbassadorDashboardData } from '@/types/Ambassador'
 import { AMBASSADOR_REWARD_LEVELS } from '@/lib/ambassadors/program'
 import { getCurrentSegmentFill } from '@/lib/ambassadors/dashboardPresentation'
 import { useClaimAmbassadorReward } from '@/hooks/ambassadors/useClaimAmbassadorReward'
+import { Container } from '@/components/ds'
 import { AmbassadorHero } from '@/components/ambassadors/AmbassadorHero'
 import { AmbassadorCodeCard } from '@/components/ambassadors/AmbassadorCodeCard'
 import { AmbassadorPointsSummary } from '@/components/ambassadors/AmbassadorPointsSummary'
@@ -31,7 +32,6 @@ export function AmbassadorDashboard({
   onRewardClaimed,
 }: AmbassadorDashboardProps) {
   const [copyFeedback, setCopyFeedback] = useState<'idle' | 'copied'>('idle')
-  const [recruitsOpen, setRecruitsOpen] = useState(false)
   const { claimingLevel, actionError, actionSuccess, handleClaimReward } =
     useClaimAmbassadorReward(onRewardClaimed)
 
@@ -75,23 +75,11 @@ export function AmbassadorDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-muted/30">
-      <div className="mx-auto max-w-5xl space-y-6 p-4 pb-16 md:p-6">
-
+    <main className="min-h-screen bg-background">
+      <Container className="space-y-4 py-6 sm:space-y-6 sm:py-8">
         <AmbassadorHero fullName={fullName} email={email} />
 
-        <AmbassadorCodeCard
-          code={data.code}
-          copyFeedback={copyFeedback}
-          onCopy={handleCopy}
-          onShare={handleShare}
-        />
-
-        {/* ── Conditions notice ── */}
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-          Les conditions du programme ambassadeur sont disponibles plus bas sur la page.
-          <a href="#conditions" className="ml-1 underline">Lire les conditions</a>
-        </div>
+        <AmbassadorCodeCard code={data.code} copyFeedback={copyFeedback} onCopy={handleCopy} onShare={handleShare} />
 
         <AmbassadorPointsSummary
           totalPoints={totalPoints}
@@ -99,18 +87,6 @@ export function AmbassadorDashboard({
           rankedCount={data.points_breakdown.ranked_count}
           nextReward={data.next_reward}
           segmentFill={segmentFill}
-        />
-
-        <AmbassadorBadges
-          unlockedLevels={unlockedLevels}
-          currentBadgeLevel={currentBadgeLevel}
-          nextBadgeLevels={nextBadgeLevels}
-        />
-
-        <AmbassadorRewardsTimeline
-          levels={levels}
-          totalPoints={totalPoints}
-          nextRewardLevel={nextRewardLevel}
         />
 
         <AmbassadorMotivationBanner
@@ -121,34 +97,36 @@ export function AmbassadorDashboard({
           onShare={handleShare}
         />
 
-        <AmbassadorLeaderboard leaderboard={data.leaderboard} />
+        <AmbassadorRewardsTimeline levels={levels} totalPoints={totalPoints} nextRewardLevel={nextRewardLevel} />
 
-        <AmbassadorRewardsList
-          rewards={data.rewards}
-          claimingLevel={claimingLevel}
-          actionError={actionError}
-          actionSuccess={actionSuccess}
-          onClaim={handleClaimReward}
-        />
-
-        <AmbassadorBonusTickets
-          totalPoints={totalPoints}
-          rewards={data.rewards}
-          claimingLevel={claimingLevel}
-          onClaim={handleClaimReward}
-        />
-
-        <AmbassadorRecruitsTable
-          recruits={data.recruits_table}
-          code={data.code}
-          isOpen={recruitsOpen}
-          onToggle={() => setRecruitsOpen((prev) => !prev)}
-          onShare={handleShare}
-        />
-
-        <AmbassadorConditions />
-
-      </div>
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 lg:items-start">
+          <div className="space-y-4 sm:space-y-6 lg:col-span-2">
+            <AmbassadorRewardsList
+              rewards={data.rewards}
+              claimingLevel={claimingLevel}
+              actionError={actionError}
+              actionSuccess={actionSuccess}
+              onClaim={handleClaimReward}
+            />
+            <AmbassadorBonusTickets
+              totalPoints={totalPoints}
+              rewards={data.rewards}
+              claimingLevel={claimingLevel}
+              onClaim={handleClaimReward}
+            />
+            <AmbassadorRecruitsTable recruits={data.recruits_table} code={data.code} onShare={handleShare} />
+          </div>
+          <div className="space-y-4 sm:space-y-6">
+            <AmbassadorLeaderboard leaderboard={data.leaderboard} />
+            <AmbassadorBadges
+              unlockedLevels={unlockedLevels}
+              currentBadgeLevel={currentBadgeLevel}
+              nextBadgeLevels={nextBadgeLevels}
+            />
+            <AmbassadorConditions />
+          </div>
+        </div>
+      </Container>
     </main>
   )
 }

@@ -13,41 +13,35 @@ interface AmbassadorCodeCardProps {
 
 export function AmbassadorCodeCard({ code, copyFeedback, onCopy, onShare }: AmbassadorCodeCardProps) {
   return (
-    <Card className="border-border/60">
-      <CardContent className="p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Ton code ambassadeur
-            </p>
-            {code ? (
-              <>
-                <p className="break-all text-2xl font-bold tracking-label text-primary sm:text-4xl sm:tracking-eyebrow">
-                  {code}
-                </p>
-                <p className="mt-2 max-w-sm text-xs text-muted-foreground">
-                  Partage ce code : tes filleuls obtiennent une réduction, toi tu gagnes des points.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-xl font-semibold text-muted-foreground">Non configuré</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Contacte l&apos;équipe Overbound pour associer ton code.
-                </p>
-              </>
-            )}
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={onCopy} disabled={!code} className="gap-2">
-              <Copy className="h-4 w-4" />
-              {copyFeedback === 'copied' ? 'Copié !' : 'Copier'}
-            </Button>
-            <Button size="sm" onClick={onShare} disabled={!code} className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Partager
-            </Button>
-          </div>
+    <Card variant="feature" className="gap-0 py-0">
+      <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="min-w-0">
+          <p className="text-label font-semibold uppercase text-subtle">Ton code ambassadeur</p>
+          {code ? (
+            <>
+              <p className="mt-1 break-all font-display text-display-md font-bold uppercase tracking-tight text-primary">
+                {code}
+              </p>
+              <p className="mt-1 max-w-md text-xs text-muted-foreground">
+                Tes filleuls obtiennent une réduction, toi tu gagnes des points.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-title font-semibold text-muted-foreground">Non configuré</p>
+              <p className="mt-1 text-xs text-muted-foreground">Contacte l&apos;équipe Overbound pour associer ton code.</p>
+            </>
+          )}
+        </div>
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
+          <Button variant="outline" size="cta" onClick={onCopy} disabled={!code}>
+            <Copy />
+            {copyFeedback === 'copied' ? 'Copié !' : 'Copier'}
+          </Button>
+          <Button size="cta" onClick={onShare} disabled={!code}>
+            <Share2 />
+            Partager
+          </Button>
         </div>
       </CardContent>
     </Card>

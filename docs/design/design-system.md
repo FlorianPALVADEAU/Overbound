@@ -108,7 +108,10 @@ Uniquement des tokens sémantiques. Aucune valeur hexadécimale dans une classe.
 | Action, accent | `primary` (vert) |
 | CTA d'inscription du header uniquement | `signal` (rouge), au plus un par écran |
 | Erreur | `destructive` |
+| Statut réussi / attention / information (admin) | `success`, `warning`, `info` |
 | Bordure | `border-border`, ou `border-primary/40` pour un séparateur de CTA |
+
+Statuts : `text-success`, `bg-success/15`, `border-success/40` (idem `warning`, `info`, `destructive`). Le vert de marque `primary` reste réservé à l'action ; `success` est un vert distinct. Interdits dans l'admin : `text-emerald-*`, `bg-amber-*`, `text-rose-*`, `text-sky-*`... (règle `raw-status-color`).
 
 Interdits : `#26AA26` et tout hex en classe, `text-gray-*`, `text-neutral-*`, `text-zinc-*`,
 `text-slate-*`, `bg-neutral-950`, `bg-red-*`, et les variantes `dark:` (le site n'a qu'un thème).
@@ -164,7 +167,7 @@ Dans une section `page`, un bloc de texte se limite à `max-w-2xl` (en-tête) ou
 ## Garde-fou `lint:design`
 
 `scripts/lint-design.mjs` compte, dans `src/app` et `src/components` (hors `ui/`, studio,
-tests ; l'admin est incluse depuis la phase P7), les motifs interdits ci-dessus. Il fonctionne en **cliquet** contre
+tests ; l'admin et `src/app/dashboard` sont inclus), les motifs interdits ci-dessus. Il fonctionne en **cliquet** contre
 `scripts/design-baseline.json` :
 
 - la migration est terminée : la baisse est enregistrée, la baseline ne contient plus que des
@@ -176,6 +179,45 @@ tests ; l'admin est incluse depuis la phase P7), les motifs interdits ci-dessus.
 
 Si le garde-fou bloque, on corrige le code avec les tokens et les primitives. On ne modifie pas la
 baseline à la main pour faire passer une régression.
+
+## Back-office (`/dashboard`)
+
+Même système, densité d'outil. Aucune valeur locale : on assemble.
+
+- **Cadre** : `AdminShell` (`src/components/admin/AdminShell.tsx`) = sidebar `bg-surface-deep` + barre haute
+  (contexte événement) + zone de contenu `max-w-screen-2xl`, `space-y-8`. Il est monté une seule fois par
+  `src/app/dashboard/layout.tsx` (et par l'hôte historique `?tab=`). Une page ou une section ne rend jamais
+  son propre `<main>`.
+- **Titre de page** : `AdminPageHeader` (`eyebrow` = domaine, `title`, `description`, `actions`). `as="h1"` par
+  défaut, `as="h2"` pour un bloc dans une page. Eyebrows : Événements, Billetterie, Communauté,
+  Communication, Système, Terrain.
+- **Chiffres clés** : `StatRow`, pas de grille de `Card` avec `text-2xl font-bold`.
+- **Panneaux** : `<Card variant="info">` (`rounded-2xl`). Champs et boutons gardent les valeurs shadcn
+  (`size="default"` 36 px autorisé ici). Rayons : `rounded-xl` / `rounded-2xl`, jamais `rounded-lg`, `rounded-3xl`.
+- **Labels** : `text-label font-semibold uppercase text-subtle`, pas de `tracking-wide`.
+- **Graphiques** (recharts) : couleurs `var(--chart-1..5)` et `var(--primary)`, jamais d'hexadécimal.
+- La règle `raw-status-color` de `lint:design` ne vaut que pour l'admin (`src/components/admin`, `src/app/dashboard`) et l'espace ambassadeur.
+
+### Mobile (< `lg`)
+
+L'écran d'un téléphone n'est pas un bureau réduit : on replie au lieu d'empiler.
+
+- **`Disclosure`** (`@/components/ds`) : carte dont le corps est replié sous `lg` et toujours ouvert dès `lg`
+  (CSS pur, pas de flash). `title`, `icon`, `badge` (visible replié), `summary` (une ligne sous le titre
+  replié), `defaultOpen` pour ce qui appelle une action (récompense à réclamer). À utiliser pour tout bloc
+  secondaire : graphiques, résumés, filtres lourds, classements, historiques.
+- **`StatRow compact`** : cellules `p-3`, chiffres `text-2xl` (admin et mobile).
+- **Listes de données** (`OperationsList`, réf. vivante dans `/design`) : on sacrifie. Sous `md`, pleine largeur,
+  lignes zébrées (`even:bg-foreground/5`), et **trois lignes maximum** par donnée : titre (1re colonne) + menu ⋯ ;
+  une ligne de résumé sans labels ; le reste est dans le détail, dépliable par le chevron. Chaque colonne
+  déclare son rôle : `mobile: 'summary' | 'detail'` (sans déclaration : 2 colonnes de résumé, le reste en
+  détail) et peut fournir `mobileCell` pour un rendu compact. Les cellules à deux lignes n'affichent que la
+  première dans le résumé. Toutes les colonnes restent accessibles, y compris celles masquées par défaut.
+  Recherche pleine largeur, puis `Filtres (n)` et actions sur une rangée ; pagination `1 / 3` en bas seulement.
+- **Barre haute admin** : le sélecteur d'événement ne garde que le `select` et les deux raccourcis ; le détail
+  (date, lieu, statut) apparaît dès `sm`.
+- Un composant qui ne tient pas à 320 px a un rendu mobile distinct (`md:hidden` / `hidden md:block`), pas un
+  `min-w-[…]` avec défilement horizontal.
 
 ## Texte long (blog, pages légales)
 

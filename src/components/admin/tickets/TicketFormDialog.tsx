@@ -202,7 +202,7 @@ export function TicketFormDialog({
             />
           </div>
 
-          <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-3 rounded-xl border p-4">
             <div>
               <h3 className="font-medium">Règles opérationnelles</h3>
               <p className="text-sm text-muted-foreground">Le comportement du billet est configuré ici, jamais déduit de son nom.</p>

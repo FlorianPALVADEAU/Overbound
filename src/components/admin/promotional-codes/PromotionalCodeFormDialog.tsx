@@ -208,7 +208,7 @@ export function PromotionalCodeFormDialog({
                 placeholder="Illimité"
               />
             </div>
-            <div className="flex items-center justify-between border rounded-lg p-4">
+            <div className="flex items-center justify-between border rounded-xl p-4">
               <div>
                 <Label htmlFor="promo-active" className="font-medium">
                   Code actif
@@ -223,7 +223,7 @@ export function PromotionalCodeFormDialog({
             </div>
           </div>
 
-          <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
+          <div className="rounded-xl border p-4 space-y-4 bg-muted/30">
             <div>
               <h3 className="text-sm font-semibold mb-1">Progression automatique de paliers</h3>
               <p className="text-xs text-muted-foreground">
@@ -245,7 +245,7 @@ export function PromotionalCodeFormDialog({
                   Laissez vide si ce code n'est pas un palier automatique
                 </p>
               </div>
-              <div className="flex items-center justify-between border rounded-lg p-4 bg-background">
+              <div className="flex items-center justify-between border rounded-xl p-4 bg-background">
                 <div>
                   <Label htmlFor="promo-auto-activate" className="font-medium">
                     Activation automatique

@@ -33,7 +33,7 @@ export function PromotionalCodeCard({ promotionalCode, onEdit, onDelete, isDelet
     : `${promotionalCode.used_count}`
 
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="p-4 sm:p-6">
         <div className="flex flex-col gap-4">
           <div className="min-w-0 flex-1 space-y-3">
@@ -41,7 +41,7 @@ export function PromotionalCodeCard({ promotionalCode, onEdit, onDelete, isDelet
               <Badge variant="secondary" className="max-w-full truncate">{promotionalCode.code}</Badge>
               <Badge variant="outline">{formatDiscount(promotionalCode)}</Badge>
               {isActive ? (
-                <Badge variant="default" className="bg-green-600 hover:bg-green-600">
+                <Badge variant="default" className="bg-success hover:bg-success">
                   Actif
                 </Badge>
               ) : (

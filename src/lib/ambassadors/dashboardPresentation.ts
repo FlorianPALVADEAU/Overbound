@@ -34,15 +34,15 @@ export const TIER_META: Record<number, { icon: LucideIcon; description: string }
 }
 
 export const BADGE_META: Record<number, { label: string; colorClass: string }> = {
-  1: { label: 'Badge Starter', colorClass: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600' },
-  2: { label: 'Badge Relayeur', colorClass: 'border-sky-500/40 bg-sky-500/10 text-sky-600' },
-  3: { label: 'Badge Booster', colorClass: 'border-amber-500/40 bg-amber-500/10 text-amber-600' },
-  4: { label: 'Badge Open Hero', colorClass: 'border-indigo-500/40 bg-indigo-500/10 text-indigo-600' },
-  5: { label: 'Badge VIP', colorClass: 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-600' },
-  6: { label: 'Badge Communauté', colorClass: 'border-orange-500/40 bg-orange-500/10 text-orange-600' },
-  7: { label: 'Badge Confirmé', colorClass: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-600' },
-  8: { label: 'Badge Elite', colorClass: 'border-rose-500/40 bg-rose-500/10 text-rose-600' },
-  9: { label: 'Badge Légende', colorClass: 'border-violet-500/40 bg-violet-500/10 text-violet-600' },
+  1: { label: 'Badge Starter', colorClass: 'border-success/40 bg-success/10 text-success' },
+  2: { label: 'Badge Relayeur', colorClass: 'border-info/40 bg-info/10 text-info' },
+  3: { label: 'Badge Booster', colorClass: 'border-warning/40 bg-warning/10 text-warning' },
+  4: { label: 'Badge Open Hero', colorClass: 'border-info/40 bg-info/10 text-info' },
+  5: { label: 'Badge VIP', colorClass: 'border-primary/40 bg-primary/10 text-primary' },
+  6: { label: 'Badge Communauté', colorClass: 'border-warning/40 bg-warning/10 text-warning' },
+  7: { label: 'Badge Confirmé', colorClass: 'border-info/40 bg-info/10 text-info' },
+  8: { label: 'Badge Elite', colorClass: 'border-destructive/40 bg-destructive/10 text-destructive' },
+  9: { label: 'Badge Légende', colorClass: 'border-primary/40 bg-primary/10 text-primary' },
   10: { label: 'Badge Officiel', colorClass: 'border-primary/50 bg-primary/10 text-primary' },
 }
 
@@ -56,10 +56,10 @@ export const PAYMENT_STATUS_LABELS: Record<AmbassadorPaymentStatus, string> = {
 }
 
 export const PAYMENT_STATUS_STYLES: Record<AmbassadorPaymentStatus, string> = {
-  paid: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600',
-  pending: 'border-amber-500/40 bg-amber-500/10 text-amber-600',
-  refunded: 'border-sky-500/40 bg-sky-500/10 text-sky-600',
-  cancelled: 'border-rose-500/40 bg-rose-500/10 text-rose-600',
+  paid: 'border-success/40 bg-success/10 text-success',
+  pending: 'border-warning/40 bg-warning/10 text-warning',
+  refunded: 'border-info/40 bg-info/10 text-info',
+  cancelled: 'border-destructive/40 bg-destructive/10 text-destructive',
 }
 
 export const REWARD_STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
@@ -70,10 +70,10 @@ export const REWARD_STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
 }
 
 export const REWARD_STATUS_STYLES: Record<AmbassadorRewardStatus, string> = {
-  earned: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600',
-  claimed: 'border-amber-500/40 bg-amber-500/10 text-amber-600',
-  fulfilled: 'border-sky-500/40 bg-sky-500/10 text-sky-600',
-  cancelled: 'border-rose-500/40 bg-rose-500/10 text-rose-600',
+  earned: 'border-success/40 bg-success/10 text-success',
+  claimed: 'border-warning/40 bg-warning/10 text-warning',
+  fulfilled: 'border-info/40 bg-info/10 text-info',
+  cancelled: 'border-destructive/40 bg-destructive/10 text-destructive',
 }
 
 export const FORMAT_LABELS: Record<AmbassadorRaceFormat, string> = { open: 'Open', ranked: 'Ranked' }

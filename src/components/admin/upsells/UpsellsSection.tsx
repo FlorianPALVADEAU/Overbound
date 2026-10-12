@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import type { Upsell } from '@/types/Upsell'
@@ -333,18 +334,17 @@ export function UpsellsSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Upsells & options</h2>
-          <p className="text-muted-foreground">
-            Propose des options additionnelles pour enrichir l’expérience participant.
-          </p>
-        </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvel upsell
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Billetterie"
+        title="Upsells & options"
+        description="Propose des options additionnelles pour enrichir l’expérience participant."
+        actions={
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvel upsell
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={alertVariant}>

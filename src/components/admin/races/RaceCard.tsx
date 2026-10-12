@@ -22,7 +22,7 @@ function difficultyLabel(value: number) {
 
 export function RaceCard({ race, onEdit, onDelete, isDeleting }: RaceCardProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="p-6">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-3">

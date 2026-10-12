@@ -117,7 +117,7 @@ export function RegistrationOperationsDialog({
           <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>
         ) : null}
 
-        <section className="space-y-3 rounded-lg border p-4">
+        <section className="space-y-3 rounded-xl border p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 font-medium"><Ticket className="h-4 w-4" /> Billet</div>
             <Badge variant="secondary">{ticketOperationsLabel(currentOperations)}</Badge>
@@ -146,7 +146,7 @@ export function RegistrationOperationsDialog({
           </DialogFooter>
         </section>
 
-        <section className="space-y-3 rounded-lg border p-4">
+        <section className="space-y-3 rounded-xl border p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 font-medium"><Clock className="h-4 w-4" /> SAS de départ</div>
             <span className="text-sm text-muted-foreground">

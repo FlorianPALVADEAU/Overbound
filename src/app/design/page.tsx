@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
-import { Container, Eyebrow, Pill, Section, SectionHeader, StatRow } from '@/components/ds'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
+import { Badge } from '@/components/ui/badge'
+import { Container, Disclosure, Eyebrow, Pill, Section, SectionHeader, StatRow } from '@/components/ds'
 import { DISPLAY_TITLE } from '@/components/ds/SectionHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { OperationsListDemo } from './OperationsListDemo'
 
 // Living reference of the design system (docs/design/design-system.md).
 // Local and preview deployments only: never indexed, 404 in production.
@@ -34,6 +37,9 @@ const SWATCHES = [
   { name: 'primary', className: 'bg-primary' },
   { name: 'signal', className: 'bg-signal' },
   { name: 'destructive', className: 'bg-destructive' },
+  { name: 'success', className: 'bg-success' },
+  { name: 'warning', className: 'bg-warning' },
+  { name: 'info', className: 'bg-info' },
   { name: 'border', className: 'bg-border' },
 ]
 
@@ -167,6 +173,38 @@ export default function DesignSystemPage() {
                 </Card>
               ))}
             </div>
+          </Block>
+
+          <Block title="Back-office (AdminPageHeader, statuts)">
+            <div className="space-y-6">
+              <AdminPageHeader
+                eyebrow="Billetterie"
+                title="Gestion des billets"
+                description="Titre de page admin : eyebrow, titre display, description, actions."
+                actions={<Button>Nouveau billet</Button>}
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge className="border-success/40 bg-success/15 text-success">Validé</Badge>
+                <Badge className="border-warning/40 bg-warning/15 text-warning">En attente</Badge>
+                <Badge className="border-info/40 bg-info/15 text-info">Information</Badge>
+                <Badge variant="destructive">Refusé</Badge>
+              </div>
+            </div>
+          </Block>
+
+          <Block title="Disclosure (replié sous lg)">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Disclosure title="Classement" summary="#3 sur 120 ambassadeurs">
+                Replié sur mobile et tablette, toujours ouvert dès lg.
+              </Disclosure>
+              <Disclosure title="Récompenses" badge={<Pill>2</Pill>} defaultOpen>
+                Ouvert par défaut quand une action est attendue.
+              </Disclosure>
+            </div>
+          </Block>
+
+          <Block title="Liste de données (OperationsList)">
+            <OperationsListDemo />
           </Block>
 
           <Block title="Rangée de chiffres">

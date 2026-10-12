@@ -45,6 +45,7 @@ import {
 } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
 import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 
 const STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
   earned: 'Débloquée',
@@ -54,10 +55,10 @@ const STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
 }
 
 const STATUS_STYLES: Record<AmbassadorRewardStatus, string> = {
-  earned: 'border-emerald-500/40 bg-emerald-500/20 text-emerald-600',
-  claimed: 'border-amber-500/40 bg-amber-500/20 text-amber-600',
-  fulfilled: 'border-sky-500/40 bg-sky-500/20 text-sky-600',
-  cancelled: 'border-rose-500/40 bg-rose-500/20 text-rose-600',
+  earned: 'border-success/40 bg-success/20 text-success',
+  claimed: 'border-warning/40 bg-warning/20 text-warning',
+  fulfilled: 'border-info/40 bg-info/20 text-info',
+  cancelled: 'border-destructive/40 bg-destructive/20 text-destructive',
 }
 
 const formatDateTime = (value: string | null) =>
@@ -176,14 +177,10 @@ export function AmbassadorsSection() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <CardTitle>Fiches ambassadeurs</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Ouvrez une fiche pour consulter ses années, récompenses et historique.
-          </p>
-        </div>
+    <>
+      <AdminPageHeader eyebrow="Communauté" title="Ambassadeurs" description="Ouvrez une fiche pour consulter ses années, récompenses et historique." />
+    <Card variant="info">
+      <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
             placeholder="Rechercher un ambassadeur..."
@@ -208,7 +205,7 @@ export function AmbassadorsSection() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 rounded-lg border bg-card">
+        <div className="mb-6 rounded-xl border bg-card">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Ambassadeurs</p>
@@ -234,10 +231,10 @@ export function AmbassadorsSection() {
           ) : (
             <>
             <div className="space-y-3 md:hidden">
-              {pointsLoading ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Chargement...</div> : null}
-              {!pointsLoading && pointsRows.length === 0 ? <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">Aucun ambassadeur.</div> : null}
+              {pointsLoading ? <div className="rounded-xl border p-6 text-center text-sm text-muted-foreground">Chargement...</div> : null}
+              {!pointsLoading && pointsRows.length === 0 ? <div className="rounded-xl border p-6 text-center text-sm text-muted-foreground">Aucun ambassadeur.</div> : null}
               {!pointsLoading && pointsRows.map((row) => (
-                <div key={row.ambassador_id} className="rounded-lg border bg-background p-4 shadow-sm">
+                <div key={row.ambassador_id} className="rounded-xl border bg-background p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{row.ambassador_name}</p>
@@ -371,16 +368,16 @@ export function AmbassadorsSection() {
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
             Impossible de charger les récompenses. {error.message}
           </div>
         ) : null}
 
         <div className="space-y-3">
           {isLoading ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">Chargement...</div>
+            <div className="rounded-xl border p-8 text-center text-muted-foreground">Chargement...</div>
           ) : groupedRewards.length === 0 ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">Aucun résultat.</div>
+            <div className="rounded-xl border p-8 text-center text-muted-foreground">Aucun résultat.</div>
           ) : (
             groupedRewards.map((ambassadorRewards) => {
               const ambassador = ambassadorRewards[0]
@@ -388,7 +385,7 @@ export function AmbassadorsSection() {
               const claimed = ambassadorRewards.filter((reward) => reward.status === 'claimed').length
               const fulfilled = ambassadorRewards.filter((reward) => reward.status === 'fulfilled').length
               return (
-                <details key={ambassador.ambassador_id} className="group rounded-lg border bg-card" open>
+                <details key={ambassador.ambassador_id} className="group rounded-xl border bg-card" open>
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{ambassador.ambassador_name}</p>
@@ -406,7 +403,7 @@ export function AmbassadorsSection() {
                       {ambassadorRewards.map((reward) => {
                         const expired = isAmbassadorRewardExpired(reward.expires_at)
                         return (
-                          <div key={reward.id} className="space-y-3 rounded-lg border bg-background p-3">
+                          <div key={reward.id} className="space-y-3 rounded-xl border bg-background p-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="font-medium">Palier {reward.reward_level}</p>
@@ -496,7 +493,7 @@ export function AmbassadorsSection() {
           {ambassadorDetail ? <div className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {ambassadorDetail.yearly_points.map((year) => (
-                <div key={year.program_year} className="rounded-lg border p-3">
+                <div key={year.program_year} className="rounded-xl border p-3">
                   <p className="font-semibold">{year.program_year}</p>
                   <p className="text-2xl font-bold">{year.total_points} pts</p>
                   <p className="text-xs text-muted-foreground">{year.recruits_open} Open · {year.recruits_ranked} Ranked</p>
@@ -515,9 +512,9 @@ export function AmbassadorsSection() {
                 </Select>
               </div>
               {visibleDetailRewards.length === 0 ? (
-                <p className="rounded-lg border p-3 text-sm text-muted-foreground">Aucune récompense pour cette année.</p>
+                <p className="rounded-xl border p-3 text-sm text-muted-foreground">Aucune récompense pour cette année.</p>
               ) : visibleDetailRewards.map((reward) => (
-                <div key={reward.id} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div key={reward.id} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{reward.program_year} · Palier {reward.reward_level} — {reward.reward_name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -558,7 +555,7 @@ export function AmbassadorsSection() {
             {ambassadorDetail.audit_events.length > 0 ? <div className="space-y-2">
               <p className="text-sm font-semibold">Historique des décisions</p>
               {ambassadorDetail.audit_events.map((event) => (
-                <div key={`${event.reward_id}-${event.occurred_at}`} className="rounded-lg border p-3 text-sm">
+                <div key={`${event.reward_id}-${event.occurred_at}`} className="rounded-xl border p-3 text-sm">
                   <p className="font-medium">{event.action === 'cancelled' ? 'Récompense annulée' : 'Récompense rouverte'} · {formatDateTime(event.occurred_at)}</p>
                   <p className="text-muted-foreground">{event.reason}</p>
                 </div>
@@ -596,7 +593,7 @@ export function AmbassadorsSection() {
                 {(ambassadorCodesData?.codes ?? []).map((c) => (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2"
+                    className="flex items-center justify-between rounded-xl border px-3 py-2"
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-medium">{c.code ?? c.promotional_code_id}</span>
@@ -604,7 +601,7 @@ export function AmbassadorsSection() {
                         <span className="text-xs text-muted-foreground">{c.name}</span>
                       ) : null}
                       {c.is_current ? (
-                        <Badge className="border-emerald-500/40 bg-emerald-500/20 text-emerald-600 text-xs">
+                        <Badge className="border-success/40 bg-success/20 text-success text-xs">
                           Actif
                         </Badge>
                       ) : null}
@@ -648,7 +645,7 @@ export function AmbassadorsSection() {
               </div>
             )}
 
-            <div className="rounded-lg border px-3 py-3">
+            <div className="rounded-xl border px-3 py-3">
               <p className="mb-2 text-xs font-semibold">Ajouter un code</p>
               <div className="flex flex-col gap-2">
                 <Select value={selectedCodeToAdd} onValueChange={setSelectedCodeToAdd}>
@@ -717,7 +714,7 @@ export function AmbassadorsSection() {
           </DialogHeader>
           {editingPoints ? (
             <div className="grid gap-3">
-              <div className="rounded-lg border px-3 py-2 text-sm">
+              <div className="rounded-xl border px-3 py-2 text-sm">
                 <div className="font-semibold">{editingPoints.ambassador_name}</div>
                 <div className="text-xs text-muted-foreground">{editingPoints.ambassador_code ?? '—'}</div>
               </div>
@@ -809,7 +806,7 @@ export function AmbassadorsSection() {
           </DialogHeader>
           {manualReferralDialog ? (
             <div className="grid gap-3">
-              <div className="rounded-lg border px-3 py-2 text-sm">
+              <div className="rounded-xl border px-3 py-2 text-sm">
                 <div className="font-semibold">{manualReferralDialog.ambassador_name}</div>
                 <div className="text-xs text-muted-foreground">{manualReferralDialog.ambassador_code ?? '—'}</div>
               </div>
@@ -894,5 +891,6 @@ export function AmbassadorsSection() {
         </DialogContent>
       </Dialog>
     </Card>
+    </>
   )
 }

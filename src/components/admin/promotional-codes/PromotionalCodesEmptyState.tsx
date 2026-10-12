@@ -10,7 +10,7 @@ interface PromotionalCodesEmptyStateProps {
 
 export function PromotionalCodesEmptyState({ onCreate }: PromotionalCodesEmptyStateProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="text-center py-12">
         <Percent className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">Aucun code promotionnel</h3>

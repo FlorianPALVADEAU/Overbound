@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils'
 
 const DIFFERENTIATORS = [
   {
-    title: 'Tu choisis ta difficulté',
-    body: "À chaque obstacle, tu peux adapter ton niveau d'engagement. Tu progresses à ton rythme, sans subir un format figé qui ne te correspond pas.",
+    title: 'Tu choisis ton rythme',
+    body: "Les obstacles sont les mêmes pour tout le monde. En OPEN, tu cours à ton rythme, sans limite de temps par tour. En RANKED, tu cours contre la montre.",
     detail: 'Pas d\'élimination forcée en OPEN.',
   },
   {

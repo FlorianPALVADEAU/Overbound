@@ -6,6 +6,7 @@ import axios from 'axios'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { EventFormDialog, type EventFormValues } from './EventFormDialog'
@@ -437,18 +438,17 @@ export function EventsSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Gestion des événements</h2>
-          <p className="text-muted-foreground">
-            Gérez vos événements, leurs statuts et leurs capacités.
-          </p>
-        </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvel événement
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Événements"
+        title="Gestion des événements"
+        description="Gérez vos événements, leurs statuts et leurs capacités."
+        actions={
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvel événement
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>

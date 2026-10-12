@@ -30,7 +30,7 @@ export function ZoneCard({ board, zone, shift, onCapacityChange, onMove, onChang
   const people = board.people(shift, zone.key)
 
   return (
-    <Card className={cn(summary.full && 'bg-muted/60 opacity-70', summary.missing > 0 && 'border-destructive/50')}>
+    <Card variant="info" className={cn(summary.full && 'bg-muted/60 opacity-70', summary.missing > 0 && 'border-destructive/50')}>
       <CardHeader className="space-y-2 pb-2">
         <CardTitle className="text-base">{zone.label}</CardTitle>
         <div className="flex items-center gap-2">

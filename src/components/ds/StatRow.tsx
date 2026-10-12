@@ -16,10 +16,12 @@ export interface Stat {
 
 interface Props {
   stats: Stat[]
+  /** Denser cells for back-office screens and phones. */
+  compact?: boolean
   className?: string
 }
 
-export function StatRow({ stats, className }: Props) {
+export function StatRow({ stats, compact = false, className }: Props) {
   return (
     <dl
       className={cn(
@@ -32,7 +34,7 @@ export function StatRow({ stats, className }: Props) {
         <div key={label} className="flex min-w-0 flex-col gap-2 bg-background p-4 sm:p-6">
           <dt className="text-label font-semibold uppercase text-subtle">{label}</dt>
           <dd className="min-w-0">
-            <span className={cn('font-display text-3xl font-bold leading-none sm:text-4xl', highlight && 'text-primary')}>
+            <span className={cn('font-display font-bold leading-none', compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl', highlight && 'text-primary')}>
               {value}
             </span>
             {unit ? <span className="ml-2 text-sm font-semibold uppercase">{unit}</span> : null}

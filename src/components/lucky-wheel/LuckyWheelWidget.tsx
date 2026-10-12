@@ -6,7 +6,11 @@ import confetti from 'canvas-confetti'
 import { useLuckyWheelTrigger, type LuckyWheelTriggerRules } from '@/hooks/lucky-wheel/use-lucky-wheel-trigger'
 import { useLuckyWheelSpin } from '@/hooks/lucky-wheel/use-lucky-wheel-spin'
 import { trackLuckyWheelEvent } from '@/lib/luckyWheel/analytics'
+import { isWheelDismissed, markWheelDismissed } from '@/lib/luckyWheel/dismissal'
 import { usePopupSlot } from '@/components/popups/PopupArbiterProvider'
+import { Eyebrow } from '@/components/ds'
+import { DISPLAY_TITLE } from '@/components/ds/SectionHeader'
+import { cn } from '@/lib/utils'
 import { LuckyWheelEntryForm } from './LuckyWheelEntryForm'
 import { LuckyWheelWheel, type WheelSegment } from './LuckyWheelWheel'
 import { LuckyWheelResult } from './LuckyWheelResult'
@@ -68,7 +72,9 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
   // unmount the widget mid-flow the instant that write lands, right before
   // the result ever renders. This is a "was I already in on load" check,
   // not a live subscription.
-  const [alreadyParticipated] = useState(() => spinApi.hasLocalParticipationFlag())
+  const [alreadyParticipated] = useState(
+    () => spinApi.hasLocalParticipationFlag() || isWheelDismissed(eventId),
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -127,6 +133,7 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
       clearTimeout(revealTimerRef.current)
       revealTimerRef.current = null
     }
+    markWheelDismissed(eventId)
     setIsOpen(false)
     setShowResult(false)
     setAwaitingReveal(false)
@@ -193,7 +200,15 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
   const winningRewardId = spinApi.outcome?.success ? spinApi.outcome.rewardId ?? null : null
 
   return (
-    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4">
+    <div
+      role="presentation"
+      className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4"
+      onClick={(event) => {
+        // Backdrop only: clicks inside the dialog bubble up here too.
+        // Locked while the spin runs so a stray click can't abort it.
+        if (event.target === event.currentTarget && !spinApi.spinning && !awaitingReveal) handleClose()
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
@@ -206,11 +221,11 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
         // two-column layout is much shorter. overflow-y-auto so any
         // overflow scrolls inside the dialog rather than clipping or
         // pushing the dialog off-screen.
-        className="relative flex max-h-[75vh] w-full max-w-240 flex-col overflow-y-auto rounded-2xl border border-border/80 bg-background shadow-[0_30px_90px_rgba(0,0,0,0.55)] sm:max-h-[90vh]"
+        className="relative flex max-h-[75vh] w-full max-w-240 flex-col overflow-y-auto rounded-2xl border border-border bg-card shadow-lg sm:max-h-[90vh]"
       >
         <button
           onClick={handleClose}
-          className="absolute right-3 top-3 z-20 rounded-full border border-border/60 bg-background/90 p-2 opacity-80 transition-opacity hover:opacity-100 sm:right-4 sm:top-4"
+          className="absolute right-3 top-3 z-20 rounded-full border border-border/60 bg-card/90 p-2 opacity-80 transition-opacity hover:opacity-100 sm:right-4 sm:top-4"
           aria-label="Fermer"
         >
           <X className="h-4 w-4" />
@@ -262,14 +277,15 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
                 />
               </div>
               <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-background to-transparent sm:hidden"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-card to-transparent sm:hidden"
                 aria-hidden="true"
               />
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 p-4 text-center sm:gap-4 sm:p-8 sm:text-left">
-              <div>
-                <h2 className="text-lg font-bold sm:text-2xl">Tourne & gagne !</h2>
+              <div className="space-y-1">
+                <Eyebrow>Lucky Wheel</Eyebrow>
+                <h2 className={cn(DISPLAY_TITLE, 'text-title sm:text-display-md')}>Tourne &amp; gagne !</h2>
                 {/* "Chance élevée de gagner", not a hard 100% guarantee at
                     the code level -- the RPC can still return
                     NO_REWARD_AVAILABLE if every reward is exhausted or out
@@ -277,7 +293,7 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
                     (docs/guides/critical-operations.md candidate) is to
                     always keep at least one low-cost, unlimited-stock
                     reward active so this copy stays true in practice. */}
-                <p className="text-xs font-semibold text-primary sm:text-sm">
+                <p className="text-sm text-muted-foreground">
                   Une récompense à gagner à chaque participation.
                 </p>
               </div>

@@ -177,7 +177,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
   }
 
   return (
-    <Card>
+    <Card variant="info">
       <CardHeader>
         <CardTitle>Paliers de prix</CardTitle>
         <CardDescription>
@@ -187,7 +187,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
       </CardHeader>
       <CardContent className="space-y-4">
         {localTiers.map((tier, index) => (
-          <div key={index} className="rounded-lg border p-4 space-y-3">
+          <div key={index} className="rounded-xl border p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-sm">Palier {index + 1}</h4>
               <div className="flex items-center gap-1">
@@ -314,7 +314,7 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
           </Button>
         </div>
 
-        <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+        <div className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">
           <p className="font-semibold mb-1">💡 Comment ça marche ?</p>
           <ul className="list-disc list-inside space-y-1">
             <li>

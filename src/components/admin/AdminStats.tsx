@@ -1,15 +1,7 @@
 'use client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Calendar,
-  MapPin,
-  Ticket,
-  Users,
-  TrendingUp,
-  Euro,
-  BarChart3,
-  Clock,
-} from 'lucide-react'
+import { Disclosure, StatRow } from '@/components/ds'
+import { Calendar, MapPin, Users, BarChart3, Clock } from 'lucide-react'
 import {
   LineChart,
   Line,
@@ -25,11 +17,38 @@ import {
   Bar,
 } from 'recharts'
 
-interface AdminStatsProps {
-  stats: any
+interface AdminOverviewStats {
+  total_revenue_cents: number
+  total_registrations: number
+  checked_in_count: number
+  total_events: number
+  upcoming_events: number
+  registrations_by_month: { month: string; count: number }[]
+  ticket_distribution: { ticket_name: string; event_title: string; count: number }[]
+  events_by_status: Record<string, number>
+  next_event: {
+    title: string
+    date: string
+    location: string
+    registrations_count: number
+    capacity: number
+  } | null
 }
 
-const COLORS = ['#019B01', '#10B981', '#059669', '#047857', '#065F46', '#064E3B', '#022c22']
+interface AdminStatsProps {
+  stats?: Record<string, unknown> | null
+}
+
+// Chart tokens (globals.css); the greens are the brand scale.
+const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)']
+const PRIMARY = 'var(--primary)'
+
+const TOOLTIP_STYLE = {
+  backgroundColor: 'var(--card)',
+  border: '1px solid var(--border)',
+  borderRadius: '12px',
+  fontSize: '12px',
+}
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Brouillon',
@@ -41,21 +60,23 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Terminé',
 }
 
-export function AdminStats({ stats }: AdminStatsProps) {
-  if (!stats) {
+export function AdminStats({ stats: rawStats }: AdminStatsProps) {
+  if (!rawStats) {
     return (
-      <div className="text-center py-12">
-        <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+      <div className="py-12 text-center">
+        <BarChart3 className="mx-auto mb-4 size-12 text-muted-foreground" />
         <p className="text-muted-foreground">Impossible de charger les statistiques</p>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="mt-2 text-xs text-muted-foreground">
           Vérifiez que les fonctions RPC sont correctement installées
         </p>
       </div>
     )
   }
 
+  const stats = rawStats as Partial<AdminOverviewStats>
+
   const monthlyData = Array.isArray(stats.registrations_by_month)
-    ? stats.registrations_by_month.map((item: any) => ({
+    ? stats.registrations_by_month.map((item) => ({
         ...item,
         month: new Date(item.month + '-01').toLocaleDateString('fr-FR', {
           month: 'short',
@@ -65,7 +86,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
     : []
 
   const ticketData = Array.isArray(stats.ticket_distribution)
-    ? stats.ticket_distribution.slice(0, 8).map((item: any) => ({
+    ? stats.ticket_distribution.slice(0, 8).map((item) => ({
         name: item.ticket_name,
         value: item.count,
         fullName: `${item.ticket_name} — ${item.event_title}`,
@@ -75,127 +96,83 @@ export function AdminStats({ stats }: AdminStatsProps) {
   const statusData =
     stats.events_by_status && typeof stats.events_by_status === 'object'
       ? Object.entries(stats.events_by_status)
-          .filter(([, count]) => (count as number) > 0)
+          .filter(([, count]) => count > 0)
           .map(([status, count]) => ({
             status: STATUS_LABELS[status] ?? status,
-            count: count as number,
+            count,
           }))
       : []
 
+  const totalRegistrations = stats.total_registrations ?? 0
+  const checkedIn = stats.checked_in_count ?? 0
+  const nextEvent = stats.next_event ?? null
+
   return (
     <>
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Euro className="h-3.5 w-3.5" />
-              Chiffre d'affaires
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {((stats.total_revenue_cents || 0) / 100).toLocaleString('fr-FR', {
-                style: 'currency',
-                currency: 'EUR',
-                maximumFractionDigits: 0,
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Paiements validés</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Ticket className="h-3.5 w-3.5" />
-              Inscriptions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(stats.total_registrations || 0).toLocaleString('fr-FR')}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.checked_in_count || 0} présents
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Calendar className="h-3.5 w-3.5" />
-              Événements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total_events || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.upcoming_events || 0} à venir
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Présence
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {stats.total_registrations > 0
-                ? Math.round((stats.checked_in_count / stats.total_registrations) * 100)
-                : 0}
-              %
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Taux de présence</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatRow
+        compact
+        className="mb-8"
+        stats={[
+          {
+            label: "Chiffre d'affaires",
+            highlight: true,
+            value: ((stats.total_revenue_cents ?? 0) / 100).toLocaleString('fr-FR', {
+              style: 'currency',
+              currency: 'EUR',
+              maximumFractionDigits: 0,
+            }),
+            unit: 'validés',
+          },
+          { label: 'Inscriptions', value: totalRegistrations.toLocaleString('fr-FR'), unit: `${checkedIn} présents` },
+          { label: 'Événements', value: stats.total_events ?? 0, unit: `${stats.upcoming_events ?? 0} à venir` },
+          {
+            label: 'Présence',
+            value: `${totalRegistrations > 0 ? Math.round((checkedIn / totalRegistrations) * 100) : 0}%`,
+            unit: 'taux',
+          },
+        ]}
+      />
 
       {/* Prochain événement */}
-      {stats.next_event && (
-        <Card className="mb-6">
+      {nextEvent && (
+        <Card variant="info" className="mb-8">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4" />
+              <Clock className="size-4" />
               Prochain événement
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-5">
-              <h3 className="text-lg font-semibold mb-3">{stats.next_event.title}</h3>
+            <div className="rounded-xl bg-linear-to-r from-primary/10 to-primary/5 p-5">
+              <h3 className="mb-3 font-display text-title font-bold uppercase">{nextEvent.title}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Calendar className="size-4 shrink-0 text-muted-foreground" />
                   <span>
-                    {new Date(stats.next_event.date).toLocaleString('fr-FR', {
+                    {new Date(nextEvent.date).toLocaleString('fr-FR', {
                       dateStyle: 'long',
                       timeStyle: 'short',
                     })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span>{stats.next_event.location}</span>
+                  <MapPin className="size-4 shrink-0 text-muted-foreground" />
+                  <span>{nextEvent.location}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Users className="size-4 shrink-0 text-muted-foreground" />
                   <span>
-                    {stats.next_event.registrations_count} / {stats.next_event.capacity} inscrits
+                    {nextEvent.registrations_count} / {nextEvent.capacity} inscrits
                   </span>
                 </div>
               </div>
-              <div className="w-full bg-muted rounded-full h-2">
+              <div className="h-2 w-full rounded-full bg-muted">
                 <div
-                  className="bg-primary rounded-full h-2 transition-all"
+                  className="h-2 rounded-full bg-primary transition-all duration-300 ease-standard"
                   style={{
                     width: `${Math.min(
                       100,
-                      (stats.next_event.registrations_count / stats.next_event.capacity) * 100
+                      (nextEvent.registrations_count / nextEvent.capacity) * 100
                     )}%`,
                   }}
                 />
@@ -206,13 +183,9 @@ export function AdminStats({ stats }: AdminStatsProps) {
       )}
 
       {/* Graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Évolution des inscriptions */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Inscriptions / mois</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Disclosure title="Inscriptions / mois" defaultOpen={true}>
             {monthlyData.length === 0 ? (
               <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
                 Pas encore de données
@@ -236,34 +209,24 @@ export function AdminStats({ stats }: AdminStatsProps) {
                     <YAxis tick={{ fontSize: 11 }} width={32} allowDecimals={false} />
                     <Tooltip
                       formatter={(value: number) => [`${value} inscriptions`, 'Inscriptions']}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
+                      contentStyle={TOOLTIP_STYLE}
                     />
                     <Line
                       type="monotone"
                       dataKey="count"
-                      stroke="#019B01"
+                      stroke={PRIMARY}
                       strokeWidth={2.5}
-                      dot={{ fill: '#019B01', r: 3 }}
+                      dot={{ fill: PRIMARY, r: 3 }}
                       activeDot={{ r: 5 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </Disclosure>
 
         {/* Répartition des tickets */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Répartition des tickets</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Disclosure title="Répartition des tickets" defaultOpen={false}>
             {ticketData.length === 0 ? (
               <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
                 Pas encore de données
@@ -284,30 +247,25 @@ export function AdminStats({ stats }: AdminStatsProps) {
                           percent > 0.06 ? `${Math.round(percent * 100)}%` : ''
                         }
                       >
-                        {ticketData.map((_: any, index: number) => (
+                        {ticketData.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number, _: string, props: any) => [
+                        formatter={(value: number, _name: string, item: { payload?: { fullName?: string } }) => [
                           `${value} inscriptions`,
-                          props.payload.fullName,
+                          item.payload?.fullName ?? '',
                         ]}
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
+                        contentStyle={TOOLTIP_STYLE}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-3 space-y-1.5">
-                  {ticketData.map((item: any, index: number) => (
+                <div className="mt-3 space-y-2">
+                  {ticketData.map((item, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
                       <div
-                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                        className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
                       <span className="truncate flex-1 text-muted-foreground">{item.fullName}</span>
@@ -317,17 +275,12 @@ export function AdminStats({ stats }: AdminStatsProps) {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+          </Disclosure>
       </div>
 
       {/* Statut des événements — horizontal bar */}
       {statusData.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Événements par statut</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Disclosure title="Événements par statut" defaultOpen={false}>
             <div style={{ height: Math.max(120, statusData.length * 44) }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -350,19 +303,13 @@ export function AdminStats({ stats }: AdminStatsProps) {
                   />
                   <Tooltip
                     formatter={(value: number) => [`${value} événement${value > 1 ? 's' : ''}`, '']}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
-                  <Bar dataKey="count" fill="#019B01" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                  <Bar dataKey="count" fill={PRIMARY} radius={[0, 4, 4, 0]} maxBarSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </CardContent>
-        </Card>
+          </Disclosure>
       )}
     </>
   )

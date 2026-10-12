@@ -59,7 +59,7 @@ export function EventCard({ event, onEdit, onDelete, isDeleting, actions }: Even
   const eventDate = new Date(event.date)
 
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">

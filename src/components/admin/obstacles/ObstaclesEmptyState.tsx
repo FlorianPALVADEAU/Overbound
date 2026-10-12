@@ -10,7 +10,7 @@ interface ObstaclesEmptyStateProps {
 
 export function ObstaclesEmptyState({ onCreate }: ObstaclesEmptyStateProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="text-center py-12">
         <Zap className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">Aucun obstacle</h3>

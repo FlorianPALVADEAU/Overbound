@@ -26,17 +26,17 @@ interface LuckyWheelWheelProps {
 // tells the participant "this one's special" without exposing the exact
 // odds. Legendary uses gold, the brand's highest-attention accent.
 const RARITY_COLORS: Record<RewardRarity, string> = {
-  common: '#64748b',
-  uncommon: '#2563eb',
-  rare: '#7c3aed',
-  legendary: '#facc15',
+  common: 'var(--muted)',
+  uncommon: 'var(--info)',
+  rare: 'var(--primary)',
+  legendary: 'var(--warning)',
 }
 
 const RARITY_TEXT_COLORS: Record<RewardRarity, string> = {
-  common: '#ffffff',
-  uncommon: '#ffffff',
-  rare: '#ffffff',
-  legendary: '#0f172a',
+  common: 'var(--foreground)',
+  uncommon: 'var(--primary-foreground)',
+  rare: 'var(--primary-foreground)',
+  legendary: 'var(--primary-foreground)',
 }
 
 const SIZE = 320
@@ -367,7 +367,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
           height: 0,
           borderLeft: '14px solid transparent',
           borderRight: '14px solid transparent',
-          borderTop: '22px solid #0f172a',
+          borderTop: '22px solid var(--primary)',
           filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))',
         }}
         aria-hidden="true"
@@ -410,8 +410,8 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
               (rendered in HTML, not SVG -- it must never rotate) shows
               through cleanly instead of segments crowding behind it. */}
           <mask id="lucky-wheel-hub-mask">
-            <rect x={0} y={0} width={SIZE} height={SIZE} fill="#ffffff" />
-            <circle cx={CENTER} cy={CENTER} r={HUB_RADIUS} fill="#000000" />
+            <rect x={0} y={0} width={SIZE} height={SIZE} fill="white" />
+            <circle cx={CENTER} cy={CENTER} r={HUB_RADIUS} fill="black" />
           </mask>
         </defs>
 
@@ -435,7 +435,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
                 <path
                   d={describeSegmentPath(startAngle, endAngle)}
                   fill={RARITY_COLORS[segment.rarity]}
-                  stroke="#0f172a"
+                  stroke="var(--surface-deep)"
                   strokeWidth={1.5}
                 />
 
@@ -461,7 +461,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
           })}
         </g>
 
-        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="#0f172a" strokeWidth={4} />
+        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="var(--surface-deep)" strokeWidth={4} />
       </svg>
 
       {/* Fixed center hub -- never rotates with the wheel. Shows the
@@ -470,7 +470,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
           step rotation and freezes on the winning reward's image once the
           real spin stops (product decision 2026-09-22). */}
       <div
-        className="absolute left-1/2 top-1/2 z-[5] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-4 border-surface-deep bg-white"
+        className="absolute left-1/2 top-1/2 z-[5] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-4 border-surface-deep bg-card"
         style={{ width: HUB_RADIUS * 2, height: HUB_RADIUS * 2 }}
       >
         {hubSegment?.imageUrl ? (
@@ -480,7 +480,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
           // or require per-domain allowlisting admins can't self-serve.
           <img src={hubSegment.imageUrl} alt={hubSegment.name} className="h-full w-full object-cover" />
         ) : (
-          <span className="px-2 text-center text-label font-bold text-surface-deep">
+          <span className="line-clamp-4 px-1.5 text-center text-xs font-semibold leading-tight text-foreground">
             {hubSegment?.name ?? ''}
           </span>
         )}

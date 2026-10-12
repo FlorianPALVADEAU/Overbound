@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -265,18 +266,17 @@ export function ObstaclesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Catalogue obstacles</h2>
-          <p className="text-muted-foreground">
-            Centralise et gère les obstacles disponibles pour les courses.
-          </p>
-        </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvel obstacle
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Événements"
+        title="Catalogue obstacles"
+        description="Centralise et gère les obstacles disponibles pour les courses."
+        actions={
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvel obstacle
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={alertVariant}>

@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
@@ -313,18 +314,17 @@ export function PromotionalCodesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Codes promotionnels</h2>
-          <p className="text-muted-foreground">
-            Crée des codes de réduction et attribue-les à tes événements.
-          </p>
-        </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau code
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Billetterie"
+        title="Codes promotionnels"
+        description="Crée des codes de réduction et attribue-les à tes événements."
+        actions={
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau code
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={alertVariant}>

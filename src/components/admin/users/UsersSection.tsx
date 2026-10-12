@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -225,11 +226,12 @@ export function UsersSection() {
   }
 
   return (
-    <Card>
+    <>
+      <AdminPageHeader eyebrow="Communauté" title="Utilisateurs" description="Comptes, rôles et accès des utilisateurs du site." />
+    <Card variant="info">
       <CardContent className="space-y-4 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold">Utilisateurs</h3>
             <p className="text-sm text-muted-foreground">
               {data?.page?.totalCount ?? data?.total ?? 0} utilisateur{(data?.page?.totalCount ?? data?.total ?? 0) > 1 ? 's' : ''} correspondant{(data?.page?.totalCount ?? data?.total ?? 0) > 1 ? 's' : ''}.
             </p>
@@ -379,7 +381,7 @@ export function UsersSection() {
                 </p>
               </div>
             ) : null}
-            <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="flex items-center justify-between rounded-xl border p-3">
               <div>
                 <Label>Marketing opt-in</Label>
                 <p className="text-xs text-muted-foreground">
@@ -405,6 +407,7 @@ export function UsersSection() {
         </DialogContent>
       </Dialog>
     </Card>
+    </>
   )
 }
 

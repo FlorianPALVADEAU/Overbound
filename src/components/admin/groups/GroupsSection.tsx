@@ -5,6 +5,7 @@ import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Crown, Clock, Trash2, RefreshCw, Plus, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -301,7 +302,7 @@ export function GroupsSection() {
       header: 'Capitaine',
       cell: (group) => {
         const captain = group.members.find((member) => member.profile_id === group.captain_id)
-        return <span className="flex min-w-0 items-center gap-2"><Crown className="h-4 w-4 shrink-0 text-amber-500" /><span className="truncate">{captain ? getMemberLabel(captain) : '—'}</span></span>
+        return <span className="flex min-w-0 items-center gap-2"><Crown className="h-4 w-4 shrink-0 text-warning" /><span className="truncate">{captain ? getMemberLabel(captain) : '—'}</span></span>
       },
     },
     { id: 'members', header: 'Membres', cell: (group) => group.members.length },
@@ -327,11 +328,12 @@ export function GroupsSection() {
   }
 
   return (
-    <Card>
+    <>
+      <AdminPageHeader eyebrow="Communauté" title="Groupes" description="Packs entreprise, capitaines, membres et ancrage de vague." />
+    <Card variant="info">
       <CardContent className="min-w-0 space-y-4 p-4 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold">Groupes</h3>
             <p className="text-sm text-muted-foreground">{data?.page.totalCount ?? 0} groupe{(data?.page.totalCount ?? 0) > 1 ? 's' : ''}.</p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -516,7 +518,7 @@ export function GroupsSection() {
                       </div>
                     </div>
                     {isCaptain ? (
-                      <span className="text-xs text-amber-600 flex items-center gap-1"><Crown className="h-3.5 w-3.5" />Capitaine</span>
+                      <span className="text-xs text-warning flex items-center gap-1"><Crown className="h-3.5 w-3.5" />Capitaine</span>
                     ) : (
                       <Button className="shrink-0" size="sm" variant="ghost" onClick={() => editingGroup && handleRemoveMember(editingGroup, member.profile_id)} disabled={removeMember.isPending}><Trash2 className="mr-1.5 h-4 w-4" />Exclure</Button>
                     )}
@@ -533,6 +535,7 @@ export function GroupsSection() {
         </DialogContent>
       </Dialog>
     </Card>
+    </>
   )
 }
 

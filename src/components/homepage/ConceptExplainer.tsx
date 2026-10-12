@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Camera } from 'lucide-react'
-import { useGetObstacles } from '@/app/api/obstacles/obstaclesQueries'
 import { cn } from '@/lib/utils'
 import { RANKED_LAP_TIME_LIMITS } from '@/constants/raceFormatRules'
 import { COURSE_PATH } from '@/constants/coursePath'
@@ -10,18 +9,18 @@ import { Container, DISPLAY_TITLE, Section, SectionHeader } from '@/components/d
 
 
 // Ordre réel sur le parcours. `at` = position sur le tracé (0 = départ, 1 = arrivée).
-// `dbName` = nom de l'obstacle en base : la photo vient de `obstacles.image_url`.
+// `image` = photo dédiée de l'obstacle (public/images/obstacles), indépendante des noms en base.
 const OBSTACLES = [
-  { name: 'Wall over', at: 0.06, dbName: 'Par dessus, par dessous' },
-  { name: "Farmer's carry", at: 0.15, dbName: 'Farmer Carry' },
-  { name: 'Rondins', at: 0.24, dbName: 'Rondins de bois' },
-  { name: "Poutres d'équilibre", at: 0.33, dbName: 'Equilibre sur poutre' },
-  { name: 'Chain carry', at: 0.42, dbName: 'Chaînes' },
-  { name: 'Monkey bars', at: 0.52, dbName: 'Échelles suspendues' },
-  { name: 'Wall under', at: 0.62, dbName: 'Par dessus, par dessous' },
-  { name: 'Barbelé', at: 0.71, dbName: 'Barbelés' },
-  { name: 'Tire flip', at: 0.8, dbName: 'Renversé de pneus' },
-  { name: 'Tire drag', at: 0.89, dbName: 'Tiré de pneu' },
+  { name: 'Wall over', at: 0.06, image: '/images/obstacles/wall-over.avif' },
+  { name: "Farmer's carry", at: 0.15, image: '/images/obstacles/farmer-carry.avif' },
+  { name: 'Rondins', at: 0.24, image: '/images/obstacles/log-carry1.avif' },
+  { name: "Poutres d'équilibre", at: 0.33, image: '/images/obstacles/balance-beam.avif' },
+  { name: 'Chain carry', at: 0.42, image: '/images/obstacles/chain-carry1.avif' },
+  { name: 'Monkey bars', at: 0.52, image: '/images/obstacles/monkey-bars.avif' },
+  { name: 'Wall under', at: 0.62, image: '/images/obstacles/wall-under.avif' },
+  { name: 'Barbelé', at: 0.71, image: '/images/obstacles/barbels.avif' },
+  { name: 'Tire flip', at: 0.8, image: '/images/obstacles/tire-flip.avif' },
+  { name: 'Tire drag', at: 0.89, image: '/images/obstacles/tire-drag.avif' },
 ] as const
 
 const GLIDE_SECONDS = 0.7
@@ -87,12 +86,9 @@ export function ConceptExplainer() {
   const [lap, setLap] = useState(1)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [failedImages, setFailedImages] = useState<ReadonlySet<string>>(new Set())
-  const { data: dbObstacles, isLoading: obstaclesLoading } = useGetObstacles()
   const shown = Math.max(active, 0)
 
-  const imageUrls = OBSTACLES.map(
-    (obstacle) => dbObstacles?.find((o) => o.name === obstacle.dbName)?.image_url ?? null,
-  )
+  const imageUrls: readonly string[] = OBSTACLES.map((obstacle) => obstacle.image)
 
   // Position des pastilles : calculée sur le vrai tracé, donc toujours collée dessus.
   useEffect(() => {
@@ -356,8 +352,7 @@ export function ConceptExplainer() {
                   />
                 )
               })}
-              {!obstaclesLoading &&
-                (!imageUrls[shown] || failedImages.has(imageUrls[shown] as string)) && (
+              {failedImages.has(imageUrls[shown]) && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pb-16 text-muted-foreground">
                     <Camera className="h-8 w-8" aria-hidden="true" />
                     <p className="text-eyebrow font-semibold uppercase">Photo à venir</p>

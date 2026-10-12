@@ -19,6 +19,7 @@ import {
 import { useAdminLogs, type AdminLogsFilters } from '@/app/api/admin/logs/logsQueries'
 import type { AdminRequestLog } from '@/types/AdminRequestLog'
 import { cn } from '@/lib/utils'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 
 const METHOD_OPTIONS = ['POST', 'PUT', 'PATCH', 'DELETE']
 
@@ -34,22 +35,22 @@ const formatDateTime = (value: string) =>
 const getMethodStyles = (method: string) => {
   switch (method.toUpperCase()) {
     case 'POST':
-      return 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+      return 'bg-success/20 text-success border border-success/40'
     case 'PUT':
-      return 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+      return 'bg-warning/20 text-warning border border-warning/50'
     case 'PATCH':
-      return 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
+      return 'bg-info/20 text-info border border-info/40'
     case 'DELETE':
-      return 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
+      return 'bg-destructive/20 text-destructive border border-destructive/50'
     default:
       return 'bg-muted text-muted-foreground border border-transparent'
   }
 }
 
 const getStatusStyles = (status: number) => {
-  if (status >= 500) return 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
-  if (status >= 400) return 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-  if (status >= 200 && status < 300) return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+  if (status >= 500) return 'bg-destructive/20 text-destructive border border-destructive/50'
+  if (status >= 400) return 'bg-warning/20 text-warning border border-warning/40'
+  if (status >= 200 && status < 300) return 'bg-success/20 text-success border border-success/30'
   return 'bg-muted text-muted-foreground border border-transparent'
 }
 
@@ -159,16 +160,11 @@ export function AdminLogsSection() {
   }, [currentPage, totalPages])
 
   return (
-    <section className="space-y-6">
-      <Card>
-        <CardHeader className="space-y-1">
-          <CardTitle>Journal des actions</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Historique des requêtes sensibles (POST / PUT / DELETE) et transferts de billets.
-          </p>
-        </CardHeader>
+    <section className="space-y-8">
+      <AdminPageHeader eyebrow="Système" title="Journal des actions" description="Historique des requêtes sensibles (POST / PUT / DELETE) et transferts de billets." />
+      <Card variant="info">
         <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="space-y-1">
               <Label>Méthode</Label>
               <Select
@@ -211,7 +207,7 @@ export function AdminLogsSection() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
+            <div className="col-span-2 space-y-1 md:col-span-1">
               <Label>Utilisateur</Label>
               <Input
                 placeholder="Email ou ID"
@@ -233,8 +229,8 @@ export function AdminLogsSection() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <div className="space-y-1">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="col-span-2 space-y-1 md:col-span-1">
               <Label>Recherche libre</Label>
               <Input
                 placeholder="Résumé, chemin, email…"
@@ -321,7 +317,7 @@ export function AdminLogsSection() {
                           </span>
                         ) : null}
                         {log.error_message ? (
-                          <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-rose-400">
+                          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-destructive">
                             {log.error_message}
                           </span>
                         ) : null}
@@ -454,7 +450,7 @@ export function AdminLogsSection() {
           {selectedLog ? (
             <div className="grid gap-4 text-sm">
               <div className="grid gap-1">
-                <Label className="text-xs uppercase text-muted-foreground">Résumé</Label>
+                <Label className="text-label font-semibold uppercase text-subtle">Résumé</Label>
                 <p className="font-medium">{selectedLog.summary}</p>
                 {selectedLog.action_type ? (
                   <p className="text-xs text-muted-foreground">{selectedLog.action_type}</p>
@@ -485,7 +481,7 @@ export function AdminLogsSection() {
               </div>
 
               <div className="grid gap-2">
-                <Label className="text-xs uppercase text-muted-foreground">Chemin</Label>
+                <Label className="text-label font-semibold uppercase text-subtle">Chemin</Label>
                 <code className="block max-w-full overflow-x-auto rounded-md bg-muted px-2 py-1 text-xs">
                 {selectedLog.path}
               </code>
@@ -523,11 +519,11 @@ function InfoTile({ label, value, className, valueClassName }: InfoTileProps) {
   return (
     <div
       className={cn(
-        'flex min-w-[160px] flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 px-3 py-2 shadow-sm',
+        'flex min-w-[160px] flex-col gap-1 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 shadow-sm',
         className,
       )}
     >
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-label font-semibold uppercase text-subtle">{label}</p>
       <p className={cn('text-sm font-medium text-foreground break-words', valueClassName)}>{value}</p>
     </div>
   )
@@ -541,7 +537,7 @@ interface JsonBlockProps {
 function JsonBlock({ title, data }: JsonBlockProps) {
   return (
     <div className="grid gap-1">
-      <Label className="text-xs uppercase text-muted-foreground">{title}</Label>
+      <Label className="text-label font-semibold uppercase text-subtle">{title}</Label>
       <pre className="max-h-64 overflow-auto rounded-md bg-muted/40 px-3 py-2 text-xs">
         {JSON.stringify(data, null, 2)}
       </pre>

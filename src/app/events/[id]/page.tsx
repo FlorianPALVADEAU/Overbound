@@ -17,11 +17,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { EventPerks } from '@/components/events/landing/EventPerks'
 import { EventGallery } from '@/components/events/landing/EventGallery'
 import { EventStickyCta } from '@/components/events/landing/EventStickyCta'
-import { UltraArenaValidationStrip } from '@/components/events/landing/UltraArenaValidationStrip'
 import { UltraArenaWhyDifferent } from '@/components/events/landing/UltraArenaWhyDifferent'
-import { UltraArenaProjection } from '@/components/events/landing/UltraArenaProjection'
-import { UltraArenaTestimonials } from '@/components/events/landing/UltraArenaTestimonials'
-import { UltraArenaComeTogether } from '@/components/events/landing/UltraArenaComeTogether'
 import { FormatsComparison } from '@/components/events/landing/FormatsComparison'
 import { UltraArenaReassurance } from '@/components/events/landing/UltraArenaReassurance'
 import { UltraArenaFAQ } from '@/components/events/landing/UltraArenaFAQ'
@@ -228,10 +224,6 @@ export default function EventDetailPage() {
     : null
 
   const isOnSale = event.status === 'on_sale' && availableSpots > 0
-  const registeredCount =
-    typeof event.capacity === 'number' && Number.isFinite(event.capacity)
-      ? Math.max(event.capacity - availableSpots, 0)
-      : null
   const startingPriceLabel = lowestPriceCents !== null ? `Dès ${formatCurrency(lowestPriceCents)}` : null
   const locationMapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=13&ie=UTF8&iwloc=&output=embed`
 
@@ -327,13 +319,6 @@ export default function EventDetailPage() {
             </>
           }
         />
-        {hasBothFormats ? (
-          <UltraArenaValidationStrip
-            isOnSale={isOnSale}
-            registeredCount={registeredCount}
-            availableSpots={availableSpots}
-          />
-        ) : null}
       </Section>
 
       {/* Slides under the angled band above: extra top padding = the overlap */}
@@ -351,23 +336,6 @@ export default function EventDetailPage() {
             isOnSale={isOnSale}
             registerHref={ctaHref}
             onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'why_different' })}
-          />
-          <UltraArenaProjection
-            galleryImages={galleryImages}
-            isOnSale={isOnSale}
-            registerHref={ctaHref}
-            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'projection' })}
-          />
-          <UltraArenaTestimonials
-            onVideoPlay={(id) => trackEvent('click_testimonial_video', { testimonial_id: id })}
-            isOnSale={isOnSale}
-            registerHref={ctaHref}
-            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'participants' })}
-          />
-          <UltraArenaComeTogether
-            isOnSale={isOnSale}
-            registerHref={ctaHref}
-            onCtaClick={() => trackEvent('click_cta_midpage', { cta_location: 'group_section' })}
           />
         </>
       ) : (
@@ -405,6 +373,8 @@ export default function EventDetailPage() {
         />
       ) : null}
 
+      <VolunteersAppeal />
+
       {isOnSale ? (
         <Section tone="deep" spacing="spacious" className="border-t border-primary/40">
           <EventFinalCta
@@ -415,8 +385,6 @@ export default function EventDetailPage() {
           />
         </Section>
       ) : null}
-
-      <VolunteersAppeal />
 
       {isOnSale ? (
         <EventStickyCta

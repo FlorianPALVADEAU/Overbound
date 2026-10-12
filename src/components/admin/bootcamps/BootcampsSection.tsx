@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Plus, Users } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
@@ -48,12 +49,22 @@ export function BootcampsSection() {
     { id: 'delete', label: 'Supprimer', destructive: true, onSelect: setDeleting },
   ]
   return <div className="space-y-6">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Bootcamps</h2><p className="text-sm text-muted-foreground">Gérez les sessions d'entraînement et leurs inscrits.</p></div><Button onClick={() => { setEditing(null); setFormOpen(true) }}><Plus className="mr-2 h-4 w-4" />Nouveau bootcamp</Button></div>
+    <AdminPageHeader
+      eyebrow="Communauté"
+      title="Bootcamps"
+      description="Gérez les sessions d'entraînement et leurs inscrits."
+      actions={
+        <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nouveau bootcamp
+        </Button>
+      }
+    />
     {message ? <Alert variant={message.type === 'error' ? 'destructive' : 'default'}><AlertDescription>{message.text}</AlertDescription></Alert> : null}
     {error ? <Alert variant="destructive"><AlertDescription>Impossible de charger les bootcamps : {error.message}</AlertDescription></Alert> : null}
     <OperationsList data={{ items: bootcamps, nextCursor: pageData?.nextCursor ?? null, total: pageData?.total }} status={error ? 'error' : isLoading && !pageData ? 'loading' : isFetching ? 'stale' : 'idle'} errorMessage={error?.message} onRetry={() => window.location.reload()} getItemId={(bootcamp) => bootcamp.id} columns={columns} rowActions={rowActions} search={search} searchPlaceholder="Rechercher un bootcamp…" onSearchChange={setSearch} pagination={{ cursor, previousCursors, nextCursor: pageData?.nextCursor ?? null, total: pageData?.total, limit: 25 }} onPaginationChange={({ cursor: nextCursor, previousCursors: nextPrevious }) => { setCursor(nextCursor); setPreviousCursors(nextPrevious) }} itemLabel="bootcamp" />
     <BootcampFormDialog open={formOpen} bootcamp={editing} onClose={() => { setFormOpen(false); setEditing(null) }} onSubmit={editing ? handleUpdate : handleCreate} />
     <DeleteConfirmationDialog open={Boolean(deleting)} onOpenChange={(open) => { if (!open) setDeleting(null) }} title="Supprimer ce bootcamp ?" entityName={deleting?.title ?? ''} entityType="le bootcamp" consequences={['Toutes les inscriptions associées']} onConfirm={handleDelete} />
-    <Dialog open={Boolean(registrantsBootcamp)} onOpenChange={() => setRegistrantsBootcamp(null)}><DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>Inscrits — {registrantsBootcamp?.title}</DialogTitle></DialogHeader>{registrantsBootcamp ? <div className="space-y-3"><p className="text-sm text-muted-foreground">{registrantsBootcamp.registration_count ?? 0} participant{(registrantsBootcamp.registration_count ?? 0) !== 1 ? 's' : ''}</p>{registrantsBootcamp.registrants?.length ? registrantsBootcamp.registrants.map((registrant) => <div key={registrant.id} className="flex items-start justify-between gap-3 rounded-lg border p-3"><div className="min-w-0 truncate">{registrant.profile?.full_name ?? registrant.profile?.email ?? '—'}</div><div className="shrink-0 text-xs text-muted-foreground">{new Date(registrant.registered_at).toLocaleDateString('fr-FR')}</div></div>) : <p className="py-6 text-center text-sm text-muted-foreground">Aucun inscrit pour le moment.</p>}</div> : null}</DialogContent></Dialog>
+    <Dialog open={Boolean(registrantsBootcamp)} onOpenChange={() => setRegistrantsBootcamp(null)}><DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>Inscrits — {registrantsBootcamp?.title}</DialogTitle></DialogHeader>{registrantsBootcamp ? <div className="space-y-3"><p className="text-sm text-muted-foreground">{registrantsBootcamp.registration_count ?? 0} participant{(registrantsBootcamp.registration_count ?? 0) !== 1 ? 's' : ''}</p>{registrantsBootcamp.registrants?.length ? registrantsBootcamp.registrants.map((registrant) => <div key={registrant.id} className="flex items-start justify-between gap-3 rounded-xl border p-3"><div className="min-w-0 truncate">{registrant.profile?.full_name ?? registrant.profile?.email ?? '—'}</div><div className="shrink-0 text-xs text-muted-foreground">{new Date(registrant.registered_at).toLocaleDateString('fr-FR')}</div></div>) : <p className="py-6 text-center text-sm text-muted-foreground">Aucun inscrit pour le moment.</p>}</div> : null}</DialogContent></Dialog>
   </div>
 }

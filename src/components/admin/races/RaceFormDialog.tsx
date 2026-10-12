@@ -55,8 +55,8 @@ const DEFAULT_VALUES: RaceFormValues = {
 
 function difficultyBadgeColor(difficulty: number) {
   if (difficulty >= 8) return 'bg-destructive/15 text-destructive'
-  if (difficulty >= 5) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-green-100 text-green-800'
+  if (difficulty >= 5) return 'bg-warning/15 text-warning'
+  return 'bg-success/15 text-success'
 }
 
 export function RaceFormDialog({
@@ -204,7 +204,7 @@ export function RaceFormDialog({
             />
           </div>
 
-          <div className="flex items-center space-x-2 rounded-lg border p-4 bg-muted/30">
+          <div className="flex items-center space-x-2 rounded-xl border p-4 bg-muted/30">
             <Checkbox
               id="is_universal"
               checked={values.is_universal}
@@ -238,7 +238,7 @@ export function RaceFormDialog({
                 <label
                   htmlFor={`obstacle-${obstacle.id}`}
                   key={obstacle.id}
-                  className="flex items-start space-x-3 rounded-lg border p-3 hover:bg-muted/50"
+                  className="flex items-start space-x-3 rounded-xl border p-3 hover:bg-muted/50"
                 >
                   <Checkbox
                     id={`obstacle-${obstacle.id}`}

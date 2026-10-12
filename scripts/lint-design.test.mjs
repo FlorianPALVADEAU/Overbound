@@ -37,3 +37,13 @@ describe('compare (ratchet)', () => {
     ])
   })
 })
+
+describe('raw-status-color (admin only)', () => {
+  const source = `<span className="text-emerald-600 bg-amber-500/20 border-rose-500/40">`
+  it('flags raw status colors in the admin', () => {
+    expect(countViolations(source, 'src/components/admin/x.tsx')).toEqual({ 'raw-status-color': 3 })
+  })
+  it('ignores them outside the admin', () => {
+    expect(countViolations(source, 'src/components/events/x.tsx')).toEqual({})
+  })
+})

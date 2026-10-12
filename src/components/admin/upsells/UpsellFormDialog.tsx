@@ -311,7 +311,7 @@ export function UpsellFormDialog({
             </div>
 
             {values.images.map((image, index) => (
-              <div key={`${index}-${image.url}`} className="rounded-lg border p-3 space-y-2">
+              <div key={`${index}-${image.url}`} className="rounded-xl border p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">Image {index + 1}</span>
                   <div className="ml-auto flex gap-1">
@@ -378,7 +378,7 @@ export function UpsellFormDialog({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between border rounded-lg p-4">
+          <div className="flex items-center justify-between border rounded-xl p-4">
             <div>
               <Label htmlFor="upsell-active" className="font-medium">
                 Upsell actif

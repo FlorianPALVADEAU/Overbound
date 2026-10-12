@@ -16,6 +16,15 @@ export interface OperationsListColumn<T> {
   headerClassName?: string
   /** Columns hidden by default remain available from the column picker. */
   hiddenByDefault?: boolean
+  /**
+   * Phone layout. The first visible column is always the row title. `summary`
+   * columns sit on one compact line under it; `detail` columns appear when the
+   * row is expanded. With no `mobile` set anywhere, the two columns after the
+   * title are the summary and the rest is detail.
+   */
+  mobile?: 'summary' | 'detail'
+  /** Compact one-line render used on phones for the title and summary slots. */
+  mobileCell?: (item: T) => ReactNode
 }
 
 export interface OperationsListFilterOption {

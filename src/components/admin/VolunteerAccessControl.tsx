@@ -92,7 +92,7 @@ export function VolunteerAccessControl({ onEventSelect, eventId }: VolunteerAcce
 
   if (availableEvents.length === 0) {
     return (
-      <Card>
+      <Card variant="info">
         <CardContent className="text-center py-12">
           <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">Aucun événement accessible</h3>
@@ -111,7 +111,7 @@ export function VolunteerAccessControl({ onEventSelect, eventId }: VolunteerAcce
     <div className="space-y-6">
       {/* Sélection d'événement */}
       {availableEvents.length > 1 && (
-        <Card>
+        <Card variant="info">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
@@ -127,7 +127,7 @@ export function VolunteerAccessControl({ onEventSelect, eventId }: VolunteerAcce
                     setSelectedEvent(event)
                     onEventSelect?.(event.id)
                   }}
-                  className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                  className={`w-full text-left p-4 rounded-xl border transition-colors ${
                     selectedEvent?.id === event.id
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'

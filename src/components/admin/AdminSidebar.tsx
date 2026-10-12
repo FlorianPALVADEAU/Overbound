@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { BarChart3, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DISPLAY_TITLE } from '@/components/ds'
 import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS } from './adminNavItems'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -60,7 +61,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
 
   return (
     <>
-      <div className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background px-4 py-3 md:hidden">
+      <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-surface-deep px-4 py-3 md:hidden">
         <BarChart3 className="size-4 shrink-0 text-primary" aria-hidden />
         <label htmlFor="admin-mobile-navigation" className="sr-only">Section d’administration</label>
         <Select
@@ -71,7 +72,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
             router.push(hrefFor(item))
           }}
         >
-          <SelectTrigger id="admin-mobile-navigation" className="min-w-0 flex-1 bg-background text-sm font-medium">
+          <SelectTrigger id="admin-mobile-navigation" className="min-w-0 flex-1 text-sm font-medium">
             <SelectValue placeholder="Choisir une section" />
           </SelectTrigger>
           <SelectContent position="popper" className="max-h-[min(70vh,20rem)]">
@@ -91,14 +92,13 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
           </SelectContent>
         </Select>
       </div>
-      <aside className="hidden w-64 flex-col border-r bg-background md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-surface-deep md:flex">
       {/* User identity */}
-      <div className="p-6 border-b">
-        <p className="text-sm font-medium text-muted-foreground">Connecté en tant que</p>
-        <p className="text-lg font-semibold truncate">{fullName || 'Administrateur'}</p>
-        <p className="text-xs uppercase tracking-wide text-muted-foreground mt-1">
+      <div className="border-b border-border p-6">
+        <p className="text-label font-semibold uppercase text-subtle">
           {profileRole === 'admin' ? 'Administrateur' : 'Bénévole'}
         </p>
+        <p className={cn(DISPLAY_TITLE, 'mt-2 truncate text-title')}>{fullName || 'Administrateur'}</p>
       </div>
 
       {/* Navigation */}
@@ -107,7 +107,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
         <Link
           href="/dashboard"
           className={cn(
-            'w-full flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
+            'w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors',
             activeTab === 'overview'
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -117,7 +117,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
           <span>Tableau de bord</span>
         </Link>
 
-        <div className="my-2 border-t border-border/40" />
+        <div className="my-2 border-t border-border" />
 
         {/* Collapsible groups */}
         {ADMIN_NAV_GROUPS.map((group) => {
@@ -131,7 +131,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
                 type="button"
                 onClick={() => toggleGroup(group.id)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
                   hasActiveItem
                     ? 'text-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -146,7 +146,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
                 )}
                 <ChevronDown
                   className={cn(
-                    'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
+                    'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ease-standard',
                     isOpen && 'rotate-180'
                   )}
                 />
@@ -155,17 +155,17 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
               {/* Items — collapsible */}
               <div
                 className={cn(
-                  'overflow-hidden transition-all duration-200 ease-in-out',
+                  'overflow-hidden transition-all duration-200 ease-standard',
                   isOpen ? 'max-h-64' : 'max-h-0'
                 )}
               >
-                <div className="ml-3 pl-3 border-l border-border/50">
+                <div className="ml-3 border-l border-border pl-3">
                   {group.items.map((item) => (
                     <Link
                       key={item.value}
                       href={hrefFor(item)}
                       className={cn(
-                        'w-full flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
+                        'w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors',
                         activeTab === item.value
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -183,10 +183,10 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
       </nav>
 
       {/* Back to site */}
-      <div className="p-4 border-t">
+      <div className="border-t border-border p-4">
         <Link
           href="/"
-          className="inline-flex w-full items-center justify-center rounded-md border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+          className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
         >
           Retour au site
         </Link>

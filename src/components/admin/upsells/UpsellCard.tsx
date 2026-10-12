@@ -20,7 +20,7 @@ function formatPrice(price: number, currency: Upsell['currency']) {
 
 export function UpsellCard({ upsell, onEdit, onDelete, isDeleting }: UpsellCardProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-3">
@@ -29,7 +29,7 @@ export function UpsellCard({ upsell, onEdit, onDelete, isDeleting }: UpsellCardP
               <Badge variant="secondary">{upsell.type}</Badge>
               <Badge variant="outline">{formatPrice(upsell.price_cents, upsell.currency)}</Badge>
               {upsell.is_active ? (
-                <Badge variant="default" className="bg-green-600 hover:bg-green-600">
+                <Badge variant="default" className="bg-success hover:bg-success">
                   Actif
                 </Badge>
               ) : (

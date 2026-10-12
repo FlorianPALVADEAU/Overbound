@@ -208,7 +208,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
   }
 
   return (
-    <Card className="min-w-0 overflow-hidden">
+    <Card variant="info" className="min-w-0 overflow-hidden">
       <CardContent className="min-w-0 space-y-4 p-3 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -234,7 +234,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
           </div>
         </div>
 
-        <section className="space-y-3 rounded-lg border p-3 sm:p-4">
+        <section className="space-y-3 rounded-xl border p-3 sm:p-4">
           <div>
             <h3 className="font-medium">Ajouter des SAS</h3>
             <p className="text-xs text-muted-foreground">Ajoute un départ unique ou génère une série régulière. Rien n’est imposé.</p>
@@ -304,7 +304,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
                 const isFull = assigned >= (capacityValue || 0)
 
                 return (
-                  <article key={wave.wave_index} className="grid min-w-0 gap-3 rounded-lg border p-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+                  <article key={wave.wave_index} className="grid min-w-0 gap-3 rounded-xl border p-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
                     <div className="flex min-w-0 items-center justify-between gap-2 sm:col-span-2 lg:col-span-2 lg:block lg:self-center">
                       <div><p className="font-medium">SAS {position + 1}</p><p className="text-xs text-muted-foreground">{formatClockTime(wave.start_time)}</p></div>
                       <div className="md:mt-1">{isClosed ? <Badge variant="destructive">Fermé</Badge> : isFull ? <Badge variant="secondary">Complet</Badge> : <Badge variant="outline">Ouvert</Badge>}</div>

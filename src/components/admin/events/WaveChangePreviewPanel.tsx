@@ -95,7 +95,7 @@ export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePrevi
   }
 
   return (
-    <section className="space-y-3 rounded-lg border bg-muted/20 p-4" aria-labelledby="wave-preview-title">
+    <section className="space-y-3 rounded-xl border bg-muted/20 p-4" aria-labelledby="wave-preview-title">
       <div className="flex items-start gap-2">
         <Eye className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <div>
@@ -137,7 +137,7 @@ export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePrevi
                 <Badge variant={preview.target.isClosed || preview.target.remainingCapacity <= 0 ? 'secondary' : 'outline'}>Capacité : {preview.target.assignedCount}/{preview.target.capacity} · {preview.target.remainingCapacity} place{preview.target.remainingCapacity > 1 ? 's' : ''}</Badge>
               </div>
               {preview.blockers.length > 0 ? <div className="space-y-1 text-sm text-destructive"><p className="font-medium">Changement bloqué</p>{preview.blockers.map((blocker) => <p key={blocker}>• {blocker}</p>)}</div> : null}
-              {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
+              {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-warning"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
               <Button type="button" disabled className="w-full" title="La confirmation sera activée dans un lot ultérieur">Confirmation indisponible pour le moment</Button>
             </div>
           ) : null}

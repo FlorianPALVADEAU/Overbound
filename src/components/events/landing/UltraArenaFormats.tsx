@@ -55,7 +55,7 @@ export function UltraArenaFormats({
           alt=""
           fill
           sizes="100vw"
-          className="object-cover opacity-100"
+          className="object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-linear-to-br from-background/75 via-background/55 to-background" />
       </div>
