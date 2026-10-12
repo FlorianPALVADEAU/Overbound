@@ -53,10 +53,12 @@ export function HeroFrame({ image, variant = 'standard', id, className, children
           className="absolute -inset-x-6 -inset-y-40 will-change-transform"
         >
           {image.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            // Remote URL from the database: plain <img>, the host may be outside
+            // images.remotePatterns. fetchPriority: this is the LCP element.
             <img
               src={image.url}
               alt={image.alt ?? ''}
+              fetchPriority="high"
               className="h-full w-full object-cover"
               style={{ objectPosition: position }}
             />

@@ -17,7 +17,7 @@ export interface EventDetailResponse {
   } | null
 }
 
-const eventDetailKey = (id: string) => ['events', id, 'detail'] as const
+export const eventDetailKey = (id: string) => ['events', id, 'detail'] as const
 
 const fetchEventDetail = async (id: string) => {
   const response = await fetch(`/api/events/${id}`, { cache: 'no-store' })
