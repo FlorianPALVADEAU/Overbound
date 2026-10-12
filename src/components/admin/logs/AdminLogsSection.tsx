@@ -164,7 +164,7 @@ export function AdminLogsSection() {
       <AdminPageHeader eyebrow="Système" title="Journal des actions" description="Historique des requêtes sensibles (POST / PUT / DELETE) et transferts de billets." />
       <Card variant="info">
         <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="space-y-1">
               <Label>Méthode</Label>
               <Select
@@ -207,7 +207,7 @@ export function AdminLogsSection() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
+            <div className="col-span-2 space-y-1 md:col-span-1">
               <Label>Utilisateur</Label>
               <Input
                 placeholder="Email ou ID"
@@ -229,8 +229,8 @@ export function AdminLogsSection() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <div className="space-y-1">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="col-span-2 space-y-1 md:col-span-1">
               <Label>Recherche libre</Label>
               <Input
                 placeholder="Résumé, chemin, email…"

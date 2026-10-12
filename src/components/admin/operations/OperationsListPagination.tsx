@@ -38,12 +38,12 @@ export function OperationsListPagination({
   }
 
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-3 border-border px-3 py-2 text-sm text-muted-foreground ${position === 'bottom' ? 'border-t' : 'border-b'}`}>
+    <div className={`${position === 'top' ? 'hidden sm:flex' : 'flex'} items-center justify-between gap-3 border-border px-3 py-2 text-xs text-muted-foreground sm:text-sm ${position === 'bottom' ? 'border-t' : 'border-b'}`}>
       <span>{pagination.total !== undefined ? `${pagination.total} ${itemLabel}${pagination.total > 1 ? 's' : ''}` : `Page ${page}`}</span>
       <div className="flex items-center gap-2">
         {isLoading ? <LoaderCircle className="size-4 animate-spin" aria-label="Actualisation" /> : null}
         <Button type="button" variant="outline" size="icon-sm" onClick={goPrevious} disabled={!canGoPrevious || isLoading} aria-label="Page précédente"><ChevronLeft /></Button>
-        <span>Page {page}{totalPages ? ` sur ${totalPages}` : ''}</span>
+        <span className="tabular-nums"><span className="hidden sm:inline">Page </span>{page}{totalPages ? ` / ${totalPages}` : ''}</span>
         <Button type="button" variant="outline" size="icon-sm" onClick={goNext} disabled={!canGoNext || isLoading} aria-label="Page suivante"><ChevronRight /></Button>
       </div>
     </div>

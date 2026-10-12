@@ -21,11 +21,11 @@ export function AdminShell({ fullName, eventId, children }: AdminShellProps) {
     <div className="min-h-screen bg-background md:flex">
       <AdminSidebar profileRole="admin" fullName={fullName} />
       <div className="min-w-0 flex-1">
-        <header className="space-y-4 border-b border-border bg-surface-deep px-4 py-4 md:px-6 lg:px-8">
+        <header className="space-y-3 border-b border-border bg-surface-deep px-4 py-3 md:space-y-4 md:px-6 md:py-4 lg:px-8">
           <div className="flex items-center justify-between gap-3">
             <Eyebrow>Administration</Eyebrow>
             <div className="flex items-center gap-3">
-              <Badge variant="secondary">Administrateur</Badge>
+              <Badge variant="secondary" className="hidden sm:inline-flex">Administrateur</Badge>
               <Button asChild variant="outline" size="sm">
                 <Link href="/account">Mon compte</Link>
               </Button>
@@ -33,7 +33,7 @@ export function AdminShell({ fullName, eventId, children }: AdminShellProps) {
           </div>
           <AdminEventContextSelector eventId={eventId} />
         </header>
-        <main className="mx-auto w-full max-w-screen-2xl min-w-0 space-y-8 px-4 py-6 md:px-6 md:py-8 lg:px-8">
+        <main className="mx-auto w-full max-w-screen-2xl min-w-0 space-y-6 px-4 py-4 md:space-y-8 md:px-6 md:py-8 lg:px-8">
           {children}
         </main>
       </div>

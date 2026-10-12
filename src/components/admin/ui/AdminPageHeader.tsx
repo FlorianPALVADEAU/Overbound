@@ -30,7 +30,7 @@ export function AdminPageHeader({
         <Heading className={cn(DISPLAY_TITLE, 'text-display-md', eyebrow && 'mt-2')}>{title}</Heading>
         {description ? <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex w-full shrink-0 flex-wrap items-center gap-2 md:w-auto [&>*]:flex-1 md:[&>*]:flex-none">{actions}</div> : null}
     </div>
   )
 }

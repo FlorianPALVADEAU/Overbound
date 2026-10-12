@@ -249,9 +249,12 @@ export function EventTicketDepartures({
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-          <Button asChild size="cta">
-            <Link href={groupHref('create')}>Créer mon groupe</Link>
-          </Button>
+          {/* The band is light, which darkens --primary; the action button keeps the brand green. */}
+          <div className="tone-dark bg-transparent">
+            <Button asChild size="cta">
+              <Link href={groupHref('create')}>Créer mon groupe</Link>
+            </Button>
+          </div>
           <Link href={groupHref('join')} className="text-center text-sm font-semibold text-primary underline-offset-4 hover:underline">
             J&apos;ai un code d&apos;invitation
           </Link>

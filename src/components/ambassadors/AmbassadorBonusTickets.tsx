@@ -2,8 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { Disclosure } from '@/components/ds'
 import { Ticket } from 'lucide-react'
 import {
   REWARD_STATUS_LABELS,
@@ -43,16 +42,15 @@ export function AmbassadorBonusTickets({
     : Math.min(100, (totalPoints / EXTRA_TICKET_BASE_POINTS) * 100)
 
   return (
-    <Card className={cn('border-border/60', isUnlocked && extraEarned > 0 && 'border-primary/25')}>
-      <CardHeader className="pb-3 pt-5">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Ticket className="h-4 w-4" />
-          Dossards bonus
-          {extraEarned > 0 && <Badge variant="secondary">{extraEarned}</Badge>}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-lg border border-border/50 bg-muted/20 p-3 text-sm text-muted-foreground">
+    <Disclosure
+      defaultOpen={claimableCount > 0}
+      icon={<Ticket className="size-4" />}
+      title="Dossards bonus"
+      badge={extraEarned > 0 ? <Badge variant="secondary">{extraEarned}</Badge> : null}
+      summary={isUnlocked ? `encore ${ptsToNext} pt${ptsToNext > 1 ? 's' : ''} pour le prochain` : `débloqué à ${EXTRA_TICKET_BASE_POINTS} pts`}
+    >
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
           Au-delà de {EXTRA_TICKET_BASE_POINTS} points, chaque tranche de{' '}
           <span className="font-semibold text-foreground">{EXTRA_TICKET_INTERVAL} points</span> te
           rapporte <span className="font-semibold text-foreground">1 dossard offert</span>.
@@ -73,12 +71,12 @@ export function AmbassadorBonusTickets({
           <div className="space-y-3">
             <div className="flex flex-wrap gap-4 text-sm">
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="h-2 w-2 rounded-full bg-success" />
                 <span><span className="font-bold">{extraEarned}</span> dossard{extraEarned > 1 ? 's' : ''} gagné{extraEarned > 1 ? 's' : ''}</span>
               </span>
               {claimedCount > 0 && (
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-sky-500" />
+                  <span className="h-2 w-2 rounded-full bg-info" />
                   <span><span className="font-bold">{claimedCount}</span> réclamé{claimedCount > 1 ? 's' : ''}</span>
                 </span>
               )}
@@ -154,7 +152,7 @@ export function AmbassadorBonusTickets({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Disclosure>
   )
 }

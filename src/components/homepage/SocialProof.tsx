@@ -379,12 +379,6 @@ const SocialProof = () => {
               <CarouselNext className="left-16 right-auto top-auto bottom-4 border-border bg-card text-foreground shadow-lg hover:bg-muted cursor-pointer" />
             </div>
           </Carousel>
-
-          <div className="max-w-full pt-10">
-            <AnimatedBanner
-              images={PARTNERS_DATA.map((partner) => partner.logo)}
-            />
-          </div>
         </div>
       </Container>
     </Section>

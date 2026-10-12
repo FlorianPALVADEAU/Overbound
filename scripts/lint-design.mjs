@@ -35,8 +35,8 @@ export const RULES = [
   { id: 'raw-red', hint: 'use Button variant="signal" (header CTA) or destructive (errors)', re: /\bbg-red-\d{2,3}\b/g },
   {
     id: 'raw-status-color',
-    // Admin only: the public site has its own status styling still to migrate.
-    only: /^src\/(components\/admin|app\/dashboard)\//,
+    // Back-office and ambassador space only: the rest of the public site has its own status styling still to migrate.
+    only: /^src\/(components\/(admin|ambassadors)|app\/(dashboard|ambassadors))\//,
     hint: 'use text-success / text-warning / text-info / text-destructive (and /10 /20 /40 for fills and borders)',
     re: /\b(?:text|bg|border|from|via|to|ring|divide)-(?:red|green|blue|amber|yellow|orange|emerald|sky|purple|violet|indigo|pink|rose|teal|cyan|lime)-\d{2,3}\b/g,
   },

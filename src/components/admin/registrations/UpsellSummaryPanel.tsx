@@ -1,7 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Disclosure } from '@/components/ds'
 import {
   Table,
   TableBody,
@@ -31,17 +31,16 @@ export function UpsellSummaryPanel({ eventId }: UpsellSummaryPanelProps) {
   if (!isLoading && summary.length === 0) return null
 
   return (
-    <Card variant="info">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Package className="h-4 w-4 text-primary" />
+    <Disclosure
+      icon={<Package className="size-4 text-primary" />}
+      title={
+        <>
           Options vendues (upsells)
-          {eventId ? null : (
-            <span className="text-xs font-normal text-muted-foreground ml-1">— tous événements</span>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
+          {eventId ? null : <span className="text-xs font-normal text-muted-foreground">— tous événements</span>}
+        </>
+      }
+      summary={`${summary.length} option${summary.length > 1 ? 's' : ''}`}
+    >
         {isLoading ? (
           <div className="flex items-center gap-2 px-6 py-4 text-sm text-muted-foreground">
             <Clock className="h-4 w-4 animate-spin" />
@@ -89,7 +88,6 @@ export function UpsellSummaryPanel({ eventId }: UpsellSummaryPanelProps) {
             </TableBody>
           </Table>
         )}
-      </CardContent>
-    </Card>
+    </Disclosure>
   )
 }

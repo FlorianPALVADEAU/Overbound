@@ -192,6 +192,7 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
       </div>
 
       <StatRow
+        compact
         stats={[
           { label: 'Inscriptions', value: count(stats?.registrations.total), unit: `${count(stats?.registrations.approved)} approuvés` },
           { label: 'En attente', value: count(stats?.registrations.pending), unit: 'à examiner' },

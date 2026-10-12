@@ -1,7 +1,6 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
 import type { AmbassadorNextReward } from '@/types/Ambassador'
 
 interface AmbassadorPointsSummaryProps {
@@ -20,63 +19,49 @@ export function AmbassadorPointsSummary({
   segmentFill,
 }: AmbassadorPointsSummaryProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/8 to-transparent">
-        <CardContent className="p-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary/60">
-            Tes points
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+      <Card variant="info" className="gap-0 py-0">
+        <CardContent className="p-4 sm:p-6">
+          <p className="text-label font-semibold uppercase text-subtle">Tes points</p>
+          <p className="mt-1 font-display text-display-md font-bold leading-none tabular-nums">
+            {totalPoints}
+            <span className="ml-2 text-title text-muted-foreground">pts</span>
           </p>
-          <div className="flex items-end gap-2">
-            <span className="text-5xl font-bold tabular-nums leading-none sm:text-6xl">{totalPoints}</span>
-            <span className="mb-1 text-lg font-bold text-muted-foreground sm:text-xl">pts</span>
-          </div>
-          <div className="mt-3 flex items-center gap-5 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-primary/40" />
-              {openCount} Open
+          <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span>{openCount} Open</span>
+            <span>
+              {rankedCount} Ranked <span className="font-semibold text-primary">×2</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-primary" />
-              {rankedCount} Ranked
-              <span className="text-label font-bold text-primary">×2</span>
-            </span>
-          </div>
+          </p>
         </CardContent>
       </Card>
 
-      <Card className={cn('border-border/60', nextReward && 'border-primary/25')}>
-        <CardContent className="p-5">
+      <Card variant="info" className="gap-0 py-0">
+        <CardContent className="p-4 sm:p-6">
           {nextReward ? (
             <>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Prochain palier
-              </p>
-              <p className="text-lg font-bold leading-snug">{nextReward.reward_name}</p>
+              <p className="text-label font-semibold uppercase text-subtle">Prochain palier</p>
+              <p className="mt-1 font-semibold leading-snug">{nextReward.reward_name}</p>
               <div className="mt-3 space-y-1.5">
-                <div className="flex justify-between text-label text-muted-foreground">
-                  <span className="font-medium">{totalPoints} pts</span>
-                  <span className="font-bold text-primary">
-                    encore {nextReward.points_remaining} pt
-                    {nextReward.points_remaining > 1 ? 's' : ''}
-                  </span>
-                  <span>{nextReward.points_required} pts</span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary transition-all duration-700"
+                    className="h-full rounded-full bg-primary transition-all duration-300 ease-standard"
                     style={{ width: `${segmentFill}%` }}
                   />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{totalPoints} pts</span>
+                  <span className="font-semibold text-primary">
+                    encore {nextReward.points_remaining} pt{nextReward.points_remaining > 1 ? 's' : ''}
+                  </span>
+                  <span>{nextReward.points_required} pts</span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex h-full flex-col justify-center py-2">
-              <p className="text-base font-bold text-primary">
-                Tous les paliers débloqués 🏆
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Tu as atteint le statut maximum.
-              </p>
+            <div className="flex h-full flex-col justify-center">
+              <p className="font-semibold text-primary">Tous les paliers débloqués 🏆</p>
+              <p className="mt-1 text-sm text-muted-foreground">Tu as atteint le statut maximum.</p>
             </div>
           )}
         </CardContent>

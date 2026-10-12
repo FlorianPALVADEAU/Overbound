@@ -32,7 +32,7 @@ const CTA = () => {
           alt="Coureurs Overbound franchissant un obstacle avec des troncs d'arbres"
           fill
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-center opacity-40"
         />
         <div className="absolute inset-0 bg-surface-deep/60" />
       </div>

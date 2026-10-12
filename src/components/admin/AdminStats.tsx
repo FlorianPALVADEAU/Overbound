@@ -1,6 +1,6 @@
 'use client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StatRow } from '@/components/ds'
+import { Disclosure, StatRow } from '@/components/ds'
 import { Calendar, MapPin, Users, BarChart3, Clock } from 'lucide-react'
 import {
   LineChart,
@@ -110,6 +110,7 @@ export function AdminStats({ stats: rawStats }: AdminStatsProps) {
   return (
     <>
       <StatRow
+        compact
         className="mb-8"
         stats={[
           {
@@ -184,11 +185,7 @@ export function AdminStats({ stats: rawStats }: AdminStatsProps) {
       {/* Graphiques */}
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Évolution des inscriptions */}
-        <Card variant="info">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Inscriptions / mois</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Disclosure title="Inscriptions / mois" defaultOpen={true}>
             {monthlyData.length === 0 ? (
               <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
                 Pas encore de données
@@ -226,15 +223,10 @@ export function AdminStats({ stats: rawStats }: AdminStatsProps) {
                 </ResponsiveContainer>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </Disclosure>
 
         {/* Répartition des tickets */}
-        <Card variant="info">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Répartition des tickets</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Disclosure title="Répartition des tickets" defaultOpen={false}>
             {ticketData.length === 0 ? (
               <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
                 Pas encore de données
@@ -283,17 +275,12 @@ export function AdminStats({ stats: rawStats }: AdminStatsProps) {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+          </Disclosure>
       </div>
 
       {/* Statut des événements — horizontal bar */}
       {statusData.length > 0 && (
-        <Card variant="info">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Événements par statut</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Disclosure title="Événements par statut" defaultOpen={false}>
             <div style={{ height: Math.max(120, statusData.length * 44) }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -322,8 +309,7 @@ export function AdminStats({ stats: rawStats }: AdminStatsProps) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </CardContent>
-        </Card>
+          </Disclosure>
       )}
     </>
   )

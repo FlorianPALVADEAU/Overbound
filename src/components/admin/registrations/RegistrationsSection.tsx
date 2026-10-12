@@ -292,10 +292,10 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   const columns: OperationsListColumn<AdminRegistration>[] = [
     { id: 'participant', header: 'Participant', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{getParticipantName(registration)}</p><p className="truncate text-xs text-muted-foreground">{registration.email}</p>{registration.group?.name ? <p className="truncate text-xs text-muted-foreground">Groupe : {registration.group.name}</p> : null}</div> },
-    { id: 'event', header: 'Événement', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.event?.title ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{registration.event?.location ?? ''}</p></div> },
-    { id: 'ticket', header: 'Billet', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.ticket?.name ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount((registration.order as any)?.amount_per_registration ?? registration.order?.amount_total ?? null, registration.order?.currency ?? null)}</p></div> },
-    { id: 'presence', header: 'Présence', cell: (registration) => registration.cancelled_at ? <RefundedBadge cancelledAt={registration.cancelled_at} /> : <Badge variant={registration.checked_in ? 'outline' : 'secondary'}>{registration.checked_in ? 'Check-in' : 'Non check-in'}</Badge> },
-    { id: 'created-at', header: 'Créé le', cell: (registration) => formatDateTime(registration.created_at), hiddenByDefault: true },
+    { id: 'event', header: 'Événement', mobile: 'detail', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.event?.title ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{registration.event?.location ?? ''}</p></div> },
+    { id: 'ticket', header: 'Billet', mobile: 'summary', cell: (registration) => <div className="min-w-0"><p className="truncate font-medium">{registration.ticket?.name ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount((registration.order as any)?.amount_per_registration ?? registration.order?.amount_total ?? null, registration.order?.currency ?? null)}</p></div> },
+    { id: 'presence', header: 'Présence', mobile: 'summary', cell: (registration) => registration.cancelled_at ? <RefundedBadge cancelledAt={registration.cancelled_at} /> : <Badge variant={registration.checked_in ? 'outline' : 'secondary'}>{registration.checked_in ? 'Check-in' : 'Non check-in'}</Badge> },
+    { id: 'created-at', header: 'Créé le', mobile: 'detail', cell: (registration) => formatDateTime(registration.created_at), hiddenByDefault: true },
   ]
   const rowActions: OperationsListAction<AdminRegistration>[] = [
     { id: 'manage', label: 'Gérer', onSelect: handleOperations, disabled: (registration) => Boolean(registration.cancelled_at) },

@@ -366,6 +366,7 @@ export function VolunteerCheckin() {
   return (
     <div className="space-y-8">
       <StatRow
+        compact
         stats={[
           { label: 'Total inscriptions', value: stats.total },
           { label: 'Présents', value: stats.checkedIn, highlight: true },

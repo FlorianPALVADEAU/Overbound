@@ -76,9 +76,9 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+    <div className="space-y-2 rounded-2xl border border-border bg-card p-3 sm:space-y-3 sm:p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
+        <div className="hidden min-w-0 sm:block">
           <p className="text-label font-semibold uppercase text-subtle">Contexte événement</p>
           <p className="truncate text-sm font-medium">
             {selectedEvent ? selectedEvent.title : hasAmbiguousContext ? 'Sélection requise' : 'Aucun événement sélectionné'}
@@ -126,7 +126,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
       </div>
 
       {selectedEvent ? (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="hidden flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground sm:flex">
           <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatEventDate(selectedEvent)}</span>
           <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</span>
           <span>{statusLabel(selectedEvent.status)}</span>
@@ -137,7 +137,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Button asChild size="sm" variant="secondary" disabled={!selectedEvent}>
           <Link href={selectedEvent ? `/dashboard/events/${selectedEvent.id}/participants` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
             Participants <ChevronRight className="ml-1 h-4 w-4" />

@@ -31,7 +31,7 @@ function AmbassadorDashboardContent() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">Chargement...</div>
       </main>
     )
@@ -43,7 +43,7 @@ function AmbassadorDashboardContent() {
 
   if (!canAccessAmbassadorDashboard) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <Card className="max-w-md">
           <CardContent className="text-center space-y-4 p-6">
             <p className="text-lg font-semibold">Accès refusé</p>
@@ -61,7 +61,7 @@ function AmbassadorDashboardContent() {
 
   if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <Card className="max-w-md">
           <CardContent className="space-y-4 p-6 text-center">
             <p className="font-semibold text-destructive">Impossible de charger le dashboard ambassadeur</p>
@@ -75,7 +75,7 @@ function AmbassadorDashboardContent() {
 
   if (dashboardLoading || !data) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">Chargement...</div>
       </main>
     )
@@ -84,7 +84,7 @@ function AmbassadorDashboardContent() {
   return (
     <>
       {isAdmin && viewAs ? (
-        <div className="sticky top-0 z-50 flex items-center justify-between bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950">
+        <div className="sticky top-0 z-50 flex items-center justify-between bg-warning px-4 py-2 text-sm font-medium text-primary-foreground">
           <span>Vue admin — dashboard de {data.code ?? viewAs}</span>
           <Link href="/ambassadors/dashboard">
             <Button size="sm" variant="outline" className="h-7 text-xs">
@@ -94,7 +94,7 @@ function AmbassadorDashboardContent() {
         </div>
       ) : null}
       {data.available_program_years.length > 1 ? (
-        <div className="sticky top-0 z-40 flex items-center gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur">
+        <div className="sticky top-0 z-40 flex items-center gap-2 overflow-x-auto border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
           <span className="text-sm font-medium">Année :</span>
           {data.available_program_years.map((year) => (
             <Button
@@ -127,7 +127,7 @@ function AmbassadorDashboardContent() {
 export default function AmbassadorDashboardPage() {
   return (
     <Suspense fallback={
-      <main className="flex min-h-screen items-center justify-center">
+      <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-sm text-muted-foreground">Chargement...</div>
       </main>
     }>

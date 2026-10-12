@@ -179,28 +179,32 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     },
     {
       id: 'status',
+      mobile: 'summary',
       header: 'Statut',
       cell: (participant) => <div className="flex flex-wrap gap-1">{participant.registration.cancelledAt ? <RefundedBadge cancelledAt={participant.registration.cancelledAt} /> : <Badge variant={participant.registration.checkedIn ? 'default' : 'secondary'}>{participant.registration.checkedIn ? 'Check-in' : 'À venir'}</Badge>}<Badge variant="outline">{participant.participant.accountStatus === 'claimed' ? 'Compte lié' : 'Invité'}</Badge></div>,
     },
     {
       id: 'ticket',
+      mobile: 'summary',
       header: 'Billet',
       cell: (participant) => <><p>{participant.ticket.name ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</p></>,
     },
     {
       id: 'departure',
+      mobile: 'detail',
       header: 'Départ',
       cell: (participant) => participant.departure.startTime ? <><p>{formatDate(participant.departure.startTime)}</p><p className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</p></> : '—',
       hiddenByDefault: true,
     },
-    { id: 'group', header: 'Groupe', cell: (participant) => participant.group ?? '—', hiddenByDefault: true },
+    { id: 'group', mobile: 'detail', header: 'Groupe', cell: (participant) => participant.group ?? '—', hiddenByDefault: true },
     {
       id: 'payment',
+      mobile: 'detail',
       header: 'Paiement',
       cell: (participant) => participant.payment ? <><p>{participant.payment.status ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</p></> : '—',
       hiddenByDefault: true,
     },
-    { id: 'created-at', header: 'Inscrit le', cell: (participant) => formatDate(participant.registration.createdAt), hiddenByDefault: true },
+    { id: 'created-at', mobile: 'detail', header: 'Inscrit le', cell: (participant) => formatDate(participant.registration.createdAt), hiddenByDefault: true },
   ]
 
   const rowActions: OperationsListAction<EventParticipantRow>[] = [

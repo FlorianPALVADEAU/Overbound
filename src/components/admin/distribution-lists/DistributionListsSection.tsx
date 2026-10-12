@@ -104,6 +104,7 @@ export function DistributionListsSection() {
       />
 
       <StatRow
+        compact
         stats={[
           { label: 'Listes totales', value: totalLists, unit: `${activeLists} active${activeLists > 1 ? 's' : ''}` },
           { label: 'Abonnés totaux', value: totalSubscribers, unit: 'toutes listes' },

@@ -2,8 +2,8 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Zap } from 'lucide-react'
+import { Disclosure } from '@/components/ds'
+import { Gift } from 'lucide-react'
 import {
   FALLBACK_TIER_ICON,
   REWARD_STATUS_LABELS,
@@ -29,68 +29,51 @@ export function AmbassadorRewardsList({
   onClaim,
 }: AmbassadorRewardsListProps) {
   if (rewards.length === 0) return null
+  const claimable = rewards.filter((reward) => reward.status === 'earned').length
 
   return (
-    <Card>
-      <CardHeader className="pb-3 pt-5">
-        <CardTitle className="flex items-center gap-2 text-base">
-          Tes récompenses débloquées
-          <Badge variant="secondary">{rewards.length}</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {actionError && (
-          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {actionError}
-          </p>
-        )}
-        {actionSuccess && (
-          <p className="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
-            {actionSuccess}
-          </p>
-        )}
-        {rewards.map((reward) => {
-          const meta = TIER_META[reward.reward_level]
-          const Icon = meta?.icon ?? FALLBACK_TIER_ICON
-          return (
-            <div
-              key={reward.id}
-              className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-4 w-4" />
+    <Disclosure
+      defaultOpen={claimable > 0}
+      icon={<Gift className="size-4" />}
+      title="Tes récompenses"
+      badge={<Badge variant="secondary">{rewards.length}</Badge>}
+      summary={claimable > 0 ? `${claimable} à réclamer` : undefined}
+    >
+      <div className="space-y-3">
+        {actionError ? <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{actionError}</p> : null}
+        {actionSuccess ? <p className="rounded-xl bg-success/10 px-3 py-2 text-sm text-success">{actionSuccess}</p> : null}
+        <ul className="divide-y divide-border">
+          {rewards.map((reward) => {
+            const Icon = TIER_META[reward.reward_level]?.icon ?? FALLBACK_TIER_ICON
+            return (
+              <li key={reward.id} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      Palier {reward.reward_level} — {reward.reward_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Débloquée le {formatAmbassadorDate(reward.earned_at)}
+                      {reward.claimed_at ? ` · Réclamée le ${formatAmbassadorDate(reward.claimed_at)}` : ''}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">
-                    Palier {reward.reward_level} — {reward.reward_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Débloquée le {formatAmbassadorDate(reward.earned_at)}
-                    {reward.claimed_at
-                      ? ` · Réclamée le ${formatAmbassadorDate(reward.claimed_at)}`
-                      : ''}
-                  </p>
+                <div className="flex items-center justify-between gap-2 sm:justify-end">
+                  <Badge className={REWARD_STATUS_STYLES[reward.status]}>{REWARD_STATUS_LABELS[reward.status]}</Badge>
+                  {reward.status === 'earned' ? (
+                    <Button size="sm" onClick={() => onClaim(reward.reward_level)} disabled={claimingLevel === reward.reward_level}>
+                      {claimingLevel === reward.reward_level ? 'Envoi…' : 'Réclamer'}
+                    </Button>
+                  ) : null}
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className={REWARD_STATUS_STYLES[reward.status]}>
-                  {REWARD_STATUS_LABELS[reward.status]}
-                </Badge>
-                {reward.status === 'earned' && (
-                  <Button
-                    size="sm"
-                    onClick={() => onClaim(reward.reward_level)}
-                    disabled={claimingLevel === reward.reward_level}
-                  >
-                    {claimingLevel === reward.reward_level ? 'Envoi…' : 'Réclamer'}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </CardContent>
-    </Card>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </Disclosure>
   )
 }

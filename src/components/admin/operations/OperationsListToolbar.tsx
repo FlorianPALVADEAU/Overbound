@@ -1,8 +1,9 @@
 'use client'
 
 import { Search, SlidersHorizontal } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
@@ -46,6 +47,8 @@ export function OperationsListToolbar<T>({
   onVisibleColumnIdsChange,
   actions,
 }: OperationsListToolbarProps<T>) {
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const activeFilterCount = filters.filter((filter) => filter.value).length
   const canChooseColumns = visibleColumnIds !== undefined && onVisibleColumnIdsChange !== undefined
 
   const toggleColumn = (columnId: string) => {
@@ -57,9 +60,9 @@ export function OperationsListToolbar<T>({
   }
 
   return (
-    <div className="flex flex-col gap-3 border-b p-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="flex flex-wrap items-center gap-2 border-b border-border p-3 sm:gap-3">
       {onSearchChange ? (
-        <div className="min-w-0 flex-1 sm:max-w-sm">
+        <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:max-w-sm">
           {searchLabel ? <label className="mb-1 block text-xs font-medium text-muted-foreground">{searchLabel}</label> : null}
           <div className="relative">
           <Search aria-hidden className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -67,18 +70,35 @@ export function OperationsListToolbar<T>({
           </div>
         </div>
       ) : null}
-      {filters.map((filter) => (
-        <Select key={filter.id} value={filter.value || '__all__'} onValueChange={(value) => onFilterChange?.(filter.id, value === '__all__' ? '' : value)}>
-          <SelectTrigger size="sm" aria-label={filter.label}><SelectValue placeholder={filter.label} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">{filter.allLabel ?? `Tous les ${filter.label.toLowerCase()}`}</SelectItem>
-            {filter.options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}{option.count !== undefined ? ` (${option.count})` : ''}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      ))}
+      {filters.length > 0 ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="sm:hidden"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          <SlidersHorizontal />
+          Filtres{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+        </Button>
+      ) : null}
+      {filters.length > 0 ? (
+        <div className={cn('order-last grid w-full grid-cols-2 gap-2 sm:contents', !filtersOpen && 'hidden sm:contents')}>
+          {filters.map((filter) => (
+            <Select key={filter.id} value={filter.value || '__all__'} onValueChange={(value) => onFilterChange?.(filter.id, value === '__all__' ? '' : value)}>
+              <SelectTrigger size="sm" className="w-full sm:w-auto" aria-label={filter.label}><SelectValue placeholder={filter.label} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{filter.allLabel ?? `Tous les ${filter.label.toLowerCase()}`}</SelectItem>
+                {filter.options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}{option.count !== undefined ? ` (${option.count})` : ''}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          ))}
+        </div>
+      ) : null}
       {canChooseColumns ? (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button type="button" variant="outline" size="sm" className="sm:ml-auto"><SlidersHorizontal />Colonnes</Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button type="button" variant="outline" size="sm" className="hidden sm:ml-auto md:inline-flex"><SlidersHorizontal />Colonnes</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
             <DropdownMenuSeparator />

@@ -92,7 +92,7 @@ export function OperationsList<T>({
   const clearSelection = () => onSelectedIdsChange?.([])
 
   return (
-    <section aria-label={`Liste ${itemLabel}`} className="overflow-hidden rounded-xl border bg-card">
+    <section aria-label={`Liste ${itemLabel}`} className="-mx-4 overflow-hidden border-y border-border bg-card sm:mx-0 sm:rounded-2xl sm:border">
       <OperationsListToolbar
         search={search}
         searchPlaceholder={searchPlaceholder}
