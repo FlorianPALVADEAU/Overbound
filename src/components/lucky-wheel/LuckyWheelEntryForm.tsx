@@ -101,7 +101,8 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
 
       <Button
         type="submit"
-        className="h-10 w-full text-sm font-bold sm:h-11 sm:text-base"
+        size="cta"
+        className="w-full"
         disabled={submitting || !email.trim()}
       >
         {submitting ? (
@@ -118,7 +119,7 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
         type="button"
         onClick={onDecline}
         disabled={submitting}
-        className="w-full text-center text-xs font-semibold underline text-muted-foreground hover:text-foreground"
+        className="w-full text-center text-xs text-muted-foreground underline hover:text-foreground"
       >
         Non merci, je continue sans participer
       </button>
