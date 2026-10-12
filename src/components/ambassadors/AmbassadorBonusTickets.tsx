@@ -60,7 +60,7 @@ export function AmbassadorBonusTickets({
 
         {!isUnlocked ? (
           <div className="space-y-2">
-            <div className="flex justify-between text-[11px] text-muted-foreground">
+            <div className="flex justify-between text-label text-muted-foreground">
               <span>{totalPoints} pts</span>
               <span className="font-bold text-primary">encore {EXTRA_TICKET_BASE_POINTS - totalPoints} pt{EXTRA_TICKET_BASE_POINTS - totalPoints > 1 ? 's' : ''} pour débloquer</span>
               <span>{EXTRA_TICKET_BASE_POINTS} pts</span>
@@ -85,7 +85,7 @@ export function AmbassadorBonusTickets({
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] text-muted-foreground">
+              <div className="flex justify-between text-label text-muted-foreground">
                 <span>{totalPoints} pts</span>
                 <span className="font-bold text-primary">encore {ptsToNext} pt{ptsToNext > 1 ? 's' : ''} pour le prochain</span>
                 <span>{nextRequired} pts</span>

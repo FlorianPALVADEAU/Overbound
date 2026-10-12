@@ -31,7 +31,7 @@ export function FormatsStickyCta({ href, label }: Props) {
     >
       <Link
         href={href}
-        className="flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 text-base font-black text-primary-foreground"
+        className="flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 text-base font-semibold text-primary-foreground"
       >
         {label}
       </Link>

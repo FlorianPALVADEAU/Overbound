@@ -1,10 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export default function NotFound() {
   return (
-    <main className='relative flex h-full flex-col items-center justify-center overflow-hidden bg-neutral-200'>
+    <main className='relative flex h-full flex-col items-center justify-center overflow-hidden tone-light bg-background text-foreground'>
       <Image
         src='/images/decorations/mountain-vector.svg'
         alt='Illustration montagne'
@@ -18,20 +20,20 @@ export default function NotFound() {
         <div className='absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-white/80 to-transparent' />
       </div>
 
-      <section className='relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-10 px-4 py-16 sm:gap-12 sm:px-6 lg:px-8 lg:py-24'>
+      <section className={cn(containerClass(), 'relative z-10 flex flex-col items-center gap-10 py-16 sm:gap-12 lg:py-24')}>
         <div className='flex flex-col items-center gap-4 text-center sm:gap-6'>
-          <span className='inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-800 shadow-sm sm:text-sm'>
+          <span className='inline-flex items-center gap-2 rounded-full bg-card/60 px-4 py-2 text-eyebrow font-semibold uppercase text-primary shadow-sm'>
             404
           </span>
-          <h1 className='text-3xl font-bold text-neutral-900 sm:text-4xl md:text-5xl lg:text-6xl'>
+          <h1 className={cn(DISPLAY_TITLE, 'text-display-lg')}>
             Oups... tu viens de quitter le sentier balisé
           </h1>
-          <p className='max-w-2xl text-sm leading-relaxed text-neutral-600 sm:text-base md:text-lg'>
+          <p className='max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg'>
             Comme lors d&apos;un parcours Overbound, il arrive de prendre un détour inattendu. Cette page n&apos;existe pas (ou plus), mais on peut t&apos;orienter pour retrouver le bon chemin et poursuivre l&apos;aventure.
           </p>
         </div>
 
-        <Button asChild className='mt-auto w-full sm:w-auto border-2 border-[#26AA26] bg-transparent text-[#26AA26] hover:bg-[#26AA26] hover:text-primary-foreground'>
+        <Button asChild className='mt-auto w-full sm:w-auto border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground'>
           <Link href='/'>Revenir à l&apos;accueil</Link>
         </Button>
       </section>

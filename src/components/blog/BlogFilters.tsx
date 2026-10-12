@@ -26,7 +26,7 @@ export default function BlogFilters({ categories }: BlogFiltersProps) {
   return (
     <div className="mb-12 space-y-8">
       {/* Search Bar and Category Filter - Same Line */}
-      <form action="/blog" className="mx-auto max-w-6xl">
+      <form action="/blog" className="w-full">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Bar */}
           <div className="flex-1 relative group">

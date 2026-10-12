@@ -64,7 +64,7 @@ export function GroupDetails({ group, currentUserId }: { group: Group; currentUs
           </div>
         ) : (
           <div className="mt-2 flex items-start justify-between gap-4">
-            <h1 className="text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight">{group.name}</h1>
+            <h1 className="text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight">{group.name}</h1>
             {isCaptain ? (
               <button
                 type="button"
@@ -94,7 +94,7 @@ export function GroupDetails({ group, currentUserId }: { group: Group; currentUs
           className="flex w-full items-center justify-between gap-3 text-left"
           aria-label="Copier le code d'invitation"
         >
-          <span className="font-mono text-4xl font-black tracking-[0.18em]">{group.invite_code}</span>
+          <span className="font-mono text-4xl font-bold tracking-label">{group.invite_code}</span>
           {copied ? <CheckIcon className="size-6 text-primary" /> : <CopyIcon className="size-5 text-muted-foreground" />}
         </button>
         <Button onClick={invite} className="h-12 w-full gap-2 text-base font-bold">

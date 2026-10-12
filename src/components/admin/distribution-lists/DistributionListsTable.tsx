@@ -85,12 +85,12 @@ export function DistributionListsTable({
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      marketing: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      events: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      news: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      volunteers: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      partners: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-      transactional: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+      marketing: 'bg-blue-500/15 text-blue-300',
+      events: 'bg-green-500/15 text-green-300',
+      news: 'bg-purple-500/15 text-purple-300',
+      volunteers: 'bg-orange-500/15 text-orange-300',
+      partners: 'bg-pink-500/15 text-pink-300',
+      transactional: 'bg-muted text-muted-foreground',
     }
     return colors[type] || colors.marketing
   }

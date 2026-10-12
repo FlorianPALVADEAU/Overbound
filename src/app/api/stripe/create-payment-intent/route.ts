@@ -1,528 +1,214 @@
 import { NextRequest } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
-import {
-  stripeClient,
-  fetchTicketsForSelections,
-  fetchUpsellsForEvent,
-  fetchPromo,
-  getUpsellSubtotal,
-  getUpsellSubtotalsById,
-  isTargetUpsellSoldOnEvent,
-  ensureAvailability,
-  respondJson,
-  allocateParticipantsToTiers,
-  expandTierAllocations,
-  fetchTierRegistrationCounts,
-} from './utils'
+import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { captureException } from '@/lib/sentry'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
-import { isOpenFormatTicket } from '@/lib/openSas'
 import { serializeUtmParams } from '@/lib/attribution/utm'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
+import { validateUpsellAssignments } from '@/lib/upsells/assignments'
+import { computeOrderPricing, toPricingSummary, type OrderPricing } from '@/lib/orderPricing'
 import {
-  FLEXIBLE_TICKET_FEE_CENTS,
-  allocatePaidTicketPrices,
-  serializeNumberList,
-} from '@/lib/tickets/flexibleTicket'
+  buildPricingInput,
+  fetchTierRegistrationCounts,
+  hasAmbassadorLink,
+  loadOrderPromos,
+  pricingErrorFailure,
+  promoRejectionFailure,
+  type PromoRow,
+} from '@/lib/orderPricing/server'
+import { paymentIntentRequestSchema, readOrderCodes, readOrderParticipants } from '@/lib/checkout/paymentIntentRequest'
+import { buildOrderMetadata } from './stripeMetadata'
+import { checkOrderEligibility } from '@/lib/checkout/orderEligibility'
+import {
+  countActiveRegistrations,
+  fetchTicketsForSelections,
+  fetchUpsellsForEvent,
+  groupHasAnchorOnEvent,
+  respondJson,
+  stripeClient,
+} from './utils'
 
 export const runtime = 'nodejs'
 
-const MAX_PROMO_CODES = 2
-const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
-const WELCOME_STACKABLE_CODE = 'WELCOME05'
-const OPEN_TICKET_CODE_SUFFIX = 'OPENTICKET'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
-const isOpenTicketCode = (code: string) => code.toUpperCase().endsWith(OPEN_TICKET_CODE_SUFFIX)
-
-const isWelcomeStackableCode = (code: string | null | undefined) =>
-  (code || '').trim().toUpperCase() === WELCOME_STACKABLE_CODE
-
-const normalizePromoCode = (value: unknown): string | null => {
-  if (typeof value !== 'string') return null
-  const normalized = value.trim().toUpperCase()
-  return normalized.length > 0 ? normalized : null
-}
-
-const isPromoValidForEvent = (promo: any, eventId: string) => {
-  const now = new Date()
-  const validFrom = promo.valid_from ? new Date(promo.valid_from) : null
-  const validUntil = promo.valid_until ? new Date(promo.valid_until) : null
-  const allowedEvents = (promo.events || []).map((item: { event_id: string }) => item.event_id)
-  const matchesEvent = allowedEvents.length === 0 || allowedEvents.includes(eventId)
-  const withinDates = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)
-  const usageAvailable = promo.usage_limit == null || promo.used_count < promo.usage_limit
-  return promo.is_active && matchesEvent && withinDates && usageAvailable
-}
+/** The codes that actually discounted the order, in the shape the checkout already reads. */
+const appliedPromoPayload = (pricing: OrderPricing, promoRows: PromoRow[]) =>
+  pricing.discounts.flatMap((discount) => {
+    const row = promoRows.find((promo) => promo.code.toUpperCase() === discount.code.toUpperCase())
+    return row
+      ? [{
+          id: row.id,
+          code: row.code,
+          discount_percent: row.discount_percent,
+          discount_amount: row.discount_amount,
+          currency: row.currency,
+          is_ambassador: discount.isAmbassador,
+          target_upsell_id: row.target_upsell_id ?? null,
+        }]
+      : []
+  })
 
 export async function POST(request: NextRequest) {
-  let eventId: string | undefined
-  let userId: string | undefined
-  let ticketSelections: any[] = []
-  let participants: any[] = []
-  let promoCodes: string[] = []
-  let ambassadorReferralCode: string | null = null
+  let context: Record<string, unknown> = {}
 
   try {
-    const clientIpAddress =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-      request.headers.get('x-real-ip') ??
-      null
-    const clientUserAgent = request.headers.get('user-agent')
-    const fbp = request.cookies.get('_fbp')?.value ?? null
-    const fbc = request.cookies.get('_fbc')?.value ?? null
+    const parsed = paymentIntentRequestSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return respondJson({ error: 'Paramètres insuffisants.' }, 400)
+    const body = parsed.data
+    context = { eventId: body.eventId, userId: body.userId, ticketCount: body.ticketSelections.length }
 
-    const requestBody = await request.json()
-    eventId = requestBody.eventId
-    userId = requestBody.userId
-    const userEmail = requestBody.userEmail
-    ticketSelections = requestBody.ticketSelections || []
-    participants = requestBody.participants || []
-    const upsells = requestBody.upsells || []
-    const legacyPromoCode = normalizePromoCode(requestBody.promoCode)
-    const inputPromoCodes: string[] = Array.isArray(requestBody.promoCodes)
-      ? requestBody.promoCodes
-          .map((code: unknown) => normalizePromoCode(code))
-          .filter((code: string | null): code is string => Boolean(code))
-      : legacyPromoCode
-        ? [legacyPromoCode]
-        : []
-    const inputAmbassadorReferralCode = normalizePromoCode(requestBody.ambassadorReferralCode)
-    const utmMetadata = serializeUtmParams(requestBody.utmParams)
-
-    promoCodes = [...new Set(inputPromoCodes)]
-    if (promoCodes.length > MAX_PROMO_CODES) {
-      return respondJson({ error: 'Vous pouvez appliquer au maximum 2 codes promo.' }, 400)
-    }
-    if (promoCodes.some((code) => /[,;|]/.test(code))) {
-      return respondJson({ error: 'Format de code promo invalide.' }, 400)
-    }
-
-    ambassadorReferralCode = inputAmbassadorReferralCode
-    if (ambassadorReferralCode && /[,;|]/.test(ambassadorReferralCode)) {
-      return respondJson({ error: 'Format de code ambassadeur invalide.' }, 400)
-    }
-    if (ambassadorReferralCode && !promoCodes.includes(ambassadorReferralCode) && promoCodes.length >= MAX_PROMO_CODES) {
-      return respondJson({ error: 'Vous pouvez appliquer au maximum 2 codes promo.' }, 400)
-    }
-    if (ambassadorReferralCode && !promoCodes.includes(ambassadorReferralCode)) {
-      promoCodes.push(ambassadorReferralCode)
-    }
-
-    if (!eventId || !userId || !userEmail || ticketSelections.length === 0) {
-      return respondJson({ error: 'Paramètres insuffisants.' }, 400)
-    }
+    const orderCodes = readOrderCodes(body)
+    if ('error' in orderCodes) return respondJson({ error: orderCodes.error }, 400)
 
     const supabase = await createSupabaseServer()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== body.userId) return respondJson({ error: 'Non authentifié.' }, 401)
 
-    if (!user || user.id !== userId) {
-      return respondJson({ error: 'Non authentifié.' }, 401)
-    }
-
-    const ticketIds = ticketSelections.map((item: any) => item.ticketId)
-    const { data: tickets, error: ticketsError } = await fetchTicketsForSelections(supabase, ticketIds)
-
-    if (ticketsError || !tickets || tickets.length === 0) {
-      return respondJson({ error: 'Impossible de récupérer les billets.' }, 404)
-    }
-
-    const eventRef = tickets[0]?.event
-    if (!eventRef || eventRef.id !== eventId) {
+    const tickets = await fetchTicketsForSelections(supabase, body.ticketSelections.map((item) => item.ticketId))
+    const event = tickets[0]?.event
+    if (!event) return respondJson({ error: 'Impossible de récupérer les billets.' }, 404)
+    if (event.id !== body.eventId || tickets.some((ticket) => ticket.event?.id !== event.id)) {
       return respondJson({ error: "Les billets ne correspondent pas à l'événement demandé." }, 400)
     }
+    if (!isEventOpenForRegistration(event)) return respondJson({ error: 'Inscriptions fermées pour cet événement.' }, 409)
 
-    if (!isEventOpenForRegistration(eventRef)) {
-      return respondJson({ error: 'Inscriptions fermées pour cet événement.' }, 409)
+    // Seats, tier counts and promo codes are shop data, not the visitor's: their own session cannot read
+    // other buyers' registrations, nor a code's ambassador link, so these reads use the admin client.
+    const admin = supabaseAdmin()
+    const participants = readOrderParticipants(body)
+    const requestedCount = body.ticketSelections.reduce((total, item) => total + item.quantity, 0)
+    if (requestedCount === 0) return respondJson({ error: 'Aucun billet sélectionné.' }, 400)
+    if (participants.length !== requestedCount) {
+      return respondJson({ error: 'Le nombre de participants ne correspond pas aux billets sélectionnés.' }, 422)
     }
+    const ineligible = checkOrderEligibility(body.participants, {
+      eventDate: event.date,
+      tickets,
+      hasGroupAnchor: await groupHasAnchorOnEvent(admin, body.groupId, body.userId, event.id),
+    })
+    if (ineligible) return respondJson({ error: ineligible }, 422)
 
-    const totalRequestedParticipants = ticketSelections.reduce(
-      (accumulator: number, item: { quantity: number }) => accumulator + (item.quantity || 0),
-      0,
-    )
-
-    const existingRegistrationsCount = await ensureAvailability(supabase, eventId, totalRequestedParticipants)
-    const availableSpots = (eventRef.capacity || 0) - existingRegistrationsCount
-
-    if (availableSpots <= 0 || totalRequestedParticipants > availableSpots) {
+    const availableSpots = (event.capacity ?? 0) - (await countActiveRegistrations(admin, event.id))
+    if (requestedCount > availableSpots) {
       return respondJson({ error: "Plus assez de places disponibles pour l'ensemble des participants." }, 409)
     }
 
-    const ticketById = new Map<string, (typeof tickets)[number]>()
-    const ticketCurrencyMap = new Map<string, string>()
-    for (const ticket of tickets) {
-      ticketById.set(ticket.id, ticket)
-      ticketCurrencyMap.set(ticket.id, (ticket.currency || 'eur').toLowerCase())
-    }
+    const upsellRows = await fetchUpsellsForEvent(supabase, event.id)
+    const upsellProducts = new Map(upsellRows.map((upsell) => [upsell.id, upsell]))
+    const upsellError =
+      validateUpsellQuantities(body.upsells, upsellProducts, participants.length) ??
+      validateUpsellAssignments(body.upsells, upsellProducts, participants.length)
+    if (upsellError) return respondJson({ error: upsellError }, 422)
 
-    if (participants.length > 0 && participants.length !== totalRequestedParticipants) {
-      return respondJson({ error: 'Le nombre de participants ne correspond pas aux billets sélectionnés.' }, 422)
-    }
+    const now = new Date()
+    const promos = await loadOrderPromos(admin, orderCodes.codes, event.id, now)
+    if (!promos.ok) return respondJson({ error: promos.error.message }, promos.error.status)
 
-    const participantEntries =
-      participants.length > 0
-        ? participants.map((participant) => ({ ticketId: participant.ticketId }))
-        : ticketSelections.flatMap((item) =>
-            Array.from({ length: item.quantity || 0 }, () => ({ ticketId: item.ticketId })),
-          )
-
-    const tierCounts = await fetchTierRegistrationCounts(supabase, eventId)
-    const { allocations, remaining, activeTierIndex } = allocateParticipantsToTiers(
-      eventRef.price_tiers,
-      tierCounts,
-      participantEntries.length,
+    const priced = computeOrderPricing(
+      buildPricingInput(
+        {
+          tickets,
+          tiers: event.price_tiers ?? [],
+          tierRegistrationCounts: await fetchTierRegistrationCounts(admin, event.id),
+          upsells: upsellRows,
+          promos: promos.value,
+        },
+        { participants, upsellLines: body.upsells, now },
+      ),
     )
-
-    if (activeTierIndex !== null && remaining > 0) {
-      return respondJson({ error: 'Tous les paliers de prix sont complets pour cet événement.' }, 409)
+    if (!priced.ok) {
+      const failure = pricingErrorFailure(priced.error)
+      return respondJson({ error: failure.message }, failure.status)
+    }
+    const pricing = priced.value
+    const [rejection] = pricing.rejections
+    if (rejection) {
+      const failure = promoRejectionFailure(rejection)
+      return respondJson({ error: failure.message }, failure.status)
     }
 
-    const tierIdsByParticipant =
-      activeTierIndex !== null ? expandTierAllocations(allocations) : []
-
-    let ticketSubtotal = 0
-    let baseTicketSubtotal = 0
-    const openTicketUnitPrices: number[] = []
-    // Price of each participant's ticket (tier applied), in participant order.
-    const unitPricesByParticipant: number[] = []
-
-    for (const [index, entry] of participantEntries.entries()) {
-      const ticket = ticketById.get(entry.ticketId)
-      if (!ticket) {
-        continue
-      }
-
-      const tierId = tierIdsByParticipant[index] ?? null
-      const tier =
-        tierId && eventRef.price_tiers
-          ? eventRef.price_tiers.find(
-              (tierItem: { id: string; discount_percentage: number }) => tierItem.id === tierId,
-            )
-          : null
-
-      const finalPrice = ticket.final_price_cents
-      if (finalPrice == null || finalPrice === 0) {
-        return respondJson({ error: `Le billet "${ticket.name}" n'a pas de tarif défini.` }, 422)
-      }
-
-      baseTicketSubtotal += finalPrice
-
-      const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
-      const unitPrice = Math.round(finalPrice * discountMultiplier)
-      ticketSubtotal += unitPrice
-      unitPricesByParticipant[index] = unitPrice
-
-      if (isOpenFormatTicket(ticket.name)) {
-        openTicketUnitPrices.push(unitPrice)
-      }
-    }
-
-    const tierDiscountAmount = Math.max(0, baseTicketSubtotal - ticketSubtotal)
-
-    const { data: upsellRows } = await fetchUpsellsForEvent(supabase, eventId)
-    const upsellMap = new Map<string, any>()
-    for (const row of upsellRows || []) {
-      upsellMap.set(row.id, row)
-    }
-
-    const upsellQuantityError = validateUpsellQuantities(
-      upsells,
-      new Map(Array.from(upsellMap.values()).map((upsell) => [upsell.id, upsell])),
-      participants.length,
-    )
-    if (upsellQuantityError) return respondJson({ error: upsellQuantityError }, 422)
-
-    const upsellSubtotal = getUpsellSubtotal(upsells, upsellMap)
-    const upsellSubtotalsById = getUpsellSubtotalsById(upsells, upsellMap)
-
-    let discountAmount = 0
-    // Part of `discountAmount` that reduces tickets (not upsells): spread over bibs for refunds.
-    let ticketScopedDiscountAmount = 0
-    const appliedPromos: Array<{
-      id: string
-      code: string
-      discount_percent: number | null
-      discount_amount: number | null
-      currency: string | null
-      is_ambassador: boolean
-      target_upsell_id: string | null
-    }> = []
-    let validatedAmbassadorReferralCode: string | null = null
-    // FDR-0014 addendum §6: "1 standard code" quota split by target -- 1
-    // ticket-scoped + 1 product-scoped standard code can coexist, never two
-    // of the same target. Tracked separately instead of one flat array.
-    const ticketScopedRegularCodes: string[] = []
-    const productScopedRegularCodes: string[] = []
-    let ambassadorPromoCount = 0
-
-    for (const promoCode of promoCodes) {
-      const { data: promo, error: promoError } = await fetchPromo(supabase, promoCode)
-      if (promoError || !promo || !isPromoValidForEvent(promo, eventId)) {
-        return respondJson({ error: `Le code promo ${promoCode} est invalide ou expiré.` }, 409)
-      }
-
-      const isAmbassadorCode = Array.isArray(promo.ambassadors) && promo.ambassadors.length > 0
-      const normalizedPromoCode = promo.code.trim().toUpperCase()
-      const isProductScoped = Boolean(promo.target_upsell_id)
-
-      if (isProductScoped) {
-        // Rejected outright if the targeted upsell isn't sold on this
-        // event at all -- distinct from "sold but not in this cart", which
-        // is a silent 0-discount below, not an error here (parity with
-        // /api/promotions/validate, FDR-0014 addendum §6).
-        const soldOnEvent = await isTargetUpsellSoldOnEvent(supabase, promo.target_upsell_id as string, eventId)
-        if (!soldOnEvent) {
-          return respondJson(
-            { error: `Le code ${promoCode} n'est pas applicable pour cet événement, aucun produit éligible.` },
-            422,
-          )
-        }
-      }
-
-      if (isAmbassadorCode) {
-        ambassadorPromoCount += 1
-      } else if (isProductScoped) {
-        productScopedRegularCodes.push(normalizedPromoCode)
-      } else {
-        ticketScopedRegularCodes.push(normalizedPromoCode)
-      }
-      if (ambassadorPromoCount > 1) {
-        return respondJson({ error: 'Un seul code ambassadeur peut être appliqué par commande.' }, 409)
-      }
-      if (
-        productScopedRegularCodes.length > 1 &&
-        !productScopedRegularCodes.some((code) => isWelcomeStackableCode(code))
-      ) {
-        return respondJson({ error: 'Un seul code promo produit peut être appliqué par commande.' }, 409)
-      }
-      if (
-        ticketScopedRegularCodes.length > 1 &&
-        !ticketScopedRegularCodes.some((code) => isWelcomeStackableCode(code))
-      ) {
-        return respondJson({ error: 'Un seul code promo billet peut être appliqué par commande.' }, 409)
-      }
-
-      if (isAmbassadorCode) {
-        validatedAmbassadorReferralCode = promo.code
-      }
-
-      const calculatePromoForSubtotal = (subtotal: number) => {
-        if (promo.discount_percent && promo.discount_percent > 0) {
-          return Math.min(subtotal, Math.round(subtotal * (promo.discount_percent / 100)))
-        }
-        if (promo.discount_amount && promo.discount_amount > 0) {
-          return Math.min(subtotal, promo.discount_amount)
-        }
-        return 0
-      }
-
-      if (isProductScoped) {
-        // Nets only against this upsell's own subtotal -- 0 (not a
-        // ticket-subtotal fallback) when the upsell isn't in the cart.
-        const targetSubtotal = upsellSubtotalsById[promo.target_upsell_id as string] ?? 0
-        const promoDiscountAmount = targetSubtotal > 0 ? calculatePromoForSubtotal(targetSubtotal) : 0
-        discountAmount += Math.max(0, promoDiscountAmount)
-        if (promoDiscountAmount > 0) {
-          appliedPromos.push({
-            id: promo.id,
-            code: promo.code,
-            discount_percent: promo.discount_percent,
-            discount_amount: promo.discount_amount,
-            currency: promo.currency,
-            is_ambassador: isAmbassadorCode,
-            target_upsell_id: promo.target_upsell_id,
-          })
-        }
-        continue
-      }
-
-      if (isOpenTicketCode(normalizedPromoCode)) {
-        if (openTicketUnitPrices.length === 0) {
-          return respondJson(
-            { error: `Le code ${promoCode} est uniquement valable pour les billets Open.` },
-            409,
-          )
-        }
-        // Discount applies to a single Open ticket only
-        const singleOpenTicketPrice = openTicketUnitPrices[0]
-        const promoDiscountAmount = calculatePromoForSubtotal(singleOpenTicketPrice)
-        discountAmount += Math.max(0, promoDiscountAmount)
-        ticketScopedDiscountAmount += Math.max(0, promoDiscountAmount)
-        if (promoDiscountAmount > 0) {
-          appliedPromos.push({
-            id: promo.id,
-            code: promo.code,
-            discount_percent: promo.discount_percent,
-            discount_amount: promo.discount_amount,
-            currency: promo.currency,
-            is_ambassador: isAmbassadorCode,
-            target_upsell_id: null,
-          })
-        }
-        continue
-      }
-
-      let promoDiscountAmount = calculatePromoForSubtotal(ticketSubtotal)
-
-      if (NON_CUMULABLE_WITH_TIER_CODES.has(normalizedPromoCode)) {
-        const standalonePromoDiscount = calculatePromoForSubtotal(baseTicketSubtotal)
-        promoDiscountAmount = Math.max(0, standalonePromoDiscount - tierDiscountAmount)
-      }
-
-      discountAmount += Math.max(0, Math.min(promoDiscountAmount, ticketSubtotal))
-      ticketScopedDiscountAmount += Math.max(0, Math.min(promoDiscountAmount, ticketSubtotal))
-
-      if (promoDiscountAmount <= 0) {
-        continue
-      }
-
-      appliedPromos.push({
-        id: promo.id,
-        code: promo.code,
-        discount_percent: promo.discount_percent,
-        discount_amount: promo.discount_amount,
-        currency: promo.currency,
-        is_ambassador: isAmbassadorCode,
-        target_upsell_id: null,
-      })
-    }
-
-    // "Billet flexible" is chosen per participant; it is never discounted (FDR: refund option).
-    const flexibleParticipantIndices = participants.flatMap((participant: { flexible?: unknown }, index: number) =>
-      participant?.flexible === true ? [index] : [],
-    )
-    const flexibleTotal = flexibleParticipantIndices.length * FLEXIBLE_TICKET_FEE_CENTS
-    const paidTicketPrices = allocatePaidTicketPrices(
-      unitPricesByParticipant.map((price) => price ?? 0),
-      ticketScopedDiscountAmount,
-    )
-
-    const totalAmount = Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0) + flexibleTotal
-
-    const currency = ticketCurrencyMap.values().next().value || 'eur'
-
-    const tierAllocationsPayload =
-      activeTierIndex !== null
-        ? allocations.map(({ tier, quantity }) => ({ tier_id: tier.id, quantity }))
-        : []
-
+    const currency = (tickets[0]?.currency || 'eur').toLowerCase()
+    const appliedPromos = appliedPromoPayload(pricing, promos.value)
     const primaryPromo = appliedPromos.find((promo) => !promo.is_ambassador) ?? appliedPromos[0] ?? null
-    const promoCodesMetadata = appliedPromos.map((promo) => promo.code).join(',')
+    const ambassadorReferralCode = promos.value.find((promo) => hasAmbassadorLink(promo.ambassadors))?.code ?? null
+    const metadata = buildOrderMetadata({
+      pricing,
+      currency,
+      primaryPromoCode: primaryPromo?.code ?? '',
+      ambassadorReferralCode,
+      utmParams: serializeUtmParams(body.utmParams),
+    })
+    const summary = toPricingSummary(pricing, currency)
 
-    if (totalAmount === 0) {
-      const freeOrderId = `free_${crypto.randomUUID()}`
+    if (pricing.totalDue === 0) {
       return respondJson({
         freeOrder: true,
-        freeOrderId,
-        pricing: {
-          ticketTotal: ticketSubtotal,
-          upsellTotal: upsellSubtotal,
-          flexibleTotal: 0,
-          discountAmount,
-          totalDue: 0,
-          currency,
-        },
+        freeOrderId: `free_${crypto.randomUUID()}`,
+        pricing: summary,
         appliedPromo: primaryPromo,
         appliedPromos,
-        freeOrderMetadata: {
-          currency,
-          discount_applied: discountAmount.toString(),
-          tier_allocations: JSON.stringify(tierAllocationsPayload),
-          ambassador_referral_code: validatedAmbassadorReferralCode || '',
-          promo_codes: promoCodesMetadata,
-          promo_code: primaryPromo?.code || '',
-          utm_params: utmMetadata,
-        },
+        freeOrderMetadata: metadata,
       })
     }
 
+    const eventSourceUrl =
+      request.headers.get('referer') ?? request.headers.get('origin') ?? `${SITE_URL}/events/${event.id}/register`
+    const fbp = request.cookies.get('_fbp')?.value ?? ''
+    const fbc = request.cookies.get('_fbc')?.value ?? ''
+
     const paymentIntent = await stripeClient.paymentIntents.create({
-      amount: totalAmount,
+      amount: pricing.totalDue,
       currency,
       payment_method_types: ['card', 'link'],
       metadata: {
+        ...metadata,
         registration_flow: 'multi',
-        user_id: userId,
-        event_id: eventId,
-        promo_code: primaryPromo?.code || '',
-        promo_codes: promoCodesMetadata,
-        ambassador_referral_code: validatedAmbassadorReferralCode || '',
-        discount_applied: discountAmount.toString(),
-        tier_allocations: JSON.stringify(tierAllocationsPayload),
-        event_title: eventRef.title,
-        ticket_count: String(ticketSelections.length),
-        participant_count: String(participantEntries.length),
-        fbp: fbp || '',
-        fbc: fbc || '',
-        utm_params: utmMetadata,
-        // Read back by /api/registrations/create: which bibs paid the flexible option, and what each bib cost.
-        flexible_participants: serializeNumberList(flexibleParticipantIndices),
-        ticket_prices: serializeNumberList(paidTicketPrices),
-        event_source_url:
-          request.headers.get('referer') ??
-          request.headers.get('origin') ??
-          `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'}/events/${eventId}/register`,
+        user_id: body.userId,
+        event_id: event.id,
+        event_title: event.title,
+        ticket_count: String(body.ticketSelections.length),
+        participant_count: String(participants.length),
+        fbp,
+        fbc,
+        event_source_url: eventSourceUrl,
       },
-      receipt_email: userEmail,
-      description: `${eventRef.title} - Billets et options`,
+      receipt_email: body.userEmail,
+      description: `${event.title} - Billets et options`,
     })
 
     await sendMetaCapiEvent({
       eventName: 'InitiateCheckout',
       eventId: `initiate_checkout_${paymentIntent.id}`,
-      eventSourceUrl:
-        request.headers.get('referer') ??
-        request.headers.get('origin') ??
-        `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'}/events/${eventId}/register`,
+      eventSourceUrl,
       userData: {
-        email: userEmail,
-        externalId: userId,
-        clientIpAddress,
-        clientUserAgent,
-        fbp,
-        fbc,
+        email: body.userEmail,
+        externalId: body.userId,
+        clientIpAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip'),
+        clientUserAgent: request.headers.get('user-agent'),
+        fbp: fbp || null,
+        fbc: fbc || null,
       },
       customData: {
         currency: currency.toUpperCase(),
-        value: Number((totalAmount / 100).toFixed(2)),
+        value: Number((pricing.totalDue / 100).toFixed(2)),
         content_type: 'product',
-        content_ids: ticketSelections.map((item: any) => String(item.ticketId)),
-        content_name: eventRef.title,
-        event_id: eventId,
+        content_ids: body.ticketSelections.map((item) => item.ticketId),
+        content_name: event.title,
+        event_id: event.id,
       },
     })
 
     return respondJson({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      pricing: {
-        ticketTotal: ticketSubtotal,
-        upsellTotal: upsellSubtotal,
-        flexibleTotal,
-        discountAmount,
-        totalDue: totalAmount,
-        currency,
-      },
+      pricing: summary,
       appliedPromo: primaryPromo,
       appliedPromos,
     })
   } catch (error) {
     console.error('Erreur création PaymentIntent:', error)
-
-    // Capture error in Sentry with context
-    captureException(error as Error, {
-      route: '/api/stripe/create-payment-intent',
-      method: 'POST',
-      eventId,
-      userId,
-      ticketCount: ticketSelections?.length || 0,
-      participantCount: participants?.length || 0,
-      promoCodes: promoCodes.join(','),
-      ambassadorReferralCode,
-    })
-
+    captureException(error as Error, { route: '/api/stripe/create-payment-intent', method: 'POST', ...context })
     return respondJson({ error: 'Erreur lors de la préparation du paiement.' }, 500)
   }
 }

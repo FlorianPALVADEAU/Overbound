@@ -1,7 +1,12 @@
+'use client'
+
+import { useState } from 'react'
+import { Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Gift } from 'lucide-react'
-import { formatPrice, resolveUpsellSizes, normalizeTshirtSizes } from '@/lib/registration'
-import { getUpsellQuantityLimit } from '@/lib/upsells/quantity'
+import { formatPrice, joinName, resolveUpsellSizes } from '@/lib/registration'
+import { readAssignments, upsellMaxPerParticipant } from '@/lib/upsells/assignments'
 import { cn } from '@/lib/utils'
 import type { EventUpsell, Participant } from './types'
 import QuantityPicker from './QuantityPicker'
@@ -10,154 +15,186 @@ import { UpsellImagePreview } from './UpsellImagePreview'
 interface UpsellCardProps {
   upsell: EventUpsell
   selection: { quantity: number; meta?: Record<string, any> } | undefined
-  selectedTicketSlots: string[]
   participants: Participant[]
   defaultCurrency: string
-  onQuantityChange: (upsellId: string, quantity: number) => void
-  onSizeChange: (upsellId: string, index: number, size: string) => void
-  onAssignmentToggle: (upsellId: string, ticketId: string, checked: boolean) => void
+  onSetForParticipant: (upsellId: string, participantId: string, quantity: number, size?: string) => void
+  onSetForAll: (upsellId: string, quantity: number) => void
+  onClear: (upsellId: string) => void
+  onSizeForAll: (upsellId: string, size: string) => void
 }
+
+const MODES = ['none', 'all', 'some'] as const
+const LONG_LIST = 8
 
 export default function UpsellCard({
   upsell,
   selection,
-  selectedTicketSlots,
   participants,
   defaultCurrency,
-  onQuantityChange,
-  onSizeChange,
-  onAssignmentToggle,
+  onSetForParticipant,
+  onSetForAll,
+  onClear,
+  onSizeForAll,
 }: UpsellCardProps) {
-  const quantity = selection?.quantity ?? 0
-  const isSelected = quantity > 0
-  const availableSizes = upsell.type === 'tshirt' ? resolveUpsellSizes(upsell) : []
-  const selectedSizes =
-    upsell.type === 'tshirt' ? normalizeTshirtSizes(selection?.meta, quantity, availableSizes) : []
-  const maxQuantity = getUpsellQuantityLimit(upsell.type, selectedTicketSlots.length)
-  const addDisabled = maxQuantity === 0 || quantity >= maxQuantity
+  const [showList, setShowList] = useState(false)
+  const assignments = readAssignments(selection?.meta)
+  const byParticipant = new Map(assignments.map((entry) => [entry.participantId, entry]))
+  const total = participants.length
+  const taking = assignments.length
+  const mode: (typeof MODES)[number] = taking === 0 ? 'none' : taking === total ? 'all' : 'some'
+  const isTshirt = upsell.type === 'tshirt'
+  const sizes = isTshirt ? resolveUpsellSizes(upsell) : []
+  const max = upsellMaxPerParticipant(upsell.type)
+  const isToggle = max === 1
+  const nameOf = (participant: Participant, index: number) => joinName(participant.firstName, participant.lastName) || `Participant ${index + 1}`
+  const commonSize = assignments.length > 0 && assignments.every((entry) => entry.size === assignments[0].size) ? assignments[0].size : undefined
+  const price = formatPrice(upsell.price_cents, (upsell.currency || defaultCurrency).toLowerCase())
+
+  const sizeSelect = (value: string | undefined, onChange: (size: string) => void, label: string, className?: string) => (
+    <Select value={value ?? ''} onValueChange={onChange}>
+      <SelectTrigger aria-label={label} size="lg" className={cn('w-full', className)}>
+        <SelectValue placeholder="Taille" />
+      </SelectTrigger>
+      <SelectContent>
+        {sizes.map((size) => (
+          <SelectItem key={size} value={size}>
+            {size}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+
+  const row = (participant: Participant, index: number) => {
+    const current = byParticipant.get(participant.id)
+    const name = nameOf(participant, index)
+    return (
+      <li key={participant.id} className="py-3">
+        {isToggle ? (
+          <div className="space-y-2">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+              <Checkbox
+                checked={Boolean(current)}
+                onCheckedChange={(checked) => onSetForParticipant(upsell.id, participant.id, checked === true ? 1 : 0)}
+                aria-label={`${upsell.name} pour ${name}`}
+              />
+              <span className="min-w-0 truncate">{name}</span>
+            </label>
+            {isTshirt && current ? sizeSelect(current.size, (size) => onSetForParticipant(upsell.id, participant.id, 1, size), `Taille pour ${name}`, 'sm:w-48') : null}
+          </div>
+        ) : (
+          <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate">{name}</span>
+            <QuantityPicker
+              value={current?.quantity ?? 0}
+              onDecrement={() => onSetForParticipant(upsell.id, participant.id, (current?.quantity ?? 0) - 1)}
+              onIncrement={() => onSetForParticipant(upsell.id, participant.id, (current?.quantity ?? 0) + 1)}
+              disableDecrement={(current?.quantity ?? 0) === 0}
+              disableIncrement={(current?.quantity ?? 0) >= max}
+            />
+          </div>
+        )}
+      </li>
+    )
+  }
 
   return (
-    <div
-      className={cn(
-        'rounded-lg border p-4 transition-colors',
-        isSelected ? 'border-primary bg-primary/5' : 'border-border',
-      )}
-    >
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 items-start gap-3 space-y-1.5">
-          <UpsellImagePreview
-            src={upsell.image_url}
-            sources={upsell.images?.map((image) => ({ src: image.url ?? image.external_url, alt: image.alt_text }))}
-            alt={upsell.name}
-          />
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex items-center gap-2 text-base font-semibold">
-              <Gift className="h-4 w-4 text-primary" />
-              {upsell.name}
-            </div>
-            {upsell.description && (
-              <p className="text-sm text-muted-foreground">{upsell.description}</p>
-            )}
+    <div className={cn('rounded-2xl border bg-card p-5 transition-colors', selection ? 'border-primary ring-1 ring-primary' : 'border-border')}>
+      <div className="flex items-start gap-4">
+        <UpsellImagePreview
+          src={upsell.image_url}
+          sources={upsell.images?.map((image) => ({ src: image.url ?? image.external_url, alt: image.alt_text }))}
+          alt={upsell.name}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-base font-semibold">{upsell.name}</p>
+            <p className="shrink-0 text-base font-semibold text-primary">{price}</p>
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-3">
-          <div className="text-lg font-semibold text-primary">
-            {formatPrice(upsell.price_cents, (upsell.currency || defaultCurrency).toLowerCase())}
-          </div>
-          <QuantityPicker
-            value={quantity}
-            onDecrement={() => onQuantityChange(upsell.id, quantity - 1)}
-            onIncrement={() => onQuantityChange(upsell.id, quantity + 1)}
-            disableDecrement={quantity === 0}
-            disableIncrement={addDisabled}
-          />
-
-          {upsell.type === 'tshirt' && quantity > 0 ? (
-            <div className="flex w-full flex-col items-end gap-2">
-              {selectedSizes.map((size, index) => (
-                <div key={`${upsell.id}-size-${index}`} className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">T-shirt #{index + 1}</span>
-                  <Select
-                    value={size}
-                    onValueChange={(value) => onSizeChange(upsell.id, index, value)}
-                  >
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Choisir une taille" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSizes.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          {upsell.type === 'tshirt' ? (
-            <p className="text-xs text-muted-foreground text-right">
-              {selectedTicketSlots.length > 0
-                ? `Maximum ${selectedTicketSlots.length} t-shirt${selectedTicketSlots.length > 1 ? 's' : ''} (${quantity}/${selectedTicketSlots.length} sélectionné${quantity > 1 ? 's' : ''}).`
-                : 'Sélectionnez au moins un billet pour ajouter un t-shirt.'}
-            </p>
-          ) : null}
-          {upsell.type === 'patch' ? (
-            <p className="text-xs text-muted-foreground text-right">
-              {selectedTicketSlots.length > 0
-                ? `Maximum ${maxQuantity} patch${maxQuantity > 1 ? 's' : ''} (2 par billet).`
-                : 'Sélectionnez au moins un billet pour ajouter des patchs.'}
-            </p>
-          ) : null}
-          {upsell.type === 'other' && selectedTicketSlots.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-right">
-              Sélectionnez au moins un billet pour ajouter cette option.
-            </p>
-          ) : null}
-          {upsell.type === 'photos' && quantity > 0 ? (
-            <div className="flex w-full flex-col items-end gap-2 text-sm">
-              <div className="text-xs text-muted-foreground">
-                Assigner le pack photo (1 par billet):
-              </div>
-              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-                {participants.map((p, idx) => {
-                  const assignments: string[] = (selection?.meta?.assignments ?? []) as string[]
-                  const checked = assignments.includes(p.ticketId)
-                  const disableUnchecked = !checked && assignments.length >= quantity
-                  return (
-                    <label
-                      key={`${upsell.id}-assign-${p.id}`}
-                      className={`flex items-center gap-2 rounded border p-2 ${checked ? 'border-primary' : 'border-border'}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        checked={checked}
-                        disabled={disableUnchecked}
-                        onChange={(e) =>
-                          onAssignmentToggle(upsell.id, p.ticketId, e.target.checked)
-                        }
-                      />
-                      <span>
-                        Participant #{idx + 1}
-                        {p.firstName || p.lastName
-                          ? ` — ${p.firstName} ${p.lastName}`
-                          : ''}
-                      </span>
-                    </label>
-                  )
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground text-right w-full">
-                {selectedTicketSlots.length > 0
-                  ? `Maximum ${selectedTicketSlots.length} pack${selectedTicketSlots.length > 1 ? 's' : ''} (${(selection?.meta?.assignments?.length || 0)}/${quantity} assigné${quantity > 1 ? 's' : ''}).`
-                  : 'Sélectionnez au moins un billet pour ajouter des packs photos.'}
-              </p>
-            </div>
-          ) : null}
+          {upsell.description ? <p className="mt-1 text-sm text-muted-foreground">{upsell.description}</p> : null}
+          <p className="mt-1 text-xs text-muted-foreground">
+            {max === 1 ? 'Un par participant.' : `${max} maximum par participant.`}
+          </p>
         </div>
       </div>
+
+      {total === 1 ? (
+        <div className="mt-4 space-y-3">
+          {isToggle ? (
+            <Button
+              type="button"
+              size="cta"
+              variant={mode === 'all' ? 'default' : 'outline'}
+              className="w-full"
+              aria-pressed={mode === 'all'}
+              onClick={() => (mode === 'all' ? onClear(upsell.id) : onSetForAll(upsell.id, 1))}
+            >
+              {mode === 'all' ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" /> Ajouté
+                </>
+              ) : (
+                'Ajouter'
+              )}
+            </Button>
+          ) : (
+            <QuantityPicker
+              value={assignments[0]?.quantity ?? 0}
+              onDecrement={() => onSetForParticipant(upsell.id, participants[0].id, (assignments[0]?.quantity ?? 0) - 1)}
+              onIncrement={() => onSetForParticipant(upsell.id, participants[0].id, (assignments[0]?.quantity ?? 0) + 1)}
+              disableDecrement={(assignments[0]?.quantity ?? 0) === 0}
+              disableIncrement={(assignments[0]?.quantity ?? 0) >= max}
+            />
+          )}
+          {isTshirt && mode === 'all'
+            ? sizeSelect(assignments[0]?.size, (size) => onSizeForAll(upsell.id, size), 'Taille', 'sm:w-48')
+            : null}
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          <div role="group" aria-label={`Pour qui : ${upsell.name}`} className="grid grid-cols-3 gap-2">
+            {[
+              { id: 'none', label: 'Personne', active: mode === 'none', onClick: () => { onClear(upsell.id); setShowList(false) } },
+              { id: 'all', label: `Tous (${total})`, active: mode === 'all', onClick: () => { onSetForAll(upsell.id, 1); setShowList(false) } },
+              { id: 'some', label: 'Choisir', active: mode === 'some' || showList, onClick: () => setShowList(true) },
+            ].map((option) => (
+              <Button
+                key={option.id}
+                type="button"
+                variant={option.active ? 'default' : 'outline'}
+                className="h-11 px-2"
+                aria-pressed={option.active}
+                onClick={option.onClick}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+
+          {isTshirt && mode !== 'none' ? (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Même taille pour tous</p>
+              {sizeSelect(commonSize, (size) => onSizeForAll(upsell.id, size), 'Même taille pour tous', 'sm:w-48')}
+            </div>
+          ) : null}
+
+          {mode === 'all' && !showList ? (
+            <button
+              type="button"
+              onClick={() => setShowList(true)}
+              className="min-h-11 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {isTshirt ? 'Changer une taille ou retirer quelqu’un' : 'Retirer quelqu’un'}
+            </button>
+          ) : null}
+
+          {showList || mode === 'some' ? (
+            <ul className={cn('divide-y divide-border', total > LONG_LIST && 'max-h-96 overflow-y-auto pr-1')}>
+              {participants.map(row)}
+            </ul>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

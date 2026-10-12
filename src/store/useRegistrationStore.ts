@@ -3,23 +3,16 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { REGISTRATION_STORAGE_KEY } from '@/constants/registration'
+import type { AppliedPromo, Participant } from '@/components/registration/types'
+import type { PricingSummary } from '@/lib/orderPricing'
 
 export type RegistrationTicketSelection = {
   ticketId: string
   quantity: number
 }
 
-export type RegistrationParticipant = {
-  id: string
-  ticketId: string
-  firstName: string
-  lastName: string
-  email: string
-  birthDate: string
-  emergencyContactName: string
-  emergencyContactPhone: string
-  medicalInfo: string
-}
+/** A bib of the order, exactly as typed in the checkout, chosen SAS included. */
+export type RegistrationParticipant = Participant
 
 export type RegistrationUpsellSelection = {
   upsellId: string
@@ -27,13 +20,7 @@ export type RegistrationUpsellSelection = {
   meta?: Record<string, any>
 }
 
-export type RegistrationSummary = {
-  ticketTotal: number
-  upsellTotal: number
-  discountAmount: number
-  totalDue: number
-  currency: string
-}
+export type RegistrationSummary = PricingSummary
 
 export type RegistrationSignature = {
   imageDataUrl: string | null
@@ -45,6 +32,8 @@ export type RegistrationDisclaimer = {
   read: boolean
   accepted: boolean
   rulebookAccepted: boolean
+  /** Set only when the buyer registers other people and vouches for them. */
+  groupAttestation?: boolean
 }
 
 export type RegistrationDraft = {
@@ -57,6 +46,8 @@ export type RegistrationDraft = {
   participants: RegistrationParticipant[]
   upsells: RegistrationUpsellSelection[]
   promoCodes: string[]
+  /** Codes as validated, to restore their discount after a reload. Absent in older drafts. */
+  appliedPromos?: AppliedPromo[]
   ambassadorReferralCode: string | null
   groupId: string | null
   summary: RegistrationSummary

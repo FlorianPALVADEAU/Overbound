@@ -21,21 +21,23 @@ export default function QuantityPicker({
       <Button
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-11 w-11"
         disabled={disableDecrement}
         onClick={onDecrement}
+        aria-label="Retirer un"
       >
-        <Minus className="h-3 w-3" />
+        <Minus className="h-4 w-4" />
       </Button>
-      <div className="w-10 text-center text-sm font-semibold">{value}</div>
+      <div className="w-8 text-center text-base font-semibold">{value}</div>
       <Button
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-11 w-11"
         disabled={disableIncrement}
         onClick={onIncrement}
+        aria-label="Ajouter un"
       >
-        <Plus className="h-3 w-3" />
+        <Plus className="h-4 w-4" />
       </Button>
     </div>
   )

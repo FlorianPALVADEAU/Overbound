@@ -16,10 +16,10 @@ const AnimatedBanner = ({
 }) => {
     const wrapperClass = compact
         ? 'py-2 lg:py-3 max-h-20'
-        : 'py-[15px] lg:py-[24px] max-h-32'
-    const backgroundClass = subtle ? 'bg-transparent text-muted-foreground' : 'bg-neutral-200 text-black'
-    const gradientFromLeft = subtle ? 'from-transparent' : 'from-white'
-    const gradientFromRight = subtle ? 'from-transparent' : 'from-white'
+        : 'py-4 lg:py-6 max-h-32'
+    const backgroundClass = subtle ? 'bg-transparent text-muted-foreground' : 'tone-light bg-muted text-foreground'
+    const gradientFromLeft = subtle ? 'from-transparent' : 'from-muted'
+    const gradientFromRight = subtle ? 'from-transparent' : 'from-muted'
     const titleClass = compact ? 'text-sm mx-10 font-medium tracking-wide' : 'text-2xl my-0 mx-[125px] font-semibold'
     const logoBoxClass = compact
         ? 'mx-3 md:mx-5 h-10 md:h-12 lg:h-14 w-16 md:w-20 lg:w-24'
@@ -31,7 +31,7 @@ const AnimatedBanner = ({
             {/* fade-in effect */}
             <div className={`pointer-events-none absolute left-0 top-0 bottom-0 w-1/3 bg-linear-to-r ${gradientFromLeft} to-transparent z-1`}></div>
             {Array.from({ length: 10 }).map((_, index) => (
-                <div key={index} className='shrink-0 flex items-center justify-around whitespace-nowrap w-fit animate-marquee'>
+                <div key={index} className='shrink-0 flex items-center justify-around whitespace-nowrap w-fit animate-marquee motion-reduce:animate-none'>
                     {title && (
                         <p className={`shrink-0 text-uppercase ${titleClass}`}>
                                 {title?.toUpperCase()}
@@ -53,21 +53,7 @@ const AnimatedBanner = ({
                 </div>
             ))}
             {/* fade-out effect */}
-            <div className={`pointer-events-none absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l ${gradientFromRight} to-transparent z-[1]`}></div>
-            <style jsx>{`
-                @keyframes marquee {
-                    0% {
-                        transform: translateX(0);
-                    }
-                    100% {
-                        transform: translateX(-100%);
-                    }
-                }
-
-                .animate-marquee {
-                    animation: marquee 8s linear infinite;
-                }
-            `}</style>
+            <div className={`pointer-events-none absolute right-0 top-0 bottom-0 w-1/3 bg-linear-to-l ${gradientFromRight} to-transparent z-1`}></div>
         </div>
     )
 }

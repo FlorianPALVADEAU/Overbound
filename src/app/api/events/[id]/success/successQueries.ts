@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import type { Registration } from '@/types/Registration'
+import type { SuccessOrderRegistration } from '@/components/events/success/EventSuccessView'
 
 export interface EventSuccessResponse {
+  registrations: SuccessOrderRegistration[]
   registration: Registration & {
     ticket: any
     event: any

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { AdminRegistration } from '@/types/Registration'
 import { formatClockTimeParis, formatDateTimeParis } from '@/lib/dateTime'
+import { isInternalUpsellMetaKey } from '@/lib/upsells/meta'
 
 interface RegistrationDetailsDialogProps {
   registration: AdminRegistration | null
@@ -76,7 +77,7 @@ const renderUpsellMeta = (meta: unknown) => {
   if (!meta || typeof meta !== 'object') return [] as string[]
   const details: string[] = []
   for (const [key, value] of Object.entries(meta as Record<string, unknown>)) {
-    if (value == null) continue
+    if (value == null || isInternalUpsellMetaKey(key)) continue
     if (key === 'sizes' && Array.isArray(value)) {
       const sizes = value.filter((item) => typeof item === 'string' && item.trim().length > 0)
       if (sizes.length > 0) details.push(`Tailles: ${sizes.join(', ')}`)
@@ -246,7 +247,7 @@ export function RegistrationDetailsDialog({
                   promotionalCodes.map((promo) => {
                     const discount = formatPromoDiscount(promo)
                     return (
-                      <Badge key={promo.id} variant="outline" className="text-[11px]">
+                      <Badge key={promo.id} variant="outline" className="text-xs">
                         {promo.code}
                         {discount ? ` • ${discount}` : ''}
                       </Badge>
@@ -277,7 +278,7 @@ export function RegistrationDetailsDialog({
                         {item.quantity} × {item.name} — {formatAmount(item.price_cents, item.currency)} / unité
                       </p>
                       {renderUpsellMeta(item.meta).map((detail) => (
-                        <p key={detail} className="text-[11px] text-muted-foreground">
+                        <p key={detail} className="text-xs text-muted-foreground">
                           {detail}
                         </p>
                       ))}

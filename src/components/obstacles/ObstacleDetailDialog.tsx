@@ -74,11 +74,11 @@ export function ObstacleDetailDialog({ obstacle, onOpenChange }: ObstacleDetailD
 
   return (
     <Dialog open={!!obstacle} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[90vw] overflow-hidden border-white/10 bg-[#141414] p-0 text-white sm:max-w-xl">
+      <DialogContent className="w-full max-w-[90vw] overflow-hidden border-white/10 bg-background p-0 text-white sm:max-w-xl">
         {obstacle && (
           <>
             <DialogHeader className="space-y-3 px-6 pt-6">
-              <DialogTitle className="text-2xl font-black text-white">{obstacle.name}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-white">{obstacle.name}</DialogTitle>
             </DialogHeader>
 
             <div className="space-y-5 px-6 pb-6">
@@ -103,7 +103,7 @@ export function ObstacleDetailDialog({ obstacle, onOpenChange }: ObstacleDetailD
               </div>
 
               {obstacle.description ? (
-                <p className="text-sm leading-relaxed text-neutral-300">{obstacle.description}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{obstacle.description}</p>
               ) : null}
 
               {specs.length > 0 ? (
@@ -121,8 +121,8 @@ export function ObstacleDetailDialog({ obstacle, onOpenChange }: ObstacleDetailD
                         className={`mb-1.5 h-4 w-4 ${spec.tone === 'warning' ? 'text-amber-300' : 'text-primary'}`}
                       />
                       <p
-                        className={`text-[11px] font-semibold uppercase tracking-wide ${
-                          spec.tone === 'warning' ? 'text-amber-300/80' : 'text-neutral-400'
+                        className={`text-label font-semibold uppercase ${
+                          spec.tone === 'warning' ? 'text-amber-300/80' : 'text-muted-foreground'
                         }`}
                       >
                         {spec.label}
@@ -135,10 +135,10 @@ export function ObstacleDetailDialog({ obstacle, onOpenChange }: ObstacleDetailD
                 </div>
               ) : null}
 
-              <div className="flex items-start gap-2.5 text-xs leading-relaxed text-neutral-400">
+              <div className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground">
                 <HeartHandshake className="mt-0.5 h-4 w-4 flex-none text-primary" />
                 <p>
-                  <strong className="text-neutral-300">Adapté aux femmes :</strong> une version
+                  <strong className="text-muted-foreground">Adapté aux femmes :</strong> une version
                   ajustée (hauteur, prise, charge) est proposée pour permettre à chacune de le
                   franchir en confiance.
                 </p>
@@ -149,7 +149,7 @@ export function ObstacleDetailDialog({ obstacle, onOpenChange }: ObstacleDetailD
                   <button
                     type="button"
                     onClick={() => window.open(obstacle.video_url ?? '', '_blank')}
-                    className="inline-flex items-center gap-1.5 text-neutral-400 transition hover:text-white"
+                    className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-white"
                   >
                     <Play className="h-3.5 w-3.5" />
                     Voir la vidéo complète
@@ -158,7 +158,7 @@ export function ObstacleDetailDialog({ obstacle, onOpenChange }: ObstacleDetailD
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 text-neutral-400 transition hover:text-white"
+                  className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-white"
                 >
                   {copied ? <Check className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
                   {copied ? 'Lien copié' : 'Partager cet obstacle'}

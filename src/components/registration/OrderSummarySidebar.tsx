@@ -1,30 +1,19 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { calculateCurrentPrice } from '@/types/EventPriceTier'
-import type { EventPriceTier } from '@/types/EventPriceTier'
-import { formatPrice, joinName } from '@/lib/registration'
+import type { ReactNode } from 'react'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
-import type {
-  AppliedPromo,
-  EventTicket,
-  Participant,
-  PricingSummary,
-  UpsellSummaryItem,
-} from './types'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import type { OrderLine } from '@/lib/checkout/orderLines'
 import PromoCodeInput from './PromoCodeInput'
+import { OrderLines, OrderTotal, RefundNotice } from './summary'
+import type { AppliedPromo } from './types'
 
 interface OrderSummarySidebarProps {
-  selectedTicketSlots: string[]
-  ticketMap: Record<string, EventTicket>
-  participants: Participant[]
-  defaultCurrency: string
-  activeTier: EventPriceTier | null
-  hasActiveDiscount: boolean
-  isTierDiscountOverriddenByPromo: boolean
-  upsellSummaryItems: UpsellSummaryItem[]
-  summaryPricing: PricingSummary
+  lines: OrderLine[]
+  totalCents: number
+  currency: string
+  hasFlexible: boolean
+  /** Why the order cannot be priced or a code was left out, in the visitor's words. */
+  pricingNotices: string[]
   appliedPromos: AppliedPromo[]
   promoInput: string
   promoError: string | null
@@ -32,18 +21,16 @@ interface OrderSummarySidebarProps {
   onValidatePromo: () => void
   onRemovePromo: (code: string) => void
   submissionMessage: { type: 'error' | 'success'; text: string } | null
+  /** Payment button, rendered under the total so it stays in view while the page scrolls. */
+  payAction?: ReactNode
 }
 
 export default function OrderSummarySidebar({
-  selectedTicketSlots,
-  ticketMap,
-  participants,
-  defaultCurrency,
-  activeTier,
-  hasActiveDiscount,
-  isTierDiscountOverriddenByPromo,
-  upsellSummaryItems,
-  summaryPricing,
+  lines,
+  totalCents,
+  currency,
+  hasFlexible,
+  pricingNotices,
   appliedPromos,
   promoInput,
   promoError,
@@ -51,151 +38,48 @@ export default function OrderSummarySidebar({
   onValidatePromo,
   onRemovePromo,
   submissionMessage,
+  payAction,
 }: OrderSummarySidebarProps) {
-  const showActiveTierDiscount = hasActiveDiscount && !isTierDiscountOverriddenByPromo
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Résumé de la commande</CardTitle>
-        <CardDescription>Mettez à jour vos choix pour ajuster le total.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <PromoCodeInput
-          appliedPromos={appliedPromos}
-          promoInput={promoInput}
-          error={promoError}
-          onInputChange={onPromoInputChange}
-          onValidate={onValidatePromo}
-          onRemove={onRemovePromo}
-        />
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h2 className="text-lg font-semibold">Ta commande</h2>
 
-        <Separator />
+      <div className="mt-4">
+        <OrderLines lines={lines} currency={currency} />
+      </div>
 
-        <div className="space-y-2">
-          <div className="text-xs uppercase text-muted-foreground">Billets</div>
-          {selectedTicketSlots.length === 0 ? (
-            <p className="text-muted-foreground">Aucun billet sélectionné.</p>
-          ) : (
-            selectedTicketSlots.map((ticketId, index) => {
-              const ticket = ticketMap[ticketId]
-              const participant = participants[index]
-              if (!ticket) return null
+      {pricingNotices.map((notice) => (
+        <p key={notice} className="mt-3 text-xs font-medium text-destructive">
+          {notice}
+        </p>
+      ))}
 
-              const ticketPrice =
-                activeTier && ticket.final_price_cents
-                  ? calculateCurrentPrice(ticket.final_price_cents, activeTier)
-                  : ticket.final_price_cents
+      <Separator className="my-4" />
+      <PromoCodeInput
+        appliedPromos={appliedPromos}
+        promoInput={promoInput}
+        error={promoError}
+        onInputChange={onPromoInputChange}
+        onValidate={onValidatePromo}
+        onRemove={onRemovePromo}
+      />
+      <Separator className="my-4" />
 
-              return (
-                <div key={`${ticketId}-${index}`} className="flex items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <p className="font-medium">{ticket.name}</p>
-                    {participant?.firstName || participant?.lastName ? (
-                      <p className="text-xs text-muted-foreground">
-                        {joinName(participant.firstName, participant.lastName)}
-                      </p>
-                    ) : null}
-                    {showActiveTierDiscount && activeTier && ticket.final_price_cents && (
-                      <p className="text-xs text-green-600 font-semibold">
-                        -{activeTier.discount_percentage}% ({activeTier.name})
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-0.5">
-                    {showActiveTierDiscount && ticket.final_price_cents && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        {formatPrice(
-                          ticket.final_price_cents,
-                          (ticket.currency || defaultCurrency).toLowerCase(),
-                        )}
-                      </span>
-                    )}
-                    <span className="font-medium">
-                      {ticketPrice
-                        ? formatPrice(ticketPrice, (ticket.currency || defaultCurrency).toLowerCase())
-                        : '—'}
-                    </span>
-                  </div>
-                </div>
-              )
-            })
-          )}
+      <OrderTotal totalCents={totalCents} currency={currency} />
+
+      {submissionMessage ? (
+        <Alert className="mt-4" variant={submissionMessage.type === 'success' ? 'default' : 'destructive'}>
+          {submissionMessage.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+          <AlertDescription>{submissionMessage.text}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {payAction ? (
+        <div className="mt-4 hidden space-y-2 lg:block">
+          {payAction}
+          <RefundNotice hasFlexible={hasFlexible} className="text-center" />
         </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <div className="text-xs uppercase text-muted-foreground">Options</div>
-          {upsellSummaryItems.length === 0 ? (
-            <p className="text-muted-foreground">Aucune option ajoutée.</p>
-          ) : (
-            upsellSummaryItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <p className="font-medium">
-                    {item.quantity} × {item.label}
-                  </p>
-                  {item.details.map((detail, i) => (
-                    <p key={`${item.id}-detail-${i}`} className="text-xs text-muted-foreground">
-                      {detail}
-                    </p>
-                  ))}
-                </div>
-                <span className="font-medium">{formatPrice(item.amount, item.currency)}</span>
-              </div>
-            ))
-          )}
-        </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span>Sous-total billets</span>
-            <span>{formatPrice(summaryPricing.ticketTotal, summaryPricing.currency)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span>Options</span>
-            <span>{formatPrice(summaryPricing.upsellTotal, summaryPricing.currency)}</span>
-          </div>
-          {summaryPricing.flexibleTotal ? (
-            <div className="flex items-center justify-between text-sm">
-              <span>Billet flexible</span>
-              <span>{formatPrice(summaryPricing.flexibleTotal, summaryPricing.currency)}</span>
-            </div>
-          ) : null}
-          {summaryPricing.discountAmount > 0 ? (
-            <div className="flex items-center justify-between text-sm text-emerald-600">
-              <span className="font-mono font-medium">
-                {appliedPromos.length > 0
-                  ? appliedPromos.map((p) => p.code).join(' + ')
-                  : 'Réduction'}
-              </span>
-              <span>- {formatPrice(summaryPricing.discountAmount, summaryPricing.currency)}</span>
-            </div>
-          ) : null}
-          <Separator />
-          <div className="flex items-center justify-between text-base font-semibold">
-            <span>Total à régler</span>
-            <span>{formatPrice(summaryPricing.totalDue, summaryPricing.currency)}</span>
-          </div>
-        </div>
-
-        {/* Payment CTA lives in the sticky bottom bar (see RegistrationPaymentBar),
-            visible on both mobile and desktop instead of scrolling away in the sidebar. */}
-
-        {submissionMessage ? (
-          <Alert variant={submissionMessage.type === 'success' ? 'default' : 'destructive'}>
-            {submissionMessage.type === 'success' ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <AlertTriangle className="h-4 w-4" />
-            )}
-            <AlertDescription>{submissionMessage.text}</AlertDescription>
-          </Alert>
-        ) : null}
-      </CardContent>
-    </Card>
+      ) : null}
+    </div>
   )
 }

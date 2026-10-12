@@ -125,6 +125,11 @@ photothèque et signature graphique (`mountain-vector.svg`) restent celles du si
 
 ## 3. Correction sur le tunnel — décision à confirmer avant l'itération 2
 
+> **Obsolète (2026-10-12).** Le choix libre du SAS, sans fenêtre dérivée des distances, est une
+> décision produit assumée (FDR-0012 et suivantes) : le participant choisit son départ, ce qui
+> supprime la gestion manuelle des vagues et le rend conscient de son temps de course. Les champs de
+> distance ont été retirés du tunnel. Ne pas réintroduire la dérivation décrite ci-dessous.
+
 L'intention initiale était de ne garder que le choix du SAS et de supprimer les deux champs de
 distance du formulaire participant. **Après lecture du code, cette suppression casserait une règle de
 sécurité, pas seulement du confort.**

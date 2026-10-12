@@ -1,56 +1,40 @@
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Gift } from 'lucide-react'
 import type { EventUpsell, Participant, SelectedUpsellState } from './types'
 import UpsellCard from './UpsellCard'
 
 interface OptionsStepProps {
   upsells: EventUpsell[]
   selectedUpsells: SelectedUpsellState
-  selectedTicketSlots: string[]
   participants: Participant[]
   defaultCurrency: string
-  onQuantityChange: (upsellId: string, quantity: number) => void
-  onSizeChange: (upsellId: string, index: number, size: string) => void
-  onAssignmentToggle: (upsellId: string, ticketId: string, checked: boolean) => void
+  onSetForParticipant: (upsellId: string, participantId: string, quantity: number, size?: string) => void
+  onSetForAll: (upsellId: string, quantity: number) => void
+  onClear: (upsellId: string) => void
+  onSizeForAll: (upsellId: string, size: string) => void
 }
 
 export default function OptionsStep({
   upsells,
   selectedUpsells,
-  selectedTicketSlots,
   participants,
   defaultCurrency,
-  onQuantityChange,
-  onSizeChange,
-  onAssignmentToggle,
+  onSetForParticipant,
+  onSetForAll,
+  onClear,
+  onSizeForAll,
 }: OptionsStepProps) {
   return (
-    <div className="space-y-4">
-      {upsells.length === 0 ? (
-        <Alert>
-          <Gift className="h-4 w-4" />
-          <AlertDescription>Pas d'options additionnelles disponibles pour cet événement.</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {upsells.length > 0 && selectedTicketSlots.length === 0 ? (
-        <Alert>
-          <Gift className="h-4 w-4" />
-          <AlertDescription>Ajoutez au moins un billet avant de choisir des options.</AlertDescription>
-        </Alert>
-      ) : null}
-
+    <div className="space-y-3">
       {upsells.map((upsell) => (
         <UpsellCard
           key={upsell.id}
           upsell={upsell}
           selection={selectedUpsells[upsell.id]}
-          selectedTicketSlots={selectedTicketSlots}
           participants={participants}
           defaultCurrency={defaultCurrency}
-          onQuantityChange={onQuantityChange}
-          onSizeChange={onSizeChange}
-          onAssignmentToggle={onAssignmentToggle}
+          onSetForParticipant={onSetForParticipant}
+          onSetForAll={onSetForAll}
+          onClear={onClear}
+          onSizeForAll={onSizeForAll}
         />
       ))}
     </div>

@@ -6,6 +6,7 @@ import { BarChart3Icon, TicketIcon, UserIcon, UsersIcon } from 'lucide-react'
 import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { getProfileCompletion } from '@/lib/account/profile'
 import { cn } from '@/lib/utils'
+import { containerClass } from '@/components/ds'
 
 const NAV_ITEMS = [
   { href: '/account', label: 'Billets', icon: TicketIcon, isActive: (path: string) => path === '/account' || path.startsWith('/account/tickets') },
@@ -40,7 +41,7 @@ function MobileNav() {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition-colors',
+                  'flex min-h-14 flex-col items-center justify-center gap-1 text-label font-semibold uppercase tracking-wider transition-colors',
                   active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -66,7 +67,7 @@ function DesktopNav() {
 
   return (
     <nav aria-label="Navigation du compte" className="hidden border-b border-border md:block">
-      <ul className="mx-auto flex max-w-5xl gap-1 px-8 xl:max-w-6xl">
+      <ul className={cn(containerClass(), 'flex gap-1')}>
         {NAV_ITEMS.map(({ href, label, icon: Icon, isActive }) => {
           const active = isActive(pathname)
           return (

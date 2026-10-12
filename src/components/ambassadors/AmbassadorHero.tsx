@@ -14,7 +14,7 @@ export function AmbassadorHero({ fullName, email }: AmbassadorHeroProps) {
     <>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+          <p className="text-xs font-semibold uppercase tracking-label text-primary">
             Espace Ambassadeur
           </p>
           <h1 className="text-2xl font-bold sm:text-3xl">{fullName || email || 'Ambassadeur'}</h1>
@@ -39,7 +39,7 @@ export function AmbassadorHero({ fullName, email }: AmbassadorHeroProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/30 to-transparent" />
         <div className="absolute left-5 top-5 max-w-xs">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Ambassadeur</p>
+          <p className="text-xs font-semibold uppercase tracking-label text-primary">Ambassadeur</p>
           <p className="mt-1 text-lg font-bold text-foreground">Fais grandir la communauté</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Partage ton code et débloque les paliers.

@@ -98,7 +98,7 @@ function LoginInner() {
   }
 
   return (
-    <main className="bg-[#0b0c0e] text-white">
+    <main className="bg-background text-white">
       <div className="grid min-h-[calc(100dvh-96px)] lg:grid-cols-[40%_60%]">
         <section className="relative hidden lg:block">
           {authVisual ? (
@@ -110,13 +110,13 @@ function LoginInner() {
         <section className="flex items-center justify-center px-6 py-8 lg:px-14">
           <div className="w-full max-w-lg space-y-6">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">Overbound</p>
-              <h1 className="text-4xl font-black uppercase leading-none">S&apos;identifier</h1>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-label text-primary/80">Overbound</p>
+              <h1 className="text-4xl font-display font-bold uppercase uppercase leading-none">S&apos;identifier</h1>
             </div>
 
             <form onSubmit={handlePasswordLogin} className="space-y-5">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm text-zinc-300">Adresse e-mail</label>
+                <label htmlFor="email" className="text-sm text-muted-foreground">Adresse e-mail</label>
                 <Input
                   id="email"
                   type="email"
@@ -126,14 +126,14 @@ function LoginInner() {
                   autoComplete="email"
                   autoFocus
                   placeholder="vous@exemple.com"
-                  className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
+                  className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm text-zinc-300">Mot de passe</label>
-                  <Link href="/auth/reset" className="text-xs text-zinc-400 hover:text-primary">Oublié ?</Link>
+                  <label htmlFor="password" className="text-sm text-muted-foreground">Mot de passe</label>
+                  <Link href="/auth/reset" className="text-xs text-muted-foreground hover:text-primary">Oublié ?</Link>
                 </div>
                 <div className="relative">
                   <Input
@@ -144,12 +144,12 @@ function LoginInner() {
                     disabled={loading}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="h-11 border-zinc-700 bg-zinc-900/40 pr-10 text-white placeholder:text-zinc-400"
+                    className="h-11 border-border bg-card/60 pr-10 text-white placeholder:text-subtle"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
                     aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   >
                     {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
@@ -157,7 +157,7 @@ function LoginInner() {
                 </div>
               </div>
 
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-subtle">
                 En vous connectant, vous acceptez nos{' '}
                 <Link href="/cgu" className="text-primary underline-offset-4 underline">conditions d’utilisation</Link>
                 {' '}et notre{' '}
@@ -186,10 +186,10 @@ function LoginInner() {
             <div className="space-y-4">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-zinc-800" />
+                  <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-[#0b0c0e] px-3 text-xs uppercase tracking-wide text-zinc-400">ou</span>
+                  <span className="bg-background px-3 text-xs uppercase tracking-wide text-subtle">ou</span>
                 </div>
               </div>
 
@@ -238,7 +238,7 @@ function LoginInner() {
               </Alert>
             ) : null}
 
-            <div className="text-center text-sm text-zinc-400">
+            <div className="text-center text-sm text-muted-foreground">
               Pas encore de compte ?{' '}
               <Link href="/auth/register" className="text-primary underline-offset-4 underline">Créer un compte</Link>
             </div>

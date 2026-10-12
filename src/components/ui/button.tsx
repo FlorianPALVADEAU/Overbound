@@ -19,6 +19,12 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Design system: red reserved for the registration CTA in the header,
+        // at most one per screen. Never for errors (use destructive).
+        signal: "bg-signal text-signal-foreground hover:bg-signal/90 focus-visible:ring-signal/40",
+        // Design system: secondary action over a photo or a dark image band.
+        "outline-on-photo":
+          "border border-foreground/40 bg-transparent text-foreground hover:bg-foreground/10",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -27,6 +33,10 @@ const buttonVariants = cva(
         icon: "size-9",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
+        // Design system: marketing CTA (44px+ touch target, FDR-0015 §10.4).
+        cta: "h-12 rounded-xl px-8 text-base font-semibold has-[>svg]:px-6",
+        // Design system: hero and final call to action.
+        hero: "h-14 rounded-xl px-10 font-display text-lg uppercase has-[>svg]:px-8",
       },
     },
     defaultVariants: {

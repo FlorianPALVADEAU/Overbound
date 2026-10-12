@@ -22,7 +22,7 @@ export function PricingExplainer() {
   return (
     <section className="w-full h-auto">
       <div className="mb-8">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-eyebrow text-primary">
           Tarification progressive
         </p>
         <h3 className="text-2xl font-bold sm:text-3xl">

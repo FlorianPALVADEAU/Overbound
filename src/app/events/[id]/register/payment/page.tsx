@@ -7,6 +7,8 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventPaymentData } from '@/app/api/events/[id]/payment-data/paymentDataQueries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { DISPLAY_TITLE, Eyebrow, containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export default function EventPaymentPage() {
   const params = useParams<{ id: string }>()
@@ -24,7 +26,7 @@ export default function EventPaymentPage() {
 
   if (sessionLoading || (session && !session.user)) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <div className="text-sm text-muted-foreground">Chargement…</div>
       </main>
     )
@@ -32,7 +34,7 @@ export default function EventPaymentPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+      <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <div className="text-sm text-muted-foreground">Chargement des informations de paiement…</div>
       </main>
     )
@@ -40,8 +42,8 @@ export default function EventPaymentPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto max-w-lg px-6 py-12">
+      <main className="min-h-screen bg-background text-foreground">
+        <div className={cn(containerClass('form'), 'py-12')}>
           <Card>
             <CardHeader>
               <CardTitle>Impossible de charger le paiement</CardTitle>
@@ -61,12 +63,13 @@ export default function EventPaymentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto max-w-5xl px-4 pb-12 pt-8 space-y-6">
-        <h1 className="text-2xl font-semibold">Finaliser mon inscription</h1>
-        <p className="text-sm text-muted-foreground">
-          Vérifiez vos informations et procédez au paiement sécurisé.
-        </p>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className={cn(containerClass(), 'space-y-6 pb-12 pt-8')}>
+        <div className="space-y-1">
+          <Eyebrow>Paiement</Eyebrow>
+          <h1 className={cn(DISPLAY_TITLE, 'text-display-md')}>Finalise ton inscription</h1>
+          <p className="text-sm text-muted-foreground">Vérifie ta commande, puis paie en toute sécurité.</p>
+        </div>
         <PaymentClient
           event={data.event}
           tickets={data.tickets}

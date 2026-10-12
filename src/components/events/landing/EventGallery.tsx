@@ -1,5 +1,5 @@
 import { CardCarousel } from '@/components/shared/CardCarousel'
-import { LANDING_X } from './layout'
+import { Container, Section } from '@/components/ds'
 
 interface Props {
   images: string[]
@@ -11,8 +11,8 @@ export function EventGallery({ images, title }: Props) {
   if (images.length === 0) return null
 
   return (
-    <section className="py-12 sm:py-16">
-      <div className={LANDING_X}>
+    <Section spacing="compact">
+      <Container>
         <CardCarousel
           items={images.slice(0, 8)}
           getKey={(src) => src}
@@ -30,7 +30,7 @@ export function EventGallery({ images, title }: Props) {
             />
           )}
         />
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }

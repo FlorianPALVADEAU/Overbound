@@ -182,7 +182,7 @@ export function StatsScreen() {
         <AccountScreen>
           <header className="mb-8">
             <Eyebrow>Statistiques</Eyebrow>
-            <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight md:text-5xl">Tes chiffres.</h1>
+            <h1 className="mt-2 text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight md:text-5xl">Tes chiffres.</h1>
           </header>
           <StatsContent />
         </AccountScreen>

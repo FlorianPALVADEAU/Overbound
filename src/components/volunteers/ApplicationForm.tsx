@@ -29,7 +29,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 const primaryButton =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-base font-black text-primary-foreground transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-base font-bold text-primary-foreground transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
 const ghostButton =
   'inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/20 px-5 text-base font-bold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
 
@@ -57,11 +57,11 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
     return (
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-primary/40 bg-primary/10 p-8 text-center" role="status">
         <CheckCircle2 className="h-12 w-12 text-primary" aria-hidden />
-        <h3 className="text-2xl font-black text-white">Candidature reçue, {submitted.firstName} !</h3>
-        <p className="text-gray-200">
+        <h3 className="text-2xl font-bold text-white">Candidature reçue, {submitted.firstName} !</h3>
+        <p className="text-foreground">
           La tribu te contacte sous 48 h avec ton poste et les infos pratiques. Pour : {submitted.eventName}.
         </p>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Un email de confirmation part à {submitted.email}. Pense à vérifier tes spams.
         </p>
         <button type="button" onClick={reset} className={ghostButton}>
@@ -93,8 +93,8 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
             />
             <span
               className={cn(
-                'mt-2 block text-xs font-black uppercase tracking-wider',
-                index === step ? 'text-white' : 'text-gray-500',
+                'mt-2 block text-xs font-bold uppercase tracking-wider',
+                index === step ? 'text-white' : 'text-subtle',
               )}
             >
               {index + 1}. {label}
@@ -104,7 +104,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
       </ol>
 
       {draftRestored && step === 0 ? (
-        <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-gray-100">
+        <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
           Tes choix précédents sont conservés.
         </p>
       ) : null}
@@ -120,7 +120,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
                 id="mission"
                 value={values.mission}
                 onChange={(event) => setValue('mission', event.target.value)}
-                className="h-12 w-full appearance-none rounded-md border border-input bg-neutral-950 px-3 pr-10 text-base text-white outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="h-12 w-full appearance-none rounded-md border border-input bg-background px-3 pr-10 text-base text-white outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 {podCatalog.all().map((pod) => (
                   <option key={pod.key} value={pod.title}>
@@ -129,7 +129,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
                 ))}
                 <option value={DEFAULT_MISSION}>Je laisse l’équipe décider</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             </div>
           </div>
 
@@ -144,7 +144,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
                 onChange={(event) => setValue('eventSelection', event.target.value)}
                 aria-invalid={Boolean(errors.eventSelection)}
                 aria-describedby={errors.eventSelection ? 'event-selection-error' : undefined}
-                className="h-12 w-full appearance-none rounded-md border border-input bg-neutral-950 px-3 pr-10 text-base text-white outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive"
+                className="h-12 w-full appearance-none rounded-md border border-input bg-background px-3 pr-10 text-base text-white outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive"
               >
                 <option value="" disabled>
                   {eventsLoading ? 'Chargement…' : 'Sélectionne ton événement'}
@@ -157,7 +157,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
                 <option value={EVENT_SELECTION_ANY}>Je peux aider sur plusieurs événements</option>
                 <option value={EVENT_SELECTION_CUSTOM}>Mon événement n’est pas dans la liste</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             </div>
             <FieldError id="event-selection-error" message={errors.eventSelection} />
           </div>
@@ -222,7 +222,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
       {step === 1 ? (
         <div className="space-y-5">
           {!sessionLoading && !isAuthenticated ? (
-            <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-gray-200">
+            <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-foreground">
               <p className="font-bold text-white">Un compte Overbound est nécessaire pour envoyer.</p>
               <p className="mt-1">Tes choix sont conservés pendant la connexion.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -303,7 +303,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
         <div className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="experience" className="text-base text-white">
-              Ton expérience <span className="text-gray-400">(optionnel)</span>
+              Ton expérience <span className="text-muted-foreground">(optionnel)</span>
             </Label>
             <Textarea
               id="experience"
@@ -316,7 +316,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
           </div>
           <div className="space-y-2">
             <Label htmlFor="motivations" className="text-base text-white">
-              Message <span className="text-gray-400">(optionnel)</span>
+              Message <span className="text-muted-foreground">(optionnel)</span>
             </Label>
             <Textarea
               id="motivations"
@@ -348,7 +348,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
               >
                 {values.gdprConsent ? <Check className="h-3.5 w-3.5" /> : null}
               </span>
-              <span className="text-sm leading-relaxed text-gray-300">
+              <span className="text-sm leading-relaxed text-muted-foreground">
                 J’accepte qu’Overbound me contacte au sujet de cette mission bénévole et des informations
                 logistiques associées.
               </span>

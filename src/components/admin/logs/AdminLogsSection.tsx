@@ -444,7 +444,7 @@ export function AdminLogsSection() {
       </Card>
 
       <Dialog open={Boolean(selectedLog)} onOpenChange={(open) => !open && setSelectedLog(null)}>
-        <DialogContent className="w-[80vw] !max-w-none bg-[#232323]">
+        <DialogContent className="w-[80vw] !max-w-none bg-card">
           <DialogHeader>
             <DialogTitle>Détail du log</DialogTitle>
             <DialogDescription>

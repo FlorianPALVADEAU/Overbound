@@ -461,11 +461,11 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                         </span>
                         {typeof (registration.order as any)?.registrations_count === 'number' &&
                         (registration.order as any).registrations_count > 1 ? (
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             Commande partagée ({(registration.order as any).registrations_count} participants)
                           </span>
                         ) : null}
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           Codes promo:{' '}
                           {Array.isArray(registration.promotional_codes) && registration.promotional_codes.length > 0
                             ? registration.promotional_codes
@@ -476,7 +476,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                                 .join(', ')
                             : 'Aucun'}
                         </span>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           T-shirt:{' '}
                           {registration.has_tshirt
                             ? `Oui${

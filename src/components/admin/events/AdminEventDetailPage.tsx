@@ -261,7 +261,7 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
             title="Renta totale"
             value={formatCurrency(stats?.revenue.total_cents ?? 0, stats?.revenue.currency)}
             icon={Coins}
-            accent="!bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-600"
+            accent="!bg-amber-500/15 text-amber-400 border-amber-600"
             description="Commandes payées recensées pour cet événement"
           />
 

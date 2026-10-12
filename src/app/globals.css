@@ -41,6 +41,46 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Design system (docs/design/design-system.md) — surfaces and text levels */
+  --color-surface-base: var(--surface-base);
+  --color-surface-deep: var(--surface-deep);
+  --color-subtle: var(--subtle);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Design system scales (docs/design/design-system.md). Static values, so a
+   plain @theme block: every token below becomes a Tailwind utility. */
+@theme {
+  /* Type scale — fluid sizes, no jump between breakpoints (FDR-0015 §10.2) */
+  --text-display-xl: clamp(2.75rem, 11vw, 8.5rem);
+  --text-display-xl--line-height: 0.88;
+  --text-display-xl--letter-spacing: -0.01em;
+  --text-display-lg: clamp(2.25rem, 6vw, 4.5rem);
+  --text-display-lg--line-height: 0.95;
+  --text-display-lg--letter-spacing: -0.005em;
+  --text-display-md: clamp(1.875rem, 4vw, 3rem);
+  --text-display-md--line-height: 1;
+  --text-display-md--letter-spacing: 0;
+  --text-title: clamp(1.25rem, 2vw, 1.5rem);
+  --text-title--line-height: 1.15;
+  --text-lead: clamp(1rem, 1.2vw, 1.125rem);
+  --text-lead--line-height: 1.6;
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.24em;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-label--letter-spacing: 0.2em;
+
+  --tracking-eyebrow: 0.24em;
+  --tracking-label: 0.2em;
+
+  --shadow-glow: 0 10px 30px -10px oklch(0.58 0.17 142 / 0.35);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 :root {
@@ -88,6 +128,67 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.64 0.18 142);
+
+  /* Design system additions */
+  /* Site base dark, never remapped by .tone-light: used by the mountain edge. */
+  --surface-base: rgb(20 20 20);
+  /* Deepest band: final CTA, footer. */
+  --surface-deep: oklch(0.1 0 0);
+  /* Third text level: labels, captions (between muted-foreground and borders). */
+  --subtle: oklch(1 0 0 / 55%);
+  /* Red reserved for the registration CTA in the header. Not for errors. */
+  --signal: oklch(0.577 0.245 27.325);
+  --signal-foreground: oklch(1 0 0);
+}
+
+/* Light band: remaps the tokens in place, so every child keeps using the
+   normal semantic classes (bg-card, text-muted-foreground...). */
+.tone-light {
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.42 0 0);
+  --secondary: oklch(0.94 0 0);
+  --secondary-foreground: oklch(0.16 0 0);
+  --border: oklch(0 0 0 / 14%);
+  --input: oklch(0 0 0 / 16%);
+  --primary: oklch(0.5 0.17 142);
+  --subtle: oklch(0 0 0 / 55%);
+}
+
+/* Dark panel inside a light band: puts back the default dark tokens. */
+.tone-dark {
+  --background: rgb(20 20 20);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0.12 0 0);
+  --card-foreground: oklch(1 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --primary: oklch(0.58 0.17 142);
+  --subtle: oklch(1 0 0 / 55%);
+}
+
+/* Green band: white text levels on the primary color. */
+.tone-primary {
+  --foreground: oklch(1 0 0);
+  --muted-foreground: oklch(1 0 0 / 80%);
+  --subtle: oklch(1 0 0 / 70%);
+}
+
+/* Mountain edge (brand signature): the silhouette is a CSS mask, so its color
+   always follows the --surface-base token instead of a hard-coded fill.
+   mountain-edge.svg is the same shape with preserveAspectRatio="none": without
+   it the browser keeps the 1920:149 ratio and centers a narrow shape in the band. */
+.edge-mountain {
+  mask-image: url('/images/decorations/mountain-edge.svg');
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
 }
 
 
@@ -147,23 +248,17 @@
   overflow: visible;
 }
 
-@keyframes scroll {
+@keyframes marquee {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 
-.animate-scroll {
-  animation: scroll 30s linear infinite;
-  display: flex;
-  width: max-content;
-}
-
-.animate-scroll:hover {
-  animation-play-state: paused;
+.animate-marquee {
+  animation: marquee 8s linear infinite;
 }
 
 /* FDR-0014: idle "heartbeat" pulse on the Lucky Wheel while it waits for
@@ -195,6 +290,43 @@
     transform: scale(1);
   }
 }
+
+/* Respect the OS "reduce motion" setting for every custom animation
+   (FDR-0015 §10.6). */
+@media (prefers-reduced-motion: reduce) {
+  .volunteer-wave,
+  .animate-marquee,
+  .animate-lucky-wheel-breathe {
+    animation: none;
+  }
+}
+
+/* Long-form text (blog posts, legal pages). Hand-written because the project
+   does not ship the typography plugin; :where() keeps specificity at zero so
+   utility classes on individual elements still win. */
+.prose-overbound {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--foreground);
+}
+.prose-overbound :where(p, ul, ol, blockquote, figure, pre, table) { margin-top: 1.25em; }
+.prose-overbound :where(h2) { margin-top: 2.25em; font-size: 1.5rem; font-weight: 600; line-height: 1.25; }
+.prose-overbound :where(h3) { margin-top: 1.75em; font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
+.prose-overbound :where(h2, h3, h4) { letter-spacing: -0.01em; }
+.prose-overbound :where(h2 + *, h3 + *, h4 + *) { margin-top: 0.75em; }
+.prose-overbound :where(ul) { list-style: disc; padding-left: 1.5em; }
+.prose-overbound :where(ol) { list-style: decimal; padding-left: 1.5em; }
+.prose-overbound :where(li) { margin-top: 0.4em; }
+.prose-overbound :where(li)::marker { color: var(--primary); }
+.prose-overbound :where(a) { color: var(--primary); text-underline-offset: 3px; }
+.prose-overbound :where(a:hover) { text-decoration: underline; }
+.prose-overbound :where(strong) { font-weight: 600; color: var(--foreground); }
+.prose-overbound :where(blockquote) { border-left: 3px solid var(--primary); padding-left: 1em; font-style: italic; color: var(--muted-foreground); }
+.prose-overbound :where(img) { border-radius: 1rem; margin-top: 1.5em; }
+.prose-overbound :where(hr) { margin: 2.5em 0; border-color: var(--border); }
+.prose-overbound :where(code) { padding: 0.1em 0.35em; border-radius: 0.375rem; background: var(--muted); font-size: 0.9em; }
+.prose-overbound :where(pre) { overflow-x: auto; padding: 1em; border-radius: 0.75rem; background: var(--muted); }
+.prose-overbound :where(pre code) { padding: 0; background: none; }
 
 /* Visible keyboard focus everywhere (WCAG 2.4.7 / 1.4.11). Unlayered on purpose: it must win over component
    utilities such as `outline-none`, which would otherwise leave keyboard users without any indicator. */

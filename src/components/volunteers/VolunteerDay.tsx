@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { SectionHeading } from './SectionHeading'
+import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/ds'
 
 const STEPS = [
   { time: 'Au départ', title: 'Brief', description: 'Équipement, répartition des postes, consignes.' },
@@ -30,9 +30,10 @@ export function VolunteerDay() {
   }, [])
 
   return (
-    <section className="bg-neutral-950 py-16 sm:py-24">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-20 xl:px-0">
-        <SectionHeading
+    <Section tone="deep">
+      <Container className="grid gap-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-20">
+        <SectionHeader
+          flush
           eyebrow="Ta journée"
           title="Le déroulé"
           className="lg:sticky lg:top-28 lg:self-start"
@@ -64,21 +65,21 @@ export function VolunteerDay() {
               >
                 <span
                   className={cn(
-                    'absolute -left-10 top-6 flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-black transition-colors duration-500 motion-reduce:transition-none',
-                    active ? 'border-primary bg-primary text-primary-foreground' : 'border-white/20 bg-neutral-950 text-white/60',
+                    'absolute -left-10 top-6 flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors duration-500 motion-reduce:transition-none',
+                    active ? 'border-primary bg-primary text-primary-foreground' : 'border-white/20 bg-background text-white/60',
                   )}
                   aria-hidden
                 >
                   {index + 1}
                 </span>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-primary">{step.time}</p>
-                <h3 className="mt-1 text-xl font-black text-white sm:text-2xl">{step.title}</h3>
-                <p className="mt-2 text-gray-300">{step.description}</p>
+                <p className="text-label font-semibold uppercase text-primary">{step.time}</p>
+                <h3 className={cn(DISPLAY_TITLE, 'mt-1 text-title')}>{step.title}</h3>
+                <p className="mt-2 text-muted-foreground">{step.description}</p>
               </li>
             )
           })}
         </ol>
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }

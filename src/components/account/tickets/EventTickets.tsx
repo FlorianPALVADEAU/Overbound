@@ -44,18 +44,18 @@ export function EventTickets({ group, context }: EventTicketsProps) {
     <div className="space-y-6">
       <header>
         <Eyebrow className="text-primary">{PHASE_EYEBROW[phase]}</Eyebrow>
-        <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight md:text-5xl">{group.title}</h1>
+        <h1 className="mt-2 text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight md:text-5xl">{group.title}</h1>
 
         <dl className="mt-5 flex divide-x divide-border border-y border-border py-4">
           {countdown ? (
             <div className="pr-5">
-              <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{countdown.caption}</dt>
-              <dd className="mt-1 text-3xl font-black leading-none tracking-tighter tabular-nums text-primary">{countdown.value}</dd>
+              <dt className="text-label font-bold uppercase text-muted-foreground">{countdown.caption}</dt>
+              <dd className="mt-1 text-3xl font-bold leading-none tracking-tighter tabular-nums text-primary">{countdown.value}</dd>
             </div>
           ) : null}
           {dateLabel ? (
             <div className="min-w-0 px-5 first:pl-0">
-              <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Date</dt>
+              <dt className="text-label font-bold uppercase text-muted-foreground">Date</dt>
               <dd className="mt-1 text-base font-bold leading-tight first-letter:uppercase">{dateLabel}</dd>
             </div>
           ) : null}

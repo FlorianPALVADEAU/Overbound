@@ -1,18 +1,18 @@
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertTriangle, UserX } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { TICKETS_SECTION_ID } from '@/lib/checkout/fieldIds'
 import type { EventPriceTier } from '@/types/EventPriceTier'
-import type { EventTicket } from './types'
 import TicketCard from './TicketCard'
+import type { EventTicket } from './types'
 
 interface TicketSelectionStepProps {
   tickets: EventTicket[]
   ticketSelections: Record<string, number>
   onTicketQuantityChange: (ticketId: string, quantity: number) => void
   defaultCurrency: string
-  activeTier: EventPriceTier | null
-  hasActiveDiscount: boolean
+  /** Tier a new ticket is sold on right now, if any. */
+  sellingTier: EventPriceTier | null
   availableSpots: number
+  showErrors: boolean
   groupBanner?: ReactNode
 }
 
@@ -21,21 +21,16 @@ export default function TicketSelectionStep({
   ticketSelections,
   onTicketQuantityChange,
   defaultCurrency,
-  activeTier,
-  hasActiveDiscount,
+  sellingTier,
   availableSpots,
+  showErrors,
   groupBanner,
 }: TicketSelectionStepProps) {
+  const nothingSelected = Object.values(ticketSelections).every((quantity) => !quantity)
+
   return (
-    <div className="space-y-4">
-      <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300">
-        <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <AlertDescription className="text-xs leading-relaxed">
-          <span className="font-semibold">Réservé aux personnes majeures (18 ans et plus).</span>
-          {' '}Les mineurs ne sont pas autorisés à participer à cette édition.
-          La prochaine édition sera ouverte aux mineurs accompagnés.
-        </AlertDescription>
-      </Alert>
+    <div id={TICKETS_SECTION_ID} tabIndex={-1} className="space-y-3 outline-none">
+      <p className="text-sm text-muted-foreground">Réservé aux personnes majeures (18 ans le jour de l&apos;événement).</p>
       {groupBanner}
 
       {tickets.map((ticket) => (
@@ -45,19 +40,14 @@ export default function TicketSelectionStep({
           quantity={ticketSelections[ticket.id] ?? 0}
           onQuantityChange={onTicketQuantityChange}
           defaultCurrency={defaultCurrency}
-          activeTier={activeTier}
-          hasActiveDiscount={hasActiveDiscount}
+          sellingTier={sellingTier}
         />
       ))}
 
-      <Alert variant="destructive" className="mt-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          {availableSpots > 0
-            ? "Places limitées sur l'événement. Dépêchez-vous !"
-            : "L'événement affiche complet. Vous pouvez rejoindre la liste d'attente."}
-        </AlertDescription>
-      </Alert>
+      {showErrors && nothingSelected ? (
+        <p className="text-sm font-medium text-destructive">Choisis au moins un billet.</p>
+      ) : null}
+      {availableSpots <= 0 ? <p className="text-sm font-medium text-destructive">Cet événement est complet.</p> : null}
     </div>
   )
 }

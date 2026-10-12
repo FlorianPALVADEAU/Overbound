@@ -109,7 +109,7 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
     <div className="space-y-8">
       <section className="space-y-4">
         <div>
-          <h2 className="text-lg font-black tracking-tight">Qui court ?</h2>
+          <h2 className="text-lg font-display font-bold uppercase tracking-tight">Qui court ?</h2>
           <p className="text-sm text-muted-foreground">
             Le dossard sera à ton nom. Ces informations remplacent celles de la personne qui te l&apos;a transmis.
           </p>
@@ -185,7 +185,6 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
         onDisclaimerAcceptedChange={setDisclaimerAccepted}
         onRulebookAcceptedChange={setRulebookAccepted}
         onSignatureChange={setSignatureImage}
-        context="transfer"
       />
 
       <div className="space-y-3">

@@ -61,11 +61,11 @@ export function AmbassadorMotivationBanner({
                 {TIER_META[nextReward.reward_level].description}
               </p>
             )}
-            <p className="mt-1.5 text-[11px] text-muted-foreground/70">
+            <p className="mt-1.5 text-label text-muted-foreground/70">
               Open = 1 pt · Ranked = 2 pts
             </p>
             {latestPointsEvent && (
-              <p className="mt-1.5 text-[11px] font-semibold text-emerald-600">
+              <p className="mt-1.5 text-label font-semibold text-emerald-600">
                 Dernier gain: +{latestPointsEvent.points} point{latestPointsEvent.points > 1 ? 's' : ''}
                 {latestPointsEvent.race_format === 'ranked' ? ' (bonus Ranked)' : ''}
               </p>
@@ -83,7 +83,7 @@ export function AmbassadorMotivationBanner({
       {/* Locked levels teaser */}
       {fomoLevels.length > 0 && (
         <div className="mt-4 border-t border-primary/10 pt-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-2 text-label font-semibold uppercase tracking-wider text-muted-foreground">
             Et ensuite…
           </p>
           <div className="flex flex-wrap gap-2">
@@ -92,7 +92,7 @@ export function AmbassadorMotivationBanner({
               return (
                 <div
                   key={l.reward_level}
-                  className="flex items-center gap-1.5 rounded-full border border-border/40 bg-background/50 px-3 py-1 text-[11px] text-muted-foreground/55 backdrop-blur-sm"
+                  className="flex items-center gap-1.5 rounded-full border border-border/40 bg-background/50 px-3 py-1 text-label text-muted-foreground/55 backdrop-blur-sm"
                 >
                   <Lock className="h-3 w-3" />
                   <FomoIcon className="h-3 w-3" />

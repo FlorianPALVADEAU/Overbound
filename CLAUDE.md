@@ -12,11 +12,12 @@ Un audit complet du code (architecture, sécurité, RGPD, logique métier, tests
 - Ne valide pas une mauvaise approche pour faire plaisir — sois direct et donne les raisons.
 - Préfère un refus motivé à une action approximative.
 - **Génération d'email HTML** : lire `docs/guides/email-conventions.md` **avant** de produire le moindre code. Ce fichier est la source de vérité pour le design, la structure et le contenu. Les emails sont envoyés via **Resend**.
+- **UI du site (pages, composants visuels)** : lire `docs/design/design-system.md` **avant** d'écrire ou de modifier le moindre composant visuel. N'utiliser que les tokens de `src/app/globals.css` et les primitives de `src/components/ds/` (`Section`, `Container`, `SectionHeader`, `Eyebrow`, `StatRow`, `Pill`) ainsi que les variants `Button`/`Card`. Interdits : hex en classe, `text-gray-*`/`neutral`/`zinc`, `font-black`, `tracking-[…]`, `text-[Npx]`, `dark:`, `max-w-6xl`. `npm run lint:design` bloque toute nouvelle violation. Référence visuelle : route `/design`.
 
 ## Stack
 
 - Next.js App Router, TypeScript strict
-- Tailwind + shadcn/ui
+- Tailwind v4 + shadcn/ui, design system maison (`src/components/ds`, tokens dans `globals.css`)
 - Supabase (auth, DB, RLS, storage)
 - Resend (email), OpenAI (IA via port interchangeable)
 
@@ -102,6 +103,7 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 | **Groups & Anchor** | @docs/fdr/FDR-0005-group-membership-and-wave-anchoring.md + @docs/guides/implementation-guide-groups.md |
 | **Ambassadors** | @docs/fdr/FDR-0006-ambassador-program-points-and-rewards.md + @docs/guides/implementation-guide-ambassador.md |
 | **Email (système)** | @docs/fdr/FDR-0007-email-distribution-and-preferences.md + @docs/guides/implementation-guide-email.md |
+| **UI / direction artistique** | @docs/design/design-system.md + @docs/adr/ADR-0005-design-system.md — **obligatoire avant toute UI** |
 | **Email (génération HTML)** | @docs/guides/email-conventions.md — **obligatoire avant toute génération d'email** |
 | **Critical Ops** | @docs/guides/critical-operations.md, @docs/guides/rpc-reference.md |
 | **Legal / Juridique** | @docs/guides/legal.md |

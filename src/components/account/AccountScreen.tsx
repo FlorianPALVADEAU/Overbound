@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { containerClass } from '@/components/ds'
 
 /** Page column shared by every account screen: one thumb-friendly column on mobile, a wide canvas on desktop. */
 export function AccountScreen({
@@ -15,8 +16,8 @@ export function AccountScreen({
   return (
     <div
       className={cn(
-        'mx-auto w-full max-w-xl px-5 pb-10 pt-6 md:px-8 md:pt-8',
-        narrow ? 'md:max-w-2xl' : 'md:max-w-5xl xl:max-w-6xl',
+        containerClass(narrow ? 'form' : 'page'),
+        'pb-10 pt-6 md:pt-8',
         className,
       )}
     >
@@ -28,7 +29,7 @@ export function AccountScreen({
 /** Small uppercase label used instead of card titles. */
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cn('text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground', className)}>
+    <p className={cn('text-label font-semibold uppercase text-muted-foreground', className)}>
       {children}
     </p>
   )

@@ -114,8 +114,8 @@ export function PodMap({ selected, onSelect }: PodMapProps) {
             onClick={() => onSelect(pod.title)}
             style={toPercent(point)}
             className={cn(
-              'group absolute z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-sm font-black outline-none transition-all duration-300 focus-visible:ring-4 focus-visible:ring-white/60 motion-reduce:transition-none',
-              active ? 'scale-110 border-white bg-primary text-primary-foreground' : 'border-white/60 bg-neutral-900 text-white hover:scale-110 hover:border-primary',
+              'group absolute z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-sm font-bold outline-none transition-all duration-300 focus-visible:ring-4 focus-visible:ring-white/60 motion-reduce:transition-none',
+              active ? 'scale-110 border-white bg-primary text-primary-foreground' : 'border-white/60 bg-card text-white hover:scale-110 hover:border-primary',
             )}
           >
             {active ? (
@@ -128,7 +128,7 @@ export function PodMap({ selected, onSelect }: PodMapProps) {
             )}
             <span
               className={cn(
-                'pointer-events-none absolute w-20 rounded-md bg-black/80 px-1.5 py-1 text-[11px] font-bold leading-tight text-white',
+                'pointer-events-none absolute w-20 rounded-md bg-black/80 px-1.5 py-1 text-label font-bold normal-case leading-tight tracking-normal text-white',
                 labelAbove ? 'bottom-full mb-2' : 'top-full mt-2',
                 labelRight ? 'right-0 text-right' : 'left-1/2 -translate-x-1/2 text-center',
                 active && 'bg-primary text-primary-foreground',
@@ -145,8 +145,8 @@ export function PodMap({ selected, onSelect }: PodMapProps) {
         aria-pressed={selected === DEFAULT_MISSION}
         onClick={() => onSelect(DEFAULT_MISSION)}
         className={cn(
-          'absolute right-0 top-0 z-10 min-h-11 rounded-full border px-4 text-xs font-black uppercase tracking-wide outline-none transition-colors focus-visible:ring-4 focus-visible:ring-white/60 motion-reduce:transition-none',
-          selected === DEFAULT_MISSION ? 'border-primary bg-primary text-primary-foreground' : 'border-white/30 bg-neutral-900/90 text-white hover:border-primary',
+          'absolute right-0 top-0 z-10 min-h-11 rounded-full border px-4 text-xs font-bold uppercase tracking-normal outline-none transition-colors focus-visible:ring-4 focus-visible:ring-white/60 motion-reduce:transition-none',
+          selected === DEFAULT_MISSION ? 'border-primary bg-primary text-primary-foreground' : 'border-white/30 bg-card/90 text-white hover:border-primary',
         )}
       >
         Surprends-moi

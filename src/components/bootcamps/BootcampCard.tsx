@@ -6,7 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Bootcamp } from '@/types/Bootcamp'
 
-function SocialProof({ count }: { count: number }) {
+function SocialProof({ count, isPast }: { count: number; isPast: boolean }) {
+  if (isPast) {
+    return count > 0 ? (
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Users className="h-3 w-3 text-primary" />
+        {count} participant{count > 1 ? 's' : ''}
+      </span>
+    ) : null
+  }
+
   if (count === 0) {
     return (
       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -69,24 +78,24 @@ export function BootcampCard({ bootcamp, isAuthenticated, onRegister, onUnregist
   }
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-lg shadow-primary/5 transition hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 sm:flex-row">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg shadow-primary/5 transition hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 sm:flex-row">
       {/* Image */}
-      <div className="relative h-52 shrink-0 overflow-hidden sm:h-auto sm:w-64 md:w-72">
+      <div className="relative h-52 shrink-0 overflow-hidden sm:h-auto sm:min-h-52 sm:w-64 md:w-72">
         {bootcamp.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={bootcamp.image_url}
             alt={bootcamp.title}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-muted">
+          <div className="flex h-full min-h-52 items-center justify-center bg-muted">
             <Users className="h-12 w-12 text-muted-foreground" />
           </div>
         )}
 
         {/* Overlay gradient */}
-        <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent to-background/30 sm:bg-linear-to-r" />
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent to-card/30" />
 
         {/* Badge statut */}
         <div className="absolute left-3 top-3 flex gap-2">
@@ -107,7 +116,7 @@ export function BootcampCard({ bootcamp, isAuthenticated, onRegister, onUnregist
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
         <div className="flex flex-col gap-1.5">
           <h2 className="text-lg font-semibold leading-tight text-foreground sm:text-xl">{bootcamp.title}</h2>
-          <SocialProof count={bootcamp.registration_count ?? 0} />
+          <SocialProof count={bootcamp.registration_count ?? 0} isPast={isPast} />
         </div>
 
         {/* Description */}
@@ -165,12 +174,8 @@ export function BootcampCard({ bootcamp, isAuthenticated, onRegister, onUnregist
         ) : null}
 
         {/* CTA */}
-        <div className="mt-auto pt-1">
-          {isPast ? (
-            <Button variant="outline" disabled size="sm">
-              Bootcamp terminé
-            </Button>
-          ) : isAuthenticated ? (
+        <div className="mt-auto empty:hidden pt-1">
+          {isPast ? null : isAuthenticated ? (
             <Button
               onClick={handleToggle}
               disabled={loading}

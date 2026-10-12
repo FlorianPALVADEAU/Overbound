@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { containerClass } from '@/components/ds'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -188,8 +189,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      {/* Container responsive avec max-width et padding adaptatifs */}
-      <div className="w-full mx-auto px-4 lg:px-32">
+      {/* Same content width and gutters as every page section (design system) */}
+      <div className={containerClass()}>
         <div className="w-full relative flex h-14 sm:h-16 items-center justify-between">
           
           {/* Logo - responsive text visibility */}
@@ -210,9 +211,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
             </Link>
           </div>
 
-          <div className="absolute flex w-full h-full items-center justify-center">
+          {/* In the flex flow (not absolute) so the nav can never slide under the logo or the actions */}
+          <div className="flex h-full min-w-0 flex-1 items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
-            <nav className="hidden h-full items-center space-x-6 align-center xl:space-x-8 lg:flex">
+            <nav className="hidden h-full items-center space-x-4 whitespace-nowrap align-center xl:space-x-8 lg:flex">
               <Link
                 href={featuredEventHref}
                 className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
@@ -319,7 +321,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button variant="ghost" className="relative size-11 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage
                           src={profile?.avatar_url || user.user_metadata?.avatar_url}
@@ -333,7 +335,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                         </AvatarFallback>
                       </Avatar>
                       {attentionNeeded ? (
-                        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-destructive text-[9px] font-bold leading-none text-white">
+                        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-destructive text-label font-bold leading-none tracking-normal text-foreground">
                           !
                         </span>
                       ) : null}
@@ -362,7 +364,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                               {item.name}
                             </span>
                             {showIndicator ? (
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[11px] font-bold leading-none text-white">
+                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-label font-bold leading-none tracking-normal text-foreground">
                                 !
                               </span>
                             ) : null}
@@ -386,7 +388,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   {!user && (
                     <Button
                       size="sm"
-                      className="hidden lg:inline-flex whitespace-nowrap text-xs sm:text-sm bg-red-700 text-white hover:bg-red-800"
+                      variant="signal"
+                      className="hidden lg:inline-flex whitespace-nowrap rounded-xl"
                       asChild
                     >
                       <Link href={featuredEventRegisterHref}>Je m'inscris</Link>
@@ -461,7 +464,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       onClick={() =>
                         setMobileDropdownOpen((current) => (current === item.name ? null : item.name))
                       }
-                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-[#26AA26]"
+                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-primary"
                     >
                       <span>{item.name}</span>
                       <ChevronDownIcon
@@ -489,7 +492,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                     onClick={closeMobileMenu}
                   >
                     {item.name}
@@ -500,7 +503,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Devenir bénévole mobile */}
               <Link
                 href="/volunteers"
-                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
                 Devenir bénévole
@@ -509,7 +512,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Bootcamps mobile */}
               <Link
                 href="/bootcamps"
-                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-white transition-colors hover:text-[#26AA26]"
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
                 onClick={closeMobileMenu}
               >
                 Bootcamps
@@ -524,7 +527,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     variant="outline"
                     size="sm"
                     asChild
-                    className="h-11 rounded-full border-[#26AA26] text-[#26AA26] hover:bg-[#26AA26]/10"
+                    className="h-11 rounded-xl border-primary text-primary hover:bg-primary/10"
                   >
                     <Link href="/auth/login" onClick={closeMobileMenu}>Se connecter</Link>
                   </Button>
@@ -532,8 +535,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 {!user ? (
                   <Button
                     size="sm"
+                    variant="signal"
                     asChild
-                    className="h-11 rounded-full bg-red-600 text-white hover:bg-red-700"
+                    className="h-11 rounded-xl"
                   >
                     <Link href={featuredEventRegisterHref} onClick={closeMobileMenu}>
                       Je m&apos;inscris
@@ -541,13 +545,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   </Button>
                 ) : (
                   <>
-                    <Button variant="outline" size="sm" asChild className="h-11 rounded-full">
+                    <Button variant="outline" size="sm" asChild className="h-11 rounded-xl">
                       <Link href="/account" onClick={closeMobileMenu}>Mon compte</Link>
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="h-11 rounded-full"
+                      className="h-11 rounded-xl"
                       onClick={() => {
                         closeMobileMenu()
                         void handleSignOut()

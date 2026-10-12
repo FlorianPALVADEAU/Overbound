@@ -84,7 +84,7 @@ function NothingToRun({ hasHistory }: { hasHistory: boolean }) {
 
   return (
     <div className="space-y-5 py-6">
-      <h1 className="text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight md:text-5xl">
+      <h1 className="text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight md:text-5xl">
         {hasHistory ? 'Pas de départ en vue.' : 'Pas encore de dossard.'}
       </h1>
       <p className="max-w-md text-muted-foreground">

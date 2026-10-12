@@ -16,8 +16,8 @@ export default function UnsubscribeSuccessPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-100 dark:bg-green-950 flex items-center justify-center">
-            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-primary" />
           </div>
           <CardTitle className="text-2xl">
             Désabonnement confirmé
@@ -28,9 +28,9 @@ export default function UnsubscribeSuccessPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+          <Alert className="border-primary/30 bg-primary/10">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 dark:text-green-200">
+            <AlertDescription className="text-foreground">
               Votre préférence a été enregistrée avec succès.
             </AlertDescription>
           </Alert>

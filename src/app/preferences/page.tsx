@@ -18,7 +18,7 @@ export default async function PreferencesPage() {
     <AccountScreen narrow>
       <header className="mb-8">
         <Eyebrow>Mon compte</Eyebrow>
-        <h1 className="mt-2 text-balance text-[2.5rem] font-black leading-[0.95] tracking-tight">Préférences d&apos;emails</h1>
+        <h1 className="mt-2 text-balance text-display-md font-display font-bold uppercase leading-[0.95] tracking-tight">Préférences d&apos;emails</h1>
         <p className="mt-3 text-muted-foreground">Choisis ce que tu veux recevoir. Appliqué immédiatement.</p>
       </header>
 

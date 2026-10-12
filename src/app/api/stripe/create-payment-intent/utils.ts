@@ -1,45 +1,19 @@
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
-import type { NextResponse } from 'next/server'
-import { NextResponse as NextResponseConstructor } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import type { PricingSupabase } from '@/lib/orderPricing/server'
+import type { UpsellType } from '@/types/Upsell'
 
-type SupabaseSessionClient = Awaited<ReturnType<typeof createSupabaseServer>>
+export const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2025-08-27.basil',
+})
 
-type PromoRecord = {
-  id: string
-  code: string
-  discount_percent: number | null
-  discount_amount: number | null
-  currency: string | null
-  is_active: boolean
-  valid_from: string | null
-  valid_until: string | null
-  usage_limit: number | null
-  used_count: number
-  events: Array<{ event_id: string }>
-  ambassadors?: Array<{ id: string }>
-  // FDR-0014 addendum: null/absent = nets against ticketSubtotal (legacy).
-  // Set = scoped to one upsell, nets only against that upsell's own
-  // subtotal. Optional so existing test fixtures without this field
-  // (pre-addendum) keep compiling as the legacy/unscoped case.
-  target_upsell_id?: string | null
-}
-
-type EventPriceTier = {
-  id: string
-  discount_percentage: number
-  available_from: string | null
-  available_until: string | null
-  display_order?: number | null
-  max_registrations?: number | null
-}
-
-type TicketRow = {
+export interface OrderTicketRow {
   id: string
   name: string
-  final_price_cents: number
+  final_price_cents: number | null
   currency: string | null
+  operations_config: Record<string, unknown> | null
+  race: { name: string | null } | null
   event: {
     id: string
     title: string
@@ -48,291 +22,84 @@ type TicketRow = {
     location: string
     status: string
     capacity: number | null
-    price_tiers?: EventPriceTier[] | null
-  }
+    price_tiers: Array<{
+      id: string
+      discount_percentage: number
+      available_from: string | null
+      available_until: string | null
+      display_order: number | null
+      max_registrations: number | null
+    }> | null
+  } | null
 }
 
-type UpsellRow = {
+export interface OrderUpsellRow {
   id: string
+  type: UpsellType
   price_cents: number
 }
 
-const hasAmbassadorLink = (value: unknown) => {
-  if (Array.isArray(value)) return value.length > 0
-  return Boolean(value && typeof value === 'object')
-}
-
-export const supabaseAdminClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
-
-export const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-08-27.basil',
-})
-
-export const fetchTicketsForSelections = async (supabase: SupabaseSessionClient, ticketIds: string[]) =>
-  supabase
+export const fetchTicketsForSelections = async (supabase: PricingSupabase, ticketIds: string[]) => {
+  const { data, error } = await supabase
     .from('tickets')
     .select(
-      `*,
+      `id, name, final_price_cents, currency, operations_config,
+      race:races!tickets_race_id_fkey(name),
       event:events (
-        id,
-        title,
-        date,
-        sales_start,
-        location,
-        status,
-        capacity,
+        id, title, date, sales_start, location, status, capacity,
         price_tiers:event_price_tiers(id, discount_percentage, available_from, available_until, display_order, max_registrations)
-      )
-    `,
+      )`,
     )
     .in('id', ticketIds)
+  if (error) throw error
+  return (data ?? []) as unknown as OrderTicketRow[]
+}
 
-export const fetchUpsellsForEvent = async (supabase: SupabaseSessionClient, eventId: string) =>
-  supabase
-    .from('upsells')
-    .select('*')
-    .eq('is_active', true)
-    .or(`event_id.eq.${eventId},event_id.is.null`)
-
-export const fetchPromo = async (supabase: SupabaseSessionClient, promoCode: string) =>
-  supabase
-    .from('promotional_codes')
-    .select(
-      `
-        id,
-        code,
-        discount_percent,
-        discount_amount,
-        currency,
-        is_active,
-        valid_from,
-        valid_until,
-        usage_limit,
-        used_count,
-        target_upsell_id,
-        events:promotional_code_events(event_id),
-        ambassadors:ambassadors(id)
-      `,
-    )
-    .ilike('code', promoCode.trim().toUpperCase())
-    .maybeSingle()
-
-// FDR-0014 addendum §6: a product-scoped code is rejected outright if its
-// target upsell isn't even sold on this event -- distinct from "sold but
-// not in this cart", which nets to a silent 0-discount at price-calc time.
-export const isTargetUpsellSoldOnEvent = async (
-  supabase: SupabaseSessionClient,
-  targetUpsellId: string,
-  eventId: string,
-) => {
+export const fetchUpsellsForEvent = async (supabase: PricingSupabase, eventId: string) => {
   const { data, error } = await supabase
     .from('upsells')
-    .select('id')
-    .eq('id', targetUpsellId)
+    .select('id, type, price_cents')
     .eq('is_active', true)
     .or(`event_id.eq.${eventId},event_id.is.null`)
-    .maybeSingle()
   if (error) throw error
-  return Boolean(data)
+  return (data ?? []) as OrderUpsellRow[]
 }
 
-/**
- * Get the current price for a ticket based on event price tiers
- */
-export const getCurrentTicketPriceFromRow = (ticket: TicketRow): number => {
-  const finalPrice = ticket.final_price_cents
-
-  // If event has price tiers, find the active one
-  if (ticket.event.price_tiers && ticket.event.price_tiers.length > 0) {
-    const now = new Date()
-    const currentTime = now.getTime()
-
-    // Find the tier that is currently active
-    const activeTier = ticket.event.price_tiers.find((tier) => {
-      const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
-      const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
-
-      return currentTime >= startTime && currentTime < endTime
-    })
-
-    if (activeTier) {
-      // Apply discount percentage
-      const discountMultiplier = 1 - activeTier.discount_percentage / 100
-      return Math.round(finalPrice * discountMultiplier)
-    }
-  }
-
-  // No active tier, return final price
-  return finalPrice
-}
-
-const isTierActiveByDate = (tier: EventPriceTier, now: Date) => {
-  const currentTime = now.getTime()
-  const startTime = tier.available_from ? new Date(tier.available_from).getTime() : 0
-  const endTime = tier.available_until ? new Date(tier.available_until).getTime() : Infinity
-  return currentTime >= startTime && currentTime < endTime
-}
-
-const sortTiersByOrder = (tiers: EventPriceTier[]) =>
-  [...tiers].sort((a, b) => {
-    const orderA = a.display_order ?? 0
-    const orderB = b.display_order ?? 0
-    if (orderA !== orderB) return orderA - orderB
-    const timeA = a.available_from ? new Date(a.available_from).getTime() : 0
-    const timeB = b.available_from ? new Date(b.available_from).getTime() : 0
-    return timeA - timeB
-  })
-
-export const fetchTierRegistrationCounts = async (supabase: SupabaseSessionClient, eventId: string) => {
-  const { data: registrations } = await supabase
-    .from('registrations')
-    .select('event_price_tier_id')
-    .eq('event_id', eventId)
-    .is('cancelled_at', null)
-
-  const counts: Record<string, number> = {}
-  for (const row of registrations || []) {
-    const tierId = (row as { event_price_tier_id?: string | null }).event_price_tier_id
-    if (!tierId) continue
-    counts[tierId] = (counts[tierId] || 0) + 1
-  }
-  return counts
-}
-
-export const allocateParticipantsToTiers = (
-  tiers: EventPriceTier[] | null | undefined,
-  countsByTierId: Record<string, number>,
-  totalParticipants: number,
-  now: Date = new Date(),
-) => {
-  if (!tiers || tiers.length === 0 || totalParticipants <= 0) {
-    return { allocations: [], remaining: totalParticipants, activeTierIndex: null }
-  }
-
-  const sorted = sortTiersByOrder(tiers)
-  const activeTierIndex = sorted.findIndex((tier) => isTierActiveByDate(tier, now))
-
-  if (activeTierIndex === -1) {
-    return { allocations: [], remaining: totalParticipants, activeTierIndex: null }
-  }
-
-  const allocations: Array<{ tier: EventPriceTier; quantity: number }> = []
-  let remaining = totalParticipants
-
-  for (let index = activeTierIndex; index < sorted.length && remaining > 0; index += 1) {
-    const tier = sorted[index]
-    const max = tier.max_registrations
-    const used = countsByTierId[tier.id] ?? 0
-    const available = max == null ? remaining : Math.max(max - used, 0)
-    if (available <= 0) continue
-    const quantity = Math.min(available, remaining)
-    allocations.push({ tier, quantity })
-    remaining -= quantity
-  }
-
-  return { allocations, remaining, activeTierIndex }
-}
-
-export const expandTierAllocations = (
-  allocations: Array<{ tier: EventPriceTier; quantity: number }>,
-): Array<string> => {
-  const result: string[] = []
-  for (const allocation of allocations) {
-    for (let i = 0; i < allocation.quantity; i += 1) {
-      result.push(allocation.tier.id)
-    }
-  }
-  return result
-}
-
-export const getTicketSubtotal = (
-  ticketSelections: Array<{ ticketId: string; quantity: number }>,
-  ticketPriceMap: Map<string, number>,
-) =>
-  ticketSelections.reduce((accumulator, item) => {
-    const unitPrice = ticketPriceMap.get(item.ticketId) || 0
-    return accumulator + unitPrice * (item.quantity || 0)
-  }, 0)
-
-export const getUpsellSubtotal = (
-  upsells: Array<{ upsellId: string; quantity: number }>,
-  upsellMap: Map<string, UpsellRow>,
-) =>
-  upsells.reduce((accumulator, item) => {
-    const upsell = upsellMap.get(item.upsellId)
-    if (!upsell) {
-      return accumulator
-    }
-    return accumulator + upsell.price_cents * (item.quantity || 0)
-  }, 0)
-
-// FDR-0014 addendum: subtotal per selected upsell, keyed by upsell id --
-// needed to net a target_upsell_id promo code against the right line
-// instead of the ticket or the aggregated upsell total.
-export const getUpsellSubtotalsById = (
-  upsells: Array<{ upsellId: string; quantity: number }>,
-  upsellMap: Map<string, UpsellRow>,
-): Record<string, number> =>
-  upsells.reduce<Record<string, number>>((accumulator, item) => {
-    const upsell = upsellMap.get(item.upsellId)
-    if (!upsell) return accumulator
-    accumulator[item.upsellId] = (accumulator[item.upsellId] ?? 0) + upsell.price_cents * (item.quantity || 0)
-    return accumulator
-  }, {})
-
-export const calcPromo = (
-  promo: PromoRecord,
-  ticketSubtotal: number,
-) => {
-  const now = new Date()
-  const validFrom = promo.valid_from ? new Date(promo.valid_from) : null
-  const validUntil = promo.valid_until ? new Date(promo.valid_until) : null
-
-  const matchesEvent = (promo.events || []).length === 0
-  const withinDates = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil)
-  const usageAvailable = promo.usage_limit == null || promo.used_count < promo.usage_limit
-
-  if (!(promo.is_active && matchesEvent && withinDates && usageAvailable)) {
-    return { discountAmount: 0, appliedPromo: null }
-  }
-
-  let discountAmount = 0
-  if (promo.discount_percent && promo.discount_percent > 0) {
-    discountAmount = Math.round(ticketSubtotal * (promo.discount_percent / 100))
-  } else if (promo.discount_amount && promo.discount_amount > 0) {
-    discountAmount = promo.discount_amount
-  }
-  discountAmount = Math.min(discountAmount, ticketSubtotal)
-
-  return {
-    discountAmount,
-    appliedPromo: {
-      id: promo.id,
-      code: promo.code,
-      discount_percent: promo.discount_percent,
-      discount_amount: promo.discount_amount,
-      currency: promo.currency,
-      is_ambassador: hasAmbassadorLink(promo.ambassadors),
-    },
-  }
-}
-
-export const ensureAvailability = async (
-  supabase: SupabaseSessionClient,
-  eventId: string,
-  totalRequestedParticipants: number,
-) => {
-  const { count: existingRegistrationsCount } = await supabase
+export const countActiveRegistrations = async (supabase: PricingSupabase, eventId: string) => {
+  const { count, error } = await supabase
     .from('registrations')
     .select('*', { count: 'exact', head: true })
     .eq('event_id', eventId)
     .is('cancelled_at', null)
-
-  return existingRegistrationsCount || 0
+  if (error) throw error
+  return count ?? 0
 }
 
-export const respondJson = (payload: unknown, status = 200) =>
-  NextResponseConstructor.json(payload, { status })
+/**
+ * True when the buyer's group already holds a departure on this event (FDR-0005): its members skip the SAS choice.
+ * Read as admin, but only for a group the buyer belongs to: a group id from the request proves nothing.
+ */
+export const groupHasAnchorOnEvent = async (
+  admin: PricingSupabase,
+  groupId: string | null | undefined,
+  userId: string,
+  eventId: string,
+) => {
+  if (!groupId) return false
+  const { data: membership, error: membershipError } = await admin
+    .from('group_members')
+    .select('group_id')
+    .eq('group_id', groupId)
+    .eq('profile_id', userId)
+    .limit(1)
+    .maybeSingle()
+  if (membershipError) throw membershipError
+  if (!membership) return false
+
+  const { data, error } = await admin.from('groups').select('anchor_event_id, anchor_wave_index').eq('id', groupId).maybeSingle()
+  if (error) throw error
+  const group = data as { anchor_event_id: string | null; anchor_wave_index: number | null } | null
+  return group?.anchor_event_id === eventId && group.anchor_wave_index != null
+}
+
+export const respondJson = (payload: unknown, status = 200) => NextResponse.json(payload, { status })

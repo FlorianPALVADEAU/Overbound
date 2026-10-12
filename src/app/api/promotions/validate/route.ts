@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { checkPromoQuota, hasAmbassadorLink, isTierExclusiveCode, promoRejectionMessage } from '@/lib/orderPricing'
 
-const NON_CUMULABLE_WITH_TIER_CODES = new Set(['LUOFF30', 'JUOFF50'])
-const WELCOME_STACKABLE_CODE = 'WELCOME05'
 
 const validateBodySchema = z.object({
   code: z.string().min(1),
@@ -11,13 +10,6 @@ const validateBodySchema = z.object({
   existingCodes: z.array(z.unknown()).optional(),
 })
 
-const hasAmbassadorLink = (value: unknown) => {
-  if (Array.isArray(value)) return value.length > 0
-  return Boolean(value && typeof value === 'object')
-}
-
-const isWelcomeStackableCode = (code: string | null | undefined) =>
-  (code || '').trim().toUpperCase() === WELCOME_STACKABLE_CODE
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +70,7 @@ export async function POST(request: NextRequest) {
     // rejected here, explicitly, if the targeted upsell isn't even sold on
     // this event -- distinct from "upsell sold but not selected in the
     // cart", which is a silent 0-discount at pricing time
-    // (calculatePromoDiscount), not an error here. An upsell that IS sold
+    // (the order pricing engine), not an error here. An upsell that IS sold
     // on the event but simply not added to the cart yet must still pass
     // this check (the participant may add it after applying the code).
     if (promotionalCode.target_upsell_id) {
@@ -130,7 +122,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ce code promo ne s’applique pas à cet événement.' }, { status: 403 })
     }
 
-    if (NON_CUMULABLE_WITH_TIER_CODES.has(normalizedCode)) {
+    if (isTierExclusiveCode(normalizedCode)) {
       const { data: eventPriceTiers, error: tierError } = await admin
         .from('event_price_tiers')
         .select('discount_percentage, available_from, available_until, display_order')
@@ -169,68 +161,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Impossible de vérifier les codes déjà appliqués.' }, { status: 500 })
       }
 
-      let ambassadorCount = 0
-      // FDR-0014 addendum §6: "1 standard code" split by target instead of
-      // one flat count -- 1 ticket-scoped (target_upsell_id null) + 1
-      // product-scoped (target_upsell_id set) standard code can coexist;
-      // never two of the same target.
-      let ticketScopedRegularCount = 0
-      let productScopedRegularCount = 0
-      const regularCodes: string[] = []
-
-      for (const existingPromo of existingPromoRows || []) {
-        if (hasAmbassadorLink((existingPromo as { ambassadors?: unknown }).ambassadors)) {
-          ambassadorCount += 1
-          continue
-        }
-        regularCodes.push(String((existingPromo as { code?: string }).code || '').trim().toUpperCase())
-        if ((existingPromo as { target_upsell_id?: string | null }).target_upsell_id) {
-          productScopedRegularCount += 1
-        } else {
-          ticketScopedRegularCount += 1
-        }
-      }
-
-      const isIncomingAmbassador = hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors)
-      if (isIncomingAmbassador && ambassadorCount >= 1) {
-        return NextResponse.json(
-          { error: 'Un seul code ambassadeur peut être appliqué par commande.' },
-          { status: 409 },
-        )
-      }
-
-      const incomingIsProductScoped = Boolean(promotionalCode.target_upsell_id)
-      const sameTargetRegularCount = incomingIsProductScoped ? productScopedRegularCount : ticketScopedRegularCount
-
-      if (!isIncomingAmbassador && sameTargetRegularCount >= 1) {
-        const regularCodesWithIncoming = [...regularCodes, normalizedCode]
-        const welcomeExceptionApplies = !incomingIsProductScoped && regularCodesWithIncoming.some((code) => isWelcomeStackableCode(code))
-        if (welcomeExceptionApplies) {
-          // Allow stacking WELCOME05 with one other standard ticket-scoped
-          // promo code. Never applies to product-scoped codes -- WELCOME05
-          // is a ticket code, this exception was never meant to reach here.
-          return NextResponse.json({
-            promotionalCode: {
-              id: promotionalCode.id,
-              code: promotionalCode.code,
-              description: promotionalCode.description,
-              discount_percent: promotionalCode.discount_percent,
-              discount_amount: promotionalCode.discount_amount,
-              currency: promotionalCode.currency,
-              is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
-              target_upsell_id: promotionalCode.target_upsell_id,
-            },
-          })
-        }
-        return NextResponse.json(
-          {
-            error: incomingIsProductScoped
-              ? 'Un seul code promo produit peut être appliqué par commande.'
-              : 'Un seul code promo billet peut être appliqué par commande.',
-          },
-          { status: 409 },
-        )
-      }
+      // Same combination rules as the payment API: the incoming code comes last, so only it can be refused.
+      const toQuotaPromo = (row: { code: string; target_upsell_id?: string | null; ambassadors?: unknown }) => ({
+        code: row.code,
+        targetUpsellId: row.target_upsell_id ?? null,
+        isAmbassador: hasAmbassadorLink(row.ambassadors),
+      })
+      const { rejections } = checkPromoQuota([
+        ...(existingPromoRows ?? []).map(toQuotaPromo),
+        toQuotaPromo(promotionalCode),
+      ])
+      const refused = rejections.find((rejection) => rejection.code === promotionalCode.code)
+      if (refused) return NextResponse.json({ error: promoRejectionMessage(refused) }, { status: 409 })
     }
 
     return NextResponse.json({

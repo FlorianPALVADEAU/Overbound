@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AlertCircleIcon, CheckCircleIcon, EyeIcon, EyeOffIcon, LoaderIcon } from 'lucide-react'
 import { useAuthFlow } from '@/hooks/auth/useAuthFlow'
+import { cn } from '@/lib/utils'
 
 type Mode = 'login' | 'signup'
 
@@ -75,18 +76,19 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
       </div>
 
       {!isVerificationStep && (
-        <div className="flex gap-1 rounded-lg bg-black/30 p-1 text-sm">
+        <div role="tablist" aria-label="Connexion ou création de compte" className="flex gap-1 rounded-lg bg-muted p-1 text-sm">
           <button
             type="button"
             onClick={() => {
               setMode('login')
               setMessage(null)
             }}
-            className={`flex-1 rounded-md px-3 py-1.5 font-medium transition-colors ${
-              mode === 'login'
-                ? 'bg-primary/50 text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            role="tab"
+            aria-selected={mode === 'login'}
+            className={cn(
+              'min-h-11 flex-1 rounded-md px-3 font-medium transition-colors',
+              mode === 'login' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            )}
           >
             Se connecter
           </button>
@@ -96,11 +98,12 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
               setMode('signup')
               setMessage(null)
             }}
-            className={`flex-1 rounded-md px-3 py-1.5 font-medium transition-colors ${
-              mode === 'signup'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            role="tab"
+            aria-selected={mode === 'signup'}
+            className={cn(
+              'min-h-11 flex-1 rounded-md px-3 font-medium transition-colors',
+              mode === 'signup' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            )}
           >
             Créer un compte
           </button>

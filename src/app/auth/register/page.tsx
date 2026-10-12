@@ -199,7 +199,7 @@ function RegisterInner() {
   }
 
   return (
-    <main className="bg-[#0b0c0e] text-white">
+    <main className="bg-background text-white">
       <div className="grid min-h-[calc(100dvh-96px)] lg:grid-cols-[40%_60%]">
         <section className="relative hidden lg:block">
           {authVisual ? (
@@ -211,8 +211,8 @@ function RegisterInner() {
         <section className="flex items-center justify-center px-6 py-8 lg:px-14">
           <div className="w-full max-w-lg space-y-6">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">Overbound</p>
-              <h1 className="text-4xl font-black uppercase leading-none">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-label text-primary/80">Overbound</p>
+              <h1 className="text-4xl font-display font-bold uppercase uppercase leading-none">
                 {isVerificationStep ? 'Vérifie ton email' : 'Créer un compte'}
               </h1>
             </div>
@@ -221,7 +221,7 @@ function RegisterInner() {
               <>
                 <form onSubmit={handleRegister} className="space-y-5">
                   <div className="space-y-2">
-                    <label htmlFor="fullName" className="text-sm text-zinc-300">Nom complet (optionnel)</label>
+                    <label htmlFor="fullName" className="text-sm text-muted-foreground">Nom complet (optionnel)</label>
                     <Input
                       id="fullName"
                       type="text"
@@ -230,12 +230,12 @@ function RegisterInner() {
                       disabled={loading}
                       autoComplete="name"
                       placeholder="Jean Dupont"
-                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
+                      className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm text-zinc-300">Adresse e-mail</label>
+                    <label htmlFor="email" className="text-sm text-muted-foreground">Adresse e-mail</label>
                     <Input
                       id="email"
                       type="email"
@@ -244,12 +244,12 @@ function RegisterInner() {
                       disabled={loading}
                       autoComplete="email"
                       placeholder="vous@exemple.com"
-                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
+                      className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm text-zinc-300">Mot de passe</label>
+                    <label htmlFor="password" className="text-sm text-muted-foreground">Mot de passe</label>
                     <div className="relative">
                       <Input
                         id="password"
@@ -259,12 +259,12 @@ function RegisterInner() {
                         disabled={loading}
                         autoComplete="new-password"
                         placeholder="••••••••"
-                        className="h-11 border-zinc-700 bg-zinc-900/40 pr-10 text-white placeholder:text-zinc-400"
+                        className="h-11 border-border bg-card/60 pr-10 text-white placeholder:text-subtle"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
                         aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                       >
                         {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
@@ -273,7 +273,7 @@ function RegisterInner() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="confirmPassword" className="text-sm text-zinc-300">Confirmer le mot de passe</label>
+                    <label htmlFor="confirmPassword" className="text-sm text-muted-foreground">Confirmer le mot de passe</label>
                     <Input
                       id="confirmPassword"
                       type={showPassword ? 'text' : 'password'}
@@ -282,11 +282,11 @@ function RegisterInner() {
                       disabled={loading}
                       autoComplete="new-password"
                       placeholder="••••••••"
-                      className="h-11 border-zinc-700 bg-zinc-900/40 text-white placeholder:text-zinc-400"
+                      className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
                     />
                   </div>
 
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-subtle">
                     En vous connectant, vous acceptez nos{' '}
                     <Link href="/cgu" className="text-primary underline-offset-4 underline">conditions d’utilisation</Link>
                     {' '}et notre{' '}
@@ -316,10 +316,10 @@ function RegisterInner() {
                 <div className="space-y-4">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-zinc-800" />
+                      <div className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center">
-                      <span className="bg-[#0b0c0e] px-3 text-xs uppercase tracking-wide text-zinc-400">ou</span>
+                      <span className="bg-background px-3 text-xs uppercase tracking-wide text-subtle">ou</span>
                     </div>
                   </div>
                   <Button
@@ -357,8 +357,8 @@ function RegisterInner() {
                 ) : null}
               </>
             ) : (
-              <div className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5">
-                <p className="text-sm text-zinc-300">
+              <div className="space-y-4 rounded-2xl border border-border bg-card/60 p-5">
+                <p className="text-sm text-muted-foreground">
                   Saisis le code envoyé à <span className="font-semibold text-white">{pendingVerificationEmail}</span>.
                 </p>
                 <div className="flex justify-center gap-2 sm:gap-3">
@@ -378,7 +378,7 @@ function RegisterInner() {
                       onPaste={handleVerificationPaste}
                       onFocus={(event) => event.target.select()}
                       disabled={verifyingCode}
-                      className="h-14 w-11 rounded-xl border border-zinc-700 bg-zinc-950 text-center text-2xl font-semibold text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 sm:h-16 sm:w-12"
+                      className="h-14 w-11 rounded-xl border border-border bg-background text-center text-2xl font-semibold text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 sm:h-16 sm:w-12"
                       aria-label={`Chiffre ${index + 1} du code`}
                     />
                   ))}
@@ -404,7 +404,7 @@ function RegisterInner() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-[11px] text-zinc-400 hover:text-white"
+                      className="h-7 px-2 text-label text-muted-foreground hover:text-white"
                       onClick={resendConfirmationEmail}
                       disabled={loading || resendingConfirmation || verifyingCode || resendCooldown > 0}
                     >
@@ -420,7 +420,7 @@ function RegisterInner() {
                       )}
                     </Button>
                   </div>
-                  <Button type="button" variant="ghost" className="w-full text-zinc-300" onClick={handleResetVerificationStep}>
+                  <Button type="button" variant="ghost" className="w-full text-muted-foreground" onClick={handleResetVerificationStep}>
                     Modifier mon email
                   </Button>
                 </div>
@@ -436,7 +436,7 @@ function RegisterInner() {
               </div>
             ) : null}
 
-            <div className="text-center text-sm text-zinc-400">
+            <div className="text-center text-sm text-muted-foreground">
               Déjà un compte ?{' '}
               <Link
                 href={

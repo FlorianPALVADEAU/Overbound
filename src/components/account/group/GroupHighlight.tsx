@@ -44,7 +44,7 @@ function ActiveGroup({ group }: { group: Group }) {
   return (
     <section className="rounded-2xl bg-primary/10 p-5 ring-1 ring-primary/30">
       <Eyebrow className="text-primary">Mon groupe</Eyebrow>
-      <h2 className="mt-1 text-2xl font-black leading-tight tracking-tight">{group.name}</h2>
+      <h2 className="mt-1 text-2xl font-display font-bold uppercase leading-tight tracking-tight">{group.name}</h2>
 
       <div className="mt-4 space-y-3">
         <MemberAvatars group={group} />
@@ -73,7 +73,7 @@ function NoGroup() {
   return (
     <section className="rounded-2xl border-2 border-dashed border-primary/40 p-5">
       <UsersIcon className="size-6 text-primary" />
-      <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight">Partez ensemble.</h2>
+      <h2 className="mt-3 text-2xl font-display font-bold uppercase leading-tight tracking-tight">Partez ensemble.</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Collègues, club, potes : un groupe, c&apos;est le même départ pour toute la bande et un code pour inviter.
       </p>

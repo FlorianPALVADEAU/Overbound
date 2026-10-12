@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Button } from '../ui/button'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 import { getNextPriceChange } from '@/lib/pricing'
+import { Container, DISPLAY_TITLE, Section } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const CTA = () => {
   const { data } = useFeaturedEvent()
@@ -23,45 +25,36 @@ const CTA = () => {
   const registerHref = event ? `/events/${event.slug}/register` : '/events/ultra-arena-2026/register'
 
   return (
-    <section className='relative w-full min-h-screen flex flex-col justify-center items-center text-white overflow-hidden'>
-        <div className='z-10 flex flex-col justify-center items-center gap-12 md:gap-16 lg:gap-20 xl:gap-24 px-4 sm:px-6 md:px-8'>
-            <div className='w-full h-auto text-center flex flex-col justify-center items-center gap-2 sm:gap-3 md:gap-4'>
-                <h2 className='text-balance wrap-break-word text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight'>
-                    {typeof availableSpots === 'number' && availableSpots > 0 ? (
-                      <span className='text-amber-500'>{availableSpots} places disponibles</span>
-                    ) : (
-                      <span className='text-amber-500'>Inscriptions ouvertes</span>
-                    )}
-                </h2>
-                <p className='text-lg sm:text-xl md:text-2xl lg:text-2xl xl:text-3xl max-w-4xl leading-relaxed'>
-                    {nextChangeDate
-                      ? `Le tarif change le ${nextChangeDate}. Réserve ta place avant.`
-                      : "Rejoins la tribu Overbound et repousse tes limites."}
-                </p>
-            </div>
-            <Button
-                asChild
-                className='min-h-11 w-64 h-12 sm:w-72 sm:h-14 md:w-80 md:h-16 text-lg sm:text-xl font-semibold bg-amber-700 hover:bg-amber-800 text-white cursor-pointer'
-                variant='default'
-            >
-                <Link href={registerHref}>Je m'inscris maintenant</Link>
-            </Button>
-        </div>
+    <Section spacing="none" tone="deep" className="flex min-h-screen flex-col items-center justify-center">
+      <div className="absolute inset-0 -z-10">
+        <Image
+          src="/images/images/P1102323.avif"
+          alt="Coureurs Overbound franchissant un obstacle avec des troncs d'arbres"
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-surface-deep/60" />
+      </div>
 
-        {/* Image de fond responsive */}
-        <div className='absolute inset-0 w-full h-full'>
-            <Image
-                src='/images/images/P1102323.avif'
-                alt="Coureurs Overbound franchissant un obstacle avec des troncs d'arbres"
-                fill
-                sizes='100vw'
-                className='object-cover object-center'
-            />
+      <Container className="flex flex-col items-center gap-12 text-center lg:gap-16">
+        <div className="flex flex-col items-center gap-4">
+          <h2 className={cn(DISPLAY_TITLE, "text-display-lg text-primary")}>
+            {typeof availableSpots === "number" && availableSpots > 0
+              ? `${availableSpots} places disponibles`
+              : "Inscriptions ouvertes"}
+          </h2>
+          <p className="max-w-3xl text-lead text-foreground/90">
+            {nextChangeDate
+              ? `Le tarif change le ${nextChangeDate}. Réserve ta place avant.`
+              : "Rejoins la tribu Overbound et repousse tes limites."}
+          </p>
         </div>
-
-        {/* Overlay pour améliorer la lisibilité du texte */}
-        <div className='absolute inset-0 bg-black/50 z-[1]'></div>
-    </section>
+        <Button asChild size="hero" className="w-full sm:w-auto">
+          <Link href={registerHref}>Je m&apos;inscris maintenant</Link>
+        </Button>
+      </Container>
+    </Section>
   )
 }
 

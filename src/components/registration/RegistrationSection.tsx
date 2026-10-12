@@ -1,57 +1,46 @@
 import type { ReactNode, Ref } from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Check } from 'lucide-react'
+import { DISPLAY_TITLE } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 interface RegistrationSectionProps {
   index: number
   title: string
-  description: string
   isComplete?: boolean
   optional?: boolean
   children: ReactNode
-  sectionRef?: Ref<HTMLDivElement>
+  sectionRef?: Ref<HTMLElement>
 }
 
+/**
+ * One step of the checkout. Flat on purpose: a numbered title and the content
+ * straight on the page, so the only boxes the visitor sees are the ones that
+ * mean something (a ticket, a participant).
+ */
 export default function RegistrationSection({
   index,
   title,
-  description,
   isComplete = false,
   optional = false,
   children,
   sectionRef,
 }: RegistrationSectionProps) {
   return (
-    <div ref={sectionRef} className="scroll-mt-6">
-      <Card className={optional ? 'border-dashed' : undefined}>
-        <CardHeader className="flex-row items-start gap-3 space-y-0">
-          <div
-            className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold',
-              isComplete
-                ? 'border-primary bg-primary text-primary-foreground'
-                : optional
-                  ? 'border-dashed border-muted-foreground/30 text-muted-foreground'
-                  : 'border-muted-foreground/30 bg-muted text-muted-foreground',
-            )}
-          >
-            {isComplete ? <Check className="h-4 w-4" /> : index}
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold leading-none">{title}</h2>
-              {/* {optional ? (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                  Optionnel
-                </span>
-              ) : null} */}
-            </div>
-            <p className="text-sm text-muted-foreground">{description}</p>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">{children}</CardContent>
-      </Card>
-    </div>
+    <section ref={sectionRef} className="scroll-mt-24 py-8 first:pt-0">
+      <header className="mb-5 flex items-center gap-3">
+        <span
+          aria-hidden
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold',
+            isComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {isComplete ? <Check className="h-4 w-4" /> : index}
+        </span>
+        <h2 className={cn(DISPLAY_TITLE, 'text-title')}>{title}</h2>
+        {optional ? <span className="text-sm text-subtle">Facultatif</span> : null}
+      </header>
+      <div className="space-y-4">{children}</div>
+    </section>
   )
 }

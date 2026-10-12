@@ -64,13 +64,13 @@ export function CardCarousel<T>({
         <div className={navVisibilityClassName}>
           <CarouselPrevious
             className={cn(
-              'top-auto border-[#26AA26] bg-[#26AA26] text-primary-foreground shadow-lg hover:bg-[#1e8a1e]',
+              'top-auto border-primary bg-primary text-primary-foreground shadow-lg hover:bg-primary/90',
               roomy ? 'bottom-1 left-0 size-11' : 'bottom-4 left-4',
             )}
           />
           <CarouselNext
             className={cn(
-              'right-auto top-auto border-[#26AA26] bg-[#26AA26] text-primary-foreground shadow-lg hover:bg-[#1e8a1e]',
+              'right-auto top-auto border-primary bg-primary text-primary-foreground shadow-lg hover:bg-primary/90',
               roomy ? 'bottom-1 left-14 size-11' : 'bottom-4 left-16',
             )}
           />
@@ -79,7 +79,7 @@ export function CardCarousel<T>({
 
       {showSwipeHint ? (
         <div className="mt-4 flex justify-center sm:hidden">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>←</span>
             <span>Glisse pour voir plus</span>
             <span>→</span>

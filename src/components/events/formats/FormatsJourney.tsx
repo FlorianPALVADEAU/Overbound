@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { JourneyStep } from './content'
+import { DISPLAY_TITLE } from '@/components/ds'
 
 interface Props {
   title: string
@@ -16,7 +17,7 @@ export function FormatsJourney({ title, tone, steps }: Props) {
   const t = TONE[tone]
   return (
     <div className={cn('rounded-2xl border bg-card p-6', t.border)}>
-      <h3 className={cn('text-xl font-black', t.text)}>{title}</h3>
+      <h3 className={cn(DISPLAY_TITLE, 'text-title', t.text)}>{title}</h3>
       <ol className="mt-5 space-y-5 border-l border-border/70 pl-6">
         {steps.map((step) => (
           <li key={step.title} className="relative">

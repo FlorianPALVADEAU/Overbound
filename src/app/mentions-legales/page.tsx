@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
+import { Container, Section } from '@/components/ds'
+import { LegalHeader } from '@/components/legal/LegalHeader'
 
 export const metadata: Metadata = {
   title: "Mentions légales - Informations légales | Overbound Race",
@@ -18,21 +20,22 @@ const lastUpdated = '08/02/2026'
 
 export default function MentionsLegalesPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background">
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Mentions légales</h1>
-          <p className="text-lg text-muted-foreground">
-            Informations légales concernant le site Overbound
-          </p>
-          <p className="text-sm text-muted-foreground">
+    <main className="min-h-screen bg-background text-foreground">
+      <LegalHeader
+        title="Mentions légales"
+        lead="Informations légales concernant le site Overbound"
+        size="prose"
+        updated={
+          <>
             Dernière mise à jour : <time dateTime="2024-11-27">{lastUpdated}</time>
-          </p>
-        </div>
+          </>
+        }
+      />
+      <Section spacing="compact">
+      <Container size="prose">
 
         {/* Content */}
-        <div className="prose prose-sm max-w-none dark:prose-invert sm:prose lg:prose-lg">
+        <div className="prose-overbound">
           {/* Éditeur du site */}
           <section className="mb-8">
             <h2 className="text-2xl font-bold">Éditeur du site</h2>
@@ -211,7 +214,8 @@ export default function MentionsLegalesPage() {
             </p>
           </section>
         </div>
-      </div>
+      </Container>
+      </Section>
     </main>
   )
 }

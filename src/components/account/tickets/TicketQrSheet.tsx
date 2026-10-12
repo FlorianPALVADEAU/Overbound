@@ -57,7 +57,7 @@ export function TicketQrSheet({ tickets, openId, context, onOpenChange }: Ticket
             <DialogDescription className="sr-only">QR code à présenter au check-in.</DialogDescription>
 
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-background/60">
+              <p className="text-xs font-bold uppercase tracking-label text-background/60">
                 {tickets.length > 1 ? `Dossard ${index + 1} sur ${tickets.length}` : 'Check-in'}
               </p>
               <DialogClose className="flex size-11 items-center justify-center rounded-full bg-background/10" aria-label="Fermer">
@@ -76,9 +76,12 @@ export function TicketQrSheet({ tickets, openId, context, onOpenChange }: Ticket
 
               <div className="text-center">
                 {bibLabel(ticket.bib_number) ? (
-                  <p className="text-7xl font-black leading-none tracking-tighter tabular-nums">{bibLabel(ticket.bib_number)}</p>
+                  <p className="mb-1 text-label font-bold uppercase text-background/60">Dossard</p>
+                ) : null}
+                {bibLabel(ticket.bib_number) ? (
+                  <p className="text-7xl font-bold leading-none tracking-tighter tabular-nums">{bibLabel(ticket.bib_number)}</p>
                 ) : (
-                  <p className="text-balance text-3xl font-black leading-tight tracking-tight">{ticket.ticket_name ?? 'Billet'}</p>
+                  <p className="text-balance text-3xl font-bold leading-tight tracking-tight">{ticket.ticket_name ?? 'Billet'}</p>
                 )}
                 <p className="mt-2 text-base font-semibold">{describeHolder(ticket, identity) ?? ''}</p>
                 <p className="mt-1 text-sm text-background/60">

@@ -15,3 +15,4 @@ Template: `docs/templates/adr-template.md`
 - [ADR-0002 - Supabase with organization-first RLS](./ADR-0002-supabase-organization-rls.md)
 - [ADR-0003 - Resend for transactional outbound email](./ADR-0003-resend-transactional-email.md)
 - [ADR-0004 - Architecture Reality vs Hexagonal Theory](./ADR-0004-architecture-reality-vs-hexagonal-theory.md)
+- [ADR-0005 - Design system tokenisé et garde-fou en cliquet](./ADR-0005-design-system.md)

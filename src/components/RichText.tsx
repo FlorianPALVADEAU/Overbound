@@ -12,7 +12,7 @@ interface ImageValue {
 const components: PortableTextComponents = {
   types: {
     code: ({ value }) => (
-      <pre className="bg-neutral-100 p-4 rounded-xl overflow-x-auto">
+      <pre className="bg-muted p-4 rounded-xl overflow-x-auto">
         <div className="text-xs opacity-60 mb-2">
           {value?.filename || value?.language?.toUpperCase?.() || 'code'}
         </div>
@@ -26,7 +26,7 @@ const components: PortableTextComponents = {
         <figure className="my-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src} alt={img?.alt || ''} className="rounded-xl w-full" />
-          {img?.caption && <figcaption className="text-sm text-neutral-500 mt-2">{img.caption}</figcaption>}
+          {img?.caption && <figcaption className="text-sm text-subtle mt-2">{img.caption}</figcaption>}
         </figure>
       )
     },
@@ -64,7 +64,7 @@ const components: PortableTextComponents = {
         </a>
       )
     },
-    code: ({ children }) => <code className="px-1 py-0.5 bg-neutral-100 rounded text-sm">{children}</code>,
+    code: ({ children }) => <code className="px-1 py-0.5 bg-muted rounded text-sm">{children}</code>,
   },
 }
 

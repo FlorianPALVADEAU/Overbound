@@ -470,7 +470,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
           step rotation and freezes on the winning reward's image once the
           real spin stops (product decision 2026-09-22). */}
       <div
-        className="absolute left-1/2 top-1/2 z-[5] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-4 border-slate-900 bg-white"
+        className="absolute left-1/2 top-1/2 z-[5] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-4 border-surface-deep bg-white"
         style={{ width: HUB_RADIUS * 2, height: HUB_RADIUS * 2 }}
       >
         {hubSegment?.imageUrl ? (
@@ -480,7 +480,7 @@ export function LuckyWheelWheel({ segments, winningRewardId, onAnimationComplete
           // or require per-domain allowlisting admins can't self-serve.
           <img src={hubSegment.imageUrl} alt={hubSegment.name} className="h-full w-full object-cover" />
         ) : (
-          <span className="px-2 text-center text-[10px] font-bold text-slate-900">
+          <span className="px-2 text-center text-label font-bold text-surface-deep">
             {hubSegment?.name ?? ''}
           </span>
         )}

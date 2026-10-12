@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { getEffectiveEventStatus, isEventOpenForRegistration } from '@/lib/events/registrationStatus'
+import { fetchTierRegistrationCounts } from '@/lib/orderPricing/server'
 
 export const runtime = 'nodejs'
 
@@ -71,6 +72,8 @@ export async function GET(
       .is('cancelled_at', null)
 
     const availableSpots = Math.max((event.capacity || 0) - (totalRegistrations || 0), 0)
+    // Same tier seating as the payment API, so the checkout shows the price that will be charged.
+    const tierRegistrationCounts = await fetchTierRegistrationCounts(admin, event.id)
 
     // Get registration counts per ticket
     const ticketIds = (event.tickets || []).map((t: { id: string }) => t.id)
@@ -125,6 +128,7 @@ export async function GET(
         })),
       })),
       availableSpots,
+      tierRegistrationCounts,
       user: user
         ? {
             id: user.id,

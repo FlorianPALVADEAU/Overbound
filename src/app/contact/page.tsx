@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
 import { ContactForm } from '@/components/contact/ContactForm'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/overbound.race/' },
@@ -26,7 +28,7 @@ export default function ContactPage() {
         description="On répond par e-mail, dans les plus brefs délais."
       />
 
-      <section className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 lg:px-8">
+      <section className={cn(containerClass(), 'grid gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16')}>
         <ContactForm />
 
         <aside className="min-w-0 space-y-10 lg:border-l lg:pl-10">

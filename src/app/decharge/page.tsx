@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { OFFICIAL_RULEBOOK_PDF_PATH, REGULATION_VERSION } from '@/constants/registration'
 import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_TITLE } from '@/constants/waiver'
+import { Container, DISPLAY_TITLE, Eyebrow, Section } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Décharge de responsabilité | Overbound Race',
@@ -14,9 +16,10 @@ export const metadata: Metadata = {
 export default function WaiverPage() {
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-primary">Version {REGULATION_VERSION}</p>
-        <h1 className="mt-2 text-balance text-3xl font-black tracking-tight sm:text-4xl">{WAIVER_TITLE}</h1>
+      <Section spacing="compact">
+      <Container size="prose">
+        <Eyebrow>Version {REGULATION_VERSION}</Eyebrow>
+        <h1 className={cn(DISPLAY_TITLE, 'mt-2 text-display-md')}>{WAIVER_TITLE}</h1>
         <p className="mt-6 leading-relaxed text-muted-foreground">{WAIVER_INTRO}</p>
         <ol className="mt-6 space-y-4 leading-relaxed">
           {WAIVER_CLAUSES.map((clause) => (
@@ -39,7 +42,8 @@ export default function WaiverPage() {
             politique de confidentialité
           </Link>
         </p>
-      </div>
+      </Container>
+      </Section>
     </main>
   )
 }

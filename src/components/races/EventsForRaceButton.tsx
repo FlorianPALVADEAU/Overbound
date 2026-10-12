@@ -176,7 +176,7 @@ export default function EventsForRaceButton({ raceId }: EventsForRaceButtonProps
                         <div className="w-full bg-muted rounded-full h-1.5">
                           <div 
                             className={`rounded-full h-1.5 transition-all ${
-                              availableSpots <= 0 ? 'bg-red-500' : 'bg-primary'
+                              availableSpots <= 0 ? 'bg-destructive' : 'bg-primary'
                             }`}
                             style={{ 
                               width: `${Math.min(100, ((event.registrations_count || 0) / event.capacity) * 100)}%` 

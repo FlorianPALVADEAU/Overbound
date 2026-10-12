@@ -14,8 +14,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OPEN_SAS_CONFIG, RANKED_START_CONFIG } from '@/lib/openSas'
-import { SectionEyebrow } from './SectionEyebrow'
-import { LANDING_X } from './layout'
+import { Container, SectionHeader } from '@/components/ds'
 
 const BADGES = [
   { icon: Shield, title: 'Sécurité encadrée', text: 'Règles terrain, staff et process de contrôle sur tout le parcours.' },
@@ -46,22 +45,17 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
   const openLastDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.lastDeparture)
 
   return (
-    <section id="infos-pratiques" className="bg-muted/20 py-16 sm:py-20">
-      <div className={`${LANDING_X}`}>
-        <div className="mb-10 max-w-2xl">
-          <SectionEyebrow>Réassurance</SectionEyebrow>
-          <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Tu sais où tu mets les pieds.
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            Encadrement, sécurité et infos pratiques claires — avant de passer à l'inscription.
-          </p>
-        </div>
+    <Container>
+        <SectionHeader
+          eyebrow="Réassurance"
+          title="Tu sais où tu mets les pieds."
+          lead="Encadrement, sécurité et infos pratiques claires — avant de passer à l'inscription."
+        />
 
         {/* Badges */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {BADGES.map((item) => (
-            <Card key={item.title} className="border-border/70 bg-card/80">
+            <Card key={item.title} variant="info">
               <CardContent className="pt-6">
                 <item.icon className="mb-3 h-5 w-5 text-primary" />
                 <p className="font-semibold">{item.title}</p>
@@ -73,7 +67,7 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
 
         {/* Map + extra infos */}
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card className="overflow-hidden border-border/70 bg-card/80">
+          <Card variant="info" className="overflow-hidden">
             <CardHeader>
               <CardTitle>Localisation</CardTitle>
             </CardHeader>
@@ -93,7 +87,7 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               </div>
-              <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-300">
+              <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs text-amber-300">
                 <Car className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>
                   <span className="font-semibold">Parking payant : 6 €/voiture.</span>{' '}
@@ -103,7 +97,7 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/80">
+          <Card variant="info">
             <CardHeader>
               <CardTitle>Infos essentielles</CardTitle>
             </CardHeader>
@@ -117,7 +111,6 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </section>
+    </Container>
   )
 }

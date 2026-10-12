@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { SectionEyebrow } from './SectionEyebrow'
-import { LANDING_X } from './layout'
+import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 const DIFFERENTIATORS = [
   {
@@ -33,34 +33,28 @@ interface Props {
 
 export function UltraArenaWhyDifferent({ isOnSale, registerHref, onCtaClick }: Props) {
   return (
-    <section id="pourquoi-different" className="relative isolate overflow-hidden py-16 sm:py-20">
-      <div className={`${LANDING_X} relative z-10`}>
-        <div className="mb-10 max-w-2xl">
-          <SectionEyebrow>Pourquoi c&apos;est différent</SectionEyebrow>
-          <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            Pas une course standard.
-            <br className="hidden sm:block" /> Une expérience à piloter.
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            Overbound repense le format course à obstacles pour que chaque profil y trouve son compte —
-            sans jamais simplifier l'expérience.
-          </p>
-        </div>
+    <Section id="pourquoi-different">
+      <Container className="relative z-10">
+        <SectionHeader
+          eyebrow={<>Pourquoi c&apos;est différent</>}
+          title={<>Pas une course standard. <br className="hidden sm:block" /> Une expérience à piloter.</>}
+          lead={<>Overbound repense le format course à obstacles pour que chaque profil y trouve son compte — sans jamais simplifier l'expérience.</>}
+        />
 
         <div className="grid gap-5 md:grid-cols-3">
           {DIFFERENTIATORS.map(({ title, body, detail }, index) => (
             <Card
               key={title}
-              className="group relative overflow-hidden border-primary/15 bg-linear-to-br from-card/95 to-card/80 transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10"
+              variant="feature"
             >
               <CardContent className="p-6">
                 <p
                   aria-hidden
-                  className="mb-4 text-5xl font-black leading-none text-primary/35"
+                  className="mb-4 font-display text-5xl font-bold leading-none text-primary/35"
                 >
                   {String(index + 1).padStart(2, '0')}
                 </p>
-                <h3 className="text-lg font-bold">{title}</h3>
+                <h3 className={cn(DISPLAY_TITLE, 'text-title')}>{title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{body}</p>
                 <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
                   <ArrowRight className="h-3 w-3 shrink-0" />
@@ -73,22 +67,22 @@ export function UltraArenaWhyDifferent({ isOnSale, registerHref, onCtaClick }: P
 
         {/* Inline CTA after the 3 cards */}
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Button asChild size="lg" className="h-12 rounded-xl px-8 text-base font-semibold">
+          <Button asChild size="cta">
             <a href="#formats" onClick={onCtaClick}>Voir les deux formats</a>
           </Button>
           {isOnSale && (
             <Button
               asChild
-              size="lg"
+              size="cta"
               variant="outline"
-              className="h-12 rounded-xl border-primary/40 px-8 text-base font-semibold"
+              className="border-primary/40"
               onClick={onCtaClick}
             >
               <Link href={registerHref}>Je prends ma place</Link>
             </Button>
           )}
         </div>
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }

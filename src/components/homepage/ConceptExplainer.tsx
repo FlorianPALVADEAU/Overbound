@@ -6,6 +6,7 @@ import { useGetObstacles } from '@/app/api/obstacles/obstaclesQueries'
 import { cn } from '@/lib/utils'
 import { RANKED_LAP_TIME_LIMITS } from '@/constants/raceFormatRules'
 import { COURSE_PATH } from '@/constants/coursePath'
+import { Container, DISPLAY_TITLE, Section, SectionHeader } from '@/components/ds'
 
 
 // Ordre réel sur le parcours. `at` = position sur le tracé (0 = départ, 1 = arrivée).
@@ -222,11 +223,7 @@ export function ConceptExplainer() {
   const pick = (index: number) => pickRef.current(index)
 
   return (
-    <section
-      ref={sectionRef}
-      id="concept"
-      className="relative w-full overflow-hidden bg-neutral-950 py-16 text-white sm:py-20"
-    >
+    <Section ref={sectionRef} id="concept" tone="deep">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_50%_42%,rgba(38,170,38,0.22),transparent_70%),radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1.5px)] bg-size-[100%_100%,22px_22px]"
@@ -235,28 +232,21 @@ export function ConceptExplainer() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-primary/15 to-transparent"
       />
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 xl:px-32">
-        <p className="text-center text-xs font-black uppercase tracking-[0.3em] text-primary">
-          Le parcours
-        </p>
-        <h2 className="mt-3 text-balance wrap-break-word text-center text-3xl font-black sm:text-4xl">
-          Une boucle de 2 km, autant de tours que tu veux
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-gray-300 sm:text-base">
-          10 obstacles à enchaîner, dans le sens des aiguilles d&apos;une montre. Tu boucles un
-          tour, tu choisis si tu repars. La première organisation OCR où tu choisis ton niveau de
-          défi sur le même parcours.
-        </p>
+      <Container className="relative">
+        <SectionHeader
+          align="center"
+          eyebrow="Le parcours"
+          title="Une boucle de 2 km, autant de tours que tu veux"
+          lead="10 obstacles à enchaîner, dans le sens des aiguilles d'une montre. Tu boucles un tour, tu choisis si tu repars. La première organisation OCR où tu choisis ton niveau de défi sur le même parcours."
+        />
 
-        <div className="mt-10 grid items-center gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12">
+        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12">
           <div className="relative">
             <div className="mb-1 flex items-baseline justify-end gap-3" aria-hidden="true">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-white/60">
-                Tour
-              </p>
+              <p className="text-eyebrow font-semibold uppercase text-subtle">Tour</p>
               <p
                 key={lap}
-                className="animate-in zoom-in-50 fade-in text-5xl font-black leading-none tabular-nums text-primary duration-300 sm:text-6xl"
+                className="animate-in zoom-in-50 fade-in font-display text-5xl font-bold leading-none tabular-nums text-primary duration-300 sm:text-6xl"
               >
                 {lap}
               </p>
@@ -292,7 +282,7 @@ export function ConceptExplainer() {
                 y={548}
                 fontSize={24}
                 fontWeight={900}
-                className="fill-white/70"
+                className="fill-foreground/70"
                 letterSpacing={2}
               >
                 DÉPART · ARRIVÉE
@@ -321,8 +311,8 @@ export function ConceptExplainer() {
                     className={cn(
                       'transition-colors duration-300',
                       index === active
-                        ? 'fill-primary stroke-white'
-                        : 'fill-neutral-900 stroke-white/40',
+                        ? 'fill-primary stroke-foreground'
+                        : 'fill-surface-deep stroke-foreground/40',
                     )}
                     strokeWidth={3}
                   />
@@ -331,7 +321,7 @@ export function ConceptExplainer() {
                     dominantBaseline="central"
                     fontSize={28}
                     fontWeight={900}
-                    className="fill-white"
+                    className="fill-foreground"
                   >
                     {index + 1}
                   </text>
@@ -340,14 +330,14 @@ export function ConceptExplainer() {
 
               <g ref={runnerRef}>
                 <circle r={20} className="fill-primary/30" />
-                <circle r={11} className="fill-white stroke-primary" strokeWidth={4} />
+                <circle r={11} className="fill-foreground stroke-primary" strokeWidth={4} />
               </g>
             </svg>
 
           </div>
 
           <div className="mx-auto w-full max-w-sm lg:max-w-none">
-            <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-neutral-900 lg:aspect-4/5">
+            <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-card lg:aspect-4/5">
               {OBSTACLES.map((obstacle, index) => {
                 const url = imageUrls[index]
                 if (!url || failedImages.has(url)) return null
@@ -368,20 +358,20 @@ export function ConceptExplainer() {
               })}
               {!obstaclesLoading &&
                 (!imageUrls[shown] || failedImages.has(imageUrls[shown] as string)) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pb-16 text-white/50">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pb-16 text-muted-foreground">
                     <Camera className="h-8 w-8" aria-hidden="true" />
-                    <p className="text-xs font-black uppercase tracking-[0.25em]">Photo à venir</p>
+                    <p className="text-eyebrow font-semibold uppercase">Photo à venir</p>
                   </div>
                 )}
               <div
                 aria-hidden="true"
-                className="absolute inset-0 bg-linear-to-t from-neutral-950 via-neutral-950/20 to-transparent"
+                className="absolute inset-0 bg-linear-to-t from-surface-deep via-surface-deep/20 to-transparent"
               />
               <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5" aria-hidden="true">
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-primary">
+                <p className="text-eyebrow font-semibold uppercase text-primary">
                   {active >= 0 ? `Obstacle ${active + 1} / ${OBSTACLES.length}` : 'Départ'}
                 </p>
-                <p className="mt-1 text-2xl font-black leading-tight sm:text-3xl">
+                <p className={cn(DISPLAY_TITLE, "mt-1 text-display-md")}>
                   {OBSTACLES[shown].name}
                 </p>
               </div>
@@ -399,7 +389,7 @@ export function ConceptExplainer() {
                   <span
                     className={cn(
                       'h-1 w-full rounded-full transition-colors duration-300 group-hover:bg-primary/70 group-focus-visible:bg-primary/70',
-                      index <= active ? 'bg-primary' : 'bg-white/15',
+                      index <= active ? 'bg-primary' : 'bg-foreground/15',
                     )}
                   />
                 </button>
@@ -407,7 +397,7 @@ export function ConceptExplainer() {
             </div>
             <ol className={reducedMotion ? 'mt-2 grid grid-cols-2 gap-x-6 text-sm' : 'sr-only'}>
               {OBSTACLES.map((obstacle, index) => (
-                <li key={`${obstacle.name}-${index}`} className="border-b border-white/10 py-2 text-gray-300">
+                <li key={`${obstacle.name}-${index}`} className="border-b border-border py-2 text-muted-foreground">
                   {index + 1}. {obstacle.name}
                 </li>
               ))}
@@ -415,18 +405,18 @@ export function ConceptExplainer() {
           </div>
         </div>
 
-        <dl className="mt-10 grid divide-y divide-white/10 border-y border-white/10 text-sm sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        <dl className="mt-10 grid divide-y divide-border border-y border-border text-sm sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="py-4 sm:pr-6">
-            <dt className="text-xs font-black uppercase tracking-[0.2em] text-primary">OPEN</dt>
-            <dd className="mt-1 text-gray-300">
-              <span className="font-bold text-white">Sans limite de temps.</span> Autant de tours que
+            <dt className="text-eyebrow font-semibold uppercase text-primary">OPEN</dt>
+            <dd className="mt-1 text-muted-foreground">
+              <span className="font-semibold text-foreground">Sans limite de temps.</span> Autant de tours que
               tu veux, à ton rythme.
             </dd>
           </div>
           <div className="py-4 sm:pl-6">
-            <dt className="text-xs font-black uppercase tracking-[0.2em] text-primary">RANKED</dt>
-            <dd className="mt-1 text-gray-300">
-              <span className="font-bold text-white">Un chrono par tour.</span>{' '}
+            <dt className="text-eyebrow font-semibold uppercase text-primary">RANKED</dt>
+            <dd className="mt-1 text-muted-foreground">
+              <span className="font-semibold text-foreground">Un chrono par tour.</span>{' '}
               {RANKED_LAP_TIME_LIMITS.firstLapMinutes} min au 1er,{' '}
               {RANKED_LAP_TIME_LIMITS.midLapsMinutes} min aux tours 2 à{' '}
               {RANKED_LAP_TIME_LIMITS.lateLapStartsAt - 1}, {RANKED_LAP_TIME_LIMITS.lateLapMinutes} min
@@ -434,7 +424,7 @@ export function ConceptExplainer() {
             </dd>
           </div>
         </dl>
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }
