@@ -24,7 +24,7 @@ import {
   SelectedWaveUnavailableError,
   type SelectedWaveAssignment,
 } from '@/lib/selectedWaveAssignment'
-import { assignBibNumber, BibCapacityExhaustedError, type RaceFormat } from '@/lib/bibNumber'
+import { assignBibNumber, BibCapacityExhaustedError, getBibRange, type RaceFormat } from '@/lib/bibNumber'
 import { sendAdminPushNotification } from '@/lib/push'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
     // Get event info with price tiers
     const { data: eventRow, error: eventError } = await admin
       .from('events')
-      .select('id, title, date, location, open_bib_capacity, ranked_bib_capacity, price_tiers:event_price_tiers(*)')
+      .select('id, title, date, location, capacity, ranked_bib_capacity, price_tiers:event_price_tiers(*)')
       .eq('id', eventId)
       .single()
 
@@ -520,9 +520,9 @@ export async function POST(request: NextRequest) {
       // OPEN nor RANKED (kids/relay formats not covered by this scheme).
       if (isOpenFormat || isRankedFormat) {
         const raceFormat: RaceFormat = isOpenFormat ? 'open' : 'ranked'
-        const maxBibNumber = isOpenFormat ? eventRow.open_bib_capacity : eventRow.ranked_bib_capacity
+        const bibRange = getBibRange(eventRow, raceFormat)
 
-        if (!maxBibNumber || maxBibNumber <= 0) {
+        if (!bibRange) {
           console.error(`Capacité dossard non configurée pour l'événement ${eventId} (${raceFormat})`)
           return NextResponse.json(
             { error: `Capacité dossard non configurée pour ce format (${raceFormat}).` },
@@ -536,7 +536,7 @@ export async function POST(request: NextRequest) {
             eventId,
             registrationId: registration.id,
             raceFormat,
-            maxBibNumber,
+            bibRange,
           })
           registration.bib_number = bibNumber
           registration.race_format = raceFormat

@@ -6,6 +6,7 @@ import { notifyEventUpdate } from '@/lib/email/eventUpdates'
 import { notifyEventOpening } from '@/lib/email/eventOpenings'
 import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { parseBibCapacity, validateBibConfigChange } from '@/lib/events/bibCapacity'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -147,7 +148,7 @@ const handlePut = async (
     const supabase = await createSupabaseServer()
     const { data: existingEvent } = await supabase
       .from('events')
-      .select('id, status, title, date, location, subtitle, slug')
+      .select('id, status, title, date, location, subtitle, slug, capacity, ranked_bib_capacity')
       .eq('id', id)
       .eq('organization_id', auth.organizationId)
       .single()
@@ -163,6 +164,7 @@ const handlePut = async (
       sales_start,
       location,
       capacity,
+      ranked_bib_capacity,
       status,
       external_provider,
       external_event_id,
@@ -171,6 +173,31 @@ const handlePut = async (
 
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
+
+    const nextRanked = parseBibCapacity(ranked_bib_capacity)
+    const { data: bibRows } = await admin
+      .from('registrations')
+      .select('bib_number, race_format')
+      .eq('event_id', id)
+      .not('bib_number', 'is', null)
+      .neq('claim_status', 'cancelled')
+    const bibs = (bibRows ?? []) as Array<{ bib_number: number; race_format: string | null }>
+    const bibError = validateBibConfigChange({
+      next: { capacity: parseInt(capacity) || 0, ranked: nextRanked },
+      current: {
+        capacity: existingEvent?.capacity ?? 0,
+        ranked: existingEvent?.ranked_bib_capacity ?? null,
+      },
+      maxRankedBib: bibs.reduce<number | null>(
+        (max, row) => (row.race_format === 'ranked' && (max === null || row.bib_number > max) ? row.bib_number : max),
+        null,
+      ),
+      maxBib: bibs.reduce<number | null>((max, row) => (max === null || row.bib_number > max ? row.bib_number : max), null),
+      hasOpenBib: bibs.some((row) => row.race_format === 'open'),
+    })
+    if (bibError) {
+      return NextResponse.json({ error: bibError }, { status: 409 })
+    }
     const { data: event, error } = await admin
       .from('events')
       .update({
@@ -183,6 +210,7 @@ const handlePut = async (
         sales_start: sales_start ? new Date(sales_start).toISOString() : null,
         location,
         capacity: parseInt(capacity) || 0,
+        ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
         status: status || 'draft',
         external_provider: external_provider || null,
         external_event_id: external_event_id || null,

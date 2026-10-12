@@ -31,6 +31,7 @@ export interface EventFormValues {
   latitude: string
   longitude: string
   capacity: string
+  ranked_bib_capacity: string
   status: Event['status']
   external_provider: string
   external_event_id: string
@@ -61,6 +62,7 @@ const DEFAULT_VALUES: EventFormValues = {
   latitude: '',
   longitude: '',
   capacity: '0',
+  ranked_bib_capacity: '',
   status: 'draft',
   external_provider: 'none',
   external_event_id: '',
@@ -92,6 +94,12 @@ export function EventFormDialog({
   const [values, setValues] = useState<EventFormValues>(DEFAULT_VALUES)
   const [localPriceTiers, setLocalPriceTiers] = useState<EventPriceTier[]>(priceTiers)
   const isCreateMode = mode === 'create'
+  const totalBibs = parseInt(values.capacity, 10) || 0
+  const rankedBibs = parseInt(values.ranked_bib_capacity, 10) || 0
+  const openBibLabel =
+    rankedBibs > totalBibs
+      ? 'Invalide : RANKED > capacité totale'
+      : `${totalBibs - rankedBibs} (n°${rankedBibs + 1} à ${totalBibs})`
 
   useEffect(() => {
     setValues(initialValues)
@@ -256,7 +264,28 @@ export function EventFormDialog({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="capacity">Capacité *</Label>
+              <Label htmlFor="ranked_bib_capacity">Dossards RANKED réservés</Label>
+              <Input
+                id="ranked_bib_capacity"
+                type="number"
+                min="0"
+                value={values.ranked_bib_capacity}
+                onChange={(event) => handleChange('ranked_bib_capacity', event.target.value)}
+                placeholder="100"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Dossards OPEN (calculé)</Label>
+              <p className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm">{openBibLabel}</p>
+            </div>
+            <p className="md:col-span-2 text-xs text-muted-foreground">
+              Les dossards sont numérotés sur une plage unique : RANKED de 1 à {rankedBibs || 'N'}, puis OPEN de {rankedBibs + 1} à la capacité totale. Sans capacité totale, toute inscription est refusée.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="capacity">Capacité totale (dossards) *</Label>
               <Input
                 id="capacity"
                 type="number"
