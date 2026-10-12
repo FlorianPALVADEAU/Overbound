@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { useParallax } from '@/hooks/useParallax'
 import { cn } from '@/lib/utils'
@@ -37,21 +37,20 @@ interface Props {
 }
 
 export function HeroFrame({ image, variant = 'standard', id, className, children }: Props) {
-  const ref = useRef<HTMLElement>(null)
-  const parallax = useParallax(ref, PARALLAX)
+  const parallax = useParallax(PARALLAX)
   const position = image.position ?? '50% 50%'
 
   return (
     <section
-      ref={ref}
+      ref={parallax.containerRef}
       id={id}
       data-hero={variant}
       className={cn('relative isolate flex flex-col justify-center overflow-hidden', HERO_HEIGHT[variant], className)}
     >
       <div className="absolute inset-0 -z-10 overflow-hidden" aria-hidden={image.alt ? undefined : true}>
         <div
+          ref={parallax.layerRef}
           className="absolute -inset-x-6 -inset-y-40 will-change-transform"
-          style={{ transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0)` }}
         >
           {image.url ? (
             // eslint-disable-next-line @next/next/no-img-element

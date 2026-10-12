@@ -8,8 +8,10 @@ export interface FeaturedEventResponse {
   availableSpots?: number
 }
 
+export const FEATURED_EVENT_QUERY_KEY = ['events', 'featured'] as const
+
 const fetchFeaturedEvent = async (): Promise<FeaturedEventResponse> => {
-  const response = await fetch('/api/events/featured', { cache: 'no-store' })
+  const response = await fetch('/api/events/featured')
   if (!response.ok) {
     throw new Error("Impossible de récupérer l'événement à venir")
   }
@@ -18,7 +20,7 @@ const fetchFeaturedEvent = async (): Promise<FeaturedEventResponse> => {
 
 export const useFeaturedEvent = () =>
   useQuery<FeaturedEventResponse, Error>({
-    queryKey: ['events', 'featured'],
+    queryKey: FEATURED_EVENT_QUERY_KEY,
     queryFn: fetchFeaturedEvent,
     staleTime: 60 * 1000,
   })

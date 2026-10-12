@@ -6,6 +6,8 @@ import ClientProviders from '@/components/ClientProviders'
 import { OrganizationStructuredDataServer } from '@/components/seo/OrganizationStructuredDataServer'
 import { AnalyticsScripts } from '@/components/consent/AnalyticsScripts'
 import { UtmCapture } from '@/components/attribution/UtmCapture'
+import { PromotionsSeed } from '@/components/layout/PromotionsSeed'
+import { loadActivePromotions } from '@/lib/promotions/loadActivePromotions'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -96,11 +98,19 @@ export const metadata: Metadata = {
 };
 
 
-export default function RootLayout({
+// The promotions banner is rendered on the server: static pages are
+// regenerated at most every 5 minutes so a banner starts and ends on time.
+// Admin changes revalidate immediately (api/admin/promotions).
+export const revalidate = 300;
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // A failed read only hides the banner; the client query retries.
+  const promotions = await loadActivePromotions().catch(() => null)
+
   return (
     <html lang="fr">
       <body
@@ -113,7 +123,13 @@ export default function RootLayout({
         <UtmCapture />
 
         <ClientProviders>
-          <Layout>{children}</Layout>
+          {promotions ? (
+            <PromotionsSeed data={promotions}>
+              <Layout>{children}</Layout>
+            </PromotionsSeed>
+          ) : (
+            <Layout>{children}</Layout>
+          )}
         </ClientProviders>
       </body>
     </html>

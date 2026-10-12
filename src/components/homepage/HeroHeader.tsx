@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import AnimatedBanner from "./AnimatedBanner";
 import { PARTNERS_DATA } from "@/datas/Partners";
 import { Container, DISPLAY_TITLE } from "@/components/ds";
@@ -90,9 +91,15 @@ export const HeroHeader = () => {
                         <source src="/videos/hero_header_video.mp4" type="video/mp4" />
                     </video>
                 ) : (
-                    <div
-                        className="absolute left-0 top-0 h-full w-full bg-cover bg-center"
-                        style={{ backgroundImage: "url(/images/hero_header_poster.avif)" }}
+                    // LCP element: a real image, preloaded with high priority
+                    // (a CSS background is invisible to the preload scanner).
+                    <Image
+                        src="/images/hero_header_poster.avif"
+                        alt=""
+                        fill
+                        priority
+                        sizes="100vw"
+                        className="object-cover"
                     />
                 )}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface ParallaxOptions {
   /** Max pixel offset from mouse movement, vertical axis. */
@@ -11,11 +11,8 @@ interface ParallaxOptions {
   scrollStrength?: number
   /** Lerp factor per frame toward the target offset (0-1). Lower = smoother trailing. */
   easing?: number
-}
-
-interface ParallaxOffset {
-  x: number
-  y: number
+  /** Scale kept on the layer alongside the translation. */
+  scale?: number
 }
 
 const DEFAULT_OPTIONS: Required<ParallaxOptions> = {
@@ -23,97 +20,94 @@ const DEFAULT_OPTIONS: Required<ParallaxOptions> = {
   mouseStrengthX: 6,
   scrollStrength: 120,
   easing: 0.08,
+  scale: 1,
 }
 
+// Below this distance (px) the layer is considered settled and the loop stops.
+const SETTLE_EPSILON = 0.1
+
 /**
- * Tracks mouse position within a container and page scroll, combining both
- * into a single translate offset for a parallax background layer.
- * No-ops (returns {x:0, y:0}) when the user prefers reduced motion.
+ * Parallax background layer driven by mouse position within a container and
+ * page scroll. Attach `containerRef` to the section and `layerRef` to the
+ * element that moves.
+ *
+ * The transform is written straight to the layer's style (no React
+ * re-render), and the animation frame loop only runs while the container is
+ * on screen and the layer is still moving toward its target. Does nothing
+ * when the user prefers reduced motion.
  */
-export function useParallax(
-  containerRef: React.RefObject<HTMLElement | null>,
-  options: ParallaxOptions = {}
-): ParallaxOffset {
-  const { mouseStrength, mouseStrengthX, scrollStrength, easing } = { ...DEFAULT_OPTIONS, ...options }
-  const [offset, setOffset] = useState<ParallaxOffset>({ x: 0, y: 0 })
-  const targetRef = useRef<ParallaxOffset>({ x: 0, y: 0 })
-  const currentRef = useRef<ParallaxOffset>({ x: 0, y: 0 })
-  const mouseOffsetRef = useRef<ParallaxOffset>({ x: 0, y: 0 })
-  const scrollOffsetRef = useRef(0)
-  const frameRef = useRef<number | null>(null)
-  // containerRef.current mutates without triggering a re-render, so a plain
-  // useEffect keyed on the ref object would never re-run once the element
-  // mounts after an initially-null render. Poll a couple of animation
-  // frames to catch that attach, then proceed as normal.
-  const [containerReady, setContainerReady] = useState(false)
+export function useParallax(options: ParallaxOptions = {}) {
+  const { mouseStrength, mouseStrengthX, scrollStrength, easing, scale } = { ...DEFAULT_OPTIONS, ...options }
+  // Callback refs stored in state: the effect re-runs when either element
+  // mounts, including sections that render only after their data arrives.
+  const [container, setContainer] = useState<HTMLElement | null>(null)
+  const [layer, setLayer] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
-    if (containerRef.current) {
-      setContainerReady(true)
-      return
-    }
-    let frame: number
-    const check = () => {
-      if (containerRef.current) {
-        setContainerReady(true)
-        return
-      }
-      frame = requestAnimationFrame(check)
-    }
-    frame = requestAnimationFrame(check)
-    return () => cancelAnimationFrame(frame)
-  })
+    if (!container || !layer) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
+    const current = { x: 0, y: 0 }
+    const mouse = { x: 0, y: 0 }
+    let scrollOffset = 0
+    let visible = false
+    let frame: number | null = null
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReducedMotion) return
+    const apply = () => {
+      layer.style.transform = `translate3d(${current.x}px, ${current.y}px, 0) scale(${scale})`
+    }
 
     const tick = () => {
-      targetRef.current = {
-        x: mouseOffsetRef.current.x,
-        y: mouseOffsetRef.current.y + scrollOffsetRef.current,
-      }
-      currentRef.current = {
-        x: currentRef.current.x + (targetRef.current.x - currentRef.current.x) * easing,
-        y: currentRef.current.y + (targetRef.current.y - currentRef.current.y) * easing,
-      }
-      setOffset({ x: currentRef.current.x, y: currentRef.current.y })
-      frameRef.current = requestAnimationFrame(tick)
+      frame = null
+      const targetX = mouse.x
+      const targetY = mouse.y + scrollOffset
+      current.x += (targetX - current.x) * easing
+      current.y += (targetY - current.y) * easing
+      apply()
+      const settled =
+        Math.abs(targetX - current.x) < SETTLE_EPSILON && Math.abs(targetY - current.y) < SETTLE_EPSILON
+      if (visible && !settled) frame = requestAnimationFrame(tick)
+    }
+
+    const wake = () => {
+      if (visible && frame === null) frame = requestAnimationFrame(tick)
     }
 
     const handleMouseMove = (event: MouseEvent) => {
+      if (!visible) return
       const rect = container.getBoundingClientRect()
       const relativeX = (event.clientX - rect.left) / rect.width - 0.5
       const relativeY = (event.clientY - rect.top) / rect.height - 0.5
       // Inverted: background drifts opposite the cursor, classic parallax depth cue.
-      mouseOffsetRef.current = {
-        x: -relativeX * mouseStrengthX,
-        y: -relativeY * mouseStrength,
-      }
+      mouse.x = -relativeX * mouseStrengthX
+      mouse.y = -relativeY * mouseStrength
+      wake()
     }
 
     const handleScroll = () => {
+      if (!visible) return
       const rect = container.getBoundingClientRect()
       const viewportCenter = window.innerHeight / 2
       const containerCenter = rect.top + rect.height / 2
-      const distanceFromCenter = (containerCenter - viewportCenter) / window.innerHeight
-      scrollOffsetRef.current = distanceFromCenter * scrollStrength
+      scrollOffset = ((containerCenter - viewportCenter) / window.innerHeight) * scrollStrength
+      wake()
     }
 
-    handleScroll()
-    frameRef.current = requestAnimationFrame(tick)
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = Boolean(entry?.isIntersecting)
+      if (visible) handleScroll()
+    })
+    observer.observe(container)
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
     window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
+      observer.disconnect()
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('scroll', handleScroll)
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
+      if (frame !== null) cancelAnimationFrame(frame)
     }
-  }, [containerRef, containerReady, mouseStrength, mouseStrengthX, scrollStrength, easing])
+  }, [container, layer, mouseStrength, mouseStrengthX, scrollStrength, easing, scale])
 
-  return offset
+  return { containerRef: setContainer, layerRef: setLayer }
 }

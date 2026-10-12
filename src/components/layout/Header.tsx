@@ -222,6 +222,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 alt="Overbound – accueil"
                 width={64}
                 height={64}
+                priority
                 className="w-8 md:w-10 lg:w-12 h-auto"
               />
             </Link>

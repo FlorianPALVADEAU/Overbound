@@ -37,9 +37,17 @@ export const assertNoElementOverflowsParent = async (page: Page) => {
       // overflow-x-auto wrapper) -- is deliberately wider than what's
       // shown. The parent's own overflow handling, not the child's size
       // against that parent, is the real layout contract there.
-      const parentStyle = window.getComputedStyle(parent)
+      // A carousel (embla) has one more level: the clipping viewport wraps a
+      // flex track, and the slides overflow the track by design.
       const CONTAINED_OVERFLOW = new Set(['hidden', 'auto', 'scroll'])
-      if (CONTAINED_OVERFLOW.has(parentStyle.overflow) || CONTAINED_OVERFLOW.has(parentStyle.overflowX)) return
+      const clips = (node: HTMLElement | null) => {
+        if (!node) return false
+        const nodeStyle = window.getComputedStyle(node)
+        return CONTAINED_OVERFLOW.has(nodeStyle.overflow) || CONTAINED_OVERFLOW.has(nodeStyle.overflowX)
+      }
+      if (clips(parent)) return
+      const grandparent = parent.parentElement
+      if (grandparent?.dataset.slot === 'carousel-content' && clips(grandparent)) return
 
       const elRect = el.getBoundingClientRect()
       const parentRect = parent.getBoundingClientRect()
