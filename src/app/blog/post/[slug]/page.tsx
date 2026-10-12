@@ -100,7 +100,7 @@ export default async function BlogPostPage(
   const canonical = `${siteUrl}/blog/post/${post.slug}`
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background">
+    <main className="min-h-screen bg-background">
       <article className={cn(containerClass(), "relative pb-16")}>
         {/* JSON-LD Article structured data for SEO */}
         <script

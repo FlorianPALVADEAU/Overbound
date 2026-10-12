@@ -83,7 +83,7 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground">
       <section className="relative isolate overflow-hidden py-14">
         <div className="absolute inset-0">
           <Image src="/images/images/overbound-og-cover.jpg" alt="Catégorie OverBound" fill sizes="100vw" className="object-cover object-center" />

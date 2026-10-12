@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 export default async function BlogCategoriesIndex() {
   const categories = await client.fetch(categoriesWithCountsQuery)
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground">
       {/* Hero header */}
       <section className="relative isolate overflow-hidden py-14 sm:py-16">
         <div className="absolute inset-0">

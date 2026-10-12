@@ -54,7 +54,7 @@ function BlogPageContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground">
       <BlogHero />
 
       <div className={cn(containerClass(), 'py-16')}>
@@ -121,7 +121,7 @@ function BlogPageContent() {
 
 function BlogPageFallback() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground">
       <BlogHero />
       <div className={cn(containerClass(), 'py-16')}>
         <BlogFiltersSkeleton />

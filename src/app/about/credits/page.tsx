@@ -125,7 +125,7 @@ function ContactCard({ contact, colorScheme }: { contact: ContactType; colorSche
 
 export default function CreditsPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground">
       <PageHero
         image={{ src: '/images/images/overbound-headband-on-chains-with-grass-in-background.avif', alt: 'Crédits Overbound' }}
         eyebrow="Crédits"

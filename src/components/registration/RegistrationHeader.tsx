@@ -3,6 +3,8 @@ import { Separator } from '@/components/ui/separator'
 import { CalendarDays, MapPin, Users } from 'lucide-react'
 import Link from 'next/link'
 import type { Event } from '@/types/Event'
+import { DISPLAY_TITLE, Eyebrow } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 interface RegistrationHeaderProps {
   event: Event
@@ -14,10 +16,11 @@ export default function RegistrationHeader({
   availableSpots,
 }: RegistrationHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 border-b pb-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-3 border-b border-border pb-6 md:flex-row md:items-center md:justify-between">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Inscription à {event.title}</h1>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <Eyebrow>Inscription</Eyebrow>
+        <h1 className={cn(DISPLAY_TITLE, 'text-display-md')}>{event.title}</h1>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <CalendarDays className="h-3.5 w-3.5" />
             {new Date(event.date).toLocaleDateString('fr-FR', {

@@ -2,6 +2,7 @@ import type { ReactNode, Ref } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DISPLAY_TITLE } from '@/components/ds'
 
 interface RegistrationSectionProps {
   index: number
@@ -40,7 +41,7 @@ export default function RegistrationSection({
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold leading-none">{title}</h2>
+              <h2 className={cn(DISPLAY_TITLE, 'text-title')}>{title}</h2>
               {/* {optional ? (
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                   Optionnel

@@ -9,6 +9,8 @@ import { useEventRegisterData } from '@/app/api/events/[id]/register-data/regist
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAccountRegistrations } from '@/app/api/account/registrations/accountRegistrationsQueries'
+import { containerClass } from '@/components/ds'
+import { cn } from '@/lib/utils'
 
 export default function EventRegisterPage() {
   const params = useParams<{ id: string }>()
@@ -82,7 +84,7 @@ export default function EventRegisterPage() {
 
     if (isLoading) {
       return (
-        <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20">
+        <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
           <div className="text-sm text-muted-foreground">Chargement des informations d'inscription…</div>
         </main>
       )
@@ -92,8 +94,8 @@ export default function EventRegisterPage() {
   if (error) {
     const isClosed = error.message?.includes('inscriptions ne sont pas')
     return (
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto max-w-lg px-6 py-12">
+      <main className="min-h-screen bg-background text-foreground">
+        <div className={cn(containerClass('form'), 'py-12')}>
           <Card>
             <CardHeader>
               <CardTitle>
@@ -127,8 +129,8 @@ export default function EventRegisterPage() {
   hasRenderedFormRef.current = true
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto w-full px-4 pb-12 pt-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className={cn(containerClass(), 'pb-12 pt-8')}>
         <MultiStepEventRegistration
           event={data.event}
           tickets={data.tickets.map(ticket => ({
