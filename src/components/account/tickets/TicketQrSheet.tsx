@@ -76,6 +76,9 @@ export function TicketQrSheet({ tickets, openId, context, onOpenChange }: Ticket
 
               <div className="text-center">
                 {bibLabel(ticket.bib_number) ? (
+                  <p className="mb-1 text-label font-bold uppercase text-background/60">Dossard</p>
+                ) : null}
+                {bibLabel(ticket.bib_number) ? (
                   <p className="text-7xl font-bold leading-none tracking-tighter tabular-nums">{bibLabel(ticket.bib_number)}</p>
                 ) : (
                   <p className="text-balance text-3xl font-bold leading-tight tracking-tight">{ticket.ticket_name ?? 'Billet'}</p>

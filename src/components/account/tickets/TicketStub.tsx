@@ -56,7 +56,7 @@ export function TicketStub({ ticket, context, transferState, onOpenQr, onTransfe
       <div className="px-5 pb-5 pt-4">
         <div className="flex min-h-5 items-start justify-between gap-3">
           <p className="min-w-0 truncate text-label font-bold uppercase text-background/60">
-            {bib ? (ticket.ticket_name ?? 'Billet') : 'Billet'}
+            {bib ? `Dossard · ${ticket.ticket_name ?? 'Billet'}` : 'Billet'}
           </p>
           {status ? (
             <p className={cn('flex shrink-0 items-center gap-1 text-label font-bold uppercase tracking-wider', status.tone)}>

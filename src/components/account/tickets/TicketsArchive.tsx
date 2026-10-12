@@ -52,8 +52,15 @@ function TicketRow({ ticket, context, transferState, onOpenQr, onTransfer, onCan
 
   const body = (
     <>
-      <span className="flex w-[4.5rem] shrink-0 items-center text-4xl font-bold leading-none tracking-tighter tabular-nums">
-        {bib ?? <TicketIcon className="size-7 text-muted-foreground" aria-hidden />}
+      <span className="flex w-[4.5rem] shrink-0 flex-col justify-center">
+        {bib ? (
+          <>
+            <span className="text-label font-bold uppercase text-muted-foreground">Dossard</span>
+            <span className="text-4xl font-bold leading-none tracking-tighter tabular-nums">{bib}</span>
+          </>
+        ) : (
+          <TicketIcon className="size-7 text-muted-foreground" aria-hidden />
+        )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold">{ticket.ticket_name ?? 'Billet'}</span>
