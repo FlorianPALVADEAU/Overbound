@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { extractSpecBreakdown } from '@/lib/upsells/meta'
 
 export interface UpsellSummaryRow {
   name: string
@@ -8,60 +9,6 @@ export interface UpsellSummaryRow {
   total_cents: number
   currency: string
   specs_breakdown?: Array<{ label: string; quantity: number }>
-}
-
-const humanizeMetaKey = (key: string) =>
-  key
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^\w/, (char) => char.toUpperCase())
-
-const extractSpecBreakdown = (
-  meta: unknown,
-  quantity: number,
-): Array<{ label: string; quantity: number }> => {
-  if (!meta || typeof meta !== 'object') return []
-
-  const entries = Object.entries(meta as Record<string, unknown>)
-  const counts = new Map<string, number>()
-
-  const increment = (label: string, by: number) => {
-    if (!label || by <= 0) return
-    counts.set(label, (counts.get(label) ?? 0) + by)
-  }
-
-  for (const [key, value] of entries) {
-    if (value === null || value === undefined) continue
-
-    if (key === 'sizes' && Array.isArray(value)) {
-      // For tshirts, one size entry represents one sold item.
-      for (const size of value) {
-        if (typeof size === 'string' && size.trim().length > 0) {
-          increment(`Taille ${size.trim()}`, 1)
-        }
-      }
-      continue
-    }
-
-    if (key === 'size' && typeof value === 'string' && value.trim().length > 0) {
-      increment(`Taille ${value.trim()}`, Math.max(1, quantity))
-      continue
-    }
-
-    if (Array.isArray(value)) {
-      const serialized = value.map((entry) => String(entry)).join(', ')
-      if (serialized.length > 0) {
-        increment(`${humanizeMetaKey(key)}: ${serialized}`, Math.max(1, quantity))
-      }
-      continue
-    }
-
-    if (typeof value === 'object') continue
-    increment(`${humanizeMetaKey(key)}: ${String(value)}`, Math.max(1, quantity))
-  }
-
-  return Array.from(counts.entries()).map(([label, value]) => ({ label, quantity: value }))
 }
 
 export async function GET(request: Request) {
