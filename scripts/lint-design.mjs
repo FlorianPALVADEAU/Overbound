@@ -18,7 +18,7 @@ const BASELINE_PATH = join(ROOT, 'scripts', 'design-baseline.json')
 const SCAN_DIRS = ['src/app', 'src/components']
 const EXCLUDED = [
   /^src\/components\/ui\//, // shadcn primitives keep their upstream classes
-  /^src\/app\/(api|studio|dashboard)\//,
+  /^src\/app\/(api|studio)\//,
   /\.test\.tsx?$/,
 ]
 
@@ -33,6 +33,13 @@ export const RULES = [
   { id: 'arbitrary-tracking', hint: 'use tracking-tight, tracking-eyebrow or tracking-label', re: /\btracking-\[/g },
   { id: 'font-black', hint: 'strong titles use font-display (SectionHeader / DISPLAY_TITLE)', re: /\bfont-black\b/g },
   { id: 'raw-red', hint: 'use Button variant="signal" (header CTA) or destructive (errors)', re: /\bbg-red-\d{2,3}\b/g },
+  {
+    id: 'raw-status-color',
+    // Admin only: the public site has its own status styling still to migrate.
+    only: /^src\/(components\/admin|app\/dashboard)\//,
+    hint: 'use text-success / text-warning / text-info / text-destructive (and /10 /20 /40 for fills and borders)',
+    re: /\b(?:text|bg|border|from|via|to|ring|divide)-(?:red|green|blue|amber|yellow|orange|emerald|sky|purple|violet|indigo|pink|rose|teal|cyan|lime)-\d{2,3}\b/g,
+  },
   { id: 'dark-variant', hint: 'the site is dark-only: no dark: variants', re: /\bdark:/g },
   { id: 'container-width', hint: 'use <Container> or containerClass() from @/components/ds', re: /\bmax-w-(?:6xl|7xl)\b/g },
 ]
@@ -51,9 +58,10 @@ function toPosix(path) {
   return path.split(sep).join('/')
 }
 
-export function countViolations(source) {
+export function countViolations(source, file = '') {
   const counts = {}
   for (const rule of RULES) {
+    if (rule.only && !rule.only.test(file)) continue
     const n = source.match(rule.re)?.length ?? 0
     if (n > 0) counts[rule.id] = n
   }
@@ -68,7 +76,7 @@ function scan() {
       // The design system itself defines the allowed container widths.
       if (rel.startsWith('src/components/ds/')) continue
       if (EXCLUDED.some((re) => re.test(rel))) continue
-      const counts = countViolations(readFileSync(file, 'utf8'))
+      const counts = countViolations(readFileSync(file, 'utf8'), rel)
       if (Object.keys(counts).length > 0) result[rel] = counts
     }
   }

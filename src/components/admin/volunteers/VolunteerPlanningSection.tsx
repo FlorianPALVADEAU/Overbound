@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Download, Loader2, Wand2 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import {
   downloadVolunteerPlanning,
@@ -74,24 +75,23 @@ export function VolunteerPlanningSection({ eventId }: { eventId?: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Planning bénévoles</h2>
-          <p className="text-sm text-muted-foreground">
-            {plural(board.candidateCount, 'candidature')} · {plural(board.assignmentCount, 'affectation')}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => autoAssign.mutate(undefined, { onSuccess: setLastRun })} disabled={autoAssign.isPending}>
-            {autoAssign.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            Répartir automatiquement
-          </Button>
-          <Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Exporter .xlsx
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Communauté"
+        title="Planning bénévoles"
+        description={`${plural(board.candidateCount, 'candidature')} · ${plural(board.assignmentCount, 'affectation')}`}
+        actions={
+          <>
+            <Button type="button" onClick={() => autoAssign.mutate(undefined, { onSuccess: setLastRun })} disabled={autoAssign.isPending}>
+              {autoAssign.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Répartir automatiquement
+            </Button>
+            <Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Exporter .xlsx
+            </Button>
+          </>
+        }
+      />
 
       {lastRun ? (
         <Alert>

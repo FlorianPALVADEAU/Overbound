@@ -20,7 +20,7 @@ export function UnassignedList({ board, shift, onAssign }: UnassignedListProps) 
       {candidates.length === 0 ? (
         <p className="text-sm text-muted-foreground">Tous les bénévoles disponibles sur ce créneau ont une zone.</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul className="divide-y rounded-xl border">
           {candidates.map((candidate) => (
             <li key={candidate.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">

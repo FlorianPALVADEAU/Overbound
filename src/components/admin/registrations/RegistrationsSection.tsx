@@ -6,6 +6,7 @@ import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -313,12 +314,11 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Gestion des membres</h2>
-        <p className="text-muted-foreground">
-          Consulte et modifie les statuts d&apos;inscription des participants.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Communauté"
+        title="Gestion des membres"
+        description="Consulte et modifie les statuts d'inscription des participants."
+      />
 
       <RegistrationStats stats={stats} />
 
@@ -425,7 +425,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                           </span>
                         ) : null}
                         {registration.claim_status === 'transferred' ? (
-                          <span className="text-xs text-amber-600">
+                          <span className="text-xs text-warning">
                             Transfert en attente
                           </span>
                         ) : null}
@@ -497,7 +497,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                         {registration.cancelled_at ? (
                           <RefundedBadge cancelledAt={registration.cancelled_at} />
                         ) : registration.checked_in ? (
-                          <Badge variant="outline" className="border-emerald-200 text-emerald-600">
+                          <Badge variant="outline" className="border-success/40 text-success">
                             Check-in
                           </Badge>
                         ) : (

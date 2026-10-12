@@ -8,7 +8,7 @@ import { useAdminOverview } from '@/app/api/admin/overview/overviewQueries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { AdminStats } from '@/components/admin/AdminStats'
+import { AdminOverview } from '@/components/admin/AdminOverview'
 
 export default function DashboardPage() {
   const [hasMounted, setHasMounted] = useState(false)
@@ -56,9 +56,9 @@ export default function DashboardPage() {
 
   if (!hasMounted || sessionLoading || (isAdmin && isLoading)) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <div className="text-sm text-muted-foreground">Chargement…</div>
-      </main>
+      </div>
     )
   }
 
@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
   if (isAdmin && error) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="space-y-4 p-6 text-center">
             <p className="font-semibold text-destructive">Impossible de charger le tableau de bord</p>
@@ -76,7 +76,7 @@ export default function DashboardPage() {
             <Button onClick={() => refetch()}>Réessayer</Button>
           </CardContent>
         </Card>
-      </main>
+      </div>
     )
   }
 
@@ -92,7 +92,7 @@ export default function DashboardPage() {
 
   if (!isAdmin || !data) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center space-y-4">
             <p className="text-lg font-semibold">Accès refusé</p>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
-      </main>
+      </div>
     )
   }
 
@@ -118,5 +118,5 @@ export default function DashboardPage() {
     )
   }
 
-  return <AdminStats stats={data.stats} />
+  return <AdminOverview stats={data.stats} />
 }

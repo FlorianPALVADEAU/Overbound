@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
 
@@ -370,8 +371,9 @@ export function AdminEmailPlayground() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-8">
+      <AdminPageHeader eyebrow="Communication" title="Emails" description="Notifications, tests d'envoi et aperçu des modèles." />
+      <Card variant="info">
         <CardHeader>
           <CardTitle>Notifications téléphone (Web Push)</CardTitle>
           <CardDescription>Active les notifications pour recevoir une alerte à chaque paiement validé.</CardDescription>
@@ -397,7 +399,7 @@ export function AdminEmailPlayground() {
           ) : null}
         </CardContent>
       </Card>
-      <Card>
+      <Card variant="info">
         <CardHeader>
           <CardTitle>Reçu de paiement</CardTitle>
           <CardDescription>Renvoyer un reçu à partir d’un PaymentIntent Stripe.</CardDescription>
@@ -426,7 +428,7 @@ export function AdminEmailPlayground() {
         </CardContent>
       </Card>
       {EMAIL_GROUPS.map((group) => (
-        <Card key={group.title}>
+        <Card variant="info" key={group.title}>
           <CardHeader>
             <CardTitle>{group.title}</CardTitle>
             <CardDescription>{group.description}</CardDescription>
@@ -437,7 +439,7 @@ export function AdminEmailPlayground() {
               const message = statusMap[item.type]?.message
 
               return (
-                <div key={item.type} className="flex flex-col gap-3 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between">
+                <div key={item.type} className="flex flex-col gap-3 rounded-xl border border-border p-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
                       <p className="font-medium">{item.label}</p>

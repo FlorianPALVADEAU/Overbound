@@ -153,14 +153,14 @@ export function TicketChangeConfirmationGate({
       ) : null}
       {submitted ? (
         <Alert aria-label="Changement confirmé">
-          <CheckCircle className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          <CheckCircle className="h-4 w-4 text-success" aria-hidden="true" />
           <AlertDescription>Le billet a été changé. Le prix historique a été conservé et l’opération a été auditée.</AlertDescription>
         </Alert>
       ) : null}
       {submitError ? <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{submitError}</AlertDescription></Alert> : null}
       {!submitted && previewAllowed ? (
         <Alert aria-label="Confirmation disponible">
-          <CheckCircle className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          <CheckCircle className="h-4 w-4 text-success" aria-hidden="true" />
           <AlertDescription>
             <p className="font-medium">Prix historique conservé</p>
             <p>Aucun débit, remboursement ou avoir ne sera créé automatiquement. La commande sera auditée.</p>
@@ -218,7 +218,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
   }
 
   return (
-    <section className="space-y-3 rounded-lg border bg-muted/20 p-4" aria-labelledby="ticket-preview-title">
+    <section className="space-y-3 rounded-xl border bg-muted/20 p-4" aria-labelledby="ticket-preview-title">
       <div className="flex items-start gap-2">
         <Eye className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <div>
@@ -252,7 +252,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
           </div>
           {preview.impacts.financial.status !== 'no_change' ? <p className="text-xs text-muted-foreground">Montant actuel : {formatAmount(preview.impacts.financial.currentPriceCents, preview.impacts.financial.currency)} · cible : {formatAmount(preview.impacts.financial.targetPriceCents, preview.impacts.financial.currency)}</p> : null}
           {preview.blockers.length > 0 ? <div className="space-y-1 text-sm text-destructive"><p className="font-medium">Changement bloqué</p>{preview.blockers.map((blocker) => <p key={blocker}>• {blocker}</p>)}</div> : null}
-          {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
+          {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-warning"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
           {confirmation ? <TicketChangeConfirmationGate
             eventId={eventId}
             registrationId={participant.id}

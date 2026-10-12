@@ -85,11 +85,11 @@ export function DistributionListsTable({
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      marketing: 'bg-blue-500/15 text-blue-300',
-      events: 'bg-green-500/15 text-green-300',
-      news: 'bg-purple-500/15 text-purple-300',
-      volunteers: 'bg-orange-500/15 text-orange-300',
-      partners: 'bg-pink-500/15 text-pink-300',
+      marketing: 'bg-info/15 text-info',
+      events: 'bg-success/15 text-success',
+      news: 'bg-primary/15 text-primary',
+      volunteers: 'bg-warning/15 text-warning',
+      partners: 'bg-secondary-foreground/15 text-secondary-foreground',
       transactional: 'bg-muted text-muted-foreground',
     }
     return colors[type] || colors.marketing
@@ -97,7 +97,7 @@ export function DistributionListsTable({
 
   return (
     <>
-      <div className="hidden overflow-hidden rounded-lg border md:block">
+      <div className="hidden overflow-hidden rounded-xl border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -219,7 +219,7 @@ export function DistributionListsTable({
         </Table>
       </div>
       <div className="space-y-3 md:hidden">
-        {lists.length === 0 ? <div className="rounded-lg border py-8 text-center text-sm text-muted-foreground">Aucune liste de distribution</div> : lists.map((list) => (
+        {lists.length === 0 ? <div className="rounded-xl border py-8 text-center text-sm text-muted-foreground">Aucune liste de distribution</div> : lists.map((list) => (
           <article key={list.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-medium">{list.name}</p>{list.description ? <p className="line-clamp-2 text-sm text-muted-foreground">{list.description}</p> : null}</div><Badge className={`shrink-0 ${getTypeColor(list.type)}`}>{list.type}</Badge></div>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm"><code className="max-w-full truncate rounded bg-muted px-1.5 py-0.5 text-xs">{list.slug}</code><Button variant="ghost" size="sm" onClick={() => onViewSubscribers(list)} className="ml-auto gap-1"><Users className="h-4 w-4" />{list.subscriber_count || 0}</Button><Switch checked={list.active} onCheckedChange={() => handleToggleActive(list)} disabled={list.id === EVENT_OPENING_FIRST_LIST_ID} /></div>

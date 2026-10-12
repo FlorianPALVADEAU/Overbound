@@ -17,13 +17,13 @@ interface ObstacleCardProps {
 
 function difficultyColor(difficulty: number) {
   if (difficulty >= 8) return 'bg-destructive/15 text-destructive'
-  if (difficulty >= 5) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-green-100 text-green-800'
+  if (difficulty >= 5) return 'bg-warning/15 text-warning'
+  return 'bg-success/15 text-success'
 }
 
 export function ObstacleCard({ obstacle, onEdit, onDelete, onPreview, isDeleting }: ObstacleCardProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="p-4">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">

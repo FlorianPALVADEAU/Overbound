@@ -174,7 +174,7 @@ export function SubscribersDialog({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-auto border rounded-lg">
+        <div className="flex-1 overflow-auto border rounded-xl">
           {isLoading ? (
             <div className="flex items-center justify-center h-48">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

@@ -5,6 +5,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
@@ -408,18 +409,17 @@ export function TicketsSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Gestion des billets</h2>
-          <p className="text-muted-foreground">
-            Paramètre les billets, leurs tarifs et leurs quotas.
-          </p>
-        </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau ticket
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Billetterie"
+        title="Gestion des billets"
+        description="Paramètre les billets, leurs tarifs et leurs quotas."
+        actions={
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau ticket
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={alertVariant}>

@@ -10,7 +10,7 @@ interface UpsellsEmptyStateProps {
 
 export function UpsellsEmptyState({ onCreate }: UpsellsEmptyStateProps) {
   return (
-    <Card>
+    <Card variant="info">
       <CardContent className="text-center py-12">
         <PackagePlus className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">Aucun upsell</h3>

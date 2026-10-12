@@ -80,7 +80,7 @@ export function OperationsListTable<T>({
           return (
             <div
               key={itemId}
-              className={cn('min-w-0 rounded-lg border bg-background p-3', selected && 'border-primary ring-1 ring-primary/30')}
+              className={cn('min-w-0 rounded-xl border bg-background p-3', selected && 'border-primary ring-1 ring-primary/30')}
               role={onItemOpen ? 'button' : undefined}
               tabIndex={onItemOpen ? 0 : undefined}
               onClick={() => onItemOpen?.(item)}

@@ -82,7 +82,7 @@ export function PriceTierManager({ tiers, currency, onChange }: PriceTierManager
   }
 
   return (
-    <div className="space-y-3 rounded-lg border p-4">
+    <div className="space-y-3 rounded-xl border p-4">
       <div className="flex items-center justify-between">
         <div>
           <h4 className="font-medium">Paliers de prix progressifs</h4>
@@ -98,7 +98,7 @@ export function PriceTierManager({ tiers, currency, onChange }: PriceTierManager
 
       <div className="space-y-3">
         {tiers.map((tier, index) => (
-          <div key={index} className="relative rounded-lg border bg-muted/30 p-4">
+          <div key={index} className="relative rounded-xl border bg-muted/30 p-4">
             <div className="flex items-start gap-3">
               {/* Drag handle - visual only for now */}
               <div className="flex flex-col gap-1 pt-7">

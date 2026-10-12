@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ComponentType } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, CalendarDays, MapPin, RefreshCw, Users, CheckCircle2, AlertCircle, Coins } from 'lucide-react'
+import { ArrowLeft, CalendarDays, MapPin, RefreshCw, Users, AlertCircle } from 'lucide-react'
 import { useSession } from '@/app/api/session/sessionQueries'
 import {
   useAdminEventDetail,
   type AdminEventDetailResponse,
 } from '@/app/api/admin/events/eventsQueries'
 import { EventParticipantsList } from './EventParticipantsList'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
+import { StatRow } from '@/components/ds'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -79,38 +81,6 @@ const formatCurrency = (amountCents: number, currency?: string | null) => {
   }).format(amount)
 }
 
-const StatCard = ({
-  title,
-  value,
-  description,
-  icon,
-  accent,
-}: {
-  title: string
-  value: string
-  description?: string
-  icon: ComponentType<{ className?: string }>
-  accent?: string
-}) => {
-  const Icon = icon
-  return (
-    <Card>
-      <CardContent className="flex items-start gap-4 p-4 md:p-6">
-        <span
-          className={`flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary ${accent ?? ''}`}
-        >
-          <Icon className="h-5 w-5" />
-        </span>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-semibold text-foreground">{value}</p>
-          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 export default function AdminEventDetailPage({ eventId }: AdminEventDetailPageProps) {
   const router = useRouter()
   const [viewMode, setViewMode] = useState<ViewMode>('all')
@@ -127,7 +97,7 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
   // Load price tiers when event data is loaded
   useEffect(() => {
     if (data?.event) {
-      const eventWithTiers = data.event as any
+      const eventWithTiers = data.event as { price_tiers?: EventPriceTier[] }
       setPriceTiers(eventWithTiers.price_tiers || [])
     }
   }, [data])
@@ -152,16 +122,13 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
 
   if (sessionLoading || !session?.user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-muted/30">
-        <div className="text-sm text-muted-foreground">Chargement…</div>
-      </main>
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">Chargement…</div>
     )
   }
 
   if (error) {
     return (
-      <main className="min-h-screen bg-muted/30 max-w-screen">
-        <div className="mx-auto flex min-h-[60vh] w-screen flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 px-6 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
           <p className="text-sm text-muted-foreground">
             {(error as Error).message || 'Impossible de charger les détails de cet événement.'}
@@ -174,139 +141,104 @@ export default function AdminEventDetailPage({ eventId }: AdminEventDetailPagePr
               <RefreshCw className="mr-2 h-4 w-4" />
               Réessayer
             </Button>
-          </div>
         </div>
-      </main>
+      </div>
     )
   }
 
+  const money = formatCurrency(stats?.revenue.total_cents ?? 0, stats?.revenue.currency)
+  const count = (value?: number) => (value ?? 0).toLocaleString('fr-FR')
+
   return (
-    <main className="min-h-screen bg-muted/30">
-      <div className="mx-auto w-full max-w-[80vw] space-y-6 px-4 py-6 md:px-6 lg:py-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour au tableau de bord
-            </Link>
-          </Button>
-          <div className="flex items-center gap-2">
-            {event?.status ? (
-              <Badge variant={statusVariant(event.status)} className="capitalize">
-                {statusLabel(event.status)}
-              </Badge>
-            ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Actualiser
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">{event?.title ?? 'Événement'}</h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
-              {formatEventDate(event?.date ?? null)}
-            </span>
-            {event?.location ? (
-              <span className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {event.location}
-              </span>
-            ) : null}
-            <span className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Capacité : {event?.capacity?.toLocaleString('fr-FR') ?? '—'}
-            </span>
-          </div>
-          {event?.subtitle ? (
-            <p className="text-sm text-muted-foreground">{event.subtitle}</p>
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/dashboard/events">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Retour aux événements
+          </Link>
+        </Button>
+        <div className="flex items-center gap-2">
+          {event?.status ? (
+            <Badge variant={statusVariant(event.status)} className="capitalize">
+              {statusLabel(event.status)}
+            </Badge>
           ) : null}
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualiser
+          </Button>
         </div>
-
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Inscriptions totales"
-            value={(stats?.registrations.total ?? 0).toLocaleString('fr-FR')}
-            icon={Users}
-            description="Coureurs enregistrés sur cet événement"
-          />
-          <StatCard
-            title="Coureurs approuvés"
-            value={(stats?.registrations.approved ?? 0).toLocaleString('fr-FR')}
-            icon={CheckCircle2}
-            description="Dossiers validés par l’équipe"
-          />
-          <StatCard
-            title="En attente"
-            value={(stats?.registrations.pending ?? 0).toLocaleString('fr-FR')}
-            icon={AlertCircle}
-            description="Inscriptions à examiner"
-          />
-          <StatCard
-            title="Bénévoles"
-            value={(stats?.volunteers.total ?? 0).toLocaleString('fr-FR')}
-            icon={Users}
-            description="Candidatures bénévoles reçues"
-          />
-        </section>
-          <StatCard
-            title="Renta totale"
-            value={formatCurrency(stats?.revenue.total_cents ?? 0, stats?.revenue.currency)}
-            icon={Coins}
-            accent="!bg-amber-500/15 text-amber-400 border-amber-600"
-            description="Commandes payées recensées pour cet événement"
-          />
-
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-foreground">Paliers de prix</h2>
-          <EventPriceTierManager
-            eventId={eventId}
-            tiers={priceTiers}
-            onTiersChange={(newTiers) => {
-              setPriceTiers(newTiers)
-              refetch() // Rafraîchir les données pour afficher les changements
-            }}
-          />
-        </section>
-
-        <section className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-foreground">Gestion des participants</h2>
-          <div className="flex gap-2">
-            {viewOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={viewMode === option.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </section>
-
-        {isLoading ? (
-          <Card>
-            <CardContent className="space-y-4 p-6 text-sm text-muted-foreground">
-              Chargement des informations participants…
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {(viewMode === 'all' || viewMode === 'participants') && (
-          <EventParticipantsList eventId={eventId} />
-        )}
-
-        {(viewMode === 'all' || viewMode === 'volunteers') && <EventVolunteersTable eventId={eventId} />}
       </div>
-    </main>
+
+      <div className="space-y-3">
+        <AdminPageHeader eyebrow="Événement" title={event?.title ?? 'Événement'} description={event?.subtitle ?? undefined} />
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            {formatEventDate(event?.date ?? null)}
+          </span>
+          {event?.location ? (
+            <span className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              {event.location}
+            </span>
+          ) : null}
+          <span className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Capacité : {event?.capacity?.toLocaleString('fr-FR') ?? '—'}
+          </span>
+        </div>
+      </div>
+
+      <StatRow
+        stats={[
+          { label: 'Inscriptions', value: count(stats?.registrations.total), unit: `${count(stats?.registrations.approved)} approuvés` },
+          { label: 'En attente', value: count(stats?.registrations.pending), unit: 'à examiner' },
+          { label: 'Bénévoles', value: count(stats?.volunteers.total), unit: 'candidatures' },
+          { label: 'Renta totale', value: money, highlight: true, unit: 'commandes payées' },
+        ]}
+      />
+
+      <section className="space-y-4">
+        <AdminPageHeader as="h2" title="Paliers de prix" />
+        <EventPriceTierManager
+          eventId={eventId}
+          tiers={priceTiers}
+          onTiersChange={(newTiers) => {
+            setPriceTiers(newTiers)
+            refetch() // Rafraîchir les données pour afficher les changements
+          }}
+        />
+      </section>
+
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <AdminPageHeader as="h2" title="Gestion des participants" />
+        <div className="flex gap-2">
+          {viewOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={viewMode === option.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode(option.value)}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      {isLoading ? (
+        <Card variant="info">
+          <CardContent className="space-y-4 p-6 text-sm text-muted-foreground">
+            Chargement des informations participants…
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {(viewMode === 'all' || viewMode === 'participants') && <EventParticipantsList eventId={eventId} />}
+
+      {(viewMode === 'all' || viewMode === 'volunteers') && <EventVolunteersTable eventId={eventId} />}
+    </div>
   )
 }

@@ -31,7 +31,7 @@ export function UpsellSummaryPanel({ eventId }: UpsellSummaryPanelProps) {
   if (!isLoading && summary.length === 0) return null
 
   return (
-    <Card>
+    <Card variant="info">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Package className="h-4 w-4 text-primary" />
@@ -78,7 +78,7 @@ export function UpsellSummaryPanel({ eventId }: UpsellSummaryPanelProps) {
                   <TableCell className="text-center tabular-nums">
                     <Badge variant="secondary">{row.quantity}</Badge>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums font-medium text-green-600">
+                  <TableCell className="text-right tabular-nums font-medium text-success">
                     {formatAmount(row.total_cents, row.currency)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground text-sm">

@@ -44,7 +44,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
 
   if (isLoading) {
     return (
-      <div aria-label="Chargement du contexte événement" className="flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground">
+      <div aria-label="Chargement du contexte événement" className="flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Chargement des événements…
       </div>
@@ -76,10 +76,10 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
   }
 
   return (
-    <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contexte événement</p>
+          <p className="text-label font-semibold uppercase text-subtle">Contexte événement</p>
           <p className="truncate text-sm font-medium">
             {selectedEvent ? selectedEvent.title : hasAmbiguousContext ? 'Sélection requise' : 'Aucun événement sélectionné'}
           </p>
@@ -88,7 +88,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
           <span className="sr-only">Événement à administrer</span>
           <select
             aria-label="Événement à administrer"
-            className="min-h-10 min-w-0 flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring lg:w-[24rem] lg:flex-none"
+            className="min-h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring lg:w-96 lg:flex-none"
             value={selectedEvent?.id ?? EMPTY_EVENT_VALUE}
             onChange={(event) => {
               const params = new URLSearchParams(window.location.search)

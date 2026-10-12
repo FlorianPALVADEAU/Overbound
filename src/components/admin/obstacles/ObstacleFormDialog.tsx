@@ -170,7 +170,7 @@ export function ObstacleFormDialog({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-3 rounded-xl border p-4">
             <div>
               <h3 className="font-medium">Indication de l&apos;obstacle (optionnel)</h3>
               <p className="text-sm text-muted-foreground">
@@ -199,7 +199,7 @@ export function ObstacleFormDialog({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-3 rounded-xl border p-4">
             <div>
               <h3 className="font-medium">Charge à porter (optionnel)</h3>
               <p className="text-sm text-muted-foreground">

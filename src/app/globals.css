@@ -48,6 +48,9 @@
   --color-subtle: var(--subtle);
   --color-signal: var(--signal);
   --color-signal-foreground: var(--signal-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -139,6 +142,11 @@
   /* Red reserved for the registration CTA in the header. Not for errors. */
   --signal: oklch(0.577 0.245 27.325);
   --signal-foreground: oklch(1 0 0);
+  /* Status colors (admin badges, alerts, deltas). Green is the brand action
+     color, so success is a distinct teal-green; they never carry an action. */
+  --success: oklch(0.72 0.17 160);
+  --warning: oklch(0.8 0.16 80);
+  --info: oklch(0.72 0.13 235);
 }
 
 /* Light band: remaps the tokens in place, so every child keeps using the
@@ -156,6 +164,9 @@
   --input: oklch(0 0 0 / 16%);
   --primary: oklch(0.5 0.17 142);
   --subtle: oklch(0 0 0 / 55%);
+  --success: oklch(0.5 0.14 160);
+  --warning: oklch(0.55 0.14 70);
+  --info: oklch(0.5 0.13 235);
 }
 
 /* Dark panel inside a light band: puts back the default dark tokens. */

@@ -158,7 +158,7 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card variant="info">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
@@ -238,7 +238,7 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
               {activeLists.map((list) => (
                 <label
                   key={list.id}
-                  className={`flex items-start space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                  className={`flex items-start space-x-3 rounded-xl border p-3 cursor-pointer transition-colors ${
                     formData.listIds.includes(list.id)
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'

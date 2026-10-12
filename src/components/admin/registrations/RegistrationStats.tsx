@@ -13,7 +13,7 @@ interface RegistrationStatsProps {
 export function RegistrationStats({ stats }: RegistrationStatsProps) {
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-2">
-      <Card>
+      <Card variant="info">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -24,13 +24,13 @@ export function RegistrationStats({ stats }: RegistrationStatsProps) {
           </div>
         </CardContent>
       </Card>
-      <Card>
+      <Card variant="info">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <CheckCircle className="h-4 w-4 text-info" />
             <div>
               <p className="text-sm text-muted-foreground">Présents</p>
-              <p className="text-xl font-bold text-blue-600">{stats.checked_in}</p>
+              <p className="text-xl font-bold text-info">{stats.checked_in}</p>
             </div>
           </div>
         </CardContent>

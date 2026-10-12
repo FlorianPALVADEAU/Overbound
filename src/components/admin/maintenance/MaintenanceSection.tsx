@@ -14,6 +14,7 @@ import {
   updateAdminMaintenance,
   useAdminMaintenance,
 } from '@/app/api/admin/maintenance/maintenanceQueries'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 
 const toDatetimeLocal = (iso: string | null) => {
   if (!iso) return ''
@@ -61,7 +62,9 @@ export function MaintenanceSection() {
   }
 
   return (
-    <Card>
+    <>
+      <AdminPageHeader eyebrow="Système" title="Maintenance" description="Coupe le site au public pendant une opération sensible." />
+    <Card variant="info">
       <CardHeader>
         <CardTitle>Mode maintenance</CardTitle>
         <CardDescription>
@@ -106,5 +109,6 @@ export function MaintenanceSection() {
         ) : null}
       </CardContent>
     </Card>
+    </>
   )
 }

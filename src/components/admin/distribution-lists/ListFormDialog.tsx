@@ -203,7 +203,7 @@ export function ListFormDialog({
             </div>
 
             {/* Default Subscribed */}
-            <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+            <div className="flex items-center justify-between space-x-2 rounded-xl border p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="default-subscribed" className="cursor-pointer">
                   Abonnement par défaut
@@ -220,7 +220,7 @@ export function ListFormDialog({
             </div>
 
             {/* Active */}
-            <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+            <div className="flex items-center justify-between space-x-2 rounded-xl border p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="active" className="cursor-pointer">
                   Liste active

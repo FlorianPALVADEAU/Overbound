@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatRow } from '@/components/ds'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -364,47 +365,16 @@ export function VolunteerCheckin() {
 
   return (
     <div className="space-y-8">
-      {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Total inscriptions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Présents
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.checkedIn}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              En attente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.pending}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatRow
+        stats={[
+          { label: 'Total inscriptions', value: stats.total },
+          { label: 'Présents', value: stats.checkedIn, highlight: true },
+          { label: 'En attente', value: stats.pending },
+        ]}
+      />
 
       {/* Scanner QR */}
-      <Card>
+      <Card variant="info">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ScanIcon className="h-5 w-5" />
@@ -468,7 +438,7 @@ export function VolunteerCheckin() {
 
       {scannerOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur">
-          <div className="w-full max-w-md space-y-4 rounded-3xl border border-border bg-card p-6 shadow-2xl shadow-primary/20">
+          <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-6 shadow-2xl shadow-primary/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-lg font-semibold">
                 <ScanIcon className="h-5 w-5" />
@@ -517,7 +487,7 @@ export function VolunteerCheckin() {
       ) : null}
 
       {/* Liste des inscriptions */}
-      <Card>
+      <Card variant="info">
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center justify-between gap-2">
             <span className="flex items-center gap-2">
@@ -564,9 +534,9 @@ export function VolunteerCheckin() {
                 return (
                   <div
                     key={registration.id}
-                    className={`overflow-hidden rounded-lg border transition ${
+                    className={`overflow-hidden rounded-xl border transition ${
                       registration.checked_in
-                        ? 'border-emerald-500/40 bg-emerald-500/10'
+                        ? 'border-success/40 bg-success/10'
                         : 'border-border bg-card'
                     }`}
                   >
@@ -575,7 +545,7 @@ export function VolunteerCheckin() {
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-full border ${
                             registration.checked_in
-                              ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
+                              ? 'border-success/40 bg-success/20 text-success'
                               : 'border-muted bg-muted text-muted-foreground'
                           }`}
                         >
@@ -591,7 +561,7 @@ export function VolunteerCheckin() {
                             <p className="truncate font-medium">{registration.email}</p>
                             <Badge
                               variant={registration.checked_in ? 'default' : 'secondary'}
-                              className={registration.checked_in ? 'border-none bg-emerald-500/20 text-emerald-300' : ''}
+                              className={registration.checked_in ? 'border-none bg-success/20 text-success' : ''}
                             >
                               {registration.checked_in ? 'Présent' : 'En attente'}
                             </Badge>
@@ -608,7 +578,7 @@ export function VolunteerCheckin() {
 
                       <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                         {registration.checked_in ? (
-                          <Badge variant="outline" className="border-emerald-400 text-emerald-300">
+                          <Badge variant="outline" className="border-success text-success">
                             <CheckCircle className="mr-1 h-4 w-4" />
                             Validé
                           </Badge>
@@ -637,7 +607,7 @@ export function VolunteerCheckin() {
                     </div>
 
                     {registration.checked_in ? (
-                      <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500/30 via-emerald-500/10 to-transparent" />
+                      <div className="h-1.5 w-full bg-gradient-to-r from-success/30 via-success/10 to-transparent" />
                     ) : null}
                   </div>
                 )

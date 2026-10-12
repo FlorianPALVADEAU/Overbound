@@ -313,7 +313,7 @@ export function EventFormDialog({
           </div>
 
           {!isCreateMode && eventId && (
-            <div className="space-y-4 p-4 border rounded-lg">
+            <div className="space-y-4 p-4 border rounded-xl">
               <h4 className="font-medium text-lg">Paliers de prix</h4>
               <p className="text-sm text-muted-foreground">
                 Définissez les réductions en pourcentage qui s'appliqueront à tous les tickets de cet événement.
@@ -326,7 +326,7 @@ export function EventFormDialog({
             </div>
           )}
 
-          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+          <div className="space-y-4 p-4 border rounded-xl bg-muted/30">
             <h4 className="font-medium">Prestataire externe (optionnel)</h4>
 
             <div className="space-y-2">

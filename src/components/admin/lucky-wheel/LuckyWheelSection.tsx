@@ -4,6 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
@@ -290,18 +291,17 @@ export function LuckyWheelSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Lucky Wheel</h2>
-          <p className="text-muted-foreground">
-            Campagnes de roue de la chance. Le tirage reste toujours déterminé côté serveur.
-          </p>
-        </div>
-        <Button onClick={handleCreateCampaignClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvelle campagne
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Communication"
+        title="Lucky Wheel"
+        description="Campagnes de roue de la chance. Le tirage reste toujours déterminé côté serveur."
+        actions={
+          <Button onClick={handleCreateCampaignClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvelle campagne
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={alertVariant}>
@@ -325,7 +325,7 @@ export function LuckyWheelSection() {
       />
 
       {selectedCampaignFromList ? (
-        <Card>
+        <Card variant="info">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Récompenses — {selectedCampaignFromList.name}</CardTitle>

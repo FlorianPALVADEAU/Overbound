@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -309,18 +310,17 @@ export function RacesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Formats de course</h2>
-          <p className="text-muted-foreground">
-            Gère les formats, leurs obstacles et leurs cibles.
-          </p>
-        </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau format
-        </Button>
-      </div>
+      <AdminPageHeader
+        eyebrow="Événements"
+        title="Formats de course"
+        description="Gère les formats, leurs obstacles et leurs cibles."
+        actions={
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau format
+          </Button>
+        }
+      />
 
       {message && (
         <Alert variant={alertVariant}>

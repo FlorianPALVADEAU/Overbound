@@ -6,6 +6,7 @@ import axios from 'axios'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
@@ -401,12 +402,11 @@ export function PromotionsSection() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">Bandeaux promotions</h2>
-        <p className="text-sm text-muted-foreground">
-          Gérez les annonces marketing affichées sous le header du site.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Billetterie"
+        title="Bandeaux promotions"
+        description="Gérez les annonces marketing affichées sous le header du site."
+      />
 
       {error ? (
         <Alert variant="destructive">

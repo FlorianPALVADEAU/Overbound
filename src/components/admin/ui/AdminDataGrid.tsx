@@ -49,7 +49,7 @@ export function AdminDataGrid<T>({
   const showEmptyState = !loading && data.length === 0
 
   return (
-    <Card className="border shadow-sm">
+    <Card variant="info" className="border shadow-sm">
       {(toolbar || meta) && (
         <div className="flex flex-col gap-3 border-b border-border bg-muted/40 px-4 py-3 md:flex-row md:items-center md:justify-between">
           {toolbar ? <div className="flex-1">{toolbar}</div> : null}

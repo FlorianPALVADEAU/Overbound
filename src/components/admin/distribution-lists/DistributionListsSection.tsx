@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, RefreshCw, Loader2, List, TrendingUp } from 'lucide-react'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
+import { StatRow } from '@/components/ds'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 
 export function DistributionListsSection() {
   const { lists, isLoading, fetchLists, toggleActive } = useDistributionLists()
@@ -59,7 +61,7 @@ export function DistributionListsSection() {
     { id: 'type', header: 'Type', cell: (list) => <span className="rounded-full bg-muted px-2 py-1 text-xs">{list.type}</span> },
     { id: 'slug', header: 'Slug', cell: (list) => <code className="text-xs">{list.slug}</code> },
     { id: 'subscribers', header: 'Abonnés', cell: (list) => <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted" onClick={(event) => { event.stopPropagation(); handleViewSubscribers(list) }}><span>♙</span>{list.subscriber_count || 0}</button> },
-    { id: 'status', header: 'Statut', cell: (list) => <span className={list.active ? 'text-emerald-600' : 'text-muted-foreground'}>{list.active ? 'Active' : 'Inactive'}</span> },
+    { id: 'status', header: 'Statut', cell: (list) => <span className={list.active ? 'text-success' : 'text-muted-foreground'}>{list.active ? 'Active' : 'Inactive'}</span> },
   ], [])
   const rowActions: OperationsListAction<DistributionListWithStats>[] = [
     { id: 'subscribers', label: 'Voir les abonnés', onSelect: handleViewSubscribers },
@@ -73,92 +75,44 @@ export function DistributionListsSection() {
   const totalSubscribers = lists.reduce((sum, l) => sum + (l.subscriber_count || 0), 0)
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            Listes de Distribution
-          </h2>
-          <p className="text-muted-foreground">
-            Gérez vos listes d'emails marketing et abonnements
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Actualiser
-          </Button>
-          <Button onClick={handleCreateClick}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle liste
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <AdminPageHeader
+        eyebrow="Communication"
+        title="Listes de diffusion"
+        description="Gérez vos listes d'emails marketing et abonnements"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Actualiser
+            </Button>
+            <Button onClick={handleCreateClick}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle liste
+            </Button>
+          </>
+        }
+      />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Listes totales
-            </CardTitle>
-            <List className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalLists}</div>
-            <p className="text-xs text-muted-foreground">
-              {activeLists} active{activeLists > 1 ? 's' : ''}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Abonnés totaux
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSubscribers}</div>
-            <p className="text-xs text-muted-foreground">
-              Toutes listes confondues
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taux moyen
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {lists.length > 0
-                ? Math.round(totalSubscribers / lists.length)
-                : 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Abonnés par liste
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatRow
+        stats={[
+          { label: 'Listes totales', value: totalLists, unit: `${activeLists} active${activeLists > 1 ? 's' : ''}` },
+          { label: 'Abonnés totaux', value: totalSubscribers, unit: 'toutes listes' },
+          { label: 'Taux moyen', value: lists.length > 0 ? Math.round(totalSubscribers / lists.length) : 0, unit: 'abonnés / liste' },
+        ]}
+      />
 
       {/* Lists Table with Tabs */}
-      <Card>
+      <Card variant="info">
         <CardHeader>
           <CardTitle>Toutes les listes</CardTitle>
           <CardDescription>

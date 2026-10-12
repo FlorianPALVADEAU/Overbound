@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AdminStats } from '@/components/admin/AdminStats'
+import { AdminOverview } from '@/components/admin/AdminOverview'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
 import { EventsSection } from '@/components/admin/events'
 import { RegistrationsSection } from '@/components/admin/registrations'
@@ -17,7 +17,9 @@ import { PromotionalCodesSection } from '@/components/admin/promotional-codes'
 import { PromotionsSection } from '@/components/admin/promotions'
 import { UpsellsSection } from '@/components/admin/upsells'
 import { AdminLogsSection } from '@/components/admin/logs/AdminLogsSection'
-import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { AdminShell } from '@/components/admin/AdminShell'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
+import { Container } from '@/components/ds'
 import { AdminEmailPlayground } from '@/components/admin/emails/AdminEmailPlayground'
 import { DistributionListsSection } from '@/components/admin/distribution-lists/DistributionListsSection'
 import { UsersSection } from '@/components/admin/users/UsersSection'
@@ -25,42 +27,7 @@ import { AmbassadorsSection } from '@/components/admin/ambassadors/AmbassadorsSe
 import { GroupsSection } from '@/components/admin/groups/GroupsSection'
 import { BootcampsSection } from '@/components/admin/bootcamps/BootcampsSection'
 import { LuckyWheelSection } from '@/components/admin/lucky-wheel/LuckyWheelSection'
-import { AdminEventContextSelector } from '@/components/admin/events/AdminEventContextSelector'
 import { ADMIN_TAB_VALUES, useAdminDashboardStore, type AdminTabValue } from '@/store/useAdminDashboardStore'
-import { BarChart3, CreditCard, Database, Mail, NotebookPen } from 'lucide-react'
-
-const externalLinks = [
-  {
-    label: 'Google Analytics',
-    href: 'https://analytics.google.com/',
-    icon: BarChart3,
-    description: 'Trafic, conversions et événements GTM.',
-  },
-  {
-    label: 'Stripe',
-    href: 'https://dashboard.stripe.com/',
-    icon: CreditCard,
-    description: 'Paiements, remboursements et abonnements.',
-  },
-  {
-    label: 'Resend',
-    href: 'https://resend.com/dashboard',
-    icon: Mail,
-    description: 'Logs emailing et délivrabilité.',
-  },
-  {
-    label: 'Supabase',
-    href: 'https://supabase.com/dashboard',
-    icon: Database,
-    description: 'Base de données, stockages et logs API.',
-  },
-  {
-    label: 'Sanity Studio',
-    href: 'https://www.sanity.io/manage',
-    icon: NotebookPen,
-    description: 'CMS, contenus éditoriaux et médias.',
-  },
-]
 
 interface Profile {
   role: 'admin' | 'volunteer'
@@ -100,26 +67,23 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
 
   if (isVolunteer && !isAdmin) {
     return (
-      <main className="min-h-screen bg-muted/30">
-        <div className="mx-auto max-w-4xl space-y-6 p-6">
-          <header className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Bénévole - Check-in</h1>
-              <p className="text-muted-foreground">
-                Bienvenue {profile.full_name || user.email}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="secondary">Bénévole</Badge>
-              <Link href="/account">
-                <Button variant="outline" size="sm">
-                  Mon compte
+      <main className="min-h-screen bg-background">
+        <Container size="form" className="space-y-8 py-8">
+          <AdminPageHeader
+            eyebrow="Terrain"
+            title="Check-in bénévole"
+            description={`Bienvenue ${profile.full_name || user.email}`}
+            actions={
+              <>
+                <Badge variant="secondary">Bénévole</Badge>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/account">Mon compte</Link>
                 </Button>
-              </Link>
-            </div>
-          </header>
+              </>
+            }
+          />
           <VolunteerAccessControl />
-          <Card>
+          <Card variant="info">
             <CardHeader>
               <CardTitle>Contact responsable</CardTitle>
               <CardDescription>Besoin d&apos;aide ? Voici les coordonnées du responsable.</CardDescription>
@@ -138,161 +102,74 @@ export function AdminDashboard({ user, profile, stats }: AdminDashboardProps) {
               </p>
             </CardContent>
           </Card>
-        </div>
+        </Container>
       </main>
     )
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="flex min-h-screen w-full flex-col md:flex-row md:gap-6 lg:gap-10 px-0 md:px-6 lg:px-10 py-6">
-        <AdminSidebar profileRole={profile.role} fullName={profile.full_name || user.email} />
-        <div className="flex-1 overflow-hidden rounded-t-3xl bg-background shadow md:rounded-3xl">
-          <div className="flex flex-col gap-4 border-b border-border bg-background px-4 py-4 md:px-6 lg:px-10">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold">Administration</h1>
-                <p className="text-sm text-muted-foreground">
-                  Événements, inscrits et opérations terrain.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">Administrateur</Badge>
-                <Link href="/account">
-                  <Button variant="outline" size="sm">
-                    Mon compte
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <AdminEventContextSelector eventId={selectedEventId} />
-          </div>
-
-          <div className="space-y-6 px-4 py-6 md:px-6 lg:px-10">
-            <Tabs
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as AdminTabValue)}
-              className="space-y-6"
-            >
-              <TabsContent value="overview" className="space-y-6">
-                <OverviewPanels stats={stats} />
-              </TabsContent>
-
-              <TabsContent value="events" className="space-y-6">
-                <EventsSection />
-              </TabsContent>
-
-              <TabsContent value="races" className="space-y-6">
-                <RacesSection />
-              </TabsContent>
-
-              <TabsContent value="obstacles" className="space-y-6">
-                <ObstaclesSection />
-              </TabsContent>
-
-              <TabsContent value="tickets" className="space-y-6">
-                <TicketsSection />
-              </TabsContent>
-
-              <TabsContent value="promocodes" className="space-y-6">
-                <PromotionalCodesSection />
-              </TabsContent>
-
-              <TabsContent value="promotions" className="space-y-6">
-                <PromotionsSection />
-              </TabsContent>
-
-              <TabsContent value="upsells" className="space-y-6">
-                <UpsellsSection />
-              </TabsContent>
-
-              <TabsContent value="lucky-wheel" className="space-y-6">
-                <LuckyWheelSection />
-              </TabsContent>
-
-              <TabsContent value="ambassadors" className="space-y-6">
-                <AmbassadorsSection />
-              </TabsContent>
-
-              <TabsContent value="users" className="space-y-6">
-                <UsersSection />
-              </TabsContent>
-
-              <TabsContent value="groups" className="space-y-6">
-                <GroupsSection />
-              </TabsContent>
-
-              <TabsContent value="bootcamps" className="space-y-6">
-                <BootcampsSection />
-              </TabsContent>
-
-              <TabsContent value="members" className="space-y-6">
-                <RegistrationsSection eventId={selectedEventId} />
-              </TabsContent>
-
-              <TabsContent value="checkin" className="space-y-6">
-                <VolunteerAccessControl eventId={selectedEventId} />
-              </TabsContent>
-
-              <TabsContent value="logs" className="space-y-6">
-                <AdminLogsSection />
-              </TabsContent>
-
-              <TabsContent value="emails" className="space-y-6">
-                <AdminEmailPlayground />
-              </TabsContent>
-
-              <TabsContent value="distribution-lists" className="space-y-6">
-                <DistributionListsSection />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function OverviewPanels({ stats }: { stats?: Record<string, unknown> | null }) {
-  return (
-    <div className="space-y-6">
-      <AdminStats stats={stats} />
-      <Card>
-        <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle>Accès rapide aux outils</CardTitle>
-            <CardDescription>Analyse, paiement, emailing et back-office data en un clic.</CardDescription>
-          </div>
-          <Badge variant="outline" className="w-fit">Raccourcis</Badge>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {externalLinks.map(({ label, href, icon: Icon, description }) => (
-              <Link
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                className="group rounded-xl border border-border/60 bg-muted/40 p-4 transition hover:-translate-y-[2px] hover:border-primary/60 hover:bg-primary/5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="font-semibold">{label}</p>
-                      <p className="text-xs text-muted-foreground">{description}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground group-hover:text-primary">↗</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AdminShell fullName={profile.full_name || user.email} eventId={selectedEventId}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as AdminTabValue)}
+        className="space-y-8"
+      >
+        <TabsContent value="overview" className="space-y-8">
+          <AdminOverview stats={stats} />
+        </TabsContent>
+        <TabsContent value="events" className="space-y-8">
+          <EventsSection />
+        </TabsContent>
+        <TabsContent value="races" className="space-y-8">
+          <RacesSection />
+        </TabsContent>
+        <TabsContent value="obstacles" className="space-y-8">
+          <ObstaclesSection />
+        </TabsContent>
+        <TabsContent value="tickets" className="space-y-8">
+          <TicketsSection />
+        </TabsContent>
+        <TabsContent value="promocodes" className="space-y-8">
+          <PromotionalCodesSection />
+        </TabsContent>
+        <TabsContent value="promotions" className="space-y-8">
+          <PromotionsSection />
+        </TabsContent>
+        <TabsContent value="upsells" className="space-y-8">
+          <UpsellsSection />
+        </TabsContent>
+        <TabsContent value="lucky-wheel" className="space-y-8">
+          <LuckyWheelSection />
+        </TabsContent>
+        <TabsContent value="ambassadors" className="space-y-8">
+          <AmbassadorsSection />
+        </TabsContent>
+        <TabsContent value="users" className="space-y-8">
+          <UsersSection />
+        </TabsContent>
+        <TabsContent value="groups" className="space-y-8">
+          <GroupsSection />
+        </TabsContent>
+        <TabsContent value="bootcamps" className="space-y-8">
+          <BootcampsSection />
+        </TabsContent>
+        <TabsContent value="members" className="space-y-8">
+          <RegistrationsSection eventId={selectedEventId} />
+        </TabsContent>
+        <TabsContent value="checkin" className="space-y-8">
+          <VolunteerAccessControl eventId={selectedEventId} />
+        </TabsContent>
+        <TabsContent value="logs" className="space-y-8">
+          <AdminLogsSection />
+        </TabsContent>
+        <TabsContent value="emails" className="space-y-8">
+          <AdminEmailPlayground />
+        </TabsContent>
+        <TabsContent value="distribution-lists" className="space-y-8">
+          <DistributionListsSection />
+        </TabsContent>
+      </Tabs>
+    </AdminShell>
   )
 }
 
