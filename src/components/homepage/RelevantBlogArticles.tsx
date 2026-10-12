@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { client } from '@/sanity/lib/client'
 import { recentPostsQuery } from '@/sanity/lib/queries'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
-import Headings from '../globals/Headings'
+import { Container, Section, SectionHeader } from '@/components/ds'
 import { Button } from '../ui/button'
 
 export default function RelevantBlogArticles() {
@@ -14,28 +14,20 @@ export default function RelevantBlogArticles() {
   }, [])
   if (!posts.length) return null
   return (
-    <section className="w-full px-4 py-12 flex flex-col gap-12 items-center justify-center sm:px-6 sm:py-16 xl:px-32">
-      <div className='relative z-10 w-full'>
-        <Headings
-          title='Articles de blog récents'
-          cta={
-            <Link href='/blog'>
-              <Button
-                variant='outline'
-                className='h-10 cursor-pointer w-full border-2 border-primary text-sm font-semibold text-primary transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/30 sm:h-11 sm:w-44 sm:text-base md:h-12 md:w-48'
-              >
-                Voir tout
-              </Button>
-            </Link>
-          }
-          sx='flex-row! justify-between!'
-        />
-      </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-auto">
+    <Section>
+      <Container className="flex flex-col gap-12">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <SectionHeader flush title="Articles de blog récents" />
+          <Button asChild variant="outline" size="cta" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground lg:w-auto">
+            <Link href="/blog">Voir tout</Link>
+          </Button>
+        </div>
+        <div className="grid h-auto w-full gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((p) => (
           <BlogArticleItem key={p._id} post={p} showExcerpt={false} />
         ))}
-      </div>
-    </section>
+        </div>
+      </Container>
+    </Section>
   )
 }

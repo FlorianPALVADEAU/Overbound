@@ -12,10 +12,8 @@ import { useRaceById } from '@/app/api/races/racesQueries'
 import { getFormatConfig, FORMAT_TEMPLATES } from '@/constants/raceFormats'
 import { RANKED_LAP_TIME_LIMITS_SUMMARY } from '@/constants/raceFormatRules'
 import Image from 'next/image'
-import Headings from '@/components/globals/Headings'
-import SubHeadings from '@/components/globals/SubHeadings'
 import { getEventStatusVariant, getEventStatusLabel } from '@/lib/shared/presentation/eventStatus'
-import { DISPLAY_TITLE } from '@/components/ds'
+import { DISPLAY_TITLE, SectionHeader } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 interface RaceEvent {
@@ -720,11 +718,7 @@ export default function RaceDetailPage() {
 
       <section className='bg-transparent'>
         <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
-          <SubHeadings
-            title='OPEN ou RANKED ?'
-            description='Découvre comment ce format se décline selon le mode de course choisi'
-            sx='text-black my-6'
-          />
+          <SectionHeader flush title="OPEN ou RANKED ?" lead="Découvre comment ce format se décline selon le mode de course choisi" className="my-6" />
           <Button asChild variant="outline" className="rounded-full">
             <Link href="/events/formats">
               Comparer les formats OPEN et RANKED
@@ -759,11 +753,7 @@ export default function RaceDetailPage() {
           return (
             <section>
               <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
-                <SubHeadings
-                  title='Progression recommandée'
-                  description='Voici comment ce format se positionne dans ton parcours Overbound'
-                  sx='text-black my-6'
-                />
+                <SectionHeader flush title="Progression recommandée" lead="Voici comment ce format se positionne dans ton parcours Overbound" className="my-6" />
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                   {/* From Formats */}
@@ -875,11 +865,7 @@ export default function RaceDetailPage() {
         {/* What You'll Get Section - Auto-scrolling Carousel */}
         <section className=" overflow-hidden">
           <div className="w-full py-12">
-            <SubHeadings
-              title='Ce que tu obtiendras en participant'
-              description="Bien plus qu'une course, une expérience qui te transforme"
-              sx='text-black my-6 px-4 py-12 sm:px-6 xl:px-32'
-            />
+            <SectionHeader flush title="Ce que tu obtiendras en participant" lead="Bien plus qu'une course, une expérience qui te transforme" className="my-6" />
 
             <div className="relative">
               <div className="flex gap-6 animate-scroll">
@@ -961,11 +947,7 @@ export default function RaceDetailPage() {
 
         <section id="events">
           <div className="w-full px-4 py-12 sm:px-6 xl:px-32">
-              <SubHeadings
-                title='Événements associés'
-                description='Retrouvez toutes les dates qui proposent ce format. Inscriptions limitées : choisissez votre arène.'
-                sx='text-black my-6 lex-row! justify-between!'
-              />
+              <SectionHeader flush title="Événements associés" lead="Retrouvez toutes les dates qui proposent ce format. Inscriptions limitées : choisissez votre arène." className="my-6" />
 
             {eventsLoading ? (
               <div className="rounded-3xl border border-border bg-card p-8 text-sm text-muted-foreground">
