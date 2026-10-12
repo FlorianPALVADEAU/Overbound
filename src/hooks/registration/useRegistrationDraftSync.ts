@@ -1,266 +1,102 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import { REGULATION_VERSION } from '@/constants/registration'
-import { useRegistrationStore } from '@/store/useRegistrationStore'
-import type { RegistrationDraft, RegistrationSummary } from '@/store/useRegistrationStore'
-import type {
-  AppliedPromo,
-  EventUser,
-  Participant,
-  PricingSummary,
-  SelectedUpsellState,
-  TicketSelections,
-} from '@/components/registration/types'
+import { useRegistrationStore, type RegistrationDraft } from '@/store/useRegistrationStore'
+import type { AppliedPromo, Participant, SelectedUpsellState, TicketSelections } from '@/components/registration/types'
 
-interface DraftSyncConfig {
-  eventId: string
-  user: EventUser | null
-  ticketSelections: TicketSelections
-  participants: Participant[]
-  selectedUpsells: SelectedUpsellState
-  appliedPromos: AppliedPromo[]
-  ambassadorReferralCode: string | null
-  groupId: string | null
-  summaryPricing: PricingSummary
-  clientSecret: string | null
-  paymentIntentId: string | null
-  signatureImage: string | null
-  disclaimerRead: boolean
-  disclaimerAccepted: boolean
-  rulebookAccepted: boolean
-  stepIndex: number
-}
-
-interface DraftSyncSetters {
+/** Where a restored draft is written back. Consents and signature are never restored (legal). */
+export interface DraftRestoreTargets {
   setTicketSelections: (selections: TicketSelections) => void
   setParticipants: (participants: Participant[]) => void
   setSelectedUpsells: (upsells: SelectedUpsellState) => void
   setAppliedPromos: (promos: AppliedPromo[]) => void
-  setPromoInput: (input: string) => void
-  setPromoError: (error: string | null) => void
-  setDisclaimerRead: (read: boolean) => void
-  setDisclaimerAccepted: (accepted: boolean) => void
-  setRulebookAccepted: (accepted: boolean) => void
-  setSignatureImage: (image: string | null) => void
-  setClientSecret: (secret: string | null) => void
-  setPaymentIntentId: (id: string | null) => void
-  setPricing: (pricing: PricingSummary | null) => void
-  setStepIndex: (index: number) => void
-  setSubmissionMessage: (msg: null) => void
 }
 
+/** Codes of a draft saved before full codes were kept: their discount is recomputed by the payment API. */
+const restoredPromos = (draft: RegistrationDraft): AppliedPromo[] => {
+  if (draft.appliedPromos && draft.appliedPromos.length > 0) return draft.appliedPromos
+  const legacyCode = (draft as RegistrationDraft & { promoCode?: string | null }).promoCode
+  const codes = draft.promoCodes.length > 0 ? draft.promoCodes : legacyCode ? [legacyCode] : []
+  return codes.map((code) => ({
+    id: code,
+    code,
+    description: '',
+    discount_percent: null,
+    discount_amount: null,
+    currency: 'eur', // Legacy drafts only; the payment API recomputes everything.
+    is_ambassador: draft.ambassadorReferralCode === code,
+    target_upsell_id: null,
+  }))
+}
+
+const restoredSelections = (draft: RegistrationDraft, initialTicketId: string | null, ticketIds: string[]) => {
+  const selections: TicketSelections = Object.fromEntries(
+    draft.ticketSelections.filter((item) => item.quantity > 0).map((item) => [item.ticketId, item.quantity]),
+  )
+  // A ticket chosen on the event page (?ticket=) wins over an older draft that does not include it.
+  if (initialTicketId && ticketIds.includes(initialTicketId) && !(selections[initialTicketId] > 0)) {
+    return { [initialTicketId]: 1 }
+  }
+  return selections
+}
+
+const freshSelections = (initialTicketId: string | null, ticketIds: string[]): TicketSelections => {
+  if (initialTicketId && ticketIds.includes(initialTicketId)) return { [initialTicketId]: 1 }
+  if (ticketIds.length === 1) return { [ticketIds[0] as string]: 1 }
+  return {}
+}
+
+/**
+ * Restores the saved checkout once on arrival, then saves the current one on
+ * every change. The draft itself is built by `buildRegistrationDraft`.
+ */
 export function useRegistrationDraftSync(
-  config: DraftSyncConfig,
-  setters: DraftSyncSetters,
+  draft: RegistrationDraft,
+  targets: DraftRestoreTargets,
   initialTicketId: string | null,
-  tickets: Array<{ id: string }>,
-  suppressEmptySyncRef?: RefObject<boolean>,
+  ticketIds: string[],
+  suppressEmptySyncRef: RefObject<boolean>,
 ) {
-  const registrationDraft = useRegistrationStore((state) => state.draft)
-  const setRegistrationDraft = useRegistrationStore((state) => state.setDraft)
-  const registrationHasHydrated = useRegistrationStore((state) => state.hasHydrated)
+  const savedDraft = useRegistrationStore((state) => state.draft)
+  const saveDraft = useRegistrationStore((state) => state.setDraft)
+  const hasHydrated = useRegistrationStore((state) => state.hasHydrated)
+  const restoredKeyRef = useRef<string | null>(null)
+  const lastSavedRef = useRef<string | null>(null)
 
-  const initializationKeyRef = useRef<string | null>(null)
-  const lastSavedDraftRef = useRef<string | null>(null)
-
-  // Initialize from draft on mount
   useEffect(() => {
-    if (!registrationHasHydrated) return
+    if (!hasHydrated) return
+    const key = `${draft.eventId}-${initialTicketId ?? ''}`
+    if (restoredKeyRef.current === key) return
+    restoredKeyRef.current = key
 
-    const key = `${config.eventId}-${initialTicketId ?? ''}`
-
-    if (initializationKeyRef.current !== key) {
-      initializationKeyRef.current = key
-
-      if (registrationDraft && registrationDraft.eventId === config.eventId) {
-        let selectionRecord: TicketSelections = {}
-        registrationDraft.ticketSelections.forEach((selection) => {
-          if (selection.quantity > 0) {
-            selectionRecord[selection.ticketId] = selection.quantity
-          }
-        })
-        // A ticket chosen on the event page (?ticket=) wins over an older draft that
-        // does not include it; otherwise the click would appear to select nothing.
-        if (
-          initialTicketId &&
-          tickets.some((t) => t.id === initialTicketId) &&
-          !(selectionRecord[initialTicketId] > 0)
-        ) {
-          selectionRecord = { [initialTicketId]: 1 }
-        }
-        if (suppressEmptySyncRef && Object.keys(selectionRecord).length > 0) {
-          suppressEmptySyncRef.current = true
-        }
-        setters.setTicketSelections(selectionRecord)
-        setters.setParticipants(registrationDraft.participants.map((p) => ({ ...p })))
-
-        const upsellRecord: SelectedUpsellState = {}
-        registrationDraft.upsells.forEach((item) => {
-          upsellRecord[item.upsellId] = {
-            quantity: item.quantity,
-            meta: item.meta || {},
-          }
-        })
-        setters.setSelectedUpsells(upsellRecord)
-
-        const legacyPromoCode =
-          (registrationDraft as RegistrationDraft & { promoCode?: string | null }).promoCode ?? null
-        const restoredPromoCodes =
-          registrationDraft.promoCodes && registrationDraft.promoCodes.length > 0
-            ? registrationDraft.promoCodes
-            : legacyPromoCode
-              ? [legacyPromoCode]
-              : []
-
-        setters.setAppliedPromos(
-          restoredPromoCodes.map((code) => ({
-            id: code,
-            code,
-            description: '',
-            discount_percent: null,
-            discount_amount: null,
-            currency: registrationDraft.summary.currency as any,
-            is_ambassador: registrationDraft.ambassadorReferralCode === code,
-          })),
-        )
-        setters.setPromoInput('')
-
-        setters.setPromoError(null)
-        // IMPORTANT: Ne jamais restaurer la décharge et la signature depuis le draft
-        // L'utilisateur doit les confirmer à chaque session pour des raisons juridiques
-        setters.setDisclaimerRead(false)
-        setters.setDisclaimerAccepted(false)
-        setters.setRulebookAccepted(false)
-        setters.setSignatureImage(null)
-        setters.setClientSecret(registrationDraft.clientSecret)
-        setters.setPaymentIntentId(registrationDraft.paymentIntentId)
-        setters.setPricing(registrationDraft.summary)
-        setters.setStepIndex(registrationDraft.stepIndex ?? 0)
-        setters.setSubmissionMessage(null)
-        return
-      }
-
-      setters.setStepIndex(0)
-      setters.setSubmissionMessage(null)
-
-      if (initialTicketId && tickets.some((t) => t.id === initialTicketId)) {
-        setters.setTicketSelections({ [initialTicketId]: 1 })
-      } else if (tickets.length === 1) {
-        setters.setTicketSelections({ [tickets[0].id]: 1 })
-      } else {
-        setters.setTicketSelections({})
-      }
-
-      setters.setParticipants([])
-      setters.setSelectedUpsells({})
-      setters.setAppliedPromos([])
-      setters.setPromoInput('')
-      setters.setPromoError(null)
-      setters.setDisclaimerRead(false)
-      setters.setDisclaimerAccepted(false)
-      setters.setRulebookAccepted(false)
-      setters.setSignatureImage(null)
-      setters.setClientSecret(null)
-      setters.setPaymentIntentId(null)
-      setters.setPricing(null)
+    if (savedDraft && savedDraft.eventId === draft.eventId) {
+      const selections = restoredSelections(savedDraft, initialTicketId, ticketIds)
+      // Participants and selections land in separate renders: keep the restored participants meanwhile.
+      if (Object.keys(selections).length > 0) suppressEmptySyncRef.current = true
+      targets.setTicketSelections(selections)
+      targets.setParticipants(savedDraft.participants.map((participant) => ({ ...participant })))
+      targets.setSelectedUpsells(
+        Object.fromEntries(savedDraft.upsells.map((item) => [item.upsellId, { quantity: item.quantity, meta: item.meta ?? {} }])),
+      )
+      // The PaymentIntent is not restored: a new one is prepared for the restored amount when paying.
+      targets.setAppliedPromos(restoredPromos(savedDraft))
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrationHasHydrated, config.eventId, initialTicketId])
 
-  // Once ticket selections reflect the restored draft, participants are safe to
-  // auto-sync again (see suppressEmptySyncRef in useParticipants).
+    targets.setTicketSelections(freshSelections(initialTicketId, ticketIds))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore runs once per event and preselected ticket
+  }, [hasHydrated, draft.eventId, initialTicketId])
+
+  // Once ticket selections reflect the restored draft, participants may follow them again.
   useEffect(() => {
-    if (!suppressEmptySyncRef?.current) return
-    if (Object.keys(config.ticketSelections).length > 0) {
-      suppressEmptySyncRef.current = false
-    }
-  }, [config.ticketSelections, suppressEmptySyncRef])
+    if (suppressEmptySyncRef.current && draft.ticketSelections.length > 0) suppressEmptySyncRef.current = false
+  }, [draft.ticketSelections, suppressEmptySyncRef])
 
-  // Auto-save to store on state changes
   useEffect(() => {
-    if (!registrationHasHydrated) return
+    if (!hasHydrated || restoredKeyRef.current === null) return
+    const serialized = JSON.stringify(draft)
+    if (lastSavedRef.current === serialized) return
+    lastSavedRef.current = serialized
+    saveDraft(draft)
+  }, [hasHydrated, draft, saveDraft])
 
-    const ticketSelectionArray = Object.entries(config.ticketSelections).map(
-      ([ticketId, quantity]) => ({ ticketId, quantity }),
-    )
-
-    const participantsPayload = config.participants.map((p) => ({ ...p }))
-
-    const upsellsPayload = Object.entries(config.selectedUpsells).map(([upsellId, c]) => ({
-      upsellId,
-      quantity: c.quantity,
-      meta: c.meta || {},
-    }))
-
-    const summaryPayload: RegistrationSummary = {
-      ticketTotal: config.summaryPricing.ticketTotal,
-      upsellTotal: config.summaryPricing.upsellTotal,
-      discountAmount: config.summaryPricing.discountAmount,
-      totalDue: config.summaryPricing.totalDue,
-      currency: config.summaryPricing.currency,
-    }
-
-    const signaturePayload = {
-      imageDataUrl: config.signatureImage,
-      regulationVersion: REGULATION_VERSION,
-      signedAt:
-        config.signatureImage && registrationDraft?.signature.imageDataUrl === config.signatureImage
-          ? registrationDraft?.signature.signedAt ?? new Date().toISOString()
-          : config.signatureImage
-            ? new Date().toISOString()
-            : null,
-    }
-
-    const draftPayload: RegistrationDraft = {
-      eventId: config.eventId,
-      userId: config.user?.id ?? null,
-      userEmail: config.user?.email || null,
-      paymentIntentId: config.paymentIntentId ?? null,
-      clientSecret: config.clientSecret ?? null,
-      ticketSelections: ticketSelectionArray,
-      participants: participantsPayload,
-      upsells: upsellsPayload,
-      promoCodes: config.appliedPromos.map((promo) => promo.code),
-      ambassadorReferralCode: config.ambassadorReferralCode ?? null,
-      groupId: config.groupId ?? null,
-      summary: summaryPayload,
-      signature: signaturePayload,
-      disclaimer: {
-        read: config.disclaimerRead,
-        accepted: config.disclaimerAccepted,
-        rulebookAccepted: config.rulebookAccepted,
-      },
-      stepIndex: config.stepIndex,
-    }
-
-    const serialized = JSON.stringify(draftPayload)
-    if (lastSavedDraftRef.current === serialized) return
-
-    lastSavedDraftRef.current = serialized
-    setRegistrationDraft(draftPayload)
-  }, [
-    registrationHasHydrated,
-    registrationDraft,
-    config.user,
-    config.eventId,
-    config.ticketSelections,
-    config.participants,
-    config.selectedUpsells,
-    config.appliedPromos,
-    config.ambassadorReferralCode,
-    config.summaryPricing.ticketTotal,
-    config.summaryPricing.upsellTotal,
-    config.summaryPricing.discountAmount,
-    config.summaryPricing.totalDue,
-    config.summaryPricing.currency,
-    config.clientSecret,
-    config.paymentIntentId,
-    config.signatureImage,
-    config.disclaimerRead,
-    config.disclaimerAccepted,
-    config.rulebookAccepted,
-    config.stepIndex,
-    setRegistrationDraft,
-  ])
-
-  return { registrationHasHydrated }
+  return { hasHydrated }
 }

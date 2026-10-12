@@ -1,185 +1,70 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Event } from '@/types/Event'
-import type {
-  AppliedPromo,
-  EventUser,
-  Participant,
-  PricingSummary,
-  SelectedUpsellState,
-  TicketSelections,
-} from '@/components/registration/types'
+import type { PricingSummary } from '@/components/registration/types'
+import { trackBeginCheckout } from '@/lib/analytics/checkoutEvents'
 import { readUtmParams } from '@/lib/attribution/utm'
-import { buildUpsellRequest } from '@/lib/upsells/assignments'
+import { buildPaymentIntentRequest } from '@/lib/checkout/paymentIntentRequest'
+import type { SignedDraft } from '@/lib/checkout/registrationRequest'
+import type { Event } from '@/types/Event'
 
-export function usePaymentIntent(
-  event: Event,
-  user: EventUser | null,
-  ticketSelections: TicketSelections,
-  participants: Participant[],
-  selectedUpsells: SelectedUpsellState,
-  appliedPromos: AppliedPromo[],
-  ambassadorReferralCode: string | null,
-  totalDue: number,
-) {
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
-  const [pricing, setPricing] = useState<PricingSummary | null>(null)
-  const [isCreatingPaymentIntent, setIsCreatingPaymentIntent] = useState(false)
-  const [submissionMessage, setSubmissionMessage] = useState<{
-    type: 'error' | 'success'
-    text: string
-  } | null>(null)
+export type PreparedPayment =
+  | { kind: 'free'; paymentIntentId: string; pricing: PricingSummary; freeOrderMetadata: Record<string, string> }
+  | { kind: 'stripe'; paymentIntentId: string; clientSecret: string; pricing: PricingSummary }
 
-  const resetPaymentIntent = useCallback(() => {
-    setClientSecret(null)
-    setPaymentIntentId(null)
-    setPricing(null)
-  }, [])
+interface PaymentIntentState {
+  clientSecret: string | null
+  paymentIntentId: string | null
+  pricing: PricingSummary | null
+}
 
-  // Which bibs carry the flexible option changes the amount: a new PaymentIntent is needed.
-  const flexibleSelectionKey = participants.map((participant) => (participant.flexible ? '1' : '0')).join('')
+const NO_PAYMENT: PaymentIntentState = { clientSecret: null, paymentIntentId: null, pricing: null }
 
-  // Reset when promo, upsells or the flexible option change
+/**
+ * The Stripe PaymentIntent of the checkout. Created on demand from the draft,
+ * dropped as soon as anything that changes the amount changes.
+ */
+export function usePaymentIntent(event: Pick<Event, 'id' | 'slug' | 'title'>, amountKey: string) {
+  const [payment, setPayment] = useState<PaymentIntentState>(NO_PAYMENT)
+  const [isCreating, setIsCreating] = useState(false)
+
   useEffect(() => {
-    resetPaymentIntent()
-  }, [appliedPromos, selectedUpsells, flexibleSelectionKey, resetPaymentIntent])
+    setPayment(NO_PAYMENT)
+  }, [amountKey])
 
-  const ensurePaymentIntent = useCallback(async () => {
-    if (!user) {
-      setSubmissionMessage({
-        type: 'error',
-        text: 'Connectez-vous pour continuer votre inscription.',
-      })
-      return null
-    }
-
-    setIsCreatingPaymentIntent(true)
-    setSubmissionMessage(null)
-
-    try {
-      const response = await fetch('/api/stripe/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: event.id,
-          userId: user.id,
-          userEmail: user.email,
-          ticketSelections: Object.entries(ticketSelections).map(([ticketId, quantity]) => ({
-            ticketId,
-            quantity,
-          })),
-          participants: participants.map((p) => ({
-            ticketId: p.ticketId,
-            email: p.email,
-            firstName: p.firstName,
-            lastName: p.lastName,
-            selectedWaveIndex: p.selectedWaveIndex ?? null,
-            flexible: p.flexible === true,
-          })),
-          upsells: buildUpsellRequest(selectedUpsells, participants.map((p) => p.id)),
-          promoCodes: appliedPromos.map((promo) => promo.code),
-          ambassadorReferralCode,
-          utmParams: readUtmParams(),
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error || 'Impossible de préparer le paiement')
-      }
-
-      const data = await response.json()
-
-      // Free order: 100% discount, no Stripe payment needed
-      if (data.freeOrder) {
-        setPaymentIntentId(data.freeOrderId)
-        setPricing(data.pricing)
-        return {
-          freeOrder: true as const,
-          freeOrderId: data.freeOrderId as string,
-          clientSecret: null,
-          paymentIntentId: data.freeOrderId as string,
-          pricing: data.pricing as PricingSummary,
-          freeOrderMetadata: data.freeOrderMetadata as Record<string, string>,
-          appliedPromo: data.appliedPromo,
-          appliedPromos: data.appliedPromos,
-        }
-      }
-
-      const typedData = data as {
-        clientSecret: string
-        paymentIntentId: string
-        pricing: PricingSummary
-      }
-
-      if (typeof window !== 'undefined') {
-        const eventId = `initiate_checkout_${typedData.paymentIntentId}`
-        const analyticsWindow = window as Window & {
-          dataLayer?: Array<Record<string, unknown>>
-          fbq?: (...args: unknown[]) => void
-        }
-        analyticsWindow.dataLayer?.push({
-          event: 'begin_checkout',
-          event_id: eventId,
-          event_slug: event.slug,
-          event_key: event.id,
-          value: Number((typedData.pricing.totalDue / 100).toFixed(2)),
-          currency: typedData.pricing.currency.toUpperCase(),
+  /** Asks the server to price and prepare the order. Throws with the visitor-facing reason on refusal. */
+  const preparePayment = useCallback(
+    async (draft: SignedDraft & { userEmail: string }): Promise<PreparedPayment> => {
+      setIsCreating(true)
+      try {
+        const response = await fetch('/api/stripe/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildPaymentIntentRequest(draft, readUtmParams())),
         })
-        analyticsWindow.fbq?.(
-          'track',
-          'InitiateCheckout',
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(data.error || 'Impossible de préparer le paiement.')
+
+        if (data.freeOrder) {
+          setPayment({ clientSecret: null, paymentIntentId: data.freeOrderId, pricing: data.pricing })
+          return { kind: 'free', paymentIntentId: data.freeOrderId, pricing: data.pricing, freeOrderMetadata: data.freeOrderMetadata ?? {} }
+        }
+
+        setPayment({ clientSecret: data.clientSecret, paymentIntentId: data.paymentIntentId, pricing: data.pricing })
+        trackBeginCheckout(
+          { eventId: event.id, eventSlug: event.slug, eventTitle: event.title },
           {
-            content_name: event.title || event.slug,
-            content_category: 'event',
-            content_ids: Object.entries(ticketSelections)
-              .filter(([, quantity]) => (quantity || 0) > 0)
-              .map(([ticketId]) => ticketId),
-            content_type: 'product',
-            value: Number((typedData.pricing.totalDue / 100).toFixed(2)),
-            currency: typedData.pricing.currency.toUpperCase(),
+            paymentIntentId: data.paymentIntentId,
+            ticketIds: draft.ticketSelections.map((item) => item.ticketId),
+            totalCents: data.pricing.totalDue,
+            currency: data.pricing.currency,
           },
-          { eventID: eventId },
         )
+        return { kind: 'stripe', paymentIntentId: data.paymentIntentId, clientSecret: data.clientSecret, pricing: data.pricing }
+      } finally {
+        setIsCreating(false)
       }
+    },
+    [event.id, event.slug, event.title],
+  )
 
-      setClientSecret(typedData.clientSecret)
-      setPaymentIntentId(typedData.paymentIntentId)
-      setPricing(typedData.pricing)
-      return typedData
-    } catch (error) {
-      setSubmissionMessage({
-        type: 'error',
-        text: error instanceof Error ? error.message : 'Erreur lors de la création du paiement',
-      })
-      throw error
-    } finally {
-      setIsCreatingPaymentIntent(false)
-    }
-  }, [
-    appliedPromos,
-    ambassadorReferralCode,
-    event.id,
-    event.slug,
-    event.title,
-    participants,
-    selectedUpsells,
-    ticketSelections,
-    totalDue,
-    user,
-  ])
-
-  return {
-    clientSecret,
-    setClientSecret,
-    paymentIntentId,
-    setPaymentIntentId,
-    pricing,
-    setPricing,
-    isCreatingPaymentIntent,
-    submissionMessage,
-    setSubmissionMessage,
-    resetPaymentIntent,
-    ensurePaymentIntent,
-  }
+  return { payment, isCreating, preparePayment }
 }

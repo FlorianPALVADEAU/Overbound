@@ -9,6 +9,8 @@ export interface EventRegisterDataResponse {
   tickets: Ticket[]
   upsells: Upsell[]
   availableSpots: number
+  /** Active registrations per price tier, for the same tier seating as the payment API. */
+  tierRegistrationCounts: Record<string, number>
   user: {
     id: string
     email: string

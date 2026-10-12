@@ -67,24 +67,8 @@ export type AppliedPromo = Pick<
   | 'target_upsell_id'
 >
 
-export interface PricingSummary {
-  ticketTotal: number
-  upsellTotal: number
-  /** Total of the "billet flexible" options; absent in pricing computed before the option existed. */
-  flexibleTotal?: number
-  discountAmount: number
-  totalDue: number
-  currency: string
-}
-
-export type UpsellSummaryItem = {
-  id: string
-  label: string
-  quantity: number
-  amount: number
-  currency: string
-  details: string[]
-}
+export type { PricingSummary } from '@/lib/orderPricing'
+export type { UpsellSummaryItem } from '@/lib/upsells/summary'
 
 export interface MultiStepEventRegistrationProps {
   event: Event
@@ -100,4 +84,6 @@ export interface MultiStepEventRegistrationProps {
   /** Group the visitor was invited to (?invite=CODE). */
   inviteCode?: string | null
   eventPriceTiers?: EventPriceTier[]
+  /** Active registrations per tier, so the checkout seats the order like the payment API. */
+  tierRegistrationCounts?: Record<string, number>
 }

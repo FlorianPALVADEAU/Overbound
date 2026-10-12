@@ -149,6 +149,7 @@ function mockAuthedUser(userId: string | null) {
 function createAdmin(
   overrides: {
     existingRegistration?: { id: string } | null
+    existingRegistrationError?: { code: string; message: string } | null
     eventOverrides?: Record<string, unknown>
     rpcOverrides?: Record<string, (...args: any[]) => Promise<{ data?: unknown; error: unknown }>>
     ticketRows?: Array<Record<string, unknown>>
@@ -216,6 +217,23 @@ function createAdmin(
       }
       if (table === 'registrations') {
         return {
+          // Already-registered lookup for this PaymentIntent (admin: a session cannot see other requests' rows).
+          select() {
+            return {
+              or() {
+                return {
+                  limit() {
+                    return {
+                      maybeSingle: async () => ({
+                        data: overrides.existingRegistration ?? null,
+                        error: overrides.existingRegistrationError ?? null,
+                      }),
+                    }
+                  },
+                }
+              },
+            }
+          },
           insert(payload: Record<string, unknown>) {
             return {
               select() {
@@ -311,23 +329,31 @@ describe('POST /api/registrations/create', () => {
       metadata: {},
       payment_method_types: ['card'],
     })
-    createSupabaseServerMock.mockResolvedValue({
-      auth: { getUser: async () => ({ data: { user: { id: 'user-1', email: 'alice@example.com' } } }) },
-      from(table: string) {
-        if (table === 'registrations') {
-          return {
-            select() {
-              return { or() { return { maybeSingle: async () => ({ data: { id: 'existing-reg' } }) } } }
-            },
-          }
-        }
-        throw new Error(`Unexpected table: ${table}`)
-      },
-    })
+    mockAuthedUser('user-1')
+    supabaseAdminMock.mockReturnValue(createAdmin({ existingRegistration: { id: 'existing-reg' } }))
 
     const response = await POST(jsonRequest(baseBody()))
 
     expect(response.status).toBe(409)
+  })
+
+  it('fails closed when the already-registered lookup cannot run (never creates a second set of bibs)', async () => {
+    paymentIntentsRetrieveMock.mockResolvedValue({
+      id: 'pi_1',
+      status: 'succeeded',
+      amount: 5000,
+      currency: 'eur',
+      metadata: {},
+      payment_method_types: ['card'],
+    })
+    mockAuthedUser('user-1')
+    supabaseAdminMock.mockReturnValue(
+      createAdmin({ existingRegistrationError: { code: '42501', message: 'permission denied for table registrations' } }),
+    )
+
+    const response = await POST(jsonRequest(baseBody()))
+
+    expect(response.status).toBe(500)
   })
 
   it('returns 400 when the PaymentIntent is not confirmed', async () => {

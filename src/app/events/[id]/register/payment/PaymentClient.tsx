@@ -1,395 +1,108 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, CheckCircle, ChevronLeft } from 'lucide-react'
 import EmbeddedStripeCheckout from '@/components/EmbeddedStripeCheckout'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { CheckCircle, AlertTriangle, ChevronLeft, CircleHelp } from 'lucide-react'
-import Link from 'next/link'
-import type { Event } from '@/types/Event'
+import { createRegistrations, registrationSuccessPath } from '@/lib/checkout/registrationApi'
+import { buildRegistrationRequest } from '@/lib/checkout/registrationRequest'
+import { checkPaymentReadiness } from '@/lib/checkout/paymentReadiness'
+import { useRegistrationStore } from '@/store/useRegistrationStore'
+import type { EventWithTickets } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell } from '@/types/Upsell'
-import { useRegistrationStore } from '@/store/useRegistrationStore'
-import { UpsellImagePreview } from '@/components/registration/UpsellImagePreview'
-import { buildUpsellRequest, readAssignments } from '@/lib/upsells/assignments'
-
-interface EventTicket extends Ticket {}
+import PaymentBlocked from './PaymentBlocked'
+import PaymentSummary from './PaymentSummary'
 
 interface PaymentClientProps {
-  event: Event
-  tickets: EventTicket[]
+  event: EventWithTickets
+  tickets: Ticket[]
   upsells: Upsell[]
   userEmail: string
 }
 
-const sizesLabel = (meta: Record<string, any> | undefined) => {
-  const counts = new Map<string, number>()
-  readAssignments(meta).forEach((assignment) => {
-    if (assignment.size) counts.set(assignment.size, (counts.get(assignment.size) ?? 0) + assignment.quantity)
-  })
-  return Array.from(counts, ([size, count]) => (count > 1 ? `${size} ×${count}` : size)).join(', ')
-}
+type PaymentMessage = { type: 'success' | 'error'; text: string } | null
 
+/** Takes the payment of a checkout draft, then registers the bibs from that same draft. */
 export default function PaymentClient({ event, tickets, upsells, userEmail }: PaymentClientProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState<PaymentMessage>(null)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const draft = useRegistrationStore((state) => state.draft)
+  const clearDraft = useRegistrationStore((state) => state.clear)
+  const hasHydrated = useRegistrationStore((state) => state.hasHydrated)
 
-  const registrationDraft = useRegistrationStore((state) => state.draft)
-  const clearRegistrationDraft = useRegistrationStore((state) => state.clear)
-  const registrationHasHydrated = useRegistrationStore((state) => state.hasHydrated)
+  if (!hasHydrated) {
+    return <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Chargement de ton paiement sécurisé…</p>
+  }
 
-  const ticketMap = useMemo(() => {
-    return Object.fromEntries(tickets.map((ticket) => [ticket.id, ticket]))
-  }, [tickets])
+  const readiness = checkPaymentReadiness(draft, event.id)
+  if (!readiness.ready) return <PaymentBlocked block={readiness.block} eventSlug={event.slug} />
+  const paid = readiness.draft
 
-  const upsellMap = useMemo(() => {
-    return Object.fromEntries(upsells.map((upsell) => [upsell.id, upsell]))
-  }, [upsells])
-
-  const handlePaymentSuccess = async (paymentIntent: any) => {
-    if (!registrationDraft) return
-    const hasSignature =
-      typeof registrationDraft.signature.imageDataUrl === 'string' &&
-      registrationDraft.signature.imageDataUrl.trim().length > 0
-    const hasAcceptedDisclaimer =
-      Boolean(registrationDraft.disclaimer?.read) &&
-      Boolean(registrationDraft.disclaimer?.accepted) &&
-      Boolean(registrationDraft.disclaimer?.rulebookAccepted)
-
-    if (!hasSignature || !hasAcceptedDisclaimer) {
+  const handlePaymentSuccess = async (paymentIntent: { id: string }) => {
+    setIsRegistering(true)
+    setMessage(null)
+    const outcome = await createRegistrations(buildRegistrationRequest(paid, { paymentIntentId: paymentIntent.id }))
+    setIsRegistering(false)
+    if (!outcome.ok) {
       setMessage({
         type: 'error',
-        text: 'Signature, décharge et règlement officiel obligatoires. Merci de revenir à l’étape précédente.',
+        text: `${outcome.message} Ton paiement est bien reçu : contacte contact@overbound-race.com si ton billet n'apparaît pas dans ton espace.`,
       })
       return
     }
-
-    setIsSubmitting(true)
-    setMessage(null)
-
-    try {
-      const response = await fetch('/api/registrations/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentIntentId: paymentIntent.id,
-          eventId: registrationDraft.eventId,
-          userId: registrationDraft.userId,
-          ticketSelections: registrationDraft.ticketSelections,
-          participants: registrationDraft.participants.map(({ id: _id, ...participant }) => participant),
-          // The draft keeps who takes what by participant id; the API wants their position in the order.
-          upsells: buildUpsellRequest(
-            Object.fromEntries(registrationDraft.upsells.map((item) => [item.upsellId, { quantity: item.quantity, meta: item.meta }])),
-            registrationDraft.participants.map((participant) => participant.id),
-          ),
-          promoCodes: registrationDraft.promoCodes || [],
-          ambassadorReferralCode: registrationDraft.ambassadorReferralCode,
-          groupId: registrationDraft.groupId ?? null,
-          signatureImage: registrationDraft.signature.imageDataUrl,
-          signatureMetadata: {
-            regulationVersion: registrationDraft.signature.regulationVersion,
-            signedAt: registrationDraft.signature.signedAt,
-          },
-          disclaimer: registrationDraft.disclaimer,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}))
-        throw new Error(errorBody.error || 'Erreur lors de la finalisation de l\'inscription')
-      }
-      const payload = await response.json().catch(() => ({}))
-
-      // The account feed is cached for 2 min and was loaded before this purchase:
-      // drop it so the new bibs show up on arrival instead of after a manual reload.
-      await queryClient.invalidateQueries({ queryKey: ['account'] })
-
-      setMessage({
-        type: 'success',
-        text: '🎉 Paiement confirmé ! Redirection en cours vers la page de confirmation.',
-      })
-
-      const registrationId = Array.isArray(payload?.registrations) ? payload.registrations[0] : null
-      router.replace(
-        registrationId
-          ? `/events/${event.slug}/success?registration_id=${registrationId}`
-          : '/account/tickets',
-      )
-      clearRegistrationDraft()
-    } catch (err) {
-      console.error('Erreur finalisation inscription:', err)
-      setMessage({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Impossible de finaliser votre inscription. Contactez le support.',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handlePaymentError = (stripeError: any) => {
-    setMessage({
-      type: 'error',
-      text: stripeError?.message || 'Le paiement a échoué ou a été interrompu. Merci de réessayer.',
-    })
-  }
-
-  if (!registrationHasHydrated) {
-    return (
-      <div className="rounded-lg border border-dashed border-muted p-8 text-center text-sm text-muted-foreground">
-        Chargement de votre paiement sécurisé...
-      </div>
-    )
-  }
-
-  if (!registrationDraft || registrationDraft.eventId !== event.id) {
-    return (
-      <div className="space-y-4">
-        {message ? (
-          <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-            {message.type === 'error' ? (
-              <AlertTriangle className="h-4 w-4" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
-            )}
-            <AlertDescription>{message.text}</AlertDescription>
-          </Alert>
-        ) : (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Aucune inscription en cours. Merci de revenir depuis la page d'inscription.
-            </AlertDescription>
-          </Alert>
-        )}
-        <Button asChild variant="outline">
-          <Link href={`/events/${event.slug}/register`}>Revenir à l'inscription</Link>
-        </Button>
-      </div>
-    )
-  }
-
-  if (!registrationDraft.clientSecret || !registrationDraft.paymentIntentId) {
-    return (
-      <div className="space-y-4">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Les informations de paiement sont manquantes ou expirées. Merci de revenir à l'étape précédente pour les régénérer.
-          </AlertDescription>
-        </Alert>
-        <Button asChild variant="outline">
-          <Link href={`/events/${event.slug}/register`}>
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Retour à l'inscription
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
-  const hasSignature =
-    typeof registrationDraft.signature.imageDataUrl === 'string' &&
-    registrationDraft.signature.imageDataUrl.trim().length > 0
-  const hasAcceptedDisclaimer =
-    Boolean(registrationDraft.disclaimer?.read) &&
-    Boolean(registrationDraft.disclaimer?.accepted) &&
-    Boolean(registrationDraft.disclaimer?.rulebookAccepted)
-
-  if (!hasSignature || !hasAcceptedDisclaimer) {
-    return (
-      <div className="space-y-4">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            La signature, la décharge et l’acceptation du règlement officiel sont obligatoires avant paiement.
-          </AlertDescription>
-        </Alert>
-        <Button asChild variant="outline">
-          <Link href={`/events/${event.slug}/register`}>
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Retour à la confirmation
-          </Link>
-        </Button>
-      </div>
-    )
+    // The account feed was cached before this purchase: drop it so the new bibs show up right away.
+    await queryClient.invalidateQueries({ queryKey: ['account'] })
+    setMessage({ type: 'success', text: 'Paiement confirmé ! On t’emmène vers ta confirmation.' })
+    router.replace(registrationSuccessPath(event.slug, outcome.registrationId))
+    clearDraft()
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <Button asChild variant="outline" size="sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Button asChild variant="outline" size="sm" className="w-fit">
           <Link href={`/events/${event.slug}/register`}>
-            <ChevronLeft className="mr-1 h-4 w-4" />
+            <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
             Modifier mes informations
           </Link>
         </Button>
         <p className="text-sm text-muted-foreground">
-          Vous êtes connecté en tant que <span className="font-medium">{userEmail}</span>
+          Connecté en tant que <span className="font-medium text-foreground">{userEmail}</span>
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2.2fr)_minmax(320px,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Paiement sécurisé</CardTitle>
-            <CardDescription>Entrez vos informations de paiement pour finaliser votre inscription.</CardDescription>
-          </CardHeader>
-          <CardContent>
-           <EmbeddedStripeCheckout
-              clientSecret={registrationDraft.clientSecret}
-              onSuccess={handlePaymentSuccess}
-              onError={handlePaymentError}
-              totalAmount={registrationDraft.summary.totalDue}
-              currency={registrationDraft.summary.currency}
-              loading={isSubmitting}
-            />
-          </CardContent>
-        </Card>
-
-        <aside className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Résumé de la commande</CardTitle>
-              <CardDescription>
-                Vérifiez vos informations avant de confirmer le paiement.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="space-y-2">
-                <div className="text-xs uppercase text-muted-foreground">Billets & participants</div>
-                {registrationDraft.participants.length === 0 ? (
-                  <p className="text-muted-foreground">Aucun participant renseigné.</p>
-                ) : (
-                  registrationDraft.participants.map((participant, index) => {
-                    const ticket = ticketMap[participant.ticketId]
-                    return (
-                      <div key={`${participant.email}-${index}`} className="flex items-center justify-between gap-3">
-                        <div className="space-y-0.5">
-                          <p className="font-medium">{`${participant.firstName} ${participant.lastName}`.trim() || 'Participant'}</p>
-                          <p className="text-xs text-muted-foreground">{participant.email}</p>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {ticket?.name || 'Billet'}
-                        </span>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="text-xs uppercase text-muted-foreground">Options</div>
-                {registrationDraft.upsells.length === 0 ? (
-                  <p className="text-muted-foreground">Aucune option ajoutée.</p>
-                ) : (
-                  registrationDraft.upsells.map((item) => {
-                    const upsell = upsellMap[item.upsellId]
-                    if (!upsell) return null
-                    return (
-                      <div key={item.upsellId} className="flex items-center justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <UpsellImagePreview src={upsell.image_url} alt={upsell.name} className="h-14 w-14" />
-                          <div className="space-y-0.5">
-                            <p className="font-medium">{item.quantity} × {upsell.name}</p>
-                            {sizesLabel(item.meta) ? (
-                              <p className="text-xs text-muted-foreground">Tailles : {sizesLabel(item.meta)}</p>
-                            ) : null}
-                          </div>
-                        </div>
-                        <span className="font-medium">
-                          {(upsell.price_cents * item.quantity / 100).toLocaleString('fr-FR', {
-                            style: 'currency',
-                            currency: (upsell.currency || 'eur').toUpperCase(),
-                          })}
-                        </span>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Sous-total billets</span>
-                  <span>{(registrationDraft.summary.ticketTotal / 100).toLocaleString('fr-FR', {
-                    style: 'currency',
-                    currency: registrationDraft.summary.currency.toUpperCase(),
-                  })}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Options</span>
-                  <span>{(registrationDraft.summary.upsellTotal / 100).toLocaleString('fr-FR', {
-                    style: 'currency',
-                    currency: registrationDraft.summary.currency.toUpperCase(),
-                  })}</span>
-                </div>
-                {registrationDraft.summary.discountAmount > 0 ? (
-                  <div className="flex items-center justify-between text-sm text-emerald-600">
-                    <span>Réduction</span>
-                    <span>- {(registrationDraft.summary.discountAmount / 100).toLocaleString('fr-FR', {
-                      style: 'currency',
-                      currency: registrationDraft.summary.currency.toUpperCase(),
-                    })}</span>
-                  </div>
-                ) : null}
-                <Separator />
-                <div className="flex items-center justify-between text-base font-semibold">
-                  <span>Total à régler</span>
-                  <span>{(registrationDraft.summary.totalDue / 100).toLocaleString('fr-FR', {
-                    style: 'currency',
-                    currency: registrationDraft.summary.currency.toUpperCase(),
-                  })}</span>
-                </div>
-                <div className="group relative flex w-fit flex-wrap items-center gap-x-1 gap-y-0.5 text-label leading-snug text-muted-foreground">
-                  <span>Billets non remboursables</span>
-                  <CircleHelp
-                    className="h-3.5 w-3.5 cursor-help"
-                    aria-label="Détail de la politique de remboursement"
-                    tabIndex={0}
-                  />
-                  <Link href="/cgv#annulation-participant" className="underline underline-offset-2 hover:text-foreground">
-                    Voir les CGV
-                  </Link>
-                  <span
-                    role="tooltip"
-                    className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 rounded-md border bg-popover p-3 text-left text-xs leading-relaxed text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                  >
-                    Aucun remboursement, avoir ni compensation volontaire n&apos;est accordé, quelle que soit la raison
-                    invoquée. Les droits impératifs prévus par la loi restent réservés.
-                  </span>
-                </div>
-                {registrationDraft.promoCodes && registrationDraft.promoCodes.length > 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    Codes promotionnels appliqués : <span className="font-medium">{registrationDraft.promoCodes.join(', ')}</span>
-                  </p>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2.2fr)_minmax(320px,1fr)] lg:items-start">
+        <section aria-labelledby="payment-form-title" className="space-y-4 rounded-2xl border border-border bg-card p-5">
+          <h2 id="payment-form-title" className="text-lg font-semibold">
+            Paiement sécurisé
+          </h2>
+          <EmbeddedStripeCheckout
+            clientSecret={paid.clientSecret}
+            onSuccess={handlePaymentSuccess}
+            onError={(error: { message?: string } | undefined) =>
+              setMessage({ type: 'error', text: error?.message || 'Le paiement a échoué ou a été interrompu. Réessaie.' })
+            }
+            totalAmount={paid.summary.totalDue}
+            currency={paid.summary.currency}
+            loading={isRegistering}
+          />
           {message ? (
             <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-              {message.type === 'error' ? (
-                <AlertTriangle className="h-4 w-4" />
-              ) : (
-                <CheckCircle className="h-4 w-4" />
-              )}
+              {message.type === 'error' ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
               <AlertDescription>{message.text}</AlertDescription>
             </Alert>
           ) : null}
+        </section>
+
+        <aside className="lg:sticky lg:top-24">
+          <PaymentSummary draft={paid} tickets={tickets} tiers={event.price_tiers ?? []} upsells={upsells} />
         </aside>
       </div>
     </div>

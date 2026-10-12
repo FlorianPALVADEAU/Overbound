@@ -37,12 +37,14 @@ export default function RegistrationHeader({
           <Separator orientation="vertical" className="hidden h-3 md:block" />
           <span className="flex items-center gap-1">
             <Users className="h-3.5 w-3.5" />
-            {availableSpots > 0 ? 'Places limitées' : 'Complet'}
+            {availableSpots > 0
+              ? `${availableSpots.toLocaleString('fr-FR')} place${availableSpots > 1 ? 's' : ''} restante${availableSpots > 1 ? 's' : ''}`
+              : 'Complet'}
           </span>
         </div>
       </div>
-      <Button asChild variant="ghost" size="sm">
-        <Link href={`/events/${event.id}`}>Retour à l&apos;événement</Link>
+      <Button asChild variant="ghost" className="min-h-11">
+        <Link href={`/events/${event.slug}`}>Retour à l&apos;événement</Link>
       </Button>
     </div>
   )

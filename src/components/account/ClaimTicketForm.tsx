@@ -185,7 +185,6 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
         onDisclaimerAcceptedChange={setDisclaimerAccepted}
         onRulebookAcceptedChange={setRulebookAccepted}
         onSignatureChange={setSignatureImage}
-        context="transfer"
       />
 
       <div className="space-y-3">

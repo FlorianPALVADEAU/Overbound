@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { EventPriceTier } from '@/types/EventPriceTier'
-import { calculateCurrentPrice } from '@/types/EventPriceTier'
+import { applyTierDiscount } from '@/lib/orderPricing'
 import { formatPrice } from '@/lib/registration'
 import type { EventTicket } from './types'
 import QuantityPicker from './QuantityPicker'
@@ -11,8 +11,7 @@ interface TicketCardProps {
   quantity: number
   onQuantityChange: (ticketId: string, quantity: number) => void
   defaultCurrency: string
-  activeTier: EventPriceTier | null
-  hasActiveDiscount: boolean
+  sellingTier: EventPriceTier | null
 }
 
 export default function TicketCard({
@@ -20,15 +19,15 @@ export default function TicketCard({
   quantity,
   onQuantityChange,
   defaultCurrency,
-  activeTier,
-  hasActiveDiscount,
+  sellingTier,
 }: TicketCardProps) {
   const isSelected = quantity > 0
   const currency = (ticket.currency || defaultCurrency).toLowerCase()
 
+  const hasActiveDiscount = Boolean(sellingTier && sellingTier.discount_percentage > 0)
   const currentPrice =
-    hasActiveDiscount && ticket.final_price_cents
-      ? calculateCurrentPrice(ticket.final_price_cents, activeTier!)
+    sellingTier && ticket.final_price_cents
+      ? applyTierDiscount(ticket.final_price_cents, sellingTier.discount_percentage)
       : ticket.final_price_cents
 
   const currentRegistrations = ticket.current_registrations ?? 0

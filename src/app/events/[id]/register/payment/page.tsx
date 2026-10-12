@@ -7,7 +7,7 @@ import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventPaymentData } from '@/app/api/events/[id]/payment-data/paymentDataQueries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { containerClass } from '@/components/ds'
+import { DISPLAY_TITLE, Eyebrow, containerClass } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 export default function EventPaymentPage() {
@@ -65,10 +65,11 @@ export default function EventPaymentPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className={cn(containerClass(), 'space-y-6 pb-12 pt-8')}>
-        <h1 className="text-2xl font-semibold">Finaliser mon inscription</h1>
-        <p className="text-sm text-muted-foreground">
-          Vérifiez vos informations et procédez au paiement sécurisé.
-        </p>
+        <div className="space-y-1">
+          <Eyebrow>Paiement</Eyebrow>
+          <h1 className={cn(DISPLAY_TITLE, 'text-display-md')}>Finalise ton inscription</h1>
+          <p className="text-sm text-muted-foreground">Vérifie ta commande, puis paie en toute sécurité.</p>
+        </div>
         <PaymentClient
           event={data.event}
           tickets={data.tickets}

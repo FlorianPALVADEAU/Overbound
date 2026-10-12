@@ -41,14 +41,20 @@ export default defineConfig({
     // The responsive contract runs once per viewport in the matrix.
     ...Object.entries(VIEWPORTS).map(([name, viewport]) => ({
       name,
-      testMatch: /responsive\.spec\.ts$/,
+      testMatch: /(responsive|checkout-layout)\.spec\.ts$/,
       use: { viewport },
     })),
     // Behaviour specs (e.g. Lucky Wheel placement) run once: their
     // assertions don't depend on viewport, so 12x would only add time.
+    // The checkout is mostly bought from a phone: its flow also runs at phone size.
+    {
+      name: 'checkout-phone-390x844',
+      testMatch: /checkout\.spec\.ts$/,
+      use: { viewport: VIEWPORTS['phone-390x844'] },
+    },
     {
       name: 'functional-desktop-1280x800',
-      testIgnore: /responsive\.spec\.ts$/,
+      testIgnore: /(responsive|checkout-layout)\.spec\.ts$/,
       use: { viewport: VIEWPORTS['desktop-1280x800'] },
     },
   ],

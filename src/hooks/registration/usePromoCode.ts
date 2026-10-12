@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { AppliedPromo } from '@/components/registration/types'
-
-const MAX_PROMO_CODES = 2
+import { MAX_PROMO_CODES_PER_ORDER } from '@/lib/orderPricing'
 
 export function usePromoCode(eventId: string) {
   const [appliedPromos, setAppliedPromos] = useState<AppliedPromo[]>([])
@@ -15,8 +14,8 @@ export function usePromoCode(eventId: string) {
       return
     }
 
-    if (appliedPromos.length >= MAX_PROMO_CODES) {
-      setPromoError('Vous pouvez appliquer au maximum 2 codes promo.')
+    if (appliedPromos.length >= MAX_PROMO_CODES_PER_ORDER) {
+      setPromoError('Deux codes promo maximum par commande.')
       return
     }
 

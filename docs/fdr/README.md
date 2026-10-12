@@ -27,3 +27,4 @@ Template: `docs/templates/fdr-template.md`
 - [FDR-0014 - Lucky Wheel (roue de la chance)](./FDR-0014-lucky-wheel.md) — Proposed
 - [FDR-0015 - Accueil evergreen, page événement générique et arbitrage des popups](./FDR-0015-homepage-evergreen-and-conversion-funnel.md) — Proposed
 - [FDR-0017 - Célébration post-achat et carte de partage](./FDR-0017-post-purchase-celebration-and-share-card.md) — Proposed
+- [FDR-0018 - Moteur de prix unique et cumul des codes promo](./FDR-0018-order-pricing-engine-and-promo-stacking.md) — Accepted

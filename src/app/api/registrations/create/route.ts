@@ -1,7 +1,7 @@
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
+import { createRegistrationRequestSchema } from '@/lib/checkout/registrationRequestSchema'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
@@ -43,46 +43,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-08-27.basil',
 })
 
-const participantSchema = z.object({
-  ticketId: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string(),
-  birthDate: z.string().optional(),
-  emergencyContactName: z.string().optional(),
-  emergencyContactPhone: z.string().optional(),
-  medicalInfo: z.string().optional(),
-  healthDataConsent: z.boolean().optional(),
-  licenseNumber: z.string().optional(),
-  selectedWaveIndex: z.number().int().positive().nullable().optional(),
-})
-
-const createRegistrationBodySchema = z.object({
-  paymentIntentId: z.string(),
-  eventId: z.string(),
-  userId: z.string(),
-  ticketSelections: z.array(z.object({ ticketId: z.string(), quantity: z.number() })).default([]),
-  participants: z.array(participantSchema).default([]),
-  upsells: z
-    .array(z.object({ upsellId: z.string(), quantity: z.number(), meta: z.record(z.string(), z.any()).optional() }))
-    .default([]),
-  promoCode: z.string().nullable().default(null),
-  promoCodes: z.array(z.string()).default([]),
-  ambassadorReferralCode: z.string().nullable().optional(),
-  groupId: z.string().nullable().optional(),
-  signatureImage: z.string().nullable().default(null),
-  signatureMetadata: z.record(z.string(), z.any()).default({}),
-  disclaimer: z
-    .object({
-      read: z.boolean(),
-      accepted: z.boolean(),
-      rulebookAccepted: z.boolean().optional(),
-      groupAttestation: z.boolean().optional(),
-    })
-    .default({ read: false, accepted: false, rulebookAccepted: false }),
-  freeOrderMetadata: z.record(z.string(), z.string()).nullable().optional(),
-})
-
 export async function POST(request: NextRequest) {
   try {
     const clientIpAddress =
@@ -93,7 +53,7 @@ export async function POST(request: NextRequest) {
     const fbpCookie = request.cookies.get('_fbp')?.value ?? null
     const fbcCookie = request.cookies.get('_fbc')?.value ?? null
 
-    const parsedBody = createRegistrationBodySchema.safeParse(await request.json())
+    const parsedBody = createRegistrationRequestSchema.safeParse(await request.json())
     if (!parsedBody.success) {
       return NextResponse.json({ error: 'Paramètres manquants.' }, { status: 400 })
     }
@@ -196,18 +156,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if registration already exists for this PaymentIntent
-    const { data: existingReg } = await supabase
+    // Registrations of other requests are invisible to the buyer's own session: read them as admin.
+    const admin = supabaseAdmin()
+
+    // Check if registration already exists for this PaymentIntent. An order has one row per bib, hence limit(1).
+    const { data: existingReg, error: existingRegError } = await admin
       .from('registrations')
       .select('id')
       .or(`stripe_payment_intent_id.eq.${paymentIntentId},and(provider.eq.internal,provider_registration_id.eq.${paymentIntentId})`)
+      .limit(1)
       .maybeSingle()
+    if (existingRegError) throw existingRegError
 
     if (existingReg) {
       return NextResponse.json({ error: 'Inscription déjà créée pour ce paiement' }, { status: 409 })
     }
-
-    const admin = supabaseAdmin()
 
     // Get event info with price tiers
     const { data: eventRow, error: eventError } = await admin

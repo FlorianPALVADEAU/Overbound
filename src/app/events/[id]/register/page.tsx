@@ -154,6 +154,7 @@ export default function EventRegisterPage() {
           groupIntent={groupIntent}
           inviteCode={inviteCode}
           eventPriceTiers={data.event.price_tiers || []}
+          tierRegistrationCounts={data.tierRegistrationCounts ?? {}}
         />
       </div>
     </div>

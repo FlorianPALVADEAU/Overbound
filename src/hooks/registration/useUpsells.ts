@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { EventUpsell, Participant, SelectedUpsellState, UpsellSummaryItem } from '@/components/registration/types'
+import type { EventUpsell, Participant, SelectedUpsellState } from '@/components/registration/types'
 import { joinName, resolveUpsellSizes } from '@/lib/registration'
 import {
   pruneAssignments,
@@ -9,8 +9,7 @@ import {
   upsellMaxPerParticipant,
   type UpsellAssignment,
 } from '@/lib/upsells/assignments'
-
-const NAMES_SHOWN_IN_SUMMARY = 3
+import { summarizeUpsells } from '@/lib/upsells/summary'
 
 /**
  * Options chosen per participant: every selection is a list of assignments
@@ -131,46 +130,12 @@ export function useUpsells(
   )
 
   const upsellSummaryItems = useMemo(() => {
-    const items: UpsellSummaryItem[] = []
-
-    for (const [upsellId, entry] of Object.entries(selectedUpsells)) {
-      const upsell = upsells.find((item) => item.id === upsellId)
-      if (!upsell || entry.quantity <= 0) continue
-      const assignments = readAssignments(entry.meta)
-      const nameOf = (participantId: string) => {
-        const index = participants.findIndex((participant) => participant.id === participantId)
-        const participant = participants[index]
-        return (participant && joinName(participant.firstName, participant.lastName)) || `Participant ${index + 1}`
-      }
-
-      const details: string[] = []
-      if (assignments.length > 0) {
-        const names = assignments.map((assignment) => nameOf(assignment.participantId))
-        const shown = names.slice(0, NAMES_SHOWN_IN_SUMMARY).join(', ')
-        const hidden = names.length - NAMES_SHOWN_IN_SUMMARY
-        details.push(`Pour : ${shown}${hidden > 0 ? ` et ${hidden} autre${hidden > 1 ? 's' : ''}` : ''}`)
-      }
-      if (upsell.type === 'tshirt') {
-        const counts = new Map<string, number>()
-        assignments.forEach((assignment) => {
-          if (assignment.size) counts.set(assignment.size, (counts.get(assignment.size) ?? 0) + assignment.quantity)
-        })
-        if (counts.size > 0) {
-          details.push(`Tailles : ${Array.from(counts, ([size, count]) => (count > 1 ? `${size} ×${count}` : size)).join(', ')}`)
-        }
-      }
-
-      items.push({
-        id: upsell.id,
-        label: upsell.name,
-        quantity: entry.quantity,
-        amount: upsell.price_cents * entry.quantity,
-        currency: (upsell.currency || defaultCurrency).toLowerCase(),
-        details,
-      })
+    const nameOf = (participantId: string) => {
+      const index = participants.findIndex((participant) => participant.id === participantId)
+      const participant = participants[index]
+      return (participant && joinName(participant.firstName, participant.lastName)) || `Participant ${index + 1}`
     }
-
-    return items
+    return summarizeUpsells(selectedUpsells, upsells, nameOf, defaultCurrency)
   }, [defaultCurrency, participants, selectedUpsells, upsells])
 
   return {

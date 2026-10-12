@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import type { Event } from '@/types/Event'
+import type { EventWithTickets } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell } from '@/types/Upsell'
 
 export interface EventPaymentDataResponse {
-  event: Event & { tickets?: Ticket[] }
+  event: EventWithTickets
   tickets: Ticket[]
   upsells: Upsell[]
   userEmail: string

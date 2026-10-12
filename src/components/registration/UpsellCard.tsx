@@ -52,7 +52,7 @@ export default function UpsellCard({
 
   const sizeSelect = (value: string | undefined, onChange: (size: string) => void, label: string, className?: string) => (
     <Select value={value ?? ''} onValueChange={onChange}>
-      <SelectTrigger aria-label={label} className={cn('h-11 w-full', className)}>
+      <SelectTrigger aria-label={label} size="lg" className={cn('w-full', className)}>
         <SelectValue placeholder="Taille" />
       </SelectTrigger>
       <SelectContent>

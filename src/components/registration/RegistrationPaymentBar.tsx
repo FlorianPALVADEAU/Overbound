@@ -1,82 +1,60 @@
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle, CheckCircle, Loader2, Lock } from 'lucide-react'
-import Link from 'next/link'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/registration'
-import type { PricingSummary } from './types'
+import { RefundNotice } from './summary'
 
 interface PayButtonProps {
-  isCreatingPaymentIntent: boolean
-  isAuthPending?: boolean
-  isFormComplete: boolean
+  isBusy: boolean
   onPayment: () => void
   className?: string
 }
 
-/** The single payment action of the checkout, shared by the summary and the mobile bar. */
-export function PayButton({
-  isCreatingPaymentIntent,
-  isAuthPending = false,
-  isFormComplete,
-  onPayment,
-  className,
-}: PayButtonProps) {
+/**
+ * The single payment action of the checkout, shared by the summary and the
+ * mobile bar. Never disabled for a missing field: a click shows what is missing.
+ */
+export function PayButton({ isBusy, onPayment, className }: PayButtonProps) {
   return (
-    <Button
-      size="cta"
-      onClick={onPayment}
-      disabled={isCreatingPaymentIntent || isAuthPending || !isFormComplete}
-      className={className}
-    >
-      {isCreatingPaymentIntent ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Préparation du paiement...
-        </>
-      ) : (
-        <>
-          <Lock className="mr-2 h-4 w-4" />
-          Payer en sécurité
-        </>
-      )}
+    <Button size="cta" onClick={onPayment} disabled={isBusy} aria-busy={isBusy} className={className}>
+      {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Lock className="mr-2 h-4 w-4" aria-hidden />}
+      {isBusy ? 'Préparation du paiement…' : 'Payer en sécurité'}
     </Button>
   )
 }
 
 interface RegistrationPaymentBarProps {
-  summaryPricing: PricingSummary
+  totalCents: number
+  currency: string
   ticketCount: number
   upsellCount: number
-  isCreatingPaymentIntent: boolean
-  isAuthPending?: boolean
-  isFormComplete: boolean
+  hasFlexible: boolean
+  isBusy: boolean
   submissionMessage: { type: 'error' | 'success'; text: string } | null
   onPayment: () => void
 }
 
+const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`
+
 /** Compact payment bar, mobile only: on desktop the button lives in the sticky summary. */
 export default function RegistrationPaymentBar({
-  summaryPricing,
+  totalCents,
+  currency,
   ticketCount,
   upsellCount,
-  isCreatingPaymentIntent,
-  isAuthPending = false,
-  isFormComplete,
+  hasFlexible,
+  isBusy,
   submissionMessage,
   onPayment,
 }: RegistrationPaymentBarProps) {
-  const cartSummaryParts = [
-    ticketCount > 0 ? `${ticketCount} billet${ticketCount > 1 ? 's' : ''}` : null,
-    upsellCount > 0 ? `${upsellCount} option${upsellCount > 1 ? 's' : ''}` : null,
-  ].filter(Boolean)
+  const cart = [ticketCount > 0 ? plural(ticketCount, 'billet') : null, upsellCount > 0 ? plural(upsellCount, 'option') : null]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden">
       {submissionMessage ? (
-        <Alert
-          variant={submissionMessage.type === 'success' ? 'default' : 'destructive'}
-          className="mx-3 mt-2 w-auto rounded-md py-2"
-        >
+        <Alert variant={submissionMessage.type === 'success' ? 'default' : 'destructive'} className="mx-3 mt-2 w-auto rounded-md py-2">
           {submissionMessage.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
           <AlertDescription className="text-xs">{submissionMessage.text}</AlertDescription>
         </Alert>
@@ -84,22 +62,11 @@ export default function RegistrationPaymentBar({
 
       <div className="flex items-center gap-3 p-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-muted-foreground">
-            {cartSummaryParts.length > 0 ? cartSummaryParts.join(' · ') : 'Total'}
-          </p>
-          <p className="text-lg font-semibold leading-tight">
-            {formatPrice(summaryPricing.totalDue, summaryPricing.currency)}
-          </p>
-          <Link href="/cgv#annulation-participant" className="text-xs text-muted-foreground underline underline-offset-2">
-            Billets non remboursables · CGV
-          </Link>
+          <p className="text-xs text-muted-foreground">{cart || 'Total'}</p>
+          <p className="text-lg font-semibold leading-tight">{formatPrice(totalCents, currency)}</p>
+          <RefundNotice hasFlexible={hasFlexible} className="line-clamp-2" />
         </div>
-        <PayButton
-          isCreatingPaymentIntent={isCreatingPaymentIntent}
-          isAuthPending={isAuthPending}
-          isFormComplete={isFormComplete}
-          onPayment={onPayment}
-        />
+        <PayButton isBusy={isBusy} onPayment={onPayment} />
       </div>
     </div>
   )
