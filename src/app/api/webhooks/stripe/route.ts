@@ -8,7 +8,7 @@ import { sendAdminPushNotification } from '@/lib/push'
 import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
-import { assignBibNumber, BibCapacityExhaustedError, type RaceFormat } from '@/lib/bibNumber'
+import { assignBibNumber, BibCapacityExhaustedError, getBibRange, type RaceFormat } from '@/lib/bibNumber'
 import {
   formatWaveStartTime,
   getRankedStartTime,
@@ -303,9 +303,9 @@ export async function POST(request: NextRequest) {
         // Bib number: independent of wave/SAS, atomic, immutable once set (FDR-0011).
         if (isOpenFormat || isRankedFormat) {
           const raceFormat: RaceFormat = isOpenFormat ? 'open' : 'ranked'
-          const maxBibNumber = isOpenFormat ? event?.open_bib_capacity : event?.ranked_bib_capacity
+          const bibRange = event ? getBibRange(event, raceFormat) : null
 
-          if (!maxBibNumber || maxBibNumber <= 0) {
+          if (!bibRange) {
             console.error(`Capacité dossard non configurée pour l'événement ${event_id} (${raceFormat})`)
             throw new Error(`Capacité dossard non configurée pour ce format (${raceFormat}).`)
           }
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
               eventId: event_id,
               registrationId: registration.id,
               raceFormat,
-              maxBibNumber,
+              bibRange,
             })
             registration.bib_number = bibNumber
             registration.race_format = raceFormat

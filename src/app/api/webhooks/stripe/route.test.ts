@@ -92,7 +92,7 @@ const EVENT_ROW = {
   slug: 'ultra-arena',
   location: 'SQY',
   date: '2026-09-12T06:00:00.000Z',
-  open_bib_capacity: 5000,
+  capacity: 6000,
   ranked_bib_capacity: 1000,
 }
 

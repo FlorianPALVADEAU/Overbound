@@ -13,7 +13,6 @@ export interface Event {
   latitude?: number | null
   longitude?: number | null
   capacity: number
-  open_bib_capacity?: number | null
   ranked_bib_capacity?: number | null
   status: EventStatus
   external_provider?: string | null
