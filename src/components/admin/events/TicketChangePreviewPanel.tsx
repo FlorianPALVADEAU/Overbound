@@ -252,7 +252,7 @@ export function TicketChangePreviewPanel({ eventId, participant }: TicketChangeP
           </div>
           {preview.impacts.financial.status !== 'no_change' ? <p className="text-xs text-muted-foreground">Montant actuel : {formatAmount(preview.impacts.financial.currentPriceCents, preview.impacts.financial.currency)} · cible : {formatAmount(preview.impacts.financial.targetPriceCents, preview.impacts.financial.currency)}</p> : null}
           {preview.blockers.length > 0 ? <div className="space-y-1 text-sm text-destructive"><p className="font-medium">Changement bloqué</p>{preview.blockers.map((blocker) => <p key={blocker}>• {blocker}</p>)}</div> : null}
-          {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-700 dark:text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
+          {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
           {confirmation ? <TicketChangeConfirmationGate
             eventId={eventId}
             registrationId={participant.id}

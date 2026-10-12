@@ -575,7 +575,7 @@ export function VolunteerCheckin() {
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-full border ${
                             registration.checked_in
-                              ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-100'
+                              ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
                               : 'border-muted bg-muted text-muted-foreground'
                           }`}
                         >
@@ -591,7 +591,7 @@ export function VolunteerCheckin() {
                             <p className="truncate font-medium">{registration.email}</p>
                             <Badge
                               variant={registration.checked_in ? 'default' : 'secondary'}
-                              className={registration.checked_in ? 'border-none bg-emerald-500/20 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-100' : ''}
+                              className={registration.checked_in ? 'border-none bg-emerald-500/20 text-emerald-300' : ''}
                             >
                               {registration.checked_in ? 'Présent' : 'En attente'}
                             </Badge>
@@ -608,7 +608,7 @@ export function VolunteerCheckin() {
 
                       <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                         {registration.checked_in ? (
-                          <Badge variant="outline" className="border-emerald-400 text-emerald-700 dark:border-emerald-300 dark:text-emerald-100">
+                          <Badge variant="outline" className="border-emerald-400 text-emerald-300">
                             <CheckCircle className="mr-1 h-4 w-4" />
                             Validé
                           </Badge>

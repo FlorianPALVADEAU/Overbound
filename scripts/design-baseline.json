@@ -1,60 +1,6 @@
 {
-  "src/app/bootcamps/page.tsx": {
-    "container-width": 1
-  },
-  "src/app/events/[id]/success/page.tsx": {
-    "font-black": 1,
-    "raw-red": 1,
-    "dark-variant": 6
-  },
-  "src/app/races/[id]/page.tsx": {
-    "container-width": 1
-  },
-  "src/components/events/EventInfoSections.tsx": {
-    "dark-variant": 1,
-    "container-width": 1
-  },
-  "src/components/events/EventlistDisplay.tsx": {
-    "arbitrary-tracking": 2,
-    "container-width": 1
-  },
-  "src/components/events/EventTicketListWithRegistration.tsx": {
-    "dark-variant": 2
-  },
-  "src/components/events/PricingTimeline.tsx": {
-    "arbitrary-hex": 6,
-    "arbitrary-font-size": 2
-  },
-  "src/components/globals/Headings.tsx": {
-    "raw-gray": 1
-  },
-  "src/components/globals/SubHeadings.tsx": {
-    "raw-gray": 1
-  },
   "src/components/layout/Footer.tsx": {
     "arbitrary-tracking": 2,
     "font-black": 1
-  },
-  "src/components/layout/MaintenanceBanner.tsx": {
-    "raw-red": 1
-  },
-  "src/components/layout/PromotionsBanner.tsx": {
-    "raw-gray": 4,
-    "arbitrary-font-size": 4,
-    "font-black": 1
-  },
-  "src/components/lucky-wheel/LuckyWheelWheel.tsx": {
-    "raw-gray": 2,
-    "arbitrary-font-size": 1
-  },
-  "src/components/pricing/PricingExplainer.tsx": {
-    "arbitrary-tracking": 1
-  },
-  "src/components/promotions/PopupPromotion.tsx": {
-    "raw-red": 1
-  },
-  "src/components/shared/CardCarousel.tsx": {
-    "arbitrary-hex": 6,
-    "raw-gray": 1
   }
 }

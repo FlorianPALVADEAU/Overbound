@@ -246,7 +246,7 @@ export function RegistrationDetailsDialog({
                   promotionalCodes.map((promo) => {
                     const discount = formatPromoDiscount(promo)
                     return (
-                      <Badge key={promo.id} variant="outline" className="text-[11px]">
+                      <Badge key={promo.id} variant="outline" className="text-xs">
                         {promo.code}
                         {discount ? ` • ${discount}` : ''}
                       </Badge>
@@ -277,7 +277,7 @@ export function RegistrationDetailsDialog({
                         {item.quantity} × {item.name} — {formatAmount(item.price_cents, item.currency)} / unité
                       </p>
                       {renderUpsellMeta(item.meta).map((detail) => (
-                        <p key={detail} className="text-[11px] text-muted-foreground">
+                        <p key={detail} className="text-xs text-muted-foreground">
                           {detail}
                         </p>
                       ))}

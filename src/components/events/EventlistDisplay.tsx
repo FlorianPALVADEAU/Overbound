@@ -148,7 +148,7 @@ const EventlistDisplay = () => {
   if (isError) {
     return (
       <section className='w-full py-16 sm:py-20'>
-        <div className='mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 text-center'>
+        <div className='mx-auto flex w-full flex-col items-center gap-4 px-4 text-center'>
           <p className='text-sm text-muted-foreground'>
             {error?.message ?? 'Impossible de charger les événements pour le moment.'}
           </p>
@@ -164,7 +164,7 @@ const EventlistDisplay = () => {
     <section className='relative w-full py-16 sm:py-20'>
       <div className='mx-auto flex w-full max-w-full flex-col gap-10'>
         <header className='space-y-4 text-center sm:text-left'>
-          <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary sm:text-sm'>
+          <span className='inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-eyebrow text-primary sm:text-sm'>
             Calendrier Overbound
           </span>
           <div className='space-y-3'>
@@ -257,7 +257,7 @@ const EventlistDisplay = () => {
                     </div>
 
                     <div className='flex items-center justify-between gap-3'>
-                      <div className='text-xs uppercase tracking-[0.3em] text-muted-foreground'>
+                      <div className='text-xs uppercase tracking-eyebrow text-muted-foreground'>
                         {event.slug ? `#${event.slug}` : `#${event.id.slice(0, 8)}`}
                       </div>
                       <Button asChild size='sm' className='group/button'>

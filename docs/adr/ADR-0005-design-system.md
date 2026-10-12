@@ -50,8 +50,8 @@ Un sous-ensemble cohérent existait déjà : les composants « landing » de la 
 ## Conséquences
 
 - Tout nouveau code UI public passe par les tokens et les primitives ; `npm run lint` échoue sinon.
-- La baseline doit baisser à chaque PR de migration (`npm run lint:design:update`) et atteindre 0
-  à la fin du chantier, moment où la règle devient stricte.
+- La migration (phases P1 à P8) est terminée : la baseline est passée de 637 violations à 3
+  exceptions assumées (`Footer.tsx`). Toute nouvelle violation fait échouer `npm run lint`.
 - Changer de police display ne touche qu'un import dans `src/app/layout.tsx`.
 - Il n'y a pas de workflow CI dans le dépôt à cette date : le garde-fou s'exécute via `npm run lint`
   en local et devra être ajouté au pipeline quand il existera.

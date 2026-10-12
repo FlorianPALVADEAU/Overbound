@@ -9,7 +9,7 @@ export function CelebrationPlayground() {
   return (
     <main className="container mx-auto max-w-4xl p-6">
       <div className="mb-8 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-black">Aperçu : célébration post-achat</h1>
+        <h1 className="text-2xl font-bold">Aperçu : célébration post-achat</h1>
         <Button onClick={() => setRun((value) => value + 1)}>Rejouer l'animation</Button>
       </div>
       <PurchaseCelebration

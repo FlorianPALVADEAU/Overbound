@@ -16,7 +16,7 @@ const Headings = ({ title, description, cta, sx }: HeadingsProps) => {
                 </h2>
                 {
                     description && (
-                        <p className='text-lg sm:text-xl lg:text-2xl text-gray-600 font-light'>
+                        <p className='text-lg sm:text-xl lg:text-2xl text-muted-foreground font-light'>
                             {description}
                         </p>
                     )

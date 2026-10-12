@@ -254,12 +254,12 @@ export default function EventTicketListWithRegistration({
                                     : 'Tarif à venir'}
                                 </div>
                                 {ticketHasDiscount && activeTier && (
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950/20 px-2 py-1 rounded-md w-fit">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md w-fit">
                                     -{activeTier.discount_percentage}% ({activeTier.name})
                                   </div>
                                 )}
                                 {priceImminent && (
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded-md w-fit">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-md w-fit">
                                     <Clock className="h-3.5 w-3.5" />
                                     Prix en hausse bientôt
                                   </div>

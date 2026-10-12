@@ -765,7 +765,7 @@ export default function RaceDetailPage() {
                   sx='text-black my-6'
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                   {/* From Formats */}
                   <div className="space-y-4">
                     <p className="text-sm uppercase tracking-wide text-muted-foreground text-center mb-4">

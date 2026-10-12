@@ -18,7 +18,6 @@ const BASELINE_PATH = join(ROOT, 'scripts', 'design-baseline.json')
 const SCAN_DIRS = ['src/app', 'src/components']
 const EXCLUDED = [
   /^src\/components\/ui\//, // shadcn primitives keep their upstream classes
-  /\/admin\//, // admin is migrated last (phase P7)
   /^src\/app\/(api|studio|dashboard)\//,
   /\.test\.tsx?$/,
 ]

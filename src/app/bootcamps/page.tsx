@@ -45,7 +45,7 @@ export default function BootcampsPage() {
 
       {/* Bannière partenaires */}
       <section className="relative z-20 -mt-10 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="mx-auto w-full max-w-7xl rounded-2xl border border-border/70 bg-background/85 p-3 shadow-xl backdrop-blur-md sm:p-4">
+        <div className="rounded-2xl border border-border/70 bg-background/85 p-3 shadow-xl backdrop-blur-md sm:p-4">
           <div className="mb-2 px-2 text-label font-semibold uppercase text-muted-foreground">
             Partenaires Officiels
           </div>

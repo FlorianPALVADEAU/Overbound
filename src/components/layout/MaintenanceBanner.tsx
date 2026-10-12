@@ -10,7 +10,7 @@ export function MaintenanceBanner({ isAdmin }: { isAdmin: boolean }) {
   if (!isAdmin || !data?.enabled) return null
 
   return (
-    <div role="status" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-red-600 px-4 py-2 text-center text-sm font-bold text-white">
+    <div role="status" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-destructive px-4 py-2 text-center text-sm font-bold text-white">
       <TriangleAlertIcon className="size-4 shrink-0" />
       <span>MAINTENANCE ACTIVE : le public ne voit que l&apos;écran de maintenance. Toi, tu vois le vrai site.</span>
       <Link href="/dashboard/maintenance" className="underline underline-offset-2">

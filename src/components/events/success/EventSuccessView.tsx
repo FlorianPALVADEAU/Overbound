@@ -45,7 +45,7 @@ const formatPrice = (priceInCents: number, currency: string) =>
 const getDifficultyColor = (difficulty: number) => {
   if (difficulty <= 3) return 'bg-green-100 text-green-800'
   if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
+  return 'bg-destructive/15 text-destructive'
 }
 
 // Label / value row that never forces horizontal scroll on narrow screens.
@@ -74,7 +74,7 @@ export function EventSuccessView({
     <main className="min-h-screen overflow-x-clip bg-background">
       <div className="container relative mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-10 text-center">
-          <h1 className="mb-4 text-balance break-words text-3xl font-black text-foreground sm:text-4xl lg:text-6xl">
+          <h1 className="mb-4 text-balance break-words text-3xl font-display font-bold uppercase text-foreground sm:text-4xl lg:text-6xl">
             C'EST DANS LA POCHE ! 🎉
           </h1>
           <p className="text-lg font-medium text-muted-foreground sm:text-xl lg:text-2xl">

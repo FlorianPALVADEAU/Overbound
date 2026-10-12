@@ -272,7 +272,7 @@ export function PurchaseCelebration({
             opacity: revealed ? 1 : 0,
             transition: 'transform 1000ms cubic-bezier(.2,.9,.25,1), opacity 600ms ease-out',
           }}
-          className="aspect-[9/16] overflow-hidden rounded-2xl border border-white/10 bg-[#050607] shadow-2xl shadow-primary/30"
+          className="aspect-[9/16] overflow-hidden rounded-2xl border border-white/10 bg-surface-deep shadow-2xl shadow-primary/30"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -355,7 +355,7 @@ export function PurchaseCelebration({
               animation: 'ob-light-pulse 1.4s ease-in-out infinite',
             }}
           />
-          <span className="absolute bottom-6 text-xs uppercase tracking-[0.3em] text-white/40">
+          <span className="absolute bottom-6 text-xs uppercase tracking-eyebrow text-white/40">
             Touche pour passer
           </span>
         </div>

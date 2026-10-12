@@ -137,7 +137,7 @@ export function WaveChangePreviewPanel({ eventId, participant }: WaveChangePrevi
                 <Badge variant={preview.target.isClosed || preview.target.remainingCapacity <= 0 ? 'secondary' : 'outline'}>Capacité : {preview.target.assignedCount}/{preview.target.capacity} · {preview.target.remainingCapacity} place{preview.target.remainingCapacity > 1 ? 's' : ''}</Badge>
               </div>
               {preview.blockers.length > 0 ? <div className="space-y-1 text-sm text-destructive"><p className="font-medium">Changement bloqué</p>{preview.blockers.map((blocker) => <p key={blocker}>• {blocker}</p>)}</div> : null}
-              {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-700 dark:text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
+              {preview.warnings.length > 0 ? <div className="space-y-1 text-sm text-amber-400"><p className="font-medium">Points d’attention</p>{preview.warnings.map((warning) => <p key={warning}>• {warning}</p>)}</div> : null}
               <Button type="button" disabled className="w-full" title="La confirmation sera activée dans un lot ultérieur">Confirmation indisponible pour le moment</Button>
             </div>
           ) : null}

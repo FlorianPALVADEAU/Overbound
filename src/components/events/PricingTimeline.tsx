@@ -182,7 +182,7 @@ export function PricingTimeline({
 
         {/* Progress line */}
         <div
-          className="absolute left-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-linear-to-r from-[#20bf55] via-[#1ea54a] to-[#187c37] transition-all duration-500"
+          className="absolute left-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-linear-to-r from-primary/90 via-primary to-primary/70 transition-all duration-500"
           style={{ width: `${visualProgressPercent}%` }}
         />
 
@@ -201,7 +201,7 @@ export function PricingTimeline({
               >
                 {/* Date au-dessus */}
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-center">
-                  <span className="whitespace-nowrap text-[11px] font-medium text-muted-foreground">
+                  <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">
                     {formatDateFromTime(segment.start)}
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export function PricingTimeline({
             style={{ left: `${toVisualPercent(100)}%` }}
           >
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-center">
-              <span className="whitespace-nowrap text-[11px] font-medium text-muted-foreground">
+              <span className="whitespace-nowrap text-xs font-medium text-muted-foreground">
                 {formatDate(eventDate)}
               </span>
             </div>
@@ -257,7 +257,7 @@ export function PricingTimeline({
 
           {/* Progress line */}
           <div
-            className="absolute left-2 top-3 w-0.5 rounded-full bg-linear-to-b from-[#20bf55] via-[#1ea54a] to-[#187c37] transition-all duration-500"
+            className="absolute left-2 top-3 w-0.5 rounded-full bg-linear-to-b from-primary/90 via-primary to-primary/70 transition-all duration-500"
             style={{ height: `calc(${visualProgressPercent}% - 6px)` }}
           />
 

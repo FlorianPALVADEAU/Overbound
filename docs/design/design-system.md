@@ -163,17 +163,26 @@ Dans une section `page`, un bloc de texte se limite à `max-w-2xl` (en-tête) ou
 
 ## Garde-fou `lint:design`
 
-`scripts/lint-design.mjs` compte, dans `src/app` et `src/components` (hors `ui/`, admin, studio,
-tests), les motifs interdits ci-dessus. Il fonctionne en **cliquet** contre
+`scripts/lint-design.mjs` compte, dans `src/app` et `src/components` (hors `ui/`, studio,
+tests ; l'admin est incluse depuis la phase P7), les motifs interdits ci-dessus. Il fonctionne en **cliquet** contre
 `scripts/design-baseline.json` :
 
-- un fichier existant peut garder ses violations historiques en attendant sa migration ;
-- aucun compteur ne peut augmenter, aucun nouveau fichier ne peut en introduire ;
-- après une migration, `npm run lint:design:update` enregistre la baisse (refusé si un compteur
-  augmente).
+- la migration est terminée : la baisse est enregistrée, la baseline ne contient plus que des
+  **exceptions assumées** (aujourd'hui `Footer.tsx` : filigrane « OVERBOUND » en `font-black` et
+  eyebrows à tracking large, voulus par le design d'origine) ;
+- aucun compteur ne peut augmenter, aucun nouveau fichier ne peut introduire de violation ;
+- `npm run lint:design:update` enregistre une baisse (refusé si un compteur augmente). Ajouter une
+  exception demande une décision de design explicite, pas un contournement du lint.
 
 Si le garde-fou bloque, on corrige le code avec les tokens et les primitives. On ne modifie pas la
 baseline à la main pour faire passer une régression.
+
+## Texte long (blog, pages légales)
+
+Le plugin typography n'est pas installé : les classes `prose` de Tailwind ne font rien. Le texte
+long utilise `.prose-overbound` (`globals.css`), basée sur les tokens, avec `:where()` pour que les
+classes utilitaires d'un élément gardent la priorité. Les pages légales partagent `LegalHeader`
+(`src/components/legal/`).
 
 ## Faire évoluer le système
 

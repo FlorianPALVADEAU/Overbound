@@ -54,20 +54,6 @@ const AnimatedBanner = ({
             ))}
             {/* fade-out effect */}
             <div className={`pointer-events-none absolute right-0 top-0 bottom-0 w-1/3 bg-linear-to-l ${gradientFromRight} to-transparent z-1`}></div>
-            <style jsx>{`
-                @keyframes marquee {
-                    0% {
-                        transform: translateX(0);
-                    }
-                    100% {
-                        transform: translateX(-100%);
-                    }
-                }
-
-                .animate-marquee {
-                    animation: marquee 8s linear infinite;
-                }
-            `}</style>
         </div>
     )
 }
