@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 
 const PREP_WEEKS = [4, 3, 2] as const
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
-const TRAINING_BASE_URL = `${BASE_URL}/trainings`
+const TRAINING_BASE_URL = `${BASE_URL}/bootcamps`
 const FEEDBACK_BASE_URL = `${BASE_URL}/feedback`
 const EVENTS_URL = `${BASE_URL}/events`
 

@@ -15,8 +15,8 @@ const NeedHelpChoosingYourFormat = () => {
                 </p>
             </div>
             <div className='flex flex-col gap-3 sm:flex-row'>
-                <Button asChild size='lg' className='h-12 rounded-full bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary/90'>
-                    <Link href='/trainings/what-race-for-me'>Choisir mon format</Link>
+                <Button asChild size='lg' className='h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90'>
+                    <Link href='/events/formats'>Choisir mon format</Link>
                 </Button>
             </div>
             </div>

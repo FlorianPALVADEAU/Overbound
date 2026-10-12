@@ -10,7 +10,7 @@ const formatFlexibleFee = () =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(FLEXIBLE_TICKET_FEE_CENTS / 100)
 
 export const metadata: Metadata = {
-  title: "Conditions Générales de Vente (CGV) - Billetterie | Overbound Race",
+  title: { absolute: "Conditions Générales de Vente (CGV) - Billetterie | Overbound Race" },
   description: "Conditions de vente Overbound Race : tarifs, paiement, annulation, transfert de dossard, droit de rétractation. Vente de billets pour courses d'obstacles OCR.",
   alternates: {
     canonical: 'https://overbound-race.com/cgv'

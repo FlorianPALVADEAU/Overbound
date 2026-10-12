@@ -8,7 +8,7 @@ export function OrganizationStructuredDataServer() {
     name: 'Overbound Race',
     alternateName: ['Overbound', 'Overbound OCR', 'Backyard à Obstacles'],
     url: siteUrl,
-    logo: `${siteUrl}/images/LOGO_FULL.webp`,
+    logo: `${siteUrl}/images/brand/LOGO_FULL.png`,
     description:
       'Overbound Race : première course à obstacles format backyard en France. Course obstacles Paris 2026, OCR personnalisable. Choisis ta distance et ta difficulté.',
     email: 'contact@overbound-race.com',
@@ -16,7 +16,11 @@ export function OrganizationStructuredDataServer() {
       '@type': 'Place',
       name: 'Paris et Île-de-France',
     },
-    sameAs: ['https://www.facebook.com/overbound.race/', 'https://www.instagram.com/overbound.race/'],
+    sameAs: [
+      'https://www.facebook.com/overbound.race/',
+      'https://www.instagram.com/overbound.race/',
+      'https://www.tiktok.com/@overbound.race',
+    ],
     sport: 'Obstacle Course Racing',
     keywords: 'course à obstacles paris, backyard à obstacles, OCR france 2026, overbound race',
   }

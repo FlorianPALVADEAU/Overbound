@@ -3,29 +3,35 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
-      },
+      { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'cdn.sanity.io', pathname: '/images/**' },
+      { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
     ],
   },
-  // FDR-0014: react-custom-roulette-r19 (Lucky Wheel) ships its layout as
-  // styled-components. Without this flag, Next's SWC compiler doesn't
-  // transform styled-components for App Router SSR, so those components'
-  // CSS rules (e.g. the wheel's own max-width: 445px) can fail to apply on
-  // first client render -- exactly the "wheel has no size limit and spills
-  // out of the popup" bug observed 2026-09-22. Sanity Studio also ships
-  // styled-components; this flag benefits it identically, no conflict.
+  // Sanity Studio ships styled-components; without this flag Next's SWC
+  // compiler doesn't transform them for App Router SSR.
   compiler: {
     styledComponents: true,
+  },
+  // Static assets in public/ have stable names but are not fingerprinted:
+  // a week of browser cache, then revalidation in the background.
+  async headers() {
+    const cache = [{ key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' }]
+    return [
+      { source: '/images/:path*', headers: cache },
+      { source: '/videos/:path*', headers: cache },
+    ]
   },
   // /about/concept described the first-edition backyard format; formats now live on /events/formats.
   async redirects() {
     return [
       { source: '/about/concept', destination: '/events/formats', permanent: true },
       { source: '/about/press', destination: '/about/partners', permanent: true },
+      // Training pages were replaced by bootcamps.
+      { source: '/trainings', destination: '/bootcamps', permanent: true },
+      { source: '/trainings/:path*', destination: '/bootcamps', permanent: true },
     ]
   },
 }

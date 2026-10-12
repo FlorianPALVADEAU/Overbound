@@ -29,7 +29,7 @@ export async function generateMetadata({
 
   if (!author) {
     return {
-      title: 'Auteur introuvable | Overbound Race',
+      title: { absolute: 'Auteur introuvable | Overbound Race' },
       robots: { index: false, follow: false },
     }
   }
@@ -39,7 +39,7 @@ export async function generateMetadata({
   const canonical = `${siteUrl}/blog/auteur/${slug}`
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical },
     openGraph: {

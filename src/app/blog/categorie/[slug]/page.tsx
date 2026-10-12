@@ -28,7 +28,7 @@ export async function generateMetadata({
 
   if (!category) {
     return {
-      title: 'Catégorie introuvable | Overbound Race',
+      title: { absolute: 'Catégorie introuvable | Overbound Race' },
       robots: { index: false, follow: false },
     }
   }
@@ -38,7 +38,7 @@ export async function generateMetadata({
   const canonical = `${siteUrl}/blog/categorie/${slug}`
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical },
     openGraph: {

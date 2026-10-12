@@ -10,16 +10,10 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/api/',
-          '/dashboard/',
-          '/account/',
-          '/auth/',
-          '/studio/',
-          '/preferences/',
-          '/billing/',
-          '/unsubscribe/',
-        ],
+        // Account, auth, billing, preferences and unsubscribe pages stay
+        // crawlable: they set noindex, which Google can only read if it
+        // is allowed to fetch them.
+        disallow: ['/api/', '/dashboard/', '/studio/'],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

@@ -5,7 +5,7 @@ import { containerClass } from '@/components/ds'
 import { LegalHeader } from '@/components/legal/LegalHeader'
 
 export const metadata: Metadata = {
-  title: "Conditions Générales d'Utilisation (CGU) | Overbound Race",
+  title: { absolute: "Conditions Générales d'Utilisation (CGU) | Overbound Race" },
   description: "Conditions générales d'utilisation de la plateforme Overbound Race : création de compte, inscription aux événements, obligations des utilisateurs et responsabilité.",
   alternates: {
     canonical: 'https://overbound-race.com/cgu'

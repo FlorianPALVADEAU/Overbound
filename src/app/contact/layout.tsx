@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Contact Overbound Race | Course à obstacles",
+  title: { absolute: "Contact Overbound Race | Course à obstacles" },
   description: "Contacte le support Overbound Race : inscriptions, modifications de dossard, documents et partenariats. Course à obstacles Paris 2026.",
   keywords: [
     "contact overbound",

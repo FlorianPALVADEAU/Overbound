@@ -214,7 +214,7 @@ export function PricingTimeline({
                     } ${active ? 'ring-4 ring-primary/30' : ''}`}
                   />
                   {active && (
-                    <div className="absolute inset-0 -m-1 animate-ping rounded-full bg-primary/25 opacity-75" />
+                    <div className="absolute inset-0 -m-1 motion-safe:animate-ping rounded-full bg-primary/25 opacity-75" />
                   )}
                 </div>
 
@@ -279,7 +279,7 @@ export function PricingTimeline({
                   } ${active ? 'ring-2 ring-primary/30 ring-offset-1 ring-offset-card' : ''}`}
                 />
                 {active && (
-                  <span className="absolute left-[0px] top-1/2 z-0 h-5 w-5 -translate-y-1/2 animate-ping rounded-full bg-primary/25 opacity-75" />
+                  <span className="absolute left-[0px] top-1/2 z-0 h-5 w-5 -translate-y-1/2 motion-safe:animate-ping rounded-full bg-primary/25 opacity-75" />
                 )}
                 <div className="flex items-center justify-between gap-3">
                   <div>

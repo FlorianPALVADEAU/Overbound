@@ -112,7 +112,7 @@
   
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 36%); /* field borders need 3:1 (WCAG 1.4.11) */
   --ring: oklch(0.64 0.18 142);
   
   /* Charts avec des variations de votre vert */
@@ -161,7 +161,7 @@
   --secondary: oklch(0.94 0 0);
   --secondary-foreground: oklch(0.16 0 0);
   --border: oklch(0 0 0 / 14%);
-  --input: oklch(0 0 0 / 16%);
+  --input: oklch(0 0 0 / 45%); /* field borders need 3:1 (WCAG 1.4.11) */
   --primary: oklch(0.5 0.17 142);
   --subtle: oklch(0 0 0 / 55%);
   --success: oklch(0.5 0.14 160);
@@ -180,16 +180,17 @@
   --secondary: oklch(0.18 0 0);
   --secondary-foreground: oklch(1 0 0);
   --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 36%); /* field borders need 3:1 (WCAG 1.4.11) */
   --primary: oklch(0.58 0.17 142);
   --subtle: oklch(1 0 0 / 55%);
 }
 
-/* Green band: white text levels on the primary color. */
+/* Green band: dark text levels on the primary color (white text only
+   reaches 3.1:1 on this green, under the 4.5:1 AA minimum). */
 .tone-primary {
-  --foreground: oklch(1 0 0);
-  --muted-foreground: oklch(1 0 0 / 80%);
-  --subtle: oklch(1 0 0 / 70%);
+  --foreground: oklch(0.145 0 0);
+  --muted-foreground: oklch(0.145 0 0 / 85%);
+  --subtle: oklch(0.145 0 0 / 75%);
 }
 
 /* Mountain edge (brand signature): the silhouette is a CSS mask, so its color

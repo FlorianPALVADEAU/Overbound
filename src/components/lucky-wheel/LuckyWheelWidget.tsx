@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
-import confetti from 'canvas-confetti'
 import { useLuckyWheelTrigger, type LuckyWheelTriggerRules } from '@/hooks/lucky-wheel/use-lucky-wheel-trigger'
 import { useLuckyWheelSpin } from '@/hooks/lucky-wheel/use-lucky-wheel-spin'
 import { trackLuckyWheelEvent } from '@/lib/luckyWheel/analytics'
@@ -179,12 +178,16 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
       setShowResult(true)
       setAwaitingReveal(false)
       if (won) {
-        confetti({
-          particleCount: 150,
-          spread: 90,
-          origin: { y: 0.5 },
-          zIndex: 10002,
-        })
+        // Loaded on demand: only winners need it.
+        void import('canvas-confetti').then(({ default: confetti }) =>
+          confetti({
+            particleCount: 150,
+            spread: 90,
+            origin: { y: 0.5 },
+            zIndex: 10002,
+            disableForReducedMotion: true,
+          }),
+        )
       }
     }, RESULT_REVEAL_DELAY_MS)
   }

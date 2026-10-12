@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Obstacles Course OCR Paris 2026 | Catalogue Overbound Race",
+  title: { absolute: "Obstacles Course OCR Paris 2026 | Catalogue Overbound Race" },
   description: "Explore les obstacles des courses à obstacles Overbound Race Paris 2026 : murs, portés, suspensions, Monkey Bar, grip. Backyard à obstacles Ultra Arena. Chaque obstacle noté par difficulté.",
   keywords: [
     "obstacles course OCR",

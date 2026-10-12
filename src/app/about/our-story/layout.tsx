@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Notre histoire | Overbound Race",
+  title: { absolute: "Notre histoire | Overbound Race" },
   description: "Comment l'idée d'Overbound est née en août 2025 et comment elle est devenue, en septembre 2026, une course à obstacles ouverte à tous.",
   keywords: [
     "overbound histoire",

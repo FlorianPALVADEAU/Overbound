@@ -6,16 +6,17 @@ import ClientProviders from '@/components/ClientProviders'
 import { OrganizationStructuredDataServer } from '@/components/seo/OrganizationStructuredDataServer'
 import { AnalyticsScripts } from '@/components/consent/AnalyticsScripts'
 import { UtmCapture } from '@/components/attribution/UtmCapture'
-import { SanityLive } from '@/sanity/lib/live'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
+// Only used on a few pages: no preload on every route.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 // Display face for titles and figures (docs/design/design-system.md).
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'),
   title: {
     default: "Overbound Race - Course à Obstacles Paris 2026 | Backyard à Obstacles",
-    template: "%s | Overbound Race - Course à Obstacles Paris 2026"
+    template: "%s | Overbound Race"
   },
   description: "Overbound Race : première course à obstacles format backyard en France ! Course obstacles Paris 2026, OCR personnalisable. Choisis ta distance et ta difficulté.",
   keywords: [
@@ -114,7 +115,6 @@ export default function RootLayout({
         <ClientProviders>
           <Layout>{children}</Layout>
         </ClientProviders>
-        <SanityLive />
       </body>
     </html>
   );

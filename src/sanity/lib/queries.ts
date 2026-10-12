@@ -1,5 +1,13 @@
 import { groq } from 'next-sanity'
 
+// Every published post, for sitemaps (postsQuery is capped at 20).
+export const sitemapPostsQuery = groq`
+*[_type == "post" && defined(slug.current) && publishedAt <= now()] | order(publishedAt desc){
+  "slug": slug.current,
+  publishedAt,
+  _updatedAt
+}`
+
 export const postsQuery = groq`
 *[_type == "post" && defined(slug.current)] | order(publishedAt desc)[0...20]{
   _id,
