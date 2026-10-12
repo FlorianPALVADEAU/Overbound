@@ -130,3 +130,17 @@ visiteur :
 - Le groupe envoyé par le navigateur n'était pas vérifié. Un visiteur pouvait passer l'identifiant
   d'un groupe qui n'est pas le sien pour ne pas choisir de SAS. L'appartenance est maintenant
   contrôlée avant de lire l'ancre.
+
+### Migrations de durcissement (2026-10-12, appliquées en dev puis en prod)
+
+- `20261012140000_revoke_client_writes.sql` : retire à `anon` et `authenticated` les droits d'écriture
+  (INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER) sur 43 tables du shop. En prod, la RLS était
+  la seule barrière, avec par exemple `registrations_insert_own` qui autorisait un utilisateur connecté
+  à créer une inscription sans payer. L'audit du code (68 écritures, 0 via une session) montre que
+  l'appli écrit ces tables uniquement avec le service role. SELECT est conservé.
+  Hors périmètre, car encore écrites avec la session : `profiles`, `notification_preferences`,
+  `list_subscriptions`, `email_logs`, `event_ratings`, `bootcamps`, `bootcamp_registrations`,
+  `distribution_lists`, `upsell_images`, `volunteer_assignments`, `volunteer_zone_settings`.
+- `20261012140100_fix_group_policies_recursion.sql` : les policies de lecture de `groups` et
+  `group_members` se référençaient mutuellement (`42P17`, HTTP 500). Le contrôle d'appartenance passe
+  dans `is_group_member()`, `SECURITY DEFINER`.
