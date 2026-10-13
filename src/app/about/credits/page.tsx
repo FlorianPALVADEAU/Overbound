@@ -47,7 +47,7 @@ const partners: ContactType[] = [
     name: 'Mathieu PERRIN',
     description: 'Ostéopathe certifié - Spécialiste du sport',
     link: 'https://www.doctolib.fr/osteopathe/neauphle-le-chateau/mathieu-perrin/booking/motives?specialityId=10&telehealth=false&placeId=practice-98553&profile_skipped=true&bookingFunnelSource=external_referral',
-    photo: '/images/images/osteopath-practicing-pt2.avif',
+    photo: '/images/images/osteopath-practicing-pt2.webp',
   }
 ]
 
@@ -127,7 +127,7 @@ export default function CreditsPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <PageHero
-        image={{ src: '/images/images/overbound-headband-on-chains-with-grass-in-background.avif', alt: 'Crédits Overbound' }}
+        image={{ src: '/images/images/overbound-headband-on-chains-with-grass-in-background.webp', alt: 'Crédits Overbound' }}
         eyebrow="Crédits"
         title="Merci à tous ceux qui rendent Overbound possible"
         description="Cette page est dédiée à ceux qui nous soutiennent."
@@ -150,7 +150,7 @@ export default function CreditsPage() {
             <Card className="h-full flex flex-col w-full p-0 m-0 border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5 hover:-translate-y-1 transition-all group overflow-hidden">
               <div className="relative top-0 w-full h-100 overflow-hidden">
                 <Image
-                  src={"/images/credits/florian-palvadeau-photo.avif"}
+                  src={"/images/credits/florian-palvadeau-photo.webp"}
                   alt="Florian PALVADEAU, Fondateur d'Overbound"
                   fill
                   sizes='100vw'

@@ -63,7 +63,7 @@ export default function PartnersPage() {
     <main className="w-full bg-background text-foreground">
       <PageHero
         image={{
-          src: '/images/images/a-photograph-in-action.avif',
+          src: '/images/images/a-photograph-in-action.webp',
           alt: 'Photographe en action lors d’un événement Overbound',
         }}
         eyebrow="Partenaires & presse"

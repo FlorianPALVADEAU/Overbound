@@ -104,7 +104,7 @@ export default function FAQPageContent({ faqs }: { faqs: FAQDocument[] }) {
     <main className="w-full bg-background text-foreground">
       <PageHero
         image={{
-          src: '/images/images/a-group-of-friend-celebrating-after-a-race.avif',
+          src: '/images/images/a-group-of-friend-celebrating-after-a-race.webp',
           alt: 'Groupe d’amis qui célèbrent après la course',
         }}
         eyebrow="FAQ"

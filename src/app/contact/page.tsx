@@ -20,7 +20,7 @@ export default function ContactPage() {
     <main className="w-full bg-background">
       <PageHero
         image={{
-          src: '/images/obstacles/tire-drag.avif',
+          src: '/images/obstacles/tire-drag.webp',
           alt: 'Discussion en cercle lors d’un échauffement Overbound',
         }}
         eyebrow="Contact"

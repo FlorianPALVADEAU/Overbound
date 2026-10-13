@@ -28,7 +28,7 @@ const CTA = () => {
     <Section spacing="none" tone="deep" className="flex min-h-screen flex-col items-center justify-center">
       <div className="absolute inset-0 -z-10">
         <Image
-          src="/images/images/P1102323.avif"
+          src="/images/images/P1102323.webp"
           alt="Coureurs Overbound franchissant un obstacle avec des troncs d'arbres"
           fill
           sizes="100vw"

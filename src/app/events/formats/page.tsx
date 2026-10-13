@@ -21,8 +21,8 @@ import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/d
 import { cn } from '@/lib/utils'
 
 const BG = {
-  hero: '/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif',
-  journey: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
+  hero: '/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.webp',
+  journey: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.webp',
 }
 
 const HERO_FACTS = [
