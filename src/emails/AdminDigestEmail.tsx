@@ -26,7 +26,7 @@ export function AdminDigestEmail({ periodLabel, totalActions, totalErrors, items
     <EmailLayout preview={`Digest administrateur — ${periodLabel}`}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/a-big-tire-is-falling-upside-down-thanks-to-a-middle-aged-man.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/a-big-tire-is-falling-upside-down-thanks-to-a-middle-aged-man.jpg`}
         alt="Digest administrateur"
         width="400"
         style={styles.heroImage}

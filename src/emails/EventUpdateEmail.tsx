@@ -31,7 +31,7 @@ export function EventUpdateEmail({
     <EmailLayout preview={`Mise à jour importante — ${eventTitle}`}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/a-big-tire-is falling-upside-down-thanks-to-a-young-man.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/a-big-tire-is-falling-upside-down-thanks-to-a-young-man.jpg`}
         alt="Mise à jour événement"
         width="400"
         style={styles.heroImage}

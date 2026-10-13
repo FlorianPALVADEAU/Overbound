@@ -44,7 +44,7 @@ export default function VolunteerAssignmentEmail({
     <EmailLayout preview={preview}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/speaker-talking-in-microphone.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/speaker-talking-in-microphone.jpg`}
         alt="Mission bénévole"
         width="400"
         style={styles.heroImage}

@@ -43,7 +43,7 @@ export function BootcampRegistrationEmail({
   return (
     <EmailLayout preview={`Tu es inscrit·e au ${bootcampTitle} — à très vite !`}>
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.jpg`}
         alt="Bootcamp Overbound"
         width="560"
         style={styles.heroImage}

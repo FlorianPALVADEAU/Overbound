@@ -25,7 +25,7 @@ export function PopupSubscribeConfirmationEmail({
       <Section style={styles.section}>
         {/* Hero Image */}
         <Img
-          src={`${getEmailAssetsBaseUrl()}/images/images/participants-carrying-wooden-logs-going-uphill.avif`}
+          src={`${getEmailAssetsBaseUrl()}/images/email/participants-carrying-wooden-logs-going-uphill.jpg`}
           alt="Overbound"
           width="400"
           style={styles.heroImage}

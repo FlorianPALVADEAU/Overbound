@@ -25,7 +25,7 @@ export default function VolunteerRecruitmentEmail({ fullName, headlineEvent, oth
     <EmailLayout preview={preview}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/a-group-of-friend-celebrating-after-a-race.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/a-group-of-friend-celebrating-after-a-race.jpg`}
         alt="Rejoins l'équipe bénévole"
         width="400"
         style={styles.heroImage}

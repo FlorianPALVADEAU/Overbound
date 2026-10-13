@@ -12,9 +12,9 @@ interface OnboardingEmailProps {
 
 export function OnboardingEmail({ fullName, accountUrl, eventsUrl, blogUrl }: OnboardingEmailProps) {
   const galleryImages = [
-    `${getEmailAssetsBaseUrl()}/images/images/a-middle-aged-man-rolling-a-tire-over.avif`,
-    `${getEmailAssetsBaseUrl()}/images/images/a-smiling-running-man-black-weared-sport.avif`,
-    `${getEmailAssetsBaseUrl()}/images/images/blond-lady-carrying-chains.avif`,
+    `${getEmailAssetsBaseUrl()}/images/email/a-middle-aged-man-rolling-a-tire-over.jpg`,
+    `${getEmailAssetsBaseUrl()}/images/email/a-smiling-running-man-black-weared-sport.jpg`,
+    `${getEmailAssetsBaseUrl()}/images/email/blond-lady-carrying-chains.jpg`,
   ]
 
   return (
@@ -26,7 +26,7 @@ export function OnboardingEmail({ fullName, accountUrl, eventsUrl, blogUrl }: On
       <Section style={styles.section}>
         {/* Hero Image */}
         <Img
-          src={`${getEmailAssetsBaseUrl()}/images/images/participants-carrying-wooden-logs-going-uphill.avif`}
+          src={`${getEmailAssetsBaseUrl()}/images/email/participants-carrying-wooden-logs-going-uphill.jpg`}
           alt="Overbound logo"
           width="400"
           style={styles.heroImage}

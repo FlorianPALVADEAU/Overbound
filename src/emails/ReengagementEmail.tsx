@@ -20,13 +20,13 @@ export function ReengagementEmail({
 }: ReengagementEmailProps) {
   const featuredImages = [
     {
-      src: `${getEmailAssetsBaseUrl()}/images/images/a-middle-aged-man-rolling-a-tire-over.avif`,
+      src: `${getEmailAssetsBaseUrl()}/images/email/a-middle-aged-man-rolling-a-tire-over.jpg`,
       title: 'Défis Multiples',
       description:
         'Découvre le monde innovant des défis multiples, où chaque obstacle demande créativité et endurance pour maximiser ton potentiel.',
     },
     {
-      src: `${getEmailAssetsBaseUrl()}/images/images/a-smiling-running-man-black-weared-sport.avif`,
+      src: `${getEmailAssetsBaseUrl()}/images/email/a-smiling-running-man-black-weared-sport.jpg`,
       title: 'Classiques Intemporels',
       description:
         'Plonge dans l\'univers des classiques intemporels alors que nous explorons les courses mythiques qui ont résisté à l\'épreuve du temps.',

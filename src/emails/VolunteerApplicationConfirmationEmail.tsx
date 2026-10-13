@@ -33,7 +33,7 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
     <EmailLayout preview="On a bien reçu ta candidature bénévole">
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.jpg`}
         alt="Candidature bénévole reçue"
         width="400"
         style={styles.heroImage}

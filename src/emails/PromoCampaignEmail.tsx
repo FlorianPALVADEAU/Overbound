@@ -28,7 +28,7 @@ export function PromoCampaignEmail({
     <EmailLayout preview={title} unsubscribeUrl={unsubscribeUrl}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.jpg`}
         alt={title}
         width="400"
         style={styles.heroImage}
