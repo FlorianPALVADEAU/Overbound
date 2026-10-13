@@ -6,7 +6,11 @@ import { useEventDetail } from '@/app/api/events/[id]/eventDetailQueries'
 import { isPublicObstacleVisible } from '@/lib/obstaclesVisibility'
 import { ZoomIn } from 'lucide-react'
 import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
+import { ObstaclePhoto } from '@/components/obstacles/ObstaclePhoto'
 import type { Obstacle } from '@/types/Obstacle'
+
+const OBSTACLE_PLACEHOLDER_URL =
+    'https://images.unsplash.com/photo-1598702631024-b282c0fd96b2?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
 
 interface ObstaclesOverviewProps {
     eventId?: string
@@ -96,11 +100,11 @@ const ObstaclesOverview = ({
                                 onClick={() => setSelectedObstacle(obst)}
                                 className={`group text-left w-full ${embedded ? "relative h-56 sm:h-60 lg:h-64 rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" : "relative h-64 sm:h-72 md:h-80 lg:h-84 xl:h-80 rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"}`}
                             >
-                                <img
-                                    src={obst.image_url || 'https://images.unsplash.com/photo-1598702631024-b282c0fd96b2?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'}
+                                <ObstaclePhoto
+                                    url={obst.image_url || OBSTACLE_PLACEHOLDER_URL}
                                     alt={obst.name}
-                                    className={`w-full h-full object-cover ${obst.image_url ? '' : 'blur-sm grayscale '}`}
-                                    loading="lazy"
+                                    className={obst.image_url ? undefined : 'blur-sm grayscale'}
+                                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 34vw, (min-width: 640px) 62vw, 88vw"
                                 />
                                 <div className="absolute inset-0 bg-linear-to-t from-surface-deep/70 via-surface-deep/10 to-transparent"></div>
                                 <span className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-deep/60 text-foreground backdrop-blur-sm transition group-hover:bg-surface-deep/80">

@@ -17,11 +17,7 @@ import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { Container, SectionHeader, SECTION_SPACING } from '@/components/ds'
 import { cn } from '@/lib/utils'
-
-const getPosterUrl = (mediaUrl: string) => {
-  const fileName = mediaUrl.split('/').pop()?.replace(/\.(webm|mp4)$/i, '')
-  return fileName ? `/images/feedbacks/posters/${fileName}.jpg` : undefined
-}
+import { testimonialPosterUrl } from '@/lib/testimonials/testimonialPoster'
 
 const renderStars = (rating: number) =>
   Array.from({ length: 5 }, (_, i) => (
@@ -45,7 +41,7 @@ function VideoCard({
   const [isMuted, setIsMuted] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const prefersReducedMotion = usePrefersReducedMotion()
-  const posterUrl = getPosterUrl(testimonial.mediaUrl)
+  const posterUrl = testimonialPosterUrl(testimonial.mediaUrl)
   const id = testimonial.id.toString()
 
   useEffect(() => {

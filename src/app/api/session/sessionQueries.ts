@@ -31,6 +31,8 @@ export interface SessionResponse {
 
 export const SESSION_QUERY_KEY = ['session'] as const
 
+const GUEST_SESSION: SessionResponse = { user: null, profile: null, alerts: null }
+
 const mapSessionUser = (sessionUser: {
   id: string
   email?: string | null
@@ -67,6 +69,9 @@ const fetchSession = async (): Promise<SessionResponse> => {
   let {
     data: { session: localSession },
   } = await supabase.auth.getSession()
+
+  // No local session means a visitor: the server would only answer 401, so skip the round trip.
+  if (!localSession) return GUEST_SESSION
 
   const doRequest = async (forceRefresh = false) => {
     const headers = await getClientAuthHeaders({ forceRefresh })

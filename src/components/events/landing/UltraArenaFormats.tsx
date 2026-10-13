@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RANKED_LAP_TIME_LIMITS_SUMMARY } from '@/constants/raceFormatRules'
 import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/ds'
 import { cn } from '@/lib/utils'
+import { BACKGROUND_IMAGE_QUALITY } from '@/lib/images/imageSource'
 
 const OPEN_FOR_WHO = [
   "Tu découvres Overbound pour la 1ère fois",
@@ -55,6 +56,7 @@ export function UltraArenaFormats({
           alt=""
           fill
           sizes="100vw"
+          quality={BACKGROUND_IMAGE_QUALITY}
           className="object-cover opacity-50"
         />
         <div className="absolute inset-0 bg-linear-to-br from-background/75 via-background/55 to-background" />

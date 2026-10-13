@@ -13,6 +13,7 @@ import AnimatedBanner from '@/components/homepage/AnimatedBanner'
 import { PARTNERS_DATA } from '@/datas/Partners'
 import { useFeaturedEvent } from '../api/events/featured/featuredEventQueries'
 import { ObstacleDetailDialog } from '@/components/obstacles/ObstacleDetailDialog'
+import { ObstaclePhoto } from '@/components/obstacles/ObstaclePhoto'
 import { OBSTACLE_TYPES, difficultyLabel } from '@/components/obstacles/obstacleLabels'
 import { PageHero } from '@/components/hero/PageHero'
 import { Container, Section, DISPLAY_TITLE } from '@/components/ds'
@@ -171,11 +172,11 @@ export default function ObstaclesPage() {
                   className="group relative h-72 overflow-hidden rounded-2xl bg-card text-left shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-primary/20"
                 >
                   {obstacle.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={obstacle.image_url}
+                    <ObstaclePhoto
+                      url={obstacle.image_url}
                       alt={obstacle.name}
-                      className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="transition duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-card">

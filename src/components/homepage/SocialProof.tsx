@@ -20,6 +20,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from '@/components/ui/carousel'
+import { testimonialPosterUrl } from '@/lib/testimonials/testimonialPoster'
 
 type Slide =
   | { id: string; type: 'video'; data: TestimonialType }
@@ -44,14 +45,6 @@ const shuffleWithSeed = <T,>(array: T[], seed: number): T[] => {
     ;[result[index], result[randomIndex]] = [result[randomIndex], result[index]]
   }
   return result
-}
-
-const getTestimonialPosterUrl = (mediaUrl: string) => {
-  const fileName = mediaUrl.split('/').pop()?.replace(/\.(webm|mp4)$/i, '')
-  if (!fileName) {
-    return '/images/hero_header_poster.avif'
-  }
-  return `/images/feedbacks/posters/${fileName}.jpg`
 }
 
 const SocialProof = () => {
@@ -179,7 +172,7 @@ const SocialProof = () => {
 
   const renderVideoSlide = (testimonial: TestimonialType) => {
     const videoId = testimonial.id.toString()
-    const posterUrl = getTestimonialPosterUrl(testimonial.mediaUrl)
+    const posterUrl = testimonialPosterUrl(testimonial.mediaUrl)
     let videoRef: HTMLVideoElement | null = null
 
     return (
