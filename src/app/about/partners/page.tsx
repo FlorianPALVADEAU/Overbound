@@ -9,7 +9,7 @@ import { Eyebrow, containerClass, DISPLAY_TITLE } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
-  title: 'Partenaires & presse | Overbound Race',
+  title: { absolute: 'Partenaires & presse | Overbound Race' },
   description:
     'Les partenaires d’Overbound, le dossier de sponsoring 2026 et les contacts partenariats et presse.',
   alternates: { canonical: 'https://overbound-race.com/about/partners' },

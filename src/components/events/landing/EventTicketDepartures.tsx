@@ -49,7 +49,7 @@ function SlotList({ waves, isOnSale, hrefFor, onPick, onPickFromDropdown }: Slot
       </ul>
       {overflow.length > 0 ? (
         <Select value="" disabled={!isOnSale} onValueChange={(value) => onPickFromDropdown(Number(value))}>
-          <SelectTrigger className="mt-3 h-12 w-full rounded-xl border-primary/60 bg-primary/10 font-semibold">
+          <SelectTrigger aria-label="Autres horaires de départ" className="mt-3 h-12 w-full rounded-xl border-primary/60 bg-primary/10 font-semibold">
             <SelectValue placeholder={`Voir les ${overflow.length} autres horaires`} />
           </SelectTrigger>
           <SelectContent>

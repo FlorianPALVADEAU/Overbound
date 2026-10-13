@@ -5,7 +5,7 @@ import { Container, Section } from '@/components/ds'
 import { LegalHeader } from '@/components/legal/LegalHeader'
 
 export const metadata: Metadata = {
-  title: "Mentions légales - Informations légales | Overbound Race",
+  title: { absolute: "Mentions légales - Informations légales | Overbound Race" },
   description: "Mentions légales du site Overbound Race : éditeur, hébergeur, directeur de publication, propriété intellectuelle et crédits.",
   alternates: {
     canonical: 'https://overbound-race.com/mentions-legales'

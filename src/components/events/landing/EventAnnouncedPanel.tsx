@@ -61,6 +61,7 @@ export function EventAnnouncedPanel({
         <form className="mt-4 space-y-3" onSubmit={onNotifySubmit}>
           <Input
             type="email"
+            aria-label="Ton adresse email"
             value={notifyEmail}
             onChange={(e) => onNotifyEmailChange(e.target.value)}
             placeholder="Ton email"

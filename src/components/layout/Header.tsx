@@ -27,7 +27,8 @@ import {
   CameraIcon,
 } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { isActiveNavHref } from '@/lib/navigation/activeLink'
 import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from '@/app/api/session/sessionQueries'
 import { useQueryClient } from '@tanstack/react-query'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
@@ -73,6 +74,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const lastScrollY = useRef(0)
   const router = useRouter()
+  const pathname = usePathname()
+  const currentFor = (href: string) => (isActiveNavHref(pathname, href) ? ('page' as const) : undefined)
   const supabase = createSupabaseBrowser()
   const queryClient = useQueryClient()
   const { data: featuredEventData } = useFeaturedEvent()
@@ -86,6 +89,18 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     setMobileMenuOpen(false)
     setMobileDropdownOpen(null)
   }
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false)
+        setMobileDropdownOpen(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [mobileMenuOpen])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -101,6 +116,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const aboutDropdownItems: DropdownItemType[] = [
     { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
+    { name: 'Blog', href: '/blog', icon: InfoIcon },
     { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
     { name: 'Partenaires & presse', href: '/about/partners', icon: MapPinIcon },
     { name: 'Contact', href: '/contact', icon: MapPinIcon },
@@ -203,7 +219,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
             <Link href="/" className="flex items-center space-x-2 p-2">
               <Image
                 src="/images/brand/totem_logo_white.png"
-                alt="OverBound Logo"
+                alt="Overbound – accueil"
                 width={64}
                 height={64}
                 className="w-8 md:w-10 lg:w-12 h-auto"
@@ -214,24 +230,27 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           {/* In the flex flow (not absolute) so the nav can never slide under the logo or the actions */}
           <div className="flex h-full min-w-0 flex-1 items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
-            <nav className="hidden h-full items-center space-x-4 whitespace-nowrap align-center xl:space-x-8 lg:flex">
+            <nav aria-label="Navigation principale" className="hidden h-full items-center space-x-4 whitespace-nowrap align-center xl:space-x-8 lg:flex">
               <Link
                 href={featuredEventHref}
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+                aria-current={currentFor(featuredEventHref)}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
               >
                 Événement
               </Link>
 
               <Link
                 href="/events/formats"
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+                aria-current={currentFor("/events/formats")}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
               >
                 Formats
               </Link>
 
               <Link
                 href="/obstacles"
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+                aria-current={currentFor("/obstacles")}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
               >
                 Obstacles
               </Link>
@@ -250,14 +269,16 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
               <Link
                 href="/volunteers"
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+                aria-current={currentFor("/volunteers")}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
               >
                 Devenir bénévole
               </Link>
 
               <Link
                 href="/bootcamps"
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+                aria-current={currentFor("/bootcamps")}
+                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
               >
                 Bootcamps
               </Link>
@@ -289,7 +310,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                             <DropdownMenuItem key={subItem.name} asChild>
                               <Link
                                 href={subItem.href}
-                                className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground"
+                                aria-current={currentFor(subItem.href)}
+                                className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground aria-[current=page]:text-primary"
                               >
                                 <span className="font-medium">{subItem.name}</span>
                               </Link>
@@ -303,7 +325,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary xl:text-base"
+                    aria-current={currentFor(item.href)}
+                    className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
                   >
                     {item.name}
                   </Link>
@@ -404,12 +427,15 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
                 className="h-11 w-11 p-0"
               >
                 {mobileMenuOpen ? (
-                  <XIcon className="h-5 w-5" />
+                  <XIcon className="h-5 w-5" aria-hidden="true" />
                 ) : (
-                  <MenuIcon className="h-5 w-5" />
+                  <MenuIcon className="h-5 w-5" aria-hidden="true" />
                 )}
               </Button>
             </div>
@@ -418,11 +444,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
         {/* Navigation Mobile - améliorée avec animations */}
         {mobileMenuOpen && (
-          <div className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
+          <nav id="mobile-menu" aria-label="Menu principal" className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
             <div className="space-y-1">
               <Link
                 href={featuredEventHref}
-                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                aria-current={currentFor(featuredEventHref)}
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                 onClick={closeMobileMenu}
               >
                 Événement
@@ -430,7 +457,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
               <Link
                 href="/events/formats"
-                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                aria-current={currentFor("/events/formats")}
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                 onClick={closeMobileMenu}
               >
                 Formats
@@ -438,7 +466,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
               <Link
                 href="/obstacles"
-                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                aria-current={currentFor("/obstacles")}
+                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                 onClick={closeMobileMenu}
               >
                 Obstacles
@@ -461,10 +490,12 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 item.type === 'dropdown' ? (
                   <div key={item.name}>
                     <button
+                      type="button"
+                      aria-expanded={mobileDropdownOpen === item.name}
                       onClick={() =>
                         setMobileDropdownOpen((current) => (current === item.name ? null : item.name))
                       }
-                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-primary"
+                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                     >
                       <span>{item.name}</span>
                       <ChevronDownIcon
@@ -479,7 +510,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            className="flex min-h-11 w-full items-center px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                            aria-current={currentFor(subItem.href)}
+                            className="flex min-h-11 w-full items-center px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-[current=page]:text-primary"
                             onClick={closeMobileMenu}
                           >
                             {subItem.name}
@@ -492,7 +524,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                    aria-current={currentFor(item.href)}
+                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                     onClick={closeMobileMenu}
                   >
                     {item.name}
@@ -503,7 +536,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Devenir bénévole mobile */}
               <Link
                 href="/volunteers"
-                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                aria-current={currentFor("/volunteers")}
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                 onClick={closeMobileMenu}
               >
                 Devenir bénévole
@@ -512,7 +546,8 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
               {/* Lien Bootcamps mobile */}
               <Link
                 href="/bootcamps"
-                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+                aria-current={currentFor("/bootcamps")}
+                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
                 onClick={closeMobileMenu}
               >
                 Bootcamps
@@ -563,7 +598,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 )}
               </div>
             </div>
-          </div>
+          </nav>
         )}
       </div>
     </header>

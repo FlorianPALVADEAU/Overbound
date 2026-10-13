@@ -6,7 +6,7 @@ import { faqFallback } from '@/datas/faqFallback'
 import { FAQPageStructuredDataServer } from '@/components/seo/FAQStructuredData'
 
 export const metadata: Metadata = {
-  title: "FAQ | Overbound Race",
+  title: { absolute: "FAQ | Overbound Race" },
   description: "Billets, transferts, formats OPEN et RANKED, jour J : les réponses aux questions les plus fréquentes sur Overbound.",
   keywords: [
     "FAQ course obstacles",

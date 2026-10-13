@@ -10,7 +10,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
 const heroImage = `${siteUrl}/images/images/overbound-og-cover.jpg`
 
 export const metadata: Metadata = {
-  title: 'Auteurs Blog OCR | Course à Obstacles Paris 2026 - Overbound Race',
+  title: { absolute: 'Auteurs Blog OCR | Course à Obstacles Paris 2026 - Overbound Race' },
   description:
     'Découvre les auteurs du blog Overbound Race : conseils OCR, préparation backyard à obstacles et course à obstacles Paris 2026.',
   alternates: {

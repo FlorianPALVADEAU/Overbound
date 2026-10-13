@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 import { client } from '@/sanity/lib/client'
-import { postsQuery, categoriesWithCountsQuery, authorsWithCountsQuery } from '@/sanity/lib/queries'
+import { sitemapPostsQuery, categoriesWithCountsQuery, authorsWithCountsQuery } from '@/sanity/lib/queries'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
 const getBuildDate = () => {
@@ -12,6 +12,8 @@ const getBuildDate = () => {
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed
 }
+
+type SitemapPost = { slug: string; publishedAt: string | null; _updatedAt: string | null }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Normaliser l'URL en enlevant le trailing slash pour éviter les doubles slashes
@@ -26,7 +28,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // '/about/team',
     '/about/faq',
     '/about/partners',
-    // '/events', // notFound() until a second event exists — see FDR-0015 §14
+    '/about/credits',
+    '/bootcamps',
     '/events/formats',
     '/obstacles',
     '/blog',
@@ -44,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = staticPages.map((page) => ({
     url: `${siteUrl}${page}`,
     lastModified: buildDate,
-    changeFrequency: page === '' || page === '/events' ? 'daily' : 'weekly',
+    changeFrequency: page === '' ? 'daily' : 'weekly',
     priority: page === '' ? 1 : page.startsWith('/events') ? 0.9 : 0.7,
   }))
 
@@ -86,10 +89,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Articles de blog dynamiques
   let blogEntries: MetadataRoute.Sitemap = []
   try {
-    const posts = await client.fetch(postsQuery)
-    blogEntries = posts.map((post: any) => ({
+    const posts = await client.fetch<SitemapPost[]>(sitemapPostsQuery)
+    blogEntries = posts.map((post) => ({
       url: `${siteUrl}/blog/post/${post.slug}`,
-      lastModified: post.publishedAt ? new Date(post.publishedAt) : new Date(),
+      lastModified: new Date(post._updatedAt || post.publishedAt || buildDate),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     }))

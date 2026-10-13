@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Formats OPEN vs RANKED | Course à Obstacles Overbound Paris 2026",
+  title: { absolute: "Formats OPEN vs RANKED | Course à Obstacles Overbound Paris 2026" },
   description: "Compare les deux formats Overbound : OPEN (vagues échelonnées, sans classement) et RANKED (départ unique, classement officiel). Trouve celui qui te correspond.",
   keywords: [
     "format course obstacles",

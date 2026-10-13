@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Crédits Overbound Race | Course à Obstacles Paris 2026",
+  title: { absolute: "Crédits Overbound Race | Course à Obstacles Paris 2026" },
   description: "Découvre l'équipe créative Overbound Race : designers, photographes, développeurs et contributeurs de la course à obstacles Paris 2026.",
   alternates: {
     canonical: 'https://overbound-race.com/about/credits'

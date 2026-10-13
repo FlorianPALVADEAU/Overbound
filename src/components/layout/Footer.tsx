@@ -24,7 +24,8 @@ const LINK_GROUPS = [
     title: 'La tribu',
     links: [
       { label: 'Notre histoire', href: '/about/our-story' },
-      // { label: "L'équipe", href: '/about/team' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Bootcamps', href: '/bootcamps' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
     ],
@@ -85,7 +86,7 @@ export function Footer() {
 
         <div className='relative z-10 grid grid-cols-2 gap-8 border-y border-border/60 px-6 py-12 text-sm text-muted-foreground sm:px-6 lg:grid-cols-4 lg:gap-12 xl:px-32'>
           {LINK_GROUPS.map((group) => (
-            <div key={group.title} className='space-y-4'>
+            <nav key={group.title} aria-label={group.title} className='space-y-4'>
               <h3 className='text-sm font-semibold uppercase tracking-[0.35em] text-foreground/70'>{group.title}</h3>
               <ul className='space-y-2'>
                 {group.links.map((link) => (
@@ -103,7 +104,7 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
 
@@ -113,10 +114,11 @@ export function Footer() {
               <Link
                 key={label}
                 href={href}
+                aria-label={label}
                 className='-my-3.5 flex min-h-11 min-w-11 items-center justify-center gap-2 py-3.5 transition hover:text-primary'
               >
-                <Icon className='h-4 w-4' />
-                <span className='hidden text-sm font-medium sm:inline'>{label}</span>
+                <Icon className='h-4 w-4' aria-hidden='true' />
+                <span aria-hidden='true' className='hidden text-sm font-medium sm:inline'>{label}</span>
               </Link>
             ))}
           </div>

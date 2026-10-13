@@ -106,6 +106,7 @@ export function UltraArenaEventOver({
                 </p>
                 <Input
                   type="email"
+                  aria-label="Ton adresse email"
                   required
                   placeholder="ton@email.com"
                   value={notifyEmail}

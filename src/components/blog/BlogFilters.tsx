@@ -44,8 +44,9 @@ export default function BlogFilters({ categories }: BlogFiltersProps) {
               />
             </svg>
             <input
-              type="text"
+              type="search"
               name="q"
+              aria-label="Rechercher un article"
               defaultValue={q || ''}
               placeholder="Rechercher un article..."
               className="w-full rounded-xl border-2 border-border bg-background/50 pl-11 pr-28 py-3 text-sm backdrop-blur-sm transition-all focus:border-primary focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/10"

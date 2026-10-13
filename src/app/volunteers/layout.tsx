@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Devenir Bénévole Course à Obstacles Paris 2026 | Overbound Race",
+  title: { absolute: "Devenir Bénévole Course à Obstacles Paris 2026 | Overbound Race" },
   description: "Rejoins l'équipe bénévole Overbound Race Paris 2026 ! Encadrement obstacles, logistique, accueil. Place offerte sur l'événement de ton choix. Backyard à obstacles Ultra Arena.",
   keywords: [
     "bénévole course obstacles",

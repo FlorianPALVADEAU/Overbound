@@ -4,7 +4,7 @@ import { containerClass } from '@/components/ds'
 import { LegalHeader } from '@/components/legal/LegalHeader'
 
 export const metadata: Metadata = {
-  title: "Politique de confidentialité RGPD - Protection des données | Overbound Race",
+  title: { absolute: "Politique de confidentialité RGPD - Protection des données | Overbound Race" },
   description: "Politique de confidentialité et protection des données personnelles Overbound Race. Conforme RGPD. Droits d'accès, rectification, suppression et portabilité.",
   alternates: {
     canonical: 'https://overbound-race.com/privacy-policies'

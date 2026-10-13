@@ -6,7 +6,7 @@ import { Container, DISPLAY_TITLE, Eyebrow, Section } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
-  title: 'Décharge de responsabilité | Overbound Race',
+  title: { absolute: 'Décharge de responsabilité | Overbound Race' },
   description: 'Texte de la décharge de responsabilité signée par chaque participant Overbound.',
   alternates: { canonical: 'https://overbound-race.com/decharge' },
   robots: { index: false, follow: true },

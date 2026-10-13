@@ -184,6 +184,7 @@ export default function GroupPanel({ user, event, group, intent, inviteCode, onN
           }}
         >
           <Input
+            aria-label="Code du groupe"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="AB12CD34"

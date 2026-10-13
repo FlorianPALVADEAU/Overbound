@@ -25,7 +25,7 @@ export async function generateMetadata(
 
   if (!event) {
     return {
-      title: 'Événement introuvable | Overbound Race',
+      title: { absolute: 'Événement introuvable | Overbound Race' },
       robots: { index: false, follow: false },
     }
   }
@@ -40,7 +40,7 @@ export async function generateMetadata(
   const shouldIndex = !['draft', 'cancelled'].includes(event.status)
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical },
     openGraph: {

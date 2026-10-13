@@ -30,8 +30,10 @@ const AnimatedBanner = ({
         <div className={`${wrapperClass} relative overflow-hidden flex flex-row ${backgroundClass}`}>
             {/* fade-in effect */}
             <div className={`pointer-events-none absolute left-0 top-0 bottom-0 w-1/3 bg-linear-to-r ${gradientFromLeft} to-transparent z-1`}></div>
-            {Array.from({ length: 10 }).map((_, index) => (
-                <div key={index} className='shrink-0 flex items-center justify-around whitespace-nowrap w-fit animate-marquee motion-reduce:animate-none'>
+            {/* Each copy slides by its own width: 4 copies cover a 3840px screen.
+                Only the first copy is exposed to assistive technology. */}
+            {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} aria-hidden={index > 0 || undefined} className='shrink-0 flex items-center justify-around whitespace-nowrap w-fit animate-marquee motion-reduce:animate-none'>
                     {title && (
                         <p className={`shrink-0 text-uppercase ${titleClass}`}>
                                 {title?.toUpperCase()}
@@ -42,7 +44,7 @@ const AnimatedBanner = ({
                                 <div key={imgIndex} className={`${logoBoxClass} relative shrink-0`}>
                                     <Image
                                         src={src}
-                                        alt={`${imageAltPrefix} ${imgIndex + 1}`}
+                                        alt={index === 0 ? `${imageAltPrefix} ${imgIndex + 1}` : ''}
                                         fill
                                         sizes="(max-width: 768px) 10rem, 16rem"
                                         className={logoImageClass}

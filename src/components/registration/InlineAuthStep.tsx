@@ -114,6 +114,7 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
         <div className="space-y-3">
           <Input
             inputMode="numeric"
+            aria-label="Code de vérification à 6 chiffres"
             placeholder="Code à 6 chiffres"
             value={verificationCode}
             onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, VERIFICATION_CODE_LENGTH))}
@@ -140,6 +141,7 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
           <form onSubmit={handleSubmit} className="space-y-3">
             <Input
               type="email"
+              aria-label="Adresse email"
               placeholder="vous@exemple.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -149,6 +151,7 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
             <div className="relative">
               <Input
                 type={showPassword ? 'text' : 'password'}
+                aria-label="Mot de passe"
                 placeholder="Mot de passe"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -159,7 +162,7 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-0 top-1/2 -translate-y-1/2 rounded-xl p-2 text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               >
                 {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
@@ -168,6 +171,7 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
             {mode === 'signup' && (
               <Input
                 type={showPassword ? 'text' : 'password'}
+                aria-label="Confirmer le mot de passe"
                 placeholder="Confirmer le mot de passe"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}

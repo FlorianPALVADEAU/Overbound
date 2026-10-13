@@ -36,7 +36,7 @@ export async function generateMetadata(
   const [post, settings] = await Promise.all([loadPost(slug), loadSettings()])
 
   if (!post) {
-    return { title: 'Article introuvable — OverBound' }
+    return { title: 'Article introuvable' }
   }
 
   const siteTitle = settings?.siteTitle || 'OverBound'
@@ -49,7 +49,8 @@ export async function generateMetadata(
   const canonical = `${siteUrl}/blog/post/${post.slug}`
 
   return {
-    title,
+    // The root template appends the brand.
+    title: post.title,
     description,
     alternates: { canonical },
     openGraph: {

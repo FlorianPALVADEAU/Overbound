@@ -610,7 +610,7 @@ export default function RaceDetailPage() {
                     </div>
                   </div>
                   <Button asChild className="w-full bga-primary hover:bg-primary/90 text-primary-foreground">
-                    <Link href="/trainings/what-race-for-me">
+                    <Link href="/events/formats">
                       Quel format pour moi ?
                     </Link>
                   </Button>
