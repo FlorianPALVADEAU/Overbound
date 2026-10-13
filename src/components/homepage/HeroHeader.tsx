@@ -75,6 +75,17 @@ export const HeroHeader = () => {
     return (
         <>
             <section className="relative h-[75vh] min-h-[28rem] w-full overflow-hidden">
+                {/* LCP element: a real image, preloaded with high priority (a CSS
+                    background is invisible to the preload scanner). It stays under
+                    the video, which has no poster: no second download of the frame. */}
+                <Image
+                    src="/images/hero_header_poster.avif"
+                    alt=""
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover"
+                />
                 {shouldLoadVideo ? (
                     <video
                         ref={videoRef}
@@ -84,24 +95,12 @@ export const HeroHeader = () => {
                         loop
                         playsInline
                         preload="metadata"
-                        poster="/images/hero_header_poster.avif"
                         className="absolute left-0 top-0 h-full w-full object-cover"
                     >
                         <source src="/videos/hero_header_video.webm" type="video/webm" />
                         <source src="/videos/hero_header_video.mp4" type="video/mp4" />
                     </video>
-                ) : (
-                    // LCP element: a real image, preloaded with high priority
-                    // (a CSS background is invisible to the preload scanner).
-                    <Image
-                        src="/images/hero_header_poster.avif"
-                        alt=""
-                        fill
-                        priority
-                        sizes="100vw"
-                        className="object-cover"
-                    />
-                )}
+                ) : null}
 
                 <div className="absolute inset-0 bg-surface-deep/40" />
 

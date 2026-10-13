@@ -1,14 +1,12 @@
 import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
+import { IMAGE_QUALITIES, REMOTE_IMAGE_PATTERNS } from './src/lib/images/imageSource'
 
 const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
-    remotePatterns: [
-      { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'cdn.sanity.io', pathname: '/images/**' },
-      { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
-    ],
+    qualities: IMAGE_QUALITIES,
+    remotePatterns: REMOTE_IMAGE_PATTERNS.map((pattern) => ({ ...pattern })),
   },
   // Sanity Studio ships styled-components; without this flag Next's SWC
   // compiler doesn't transform them for App Router SSR.

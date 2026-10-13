@@ -1,6 +1,7 @@
 import type { ReactNode, Ref } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { BACKGROUND_IMAGE_QUALITY } from '@/lib/images/imageSource'
 
 /**
  * Full-bleed band that gives every page its rhythm (docs/design/design-system.md).
@@ -93,7 +94,8 @@ export function Section({
     >
       {backgroundSrc ? (
         <div className="absolute inset-0 -z-10" aria-hidden>
-          <Image src={backgroundSrc} alt="" fill sizes="100vw" className="object-cover" />
+          {/* Dimmed by the overlay below: a lower quality is invisible and halves the weight. */}
+          <Image src={backgroundSrc} alt="" fill sizes="100vw" quality={BACKGROUND_IMAGE_QUALITY} className="object-cover" />
           <div className={cn('absolute inset-0', OVERLAY_CLASS[tone])} />
         </div>
       ) : null}

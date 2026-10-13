@@ -6,6 +6,8 @@ import { NextEventSection } from '@/components/homepage/NextEventSection';
 import { ConceptExplainer } from '@/components/homepage/ConceptExplainer';
 import { HomeFormatsSection } from '@/components/homepage/HomeFormatsSection';
 import { HomeDeferredSections } from '@/components/homepage/HomeDeferredSections';
+import { FaqSeed } from '@/components/homepage/FaqSeed';
+import { fetchFaqQuestions } from '@/lib/faq/fetchFaqQuestions';
 import { metadata as baseMetadata } from './metadata';
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com').replace(/\/$/, '')
@@ -29,7 +31,11 @@ export default async function Home() {
   // Every useFeaturedEvent() consumer (hero, next event, formats, CTA) then
   // renders with data on the first paint instead of popping in after a
   // client fetch. If the read fails, the client fetches as before.
-  const featured = await loadFeaturedEvent().catch(() => null);
+  // Same for the FAQ: read from Sanity here, so the browser never calls it.
+  const [featured, faq] = await Promise.all([
+    loadFeaturedEvent().catch(() => null),
+    fetchFaqQuestions().catch(() => null),
+  ]);
 
   const sections = (
     <div className="flex h-full w-full flex-col">
@@ -41,5 +47,6 @@ export default async function Home() {
     </div>
   );
 
-  return featured ? <FeaturedEventSeed data={featured}>{sections}</FeaturedEventSeed> : sections;
+  const withFaq = faq ? <FaqSeed data={faq}>{sections}</FaqSeed> : sections;
+  return featured ? <FeaturedEventSeed data={featured}>{withFaq}</FeaturedEventSeed> : withFaq;
 }
