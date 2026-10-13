@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
-import { isPublicObstacleVisible } from '@/lib/obstaclesVisibility'
+import { loadPublicObstacles } from '@/lib/obstacles/loadPublicObstacles'
 
-export async function GET(req: Request) {
-  const supabase = await createSupabaseServer()
-  const { data, error } = await supabase.from('obstacles').select('*')
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+export async function GET() {
+  try {
+    return NextResponse.json(await loadPublicObstacles())
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Erreur serveur' }, { status: 500 })
   }
-
-  return NextResponse.json((data ?? []).filter((obstacle) => isPublicObstacleVisible(obstacle?.name)))
 }

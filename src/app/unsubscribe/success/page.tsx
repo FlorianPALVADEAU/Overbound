@@ -19,7 +19,7 @@ export default function UnsubscribeSuccessPage() {
           <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center">
             <CheckCircle2 className="w-8 h-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">
+          <CardTitle role="heading" aria-level={1} className="text-2xl">
             Désabonnement confirmé
           </CardTitle>
           <CardDescription>

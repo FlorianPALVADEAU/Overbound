@@ -68,7 +68,7 @@ export default function ResetPasswordRequestPage() {
                 <MailIcon className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Mot de passe oublié</CardTitle>
+            <CardTitle role="heading" aria-level={1} className="text-2xl">Mot de passe oublié</CardTitle>
             <p className="text-sm text-muted-foreground">
               Saisis l’adresse associée à ton compte Overbound. Nous t’enverrons un lien pour définir un nouveau mot de passe.
             </p>

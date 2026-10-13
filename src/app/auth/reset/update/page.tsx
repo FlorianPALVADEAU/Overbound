@@ -107,7 +107,7 @@ export default function ResetPasswordUpdatePage() {
                 <LockIcon className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Définis ton nouveau mot de passe</CardTitle>
+            <CardTitle role="heading" aria-level={1} className="text-2xl">Définis ton nouveau mot de passe</CardTitle>
             <p className="text-sm text-muted-foreground">
               Choisis un mot de passe sécurisé qui protège ton espace Overbound.
             </p>

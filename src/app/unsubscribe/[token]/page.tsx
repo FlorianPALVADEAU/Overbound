@@ -71,7 +71,7 @@ export default function UnsubscribePage() {
             {status === 'success' && <CheckCircle2 className="w-6 h-6 text-green-600" />}
             {status === 'error' && <XCircle className="w-6 h-6 text-destructive" />}
           </div>
-          <CardTitle className="text-2xl">
+          <CardTitle role="heading" aria-level={1} className="text-2xl">
             {status === 'success'
               ? 'Désabonnement confirmé'
               : 'Se désabonner des emails marketing'}

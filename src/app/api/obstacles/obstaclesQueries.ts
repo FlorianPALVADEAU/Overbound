@@ -10,9 +10,12 @@ const fetchObstacles = async (): Promise<Obstacle[]> => {
   return res.data;
 };
 
+export const OBSTACLES_QUERY_KEY = ['obstacles'] as const;
+
 export const useGetObstacles = () => {
   return useQuery<Obstacle[], Error>({
-    queryKey: ['obstacles'],
-    queryFn: fetchObstacles
+    queryKey: OBSTACLES_QUERY_KEY,
+    queryFn: fetchObstacles,
+    staleTime: 60 * 1000,
   });
 };

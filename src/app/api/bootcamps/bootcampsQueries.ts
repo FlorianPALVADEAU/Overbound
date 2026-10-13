@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axiosClient from '../axiosClient'
 import type { Bootcamp } from '@/types/Bootcamp'
 
-const QUERY_KEY = ['bootcamps'] as const
+export const BOOTCAMPS_QUERY_KEY = ['bootcamps'] as const
+const QUERY_KEY = BOOTCAMPS_QUERY_KEY
 
 const fetchBootcamps = async (): Promise<Bootcamp[]> => {
   const res = await axiosClient.get('/bootcamps')

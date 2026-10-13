@@ -279,9 +279,9 @@ const SocialProof = () => {
           </p>
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <h4 className="truncate text-xs font-semibold text-foreground sm:text-sm">
+              <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
                 {testimonial.name}
-              </h4>
+              </h3>
               <p className="text-xs text-muted-foreground">
                 {testimonial.age} ans • {testimonial.location}
               </p>
@@ -314,9 +314,9 @@ const SocialProof = () => {
       </blockquote>
       <div className="flex items-center justify-between">
         <div className="min-w-0">
-          <h4 className="truncate text-sm font-semibold text-foreground sm:text-base">
+          <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">
             {testimonial.name}
-          </h4>
+          </h3>
           <p className="text-xs text-muted-foreground sm:text-sm">
             {testimonial.age} ans • {testimonial.location}
           </p>

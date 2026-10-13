@@ -115,7 +115,7 @@ export function BootcampCard({ bootcamp, isAuthenticated, onRegister, onUnregist
       {/* Content */}
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
         <div className="flex flex-col gap-1.5">
-          <h2 className="text-lg font-semibold leading-tight text-foreground sm:text-xl">{bootcamp.title}</h2>
+          <h3 className="text-lg font-semibold leading-tight text-foreground sm:text-xl">{bootcamp.title}</h3>
           <SocialProof count={bootcamp.registration_count ?? 0} isPast={isPast} />
         </div>
 
