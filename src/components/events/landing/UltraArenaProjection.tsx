@@ -14,10 +14,10 @@ const EXPERIENCE_POINTS = [
 ]
 
 const DEFAULT_IMAGES = [
-  '/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif',
-  '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.avif',
-  '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif',
-  '/images/images/a-sunny-mood-with-runners-ready-to-go.avif',
+  '/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.webp',
+  '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.webp',
+  '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.webp',
+  '/images/images/a-sunny-mood-with-runners-ready-to-go.webp',
 ]
 
 interface Props {
@@ -38,7 +38,7 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
       {/* Atmospheric background */}
       <div className="absolute inset-0">
         <Image
-          src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.avif"
+          src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.webp"
           alt="Ambiance de l'événement"
           fill
           sizes="100vw"

@@ -14,6 +14,14 @@ export const BACKGROUND_IMAGE_QUALITY = 50
 /** Every quality a component may request; next/image refuses the others. */
 export const IMAGE_QUALITIES = [BACKGROUND_IMAGE_QUALITY, 75]
 
+/**
+ * Vercel's image optimizer returns AVIF sources untouched (no resize), so every
+ * AVIF under public/images has a WebP twin that it does resize. Database rows
+ * still store .avif URLs: they are served through that twin.
+ */
+const toResizableTwin = (path: string) =>
+  path.startsWith('/images/') && path.endsWith('.avif') ? `${path.slice(0, -5)}.webp` : path
+
 /** Hosts serving our own public/ folder: their URLs are rewritten to local paths. */
 const OWN_HOSTS = new Set(['overbound-race.com', 'www.overbound-race.com'])
 
@@ -35,7 +43,7 @@ export interface ImageSource {
  * allowlisted remote hosts stay optimizable, anything else is passed through.
  */
 export function resolveImageSource(url: string): ImageSource {
-  if (url.startsWith('/') && !url.startsWith('//')) return { src: url, optimizable: true }
+  if (url.startsWith('/') && !url.startsWith('//')) return { src: toResizableTwin(url), optimizable: true }
 
   let parsed: URL
   try {
@@ -45,7 +53,7 @@ export function resolveImageSource(url: string): ImageSource {
   }
 
   if (OWN_HOSTS.has(parsed.hostname)) {
-    return { src: `${parsed.pathname}${parsed.search}`, optimizable: true }
+    return { src: `${toResizableTwin(parsed.pathname)}${parsed.search}`, optimizable: true }
   }
 
   const optimizable = REMOTE_IMAGE_PATTERNS.some(

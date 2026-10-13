@@ -12,16 +12,16 @@ import { Container, DISPLAY_TITLE, Section, SectionHeader } from '@/components/d
 // Ordre réel sur le parcours. `at` = position sur le tracé (0 = départ, 1 = arrivée).
 // `image` = photo dédiée de l'obstacle (public/images/obstacles), indépendante des noms en base.
 const OBSTACLES = [
-  { name: 'Wall over', at: 0.06, image: '/images/obstacles/wall-over.avif' },
-  { name: "Farmer's carry", at: 0.15, image: '/images/obstacles/farmer-carry.avif' },
-  { name: 'Rondins', at: 0.24, image: '/images/obstacles/log-carry1.avif' },
-  { name: "Poutres d'équilibre", at: 0.33, image: '/images/obstacles/balance-beam.avif' },
-  { name: 'Chain carry', at: 0.42, image: '/images/obstacles/chain-carry1.avif' },
-  { name: 'Monkey bars', at: 0.52, image: '/images/obstacles/monkey-bars.avif' },
-  { name: 'Wall under', at: 0.62, image: '/images/obstacles/wall-under.avif' },
-  { name: 'Barbelé', at: 0.71, image: '/images/obstacles/barbels.avif' },
-  { name: 'Tire flip', at: 0.8, image: '/images/obstacles/tire-flip.avif' },
-  { name: 'Tire drag', at: 0.89, image: '/images/obstacles/tire-drag.avif' },
+  { name: 'Wall over', at: 0.06, image: '/images/obstacles/wall-over.webp' },
+  { name: "Farmer's carry", at: 0.15, image: '/images/obstacles/farmer-carry.webp' },
+  { name: 'Rondins', at: 0.24, image: '/images/obstacles/log-carry1.webp' },
+  { name: "Poutres d'équilibre", at: 0.33, image: '/images/obstacles/balance-beam.webp' },
+  { name: 'Chain carry', at: 0.42, image: '/images/obstacles/chain-carry1.webp' },
+  { name: 'Monkey bars', at: 0.52, image: '/images/obstacles/monkey-bars.webp' },
+  { name: 'Wall under', at: 0.62, image: '/images/obstacles/wall-under.webp' },
+  { name: 'Barbelé', at: 0.71, image: '/images/obstacles/barbels.webp' },
+  { name: 'Tire flip', at: 0.8, image: '/images/obstacles/tire-flip.webp' },
+  { name: 'Tire drag', at: 0.89, image: '/images/obstacles/tire-drag.webp' },
 ] as const
 
 const GLIDE_SECONDS = 0.7

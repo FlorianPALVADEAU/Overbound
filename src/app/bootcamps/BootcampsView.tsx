@@ -37,7 +37,7 @@ export function BootcampsView() {
   return (
     <main className="relative min-h-screen bg-background text-foreground">
       <PageHero
-        image={{ src: '/images/obstacles/tire-flip.avif', alt: 'Bootcamp Overbound' }}
+        image={{ src: '/images/obstacles/tire-flip.webp', alt: 'Bootcamp Overbound' }}
         eyebrow="Prépare-toi avec Overbound"
         title="Nos Bootcamps"
         description="Des sessions encadrées par l'équipe Overbound : foncier, technique, mental."

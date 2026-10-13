@@ -38,7 +38,7 @@ export function UltraArenaEventOver({
       <Section spacing="spacious">
         <div className="absolute inset-0">
           <img
-            src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.avif"
+            src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.webp"
             alt="Ultra Arena — édition passée Overbound"
             className="h-full w-full object-cover object-center opacity-20"
           />

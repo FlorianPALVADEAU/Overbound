@@ -17,7 +17,7 @@ export function VolunteerPerks() {
         <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-8 lg:grid-cols-2 lg:gap-14">
           <div className="relative isolate flex aspect-4/3 flex-col justify-end overflow-hidden rounded-2xl">
             <Image
-              src="/images/images/two-sporty-mens-staring-at-the-camera-with-pride.avif"
+              src="/images/images/two-sporty-mens-staring-at-the-camera-with-pride.webp"
               alt="Deux coureurs fiers face caméra après leur course"
               fill
               sizes="(min-width: 1024px) 50vw, 100vw"

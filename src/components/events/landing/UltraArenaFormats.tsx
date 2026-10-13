@@ -52,7 +52,7 @@ export function UltraArenaFormats({
     <Section id="formats">
       <div className="absolute inset-0">
         <Image
-          src="/images/obstacles/log-carry1.avif"
+          src="/images/obstacles/log-carry1.webp"
           alt=""
           fill
           sizes="100vw"

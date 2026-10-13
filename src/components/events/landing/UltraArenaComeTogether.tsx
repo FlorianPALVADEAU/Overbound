@@ -33,7 +33,7 @@ export function UltraArenaComeTogether({ isOnSale, registerHref, onCtaClick }: P
     <Section>
       <div className="absolute inset-0">
         <Image
-          src="/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.avif"
+          src="/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.webp"
           alt=""
           fill
           sizes="100vw"

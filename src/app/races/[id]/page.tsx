@@ -876,49 +876,49 @@ export default function RaceDetailPage() {
                         icon: '🏆',
                         title: 'Dépassement de soi',
                         description: 'Repousse tes limites',
-                        photoUrl: '/images/images/man-looking-determined-staring-at-the-floor.avif'
+                        photoUrl: '/images/images/man-looking-determined-staring-at-the-floor.webp'
                       },
                       {
                         icon: '🤝',
                         title: 'Esprit de tribu',
                         description: 'Une communauté soudée',
-                        photoUrl: '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.avif'
+                        photoUrl: '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.webp'
                       },
                       {
                         icon: '💪',
                         title: 'Progression mesurable',
                         description: 'Vois ton évolution',
-                        photoUrl: '/images/images/a-big-tire-is-falling-upside-down-thanks-to-a-middle-aged-man.avif'
+                        photoUrl: '/images/images/a-big-tire-is-falling-upside-down-thanks-to-a-middle-aged-man.webp'
                       },
                       {
                         icon: '🎯',
                         title: 'Confiance en toi',
                         description: 'Gagne en assurance',
-                        photoUrl: '/images/images/a-man-shouting-of-happiness-very-happy.avif'
+                        photoUrl: '/images/images/a-man-shouting-of-happiness-very-happy.webp'
                       },
                       {
                         icon: '🔥',
                         title: 'Souvenir inoubliable',
                         description: 'Une expérience qui marque',
-                        photoUrl: '/images/images/young-man-carrying-wooden-logs.avif'
+                        photoUrl: '/images/images/young-man-carrying-wooden-logs.webp'
                       },
                       {
                         icon: '⚡',
                         title: 'Forme physique',
                         description: 'Améliore ta condition',
-                        photoUrl: '/images/images/blond-lady-carrying-chains.avif'
+                        photoUrl: '/images/images/blond-lady-carrying-chains.webp'
                       },
                       {
                         icon: '🎖️',
                         title: 'Accomplissement',
                         description: 'La fierté du défi relevé',
-                        photoUrl: '/images/images/young-lady-smiling-below-barbed-wires.avif'
+                        photoUrl: '/images/images/young-lady-smiling-below-barbed-wires.webp'
                       },
                       {
                         icon: '👥',
                         title: 'Nouvelles amitiés',
                         description: 'Des liens forts',
-                        photoUrl: '/images/images/a-group-of-friend-celebrating-after-a-race.avif'
+                        photoUrl: '/images/images/a-group-of-friend-celebrating-after-a-race.webp'
                       },
                     ].map((item, index) => (
                       <div

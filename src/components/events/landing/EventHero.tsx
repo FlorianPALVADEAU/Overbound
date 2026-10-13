@@ -63,7 +63,7 @@ export function EventHero({
     <HeroFrame
       variant="tall"
       className="justify-end"
-      image={{ url: imageUrl, src: '/images/images/a-smiling-running-man-black-weared-sport.avif', position: '50% 20%' }}
+      image={{ url: imageUrl, src: '/images/images/a-smiling-running-man-black-weared-sport.webp', position: '50% 20%' }}
     >
       <div className={cn(containerClass(), 'pb-8 pt-32 sm:pb-12')}>
         <Badge variant={statusVariant} className="border border-primary/40 bg-surface-deep/40 text-primary backdrop-blur">

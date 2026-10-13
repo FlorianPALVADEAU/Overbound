@@ -79,7 +79,7 @@ export const HeroHeader = () => {
                     background is invisible to the preload scanner). It stays under
                     the video, which has no poster: no second download of the frame. */}
                 <Image
-                    src="/images/hero_header_poster.avif"
+                    src="/images/hero_header_poster.webp"
                     alt=""
                     fill
                     priority
