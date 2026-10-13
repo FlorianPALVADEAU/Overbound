@@ -28,7 +28,7 @@ export function EventPrepEmail({
     <EmailLayout preview={preview}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/young-lady-ramping-below-barbed-wires.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/young-lady-ramping-below-barbed-wires.jpg`}
         alt="Overbound préparation"
         width="400"
         style={styles.heroImage}
@@ -65,7 +65,7 @@ export function EventPrepEmail({
                 <td style={styles.programCell}>
                   <Section style={styles.programCard}>
                     <Img
-                      src={`${getEmailAssetsBaseUrl()}/images/images/a-middle-aged-man-rolling-a-tire-over.avif`}
+                      src={`${getEmailAssetsBaseUrl()}/images/email/a-middle-aged-man-rolling-a-tire-over.jpg`}
                       alt="Programme Essentiel"
                       width="250"
                       height="200"
@@ -87,7 +87,7 @@ export function EventPrepEmail({
                 <td style={styles.programCell}>
                   <Section style={styles.programCard}>
                     <Img
-                      src={`${getEmailAssetsBaseUrl()}/images/images/osteopath-practicing-pt2.avif`}
+                      src={`${getEmailAssetsBaseUrl()}/images/email/osteopath-practicing-pt2.jpg`}
                       alt="Programme Récupération post-course"
                       width="250"
                       height="200"

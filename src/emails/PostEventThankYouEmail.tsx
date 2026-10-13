@@ -20,7 +20,7 @@ export function PostEventThankYouEmail({ participantName, eventTitle, eventId, u
     <EmailLayout preview={`Merci d'avoir participé à ${eventTitle}`}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/two-sporty-mens-staring-at-the-camera-with-pride.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/two-sporty-mens-staring-at-the-camera-with-pride.jpg`}
         alt="Merci de ta participation"
         width="400"
         style={styles.heroImage}

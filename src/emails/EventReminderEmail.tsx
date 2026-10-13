@@ -26,7 +26,7 @@ export function EventReminderEmail({
   daysUntilEvent,
   weatherInfo,
 }: EventReminderEmailProps) {
-  const eventImage = `${getEmailAssetsBaseUrl()}/images/images/participants-carrying-wooden-logs-going-uphill.avif`
+  const eventImage = `${getEmailAssetsBaseUrl()}/images/email/participants-carrying-wooden-logs-going-uphill.jpg`
 
   return (
     <EmailLayout

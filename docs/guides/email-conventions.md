@@ -267,6 +267,7 @@ Trois types utilisés :
 
 ## Images
 
+- **Format : JPEG (photos) ou PNG (logos, icônes) uniquement.** Jamais d'AVIF ni de WebP : Outlook desktop et plusieurs clients mail ne les affichent pas. Les photos d'email vivent dans `public/images/email/` (1200 px de large au plus, JPEG progressif qualité ~78), soit `https://www.overbound-race.com/images/email/<nom>.jpg`. Pour une nouvelle photo, la convertir depuis `public/images/images/<nom>.avif` avec sharp plutôt que de pointer vers l'AVIF.
 - `display:block` systématiquement pour éviter l'espace blanc sous les images
 - Attribut `alt` toujours renseigné (description concrète de l'image)
 - `width` explicite en attribut HTML ET en style inline

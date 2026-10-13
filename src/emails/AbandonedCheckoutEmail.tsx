@@ -22,7 +22,7 @@ export function AbandonedCheckoutEmail({
     <EmailLayout preview={`Ton inscription à ${eventTitle} t'attend`}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/two-runners-going-downhill-with-chains-on-their-backs.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/two-runners-going-downhill-with-chains-on-their-backs.jpg`}
         alt="Ton inscription t'attend"
         width="400"
         style={styles.heroImage}

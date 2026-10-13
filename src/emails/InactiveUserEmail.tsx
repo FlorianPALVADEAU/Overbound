@@ -26,7 +26,7 @@ export function InactiveUserEmail({
     <EmailLayout preview={preview} unsubscribeUrl={unsubscribeUrl}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.jpg`}
         alt="On reprend la ligne de départ"
         width="400"
         style={styles.heroImage}

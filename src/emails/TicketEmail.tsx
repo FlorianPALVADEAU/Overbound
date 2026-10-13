@@ -33,7 +33,7 @@ export default function TicketEmail({
     <EmailLayout preview={`Ton billet OverBound — ${eventTitle}`}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/two-runners-going-downhill-with-chains-on-their-backs.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/two-runners-going-downhill-with-chains-on-their-backs.jpg`}
         alt="Ton billet Overbound"
         width="400"
         style={styles.heroImage}

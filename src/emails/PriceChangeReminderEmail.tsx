@@ -30,7 +30,7 @@ export function PriceChangeReminderEmail({
     <EmailLayout preview={preview} unsubscribeUrl={unsubscribeUrl}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/runner-wearing-glasses-astonished.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/runner-wearing-glasses-astonished.jpg`}
         alt="Dernière chance"
         width="400"
         style={styles.heroImage}

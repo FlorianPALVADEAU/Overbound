@@ -35,7 +35,7 @@ export function VolunteerApplicationEmail({ applicantName, applicantEmail, phone
     <EmailLayout preview={`Nouvelle candidature bénévole — ${applicantName}`}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/a-young-girl-climbing-a-ladder-with-many-other-participants-watching-her.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/benevoles-24.jpg`}
         alt="Nouvelle candidature bénévole"
         width="400"
         style={styles.heroImage}

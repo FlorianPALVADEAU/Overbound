@@ -18,7 +18,7 @@ export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eve
     <EmailLayout preview={`Nouvel événement OverBound — ${eventTitle}`} unsubscribeUrl={unsubscribeUrl}>
       {/* Hero Image */}
       <Img
-        src={`${getEmailAssetsBaseUrl()}/images/images/a-group-of-friend-celebrating-after-a-race.avif`}
+        src={`${getEmailAssetsBaseUrl()}/images/email/a-group-of-friend-celebrating-after-a-race.jpg`}
         alt={eventTitle}
         width="400"
         style={styles.heroImage}
