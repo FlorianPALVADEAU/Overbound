@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -30,21 +29,22 @@ const ObstacleSkeleton = () => (
 )
 
 export default function ObstaclesPage() {
-  const { data: obstacles, isLoading, isFetching, error } = useGetObstacles()
+  const { data: obstacles, isLoading, error } = useGetObstacles()
   const { data: featuredEventData } = useFeaturedEvent()
   const featuredEvent = featuredEventData?.event
   const featuredEventHref = featuredEvent ? `/events/${featuredEvent.slug}` : '/'
   const [selectedObstacle, setSelectedObstacle] = useState<Obstacle | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const searchParams = useSearchParams()
-  const deepLinkObstacleId = searchParams.get('obstacle')
 
+  // ?obstacle=<id> opens its detail. Read after mount rather than with
+  // useSearchParams, which would drop the whole page out of the server HTML.
   useEffect(() => {
+    const deepLinkObstacleId = new URLSearchParams(window.location.search).get('obstacle')
     if (!deepLinkObstacleId || !obstacles) return
     const match = obstacles.find((obstacle) => obstacle.id === deepLinkObstacleId)
     if (match) setSelectedObstacle(match)
-  }, [deepLinkObstacleId, obstacles])
+  }, [obstacles])
 
   const totalObstacles = obstacles?.length ?? 0
 
@@ -112,6 +112,8 @@ export default function ObstaclesPage() {
 
         <Section id="catalogue">
           <Container>
+          {/* Cards are h3: this keeps the outline h1 > h2 > h3. */}
+          <h2 className="sr-only">Catalogue des obstacles</h2>
           <div className="mb-5 flex flex-col justify-center gap-6 sm:gap-8">
             <div className="w-full space-y-2">
               <label htmlFor="search" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -157,11 +159,10 @@ export default function ObstaclesPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {(isLoading || isFetching) &&
+            {isLoading &&
               Array.from({ length: 9 }).map((_, index) => <ObstacleSkeleton key={`skeleton-${index}`} />)}
 
             {!isLoading &&
-              !isFetching &&
               filteredObstacles.map((obstacle) => (
                 <button
                   key={obstacle.id}

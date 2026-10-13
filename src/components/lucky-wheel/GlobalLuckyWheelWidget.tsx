@@ -1,5 +1,6 @@
 'use client'
 
+import { useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
@@ -20,7 +21,13 @@ const LuckyWheelWidget = dynamic(
  * uses. /api/lucky-wheel/campaign requires a real event UUID, which both
  * paths provide via event.id.
  */
+const noopSubscribe = () => () => {}
+
 export function GlobalLuckyWheelWidget() {
+  // Client-only widget: render nothing on the server and during hydration.
+  // The featured event can already be in the client cache at hydration
+  // (seeded by the homepage), which would otherwise mismatch the server HTML.
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
   const placement = resolveLuckyWheelPlacement(usePathname())
   const routeEventParam = placement?.source === 'route-event' ? placement.eventParam : ''
 
@@ -28,7 +35,7 @@ export function GlobalLuckyWheelWidget() {
   // Shared, cached query (the header reads it too), so no extra request.
   const { data: featuredEventData } = useFeaturedEvent()
 
-  if (!placement) return null
+  if (!hydrated || !placement) return null
 
   const eventId =
     placement.source === 'route-event' ? routeEventData?.event?.id : featuredEventData?.event?.id

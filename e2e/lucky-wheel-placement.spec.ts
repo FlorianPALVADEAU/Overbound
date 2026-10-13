@@ -75,6 +75,25 @@ test.describe('Lucky Wheel placement', () => {
     await expect(dialog).toBeHidden()
   })
 
+  test('keeps keyboard focus inside the popup and closes with Escape', async ({ page, request }) => {
+    test.skip(!(await fetchFeaturedEventId(request)), 'no featured event in this environment')
+
+    await forceLuckyWheelCampaign(page)
+    await page.goto('/')
+
+    const dialog = wheelDialog(page)
+    await expect(dialog).toBeVisible({ timeout: 20_000 })
+    await expect(dialog.locator(':focus')).toHaveCount(1)
+
+    for (let step = 0; step < 8; step += 1) {
+      await page.keyboard.press('Tab')
+      await expect(dialog.locator(':focus')).toHaveCount(1)
+    }
+
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+  })
+
   for (const route of EXCLUDED_ROUTES) {
     test(`never opens on ${route}`, async ({ page, request }) => {
       // Without a featured event the widget never mounts anywhere, so this

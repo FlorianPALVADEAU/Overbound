@@ -1,49 +1,41 @@
-'use client'
-
 import Link from "next/link";
-import Image from "next/image";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
 import BlogArticleItem from "@/components/blog/BlogArticleItem";
 import BlogFilters from "@/components/blog/BlogFilters";
-import { useBlogPosts, useBlogCategories } from "@/app/api/blog/blogQueries";
-import { BlogGridSkeleton, BlogFiltersSkeleton } from "@/components/blog/BlogSkeleton";
+import { fetchBlogCategories, fetchBlogPosts, type BlogPost, type Category } from "@/app/api/blog/blogQueries";
 import { PageHero } from '@/components/hero/PageHero'
 import { containerClass } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
-export default function BlogIndex() {
-  return (
-    <Suspense fallback={<BlogPageFallback />}>
-      <BlogPageContent />
-    </Suspense>
-  );
-}
+const PAGE_SIZE = 12;
 
-function BlogPageContent() {
-  const searchParams = useSearchParams();
-  const page = searchParams.get('page');
-  const q = searchParams.get('q')?.trim();
-  const category = searchParams.get('category')?.trim();
+// Rendered on the server so the articles are in the HTML. Search and
+// category come from the URL; Sanity results are cached for a minute.
+export const revalidate = 60;
 
-  const pageSize = 12;
+type BlogSearchParams = Promise<{ page?: string; q?: string; category?: string }>;
+
+export default async function BlogIndex({ searchParams }: { searchParams: BlogSearchParams }) {
+  const { page, q: rawQ, category: rawCategory } = await searchParams;
+  const q = rawQ?.trim();
+  const category = rawCategory?.trim();
+
   const current = Math.max(1, parseInt(page || "1", 10) || 1);
-  const offset = (current - 1) * pageSize;
-  const end = offset + pageSize;
+  const offset = (current - 1) * PAGE_SIZE;
 
-  const params = useMemo(() => ({
-    offset,
-    end,
-    q: q ? `*${q}*` : "",
-    category: category ?? "",
-  }), [offset, end, q, category]);
+  // A Sanity outage shows an explicit message instead of an error page.
+  const [postsData, categories] = await Promise.all([
+    fetchBlogPosts({ offset, end: offset + PAGE_SIZE, q: q ? `*${q}*` : "", category: category ?? "" }).catch(
+      (error: unknown) => {
+        console.error('[blog] posts read failed', error);
+        return null;
+      },
+    ),
+    fetchBlogCategories().catch((): Category[] => []),
+  ]);
 
-  const { data: postsData, isLoading: postsLoading } = useBlogPosts(params);
-  const { data: categories, isLoading: categoriesLoading } = useBlogCategories();
-
-  const posts = postsData?.items || [];
-  const total = postsData?.total || 0;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const posts: BlogPost[] = postsData?.items ?? [];
+  const total = postsData?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const buildUrl = (nextPage: number) => {
     const search = new URLSearchParams();
@@ -58,27 +50,18 @@ function BlogPageContent() {
       <BlogHero />
 
       <div className={cn(containerClass(), 'py-16')}>
-        {/* Search and Filters Section */}
-        {categoriesLoading ? (
-          <BlogFiltersSkeleton />
-        ) : (
-          <BlogFilters categories={categories || []} />
-        )}
+        <BlogFilters categories={categories} />
 
-        {/* Articles grid */}
-        {postsLoading ? (
-          <BlogGridSkeleton />
-        ) : posts && posts.length > 0 ? (
+        {posts.length > 0 ? (
           <>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {posts.map((p: any) => (
+              {posts.map((p) => (
                 <BlogArticleItem key={p._id} post={p} />
               ))}
             </div>
 
-            {/* Pagination */}
             {pageCount > 1 && (
-              <nav className="mt-16 flex items-center justify-center gap-4">
+              <nav aria-label="Pagination" className="mt-16 flex items-center justify-center gap-4">
                 {current > 1 && (
                   <Link
                     href={buildUrl(current - 1)}
@@ -103,7 +86,9 @@ function BlogPageContent() {
           </>
         ) : (
           <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-            <p className="text-lg font-medium text-muted-foreground">Aucun article trouvé</p>
+            <p className="text-lg font-medium text-muted-foreground">
+              {postsData ? 'Aucun article trouvé' : 'Les articles ne peuvent pas être chargés pour le moment.'}
+            </p>
             {q && (
               <Link
                 href="/blog"
@@ -114,18 +99,6 @@ function BlogPageContent() {
             )}
           </div>
         )}
-      </div>
-    </main>
-  );
-}
-
-function BlogPageFallback() {
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <BlogHero />
-      <div className={cn(containerClass(), 'py-16')}>
-        <BlogFiltersSkeleton />
-        <BlogGridSkeleton />
       </div>
     </main>
   );

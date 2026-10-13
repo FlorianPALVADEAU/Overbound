@@ -103,19 +103,3 @@ export const useGetPost = (slug: string) => {
     queryFn: () => fetchSinglePost(slug)
   });
 };
-
-export const useBlogPosts = (params: PostsQueryParams) => {
-  return useQuery({
-    queryKey: ['blog-posts', params],
-    queryFn: () => fetchBlogPosts(params),
-    staleTime: 60 * 1000, // 1 minute
-  });
-};
-
-export const useBlogCategories = () => {
-  return useQuery({
-    queryKey: ['blog-categories'],
-    queryFn: fetchBlogCategories,
-    staleTime: 60 * 1000, // 1 minute
-  });
-};

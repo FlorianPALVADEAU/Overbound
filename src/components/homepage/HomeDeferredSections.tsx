@@ -1,31 +1,29 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+
+// Below-the-fold sections: split into their own chunks, but still rendered on
+// the server so their content is in the HTML (SEO) and nothing pops in.
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 
 const ObstaclesOverview = dynamic(
-  () => import('@/components/homepage/ObstaclesOverview'),
-  { ssr: false },
+  () => import('@/components/homepage/ObstaclesOverview')
 )
 
 const SocialProof = dynamic(
-  () => import('@/components/homepage/SocialProof'),
-  { ssr: false },
+  () => import('@/components/homepage/SocialProof')
 )
 
 const CTASection = dynamic(
-  () => import('@/components/homepage/CTA'),
-  { ssr: false },
+  () => import('@/components/homepage/CTA')
 )
 
 const FAQ = dynamic(
-  () => import('@/components/homepage/FAQ'),
-  { ssr: false },
+  () => import('@/components/homepage/FAQ')
 )
 
 const VolunteersAppeal = dynamic(
-  () => import('@/components/homepage/VolunteersAppeal'),
-  { ssr: false },
+  () => import('@/components/homepage/VolunteersAppeal')
 )
 
 export function HomeDeferredSections() {

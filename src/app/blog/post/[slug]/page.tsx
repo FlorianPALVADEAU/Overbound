@@ -4,7 +4,7 @@ import { markdownToHtml } from '@/lib/markdown'
 import { safeJsonStringify } from '@/lib/safeJson'
 import { client } from '@/sanity/lib/client'
 import { urlFor } from '@/sanity/lib/image'
-import { relatedPostsQuery, settingsQuery } from '@/sanity/lib/queries'
+import { relatedPostsQuery, settingsQuery, sitemapPostsQuery } from '@/sanity/lib/queries'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -12,6 +12,19 @@ import { estimateReadingTime } from '@/lib/readingTime'
 import Image from 'next/image'
 import { containerClass } from '@/components/ds'
 import { cn } from '@/lib/utils'
+
+// Articles are pre-rendered at build time and regenerated at most every minute.
+export const revalidate = 60
+
+export async function generateStaticParams() {
+  try {
+    const posts = await client.fetch<Array<{ slug: string }>>(sitemapPostsQuery)
+    return posts.filter((post) => post.slug).map((post) => ({ slug: post.slug }))
+  } catch {
+    // Sanity unreachable at build time: articles render on first visit instead.
+    return []
+  }
+}
 
 async function loadPost(slug: string) {
   try {
@@ -112,8 +125,13 @@ export default async function BlogPostPage(
               '@type': 'BlogPosting',
               headline: post.title,
               datePublished: post.publishedAt || undefined,
-              dateModified: post.publishedAt || undefined,
+              dateModified: post._updatedAt || post.publishedAt || undefined,
               author: post.author?.name ? { '@type': 'Person', name: post.author.name } : undefined,
+              publisher: {
+                '@type': 'Organization',
+                name: 'Overbound Race',
+                logo: { '@type': 'ImageObject', url: `${siteUrl}/images/brand/LOGO_FULL.png` },
+              },
               image: post.mainImage ? urlFor(post.mainImage).width(1200).height(630).url() : undefined,
               mainEntityOfPage: canonical,
             }),
@@ -127,13 +145,16 @@ export default async function BlogPostPage(
               '@context': 'https://schema.org',
               '@type': 'BreadcrumbList',
               itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${siteUrl}/` },
-                { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
+                { name: 'Accueil', item: `${siteUrl}/` },
+                { name: 'Blog', item: `${siteUrl}/blog` },
                 post.categories?.[0]?.title
-                  ? { '@type': 'ListItem', position: 3, name: post.categories[0].title, item: `${siteUrl}/blog/categorie/${post.categories[0].slug}` }
-                  : undefined,
-                { '@type': 'ListItem', position: 4, name: post.title, item: canonical },
-              ].filter(Boolean),
+                  ? { name: post.categories[0].title, item: `${siteUrl}/blog/categorie/${post.categories[0].slug}` }
+                  : null,
+                { name: post.title, item: canonical },
+              ]
+                .filter((crumb): crumb is { name: string; item: string } => crumb !== null)
+                // Positions must follow each other, even without a category.
+                .map((crumb, index) => ({ '@type': 'ListItem', position: index + 1, ...crumb })),
             }),
           }}
         />
@@ -213,7 +234,10 @@ export default async function BlogPostPage(
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={urlFor(post.mainImage).width(1600).height(900).url()}
-                alt=""
+                alt={post.mainImage.alt || ''}
+                width={1600}
+                height={900}
+                fetchPriority="high"
                 className="h-full w-full object-cover"
               />
             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useLuckyWheelTrigger, type LuckyWheelTriggerRules } from '@/hooks/lucky-wheel/use-lucky-wheel-trigger'
 import { useLuckyWheelSpin } from '@/hooks/lucky-wheel/use-lucky-wheel-spin'
 import { trackLuckyWheelEvent } from '@/lib/luckyWheel/analytics'
@@ -57,6 +58,13 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
   // outcome is already decided.
   const [awaitingReveal, setAwaitingReveal] = useState(false)
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const resultRef = useRef<HTMLDivElement>(null)
+
+  // The result replaces the form: move focus to it so screen readers
+  // announce the outcome and keyboard users don't land on a removed node.
+  useEffect(() => {
+    if (showResult) resultRef.current?.focus()
+  }, [showResult])
 
   useEffect(() => {
     return () => {
@@ -202,23 +210,21 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
 
   const winningRewardId = spinApi.outcome?.success ? spinApi.outcome.rewardId ?? null : null
 
+  // Locked while the spin runs so a stray click or Escape can't abort it.
+  const closeLocked = spinApi.spinning || awaitingReveal
+  const preventWhileLocked = (event: Event) => {
+    if (closeLocked) event.preventDefault()
+  }
+
+  // Radix Dialog: focus trap, focus return, Escape and outside click.
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4"
-      onClick={(event) => {
-        // Backdrop only: clicks inside the dialog bubble up here too.
-        // Locked while the spin runs so a stray click can't abort it.
-        if (event.target === event.currentTarget && !spinApi.spinning && !awaitingReveal) handleClose()
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        // Accessible name, stable across the form and result screens (the
-        // visible h2 only exists on the form screen). Also the hook the
-        // placement e2e spec selects on.
-        aria-label="Roue de la fortune"
+    <DialogPrimitive.Root open onOpenChange={(open) => { if (!open) handleClose() }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4">
+      <DialogPrimitive.Content
+        aria-describedby={undefined}
+        onEscapeKeyDown={preventWhileLocked}
+        onPointerDownOutside={preventWhileLocked}
         // max-h-[75vh] on mobile (product feedback 2026-09-22: popup must
         // never exceed 3/4 of the screen height), relaxed on sm+ where the
         // two-column layout is much shorter. overflow-y-auto so any
@@ -226,16 +232,20 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
         // pushing the dialog off-screen.
         className="relative flex max-h-[75vh] w-full max-w-240 flex-col overflow-y-auto rounded-2xl border border-border bg-card shadow-lg sm:max-h-[90vh]"
       >
-        <button
-          onClick={handleClose}
-          className="absolute right-3 top-3 z-20 rounded-full border border-border/60 bg-card/90 p-2 opacity-80 transition-opacity hover:opacity-100 sm:right-4 sm:top-4"
+        {/* Accessible name, stable across the form and result screens (the
+            visible h2 only exists on the form screen). Also the hook the
+            placement e2e spec selects on. */}
+        <DialogPrimitive.Title className="sr-only">Roue de la fortune</DialogPrimitive.Title>
+        <DialogPrimitive.Close
+          disabled={closeLocked}
+          className="absolute right-2 top-2 z-20 inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-card/90 opacity-80 transition-opacity hover:opacity-100 sm:right-3 sm:top-3"
           aria-label="Fermer"
         >
-          <X className="h-4 w-4" />
-        </button>
+          <X className="h-4 w-4" aria-hidden="true" />
+        </DialogPrimitive.Close>
 
         {showResult && spinApi.outcome ? (
-          <div className="p-5 sm:p-8">
+          <div ref={resultRef} tabIndex={-1} className="p-5 outline-none sm:p-8">
             <LuckyWheelResult
               outcome={spinApi.outcome}
               eventId={eventId}
@@ -315,7 +325,9 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogPrimitive.Content>
+        </DialogPrimitive.Overlay>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
 }

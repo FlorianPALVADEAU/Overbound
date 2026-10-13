@@ -56,8 +56,8 @@ export function EventHero({
   onRegisterClick,
 }: Props) {
   const date = new Date(eventDate)
-  const day = date.toLocaleDateString('fr-FR', { day: 'numeric' })
-  const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
+  const day = date.toLocaleDateString('fr-FR', { day: 'numeric', timeZone: 'Europe/Paris' })
+  const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })
 
   return (
     <HeroFrame

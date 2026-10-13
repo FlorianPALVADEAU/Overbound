@@ -1,6 +1,7 @@
 'use server'
 
 import { NextResponse, type NextRequest } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -73,6 +74,8 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
     if (updateError) throw updateError
 
     const data = await fetchPromotion(promotion.id)
+    // The banner is rendered into every page by the root layout.
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ promotion: data })
   } catch (error) {
@@ -94,6 +97,8 @@ const handleDelete = async (request: NextRequest, { params }: { params: Promise<
     const { error: deleteError } = await admin.from('site_promotions').delete().eq('id', id)
 
     if (deleteError) throw deleteError
+    // The banner is rendered into every page by the root layout.
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ success: true })
   } catch (error) {

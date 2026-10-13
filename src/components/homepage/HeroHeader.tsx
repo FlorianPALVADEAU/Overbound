@@ -1,15 +1,21 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Pause, Play } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import AnimatedBanner from "./AnimatedBanner";
 import { PARTNERS_DATA } from "@/datas/Partners";
 import { Container, DISPLAY_TITLE } from "@/components/ds";
 import { cn } from "@/lib/utils";
 import { useFeaturedEvent } from "@/app/api/events/featured/featuredEventQueries";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 export const HeroHeader = () => {
     const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+    const [videoPaused, setVideoPaused] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const prefersReducedMotion = usePrefersReducedMotion();
     const { data: featured } = useFeaturedEvent();
     const registerHref = featured?.event
         ? `/events/${featured.event.slug}/register`
@@ -28,7 +34,8 @@ export const HeroHeader = () => {
             connection?.effectiveType === "3g"
         );
 
-        if (isMobileViewport || isConstrainedNetwork) {
+        // Reduced motion: the still poster replaces the looping video.
+        if (isMobileViewport || isConstrainedNetwork || prefersReducedMotion) {
             setShouldLoadVideo(false);
             return;
         }
@@ -51,13 +58,27 @@ export const HeroHeader = () => {
         return () => {
             globalThis.clearTimeout(timeoutHandle);
         };
-    }, []);
+    }, [prefersReducedMotion]);
+
+    const toggleVideo = () => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.paused) {
+            void video.play();
+            setVideoPaused(false);
+        } else {
+            video.pause();
+            setVideoPaused(true);
+        }
+    };
 
     return (
         <>
             <section className="relative h-[75vh] min-h-[28rem] w-full overflow-hidden">
                 {shouldLoadVideo ? (
                     <video
+                        ref={videoRef}
+                        aria-hidden="true"
                         autoPlay
                         muted
                         loop
@@ -68,16 +89,33 @@ export const HeroHeader = () => {
                     >
                         <source src="/videos/hero_header_video.webm" type="video/webm" />
                         <source src="/videos/hero_header_video.mp4" type="video/mp4" />
-                        Ton navigateur ne supporte pas les vidéos HTML5.
                     </video>
                 ) : (
-                    <div
-                        className="absolute left-0 top-0 h-full w-full bg-cover bg-center"
-                        style={{ backgroundImage: "url(/images/hero_header_poster.avif)" }}
+                    // LCP element: a real image, preloaded with high priority
+                    // (a CSS background is invisible to the preload scanner).
+                    <Image
+                        src="/images/hero_header_poster.avif"
+                        alt=""
+                        fill
+                        priority
+                        sizes="100vw"
+                        className="object-cover"
                     />
                 )}
 
                 <div className="absolute inset-0 bg-surface-deep/40" />
+
+                {/* WCAG 2.2.2: looping background video can be paused. */}
+                {shouldLoadVideo ? (
+                    <button
+                        type="button"
+                        onClick={toggleVideo}
+                        aria-label={videoPaused ? "Relancer la vidéo de fond" : "Mettre en pause la vidéo de fond"}
+                        className="absolute bottom-4 right-4 z-20 flex size-11 items-center justify-center rounded-full bg-surface-deep/60 text-foreground transition-colors duration-200 hover:bg-surface-deep/80"
+                    >
+                        {videoPaused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+                    </button>
+                ) : null}
 
                 <Container className="relative z-10 flex h-full flex-col items-start justify-center gap-8">
                     <div>

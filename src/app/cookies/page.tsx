@@ -206,7 +206,7 @@ export default function CookiesPage() {
                     {category.cookies.map((cookie, idx) => (
                       <div key={idx} className="rounded-lg border bg-muted/30 p-4">
                         <div className="mb-3 flex items-start justify-between">
-                          <h4 className="font-mono text-sm font-semibold">{cookie.name}</h4>
+                          <h3 className="font-mono text-sm font-semibold">{cookie.name}</h3>
                           <span className="rounded-full bg-background px-2 py-1 text-xs font-medium">
                             {cookie.duration}
                           </span>

@@ -1,6 +1,5 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
 import { Calendar, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,8 +13,7 @@ import { cn } from '@/lib/utils'
 export function NextEventSection() {
   const { data, isLoading } = useFeaturedEvent()
   const event = data?.event
-  const sectionRef = useRef<HTMLElement>(null)
-  const parallax = useParallax(sectionRef)
+  const parallax = useParallax({ scale: 1.1 })
 
   if (isLoading || !event) return null
 
@@ -38,14 +36,14 @@ export function NextEventSection() {
   const discoverHref = `/events/${event.slug}`
 
   return (
-    <Section ref={sectionRef} tone="deep">
-      <div className="absolute inset-0 -z-10 -m-6">
+    <Section ref={parallax.containerRef} tone="deep">
+      <div className="absolute inset-0 -z-10 -m-6 overflow-hidden">
         {event.image_url ? (
           <img
             src={event.image_url}
             alt={event.title}
+            ref={parallax.layerRef}
             className="h-full w-full scale-110 object-cover will-change-transform"
-            style={{ transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0) scale(1.1)` }}
           />
         ) : null}
         <div className="absolute inset-0 bg-surface-deep/55" />

@@ -1,6 +1,7 @@
 'use server'
 
 import { NextResponse, type NextRequest } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -121,6 +122,8 @@ const handlePost = async (request: NextRequest) => {
     if (insertError) throw insertError
 
     const data = await fetchPromotion(promotion.id)
+    // The banner is rendered into every page by the root layout.
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ promotion: data })
   } catch (error) {

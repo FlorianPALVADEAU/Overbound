@@ -199,6 +199,22 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [mobileMenuOpen])
 
+  const guestActions = (
+    <div className="flex items-center space-x-2 z-10">
+      <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
+        <Link href="/auth/login">Se connecter</Link>
+      </Button>
+      <Button
+        size="sm"
+        variant="signal"
+        className="hidden lg:inline-flex whitespace-nowrap rounded-xl"
+        asChild
+      >
+        <Link href={featuredEventRegisterHref}>Je m'inscris</Link>
+      </Button>
+    </div>
+  )
+
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-transform duration-300 will-change-transform ${
@@ -222,6 +238,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 alt="Overbound – accueil"
                 width={64}
                 height={64}
+                priority
                 className="w-8 md:w-10 lg:w-12 h-auto"
               />
             </Link>
@@ -339,7 +356,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           {/* Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {isLoading ? (
-              <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+              // The centred nav depends on this width: while the session loads,
+              // the guest buttons hold their place, hidden and out of the tab
+              // order, so the header does not shift for most visitors (CLS).
+              <div className="invisible" aria-hidden="true">{guestActions}</div>
             ) : user ? (
               <>
                 <DropdownMenu>
@@ -404,21 +424,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center space-x-2 z-10">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
-                  <Link href="/auth/login">Se connecter</Link>
-                </Button>
-                  {!user && (
-                    <Button
-                      size="sm"
-                      variant="signal"
-                      className="hidden lg:inline-flex whitespace-nowrap rounded-xl"
-                      asChild
-                    >
-                      <Link href={featuredEventRegisterHref}>Je m'inscris</Link>
-                    </Button>
-                  )}
-              </div>
+              guestActions
             )}
 
             {/* Mobile menu button - affiché seulement sur mobile/tablet */}

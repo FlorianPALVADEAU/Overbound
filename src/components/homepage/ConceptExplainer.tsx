@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -87,6 +88,13 @@ export function ConceptExplainer() {
   const [reducedMotion, setReducedMotion] = useState(false)
   const [failedImages, setFailedImages] = useState<ReadonlySet<string>>(new Set())
   const shown = Math.max(active, 0)
+  // Photos are mounted (and downloaded) only once needed: the current one and
+  // the next, then kept so the cross-fade has something to fade from.
+  const [mountedImages, setMountedImages] = useState<ReadonlySet<number>>(() => new Set([0, 1]))
+  const nextShown = (shown + 1) % OBSTACLES.length
+  if (!mountedImages.has(shown) || !mountedImages.has(nextShown)) {
+    setMountedImages((prev) => new Set(prev).add(shown).add(nextShown))
+  }
 
   const imageUrls: readonly string[] = OBSTACLES.map((obstacle) => obstacle.image)
 
@@ -336,17 +344,17 @@ export function ConceptExplainer() {
             <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-card lg:aspect-4/5">
               {OBSTACLES.map((obstacle, index) => {
                 const url = imageUrls[index]
-                if (!url || failedImages.has(url)) return null
+                if (!url || failedImages.has(url) || !mountedImages.has(index)) return null
                 return (
-                  // eslint-disable-next-line @next/next/no-img-element -- l'URL vient de la base, host non maîtrisé
-                  <img
+                  <Image
                     key={`${obstacle.name}-${index}`}
                     src={url}
                     alt=""
-                    loading="lazy"
+                    fill
+                    sizes="(min-width: 1024px) 40vw, 384px"
                     onError={() => setFailedImages((prev) => new Set(prev).add(url))}
                     className={cn(
-                      'absolute inset-0 h-full w-full object-cover object-[50%_25%] transition-opacity duration-300 motion-reduce:transition-none',
+                      'object-cover object-[50%_25%] transition-opacity duration-300 motion-reduce:transition-none',
                       index === shown ? 'opacity-100' : 'opacity-0',
                     )}
                   />

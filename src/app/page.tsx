@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { loadFeaturedEvent } from '@/lib/events/loadFeaturedEvent';
+import { FeaturedEventSeed } from '@/components/homepage/FeaturedEventSeed';
 import HeroHeader from '@/components/homepage/HeroHeader';
 import { NextEventSection } from '@/components/homepage/NextEventSection';
 import { ConceptExplainer } from '@/components/homepage/ConceptExplainer';
@@ -19,10 +21,17 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = 'force-dynamic';
+// Static page regenerated every minute: the featured event (price, spots)
+// is read on the server and rendered into the HTML.
+export const revalidate = 60;
 
-export default function Home() {
-  return (
+export default async function Home() {
+  // Every useFeaturedEvent() consumer (hero, next event, formats, CTA) then
+  // renders with data on the first paint instead of popping in after a
+  // client fetch. If the read fails, the client fetches as before.
+  const featured = await loadFeaturedEvent().catch(() => null);
+
+  const sections = (
     <div className="flex h-full w-full flex-col">
       <HeroHeader />
       <NextEventSection />
@@ -31,4 +40,6 @@ export default function Home() {
       <HomeDeferredSections />
     </div>
   );
+
+  return featured ? <FeaturedEventSeed data={featured}>{sections}</FeaturedEventSeed> : sections;
 }

@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import type { EventPriceTier } from '@/types/EventPriceTier'
 
 export type EventMetaTicket = {
   name: string | null
@@ -17,7 +18,9 @@ export type EventMeta = {
   location: string
   status: string
   image_url?: string | null
+  sales_start?: string | null
   tickets?: EventMetaTicket[] | null
+  price_tiers?: EventPriceTier[] | null
   [key: string]: unknown
 }
 
@@ -41,7 +44,8 @@ export const fetchEventMeta = cache(async (id: string): Promise<EventMeta | null
           name,
           final_price_cents,
           currency
-        )
+        ),
+        price_tiers:event_price_tiers (*)
       `
     )
     .eq(isUUID(id) ? 'id' : 'slug', id)

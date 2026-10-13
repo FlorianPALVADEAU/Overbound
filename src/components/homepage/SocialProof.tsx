@@ -9,6 +9,7 @@ import {
   TestimonialTypeEnum,
 } from '@/datas/Testimonials'
 import AnimatedBanner from './AnimatedBanner'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { PARTNERS_DATA } from '@/datas/Partners'
 import { Container, Section, SectionHeader } from '@/components/ds'
 import {
@@ -58,7 +59,7 @@ const SocialProof = () => {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
   const [isMuted, setIsMuted] = useState(true)
-  const [hoveredVideo, setHoveredVideo] = useState<string | null>(null)
+  const prefersReducedMotion = usePrefersReducedMotion()
   const [pausedVideoId, setPausedVideoId] = useState<string | null>(null)
   const [canLoadMedia, setCanLoadMedia] = useState(false)
 
@@ -115,15 +116,6 @@ const SocialProof = () => {
       seedBase + 73,
     )
   }, [uniqueTestimonials])
-
-  useEffect(() => {
-    if (!carouselApi) return
-    const handleSelect = () => setHoveredVideo(null)
-    carouselApi.on('select', handleSelect)
-    return () => {
-      carouselApi.off('select', handleSelect)
-    }
-  }, [carouselApi])
 
   useEffect(() => {
     if (!sectionRef.current) return
@@ -187,16 +179,13 @@ const SocialProof = () => {
 
   const renderVideoSlide = (testimonial: TestimonialType) => {
     const videoId = testimonial.id.toString()
-    const isHovered = hoveredVideo === videoId
     const posterUrl = getTestimonialPosterUrl(testimonial.mediaUrl)
     let videoRef: HTMLVideoElement | null = null
 
     return (
       <div className="relative flex h-full max-h-160 flex-col overflow-hidden rounded-2xl bg-surface-deep shadow-xl">
         <div
-          className="relative w-full flex-1 min-h-90 overflow-hidden sm:min-h-100"
-          onMouseEnter={() => setHoveredVideo(videoId)}
-          onMouseLeave={() => setHoveredVideo(null)}
+          className="group relative w-full flex-1 min-h-90 overflow-hidden sm:min-h-100"
         >
           <video
             className="absolute inset-0 h-full w-full object-cover"
@@ -204,13 +193,14 @@ const SocialProof = () => {
             muted={activeVideoId === videoId ? isMuted : true}
             playsInline
             preload="none"
-            autoPlay
+            autoPlay={!prefersReducedMotion}
             poster={posterUrl}
             onEnded={activeVideoId === videoId ? handleVideoEnded : undefined}
             ref={(video) => {
               videoRef = video
               if (!video || !canLoadMedia) return
-              if (pausedVideoId !== videoId) {
+              // Reduced motion: only the video the visitor started plays.
+              if (pausedVideoId !== videoId && (!prefersReducedMotion || activeVideoId === videoId)) {
                 void video.play()
               }
             }}
@@ -229,8 +219,8 @@ const SocialProof = () => {
               : 'bg-surface-deep/40 hover:bg-surface-deep/30'
           }`} />
 
-          {/* Play/Pause button - only visible on hover */}
-          {isHovered && (
+          {/* Play/Pause: always reachable by keyboard and touch */}
+          {(
             <>
               {activeVideoId === videoId && pausedVideoId !== videoId ? (
                 <Button
@@ -238,9 +228,10 @@ const SocialProof = () => {
                     event.stopPropagation()
                     handlePauseClick(videoId, videoRef)
                   }}
-                  className="cursor-pointer absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
+                  aria-label="Mettre la vidéo en pause"
+                  className="opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 group-focus-within:opacity-100 cursor-pointer absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
                 >
-                  <Pause className="h-5 w-5" />
+                  <Pause className="h-5 w-5" aria-hidden="true" />
                 </Button>
               ) : (
                 <Button
@@ -248,27 +239,29 @@ const SocialProof = () => {
                     event.stopPropagation()
                     handlePlayClick(videoId, videoRef)
                   }}
-                  className="cursor-pointer absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
+                  aria-label="Lire la vidéo avec le son"
+                  className="opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 group-focus-within:opacity-100 cursor-pointer absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30 sm:h-14 sm:w-14"
                 >
-                  <Play className="ml-0.5 h-5 w-5" />
+                  <Play className="ml-0.5 h-5 w-5" aria-hidden="true" />
                 </Button>
               )}
             </>
           )}
 
-          {/* Mute/Unmute button - only visible on hover when this video is active */}
-          {isHovered && activeVideoId === videoId && (
+          {/* Mute/Unmute: shown once this video is the active one */}
+          {activeVideoId === videoId && (
             <Button
               onClick={(event) => {
                 event.stopPropagation()
                 toggleMute()
               }}
-              className="cursor-pointer absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30"
+              aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
+              className="opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 group-focus-within:opacity-100 cursor-pointer absolute right-4 top-4 flex size-11 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/30"
             >
               {isMuted ? (
-                <VolumeX className="h-5 w-5" />
+                <VolumeX className="h-5 w-5" aria-hidden="true" />
               ) : (
-                <Volume2 className="h-5 w-5" />
+                <Volume2 className="h-5 w-5" aria-hidden="true" />
               )}
             </Button>
           )}
@@ -286,9 +279,9 @@ const SocialProof = () => {
           </p>
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <h4 className="truncate text-xs font-semibold text-foreground sm:text-sm">
+              <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
                 {testimonial.name}
-              </h4>
+              </h3>
               <p className="text-xs text-muted-foreground">
                 {testimonial.age} ans • {testimonial.location}
               </p>
@@ -321,9 +314,9 @@ const SocialProof = () => {
       </blockquote>
       <div className="flex items-center justify-between">
         <div className="min-w-0">
-          <h4 className="truncate text-sm font-semibold text-foreground sm:text-base">
+          <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">
             {testimonial.name}
-          </h4>
+          </h3>
           <p className="text-xs text-muted-foreground sm:text-sm">
             {testimonial.age} ans • {testimonial.location}
           </p>

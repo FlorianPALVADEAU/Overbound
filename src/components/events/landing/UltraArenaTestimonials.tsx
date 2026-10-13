@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/carousel'
 import { testimonials, TestimonialType } from '@/datas/Testimonials'
 import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { Container, SectionHeader, SECTION_SPACING } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
@@ -43,15 +44,16 @@ function VideoCard({
   const [isActive, setIsActive] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
+  const prefersReducedMotion = usePrefersReducedMotion()
   const posterUrl = getPosterUrl(testimonial.mediaUrl)
   const id = testimonial.id.toString()
 
   useEffect(() => {
     const video = videoRef.current
     if (!video || !canLoad) return
-    if (!isPaused) void video.play()
-  }, [canLoad, isPaused])
+    // Reduced motion: no autoplay, only the video the visitor started plays.
+    if (!isPaused && (!prefersReducedMotion || isActive)) void video.play()
+  }, [canLoad, isPaused, prefersReducedMotion, isActive])
 
   const handlePlay = () => {
     const video = videoRef.current
@@ -73,9 +75,7 @@ function VideoCard({
     <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-surface-deep shadow-xl">
       {/* Video area */}
       <div
-        className="relative min-h-72 w-full flex-1 overflow-hidden sm:min-h-80"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="group relative min-h-72 w-full flex-1 overflow-hidden sm:min-h-80"
       >
         <video
           ref={videoRef}
@@ -84,7 +84,7 @@ function VideoCard({
           muted={isActive ? isMuted : true}
           playsInline
           preload="none"
-          autoPlay
+          autoPlay={!prefersReducedMotion}
           poster={posterUrl}
           onEnded={() => setIsMuted(true)}
         >
@@ -102,32 +102,35 @@ function VideoCard({
           }`}
         />
 
-        {/* Play / Pause */}
-        {isHovered && (
+        {/* Play / Pause: always reachable by keyboard and touch */}
+        {(
           isActive && !isPaused ? (
             <Button
               onClick={(e) => { e.stopPropagation(); handlePause() }}
-              className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+              aria-label="Mettre la vidéo en pause"
+              className="opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 group-focus-within:opacity-100 absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
             >
-              <Pause className="h-5 w-5" />
+              <Pause className="h-5 w-5" aria-hidden="true" />
             </Button>
           ) : (
             <Button
               onClick={(e) => { e.stopPropagation(); handlePlay() }}
-              className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+              aria-label="Lire la vidéo avec le son"
+              className="opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 group-focus-within:opacity-100 absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
             >
-              <Play className="ml-0.5 h-5 w-5" />
+              <Play className="ml-0.5 h-5 w-5" aria-hidden="true" />
             </Button>
           )
         )}
 
         {/* Mute toggle */}
-        {isHovered && isActive && (
+        {isActive && (
           <Button
             onClick={(e) => { e.stopPropagation(); setIsMuted((m) => !m) }}
-            className="absolute right-3 top-3 h-9 w-9 cursor-pointer rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+            aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
+            className="opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 group-focus-within:opacity-100 absolute right-3 top-3 size-11 cursor-pointer rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
           >
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            {isMuted ? <VolumeX className="h-4 w-4" aria-hidden="true" /> : <Volume2 className="h-4 w-4" aria-hidden="true" />}
           </Button>
         )}
       </div>
