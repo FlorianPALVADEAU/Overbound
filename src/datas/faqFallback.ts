@@ -137,6 +137,28 @@ export const faqFallback: FAQDocument[] = [
     relatedLinks: [{ label: 'CGV', href: '/cgv#annulation-participant' }],
   },
   {
+    _id: 'fallback-inscriptions-assurance-pps',
+    title: 'Quels documents apporter, et suis-je assuré ?',
+    shortAnswer: 'Ton PPS (ou licence FFA) et une pièce d’identité. L’assurance d’Overbound ne couvre pas tes propres blessures sans faute de sa part.',
+    answer: [
+      block(
+        'Pour cette édition, le Pass Prévention Santé (PPS) de la FFA, ou une licence FFA en cours de validité, est obligatoire. Il est contrôlé au retrait du dossard avec une pièce d’identité. Sans justificatif valable, le départ est refusé et le billet n’est pas remboursé.',
+      ),
+      block(
+        'Overbound est assurée en responsabilité civile (AXA France IARD) : le contrat couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound.',
+      ),
+      block(
+        'Il ne couvre pas les dommages que tu te causes à toi-même sans faute d’Overbound, par exemple une chute sur un obstacle conforme : tes frais médicaux, ton invalidité ou ton décès restent alors à ta charge. Nous te recommandons une assurance individuelle accident.',
+      ),
+      block(
+        'Overbound ne s’engage pas sur la prise en charge d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound : vérifie que ta responsabilité civile personnelle couvre ce cas.',
+      ),
+    ],
+    category: 'inscriptions',
+    order: 4,
+    relatedLinks: [{ label: 'CGV, article 12', href: '/cgv#responsabilite' }],
+  },
+  {
     _id: 'fallback-preparation-training',
     title: 'Comment me préparer ?',
     shortAnswer: 'Cardio, renforcement et un peu de grip, sur quelques semaines.',

@@ -156,10 +156,14 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
         </div>
         <ul className="space-y-1.5 text-xs leading-relaxed text-muted-foreground">
           <li>Préviens ton contact d&apos;urgence que tu donnes ses coordonnées à Overbound.</li>
-          <li>Le jour J, une pièce d&apos;identité à ton nom te sera demandée au retrait du dossard.</li>
           <li>
-            L&apos;assurance d&apos;Overbound couvre sa responsabilité, pas tes propres blessures sans faute de sa part : une
-            assurance individuelle accident est recommandée (
+            Le jour J, une pièce d&apos;identité à ton nom et ton Pass Prévention Santé (PPS) FFA, ou ta licence FFA en
+            cours de validité, te seront demandés au retrait du dossard. Sans eux, le départ est refusé.
+          </li>
+          <li>
+            L&apos;assurance d&apos;Overbound couvre sa responsabilité, pas tes propres blessures sans faute de sa part, et
+            elle n&apos;est pas garantie pour un dommage causé à un autre participant : une assurance individuelle accident
+            est recommandée (
             <a href="/cgv#responsabilite" target="_blank" rel="noreferrer" className="underline underline-offset-2">
               CGV, article 12
             </a>

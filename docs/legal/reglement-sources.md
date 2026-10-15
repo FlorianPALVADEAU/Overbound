@@ -41,7 +41,7 @@ Documents qui font foi, par ordre de priorité pour un participant :
 |---|---|---|
 | Édition 2026 réservée aux majeurs (18 ans révolus le jour J) ; aucun transfert vers un mineur | CGV art. 4 et 11, décharge §6, `MINIMUM_PARTICIPANT_AGE` | capacité à contracter et à signer la décharge |
 | Aptitude physique attestée par le participant | décharge §5, CGV art. 11 | preuve de l'information |
-| Justificatif de santé (PPS, licence ou certificat) exigible selon le format — **décision en attente** | CGV art. 11, décharge §5 | délégation FFA pour la course à obstacles ; PPS exigé par la FFA pour les non-licenciés en compétition |
+| Justificatif de santé : **PPS FFA obligatoire pour l'édition 2026** (ou licence FFA en cours de validité), tous formats, contrôlé au retrait du dossard avec une pièce d'identité ; sans justificatif, départ refusé et billet non remboursé (décidé le 2026-10-15). Source unique : `HEALTH_PROOF` dans `src/constants/participantNotice.ts` | CGV art. 11, décharge §5, tunnel (bloc « Avant de signer »), email billet, formulaire de transfert, FAQ | délégation FFA pour la course à obstacles ; PPS exigé par la FFA pour les non-licenciés en compétition. Hypothèse à confirmer avec la FFA / la préfecture : licence FFA acceptée à la place du PPS, certificat médical non accepté |
 | Pièce d'identité au retrait du dossard ; départ refusé si l'identité ne correspond pas | CGV art. 11, décharge §12, email billet | dossard personnel |
 | Équipement adapté, contrôlable ; mise hors course sans remboursement | CGV art. 11 | sécurité |
 | Respect du briefing, des consignes et des signaleurs ; arrêt en cas de danger | décharge §3 | obligation de sécurité (de moyens) de l'organisateur |
@@ -81,7 +81,7 @@ Documents qui font foi, par ordre de priorité pour un participant :
 | RC organisateur AXA France IARD, contrat n° 0000011530476604, valable du 11/09/2026 au 01/01/2027, plafond 9 M€ dommages corporels par année | `COMPANY_INFO.insurance`, CGV art. 12, décharge §11 | art. L321-1 C. sport ; Cass. 1re civ. 28 janv. 2026 n° 24-20.866 |
 | L'assurance ne couvre pas les dommages corporels du participant sans faute d'Overbound ; assurance individuelle accident recommandée | CGV art. 12, décharge §11, formulaire de transfert | même arrêt |
 | Contrat à tacite reconduction : l'édition suivante est couverte aux mêmes conditions (confirmé par Florian le 2026-10-09). Mettre à jour `COMPANY_INFO.insurance` avec la nouvelle attestation dès qu'elle est disponible | `COMPANY_INFO.insurance` | — |
-| **Question posée à AXA le 2026-10-09, réponse attendue** : la RC des participants entre eux est-elle couverte (exigée par L321-1) ? Un bénéficiaire de transfert est-il couvert comme un acheteur ? Tant que la réponse n'est pas écrite, ne rien affirmer sur ces deux points dans les textes | — | art. L321-1 C. sport |
+| **Réponse écrite d'AXA (2026-10-15)** : la RC couvre les dommages causés aux tiers, participants compris, dont la cause est imputable à Overbound, dans la limite du contrat ; elle ne couvre pas les dommages que les participants se causent à eux-mêmes ; AXA recommande une assurance individuelle accident. **Non répondu** : RC d'un participant envers un autre participant (L321-1), bénéficiaires d'un transfert. Les textes ne l'affirment pas : « Overbound ne s'engage pas sur la prise en charge… » | `src/constants/participantNotice.ts`, CGV art. 12, CGU art. 13, décharge §11, tunnel | art. L321-1 C. sport |
 
 ### Données personnelles
 | Règle | Source | Fondement |
@@ -93,8 +93,9 @@ Documents qui font foi, par ordre de priorité pour un participant :
 
 ## Points ouverts
 
-- Décision PPS : formats concernés, mode de collecte, contrôle au check-in.
-- Réponses écrites d'AXA (voir tableau Assurance).
+- PPS : décidé pour l'édition 2026 (voir tableau). Reste : le contrôle au retrait du dossard n'est pas outillé dans le check-in (procédure bénévoles à écrire), et le règlement officiel (PDF) doit être réécrit pour le mentionner.
+- Relancer AXA sur la RC participant envers participant, les bénéficiaires de transfert et l'édition suivante (l'attestation s'arrête au 01/01/2027).
+- Contenus Sanity (FAQ publiée) à aligner à la main avec `fallback-inscriptions-assurance-pps`.
 - **Médiateur de la consommation** : aucune adhésion à ce jour (2026-10-09), alors que les CGV et CGU citent CM2C.
   L'adhésion est obligatoire avant toute vente à un consommateur (art. L612-1 C. conso), sanction jusqu'à
   15 000 € pour une personne morale (art. L641-1). Adhérer, puis vérifier que le nom et le site du médiateur

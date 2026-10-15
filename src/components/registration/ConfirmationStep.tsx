@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { PARTICIPANT_NOTICE } from '@/constants/participantNotice'
 import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_SUMMARY, WAIVER_TITLE } from '@/constants/waiver'
 import { CONSENT_FIELD_IDS } from '@/lib/checkout/fieldIds'
 
@@ -84,6 +85,19 @@ export default function ConfirmationStep({
   return (
     <div className="space-y-8">
       <div className="space-y-4">
+        <div className="space-y-4 rounded-xl border border-border p-4 text-sm leading-relaxed">
+          <p className="font-semibold">Avant de signer : risques, assurance et tes engagements</p>
+          {PARTICIPANT_NOTICE.map((section) => (
+            <div key={section.title} className="space-y-1">
+              <p className="text-label font-semibold uppercase text-subtle">{section.title}</p>
+              <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                {section.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
         <div className="rounded-xl bg-muted p-4 text-sm leading-relaxed">
           <p className="font-medium">{WAIVER_SUMMARY}</p>
           <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
