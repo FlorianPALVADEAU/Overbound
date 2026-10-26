@@ -22,7 +22,7 @@ const CAMPAIGN_EVENT_LOCATION = 'Base de loisirs de Saint-Quentin-en-Yvelines'
 const SITE_URL = getEmailAssetsBaseUrl()
 const CAMPAIGN_EVENT_URL = `${SITE_URL}/events/ultra-arena-2026`
 const CAMPAIGN_HERO_IMAGE_URL =
-  `${SITE_URL}/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.jpg`
+  `${SITE_URL}/images/og/crowd.jpg`
 const CAMPAIGN_OFFER_TITLE = '-25% sur les 35 premiers inscrits'
 const CAMPAIGN_OFFER_DESCRIPTION =
   'Aucun code requis : la réduction s’applique automatiquement au checkout.'

@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/og-coach-warmup.jpg',
+        url: ogImageUrl({ title: "Plans d'entraînement", kicker: 'Overbound', photo: 'tire2' }),
         width: 1200,
         height: 630,
         alt: "Coureurs lors d'un échauffement avant une course Overbound Race"
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Plans d'entraînement OCR gratuits - Overbound Race",
     description: "Programmes d'entraînement professionnels pour courses d'obstacles.",
-    images: ['/images/images/og-coach-warmup.jpg'],
+    images: [ogImageUrl({ title: "Plans d'entraînement", kicker: 'Overbound', photo: 'tire2' })],
   }
 };
 

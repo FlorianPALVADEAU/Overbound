@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from "next";
 import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -8,6 +9,7 @@ import { AnalyticsScripts } from '@/components/consent/AnalyticsScripts'
 import { UtmCapture } from '@/components/attribution/UtmCapture'
 import { PromotionsSeed } from '@/components/layout/PromotionsSeed'
 import { loadActivePromotions } from '@/lib/promotions/loadActivePromotions'
+import { loadNextEdition } from '@/lib/seo/loadNextEdition'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,74 +30,56 @@ const displayFace = Barlow_Condensed({
   weight: "700",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'),
-  title: {
-    default: "Overbound Race - Course à Obstacles Paris 2026 | Backyard à Obstacles",
-    template: "%s | Overbound Race"
-  },
-  description: "Overbound Race : première course à obstacles format backyard en France ! Course obstacles Paris 2026, OCR personnalisable. Choisis ta distance et ta difficulté.",
-  keywords: [
-    "course à obstacles paris",
-    "course à obstacles paris 2026",
-    "course obstacles 2026",
-    "overbound",
-    "overbound race",
-    "backyard à obstacles",
-    "backyard obstacles france",
-    "backyard ultra obstacles",
-    "OCR paris",
-    "OCR france 2026",
-    "course à obstacles île-de-france",
-    "spartan race paris",
-    "spartan race alternative",
-    "mud day alternative",
-    "course obstacles débutant",
-    "obstacle race france",
-    "course endurance obstacles",
-    "trail obstacles paris",
-    "événement sportif paris 2026",
-  ],
-  authors: [{ name: "Overbound Race" }],
-  creator: "Overbound Race",
-  publisher: "Overbound Race",
-  openGraph: {
-    type: "website",
-    locale: "fr_FR",
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com',
-    siteName: "Overbound Race",
-    title: "Overbound Race - Course à Obstacles Paris 2026 | Backyard à Obstacles",
-    description: "Première course à obstacles format backyard en France ! OCR personnalisable à Paris 2026. Choisis ta distance et difficulté. Inscriptions ouvertes !",
-    images: [
-      {
-        url: "/images/images/overbound-og-cover.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Overbound Race - Course à Obstacles Paris 2026 - Backyard à Obstacles",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Overbound Race - Course à Obstacles Paris 2026 | Backyard à Obstacles",
-    description: "Première course à obstacles format backyard en France ! OCR personnalisable à Paris 2026. Inscriptions ouvertes !",
-    images: ["/images/images/overbound-og-cover.jpg"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+export async function generateMetadata(): Promise<Metadata> {
+  const next = await loadNextEdition()
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'),
+    title: {
+      default: "Overbound Race | Course à obstacles en boucles, Paris Île-de-France",
+      template: "%s | Overbound Race"
+    },
+    description: `Overbound : la course à obstacles en boucles de 2 km, inspirée du backyard ultra. Deux formats, RANKED et OPEN, pour tous les niveaux. Prochaine édition ${next.window}.`,
+    authors: [{ name: "Overbound Race" }],
+    creator: "Overbound Race",
+    publisher: "Overbound Race",
+    openGraph: {
+      type: "website",
+      locale: "fr_FR",
+      url: process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com',
+      siteName: "Overbound Race",
+      title: "Overbound Race | Course à obstacles en boucles, Paris Île-de-France",
+      description: `Course à obstacles en boucles de 2 km en Île-de-France. Deux formats, RANKED et OPEN. Prochaine édition ${next.window}.`,
+      images: [
+        {
+          url: ogImageUrl({ title: 'Course à obstacles en boucles', kicker: 'Overbound · Paris', photo: 'crowd' }),
+          width: 1200,
+          height: 630,
+          alt: "Overbound Race - course à obstacles en boucles",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Overbound Race | Course à obstacles en boucles, Paris Île-de-France",
+      description: `Course à obstacles en boucles de 2 km en Île-de-France. Deux formats, RANKED et OPEN. Prochaine édition ${next.window}.`,
+      images: [ogImageUrl({ title: 'Course à obstacles en boucles', kicker: 'Overbound · Paris', photo: 'crowd' })],
+    },
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
-  },
-  // verification: {
-  //   google: 'AJOUTE_TON_CODE_GSC_ICI', // Code de Google Search Console
-  // },
-};
+    // verification: {
+    //   google: 'AJOUTE_TON_CODE_GSC_ICI', // Code de Google Search Console
+    // },
+  }
+}
 
 
 // The promotions banner is rendered on the server: static pages are

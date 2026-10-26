@@ -1,3 +1,4 @@
+import { COVER } from '@/constants/coverImages'
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
 import { ContactForm } from '@/components/contact/ContactForm'
@@ -20,7 +21,7 @@ export default function ContactPage() {
     <main className="w-full bg-background">
       <PageHero
         image={{
-          src: '/images/obstacles/tire-drag.webp',
+          src: COVER.pages.contact,
           alt: 'Discussion en cercle lors d’un échauffement Overbound',
         }}
         eyebrow="Contact"

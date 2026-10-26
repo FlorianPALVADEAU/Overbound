@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import { PageHero } from '@/components/hero/PageHero'
 
 const SHEET = [
@@ -25,8 +26,8 @@ export function VolunteerHero() {
     <>
     <PageHero
       id="top"
-      image={{ src: '/images/images/P1090801.webp', alt: 'Un groupe d’amis célébrant ensemble après une course Overbound' }}
-      eyebrow="Bénévoles Overbound"
+      image={{ src: COVER.pages.volunteers, alt: 'Un groupe d’amis célébrant ensemble après une course Overbound' }}
+      eyebrow="Devenir bénévole · course à obstacles à Paris"
       title={
         <>
           Tu ne cours pas. <span className="text-primary">Tu fais courir.</span>

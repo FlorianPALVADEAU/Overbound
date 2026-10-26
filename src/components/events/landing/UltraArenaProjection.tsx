@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
@@ -13,12 +14,7 @@ const EXPERIENCE_POINTS = [
   'Format accessible même sans niveau élite',
 ]
 
-const DEFAULT_IMAGES = [
-  '/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.webp',
-  '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.webp',
-  '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.webp',
-  '/images/images/a-sunny-mood-with-runners-ready-to-go.webp',
-]
+const DEFAULT_IMAGES = COVER.event.gallery
 
 interface Props {
   galleryImages?: string[]
@@ -38,7 +34,7 @@ export function UltraArenaProjection({ galleryImages = [], isOnSale, registerHre
       {/* Atmospheric background */}
       <div className="absolute inset-0">
         <Image
-          src="/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.webp"
+          src={COVER.event.projectionBackground}
           alt="Ambiance de l'événement"
           fill
           sizes="100vw"

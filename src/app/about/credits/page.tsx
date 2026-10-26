@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -127,7 +128,7 @@ export default function CreditsPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <PageHero
-        image={{ src: '/images/images/overbound-headband-on-chains-with-grass-in-background.webp', alt: 'Crédits Overbound' }}
+        image={{ src: COVER.pages.credits, alt: 'Crédits Overbound', position: '50% 25%' }}
         eyebrow="Crédits"
         title="Merci à tous ceux qui rendent Overbound possible"
         description="Cette page est dédiée à ceux qui nous soutiennent."

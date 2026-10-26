@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/og-tractor-tire.jpg',
+        url: ogImageUrl({ title: 'Les obstacles', kicker: 'Overbound', photo: 'tire' }),
         width: 1200,
         height: 630,
         alt: 'Obstacles Course OCR - Overbound Race Paris 2026'
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Obstacles Course OCR Paris 2026 | Overbound Race",
     description: "Explore nos obstacles : escalade, force, grip, agilité. Course à obstacles Paris 2026.",
-    images: ['/images/images/og-tractor-tire.jpg'],
+    images: [ogImageUrl({ title: 'Les obstacles', kicker: 'Overbound', photo: 'tire' })],
   }
 };
 

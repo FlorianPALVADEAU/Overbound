@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 import { client } from '@/sanity/lib/client'
 import { FAQsQuery } from '@/sanity/lib/queries'
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/overbound-og-cover.jpg',
+        url: ogImageUrl({ title: 'Questions fréquentes', kicker: 'Overbound', photo: 'group' }),
         width: 1200,
         height: 630,
         alt: 'FAQ Overbound Race',
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "FAQ | Overbound Race",
     description: "Billets, transferts, formats OPEN et RANKED, jour J : les réponses aux questions les plus fréquentes.",
-    images: ['/images/images/overbound-og-cover.jpg'],
+    images: [ogImageUrl({ title: 'Questions fréquentes', kicker: 'Overbound', photo: 'group' })],
   }
 };
 

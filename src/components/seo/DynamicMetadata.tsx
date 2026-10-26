@@ -1,6 +1,7 @@
 'use client'
 
 import Head from 'next/head'
+import { DEFAULT_OG_IMAGE_URL } from '@/lib/seo/ogImage'
 
 interface DynamicMetadataProps {
   title: string
@@ -14,7 +15,7 @@ export function DynamicMetadata({ title, description, keywords, image, url }: Dy
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const fullTitle = `${title} | Overbound Race`
   const fullUrl = url ? `${siteUrl}${url}` : siteUrl
-  const imageUrl = image ? `${siteUrl}${image}` : `${siteUrl}/images/images/overbound-og-cover.jpg`
+  const imageUrl = image ? `${siteUrl}${image}` : `${siteUrl}${DEFAULT_OG_IMAGE_URL}`
 
   return (
     <Head>

@@ -27,6 +27,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Static files and the Sentry tunnel skip auth and maintenance checks.
-    '/((?!_next/static|_next/image|favicon.ico|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm|woff2?|pdf|txt|xml|js|webmanifest)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|monitoring|og$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm|woff2?|pdf|txt|xml|js|webmanifest)$).*)',
   ],
 }

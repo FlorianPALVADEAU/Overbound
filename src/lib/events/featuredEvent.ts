@@ -33,3 +33,16 @@ export const selectFeaturedEvent = <T extends FeaturedEventCandidate>(
 
   return announced[0]?.event ?? null
 }
+
+/**
+ * Picks the most recent past event, used by the events hub when nothing is
+ * open: it carries the thank-you content (photos) and the waiting list.
+ * Never a draft or a cancelled event.
+ */
+export const selectLastEvent = <T extends FeaturedEventCandidate>(events: T[]): T | null => {
+  const past = events.filter((event) => {
+    const status = String(event.status ?? '').toLowerCase()
+    return status !== 'draft' && status !== 'cancelled'
+  })
+  return past.sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime())[0] ?? null
+}

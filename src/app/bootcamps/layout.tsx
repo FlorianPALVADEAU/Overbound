@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
-const title = "Bootcamps d'entraînement course à obstacles"
+const title = "Bootcamp course à obstacles à Paris : s'entraîner avant la course"
 const description =
-  "Prépare-toi avec les bootcamps Overbound : des sessions d'entraînement encadrées avant la course de septembre 2026."
+  "Bootcamps Overbound : des séances d'entraînement encadrées pour préparer une course à obstacles en boucles en Île-de-France. Inscription en un clic."
 
 export const metadata: Metadata = {
-  title,
+  title: { absolute: `${title} | Overbound` },
   description,
   alternates: { canonical: '/bootcamps' },
   openGraph: {

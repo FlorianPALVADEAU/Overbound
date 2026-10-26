@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -90,7 +91,7 @@ export default function ObstaclesPage() {
     <>
       <main className="relative min-h-screen bg-background text-foreground">
         <PageHero
-          image={{ src: '/images/images/young-man-lifting-a-tractor-tire-with-a-photograph-in-his-back.webp', alt: 'Athlète Overbound franchissant un obstacle', position: '50% 100%' }}
+          image={{ src: COVER.pages.obstacles, alt: 'Athlète Overbound franchissant un obstacle', position: '50% 100%' }}
           eyebrow="Parcours Overbound"
           title="Les obstacles qui t'attendent sur la boucle"
           description="Chaque module est noté selon sa difficulté et sa dominante physique."

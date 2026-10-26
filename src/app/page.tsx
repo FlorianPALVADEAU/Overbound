@@ -4,24 +4,29 @@ import { FeaturedEventSeed } from '@/components/homepage/FeaturedEventSeed';
 import HeroHeader from '@/components/homepage/HeroHeader';
 import { NextEventSection } from '@/components/homepage/NextEventSection';
 import { ConceptExplainer } from '@/components/homepage/ConceptExplainer';
+import { EditionFacts } from '@/components/homepage/EditionFacts';
 import { HomeFormatsSection } from '@/components/homepage/HomeFormatsSection';
 import { HomeDeferredSections } from '@/components/homepage/HomeDeferredSections';
 import { FaqSeed } from '@/components/homepage/FaqSeed';
 import { fetchFaqQuestions } from '@/lib/faq/fetchFaqQuestions';
-import { metadata as baseMetadata } from './metadata';
+import { buildBaseMetadata } from './metadata';
+import { loadNextEdition } from '@/lib/seo/loadNextEdition';
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com').replace(/\/$/, '')
 
-export const metadata: Metadata = {
-  ...baseMetadata,
-  alternates: {
-    canonical: siteUrl,
-  },
-  openGraph: {
-    ...baseMetadata.openGraph,
-    url: siteUrl,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const baseMetadata = buildBaseMetadata(await loadNextEdition());
+  return {
+    ...baseMetadata,
+    alternates: {
+      canonical: siteUrl,
+    },
+    openGraph: {
+      ...baseMetadata.openGraph,
+      url: siteUrl,
+    },
+  };
+}
 
 // Static page regenerated every minute: the featured event (price, spots)
 // is read on the server and rendered into the HTML.
@@ -43,6 +48,7 @@ export default async function Home() {
       <NextEventSection />
       <ConceptExplainer />
       <HomeFormatsSection />
+      <EditionFacts />
       <HomeDeferredSections />
     </div>
   );
