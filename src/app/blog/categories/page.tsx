@@ -1,3 +1,5 @@
+import { COVER } from '@/constants/coverImages'
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import { client } from '@/sanity/lib/client'
 import { categoriesWithCountsQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
@@ -9,7 +11,7 @@ import { cn } from '@/lib/utils'
 export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
-const heroImage = `${siteUrl}/images/images/overbound-og-cover.jpg`
+const heroImage = `${siteUrl}${ogImageUrl({ title: 'Les catégories', kicker: 'Blog Overbound', photo: 'group' })}`
 
 export const metadata: Metadata = {
   title: { absolute: 'Catégories Blog OCR | Course à Obstacles Paris 2026 - Overbound Race' },
@@ -52,7 +54,7 @@ export default async function BlogCategoriesIndex() {
       <section className="relative isolate overflow-hidden py-14 sm:py-16">
         <div className="absolute inset-0">
           <Image
-            src="/images/images/overbound-og-cover.jpg"
+            src={COVER.pages.blog}
             alt="Catégories du blog OverBound"
             fill
             sizes="100vw"

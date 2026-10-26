@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
 import { Button } from '@/components/ui/button'
@@ -21,8 +22,8 @@ import { Container, Section, SectionHeader, DISPLAY_TITLE } from '@/components/d
 import { cn } from '@/lib/utils'
 
 const BG = {
-  hero: '/images/images/lot-of-runner-going-everywhere-with-chains-on-their-necks.webp',
-  journey: '/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.webp',
+  hero: COVER.pages.formats,
+  journey: COVER.pages.formatsJourney,
 }
 
 const HERO_FACTS = [

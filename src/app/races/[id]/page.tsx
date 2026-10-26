@@ -1,4 +1,5 @@
 'use client'
+import { COVER } from '@/constants/coverImages'
 
 import { useMemo } from 'react'
 import { useParams } from 'next/navigation'
@@ -876,49 +877,49 @@ export default function RaceDetailPage() {
                         icon: '🏆',
                         title: 'Dépassement de soi',
                         description: 'Repousse tes limites',
-                        photoUrl: '/images/images/man-looking-determined-staring-at-the-floor.webp'
+                        photoUrl: COVER.raceValues[0]
                       },
                       {
                         icon: '🤝',
                         title: 'Esprit de tribu',
                         description: 'Une communauté soudée',
-                        photoUrl: '/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.webp'
+                        photoUrl: COVER.raceValues[1]
                       },
                       {
                         icon: '💪',
                         title: 'Progression mesurable',
                         description: 'Vois ton évolution',
-                        photoUrl: '/images/images/a-big-tire-is-falling-upside-down-thanks-to-a-middle-aged-man.webp'
+                        photoUrl: COVER.raceValues[2]
                       },
                       {
                         icon: '🎯',
                         title: 'Confiance en toi',
                         description: 'Gagne en assurance',
-                        photoUrl: '/images/images/a-man-shouting-of-happiness-very-happy.webp'
+                        photoUrl: COVER.raceValues[3]
                       },
                       {
                         icon: '🔥',
                         title: 'Souvenir inoubliable',
                         description: 'Une expérience qui marque',
-                        photoUrl: '/images/images/young-man-carrying-wooden-logs.webp'
+                        photoUrl: COVER.raceValues[4]
                       },
                       {
                         icon: '⚡',
                         title: 'Forme physique',
                         description: 'Améliore ta condition',
-                        photoUrl: '/images/images/blond-lady-carrying-chains.webp'
+                        photoUrl: COVER.raceValues[5]
                       },
                       {
                         icon: '🎖️',
                         title: 'Accomplissement',
                         description: 'La fierté du défi relevé',
-                        photoUrl: '/images/images/young-lady-smiling-below-barbed-wires.webp'
+                        photoUrl: COVER.raceValues[6]
                       },
                       {
                         icon: '👥',
                         title: 'Nouvelles amitiés',
                         description: 'Des liens forts',
-                        photoUrl: '/images/images/a-group-of-friend-celebrating-after-a-race.webp'
+                        photoUrl: COVER.raceValues[7]
                       },
                     ].map((item, index) => (
                       <div

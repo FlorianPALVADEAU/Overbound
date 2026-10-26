@@ -1,3 +1,5 @@
+import { COVER } from '@/constants/coverImages'
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import { client } from '@/sanity/lib/client'
 import { postsByCategorySlugQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
@@ -10,7 +12,7 @@ import { cn } from '@/lib/utils'
 export const revalidate = 60
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
-const heroImage = `${siteUrl}/images/images/overbound-og-cover.jpg`
+const heroImage = `${siteUrl}${ogImageUrl({ title: 'Blog Overbound', kicker: 'Catégorie', photo: 'group' })}`
 
 export async function generateMetadata({
   params,
@@ -86,7 +88,7 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
     <main className="min-h-screen bg-background text-foreground">
       <section className="relative isolate overflow-hidden py-14">
         <div className="absolute inset-0">
-          <Image src="/images/images/overbound-og-cover.jpg" alt="Catégorie OverBound" fill sizes="100vw" className="object-cover object-center" />
+          <Image src={COVER.pages.blog} alt="Catégorie OverBound" fill sizes="100vw" className="object-cover object-center" />
           <div className="absolute inset-0 bg-background/45" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
         </div>

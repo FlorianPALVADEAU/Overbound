@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import { client } from '@/sanity/lib/client'
 import { authorsWithCountsQuery } from '@/sanity/lib/queries'
 import { urlFor } from '@/sanity/lib/image'
@@ -7,7 +8,7 @@ import type { Metadata } from 'next'
 export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
-const heroImage = `${siteUrl}/images/images/overbound-og-cover.jpg`
+const heroImage = `${siteUrl}${ogImageUrl({ title: 'Les auteurs', kicker: 'Blog Overbound', photo: 'group' })}`
 
 export const metadata: Metadata = {
   title: { absolute: 'Auteurs Blog OCR | Course à Obstacles Paris 2026 - Overbound Race' },

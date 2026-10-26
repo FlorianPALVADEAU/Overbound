@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
@@ -104,7 +105,7 @@ export default function FAQPageContent({ faqs }: { faqs: FAQDocument[] }) {
     <main className="w-full bg-background text-foreground">
       <PageHero
         image={{
-          src: '/images/images/a-group-of-friend-celebrating-after-a-race.webp',
+          src: COVER.pages.faq,
           alt: 'Groupe d’amis qui célèbrent après la course',
         }}
         eyebrow="FAQ"

@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
@@ -33,7 +34,7 @@ export function UltraArenaComeTogether({ isOnSale, registerHref, onCtaClick }: P
     <Section>
       <div className="absolute inset-0">
         <Image
-          src="/images/images/a-group-of-friends-celebrating-after-a-hard-obstacle.webp"
+          src={COVER.community.comeTogether}
           alt=""
           fill
           sizes="100vw"

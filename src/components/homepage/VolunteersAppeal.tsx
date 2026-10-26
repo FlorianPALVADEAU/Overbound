@@ -1,3 +1,4 @@
+import { COVER } from '@/constants/coverImages'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, CalendarDays, Sun, Sunrise } from 'lucide-react'
@@ -27,7 +28,7 @@ const VolunteersAppeal = () => {
         <div className="relative order-first p-4 lg:order-last lg:p-8">
           <div className="relative h-80 overflow-hidden rounded-2xl animate-in fade-in duration-700 sm:h-[26rem] lg:h-full lg:min-h-144">
             <Image
-              src="/images/images/a-group-of-friend-celebrating-after-a-race.webp"
+              src={COVER.home.volunteersAppeal}
               alt="Trois membres de la tribu Overbound qui rient ensemble après la course"
               fill
               sizes="(min-width: 1024px) 45vw, 100vw"

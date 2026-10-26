@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import { Zap, Users, CalendarCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/app/api/session/sessionQueries'
@@ -37,7 +38,7 @@ export function BootcampsView() {
   return (
     <main className="relative min-h-screen bg-background text-foreground">
       <PageHero
-        image={{ src: '/images/obstacles/tire-flip.webp', alt: 'Bootcamp Overbound' }}
+        image={{ src: COVER.pages.bootcamps, alt: 'Bootcamp Overbound', position: '50% 75%' }}
         eyebrow="Prépare-toi avec Overbound"
         title="Nos Bootcamps"
         description="Des sessions encadrées par l'équipe Overbound : foncier, technique, mental."

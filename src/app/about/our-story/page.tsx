@@ -1,3 +1,4 @@
+import { COVER } from '@/constants/coverImages'
 import Image from 'next/image'
 import Link from 'next/link'
 import { PageHero } from '@/components/hero/PageHero'
@@ -13,13 +14,13 @@ const CHAPTERS = [
     when: 'Août 2025',
     title: 'L’idée',
     text: 'Une boucle d’environ 2 km. Des obstacles à porter, à grimper, à ramper. Et deux façons de la vivre : OPEN, à ton rythme, ou RANKED, chrono en main.',
-    image: { src: `${IMG}monkey-bars.webp`, alt: 'Coureur portant des troncs de bois' },
+    image: { src: `${IMGObstacle}monkey-bars.webp`, alt: 'Coureur portant des troncs de bois' },
   },
   {
     when: 'Novembre 2025',
     title: 'Le trailer',
     text: 'On montre ce qu’on prépare. L’idée sort de ma tête et commence à circuler : elle devient un rendez-vous.',
-    image: { src: `${IMG}two-runners-going-uphill-with-chains-on-their-backs.webp`, alt: 'Deux coureurs montant une pente, chaînes sur le dos' },
+    image: { src: `${IMGObstacle}chain-carry2.webp`, alt: 'Deux coureurs montant une pente, chaînes sur le dos' },
   },
   {
     when: '12 septembre 2026',
@@ -46,7 +47,7 @@ export default function OurStoryPage() {
   return (
     <main className="w-full bg-background text-foreground">
       <PageHero
-        image={{ src: `${IMG}finish-line-2runners.webp`, alt: 'Deux sportifs fiers face à la caméra' }}
+        image={{ src: COVER.pages.ourStory, alt: 'Deux sportifs fiers face à la caméra' }}
         eyebrow="Notre histoire"
         title="Une idée, une boucle, une tribu"
         description="Août 2025 : une envie. Septembre 2026 : une ligne de départ."

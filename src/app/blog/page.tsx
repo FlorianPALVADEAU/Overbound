@@ -1,3 +1,4 @@
+import { COVER } from '@/constants/coverImages'
 import Link from "next/link";
 import BlogArticleItem from "@/components/blog/BlogArticleItem";
 import BlogFilters from "@/components/blog/BlogFilters";
@@ -107,7 +108,7 @@ export default async function BlogIndex({ searchParams }: { searchParams: BlogSe
 function BlogHero() {
   return (
     <PageHero
-      image={{ src: '/images/images/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.webp', alt: 'OverBound Blog', position: '50% 30%' }}
+      image={{ src: COVER.pages.blog, alt: 'OverBound Blog', position: '50% 30%' }}
       eyebrow="La tribu OverBound"
       title="Conseils, actus et coulisses"
       description="Entraînement, nutrition, préparation et histoires de la tribu."

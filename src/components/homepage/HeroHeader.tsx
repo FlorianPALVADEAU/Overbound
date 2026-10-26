@@ -1,4 +1,5 @@
 "use client";
+import { COVER } from '@/constants/coverImages'
 import React, { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { Button } from "../ui/button";
@@ -79,7 +80,7 @@ export const HeroHeader = () => {
                     background is invisible to the preload scanner). It stays under
                     the video, which has no poster: no second download of the frame. */}
                 <Image
-                    src="/images/hero_header_poster.webp"
+                    src={COVER.home.poster}
                     alt=""
                     fill
                     priority

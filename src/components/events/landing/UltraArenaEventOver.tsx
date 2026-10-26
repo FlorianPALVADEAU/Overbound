@@ -1,5 +1,6 @@
 'use client'
 
+import { COVER } from '@/constants/coverImages'
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Camera, Instagram, Mail } from 'lucide-react'
@@ -38,7 +39,7 @@ export function UltraArenaEventOver({
       <Section spacing="spacious">
         <div className="absolute inset-0">
           <img
-            src="/images/images/a-young-men-carrying-two-wooden-logs-on-his-shoulders-shouting-at-the-camera.webp"
+            src={COVER.community.eventOver}
             alt="Ultra Arena — édition passée Overbound"
             className="h-full w-full object-cover object-center opacity-20"
           />

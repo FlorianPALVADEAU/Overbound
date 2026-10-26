@@ -219,6 +219,14 @@ L'écran d'un téléphone n'est pas un bureau réduit : on replie au lieu d'empi
 - Un composant qui ne tient pas à 320 px a un rendu mobile distinct (`md:hidden` / `hidden md:block`), pas un
   `min-w-[…]` avec défilement horizontal.
 
+## Images de couverture et de partage
+
+- **Une seule source** : `src/constants/coverImages.ts`. `COVER` liste chaque emplacement (hero d'accueil, hero événement, bandeaux de page, bandes de la page événement, galerie). Remplacer une photo = changer son nom de fichier dans ce fichier, nulle part ailleurs. Ne jamais écrire un chemin `/images/...` en dur dans un composant de page.
+- **Format** : webp qualité ~80, 1920 px de large, paysage de préférence (les portraits sont recadrés au centre ; régler `position` du `PageHero` si besoin). Photos dans `public/images/images` (événement, équipe) et `public/images/obstacles`.
+- **Série à jour** : `obstacles/*`, `P1xxxxxx.webp` et `benevoles-*.webp`. Les autres fichiers de `images/images` sont l'ancienne série, à ne plus utiliser pour une couverture.
+- **Image de partage (OG, Twitter)** : générée par la route `/og` (`src/app/og/route.tsx`), JPEG ~100 Ko avec photo, dégradé, logo, kicker et titre. Dans les métadonnées d'une page : `ogImageUrl({ title, kicker, photo })` (`src/lib/seo/ogImage.ts`). Photos autorisées : `OG_PHOTOS` dans `coverImages.ts`, des jpg 1200×630 dans `public/images/og/`. Pour une nouvelle photo, la convertir avec sharp (`resize(1200, 630, { fit: 'cover' })`, jpeg q80), la déposer dans `og/` et ajouter sa clé à `OG_PHOTOS`.
+- **Email** : jpg/png uniquement, voir `docs/guides/email-conventions.md`.
+
 ## Texte long (blog, pages légales)
 
 Le plugin typography n'est pas installé : les classes `prose` de Tailwind ne font rien. Le texte

@@ -1,3 +1,5 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
+import { COVER } from '@/constants/coverImages'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
     description: 'Les partenaires d’Overbound, le dossier de sponsoring 2026 et nos contacts.',
     url: 'https://overbound-race.com/about/partners',
     siteName: 'Overbound Race',
-    images: ['/images/images/overbound-og-cover.jpg'],
+    images: [ogImageUrl({ title: 'Partenaires et presse', kicker: 'Overbound', photo: 'partners' })],
     locale: 'fr_FR',
     type: 'website',
   },
@@ -63,7 +65,7 @@ export default function PartnersPage() {
     <main className="w-full bg-background text-foreground">
       <PageHero
         image={{
-          src: '/images/images/a-photograph-in-action.webp',
+          src: COVER.pages.partners,
           alt: 'Photographe en action lors d’un événement Overbound',
         }}
         eyebrow="Partenaires & presse"

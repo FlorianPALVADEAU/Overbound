@@ -30,7 +30,7 @@ export default async function MaintenancePage() {
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden bg-black text-white">
       <Image
-        src="/images/images/a-wave-of-runners-carrying-wooden-logs-on-their-shoulders-while-running.jpg"
+        src="/images/og/crowd.jpg"
         alt=""
         fill
         priority
