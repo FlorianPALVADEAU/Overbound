@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/og-group-warmup.jpg',
+        url: ogImageUrl({ title: 'Test de forme', kicker: 'Overbound', photo: 'drag' }),
         width: 1200,
         height: 630,
         alt: 'Coureurs lors d\'un échauffement dans l\'herbe avant une course Overbound Race'
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Test de condition physique OCR - Overbound Race",
     description: "Évaluez votre niveau et recevez des recommandations d'entraînement.",
-    images: ['/images/images/og-group-warmup.jpg'],
+    images: [ogImageUrl({ title: 'Test de forme', kicker: 'Overbound', photo: 'drag' })],
   },
 };
 

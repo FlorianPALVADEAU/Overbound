@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/og-runners-wave.jpg',
+        url: ogImageUrl({ title: 'OPEN ou RANKED', kicker: 'Deux formats, une boucle', photo: 'women' }),
         width: 1200,
         height: 630,
         alt: 'Formats OPEN vs RANKED - Overbound Race Paris 2026'
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Formats OPEN vs RANKED | Overbound Race Paris 2026",
     description: "Compare les deux formats et choisis celui qui te correspond.",
-    images: ['/images/images/og-runners-wave.jpg'],
+    images: [ogImageUrl({ title: 'OPEN ou RANKED', kicker: 'Deux formats, une boucle', photo: 'women' })],
   },
 };
 

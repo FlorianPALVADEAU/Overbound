@@ -1,3 +1,4 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     siteName: 'Overbound Race',
     images: [
       {
-        url: '/images/images/og-headband-chains.jpg',
+        url: ogImageUrl({ title: 'Notre histoire', kicker: 'Overbound', photo: 'start' }),
         width: 1200,
         height: 630,
         alt: 'Overbound Race - Créateurs du Backyard à Obstacles'
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Notre Histoire | Overbound Race",
     description: "Comment Overbound est passé d'une idée à une course à obstacles.",
-    images: ['/images/images/og-headband-chains.jpg'],
+    images: [ogImageUrl({ title: 'Notre histoire', kicker: 'Overbound', photo: 'start' })],
   }
 };
 

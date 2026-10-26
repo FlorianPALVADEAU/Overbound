@@ -55,4 +55,4 @@ supabase/.db-dumps/
 scripts/sql/*.sql
 
 # claude
-.claude/settings.local.json
+.claude/settings.local.json/TEMP/

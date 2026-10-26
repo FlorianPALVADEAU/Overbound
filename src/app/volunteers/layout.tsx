@@ -1,22 +1,14 @@
+import { ogImageUrl } from '@/lib/seo/ogImage'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: { absolute: "Devenir Bénévole Course à Obstacles Paris 2026 | Overbound Race" },
-  description: "Rejoins l'équipe bénévole Overbound Race Paris 2026 ! Encadrement obstacles, logistique, accueil. Place offerte sur l'événement de ton choix. Backyard à obstacles Ultra Arena.",
-  keywords: [
-    "bénévole course obstacles",
-    "bénévole OCR paris",
-    "volontaire course obstacles 2026",
-    "overbound bénévole",
-    "bénévole événement sportif paris",
-    "volontaire ultra arena",
-    "bénévole backyard obstacles",
-  ],
+  title: { absolute: "Devenir bénévole sur une course à obstacles à Paris | Overbound" },
+  description: "Deviens bénévole sur Overbound, course à obstacles en boucles en Île-de-France : encadrement des obstacles, logistique, accueil. Choisis ton poste et ton créneau, réponse sous 48 h.",
   alternates: {
     canonical: 'https://overbound-race.com/volunteers'
   },
   openGraph: {
-    title: "Devenir Bénévole Course à Obstacles Paris 2026 | Overbound Race",
+    title: "Devenir bénévole sur une course à obstacles à Paris | Overbound",
     description: "Rejoins la tribu bénévole Overbound Race ! Vis l'expérience de l'intérieur. Place offerte sur l'événement de ton choix.",
     url: 'https://overbound-race.com/volunteers',
     siteName: 'Overbound Race',
@@ -24,18 +16,18 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/images/og-two-men-pride.jpg',
+        url: ogImageUrl({ title: 'Deviens bénévole', kicker: 'Overbound', photo: 'pride' }),
         width: 1200,
         height: 630,
-        alt: 'Bénévoles Overbound Race - Course à obstacles Paris 2026'
+        alt: 'Bénévoles Overbound, course à obstacles en Île-de-France'
       }
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Devenir Bénévole | Overbound Race Paris 2026",
+    title: "Devenir bénévole sur une course à obstacles à Paris | Overbound",
     description: "Rejoins la tribu bénévole ! Place offerte sur l'événement de ton choix.",
-    images: ['/images/images/og-two-men-pride.jpg'],
+    images: [ogImageUrl({ title: 'Deviens bénévole', kicker: 'Overbound', photo: 'pride' })],
   }
 };
 

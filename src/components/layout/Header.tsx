@@ -80,10 +80,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const queryClient = useQueryClient()
   const { data: featuredEventData } = useFeaturedEvent()
   const featuredEvent = featuredEventData?.event
-  const featuredEventHref = featuredEvent ? `/events/${featuredEvent.slug}` : '/events/ultra-arena-2026'
+  const featuredEventHref = featuredEvent ? `/events/${featuredEvent.slug}` : '/events'
   const featuredEventRegisterHref = featuredEvent
     ? `/events/${featuredEvent.slug}/register`
-    : '/events/ultra-arena-2026/register'
+    : '/events'
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false)

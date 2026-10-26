@@ -29,3 +29,4 @@ Template: `docs/templates/fdr-template.md`
 - [FDR-0017 - Célébration post-achat et carte de partage](./FDR-0017-post-purchase-celebration-and-share-card.md) — Proposed
 - [FDR-0018 - Moteur de prix unique et cumul des codes promo](./FDR-0018-order-pricing-engine-and-promo-stacking.md) — Accepted
 - [FDR-0019 - Prix unique et remise de groupe (Open)](./FDR-0019-single-price-and-group-discount.md) — Accepted
+- [FDR-0020 - Audit SEO/GEO et positionnement 2027](./FDR-0020-seo-geo-audit-and-2027-positioning.md) — Proposed

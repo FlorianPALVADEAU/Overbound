@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { selectFeaturedEvent } from './featuredEvent'
+import { selectFeaturedEvent, selectLastEvent } from './featuredEvent'
 
 const now = new Date('2026-06-01T00:00:00Z')
 
@@ -34,5 +34,23 @@ describe('selectFeaturedEvent', () => {
     const result = selectFeaturedEvent(events, now)
 
     expect(result?.id).toBe('announced')
+  })
+})
+
+describe('selectLastEvent', () => {
+  it('returns the most recent event, ignoring drafts and cancelled ones', () => {
+    const events = [
+      { id: 'old', status: 'completed', date: '2025-09-01T00:00:00Z' },
+      { id: 'last', status: 'completed', date: '2026-09-12T00:00:00Z' },
+      { id: 'draft', status: 'draft', date: '2027-04-01T00:00:00Z' },
+      { id: 'cancelled', status: 'cancelled', date: '2027-01-01T00:00:00Z' },
+    ]
+
+    expect(selectLastEvent(events)?.id).toBe('last')
+  })
+
+  it('returns null when there is no usable event', () => {
+    expect(selectLastEvent([{ id: 'draft', status: 'draft', date: '2027-04-01T00:00:00Z' }])).toBeNull()
+    expect(selectLastEvent([])).toBeNull()
   })
 })
