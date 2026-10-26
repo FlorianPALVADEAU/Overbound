@@ -1,10 +1,11 @@
 import { Badge } from '@/components/ui/badge'
+import { isOpenFormatTicket } from '@/lib/openSas'
 import { cn } from '@/lib/utils'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { applyTierDiscount } from '@/lib/orderPricing'
 import { formatPrice } from '@/lib/registration'
 import type { EventTicket } from './types'
-import QuantityPicker from './QuantityPicker'
+import TicketQuantitySelect from './TicketQuantitySelect'
 
 interface TicketCardProps {
   ticket: EventTicket
@@ -12,6 +13,8 @@ interface TicketCardProps {
   onQuantityChange: (ticketId: string, quantity: number) => void
   defaultCurrency: string
   sellingTier: EventPriceTier | null
+  /** OPEN bibs chosen on the other tickets: they count toward the group discount. */
+  otherOpenCount: number
 }
 
 export default function TicketCard({
@@ -20,8 +23,10 @@ export default function TicketCard({
   onQuantityChange,
   defaultCurrency,
   sellingTier,
+  otherOpenCount,
 }: TicketCardProps) {
   const isSelected = quantity > 0
+  const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name)
   const currency = (ticket.currency || defaultCurrency).toLowerCase()
 
   const hasActiveDiscount = Boolean(sellingTier && sellingTier.discount_percentage > 0)
@@ -64,8 +69,8 @@ export default function TicketCard({
             </p>
           )}
         </div>
-        <div className="flex items-center justify-between gap-4 md:flex-col md:items-end">
-          <div className="space-y-0.5 text-right">
+        <div className="flex flex-col gap-3 md:items-end">
+          <div className="space-y-0.5 md:text-right">
             {hasActiveDiscount &&
               ticket.final_price_cents !== null &&
               ticket.final_price_cents !== undefined && (
@@ -81,12 +86,14 @@ export default function TicketCard({
                 : 'Tarif à venir'}
             </div>
           </div>
-          <QuantityPicker
-            value={quantity}
-            onDecrement={() => onQuantityChange(ticket.id, quantity - 1)}
-            onIncrement={() => onQuantityChange(ticket.id, quantity + 1)}
-            disableDecrement={quantity === 0 || isSoldOut}
-            disableIncrement={isSoldOut}
+          <TicketQuantitySelect
+            ticketName={ticket.name}
+            quantity={quantity}
+            onChange={(next) => onQuantityChange(ticket.id, next)}
+            unitCents={currentPrice ?? null}
+            isOpenFormat={isOpenFormat}
+            otherOpenCount={otherOpenCount}
+            disabled={isSoldOut}
           />
         </div>
       </div>

@@ -95,7 +95,8 @@ describe('computeOrderPricing — invariants over random orders', () => {
       expect(pricing.totalDue).toBe(
         pricing.ticketSubtotal + pricing.upsellSubtotal + pricing.flexibleTotal - pricing.discountAmount,
       )
-      expect(pricing.discountAmount).toBe(sum(pricing.discounts.map((d) => d.amountCents)))
+      const groupApplied = pricing.groupDiscount.applied ? pricing.groupDiscount.amountCents : 0
+      expect(pricing.discountAmount).toBe(sum(pricing.discounts.map((d) => d.amountCents)) + groupApplied)
     }
   })
 

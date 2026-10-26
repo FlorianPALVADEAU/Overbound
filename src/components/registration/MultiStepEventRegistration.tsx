@@ -28,6 +28,7 @@ import ParticipantsStep from './ParticipantsStep'
 import RegistrationHeader from './RegistrationHeader'
 import RegistrationPaymentBar, { PayButton } from './RegistrationPaymentBar'
 import RegistrationSection from './RegistrationSection'
+import { OrderLines } from './summary'
 import TicketSelectionStep from './TicketSelectionStep'
 import type { MultiStepEventRegistrationProps } from './types'
 
@@ -101,6 +102,11 @@ export default function MultiStepEventRegistration({
     needsGroupAttestation,
   })
 
+  const completeById = useMemo(
+    () => Object.fromEntries(Object.entries(validation.participantErrors).map(([id, errors]) => [id, Object.keys(errors).length === 0])),
+    [validation.participantErrors],
+  )
+
   const draft = useCheckoutDraft({
     eventId: event.id,
     user,
@@ -149,6 +155,7 @@ export default function MultiStepEventRegistration({
     ...(checkout.pricing?.rejections ?? []).map(promoRejectionMessage),
   ]
   const sellingTier = eventPriceTiers.find((tier) => tier.id === checkout.sellingTierId) ?? null
+  const upsellCount = upsellState.upsellSummaryItems.reduce((sum, item) => sum + item.quantity, 0)
   const hasFlexible = flexibleBySlot.some(Boolean)
   const isBusy = isCreating || submission.isSubmitting || authReason !== null
 
@@ -232,6 +239,7 @@ export default function MultiStepEventRegistration({
                   onFieldChange={handleParticipantChange}
                   onWaveSelect={handleWaveSelection}
                   errorsByParticipant={showErrors ? validation.participantErrors : {}}
+                  completeById={completeById}
                   groupAnchor={groupAnchor}
                 />
               </RegistrationSection>
@@ -279,6 +287,9 @@ export default function MultiStepEventRegistration({
             totalCents={summary.totalDue}
             currency={summary.currency}
             hasFlexible={hasFlexible}
+            ticketCount={totalParticipants}
+            upsellCount={upsellCount}
+            groupDiscountPercent={summary.groupDiscount?.applied ? summary.groupDiscount.percent : null}
             pricingNotices={pricingNotices}
             appliedPromos={promo.appliedPromos}
             promoInput={promo.promoInput}
@@ -296,7 +307,8 @@ export default function MultiStepEventRegistration({
         totalCents={summary.totalDue}
         currency={summary.currency}
         ticketCount={totalParticipants}
-        upsellCount={upsellState.upsellSummaryItems.reduce((sum, item) => sum + item.quantity, 0)}
+        upsellCount={upsellCount}
+        detail={lines.length > 0 ? <OrderLines lines={lines} currency={summary.currency} /> : undefined}
         hasFlexible={hasFlexible}
         isBusy={isBusy}
         submissionMessage={submission.message}

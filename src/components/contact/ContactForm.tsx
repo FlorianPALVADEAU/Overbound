@@ -29,7 +29,7 @@ export function ContactForm() {
         <h2 className={cn(DISPLAY_TITLE, 'text-title')}>Connecte-toi pour nous écrire</h2>
         <p className="max-w-prose text-foreground/80">
           Le formulaire est réservé aux comptes Overbound. Tu peux aussi nous écrire directement à{' '}
-          <a href="mailto:contact@overbound-race.com" className="font-semibold text-primary underline">
+          <a href="mailto:contact@overbound-race.com" className="inline-flex min-h-11 items-center font-semibold text-primary underline">
             contact@overbound-race.com
           </a>
           .

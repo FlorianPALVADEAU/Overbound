@@ -3,7 +3,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { joinName } from '@/lib/registration'
 import { cn } from '@/lib/utils'
 import { isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
@@ -18,7 +17,6 @@ import type { EventTicket, Participant } from './types'
 interface ParticipantFormProps {
   eventId: string
   participant: Participant
-  index: number
   ticket: EventTicket | undefined
   onFieldChange: (participantId: string, field: keyof Participant, value: string | boolean) => void
   onWaveSelect: (participantId: string, waveIndex: number | null) => void
@@ -30,7 +28,6 @@ interface ParticipantFormProps {
 export default function ParticipantForm({
   eventId,
   participant,
-  index,
   ticket,
   onFieldChange,
   onWaveSelect,
@@ -53,8 +50,6 @@ export default function ParticipantForm({
         {errors[field]}
       </p>
     ) : null
-
-  const displayName = joinName(participant.firstName, participant.lastName)
 
   const field = (
     key: 'firstName' | 'lastName' | 'email' | 'birthDate' | 'emergencyContactName' | 'emergencyContactPhone',
@@ -83,23 +78,7 @@ export default function ParticipantForm({
   )
 
   return (
-    <fieldset className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-5 py-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
-          >
-            {index + 1}
-          </span>
-          <legend className="float-left min-w-0 truncate text-base font-semibold">
-            {displayName || `Participant ${index + 1}`}
-          </legend>
-        </div>
-        {ticket ? <span className="shrink-0 text-sm text-muted-foreground">{ticket.name}</span> : null}
-      </div>
-
-      <div className="space-y-8 p-5">
+    <div className="space-y-8 p-5">
         <div className="space-y-4">
           <h3 className="text-eyebrow font-semibold uppercase text-subtle">Participant</h3>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -228,11 +207,9 @@ export default function ParticipantForm({
             </span>
           </Label>
         </div>
-      </div>
-    </fieldset>
+    </div>
   )
 }
-
 
 const formatFlexibleFee = () =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(FLEXIBLE_TICKET_FEE_CENTS / 100)

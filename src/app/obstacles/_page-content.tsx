@@ -242,7 +242,7 @@ export default function ObstaclesPage() {
                   encadrées pour maîtriser chaque franchissement.
                 </p>
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
                 <Button asChild size="cta" className="w-full sm:w-auto">
                   <Link href={featuredEventHref}>Voir la prochaine édition</Link>
                 </Button>

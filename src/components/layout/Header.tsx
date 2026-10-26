@@ -201,13 +201,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
 
   const guestActions = (
     <div className="flex items-center space-x-2 z-10">
-      <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
+      <Button variant="ghost" size="sm" className="hidden min-h-11 sm:inline-flex" asChild>
         <Link href="/auth/login">Se connecter</Link>
       </Button>
       <Button
         size="sm"
         variant="signal"
-        className="hidden lg:inline-flex whitespace-nowrap rounded-xl"
+        className="hidden min-h-11 lg:inline-flex whitespace-nowrap rounded-xl"
         asChild
       >
         <Link href={featuredEventRegisterHref}>Je m'inscris</Link>

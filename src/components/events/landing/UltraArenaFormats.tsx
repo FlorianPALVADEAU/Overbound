@@ -99,7 +99,7 @@ export function UltraArenaFormats({
                 {isOnSale ? (
                   <Button
                     asChild
-                    className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                    className="min-h-11 w-full bg-blue-600 text-white hover:bg-blue-700"
                     onClick={onOpenClick}
                   >
                     <Link href={registerHref(openTicket?.id)}>Je choisis OPEN</Link>
@@ -144,7 +144,7 @@ export function UltraArenaFormats({
                 {isOnSale ? (
                   <Button
                     asChild
-                    className="w-full bg-amber-700 text-white hover:bg-amber-800"
+                    className="min-h-11 w-full bg-amber-700 text-white hover:bg-amber-800"
                     onClick={onRankedClick}
                   >
                     <Link href={registerHref(rankedTicket?.id)}>Je choisis RANKED</Link>

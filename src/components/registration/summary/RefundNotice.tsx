@@ -12,11 +12,6 @@ interface RefundNoticeProps {
 export default function RefundNotice({ hasFlexible, className }: RefundNoticeProps) {
   return (
     <div className={cn('text-xs text-muted-foreground', className)}>
-      <p>
-        {hasFlexible
-          ? `Billets non remboursables à ton initiative, sauf billets flexibles (jusqu'à ${FLEXIBLE_REFUND_DEADLINE_DAYS} jours avant l'événement).`
-          : 'Billets non remboursables à ton initiative.'}
-      </p>
       <Link
         href="/cgv#annulation-participant"
         className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-foreground"

@@ -25,7 +25,7 @@ export const TEST_CARDS = {
 export const prepareBrowser = async (page: Page) => {
   await disableAutomaticPopups(page)
   await page.addInitScript(() => {
-    window.localStorage.setItem('overbound-consent', JSON.stringify({ analytics: false, updatedAt: new Date().toISOString() }))
+    window.localStorage.setItem('overbound-consent', JSON.stringify({ analytics: false, marketing: false, updatedAt: new Date().toISOString() }))
   })
 }
 

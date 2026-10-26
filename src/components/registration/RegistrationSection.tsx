@@ -26,8 +26,8 @@ export default function RegistrationSection({
   sectionRef,
 }: RegistrationSectionProps) {
   return (
-    <section ref={sectionRef} className="scroll-mt-24 py-8 first:pt-0">
-      <header className="mb-5 flex items-center gap-3">
+    <section ref={sectionRef} className="scroll-mt-24 py-6 first:pt-0">
+      <header className="mb-3 flex items-center gap-3">
         <span
           aria-hidden
           className={cn(
@@ -40,7 +40,7 @@ export default function RegistrationSection({
         <h2 className={cn(DISPLAY_TITLE, 'text-title')}>{title}</h2>
         {optional ? <span className="text-sm text-subtle">Facultatif</span> : null}
       </header>
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-3">{children}</div>
     </section>
   )
 }

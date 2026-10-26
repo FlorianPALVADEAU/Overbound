@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import type { OrderLine } from '@/lib/checkout/orderLines'
 import PromoCodeInput from './PromoCodeInput'
-import { OrderLines, OrderTotal, RefundNotice } from './summary'
+import { OrderDetailsToggle, OrderLines, OrderTotal, RefundNotice } from './summary'
 import type { AppliedPromo } from './types'
 
 interface OrderSummarySidebarProps {
@@ -12,6 +12,10 @@ interface OrderSummarySidebarProps {
   totalCents: number
   currency: string
   hasFlexible: boolean
+  ticketCount: number
+  upsellCount: number
+  /** Percentage of the group discount when it applies to the order. */
+  groupDiscountPercent: number | null
   /** Why the order cannot be priced or a code was left out, in the visitor's words. */
   pricingNotices: string[]
   appliedPromos: AppliedPromo[]
@@ -25,11 +29,16 @@ interface OrderSummarySidebarProps {
   payAction?: ReactNode
 }
 
+const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`
+
 export default function OrderSummarySidebar({
   lines,
   totalCents,
   currency,
   hasFlexible,
+  ticketCount,
+  upsellCount,
+  groupDiscountPercent,
   pricingNotices,
   appliedPromos,
   promoInput,
@@ -44,15 +53,33 @@ export default function OrderSummarySidebar({
     <div className="rounded-2xl border border-border bg-card p-5">
       <h2 className="text-lg font-semibold">Ta commande</h2>
 
-      <div className="mt-4">
-        <OrderLines lines={lines} currency={currency} />
-      </div>
+      {lines.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">Choisis un billet pour commencer.</p>
+      ) : (
+        <div className="mt-3 space-y-1">
+          <p className="text-sm text-muted-foreground">
+            {plural(ticketCount, 'billet')}
+            {upsellCount > 0 ? ` · ${plural(upsellCount, 'option')}` : ''}
+          </p>
+          {groupDiscountPercent ? (
+            <p className="text-sm font-medium text-primary">Remise groupe −{groupDiscountPercent} % appliquée</p>
+          ) : null}
+        </div>
+      )}
 
       {pricingNotices.map((notice) => (
         <p key={notice} className="mt-3 text-xs font-medium text-destructive">
           {notice}
         </p>
       ))}
+
+      {lines.length > 0 ? (
+        <div className="mt-3">
+          <OrderDetailsToggle lineCount={lines.length}>
+            <OrderLines lines={lines} currency={currency} />
+          </OrderDetailsToggle>
+        </div>
+      ) : null}
 
       <Separator className="my-4" />
       <PromoCodeInput

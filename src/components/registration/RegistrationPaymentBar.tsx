@@ -1,6 +1,8 @@
-import { AlertTriangle, CheckCircle, Loader2, Lock } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { AlertTriangle, CheckCircle, ChevronUp, Loader2, Lock } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { formatPrice } from '@/lib/registration'
 import { RefundNotice } from './summary'
 
@@ -32,6 +34,8 @@ interface RegistrationPaymentBarProps {
   isBusy: boolean
   submissionMessage: { type: 'error' | 'success'; text: string } | null
   onPayment: () => void
+  /** Full order, opened by a tap on the total. */
+  detail?: ReactNode
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`
@@ -46,6 +50,7 @@ export default function RegistrationPaymentBar({
   isBusy,
   submissionMessage,
   onPayment,
+  detail,
 }: RegistrationPaymentBarProps) {
   const cart = [ticketCount > 0 ? plural(ticketCount, 'billet') : null, upsellCount > 0 ? plural(upsellCount, 'option') : null]
     .filter(Boolean)
@@ -62,8 +67,37 @@ export default function RegistrationPaymentBar({
 
       <div className="flex items-center gap-3 p-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-muted-foreground">{cart || 'Total'}</p>
-          <p className="text-lg font-semibold leading-tight">{formatPrice(totalCents, currency)}</p>
+          {detail ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="flex min-h-11 max-w-full flex-col items-start rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`Voir le détail de la commande, total ${formatPrice(totalCents, currency)}`}
+                >
+                  <span className="text-xs text-muted-foreground">{cart || 'Total'}</span>
+                  <span className="flex items-center gap-1 text-lg font-semibold leading-tight">
+                    {formatPrice(totalCents, currency)}
+                    <ChevronUp aria-hidden className="hidden size-4 text-primary min-[360px]:block" />
+                  </span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[85dvh] overflow-y-auto">
+                <DialogTitle>Ta commande</DialogTitle>
+                <DialogDescription className="sr-only">Détail des billets, options et réductions.</DialogDescription>
+                {detail}
+                <div className="flex items-baseline justify-between border-t border-border pt-3">
+                  <span className="font-semibold">Total</span>
+                  <span className="text-xl font-bold">{formatPrice(totalCents, currency)}</span>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">{cart || 'Total'}</p>
+              <p className="text-lg font-semibold leading-tight">{formatPrice(totalCents, currency)}</p>
+            </>
+          )}
           <RefundNotice hasFlexible={hasFlexible} className="line-clamp-2" />
         </div>
         <PayButton isBusy={isBusy} onPayment={onPayment} />

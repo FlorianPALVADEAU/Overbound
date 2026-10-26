@@ -146,7 +146,7 @@ export function BootcampsView() {
                 Entraîne-toi avec nous, puis inscris-toi à la course Overbound pour vivre l'expérience complète.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
               <Button asChild size="cta" className="w-full sm:w-auto">
                 <Link href="/events/ultra-arena-2026">Voir les prochains événements</Link>
               </Button>
