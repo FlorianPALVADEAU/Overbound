@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
+import { HEALTH_PROOF_SENTENCE } from '@/constants/participantNotice'
 import { TICKET_TRANSFER_FEE_CENTS, formatTransferFee } from '@/lib/tickets/transferPolicy'
 import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 import { Container, Section } from '@/components/ds'
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '09/10/2026'
+const lastUpdated = '15/10/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et acceptation' },
@@ -49,7 +50,7 @@ export default function CGVPage() {
         size="page"
         updated={
           <>
-            Dernière mise à jour : <time dateTime="2026-10-09">{lastUpdated}</time>
+            Dernière mise à jour : <time dateTime="2026-10-15">{lastUpdated}</time>
           </>
         }
       />
@@ -383,10 +384,8 @@ export default function CGVPage() {
                 compatible avec une course à obstacles et ne pas avoir connaissance d'une contre-indication médicale.
               </p>
               <p>
-                <strong>Justificatif de santé :</strong> Overbound peut exiger, pour tout ou partie des formats, la
-                présentation d'un Pass Prévention Santé (PPS), d'une licence sportive ou d'un certificat médical. Cette
-                exigence est indiquée sur la page de l'événement et dans son règlement ; à défaut de justificatif, le
-                départ peut être refusé sans remboursement.
+                <strong>Justificatif de santé :</strong> {HEALTH_PROOF_SENTENCE} Il appartient à chaque participant
+                de l'obtenir avant l'événement, y compris pour les dossards reçus par transfert.
               </p>
               <p>
                 <strong>Décharge signée :</strong> chaque participant signe personnellement la décharge de
@@ -443,23 +442,43 @@ export default function CGVPage() {
                 ))}
               </ul>
               <p>
-                Cette assurance indemnise les victimes des dommages dont Overbound est responsable, dans les limites et
-                conditions du contrat. L'attestation d'assurance est communiquée sur simple demande à{' '}
+                <strong>Ce que cette assurance couvre :</strong> les dommages causés à des tiers, participants
+                compris, lorsque la cause est imputable à Overbound, dans les limites et conditions du contrat.
+                L'attestation d'assurance est communiquée sur simple demande à{' '}
                 <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary underline">
                   {COMPANY_INFO.contact.email}
                 </Link>
                 .
               </p>
               <p>
-                <strong>Ce que cette assurance ne couvre pas :</strong> les dommages corporels que le participant se
-                cause à lui-même ou qui surviennent sans faute d'un tiers responsable (par exemple une chute sur un
-                obstacle conforme). Ces dommages ne sont indemnisés que par une assurance personnelle.
+                <strong>Ce que cette assurance ne couvre pas :</strong> les dommages que le participant se cause à
+                lui-même, en l'absence de faute d'Overbound (par exemple une chute sur un obstacle conforme). Ses
+                frais médicaux, son invalidité ou son décès restent alors à sa charge, sauf assurance personnelle.
               </p>
               <p>
-                <strong>Assurance individuelle accident :</strong> Overbound informe chaque participant de son intérêt
-                à souscrire une assurance individuelle accident couvrant les dommages corporels liés à la pratique
-                sportive (frais médicaux, invalidité, décès). Une licence sportive ou une assurance personnelle peut
-                déjà inclure cette garantie : il appartient au participant de le vérifier avant l'événement.
+                <strong>Dommage causé à un autre participant :</strong> Overbound ne s'engage pas sur la prise en
+                charge, par son contrat, d'un dommage qu'un participant cause à un autre participant sans faute
+                d'Overbound. Chaque participant doit vérifier que sa responsabilité civile personnelle (assurance
+                habitation, licence sportive) couvre ce cas.
+              </p>
+              <p>
+                <strong>Dossard transféré et éditions suivantes :</strong> le contrat ci-dessus est celui en vigueur à
+                la date de publication de ces CGV. Overbound communique l'attestation applicable à chaque édition sur
+                demande.
+              </p>
+              <p>
+                <strong>Assurance individuelle accident :</strong> Overbound recommande à chaque participant de
+                souscrire une assurance individuelle accident (indemnités en cas de blessure, d'invalidité ou de
+                décès). Une licence sportive ou une assurance personnelle peut déjà inclure cette garantie : il
+                appartient au participant de le vérifier avant l'événement.
+              </p>
+              <p>
+                <strong>Engagements et risques du participant :</strong> en s'inscrivant, le participant reconnaît
+                avoir été informé des risques de la pratique (chutes, fractures, blessures graves, invalidité,
+                décès), de l'étendue et des limites de l'assurance décrites ci-dessus, et de l'intérêt de souscrire
+                une assurance individuelle accident. Il s'engage à respecter le règlement et les consignes de
+                sécurité, à présenter le justificatif de santé et une pièce d'identité au retrait du dossard, et à
+                interrompre sa participation en cas de danger.
               </p>
             </section>
 

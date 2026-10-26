@@ -1,6 +1,7 @@
 import { allocatePaidTicketPrices } from '@/lib/tickets/flexibleTicket'
 import { createBalance } from './balance'
-import { priceParticipants } from './participantPricing'
+import { computeGroupDiscount } from './groupDiscount'
+import { applyTierDiscount, priceParticipants } from './participantPricing'
 import { applyDiscounts } from './promo/applyDiscounts'
 import { checkPromoQuota } from './promo/quota'
 import { assignParticipantsToTiers } from './tierAllocation'
@@ -29,21 +30,34 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
   const upsellSubtotal = sumValues(upsellSubtotalsById)
 
   const quota = checkPromoQuota(input.promos)
-  const { discounts, rejections } = applyDiscounts(
+  const { discounts: allDiscounts, rejections } = applyDiscounts(
     quota.kept,
     createBalance(ticketSubtotal, upsellSubtotalsById),
     { participants, baseTicketSubtotal, tierDiscountAmount },
   )
 
-  const ticketDiscountAmount = sum(discounts.filter((d) => d.target.kind === 'tickets').map((d) => d.amountCents))
+  // Group discount and ticket codes never add up: the better one applies. A tie goes to the
+  // group discount. A beaten code stays on the order at 0 € so the ambassador still gets credit.
+  const group = computeGroupDiscount(participants)
+  const codeTicketDiscount = sum(allDiscounts.filter((d) => d.target.kind === 'tickets').map((d) => d.amountCents))
+  const groupApplies = group.amountCents > 0 && group.amountCents >= codeTicketDiscount
+  const discounts = groupApplies
+    ? allDiscounts.map((d) => (d.target.kind === 'tickets' ? { ...d, amountCents: 0 } : d))
+    : allDiscounts
+  const ticketDiscountAmount = groupApplies ? group.amountCents : codeTicketDiscount
   const upsellDiscountAmount = sum(discounts.filter((d) => d.target.kind === 'upsell').map((d) => d.amountCents))
   const discountAmount = ticketDiscountAmount + upsellDiscountAmount
   // Never discounted: the option is a refund right, not part of the ticket price.
   const flexibleTotal = participants.filter((participant) => participant.flexible).length * input.flexibleFeeCents
-  const paidPrices = allocatePaidTicketPrices(
-    participants.map((participant) => participant.unitPriceCents),
-    ticketDiscountAmount,
-  )
+  // The group discount belongs to the OPEN bibs alone; a code is spread over every bib.
+  const paidPrices = groupApplies
+    ? participants.map((participant) =>
+        participant.isOpenFormat ? applyTierDiscount(participant.unitPriceCents, group.percent) : participant.unitPriceCents,
+      )
+    : allocatePaidTicketPrices(
+        participants.map((participant) => participant.unitPriceCents),
+        ticketDiscountAmount,
+      )
 
   return ok({
     participants: participants.map(({ isOpenFormat: _isOpenFormat, ...participant }, index) => ({
@@ -54,6 +68,7 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
     baseTicketSubtotal,
     ticketSubtotal,
     tierDiscountAmount,
+    groupDiscount: { percent: group.percent, amountCents: group.amountCents, applied: groupApplies },
     upsellSubtotal,
     upsellSubtotalsById,
     flexibleTotal,

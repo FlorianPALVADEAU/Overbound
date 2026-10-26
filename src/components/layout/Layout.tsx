@@ -122,7 +122,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex min-h-screen flex-col">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+          className="fixed left-4 top-4 z-100 -translate-y-24 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground focus:translate-y-0"
         >
           Aller au contenu principal
         </a>

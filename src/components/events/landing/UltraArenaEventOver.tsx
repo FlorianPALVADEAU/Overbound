@@ -133,7 +133,7 @@ export function UltraArenaEventOver({
               href="https://www.instagram.com/overbound.race/"
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="inline-flex items-center gap-1.5 underline underline-offset-4 hover:text-foreground"
+              className="inline-flex min-h-11 items-center gap-1.5 underline underline-offset-4 hover:text-foreground"
             >
               <Instagram className="h-4 w-4" />
               Suivre sur Instagram

@@ -8,8 +8,11 @@ export interface UpsellSummaryItem {
   label: string
   quantity: number
   amount: number
+  unitCents: number
   currency: string
   details: string[]
+  /** Who takes how many, so the checkout can show each option under its participant's ticket. */
+  assignments: UpsellAssignment[]
 }
 
 interface SummarizedUpsell {
@@ -57,7 +60,9 @@ export const summarizeUpsells = (
       label: upsell.name,
       quantity: selection.quantity,
       amount: upsell.price_cents * selection.quantity,
+      unitCents: upsell.price_cents,
       currency: (upsell.currency || defaultCurrency).toLowerCase(),
       details,
+      assignments,
     }]
   })

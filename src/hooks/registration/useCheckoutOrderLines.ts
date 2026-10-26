@@ -29,6 +29,10 @@ export function useCheckoutOrderLines(
           return participant ? joinName(participant.firstName, participant.lastName) : ''
         },
         upsell: (id) => upsells.find((upsell) => upsell.id === id)?.name ?? 'option',
+        assignee: (participantId) => {
+          const participant = participants.find((entry) => entry.id === participantId)
+          return participant ? { ticketId: participant.ticketId, name: joinName(participant.firstName, participant.lastName) } : null
+        },
       }),
     [summary, upsellItems, tickets, tiers, upsells, participants],
   )

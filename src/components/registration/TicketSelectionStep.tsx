@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { TICKETS_SECTION_ID } from '@/lib/checkout/fieldIds'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import { isOpenFormatTicket } from '@/lib/openSas'
 import TicketCard from './TicketCard'
 import type { EventTicket } from './types'
 
@@ -26,6 +27,12 @@ export default function TicketSelectionStep({
   showErrors,
   groupBanner,
 }: TicketSelectionStepProps) {
+  const openCountExcluding = (ticketId: string) =>
+    tickets.reduce(
+      (total, other) =>
+        other.id !== ticketId && isOpenFormatTicket(other.name, other.race?.name) ? total + (ticketSelections[other.id] ?? 0) : total,
+      0,
+    )
   const nothingSelected = Object.values(ticketSelections).every((quantity) => !quantity)
 
   return (
@@ -41,6 +48,7 @@ export default function TicketSelectionStep({
           onQuantityChange={onTicketQuantityChange}
           defaultCurrency={defaultCurrency}
           sellingTier={sellingTier}
+          otherOpenCount={openCountExcluding(ticket.id)}
         />
       ))}
 

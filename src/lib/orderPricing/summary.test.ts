@@ -24,6 +24,7 @@ describe('toPricingSummary', () => {
         { code: 'SUMMER', amountCents: 500, upsellId: null },
         { code: 'TEE50', amountCents: 1000, upsellId: 'tshirt' },
       ],
+      groupDiscount: { percent: 0, amountCents: 0, applied: false },
       totalDue: 5500,
       currency: 'eur',
     })

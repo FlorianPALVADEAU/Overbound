@@ -1,4 +1,4 @@
-import type { OrderPricing, PricedParticipant } from './types'
+import type { GroupDiscountResult, OrderPricing, PricedParticipant } from './types'
 
 /** Bibs bought on the same ticket at the same price, shown as one line. */
 export interface PricingSummaryTicketLine {
@@ -30,6 +30,8 @@ export interface PricingSummary {
   discountAmount: number
   /** Absent in drafts saved before discounts were itemised. */
   discounts?: PricingSummaryDiscount[]
+  /** Absent in drafts saved before the group discount existed. */
+  groupDiscount?: GroupDiscountResult
   totalDue: number
   currency: string
 }
@@ -66,6 +68,7 @@ export const toPricingSummary = (pricing: OrderPricing, currency: string): Prici
     amountCents: discount.amountCents,
     upsellId: discount.target.kind === 'upsell' ? discount.target.upsellId : null,
   })),
+  groupDiscount: pricing.groupDiscount,
   totalDue: pricing.totalDue,
   currency,
 })

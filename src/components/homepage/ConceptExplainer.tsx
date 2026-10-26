@@ -241,7 +241,7 @@ export function ConceptExplainer() {
           align="center"
           eyebrow="Le parcours"
           title="Une boucle de 2 km, autant de tours que tu veux"
-          lead="10 obstacles à enchaîner, dans le sens des aiguilles d'une montre. Tu boucles un tour, tu choisis si tu repars. La première organisation OCR où tu choisis ton niveau de défi sur le même parcours."
+          lead="10 obstacles à enchaîner. Tu boucles un tour, tu choisis si tu repars. La première organisation OCR où tu choisis ta distance de course sur un même parcours."
         />
 
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12">
@@ -296,18 +296,9 @@ export function ConceptExplainer() {
                 <g
                   key={`${OBSTACLES[index].name}-${index}`}
                   transform={`translate(${point.x} ${point.y})`}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Obstacle ${index + 1} : ${OBSTACLES[index].name}`}
-                  aria-current={index === active ? 'true' : undefined}
+                  aria-hidden
                   onClick={() => pick(index)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      pick(index)
-                    }
-                  }}
-                  className="cursor-pointer outline-none [&:focus-visible>circle:nth-child(2)]:stroke-primary"
+                  className="cursor-pointer outline-none"
                 >
                   <circle r={56} fill="transparent" />
                   <circle
@@ -379,7 +370,15 @@ export function ConceptExplainer() {
                 </p>
               </div>
             </div>
-            <div className="mt-1 flex gap-1">
+            <div aria-hidden className="mt-3 flex gap-1 xl:hidden">
+              {OBSTACLES.map((obstacle, index) => (
+                <span
+                  key={`${obstacle.name}-${index}`}
+                  className={cn('h-1 flex-1 rounded-full transition-colors duration-300', index <= active ? 'bg-primary' : 'bg-foreground/15')}
+                />
+              ))}
+            </div>
+            <div className="mt-1 hidden gap-1 xl:flex">
               {OBSTACLES.map((obstacle, index) => (
                 <button
                   key={`${obstacle.name}-${index}`}

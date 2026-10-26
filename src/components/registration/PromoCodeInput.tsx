@@ -41,6 +41,11 @@ export default function PromoCodeInput({
             </Button>
           </div>
         ))}
+        {appliedPromos.length > 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Code enregistré, merci ! Les réductions ne se cumulent pas : seule la plus élevée s&apos;applique à ta commande.
+          </p>
+        ) : null}
         {canAddMore ? (
           <div className="flex gap-2">
             <Input

@@ -56,7 +56,7 @@ export const stubCheckoutApis = async (page: Page, { signedIn }: { signedIn: boo
   await disableAutomaticPopups(page)
   // Consent already answered (refused): the cookie banner would otherwise cover the phone payment bar.
   await page.addInitScript(() => {
-    window.localStorage.setItem('overbound-consent', JSON.stringify({ analytics: false, updatedAt: new Date().toISOString() }))
+    window.localStorage.setItem('overbound-consent', JSON.stringify({ analytics: false, marketing: false, updatedAt: new Date().toISOString() }))
   })
   await page.route('**/api/session', (route) =>
     route.fulfill(

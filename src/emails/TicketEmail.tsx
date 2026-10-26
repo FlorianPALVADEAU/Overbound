@@ -129,6 +129,16 @@ export default function TicketEmail({
             Merci de te présenter au minimum 1h avant ton départ.
           </Text>
         ) : null}
+        <Text style={styles.paragraph}>
+          <strong>À apporter au retrait du dossard :</strong> ton Pass Prévention Santé (PPS) FFA ou ta licence FFA en
+          cours de validité, et une pièce d&apos;identité. Sans justificatif, le départ est refusé et le billet n&apos;est
+          pas remboursé.
+        </Text>
+        <Text style={styles.paragraph}>
+          <strong>Assurance :</strong> l&apos;assurance d&apos;Overbound couvre les dommages dont Overbound est
+          responsable, pas ceux que tu te causes à toi-même. Nous te recommandons une assurance individuelle accident.
+          Détails à l&apos;article 12 des CGV.
+        </Text>
         <Text style={styles.footerText}>
           Ta participation est soumise à la décharge de responsabilité signée lors de la commande. Si quelqu&apos;un
           t&apos;a inscrit, il l&apos;a acceptée en ton nom : lis-la avant l&apos;événement.{' '}

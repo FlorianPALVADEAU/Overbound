@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '09/10/2026'
+const lastUpdated = '15/10/2026'
 
 const toc = [
   { id: 'intro', label: '1. Objet et champ d’application' },
@@ -120,11 +120,15 @@ const paragraphs = {
     "Les contenus fournis à titre informatif (programmes d’entraînement, conseils) ne remplacent pas l’avis d’un professionnel de santé. L’utilisateur demeure responsable de sa condition physique.",
   ],
   assurances: [
-    "Overbound souscrit un contrat de responsabilité civile organisateur couvrant les dommages causés aux tiers pendant ses événements.",
-    "Chaque participant est invité à disposer d’une assurance personnelle couvrant les dommages corporels auxquels il pourrait s’exposer (préconisation : licence fédérale sportive ou assurance personnelle multisport).",
+    "Overbound souscrit un contrat de responsabilité civile organisateur (AXA France IARD) couvrant les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound, dans les limites du contrat détaillé à l’article 12 des CGV.",
+    "Cette assurance ne couvre pas les dommages que le participant se cause à lui-même sans faute d’Overbound : ses frais médicaux, son invalidité ou son décès restent alors à sa charge.",
+    "Overbound ne s’engage pas sur la prise en charge, par son contrat, d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound. Chaque participant vérifie que sa responsabilité civile personnelle couvre ce cas.",
+    "Chaque participant est invité à souscrire une assurance individuelle accident couvrant les dommages corporels auxquels il s’expose (indemnités en cas de blessure, d’invalidité ou de décès). Une licence fédérale sportive ou une assurance personnelle multisport peut déjà l’inclure.",
+    "Pour l’édition 2026, un Pass Prévention Santé (PPS) de la FFA, ou une licence FFA en cours de validité, est exigé au retrait du dossard (article 11 des CGV).",
     "Les effets personnels restent sous la responsabilité du participant. Des zones de consigne sécurisées peuvent être proposées, sans constituer une obligation de résultat.",
     "En cas d’événement international, il appartient au participant de vérifier la validité de ses garanties (assurance voyage, rapatriement).",
   ],
+
   proprieteIntellectuelle: [
     "Tous éléments composant la Plateforme (textes, graphismes, logos, vidéos, code source, base de données) sont la propriété exclusive d’Overbound ou de ses partenaires et sont protégés par le droit d’auteur et le Code de la propriété intellectuelle.",
     "Toute reproduction, représentation, modification ou exploitation non autorisée est strictement interdite. Une licence non exclusive, personnelle et non transférable est accordée à l’utilisateur pour l’usage de la Plateforme.",

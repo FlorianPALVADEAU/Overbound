@@ -18,8 +18,14 @@ describe('summarizeUpsells', () => {
       label: 'T-shirt',
       quantity: 3,
       amount: 6000,
+      unitCents: 2000,
       currency: 'eur',
       details: ['Pour : Camille, Léo, Inès', 'Tailles : M ×2, L'],
+      assignments: [
+        { participantId: 'p1', quantity: 1, size: 'M' },
+        { participantId: 'p2', quantity: 1, size: 'M' },
+        { participantId: 'p3', quantity: 1, size: 'L' },
+      ],
     })
   })
 

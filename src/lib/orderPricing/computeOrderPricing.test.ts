@@ -29,7 +29,7 @@ describe('computeOrderPricing — tiers', () => {
   })
 
   it('applies the active tier to every ticket', () => {
-    expect(price(order({ participants: participantsOn('open', 'open', 'open'), tiers: [tier()] })).totalDue).toBe(12000)
+    expect(price(order({ participants: participantsOn('ranked', 'ranked', 'ranked'), tiers: [tier()] })).totalDue).toBe(16800)
   })
 
   it('charges the next tier for the participants that do not fit in the active one', () => {
@@ -45,7 +45,8 @@ describe('computeOrderPricing — tiers', () => {
       { tierId: 'early', quantity: 2 },
       { tierId: 'late', quantity: 1 },
     ])
-    expect(pricing.totalDue).toBe(13000)
+    // 4000 + 4000 + 5000, then 15 % group discount on each OPEN ticket: 3400 + 3400 + 4250
+    expect(pricing.totalDue).toBe(11050)
   })
 
   it('refuses the order when every tier is full', () => {
@@ -130,7 +131,8 @@ describe('computeOrderPricing — upsells and product codes', () => {
       }),
     )
     expect(pricing.upsellSubtotal).toBe(3600)
-    expect(pricing.totalDue).toBe(18600)
+    // 3 × 50 € - 15 % group discount = 127,50 €, plus 36 € of upsells
+    expect(pricing.totalDue).toBe(16350)
   })
 
   it('discounts the targeted upsell and the tickets separately', () => {

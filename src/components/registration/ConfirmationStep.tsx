@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { PARTICIPANT_NOTICE } from '@/constants/participantNotice'
 import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_SUMMARY, WAIVER_TITLE } from '@/constants/waiver'
 import { CONSENT_FIELD_IDS } from '@/lib/checkout/fieldIds'
 
@@ -82,14 +83,34 @@ export default function ConfirmationStep({
   ]
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <div className="rounded-xl bg-muted p-4 text-sm leading-relaxed">
-          <p className="font-medium">{WAIVER_SUMMARY}</p>
-          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <div
+          role="region"
+          aria-label="Avant de signer : risques, assurance et tes engagements"
+          tabIndex={0}
+          className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-border bg-card p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+        >
+          <h3 className="text-base font-semibold">Avant de signer : risques, assurance et tes engagements</h3>
+          {PARTICIPANT_NOTICE.map((section) => (
+            <div key={section.title} className="space-y-1">
+              <h4 className="text-sm font-bold">{section.title}</h4>
+              <ul className="list-disc space-y-1 pl-5 text-sm leading-snug text-foreground">
+                {section.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl border border-primary/40 bg-card p-3 text-foreground sm:p-4">
+          <p className="text-base font-medium leading-snug">{WAIVER_SUMMARY}</p>
+          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
             <button
               type="button"
               onClick={() => setIsDisclaimerExpanded((prev) => !prev)}
+              aria-expanded={isDisclaimerExpanded}
+              aria-controls="waiver-full-text"
               className="min-h-11 text-sm font-semibold text-primary underline-offset-4 hover:underline"
             >
               {isDisclaimerExpanded ? 'Masquer la décharge' : 'Lire la décharge complète'}
@@ -105,15 +126,23 @@ export default function ConfirmationStep({
           </p>
 
           {isDisclaimerExpanded ? (
-            <div className="mt-2 max-h-80 space-y-3 overflow-y-auto border-t border-border pt-4 text-xs leading-relaxed">
-              <p className="font-semibold uppercase">{WAIVER_TITLE}</p>
+            <div
+              id="waiver-full-text"
+              role="region"
+              aria-label={WAIVER_TITLE}
+              tabIndex={0}
+              className="mt-2 max-h-96 space-y-2 overflow-y-auto rounded-lg border border-border bg-background p-3 text-sm leading-snug text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <h4 className="font-semibold uppercase">{WAIVER_TITLE}</h4>
               <p>{WAIVER_INTRO}</p>
-              {WAIVER_CLAUSES.map((clause) => (
-                <p key={clause.id}>
-                  {clause.id}. {clause.text}
-                </p>
-              ))}
-              <p className="text-muted-foreground">
+              <ol className="space-y-1">
+                {WAIVER_CLAUSES.map((clause) => (
+                  <li key={clause.id}>
+                    <span className="font-bold">{clause.id}.</span> {clause.text}
+                  </li>
+                ))}
+              </ol>
+              <p>
                 Documents utiles :{' '}
                 <a className="underline" href={OFFICIAL_RULEBOOK_PDF_PATH} target="_blank" rel="noreferrer">
                   Règlement officiel (PDF)
@@ -133,13 +162,14 @@ export default function ConfirmationStep({
           ) : null}
         </div>
 
-        <div className="space-y-1">
+        <fieldset>
+          <legend className="sr-only">Tes engagements</legend>
           {consents.map((consent) => (
             <div key={consent.id}>
               <Label
                 htmlFor={consent.id}
                 className={cn(
-                  'flex min-h-11 cursor-pointer items-start gap-3 rounded-lg p-3 text-sm font-normal leading-relaxed',
+                  'flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 py-1 text-sm font-normal leading-snug text-foreground',
                   consent.error && 'bg-destructive/10 text-destructive',
                 )}
               >
@@ -148,19 +178,20 @@ export default function ConfirmationStep({
                   checked={consent.checked}
                   onCheckedChange={(checked) => consent.onChange(checked === true)}
                   aria-invalid={consent.error}
-                  className={cn('mt-0.5', consent.error && 'border-destructive')}
+                  aria-describedby={consent.error ? `${consent.id}-error` : undefined}
+                  className={cn(consent.error && 'border-destructive')}
                 />
                 <span className="block">
                   {consent.label} <span className="text-destructive" aria-hidden>*</span>
                 </span>
               </Label>
-              {consent.error ? <p className="px-3 text-xs font-medium text-destructive">Ce champ est obligatoire.</p> : null}
+              {consent.error ? <p id={`${consent.id}-error`} className="px-3 text-sm font-medium text-destructive">Ce champ est obligatoire.</p> : null}
             </div>
           ))}
-        </div>
+        </fieldset>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div>
           <p className="text-base font-semibold">
             Ta signature <span className="text-destructive" aria-hidden>*</span>

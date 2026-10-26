@@ -173,7 +173,7 @@ describe('POST /api/stripe/create-payment-intent', () => {
   it('charges the engine total and records each bib price', async () => {
     const response = await post(body())
     expect(response.status).toBe(200)
-    expect(chargedMetadata()).toMatchObject({ amount: 10000, metadata: { ticket_prices: '5000,5000', flexible_participants: '' } })
+    expect(chargedMetadata()).toMatchObject({ amount: 9000, metadata: { ticket_prices: '4500,4500', flexible_participants: '' } })
   })
 
   it('applies -50 % to what a free OPEN ticket left to pay (2 × 50 € = 25 €)', async () => {
@@ -213,7 +213,7 @@ describe('POST /api/stripe/create-payment-intent', () => {
     await post(body())
     EVENT.price_tiers = []
     expect(chargedMetadata()).toMatchObject({
-      amount: 9000,
+      amount: 8100, // 4000 + 5000, minus the 10 % duo discount
       metadata: { tier_allocations: JSON.stringify([{ tier_id: 'early', quantity: 1 }, { tier_id: 'late', quantity: 1 }]) },
     })
   })

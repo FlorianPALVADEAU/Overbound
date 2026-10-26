@@ -18,7 +18,7 @@ import { Container, SectionHeader } from '@/components/ds'
 
 const BADGES = [
   { icon: Shield, title: 'Sécurité encadrée', text: 'Règles terrain, staff et process de contrôle sur tout le parcours.' },
-  { icon: IdCard, title: 'Documents clairs', text: 'PPS valide, certificat médical, ou licence sportive. Présentés le jour J.' },
+  { icon: IdCard, title: 'Documents clairs', text: 'PPS de la FFA (ou licence FFA en cours de validité) et pièce d’identité, contrôlés au retrait du dossard.' },
   { icon: Users, title: 'Solo ou en groupe', text: 'Tu peux participer seul ou inscrire ton groupe en une seule commande.' },
   { icon: Clock, title: 'Organisation lisible', text: "Horaires, format, logistique et règles expliqués simplement à l'avance." },
 ]
