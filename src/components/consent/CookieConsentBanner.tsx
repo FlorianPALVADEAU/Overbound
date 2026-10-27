@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useBlockingOverlay } from '@/components/popups/PopupArbiterProvider'
 import { readConsent, writeConsent } from './consent'
 
 export function CookieConsentBanner() {
@@ -12,6 +13,9 @@ export function CookieConsentBanner() {
     const consent = readConsent()
     setIsOpen(!consent)
   }, [])
+
+  // Cookies first: no popup (Lucky Wheel, promotion) opens over the banner.
+  useBlockingOverlay(isOpen)
 
   if (!isOpen) return null
 
@@ -26,16 +30,15 @@ export function CookieConsentBanner() {
       aria-label="Gestion des cookies"
       className="fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
     >
-      <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-background/95 p-6 shadow-xl backdrop-blur">
+      <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-background/95 p-4 shadow-xl sm:p-6 backdrop-blur">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-semibold">Gestion des cookies</p>
+            <p className="hidden text-sm font-semibold sm:block">Gestion des cookies</p>
             <p className="text-sm text-muted-foreground">
-              Nous utilisons des cookies nécessaires au fonctionnement du site et, avec ton accord, des cookies de mesure
-              d’audience et de publicité (Google Analytics, Meta). Tu peux choisir par finalité et modifier ton choix à
-              tout moment.
+              Cookies de mesure d’audience et de publicité (Google Analytics, Meta), avec ton accord. Tu peux modifier ton choix
+              à tout moment.
             </p>
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
               <Link href="/cookies#preferences" className="inline-flex min-h-11 items-center underline underline-offset-4">
                 Personnaliser
               </Link>
@@ -47,11 +50,11 @@ export function CookieConsentBanner() {
               </Link>
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button variant="outline" className="min-h-11 min-w-36 px-6" onClick={() => choose(false)}>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <Button variant="outline" className="min-h-11 px-4 sm:min-w-36 sm:px-6" onClick={() => choose(false)}>
               Tout refuser
             </Button>
-            <Button variant="outline" className="min-h-11 min-w-36 px-6" onClick={() => choose(true)}>
+            <Button variant="outline" className="min-h-11 px-4 sm:min-w-36 sm:px-6" onClick={() => choose(true)}>
               Tout accepter
             </Button>
           </div>

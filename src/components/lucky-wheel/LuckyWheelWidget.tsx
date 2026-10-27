@@ -230,19 +230,23 @@ export function LuckyWheelWidget({ eventId }: LuckyWheelWidgetProps) {
         // two-column layout is much shorter. overflow-y-auto so any
         // overflow scrolls inside the dialog rather than clipping or
         // pushing the dialog off-screen.
-        className="relative flex max-h-[75vh] w-full max-w-240 flex-col overflow-y-auto rounded-2xl border border-border bg-card shadow-lg sm:max-h-[90vh]"
+        className="relative flex max-h-[75vh] w-full max-w-240 flex-col overflow-y-auto rounded-2xl border border-border bg-card shadow-lg sm:max-h-[90vh] landscape:max-h-[92dvh]"
       >
         {/* Accessible name, stable across the form and result screens (the
             visible h2 only exists on the form screen). Also the hook the
             placement e2e spec selects on. */}
         <DialogPrimitive.Title className="sr-only">Roue de la fortune</DialogPrimitive.Title>
-        <DialogPrimitive.Close
-          disabled={closeLocked}
-          className="absolute right-2 top-2 z-20 inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-card/90 opacity-80 transition-opacity hover:opacity-100 sm:right-3 sm:top-3"
-          aria-label="Fermer"
-        >
-          <X className="h-4 w-4" aria-hidden="true" />
-        </DialogPrimitive.Close>
+        {/* Zero-height sticky wrapper: the close button stays visible while the
+            dialog scrolls (phone in landscape, 844x390, scrolls inside). */}
+        <div className="sticky top-0 z-20 h-0">
+          <DialogPrimitive.Close
+            disabled={closeLocked}
+            className="absolute right-2 top-2 inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-card/90 opacity-80 transition-opacity hover:opacity-100 sm:right-3 sm:top-3"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </DialogPrimitive.Close>
+        </div>
 
         {showResult && spinApi.outcome ? (
           <div ref={resultRef} tabIndex={-1} className="p-5 outline-none sm:p-8">

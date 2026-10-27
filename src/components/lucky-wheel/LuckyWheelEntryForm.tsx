@@ -51,7 +51,7 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
         />
       </div>
 
-      <div className="flex items-start gap-2">
+      <div className="flex min-h-11 items-start gap-2">
         <Checkbox
           id="lucky-wheel-consent"
           checked={marketingConsent}
@@ -80,7 +80,7 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
             href="/privacy-policies"
             target="_blank"
             rel="noopener noreferrer"
-            className="block text-xs text-muted-foreground underline"
+            className="inline-flex min-h-11 items-center text-xs text-muted-foreground underline"
           >
             En savoir plus
           </a>
@@ -121,7 +121,7 @@ export function LuckyWheelEntryForm({ submitting, error, onSubmit, onDecline }: 
         type="button"
         onClick={onDecline}
         disabled={submitting}
-        className="w-full text-center text-xs text-muted-foreground underline hover:text-foreground"
+        className="min-h-11 w-full text-center text-xs text-muted-foreground underline hover:text-foreground"
       >
         Non merci, je continue sans participer
       </button>

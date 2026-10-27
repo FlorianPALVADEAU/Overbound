@@ -8,6 +8,12 @@ export interface LuckyWheelTriggerRules {
   exit_intent?: boolean
 }
 
+// Floor on the time trigger. A campaign configured with delay_ms 0 opened the
+// wheel on first paint and hid the hero facts (date, place, price) from every
+// cold visitor (UX simulation 2026-10-27). Scroll and exit-intent triggers are
+// not floored: they only fire on visitor intent.
+export const MIN_TRIGGER_DELAY_MS = 10_000
+
 // FDR-0014 §3.1: configurable triggers (time on page, scroll%, exit intent,
 // manual CTA). Whichever condition fires first opens the widget -- mirrors
 // PopupPromotion's delay pattern (src/components/promotions/PopupPromotion.tsx)
@@ -43,7 +49,7 @@ export function useLuckyWheelTrigger({
     const cleanups: (() => void)[] = []
 
     if (typeof rules.delay_ms === 'number' && rules.delay_ms >= 0) {
-      timers.push(setTimeout(fire, rules.delay_ms))
+      timers.push(setTimeout(fire, Math.max(rules.delay_ms, MIN_TRIGGER_DELAY_MS)))
     }
 
     if (typeof rules.scroll_percent === 'number' && rules.scroll_percent > 0) {
