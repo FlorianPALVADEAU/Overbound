@@ -175,7 +175,7 @@ export const FORMAT_FAQS = [
   {
     id: 'ranked-backyard',
     question: 'Comment fonctionne le RANKED ?',
-    answer: `C'est un backyard : départ unique à ${RANKED_FORMAT_RULES.departure}, puis un nouveau tour part à intervalles réguliers. Tu as ${RANKED_LAP_TIME_LIMITS.firstLapMinutes} min pour le 1er tour, ${RANKED_LAP_TIME_LIMITS.midLapsMinutes} min pour les tours 2 à ${RANKED_LAP_TIME_LIMITS.lateLapStartsAt - 1}, ${RANKED_LAP_TIME_LIMITS.lateLapMinutes} min ensuite. Ton repos, c'est le temps qu'il te reste avant le prochain départ. Un tour hors temps t'élimine.`,
+    answer: `Une course d'obstacles en boucle : départ unique à ${RANKED_FORMAT_RULES.departure}, puis un nouveau tour part à intervalles réguliers. Tu as ${RANKED_LAP_TIME_LIMITS.firstLapMinutes} min pour le 1er tour, ${RANKED_LAP_TIME_LIMITS.midLapsMinutes} min pour les tours 2 à ${RANKED_LAP_TIME_LIMITS.lateLapStartsAt - 1}, ${RANKED_LAP_TIME_LIMITS.lateLapMinutes} min ensuite. Ton repos, c'est le temps qu'il te reste avant le prochain départ. Un tour hors temps t'élimine.`,
   },
   {
     id: 'penalty',

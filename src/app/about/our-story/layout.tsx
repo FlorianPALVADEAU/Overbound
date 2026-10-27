@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         url: ogImageUrl({ title: 'Notre histoire', kicker: 'Overbound', photo: 'start' }),
         width: 1200,
         height: 630,
-        alt: 'Overbound Race - Créateurs du Backyard à Obstacles'
+        alt: "Overbound Race - Créateurs de la course d'obstacles en boucle"
       }
     ],
     locale: 'fr_FR',

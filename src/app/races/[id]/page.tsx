@@ -248,10 +248,10 @@ export default function RaceDetailPage() {
                 {isUltraArena ? (
                   <div className="mt-4 space-y-3">
                     <Badge className="bg-amber-500 text-white font-bold text-sm">
-                      PREMIÈRE MONDIALE - Format Backyard OCR
+                      Course d'obstacles en boucle
                     </Badge>
                     <p className="text-xl leading-relaxed text-muted-foreground">
-                      <span className="text-foreground font-semibold">Du jamais vu dans l'OCR :</span> Le premier format backyard appliqué aux courses d'obstacles.
+                      <span className="text-foreground font-semibold">Du jamais vu dans l'OCR :</span> Une course d'obstacles en boucle, sans distance fixe.
                       Inspiré du légendaire <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a>, la Ultra Arena n'a pas de distance fixe.
                     </p>
                     <p className="text-lg leading-relaxed text-muted-foreground">
@@ -368,14 +368,14 @@ export default function RaceDetailPage() {
             <div className="lg:col-span-2 space-y-8">
               <div className="rounded-3xl border border-border bg-card p-8">
                 <h2 className="text-2xl font-bold text-card-foreground">
-                  {isUltraArena ? 'Le concept Backyard OCR' : isTribalKids ? 'L\'esprit Tribal Kids' : isOrigin ? 'L\'esprit Sprint' : isHorizon ? 'Philosophie de la progression' : 'Philosophie du format'}
+                  {isUltraArena ? 'Le concept de la boucle' : isTribalKids ? 'L\'esprit Tribal Kids' : isOrigin ? 'L\'esprit Sprint' : isHorizon ? 'Philosophie de la progression' : 'Philosophie du format'}
                 </h2>
                 {isUltraArena ? (
                   <>
                     <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
                       <p>
-                        <span className="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a></span>, la Ultra Arena introduit
-                        pour la première fois au monde le concept de backyard ultra à l'obstacle course racing.
+                        <span className="text-foreground font-semibold">Inspiré du <a href="https://www.mattmahoney.net/barkley/" target='_blank' className='underline'>Barkley Marathons</a></span>, la Ultra Arena reprend
+                        le principe de la boucle répétée à la course d'obstacles.
                       </p>
                       <p>
                         <span className="text-amber-600 font-semibold">Le principe :</span> Chaque concurrent part pour un tour de 2km
