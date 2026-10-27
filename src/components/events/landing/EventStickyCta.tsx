@@ -41,7 +41,7 @@ export function EventStickyCta({ registerHref, label, priceLabel, visible, onCli
         ].join(' ')}
       >
         <div className="rounded-2xl border border-primary/30 bg-background/95 p-3 shadow-2xl backdrop-blur">
-          <Button asChild size="lg" className="rounded-xl px-6 text-base font-semibold">
+          <Button asChild size="cta">
             <Link href={registerHref} onClick={() => onClick('sticky_desktop')}>
               {label} →
             </Link>

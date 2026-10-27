@@ -159,8 +159,9 @@ export function UltraArenaFormats({
           </Card>
         </div>
 
-        <p className="mt-5 text-center text-xs text-muted-foreground">
-          Pas encore sûr(e) ? Tous les détails des billets avec les prix exacts sont disponibles plus bas.
+        <p className="mx-auto mt-5 max-w-xl text-center text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">Première course ? Prends OPEN.</span> Pas d'élimination, tu
+          choisis ton heure de départ. RANKED est la version compétition, avec classement. Les prix exacts sont plus bas.
         </p>
 
         <div className="mt-6 flex justify-center">

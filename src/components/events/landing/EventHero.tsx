@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { HeroFrame } from '@/components/hero/HeroFrame'
-import { containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { containerClass, DISPLAY_TITLE, Pill } from '@/components/ds'
 import { cn } from '@/lib/utils'
+import { SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 
 interface Props {
   title: string
@@ -27,6 +28,12 @@ interface Props {
   imageUrl?: string | null
   onRegisterClick: () => void
 }
+
+const COURSE_HIGHLIGHTS = [
+  `Boucle de ${SHARED_FORMAT_RULES.loopKm} km`,
+  `${SHARED_FORMAT_RULES.obstaclesPerLoopMin}+ obstacles par tour`,
+  'Débutants acceptés en OPEN',
+]
 
 const Fact = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="min-w-0 px-4 py-4 sm:px-6 sm:py-5">
@@ -77,6 +84,13 @@ export function EventHero({
         {description ? (
           <p className="mt-6 line-clamp-2 max-w-xl text-lead text-foreground/75">{description}</p>
         ) : null}
+        <ul className="mt-6 flex flex-wrap gap-2">
+          {COURSE_HIGHLIGHTS.map((item) => (
+            <li key={item}>
+              <Pill variant="glass">{item}</Pill>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="border-t border-border bg-background">

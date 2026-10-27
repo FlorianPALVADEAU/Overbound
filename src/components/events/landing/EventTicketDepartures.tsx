@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Clock } from 'lucide-react'
+import { Clock, IdCard } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,6 +12,7 @@ import { getCurrentPriceTier, type EventPriceTier } from '@/types/EventPriceTier
 import { formatWaveStartTime } from '@/lib/openSas'
 import { Container, DISPLAY_TITLE, SectionHeader } from '@/components/ds'
 import { cn } from '@/lib/utils'
+import { SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import {
   describeTicketDeparture,
   splitDepartureWaves,
@@ -152,6 +153,14 @@ export function EventTicketDepartures({
         lead="Prix du moment et horaires de départ au même endroit. Paiement sécurisé, billet par email."
         flush
       />
+
+      <div className="mt-6 flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
+        <IdCard className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+        <p className="text-sm text-foreground sm:text-base">
+          <span className="font-semibold">Réservé aux {SHARED_FORMAT_RULES.minAge} ans et plus.</span> PPS de la FFA ou
+          licence FFA en cours de validité exigé. Une pièce d&apos;identité est contrôlée au retrait du dossard.
+        </p>
+      </div>
 
       {notice ? <div className="mt-6 space-y-4">{notice}</div> : null}
 

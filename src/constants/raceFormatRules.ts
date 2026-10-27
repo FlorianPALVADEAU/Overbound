@@ -28,5 +28,6 @@ export const RANKED_FORMAT_RULES = {
 
 export const SHARED_FORMAT_RULES = {
   loopKm: 2,
+  obstaclesPerLoopMin: 10,
   minAge: 18,
 } as const

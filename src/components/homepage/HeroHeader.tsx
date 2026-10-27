@@ -10,6 +10,7 @@ import { PARTNERS_DATA } from "@/datas/Partners";
 import { Container, DISPLAY_TITLE } from "@/components/ds";
 import { cn } from "@/lib/utils";
 import { useFeaturedEvent } from "@/app/api/events/featured/featuredEventQueries";
+import { PREVIOUS_EDITION } from "@/lib/seo/siteFacts";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 export const HeroHeader = () => {
@@ -121,7 +122,7 @@ export const HeroHeader = () => {
                     <div>
                         <h1 className={cn(DISPLAY_TITLE, "mb-4 text-display-xl")}>Relève le défi ultime.</h1>
                         <p className="mb-6 max-w-2xl text-lead text-foreground/90">
-                            La première course d&apos;obstacles format backyard au monde. La limite, c&apos;est toi.
+                            Une course d&apos;obstacles en boucle : 2 km à répéter, la limite, c&apos;est toi.
                         </p>
                     </div>
                     <div className="flex flex-col items-start gap-3">
@@ -129,7 +130,7 @@ export const HeroHeader = () => {
                             <Link href={registerHref}>Je m&apos;inscris maintenant</Link>
                         </Button>
                         <p className="text-sm italic text-muted-foreground">
-                            Des centaines de coureurs ont déjà testé et adoré l&apos;expérience !
+                            {PREVIOUS_EDITION.participants.charAt(0).toUpperCase() + PREVIOUS_EDITION.participants.slice(1)} à la première édition, en 2026.
                         </p>
                     </div>
                 </Container>

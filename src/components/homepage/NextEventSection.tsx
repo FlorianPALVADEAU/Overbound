@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Calendar, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
-import { getCurrentTicketPrice } from '@/lib/pricing'
+import { getFeaturedEventFacts } from '@/lib/events/featuredEventFacts'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { useParallax } from '@/hooks/useParallax'
 import { Container, DISPLAY_TITLE, Eyebrow, Pill, Section } from '@/components/ds'
@@ -17,19 +17,7 @@ export function NextEventSection() {
 
   if (isLoading || !event) return null
 
-  const tickets = event.tickets ?? []
-  const priceTiers = event.price_tiers ?? []
-  const ticketPrices = tickets
-    .map((t) => getCurrentTicketPrice(t, priceTiers))
-    .filter((p): p is number => typeof p === 'number')
-  const lowestPrice = ticketPrices.length > 0 ? Math.min(...ticketPrices) : null
-  const currency = (tickets.find((t) => t.currency)?.currency ?? 'EUR').toUpperCase()
-
-  const formattedDate = new Date(event.date).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  const facts = getFeaturedEventFacts(event)
 
   const isOnSale = isEventOpenForRegistration(event) && (data?.availableSpots ?? 0) > 0
   const registerHref = `/events/${event.slug}/register`
@@ -58,15 +46,15 @@ export function NextEventSection() {
         <div className="flex flex-wrap items-center gap-3">
           <Pill variant="glass" className="py-2">
             <Calendar className="h-4 w-4" />
-            {formattedDate}
+            {facts.dateLabel}
           </Pill>
           <Pill variant="glass" className="py-2">
             <MapPin className="h-4 w-4" />
-            {event.location}
+            {facts.location}
           </Pill>
-          {lowestPrice !== null ? (
+          {facts.priceLabel ? (
             <Pill variant="tag" className="py-2 text-sm normal-case">
-              Dès {(lowestPrice / 100).toLocaleString("fr-FR", { style: "currency", currency })}
+              {facts.priceLabel}
             </Pill>
           ) : null}
           {typeof data?.availableSpots === "number" ? (
