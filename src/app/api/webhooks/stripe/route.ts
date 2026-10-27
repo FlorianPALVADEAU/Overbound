@@ -251,6 +251,7 @@ export async function POST(request: NextRequest) {
             currency: paymentIntent.currency,
             provider: 'stripe',
             provider_order_id: paymentIntent.id,
+            cgv_version: typeof metadata.cgv_version === 'string' ? metadata.cgv_version : null,
           })
           .select()
           .single()

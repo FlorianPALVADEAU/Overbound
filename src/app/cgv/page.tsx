@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
+import { CGV_VERSION } from '@/constants/legalVersions'
 import { HEALTH_PROOF_SENTENCE } from '@/constants/participantNotice'
 import { TICKET_TRANSFER_FEE_CENTS, formatTransferFee } from '@/lib/tickets/transferPolicy'
 import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
@@ -22,7 +23,9 @@ export const metadata: Metadata = {
   }
 };
 
-const lastUpdated = '15/10/2026'
+// **IMPORTANT: any substantive edit of this page requires bumping CGV_VERSION (src/constants/legalVersions.ts)
+// in the same commit. See CLAUDE.md, section « CGV : versionnage obligatoire ».**
+const lastUpdated = CGV_VERSION.split('-').reverse().join('/')
 
 const toc = [
   { id: 'intro', label: '1. Objet et acceptation' },
@@ -50,7 +53,7 @@ export default function CGVPage() {
         size="page"
         updated={
           <>
-            Dernière mise à jour : <time dateTime="2026-10-15">{lastUpdated}</time>
+            Dernière mise à jour : <time dateTime={CGV_VERSION}>{lastUpdated}</time>
           </>
         }
       />
@@ -139,7 +142,7 @@ export default function CGVPage() {
                 <li>Des courses d'obstacles (OCR) de différents formats et niveaux</li>
                 <li>Des événements sportifs hybrides (trail, course urbaine, course nature)</li>
                 <li>Des sessions d'entraînement et workshops</li>
-                <li>Des événements spéciaux (Backyard Ultra, Kids OCR, etc.)</li>
+                <li>Des événements spéciaux (Kids OCR, etc.)</li>
               </ul>
               <p>
                 Chaque événement est décrit dans une fiche détaillée précisant : le format, la distance, le niveau de
@@ -304,13 +307,46 @@ export default function CGVPage() {
                 exécuté, ne sont pas remboursés.
               </p>
               <p>
-                <strong>9.2 Report.</strong> En cas de report à une autre date, l'inscription reste valable pour la
-                nouvelle date sans démarche. L'acheteur d'origine qui ne souhaite pas participer à la nouvelle date
-                peut demander le remboursement dans les 30 jours suivant l'annonce du report, par email à{' '}
+                <strong>9.2 Report.</strong> Overbound peut reporter l'événement à une autre date lorsque sa tenue à la
+                date prévue est impossible ou dangereuse : cas de force majeure, décision d'une autorité
+                administrative, conditions météorologiques, sanitaires ou de sécurité, indisponibilité du site ou d'un
+                prestataire essentiel à la sécurité de l'événement. Le report est annoncé par email à l'acheteur
+                d'origine et au titulaire du dossard dès que la décision est prise, au plus tard la veille de la date
+                initiale, avec le motif, la nouvelle date et les délais ci-dessous. Si aucune nouvelle date n'est fixée
+                dans les 90 jours suivant l'annonce, l'événement est considéré comme annulé et l'article 9.1
+                s'applique. En cas de report, l'inscription reste valable pour la nouvelle date sans démarche. Le titulaire du dossard qui ne peut pas participer à la nouvelle date
+                peut, au choix : (a) transférer son dossard dans les conditions de l'article 8, y compris les frais
+                de transfert qui y sont prévus ; (b) demander le remboursement dans les conditions ci-dessous.
+              </p>
+              <p>
+                <strong>9.2.1 Report pour une cause extérieure.</strong> Lorsque le report résulte d'un cas de force
+                majeure, d'une décision d'une autorité administrative ou de conditions (météo, sécurité, santé
+                publique) rendant la tenue de l'événement dangereuse ou impossible, l'acheteur d'origine peut demander
+                le remboursement de 80 % du prix du billet effectivement payé (calculé comme indiqué à l'article 10).
+                Les 20 % restants correspondent aux frais déjà engagés par Overbound et non récupérables (dossards,
+                médailles, prestations et installations réservées ou livrées). Overbound précise sur demande la nature
+                de ces frais. Les options non fournies sont remboursées ; les options personnalisées déjà fabriquées ne
+                le sont pas.
+              </p>
+              <p>
+                <strong>9.2.2 Autre report.</strong> Lorsque le report ne résulte pas d'une cause extérieure au sens
+                de l'article 9.2.1, ou lorsque la nouvelle date est postérieure de plus de 12 mois à la date initiale,
+                le remboursement porte sur 100 % du prix du billet effectivement payé.
+              </p>
+              <p>
+                <strong>9.2.3 Demande.</strong> La demande est faite par l'acheteur d'origine, par email à{' '}
                 <Link href={`mailto:${COMPANY_INFO.emails.support}`} className="text-primary underline">
                   {COMPANY_INFO.emails.support}
                 </Link>
-                .
+                , dans les 15 jours suivant l'annonce du report et au plus tard la veille de la nouvelle date.
+                Overbound en accuse réception par écrit et rembourse sur le moyen de paiement utilisé dans les 30 jours
+                suivant la demande. L'email d'annonce du report rappelle ce délai. À défaut de demande dans le délai,
+                l'inscription est maintenue pour la nouvelle date et le remboursement n'est plus dû au titre du
+                report. Les frais de transfert déjà payés ne sont pas remboursés. L'option « billet flexible » reste
+                utilisable dans les conditions de l'article 10, appréciées par rapport à la nouvelle date.
+                Le remboursement s'applique billet par billet, y compris pour une commande de plusieurs billets ou un
+                pack, et il est versé à l'acheteur d'origine. Il met fin aux avantages attachés au billet remboursé,
+                notamment les points ambassadeur.
               </p>
               <p>
                 <strong>9.3 Adaptation.</strong> Pour des raisons de sécurité, de météo ou sur demande d'une autorité,
@@ -321,7 +357,8 @@ export default function CGVPage() {
               <p>
                 <strong>9.4 Indemnisation.</strong> En cas de force majeure, aucune indemnité autre que le
                 remboursement prévu au 9.1 n'est due (article 1218 du Code civil). En dehors de ce cas, les droits du
-                consommateur à réparation s'appliquent dans les conditions du droit commun. Les participants sont
+                consommateur à réparation s'appliquent dans les conditions du droit commun. Overbound recommande de
+                privilégier des réservations de transport et d'hébergement modifiables ou remboursables. Les participants sont
                 informés par email de toute annulation, report ou adaptation significative.
               </p>
             </section>

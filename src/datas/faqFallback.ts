@@ -125,7 +125,7 @@ export const faqFallback: FAQDocument[] = [
         'Une inscription concerne une activité sportive datée : le droit de rétractation de 14 jours ne s’applique pas, et aucun remboursement n’est accordé si tu ne peux plus venir.',
       ),
       block(
-        'Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine. En cas de report, ton billet reste valable ou tu peux demander le remboursement.',
+        'Si Overbound annule l’événement, le prix du billet est remboursé à l’acheteur d’origine. En cas de report, ton billet reste valable ; si tu ne peux pas venir à la nouvelle date, tu peux le transférer ou demander un remboursement dans les conditions de l’article 9 des CGV.',
       ),
       block(
         'Avec l’option billet flexible (8,90 € par billet, à cocher à la commande), tu peux annuler depuis ton espace jusqu’à 7 jours avant l’événement, sans justificatif : le prix du billet t’est remboursé, hors frais de l’option.',

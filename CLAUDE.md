@@ -84,6 +84,14 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 - Jamais updater une table sans l'autre
 - RLS strict : SELECT = auth.uid() OR is_admin()
 
+### CGV : versionnage obligatoire
+⚠️ **TOUTE modification de fond de `src/app/cgv/page.tsx` EXIGE de changer `CGV_VERSION` dans `src/constants/legalVersions.ts` (date ISO du jour), dans le même commit.**
+- Cette version est figée dans les métadonnées du PaymentIntent puis copiée dans `orders.cgv_version` : c'est la **seule preuve** de la version des CGV acceptée par chaque acheteur. Oublier de la changer = commandes rattachées à tort à l'ancien texte.
+- **Les billets déjà vendus restent soumis à la version qu'ils ont acceptée** : ne jamais appliquer rétroactivement un nouvel article (ex. art. 9.2, remboursement 80 % en cas de report) à une commande portant une `cgv_version` antérieure.
+- La migration `supabase/migrations/20261027120000_orders_cgv_version.sql` **doit être appliquée AVANT de déployer** le code qui écrit `cgv_version`, sinon l'insert de commande échoue.
+- Une coquille ou une mise en forme ne demande pas de nouvelle version. Un changement de droits, prix, frais, délais ou remboursements, oui.
+- Toute modification de l'article 9 (report/annulation) passe par `docs/guides/legal.md` : revue d'avocat requise, voir `docs/legal/CGV-report-annulation-organisateur-2026-10.md`.
+
 ### Ambassador points awarded
 ⚠️ Points awarded via RPC `award_ambassador_points_for_order()` — ne jamais insérer directly.
 - Cherche `promotional_code_id` dans l'order

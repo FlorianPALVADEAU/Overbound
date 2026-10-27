@@ -1,5 +1,6 @@
 import type { OrderPricing } from '@/lib/orderPricing'
 import { serializeNumberList } from '@/lib/tickets/flexibleTicket'
+import { CGV_VERSION } from '@/constants/legalVersions'
 
 interface OrderMetadataArgs {
   pricing: OrderPricing
@@ -23,6 +24,7 @@ export const buildOrderMetadata = ({ pricing, currency, primaryPromoCode, ambass
   promo_codes: pricing.discounts.map((discount) => discount.code).join(','),
   promo_code: primaryPromoCode,
   utm_params: utmParams,
+  cgv_version: CGV_VERSION,
   flexible_participants: serializeNumberList(
     pricing.participants.flatMap((participant, index) => (participant.flexible ? [index] : [])),
   ),

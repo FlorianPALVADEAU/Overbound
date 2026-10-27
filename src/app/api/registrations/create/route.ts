@@ -31,6 +31,7 @@ import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
 import { readRequestAssignments, validateUpsellAssignments } from '@/lib/upsells/assignments'
+import { CGV_VERSION } from '@/constants/legalVersions'
 
 export const runtime = 'nodejs'
 
@@ -369,6 +370,8 @@ export async function POST(request: NextRequest) {
         currency: paymentIntent.currency,
         provider: isFreeOrder ? 'free' : 'stripe',
         provider_order_id: paymentIntent.id,
+        // Free orders carry no Stripe-held metadata (client-supplied, untrusted): stamp the server's version.
+        cgv_version: isFreeOrder ? CGV_VERSION : paymentIntent.metadata.cgv_version || null,
       })
       .select()
       .single()
