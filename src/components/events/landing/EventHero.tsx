@@ -32,7 +32,7 @@ interface Props {
 const COURSE_HIGHLIGHTS = [
   `Boucle de ${SHARED_FORMAT_RULES.loopKm} km`,
   `${SHARED_FORMAT_RULES.obstaclesPerLoopMin}+ obstacles par tour`,
-  'Débutants acceptés en OPEN',
+  'Débutants acceptés',
 ]
 
 const Fact = ({ label, children }: { label: string; children: React.ReactNode }) => (

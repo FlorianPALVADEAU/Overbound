@@ -18,11 +18,9 @@ import {
   UserIcon,
   LogOutIcon,
   SettingsIcon,
-  InfoIcon,
   CreditCardIcon,
   MedalIcon,
   ChevronDownIcon,
-  MapPinIcon,
   UsersIcon,
   CameraIcon,
 } from 'lucide-react'
@@ -47,23 +45,51 @@ type NavigationItemType = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
 }
 
-type DropdownItemType = {
+type NavLeaf = {
   name: string
   href: string
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  highlight?: boolean
+  /** Opens in a new tab (off-site link). */
+  external?: boolean
 }
 
-type NavLinkItem = NavigationItemType & { type: 'link' }
-type NavDropdownItem = {
-  type: 'dropdown'
+type NavGroup = {
   name: string
-  href?: string
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  items: DropdownItemType[]
+  items: NavLeaf[]
 }
 
-type NavItem = NavLinkItem | NavDropdownItem
+type NavItem = (NavLeaf & { type: 'link' }) | (NavGroup & { type: 'dropdown' })
+
+function NavSubLink({
+  item,
+  current,
+  className,
+  onNavigate,
+}: {
+  item: NavLeaf
+  current?: 'page'
+  className: string
+  onNavigate?: () => void
+}) {
+  if (item.external) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className={className}
+        onClick={onNavigate}
+      >
+        <CameraIcon className="h-4 w-4" aria-hidden="true" />
+        {item.name}
+      </a>
+    )
+  }
+  return (
+    <Link href={item.href} aria-current={current} className={className} onClick={onNavigate}>
+      {item.name}
+    </Link>
+  )
+}
 
 
 
@@ -114,17 +140,36 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     router.refresh()
   }
 
-  const aboutDropdownItems: DropdownItemType[] = [
-    { name: 'Notre histoire', href: '/about/our-story', icon: MedalIcon },
-    { name: 'Blog', href: '/blog', icon: InfoIcon },
-    { name: 'FAQ', href: '/about/faq', icon: MapPinIcon },
-    { name: 'Partenaires & presse', href: '/about/partners', icon: MapPinIcon },
-    { name: 'Contact', href: '/contact', icon: MapPinIcon },
+  const navItems: NavItem[] = [
+    { type: 'link', name: 'Événement', href: featuredEventHref },
+    { type: 'link', name: 'Devenir bénévole', href: '/volunteers' },
+    {
+      type: 'dropdown',
+      name: 'La course',
+      items: [
+        { name: 'Formats', href: '/events/formats' },
+        { name: 'Obstacles', href: '/obstacles' },
+        { name: 'Bootcamps', href: '/bootcamps' },
+        ...(featuredEvent?.photos_url
+          ? [{ name: 'Photos de l\u2019édition', href: featuredEvent.photos_url, external: true }]
+          : []),
+      ],
+    },
+    {
+      type: 'dropdown',
+      name: 'À propos',
+      items: [
+        { name: 'Notre histoire', href: '/about/our-story' },
+        { name: 'Blog', href: '/blog' },
+        { name: 'Partenaires & presse', href: '/about/partners' },
+        { name: 'FAQ', href: '/about/faq' },
+        { name: 'Contact', href: '/contact' },
+      ],
+    },
   ]
 
-  const navItems: NavItem[] = [
-    { type: 'dropdown', name: 'À propos', icon: InfoIcon, items: aboutDropdownItems },
-  ]
+  const isGroupActive = (group: NavGroup) =>
+    group.items.some((subItem) => !subItem.external && isActiveNavHref(pathname, subItem.href))
 
   const rawRoleCandidates = [
     profile?.role,
@@ -223,10 +268,10 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     >
       {/* Same content width and gutters as every page section (design system) */}
       <div className={containerClass()}>
-        <div className="w-full relative flex h-14 sm:h-16 items-center justify-between">
+        <div className="w-full relative grid h-14 sm:h-16 grid-cols-[1fr_auto_1fr] grid-rows-1 items-stretch">
           
           {/* Logo - responsive text visibility */}
-          <div className="flex items-between z-10 py-2 pr-2">
+          <div className="flex items-center justify-self-start z-10 py-2 pr-2">
             {/* py-2 pr-2 on the wrapping div above (not negative-margined,
                 since the logo sits flush against the header's left edge
                 and can't grow further left) plus p-2 here grows the tap
@@ -245,61 +290,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           </div>
 
           {/* In the flex flow (not absolute) so the nav can never slide under the logo or the actions */}
-          <div className="flex h-full min-w-0 flex-1 items-center justify-center">
+          <div className="flex h-full min-w-0 items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
             <nav aria-label="Navigation principale" className="hidden h-full items-center space-x-4 whitespace-nowrap align-center xl:space-x-8 lg:flex">
-              <Link
-                href={featuredEventHref}
-                aria-current={currentFor(featuredEventHref)}
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
-              >
-                Événement
-              </Link>
-
-              <Link
-                href="/events/formats"
-                aria-current={currentFor("/events/formats")}
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
-              >
-                Formats
-              </Link>
-
-              <Link
-                href="/obstacles"
-                aria-current={currentFor("/obstacles")}
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
-              >
-                Obstacles
-              </Link>
-
-              {featuredEvent?.photos_url ? (
-                <a
-                  href={featuredEvent.photos_url}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="cursor-pointer text-amber-500 underline underline-offset-5 flex items-center gap-1.5 text-sm uppercase font-medium transition-colors hover:text-primary xl:text-base"
-                >
-                  <CameraIcon className="h-4 w-4" />
-                  photos édition
-                </a>
-              ) : null}
-
-              <Link
-                href="/volunteers"
-                aria-current={currentFor("/volunteers")}
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
-              >
-                Devenir bénévole
-              </Link>
-
-              <Link
-                href="/bootcamps"
-                aria-current={currentFor("/bootcamps")}
-                className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
-              >
-                Bootcamps
-              </Link>
-
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
                   <div
@@ -315,7 +308,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="cursor-pointer outline-none flex h-full items-center uppercase text-sm font-medium text-foreground hover:text-primary xl:text-base group"
+                          className={`cursor-pointer outline-none flex h-full items-center uppercase text-sm font-medium hover:text-primary xl:text-base group ${
+                            isGroupActive(item) ? 'text-primary' : 'text-foreground'
+                          }`}
                         >
                           {item.name}
                           <ChevronDownIcon className="ml-1 h-3 w-3 transition-transform group-hover:rotate-180" />
@@ -325,13 +320,11 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                         <div className="py-2">
                           {item.items.map((subItem) => (
                             <DropdownMenuItem key={subItem.name} asChild>
-                              <Link
-                                href={subItem.href}
-                                aria-current={currentFor(subItem.href)}
-                                className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground aria-[current=page]:text-primary"
-                              >
-                                <span className="font-medium">{subItem.name}</span>
-                              </Link>
+                              <NavSubLink
+                                item={subItem}
+                                current={currentFor(subItem.href)}
+                                className="flex items-center gap-3 rounded-md px-4 pr-6 py-2 text-sm font-medium transition-colors outline-none cursor-pointer text-muted-foreground hover:text-foreground aria-[current=page]:text-primary"
+                              />
                             </DropdownMenuItem>
                           ))}
                         </div>
@@ -354,7 +347,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center justify-self-end space-x-2 sm:space-x-4">
             {isLoading ? (
               // The centred nav depends on this width: while the session loads,
               // the guest buttons hold their place, hidden and out of the tab
@@ -452,46 +445,6 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         {mobileMenuOpen && (
           <nav id="mobile-menu" aria-label="Menu principal" className="absolute left-0 z-10 w-full border-t border-border bg-background pb-4 pt-4 backdrop-blur lg:hidden">
             <div className="space-y-1">
-              <Link
-                href={featuredEventHref}
-                aria-current={currentFor(featuredEventHref)}
-                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
-                onClick={closeMobileMenu}
-              >
-                Événement
-              </Link>
-
-              <Link
-                href="/events/formats"
-                aria-current={currentFor("/events/formats")}
-                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
-                onClick={closeMobileMenu}
-              >
-                Formats
-              </Link>
-
-              <Link
-                href="/obstacles"
-                aria-current={currentFor("/obstacles")}
-                className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
-                onClick={closeMobileMenu}
-              >
-                Obstacles
-              </Link>
-
-              {featuredEvent?.photos_url ? (
-                <a
-                  href={featuredEvent.photos_url}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="flex min-h-11 w-full items-center gap-2 px-6 py-3 text-base font-semibold text-amber-500 underline underline-offset-4 transition-colors hover:text-primary"
-                  onClick={closeMobileMenu}
-                >
-                  <CameraIcon className="h-4 w-4" />
-                  Photos édition
-                </a>
-              ) : null}
-
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
                   <div key={item.name}>
@@ -501,9 +454,9 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       onClick={() =>
                         setMobileDropdownOpen((current) => (current === item.name ? null : item.name))
                       }
-                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
+                      className="flex min-h-11 w-full items-center justify-between px-6 py-3 text-left text-base font-semibold text-foreground transition-colors hover:text-primary"
                     >
-                      <span>{item.name}</span>
+                      <span className={isGroupActive(item) ? 'text-primary' : undefined}>{item.name}</span>
                       <ChevronDownIcon
                         className={`h-4 w-4 transition-transform ${
                           mobileDropdownOpen === item.name ? 'rotate-180' : ''
@@ -513,15 +466,13 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     {mobileDropdownOpen === item.name ? (
                       <div className="space-y-1 px-6 pb-3 pt-1">
                         {item.items.map((subItem) => (
-                          <Link
+                          <NavSubLink
                             key={subItem.name}
-                            href={subItem.href}
-                            aria-current={currentFor(subItem.href)}
-                            className="flex min-h-11 w-full items-center px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-[current=page]:text-primary"
-                            onClick={closeMobileMenu}
-                          >
-                            {subItem.name}
-                          </Link>
+                            item={subItem}
+                            current={currentFor(subItem.href)}
+                            onNavigate={closeMobileMenu}
+                            className="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-[current=page]:text-primary"
+                          />
                         ))}
                       </div>
                     ) : null}
@@ -538,26 +489,6 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                   </Link>
                 ),
               )}
-
-              {/* Lien Devenir bénévole mobile */}
-              <Link
-                href="/volunteers"
-                aria-current={currentFor("/volunteers")}
-                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
-                onClick={closeMobileMenu}
-              >
-                Devenir bénévole
-              </Link>
-
-              {/* Lien Bootcamps mobile */}
-              <Link
-                href="/bootcamps"
-                aria-current={currentFor("/bootcamps")}
-                className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
-                onClick={closeMobileMenu}
-              >
-                Bootcamps
-              </Link>
             </div>
 
             {/* Boutons CTA sur mobile */}
