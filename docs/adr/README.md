@@ -16,3 +16,4 @@ Template: `docs/templates/adr-template.md`
 - [ADR-0003 - Resend for transactional outbound email](./ADR-0003-resend-transactional-email.md)
 - [ADR-0004 - Architecture Reality vs Hexagonal Theory](./ADR-0004-architecture-reality-vs-hexagonal-theory.md)
 - [ADR-0005 - Design system tokenisé et garde-fou en cliquet](./ADR-0005-design-system.md)
+- [ADR-0006 - Emails marketing via Amazon SES, audience portée par Supabase](./ADR-0006-marketing-email-ses-supabase-audience.md)

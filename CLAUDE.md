@@ -11,7 +11,7 @@ Un audit complet du code (architecture, sécurité, RGPD, logique métier, tests
 - Si le contexte est insuffisant, demande les informations manquantes plutôt que de fabriquer une réponse.
 - Ne valide pas une mauvaise approche pour faire plaisir — sois direct et donne les raisons.
 - Préfère un refus motivé à une action approximative.
-- **Génération d'email HTML** : lire `docs/guides/email-conventions.md` **avant** de produire le moindre code. Ce fichier est la source de vérité pour le design, la structure et le contenu. Les emails sont envoyés via **Resend**.
+- **Génération d'email HTML** : lire `docs/guides/email-conventions.md` **avant** de produire le moindre code. Ce fichier est la source de vérité pour le design, la structure et le contenu. Les emails **transactionnels** (billets, reçus) sont envoyés via **Resend** ; les emails **marketing** via **Amazon SES** (voir [ADR-0006](docs/adr/ADR-0006-marketing-email-ses-supabase-audience.md)). Le footer `{{{RESEND_UNSUBSCRIBE_URL}}}` du guide ne vaut que pour Resend ; un mail marketing SES porte le lien généré par `generateMarketingUnsubscribeUrl`.
 - **UI du site (pages, composants visuels)** : lire `docs/design/design-system.md` **avant** d'écrire ou de modifier le moindre composant visuel. N'utiliser que les tokens de `src/app/globals.css` et les primitives de `src/components/ds/` (`Section`, `Container`, `SectionHeader`, `Eyebrow`, `StatRow`, `Pill`) ainsi que les variants `Button`/`Card`. Interdits : hex en classe, `text-gray-*`/`neutral`/`zinc`, `font-black`, `tracking-[…]`, `text-[Npx]`, `dark:`, `max-w-6xl`. `npm run lint:design` bloque toute nouvelle violation. Référence visuelle : route `/design`.
 
 ## Stack
@@ -19,7 +19,7 @@ Un audit complet du code (architecture, sécurité, RGPD, logique métier, tests
 - Next.js App Router, TypeScript strict
 - Tailwind v4 + shadcn/ui, design system maison (`src/components/ds`, tokens dans `globals.css`)
 - Supabase (auth, DB, RLS, storage)
-- Resend (email), OpenAI (IA via port interchangeable)
+- Resend (email transactionnel), Amazon SES (email marketing), OpenAI (IA via port interchangeable)
 
 ## Architecture
 
@@ -51,7 +51,7 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 | **Wave Assignment** | 24 vagues OPEN (08h-11h50) vs départ unique RANKED (15h). Format detection via noms ticket/race. | src/lib/openSas.ts, src/lib/slotAssignment.ts, src/app/api/registrations/create/route.ts |
 | **Group Membership** | Packs entreprise (captain + members) avec synchronisation d'ancre de vague. Anchor init via creator/member_join/admin. | src/lib/groups/*, migrations/20260416_groups.sql, migrations/20260512_groups_anchor_source.sql |
 | **Ambassador Program** | Points (1pt OPEN, 2pts RANKED), 10 reward levels, extra tickets. Multi-promo codes. | src/lib/ambassadors/program.ts, api/ambassadors/* |
-| **Email System** | 4 phases : unsubscribe → distribution lists → granular prefs → admin interface. RLS strict. | src/lib/email/*, api/admin/distribution-lists/* |
+| **Email System** | 4 phases : unsubscribe → distribution lists → granular prefs → admin interface. RLS strict. Audience marketing = Supabase (`resolveAudience`), envoi marketing = SES via `runCampaign`, transactionnel = Resend. | src/lib/email/*, api/admin/distribution-lists/* |
 | **Registration State** | État parallèles : claim_status + approval_status + checked_in. Workflow complexe d'approbation. | src/types/Registration.ts, api/checkin/* |
 | **Pricing & Tiers** | Prix dynamiques par tier (discount %), auto-activation. Promo codes (cumulative rules). | src/lib/pricing.ts, src/types/EventPriceTier.ts |
 

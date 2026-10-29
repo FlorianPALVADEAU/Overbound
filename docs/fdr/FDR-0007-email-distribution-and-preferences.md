@@ -19,6 +19,23 @@
 
 Les exemples SQL de cette FDR restent une spécification historique; ils ne prouvent pas une migration appliquée.
 
+## Amendement — 2026-10-29 (ADR-0006)
+
+La décision « Supabase est le référentiel, Resend une projection » est maintenant appliquée dans le code, et l'envoi marketing quitte Resend pour Amazon SES. Voir [ADR-0006](../adr/ADR-0006-marketing-email-ses-supabase-audience.md).
+
+| Élément | Statut | Détail |
+|---|---|---|
+| Audience lue depuis Supabase | **fait localement** | `resolveAudience()` (`src/lib/email/audience.ts`) : abonnés `list_subscriptions` + abonnés sans compte, moins `email_suppressions`, moins fréquence de digest incompatible, dédupliqué par email en minuscules. Les routes d'abonnement et de préférences n'écrasent plus la base avec les topics Resend. |
+| Resend sans contacts | **fait localement** | `EMAIL_CONTACTS_SYNC=off` neutralise les appels contacts, segments et topics. Le fichier `resendAudiences.ts` reste jusqu'à la contraction. |
+| Envoi marketing | **fait localement** | `runCampaign()` + transport SES (`MARKETING_TRANSPORT=ses`). Registre `marketing_sends`, échec fermé, reprise par clé de campagne. |
+| Bounces et plaintes | **fait, vérifié** | Webhook SNS `/api/webhooks/ses`, table `email_suppressions` (migration appliquée). Une plainte désinscrit aussi. |
+| Migration `marketing_sends` | **à appliquer** | Écrite, non appliquée. À appliquer avant le déploiement du code qui l'écrit. |
+| Désinscrits Resend absents de Supabase | **à faire (données)** | 33 adresses désinscrites dans Resend étaient encore abonnées dans Supabase le 2026-10-29. À réconcilier avant le premier envoi SES. |
+| Slugs de listes | **à faire** | Écart entre base et code : `volunteers-recruitment` / `volunteers-opportunities`, `partners-offers` / `partner-offers`. |
+| Segmentation par événement, pagination, export serveur | **à faire** | Inchangé par rapport au tableau ci-dessus. |
+
+Le trigger `sync_notification_prefs_to_lists` reste la seule passerelle entre `notification_preferences` et `list_subscriptions` : le code applicatif n'écrit pas l'un sans l'autre.
+
 ## Decision
 
 ### Décisions de reprise — 2026-09-21

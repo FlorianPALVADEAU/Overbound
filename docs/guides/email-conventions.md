@@ -298,7 +298,8 @@ Trois types utilisés :
 </tr>
 ```
 
-- `{{{RESEND_UNSUBSCRIBE_URL}}}` : variable triple accolades Resend — **ne jamais omettre**
+- `{{{RESEND_UNSUBSCRIBE_URL}}}` : variable triple accolades Resend — **ne jamais omettre** dans un email envoyé par Resend (diffusions Resend, modèles Resend).
+- **Email marketing envoyé par Amazon SES (ADR-0006)** : la variable Resend n'est pas résolue. Le lien de désinscription est généré par `generateMarketingUnsubscribeUrl({ email, userId })` et passé au modèle (voir `EventOpeningEmail`, prop `unsubscribeUrl`). Le lien reste obligatoire, avec le texte « Se désinscrire ».
 - Contact email : `contact@overbound-race.com`
 - Nom de marque : `Overbound` (sans accent)
 - Infos événement : date + lieu toujours présents si l'email concerne l'Ultra Arena 2026

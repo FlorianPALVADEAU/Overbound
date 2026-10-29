@@ -1,7 +1,13 @@
 # Implementation Guide: Email Distribution & Preferences
 
 **For**: Developers implementing email features  
-**Related**: [FDR-0007](../fdr/FDR-0007-email-distribution-and-preferences.md)
+**Related**: [FDR-0007](../fdr/FDR-0007-email-distribution-and-preferences.md), [ADR-0006](../adr/ADR-0006-marketing-email-ses-supabase-audience.md)
+
+> **2026-10-29 — lire avant le reste.** L'audience marketing vient de Supabase (`resolveAudience()`,
+> `src/lib/email/audience.ts`), l'envoi marketing passe par `runCampaign()` et le transport choisi par
+> `MARKETING_TRANSPORT` (Amazon SES ou Resend). Resend ne sert plus que pour le transactionnel. Les
+> sections « Resend Segments », « Include in Email (Resend Template) » et les requêtes sur `email_logs`
+> ci-dessous décrivent l'ancien chemin ; la section « Envoi marketing (SES + Supabase) » les remplace.
 
 ---
 
@@ -25,6 +31,63 @@
 2. Enable/disable email types
 3. Set digest frequency (immédiat, quotidien, hebdo, jamais)
 4. Saved automatically
+
+---
+
+## Envoi marketing (SES + Supabase)
+
+### Chemin d'un envoi
+
+1. `resolveAudience({ listIds | slugs })` retourne les destinataires uniques en minuscules : abonnés
+   avec compte et sans compte, sans les adresses de `email_suppressions`.
+2. `runCampaign({ campaignKey, recipients, send, provider })` (`src/lib/email/campaign.ts`) envoie
+   par paquets de 14 par seconde, avec un budget de 45 s.
+3. `send` appelle `deliverMarketingMail()` (`src/lib/email/transport/`), qui choisit SES ou Resend.
+4. Chaque résultat est écrit dans `marketing_sends` (`campaign_key`, `email`). Le rapport retourné
+   (`sent`, `failed`, `alreadyDone`, `suppressed`, `remaining`, `ledgerErrors`, `aborted`) est renvoyé à l'admin.
+
+### Règles à respecter
+
+- Un envoi de masse passe toujours par `runCampaign()`. Ne pas appeler `emails.send` en boucle.
+- `remaining > 0` : le budget est épuisé. Relancer la même campagne ; les adresses `sent` sont sautées.
+- `aborted` non nul : deux paquets entiers ont échoué (mauvaise configuration, panne). Corriger, puis relancer.
+- La clé de campagne dérive du contenu : mêmes listes et même contenu égalent une campagne. Pour renvoyer, changer le sujet.
+- Tout mail marketing contient un lien `generateMarketingUnsubscribeUrl({ email, userId })` et les en-têtes `List-Unsubscribe`.
+- Le transactionnel (`src/lib/email.ts`, billets, reçus, `eventOpenings.ts`) reste sur Resend. Ne pas le router vers SES.
+
+### Variables d'environnement
+
+| Variable | Rôle |
+|---|---|
+| `MARKETING_TRANSPORT` | `ses` pour SES ; toute autre valeur garde Resend (défaut) |
+| `AWS_REGION`, `SES_FROM_MARKETING`, `SES_CONFIGURATION_SET` | Requises pour que SES soit configuré ; clés AWS dans Vercel uniquement |
+| `RESEND_API_KEY` | Transactionnel, et marketing si `MARKETING_TRANSPORT` n'est pas `ses` |
+| `EMAIL_CONTACTS_SYNC` | `off` neutralise les appels Resend de contacts, segments et topics |
+
+### Bounces et plaintes
+
+Le webhook `POST /api/webhooks/ses` (SNS, signature vérifiée) alimente `email_suppressions`. Une plainte
+désinscrit aussi l'utilisateur. Test : envoyer à `bounce@simulator.amazonses.com` et
+`complaint@simulator.amazonses.com`, puis vérifier la suppression.
+
+### Montée en charge
+
+Réputation neuve : 50, 200, 500, puis toute la base, un palier par jour. Arrêter si bounce > 2 % ou
+plainte > 0,1 %. Ne jamais envoyer à toute la base le premier jour.
+
+### Requêtes utiles
+
+```sql
+-- Résultat d'une campagne
+SELECT status, COUNT(*) FROM marketing_sends WHERE campaign_key = 'CAMPAIGN_KEY' GROUP BY status;
+
+-- Échecs d'une campagne
+SELECT email, status, error, attempts FROM marketing_sends
+WHERE campaign_key = 'CAMPAIGN_KEY' AND status <> 'sent';
+
+-- Adresses supprimées par raison
+SELECT reason, COUNT(*) FROM email_suppressions GROUP BY reason;
+```
 
 ---
 

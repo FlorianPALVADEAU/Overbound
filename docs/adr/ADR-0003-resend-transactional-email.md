@@ -1,7 +1,11 @@
 # ADR-0003 - Resend for transactional outbound email
 
-- Statut: Accepted
+- Statut: Accepted (partiellement supersédé par [ADR-0006](./ADR-0006-marketing-email-ses-supabase-audience.md))
 - Date: 2026-04-05
+
+> **2026-10-29** : Resend reste le fournisseur des emails **transactionnels** uniquement (billets,
+> reçus, ouverture d'inscriptions individuelle). Les envois **marketing** passent par Amazon SES et
+> l'audience vit dans Supabase, voir ADR-0006.
 
 ## Contexte
 
