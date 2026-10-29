@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import {
-  getResendAudienceIdForSlug,
-  isResendContactSubscribed,
   mapSlugsToAudienceIds,
   subscribeResendContactToAudiences,
   unsubscribeResendContactFromAudiences,
@@ -56,33 +54,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Create a map of list_id => subscription status (legacy fallback)
+    // Supabase is the source of truth for the subscription state
     const subscriptionMap = new Map(
       subscriptions?.map((sub) => [sub.list_id, Boolean(sub.subscribed)]) || []
     )
-
-    // Prefer Resend status when audience mapping exists
-    if (user.email && lists && lists.length > 0) {
-      await Promise.all(
-        lists.map(async (list) => {
-          const audienceId = getResendAudienceIdForSlug(list.slug)
-          if (!audienceId) return
-
-          try {
-            const subscribed = await isResendContactSubscribed({
-              email: user.email!,
-              audienceId,
-            })
-            subscriptionMap.set(list.id, subscribed)
-          } catch (error) {
-            console.warn('[subscriptions] failed to read Resend status', {
-              listSlug: list.slug,
-              error: error instanceof Error ? error.message : String(error),
-            })
-          }
-        }),
-      )
-    }
 
     // Map lists with subscription status
     const listsWithStatus = lists?.map((list) => ({

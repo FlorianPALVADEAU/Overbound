@@ -40,7 +40,7 @@ export async function recordSuppression(params: {
     const { error: unsubscribeError } = await admin
       .from('list_subscriptions')
       .update({ subscribed: false, unsubscribed_at: new Date().toISOString() })
-      .ilike('email', email)
+      .eq('email', email)
 
     if (unsubscribeError) {
       return { ok: false, message: unsubscribeError.message }

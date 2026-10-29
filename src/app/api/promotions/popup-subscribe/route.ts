@@ -132,35 +132,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { audienceIds, missingSlugs } = mapSlugsToAudienceIds(marketingLists.map((list) => list.slug))
-    if (audienceIds.length === 0) {
-      return NextResponse.json(
-        { error: 'Aucune audience Resend configurée pour les listes marketing.' },
-        { status: 500 }
-      )
-    }
-
-    if (missingSlugs.length > 0) {
-      console.warn('[popup-subscribe] missing Resend audience mapping for slugs', missingSlugs)
-    }
-
-    await subscribeResendContactToAudiences({
-      email,
-      fullName,
-      audienceIds,
-      properties: {
-        source: `popup-${validatedData.promotion_id}`,
-      },
-    })
-
-    await markResendContactAsUnregistered({
-      email,
-      fullName,
-      properties: {
-        source: `popup-${validatedData.promotion_id}`,
-      },
-    })
-
     // Vérifier quelles subscriptions existent déjà (utiliser admin pour contourner RLS)
     const { data: existingSubscriptionsData } = await admin
       .from('list_subscriptions')
@@ -197,6 +168,33 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
+    }
+
+    // Resend est une projection facultative (EMAIL_CONTACTS_SYNC) : un échec ne doit pas annuler l'inscription.
+    try {
+      const { audienceIds, missingSlugs } = mapSlugsToAudienceIds(marketingLists.map((list) => list.slug))
+      if (missingSlugs.length > 0) {
+        console.warn('[popup-subscribe] missing Resend audience mapping for slugs', missingSlugs)
+      }
+
+      await subscribeResendContactToAudiences({
+        email,
+        fullName,
+        audienceIds,
+        properties: {
+          source: `popup-${validatedData.promotion_id}`,
+        },
+      })
+
+      await markResendContactAsUnregistered({
+        email,
+        fullName,
+        properties: {
+          source: `popup-${validatedData.promotion_id}`,
+        },
+      })
+    } catch (syncError) {
+      console.error('[popup-subscribe] resend sync failed', syncError)
     }
 
     // Envoyer l'email de confirmation (même si déjà abonné, pour confirmer l'action)

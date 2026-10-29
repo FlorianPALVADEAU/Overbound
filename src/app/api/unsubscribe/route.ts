@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import { validateUnsubscribeToken } from '@/lib/email/unsubscribe'
 import {
   DEFAULT_MARKETING_LIST_SLUGS,
@@ -51,8 +51,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create Supabase client
-    const supabase = await createClient()
+    // The signed token is the credential: the visitor is usually logged out, so row-level
+    // security would silently update nothing. Use the service client.
+    const supabase = supabaseAdmin()
 
     // Verify user exists if userId is provided
     let profile = null
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       if (payload.userId) {
         query = query.eq('user_id', payload.userId)
       } else {
-        query = query.eq('email', payload.email)
+        query = query.eq('email', payload.email.trim().toLowerCase())
       }
 
       const { error: listError } = await query
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
       if (payload.userId) {
         allListsQuery = allListsQuery.eq('user_id', payload.userId)
       } else {
-        allListsQuery = allListsQuery.eq('email', payload.email)
+        allListsQuery = allListsQuery.eq('email', payload.email.trim().toLowerCase())
       }
 
       const { error: allListsError } = await allListsQuery
@@ -251,8 +252,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Create Supabase client
-    const supabase = await createClient()
+    // The signed token is the credential: the visitor is usually logged out, so row-level
+    // security would silently update nothing. Use the service client.
+    const supabase = supabaseAdmin()
 
     // If listId is provided, unsubscribe from that specific list
     if (payload.listId) {
@@ -269,7 +271,7 @@ export async function GET(request: NextRequest) {
       if (payload.userId) {
         query = query.eq('user_id', payload.userId)
       } else {
-        query = query.eq('email', payload.email)
+        query = query.eq('email', payload.email.trim().toLowerCase())
       }
 
       const { error: listError } = await query
@@ -322,7 +324,7 @@ export async function GET(request: NextRequest) {
       if (payload.userId) {
         allListsQuery = allListsQuery.eq('user_id', payload.userId)
       } else {
-        allListsQuery = allListsQuery.eq('email', payload.email)
+        allListsQuery = allListsQuery.eq('email', payload.email.trim().toLowerCase())
       }
 
       const { error: allListsError } = await allListsQuery

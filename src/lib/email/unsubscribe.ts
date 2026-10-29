@@ -112,6 +112,21 @@ export function generateUnsubscribeUrl(
 }
 
 /**
+ * Unsubscribe URL for any marketing recipient, with or without an account.
+ */
+export function generateMarketingUnsubscribeUrl(params: {
+  email: string
+  userId?: string | null
+}): string {
+  const token = generateUnsubscribeToken({
+    email: params.email.trim().toLowerCase(),
+    ...(params.userId ? { userId: params.userId } : {}),
+  })
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return `${baseUrl}/unsubscribe/${token}`
+}
+
+/**
  * Generate a preferences URL for an authenticated user
  */
 export function generatePreferencesUrl(): string {

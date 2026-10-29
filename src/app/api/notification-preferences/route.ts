@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import type { NotificationPreferences, UpdateNotificationPreferencesData } from '@/types/NotificationPreferences'
 import {
-  getResendTopicPreferences,
   mapSlugsToAudienceIds,
   syncResendContactTopics,
   subscribeResendContactToAudiences,
@@ -91,47 +90,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let preferences = await ensureNotificationPreferences(admin, user.id)
-
-    // Source of truth for marketing toggles is Resend topics.
-    if (user.email) {
-      const resendTopicPrefs = await getResendTopicPreferences(user.email)
-      if (resendTopicPrefs) {
-        const nextValues = {
-          events_announcements: resendTopicPrefs.events_announcements ?? preferences.events_announcements,
-          price_alerts: resendTopicPrefs.price_alerts ?? preferences.price_alerts,
-          news_blog: resendTopicPrefs.news_blog ?? preferences.news_blog,
-          volunteers_opportunities:
-            resendTopicPrefs.volunteers_opportunities ?? preferences.volunteers_opportunities,
-          partner_offers: resendTopicPrefs.partner_offers ?? preferences.partner_offers,
-        }
-
-        const changed =
-          nextValues.events_announcements !== preferences.events_announcements ||
-          nextValues.price_alerts !== preferences.price_alerts ||
-          nextValues.news_blog !== preferences.news_blog ||
-          nextValues.volunteers_opportunities !== preferences.volunteers_opportunities ||
-          nextValues.partner_offers !== preferences.partner_offers
-
-        if (changed) {
-          const { data: synced } = await admin
-            .from('notification_preferences')
-            .update(nextValues)
-            .eq('user_id', user.id)
-            .select()
-            .single()
-
-          if (synced) {
-            preferences = synced as NotificationPreferences
-          } else {
-            preferences = {
-              ...preferences,
-              ...nextValues,
-            }
-          }
-        }
-      }
-    }
+    const preferences = await ensureNotificationPreferences(admin, user.id)
 
     return NextResponse.json(preferences)
   } catch (error) {

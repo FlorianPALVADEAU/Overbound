@@ -25,6 +25,8 @@ import LuckyWheelReminderEmail from '@/emails/LuckyWheelReminderEmail'
 import { TransferHandedOverEmail, TransferReceivedEmail } from '@/emails/TicketTransferEmail'
 import { FlexibleRefundEmail } from '@/emails/TicketRefundEmail'
 import { renderEmail } from '@/lib/email/render'
+import { deliverMarketingMail, type SendResult } from '@/lib/email/transport'
+import { generateMarketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
@@ -239,27 +241,15 @@ export async function sendNewEventAnnouncementEmail(params: {
   eventLocation: string
   eventUrl: string
   highlight?: string | null
-}) {
-  const { generateUnsubscribeUrl } = await import('@/lib/email/unsubscribe')
-  const unsubscribeUrl = params.userId
-    ? generateUnsubscribeUrl(params.userId, params.to)
-    : undefined
+}): Promise<SendResult> {
+  const unsubscribeUrl = generateMarketingUnsubscribeUrl({ email: params.to, userId: params.userId })
+  const html = await renderEmail(NewEventAnnouncementEmail({ ...params, unsubscribeUrl }))
 
-  const html = await renderEmail(
-    NewEventAnnouncementEmail({ ...params, unsubscribeUrl })
-  )
-
-  return resend.emails.send({
-    from: UNFORMAL_FROM,
+  return deliverMarketingMail({
     to: params.to,
     subject: `Nouveau : ${params.eventTitle}`,
     html,
-    headers: unsubscribeUrl
-      ? {
-          'List-Unsubscribe': `<${unsubscribeUrl}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        }
-      : undefined,
+    unsubscribeUrl,
   })
 }
 
@@ -306,27 +296,15 @@ export async function sendPriceChangeReminderEmail(params: {
   eventUrl: string
   currentPriceLabel: string
   nextPriceLabel?: string | null
-}) {
-  const { generateUnsubscribeUrl } = await import('@/lib/email/unsubscribe')
-  const unsubscribeUrl = params.userId
-    ? generateUnsubscribeUrl(params.userId, params.to)
-    : undefined
+}): Promise<SendResult> {
+  const unsubscribeUrl = generateMarketingUnsubscribeUrl({ email: params.to, userId: params.userId })
+  const html = await renderEmail(PriceChangeReminderEmail({ ...params, unsubscribeUrl }))
 
-  const html = await renderEmail(
-    PriceChangeReminderEmail({ ...params, unsubscribeUrl })
-  )
-
-  return resend.emails.send({
-    from: UNFORMAL_FROM,
+  return deliverMarketingMail({
     to: params.to,
     subject: `Dernier rappel — tarif ${params.eventTitle}`,
     html,
-    headers: unsubscribeUrl
-      ? {
-          'List-Unsubscribe': `<${unsubscribeUrl}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        }
-      : undefined,
+    unsubscribeUrl,
   })
 }
 
@@ -340,27 +318,15 @@ export async function sendPromoCampaignEmail(params: {
   ctaUrl: string
   promoCode?: string | null
   promoDetails?: string | null
-}) {
-  const { generateUnsubscribeUrl } = await import('@/lib/email/unsubscribe')
-  const unsubscribeUrl = params.userId
-    ? generateUnsubscribeUrl(params.userId, params.to)
-    : undefined
+}): Promise<SendResult> {
+  const unsubscribeUrl = generateMarketingUnsubscribeUrl({ email: params.to, userId: params.userId })
+  const html = await renderEmail(PromoCampaignEmail({ ...params, unsubscribeUrl }))
 
-  const html = await renderEmail(
-    PromoCampaignEmail({ ...params, unsubscribeUrl })
-  )
-
-  return resend.emails.send({
-    from: UNFORMAL_FROM,
+  return deliverMarketingMail({
     to: params.to,
     subject: params.title,
     html,
-    headers: unsubscribeUrl
-      ? {
-          'List-Unsubscribe': `<${unsubscribeUrl}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        }
-      : undefined,
+    unsubscribeUrl,
   })
 }
 

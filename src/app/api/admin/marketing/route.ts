@@ -1,3 +1,4 @@
+import type { CampaignReport } from '@/lib/email/campaign'
 import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -52,9 +53,11 @@ const handlePost = async (request: NextRequest) => {
       })),
     )
 
+    let report: CampaignReport | null = null
+
     switch (type) {
       case 'new_event':
-        await dispatchNewEventAnnouncement({
+        report = await dispatchNewEventAnnouncement({
           recipients: normalizedRecipients,
           eventTitle: String(payload.eventTitle ?? 'Nouvel événement'),
           eventDate: String(payload.eventDate ?? ''),
@@ -64,7 +67,7 @@ const handlePost = async (request: NextRequest) => {
         })
         break
       case 'price_change':
-        await dispatchPriceChangeReminder({
+        report = await dispatchPriceChangeReminder({
           recipients: normalizedRecipients,
           eventTitle: String(payload.eventTitle ?? 'Événement'),
           eventDate: String(payload.eventDate ?? ''),
@@ -75,7 +78,7 @@ const handlePost = async (request: NextRequest) => {
         })
         break
       case 'promo':
-        await dispatchPromoCampaign({
+        report = await dispatchPromoCampaign({
           recipients: normalizedRecipients,
           title: String(payload.title ?? 'Offre OverBound'),
           message: String(payload.message ?? ''),
@@ -89,7 +92,20 @@ const handlePost = async (request: NextRequest) => {
         return NextResponse.json({ error: 'Type de campagne inconnu.' }, { status: 400 })
     }
 
-    return NextResponse.json({ success: true, recipients: normalizedRecipients.length })
+    if (!report) {
+      return NextResponse.json({ error: 'Transport marketing non configuré.' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: report.failed === 0 && report.remaining === 0 && !report.aborted,
+      recipients: normalizedRecipients.length,
+      sent: report.sent,
+      failed: report.failed,
+      remaining: report.remaining,
+      alreadyDone: report.alreadyDone,
+      suppressed: report.suppressed,
+      aborted: report.aborted,
+    })
   } catch (error) {
     console.error('[marketing] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

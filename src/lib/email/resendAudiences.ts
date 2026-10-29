@@ -35,6 +35,12 @@ export type ResendContactInput = {
   properties?: Record<string, string | number | null>
 }
 
+/**
+ * EMAIL_CONTACTS_SYNC=off stops every call to Resend contacts, segments and topics
+ * (FDR-0007: Supabase holds the audience, Resend is only a mail transport).
+ */
+export const isContactsSyncEnabled = () => process.env.EMAIL_CONTACTS_SYNC?.trim().toLowerCase() !== 'off'
+
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const RESEND_MIN_INTERVAL_MS = 550
@@ -172,6 +178,8 @@ export const mapPreferencesToResendTopics = (
 }
 
 export async function getResendTopicPreferences(email: string): Promise<Partial<Record<MarketingPreferenceKey, boolean>> | null> {
+  if (!isContactsSyncEnabled()) return null
+
   const resend = getResend()
   const normalizedEmail = normalizeEmail(email)
 
@@ -242,6 +250,8 @@ const isMissingPropertyDefinitionError = (error: { message: string; name: string
   )
 
 export async function upsertResendContactInAudience(input: ResendContactInput) {
+  if (!isContactsSyncEnabled()) return null
+
   const resend = getResend()
   const email = normalizeEmail(input.email)
   const { firstName, lastName } = splitName(input.fullName)
@@ -350,6 +360,8 @@ export async function syncResendContactTopics(params: {
   fullName?: string | null
   preferences: Partial<Record<MarketingPreferenceKey, boolean>>
 }) {
+  if (!isContactsSyncEnabled()) return
+
   const resend = getResend()
   const email = normalizeEmail(params.email)
   const { firstName, lastName } = splitName(params.fullName)
@@ -427,6 +439,8 @@ export async function unsubscribeResendContactFromAudiences(params: {
   email: string
   audienceIds: string[]
 }) {
+  if (!isContactsSyncEnabled()) return
+
   for (const audienceId of params.audienceIds) {
     const resend = getResend()
     const existing = await callResendWithRetry(() =>
@@ -467,6 +481,8 @@ export async function unsubscribeResendContactFromAudiences(params: {
 }
 
 export async function listResendAudienceContacts(audienceId: string) {
+  if (!isContactsSyncEnabled()) return []
+
   const resend = getResend()
   const contacts: Array<{
     id: string
@@ -505,6 +521,8 @@ export async function listResendAudienceContacts(audienceId: string) {
 }
 
 export async function isResendContactSubscribed(params: { email: string; audienceId: string }) {
+  if (!isContactsSyncEnabled()) return false
+
   const resend = getResend()
   const result = await callResendWithRetry(() =>
     resend.contacts.get({
@@ -533,6 +551,8 @@ export async function isResendContactSubscribed(params: { email: string; audienc
 }
 
 export async function deleteResendContactByEmail(email: string) {
+  if (!isContactsSyncEnabled()) return { deleted: false }
+
   const resend = getResend()
   const normalizedEmail = normalizeEmail(email)
 
@@ -569,6 +589,8 @@ export async function removeResendContactFromSegment(params: {
   email: string
   segmentId: string
 }) {
+  if (!isContactsSyncEnabled()) return
+
   const resend = getResend()
   const email = normalizeEmail(params.email)
   const removed = await callResendWithRetry(() =>

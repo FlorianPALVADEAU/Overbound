@@ -1,3 +1,4 @@
+import type { SendResult } from '@/lib/email/transport'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
@@ -23,6 +24,14 @@ import { sendAmbassadorRewardEarnedEmail, sendAmbassadorRewardStatusEmail } from
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 export const runtime = 'nodejs'
+
+
+/** Marketing senders report failures instead of throwing: a test send must not claim success on a rejection. */
+function assertSent(result: SendResult) {
+  if (!result.ok) {
+    throw new Error(`${result.error.code}: ${result.error.message}`)
+  }
+}
 
 const SITE_URL = getEmailAssetsBaseUrl()
 const ACCOUNT_URL = `${SITE_URL}/account`
@@ -131,7 +140,7 @@ const handlePost = async (request: NextRequest) => {
         return 'Billet de démonstration envoyé.'
       },
       marketing_new_event: async () => {
-        await sendNewEventAnnouncementEmail({
+        assertSent(await sendNewEventAnnouncementEmail({
           to: user.email!,
           fullName,
           userId: user.id,
@@ -140,7 +149,7 @@ const handlePost = async (request: NextRequest) => {
           eventLocation: 'Paris — Bois de Boulogne',
           eventUrl: `${EVENTS_URL}/night-run`,
           highlight: 'Format nocturne inédit + obstacles lumineux.',
-        })
+        }))
         return 'Annonce nouvel événement envoyée.'
       },
       event_opening: async () => {
@@ -159,7 +168,7 @@ const handlePost = async (request: NextRequest) => {
         return 'Email ouverture inscriptions envoyé.'
       },
       marketing_price_change: async () => {
-        await sendPriceChangeReminderEmail({
+        assertSent(await sendPriceChangeReminderEmail({
           to: user.email!,
           fullName,
           userId: user.id,
@@ -169,11 +178,11 @@ const handlePost = async (request: NextRequest) => {
           eventUrl: `${EVENTS_URL}/overbound-marseille`,
           currentPriceLabel: '49,00 €',
           nextPriceLabel: '59,00 €',
-        })
+        }))
         return 'Rappel changement de prix envoyé.'
       },
       marketing_promo: async () => {
-        await sendPromoCampaignEmail({
+        assertSent(await sendPromoCampaignEmail({
           to: user.email!,
           fullName,
           userId: user.id,
@@ -183,7 +192,7 @@ const handlePost = async (request: NextRequest) => {
           ctaUrl: EVENTS_URL,
           promoCode: 'OB-WELCOME20',
           promoDetails: "Valable jusqu'au 30 juin sur tous les formats OverBound.",
-        })
+        }))
         return 'Email promo envoyé.'
       },
       reactivation_inactive: async () => {

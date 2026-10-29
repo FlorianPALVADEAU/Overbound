@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { Resend } from 'resend'
 import { createHash } from 'node:crypto'
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -9,12 +8,20 @@ import EventOpeningEmail from '@/emails/EventOpeningEmail'
 import { renderEmail } from '@/lib/email/render'
 import {
   buildUnifiedCampaignAudience,
-  dispatchCampaign,
   type CampaignAudienceRecipient,
 } from '@/lib/email/adminCampaigns'
+import { runCampaign } from '@/lib/email/campaign'
+import {
+  deliverMarketingMail,
+  getMarketingTransportName,
+  isMarketingTransportConfigured,
+} from '@/lib/email/transport'
+import { generateMarketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 
 export const runtime = 'nodejs'
+// Paced sending stops on its time budget; running the campaign again resumes it.
+export const maxDuration = 60
 
 const CAMPAIGN_EVENT_TITLE = 'Ultra Arena 2026'
 const CAMPAIGN_EVENT_DATE = 'Samedi 12 septembre 2026'
@@ -26,8 +33,9 @@ const CAMPAIGN_HERO_IMAGE_URL =
 const CAMPAIGN_OFFER_TITLE = '-25% sur les 35 premiers inscrits'
 const CAMPAIGN_OFFER_DESCRIPTION =
   'Aucun code requis : la réduction s’applique automatiquement au checkout.'
-const CAMPAIGN_FROM = "Florian d'Overbound <no-reply@overbound-race.com>"
+const CAMPAIGN_KEY = 'registration-opening:ultra-arena-2026'
 const BULK_BATCH_SIZE = 20
+const SEND_SUBJECT = `Inscriptions ouvertes — ${CAMPAIGN_EVENT_TITLE}`
 
 const sendSchema = z.object({
   mode: z.enum(['dry_run', 'self', 'all']),
@@ -61,8 +69,12 @@ const ensureAdmin = async (request?: NextRequest) => {
   }
 }
 
-const buildOpeningEmailHtml = async (recipient: CampaignAudienceRecipient) =>
-  renderEmail(
+const buildOpeningMessage = async (recipient: CampaignAudienceRecipient) => {
+  const unsubscribeUrl = generateMarketingUnsubscribeUrl({
+    email: recipient.email,
+    userId: recipient.userId,
+  })
+  const html = await renderEmail(
     EventOpeningEmail({
       fullName: recipient.fullName,
       eventTitle: CAMPAIGN_EVENT_TITLE,
@@ -72,8 +84,11 @@ const buildOpeningEmailHtml = async (recipient: CampaignAudienceRecipient) =>
       heroImageUrl: CAMPAIGN_HERO_IMAGE_URL,
       offerTitle: CAMPAIGN_OFFER_TITLE,
       offerDescription: CAMPAIGN_OFFER_DESCRIPTION,
+      unsubscribeUrl,
     }),
   )
+  return { to: recipient.email, subject: SEND_SUBJECT, html, unsubscribeUrl }
+}
 
 const buildAudienceToken = (recipients: CampaignAudienceRecipient[]) => {
   const hash = createHash('sha256')
@@ -124,12 +139,12 @@ async function handlePost(request: NextRequest) {
       return NextResponse.json({ error: 'Mode invalide.' }, { status: 400 })
     }
 
-    if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json({ error: 'RESEND_API_KEY manquante.' }, { status: 500 })
+    if (!isMarketingTransportConfigured()) {
+      return NextResponse.json(
+        { error: `Transport marketing "${getMarketingTransportName()}" non configuré.` },
+        { status: 500 },
+      )
     }
-
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const subject = `Inscriptions ouvertes — ${CAMPAIGN_EVENT_TITLE}`
 
     const mode = parsed.data.mode
 
@@ -160,25 +175,10 @@ async function handlePost(request: NextRequest) {
         sources: ['auth'],
       }
 
-      const report = await dispatchCampaign({
-        resend,
-        recipients: [selfRecipient],
-        buildMessage: async (recipient) => ({
-          from: CAMPAIGN_FROM,
-          to: recipient.email,
-          subject,
-          html: await buildOpeningEmailHtml(recipient),
-        }),
-        batchSize: 1,
-        retries: 1,
-      })
-
-      if (report.sent !== 1) {
+      const result = await deliverMarketingMail(await buildOpeningMessage(selfRecipient))
+      if (!result.ok) {
         return NextResponse.json(
-          {
-            error: `Échec envoi test: ${report.failures[0]?.error || 'Erreur inconnue.'}`,
-            report,
-          },
+          { error: `Échec envoi test: ${result.error.code} ${result.error.message}` },
           { status: 502 },
         )
       }
@@ -186,8 +186,8 @@ async function handlePost(request: NextRequest) {
       return NextResponse.json({
         success: true,
         mode,
-        sent: report.sent,
-        failed: report.failed,
+        sent: 1,
+        failed: 0,
         message: `Email de test envoyé à ${adminCheck.user.email}.`,
       })
     }
@@ -208,20 +208,14 @@ async function handlePost(request: NextRequest) {
       )
     }
 
-    const report = await dispatchCampaign({
-      resend,
+    const report = await runCampaign({
+      campaignKey: CAMPAIGN_KEY,
+      provider: getMarketingTransportName(),
       recipients,
-      buildMessage: async (recipient) => ({
-        from: CAMPAIGN_FROM,
-        to: recipient.email,
-        subject,
-        html: await buildOpeningEmailHtml(recipient),
-      }),
-      batchSize: BULK_BATCH_SIZE,
-      retries: 2,
+      send: async (recipient) => deliverMarketingMail(await buildOpeningMessage(recipient)),
     })
 
-    if (report.sent === 0) {
+    if (report.sent === 0 && report.alreadyDone === 0) {
       return NextResponse.json(
         {
           error: "Aucun email n'a pu être envoyé.",
@@ -233,18 +227,22 @@ async function handlePost(request: NextRequest) {
       )
     }
 
+    const complete = report.failed === 0 && report.remaining === 0 && !report.aborted
     return NextResponse.json({
-      success: report.failed === 0,
+      success: complete,
       mode: 'all',
       audienceStats: stats,
       total: report.total,
       sent: report.sent,
       failed: report.failed,
+      remaining: report.remaining,
+      alreadyDone: report.alreadyDone,
+      suppressed: report.suppressed,
+      aborted: report.aborted,
       failures: report.failures.slice(0, 20),
-      message:
-        report.failed > 0
-          ? `Envoi partiel: ${report.sent} envoyés, ${report.failed} échec(s).`
-          : `Envoi terminé. ${report.sent} email(s) envoyés.`,
+      message: complete
+        ? `Envoi terminé. ${report.sent} email(s) envoyés, ${report.alreadyDone} déjà servis.`
+        : `Envoi partiel: ${report.sent} envoyés, ${report.failed} échec(s), ${report.remaining} restants. Relance l'envoi pour continuer.`,
     })
   } catch (error) {
     console.error('[admin registration opening] send error', error)

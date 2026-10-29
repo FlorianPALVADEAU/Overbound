@@ -3,7 +3,13 @@ import {
   sendPriceChangeReminderEmail,
   sendPromoCampaignEmail,
 } from '@/lib/email'
-import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
+import { createHash } from 'node:crypto'
+import { runCampaign, type CampaignReport } from '@/lib/email/campaign'
+import {
+  getMarketingTransportName,
+  isMarketingTransportConfigured,
+  type SendResult,
+} from '@/lib/email/transport'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import {
   getListRecipients,
@@ -18,8 +24,6 @@ export interface MarketingRecipient {
   fullName?: string | null
 }
 
-const DEFAULT_BATCH_SIZE = 200
-
 export async function dispatchNewEventAnnouncement(params: {
   recipients: MarketingRecipient[]
   eventTitle: string
@@ -28,8 +32,8 @@ export async function dispatchNewEventAnnouncement(params: {
   eventUrl: string
   highlight?: string | null
 }) {
-  await dispatchMarketingEmails('marketing_new_event', params.recipients, async (recipient) => {
-    await sendNewEventAnnouncementEmail({
+  return dispatchMarketingEmails('marketing_new_event', params.recipients, async (recipient) => {
+    return sendNewEventAnnouncementEmail({
       to: recipient.email,
       fullName: recipient.fullName,
       userId: recipient.userId || undefined,
@@ -54,8 +58,8 @@ export async function dispatchPriceChangeReminder(params: {
   currentPriceLabel: string
   nextPriceLabel?: string | null
 }) {
-  await dispatchMarketingEmails('marketing_price_change', params.recipients, async (recipient) => {
-    await sendPriceChangeReminderEmail({
+  return dispatchMarketingEmails('marketing_price_change', params.recipients, async (recipient) => {
+    return sendPriceChangeReminderEmail({
       to: recipient.email,
       fullName: recipient.fullName,
       userId: recipient.userId || undefined,
@@ -81,8 +85,8 @@ export async function dispatchPromoCampaign(params: {
   promoCode?: string | null
   promoDetails?: string | null
 }) {
-  await dispatchMarketingEmails('marketing_promo', params.recipients, async (recipient) => {
-    await sendPromoCampaignEmail({
+  return dispatchMarketingEmails('marketing_promo', params.recipients, async (recipient) => {
+    return sendPromoCampaignEmail({
       to: recipient.email,
       fullName: recipient.fullName,
       userId: recipient.userId || undefined,
@@ -99,47 +103,40 @@ export async function dispatchPromoCampaign(params: {
   })
 }
 
+/** Same mail to the same audience is one campaign: a rerun resumes it instead of mailing twice. */
+function campaignKeyFor(emailType: MarketingEmailType, context: Record<string, unknown>) {
+  const digest = createHash('sha256').update(JSON.stringify(context)).digest('hex').slice(0, 16)
+  return `${emailType}:${digest}`
+}
+
 async function dispatchMarketingEmails(
   emailType: MarketingEmailType,
   recipients: MarketingRecipient[],
-  sendFn: (recipient: MarketingRecipient) => Promise<void>,
+  sendFn: (recipient: MarketingRecipient) => Promise<SendResult>,
   context: Record<string, unknown> = {},
-) {
-  if (!process.env.RESEND_API_KEY) {
-    return
+): Promise<CampaignReport | null> {
+  if (!isMarketingTransportConfigured()) {
+    console.error(`[marketing] ${getMarketingTransportName()} is not configured, ${emailType} not sent`)
+    return null
   }
 
-  // Filter recipients based on digest frequency preference
-  const filteredRecipients = await filterRecipientsByDigestFrequency(recipients)
+  const eligible = await filterRecipientsByDigestFrequency(recipients)
+  const report = await runCampaign({
+    campaignKey: campaignKeyFor(emailType, context),
+    provider: getMarketingTransportName(),
+    recipients: eligible,
+    send: sendFn,
+  })
 
-  const batches = chunkRecipients(filteredRecipients, DEFAULT_BATCH_SIZE)
-
-  for (const batch of batches) {
-    await Promise.all(
-      batch.map(async (recipient) => {
-        const logKey = recipient.userId ?? recipient.email
-
-        const alreadySent = await getLastEmailLog({
-          userId: logKey,
-          emailType,
-          contextFilters: context,
-        })
-
-        if (alreadySent) {
-          return
-        }
-
-        await sendFn(recipient)
-
-        await recordEmailLog({
-          userId: logKey,
-          email: recipient.email,
-          emailType,
-          context,
-        })
-      }),
-    )
-  }
+  console.info(`[marketing] ${emailType}`, {
+    sent: report.sent,
+    failed: report.failed,
+    alreadyDone: report.alreadyDone,
+    suppressed: report.suppressed,
+    remaining: report.remaining,
+    aborted: report.aborted,
+  })
+  return report
 }
 
 /**
@@ -160,55 +157,29 @@ async function filterRecipientsByDigestFrequency(
     .filter((id): id is string => id !== null && id !== undefined)
 
   if (userIds.length === 0) {
-    // If no user IDs, allow all (backward compatibility)
+    // Nobody to look up: recipients without an account have no preference to honour
     return recipients
   }
 
-  try {
-    // Query notification preferences for these users
-    const { data: preferences, error } = await supabaseAdmin()
-      .from('notification_preferences')
-      .select('user_id, digest_frequency')
-      .in('user_id', userIds)
+  // Query notification preferences for these users
+  const { data: preferences, error } = await supabaseAdmin()
+    .from('notification_preferences')
+    .select('user_id, digest_frequency')
+    .in('user_id', userIds)
 
-    if (error) {
-      console.error('Error fetching notification preferences:', error)
-      // On error, default to sending to all (backward compatibility)
-      return recipients
-    }
-
-    // Create a map of user_id to digest_frequency
-    const preferencesMap = new Map(
-      preferences?.map((p) => [p.user_id, p.digest_frequency]) ?? []
-    )
-
-    // Filter recipients: only keep those with 'immediate' or no preference set
-    return recipients.filter((recipient) => {
-      if (!recipient.userId) {
-        // No user ID means we can't check preferences, allow it (backward compatibility)
-        return true
-      }
-
-      const digestFrequency = preferencesMap.get(recipient.userId)
-
-      // Allow if:
-      // 1. No preference found (user hasn't set preferences yet, default to immediate)
-      // 2. Preference is 'immediate'
-      return !digestFrequency || digestFrequency === 'immediate'
-    })
-  } catch (error) {
-    console.error('Error filtering recipients by digest frequency:', error)
-    // On error, default to sending to all (backward compatibility)
-    return recipients
+  if (error) {
+    // Fail closed: an unreadable preference table must not turn into "mail everyone".
+    throw new Error(`[marketing] preference read failed: ${error.message}`)
   }
-}
 
-function chunkRecipients(recipients: MarketingRecipient[], size: number) {
-  const chunks: MarketingRecipient[][] = []
-  for (let i = 0; i < recipients.length; i += size) {
-    chunks.push(recipients.slice(i, i + size))
-  }
-  return chunks
+  const preferencesMap = new Map(preferences?.map((p) => [p.user_id, p.digest_frequency]) ?? [])
+
+  // Keep recipients with 'immediate' or no preference set; recipients without an account have none.
+  return recipients.filter((recipient) => {
+    if (!recipient.userId) return true
+    const digestFrequency = preferencesMap.get(recipient.userId)
+    return !digestFrequency || digestFrequency === 'immediate'
+  })
 }
 
 /**
@@ -249,53 +220,6 @@ export async function getEventAnnouncementRecipients(): Promise<MarketingRecipie
  */
 export async function getPriceAlertRecipients(): Promise<MarketingRecipient[]> {
   return await getListRecipients('price-alerts')
-}
-
-/**
- * Send marketing emails with unsubscribe links
- * This is the main function to use for distribution list emails
- */
-export async function sendMarketingEmail(
-  emailType: MarketingEmailType,
-  recipients: MarketingRecipient[],
-  sendFn: (recipient: MarketingRecipient) => Promise<void>,
-  context: Record<string, unknown> = {},
-) {
-  if (!process.env.RESEND_API_KEY) {
-    return
-  }
-
-  // Filter recipients based on digest frequency preference
-  const filteredRecipients = await filterRecipientsByDigestFrequency(recipients)
-
-  const batches = chunkRecipients(filteredRecipients, DEFAULT_BATCH_SIZE)
-
-  for (const batch of batches) {
-    await Promise.all(
-      batch.map(async (recipient) => {
-        const logKey = recipient.userId ?? recipient.email
-
-        const alreadySent = await getLastEmailLog({
-          userId: logKey,
-          emailType,
-          contextFilters: context,
-        })
-
-        if (alreadySent) {
-          return
-        }
-
-        await sendFn(recipient)
-
-        await recordEmailLog({
-          userId: logKey,
-          email: recipient.email,
-          emailType,
-          context,
-        })
-      }),
-    )
-  }
 }
 
 /**

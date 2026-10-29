@@ -4,8 +4,8 @@ const {
   sendNewEventAnnouncementEmailMock,
   sendPriceChangeReminderEmailMock,
   sendPromoCampaignEmailMock,
-  getLastEmailLogMock,
-  recordEmailLogMock,
+  ledgerMock,
+  filterSuppressedMock,
   supabaseAdminMock,
   getListRecipientsMock,
   getMultipleListsRecipientsMock,
@@ -13,8 +13,8 @@ const {
   sendNewEventAnnouncementEmailMock: vi.fn(),
   sendPriceChangeReminderEmailMock: vi.fn(),
   sendPromoCampaignEmailMock: vi.fn(),
-  getLastEmailLogMock: vi.fn(),
-  recordEmailLogMock: vi.fn(),
+  ledgerMock: { loadFinished: vi.fn(), record: vi.fn() },
+  filterSuppressedMock: vi.fn(),
   supabaseAdminMock: vi.fn(),
   getListRecipientsMock: vi.fn(),
   getMultipleListsRecipientsMock: vi.fn(),
@@ -26,10 +26,8 @@ vi.mock('@/lib/email', () => ({
   sendPromoCampaignEmail: sendPromoCampaignEmailMock,
 }))
 
-vi.mock('@/lib/email/emailLogs', () => ({
-  getLastEmailLog: getLastEmailLogMock,
-  recordEmailLog: recordEmailLogMock,
-}))
+vi.mock('@/lib/email/campaignLedger', () => ({ supabaseCampaignLedger: ledgerMock }))
+vi.mock('@/lib/email/suppression', () => ({ filterSuppressed: filterSuppressedMock }))
 
 vi.mock('@/lib/supabase/server', () => ({
   supabaseAdmin: supabaseAdminMock,
@@ -44,7 +42,6 @@ import {
   dispatchNewEventAnnouncement,
   dispatchPriceChangeReminder,
   dispatchPromoCampaign,
-  sendMarketingEmail,
   getRecipientsFromList,
   getRecipientsFromLists,
   getEventAnnouncementRecipients,
@@ -60,18 +57,27 @@ const noPreferencesAdmin = () => ({
   }),
 })
 
+const sentOk = { ok: true, messageId: 'm-1' }
+const event = {
+  eventTitle: 'Ultra Arena',
+  eventDate: '12 septembre 2026',
+  eventLocation: 'SQY',
+  eventUrl: 'https://overbound-race.com/events/ultra-arena',
+}
+
 describe('email/marketing', () => {
   const originalResendKey = process.env.RESEND_API_KEY
 
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.RESEND_API_KEY = 'test-resend-key'
-    getLastEmailLogMock.mockResolvedValue(null)
-    recordEmailLogMock.mockResolvedValue(undefined)
+    ledgerMock.loadFinished.mockResolvedValue(new Set())
+    ledgerMock.record.mockResolvedValue({ ok: true })
+    filterSuppressedMock.mockImplementation(async (recipients: unknown[]) => recipients)
     supabaseAdminMock.mockReturnValue(noPreferencesAdmin())
-    sendNewEventAnnouncementEmailMock.mockResolvedValue(undefined)
-    sendPriceChangeReminderEmailMock.mockResolvedValue(undefined)
-    sendPromoCampaignEmailMock.mockResolvedValue(undefined)
+    sendNewEventAnnouncementEmailMock.mockResolvedValue(sentOk)
+    sendPriceChangeReminderEmailMock.mockResolvedValue(sentOk)
+    sendPromoCampaignEmailMock.mockResolvedValue(sentOk)
   })
 
   afterEach(() => {
@@ -79,67 +85,102 @@ describe('email/marketing', () => {
   })
 
   describe('dispatchNewEventAnnouncement', () => {
-    it('sends the announcement to every recipient and logs it', async () => {
-      await dispatchNewEventAnnouncement({
+    it('sends the announcement to every recipient and records it in the campaign ledger', async () => {
+      const report = await dispatchNewEventAnnouncement({
         recipients: [{ userId: 'u1', email: 'a@example.com', fullName: 'Alice' }],
-        eventTitle: 'Ultra Arena',
-        eventDate: '12 septembre 2026',
-        eventLocation: 'SQY',
-        eventUrl: 'https://overbound-race.com/events/ultra-arena',
+        ...event,
       })
 
       expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledWith(
         expect.objectContaining({ to: 'a@example.com', eventTitle: 'Ultra Arena' }),
       )
-      expect(recordEmailLogMock).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'u1', emailType: 'marketing_new_event' }),
+      expect(ledgerMock.record).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'a@example.com', status: 'sent', userId: 'u1' }),
+      )
+      expect(report).toMatchObject({ sent: 1, failed: 0 })
+    })
+
+    it('mails a subscriber without an account, which the old email_logs key could not record', async () => {
+      await dispatchNewEventAnnouncement({ recipients: [{ email: 'guest@example.com' }], ...event })
+
+      expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'guest@example.com' }),
+      )
+      expect(ledgerMock.record).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'guest@example.com', userId: null, status: 'sent' }),
       )
     })
 
-    it('does nothing when RESEND_API_KEY is not configured', async () => {
-      delete process.env.RESEND_API_KEY
-
-      await dispatchNewEventAnnouncement({
-        recipients: [{ userId: 'u1', email: 'a@example.com' }],
-        eventTitle: 'Ultra Arena',
-        eventDate: '12 septembre 2026',
-        eventLocation: 'SQY',
-        eventUrl: 'https://overbound-race.com/events/ultra-arena',
+    it('records a provider rejection as failed instead of sent', async () => {
+      sendNewEventAnnouncementEmailMock.mockResolvedValue({
+        ok: false,
+        error: { kind: 'permanent', code: 'validation_error', message: 'bad address' },
       })
 
+      const report = await dispatchNewEventAnnouncement({ recipients: [{ email: 'a@example.com' }], ...event })
+
+      expect(report).toMatchObject({ sent: 0, failed: 1 })
+      expect(ledgerMock.record).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed_permanent' }))
+    })
+
+    it('does not mail an address that was already sent this campaign', async () => {
+      ledgerMock.loadFinished.mockResolvedValue(new Set(['a@example.com']))
+
+      await dispatchNewEventAnnouncement({ recipients: [{ email: 'a@example.com' }], ...event })
+
       expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
+    })
+
+    it('does not mail a suppressed address', async () => {
+      filterSuppressedMock.mockResolvedValue([])
+
+      await dispatchNewEventAnnouncement({ recipients: [{ email: 'bounced@example.com' }], ...event })
+
+      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
+    })
+
+    it('sends nothing when the selected provider is not configured', async () => {
+      delete process.env.RESEND_API_KEY
+
+      const report = await dispatchNewEventAnnouncement({
+        recipients: [{ userId: 'u1', email: 'a@example.com' }],
+        ...event,
+      })
+
+      expect(report).toBeNull()
+      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
+      expect(ledgerMock.record).not.toHaveBeenCalled()
     })
   })
 
   describe('dispatchPriceChangeReminder', () => {
+    const reminder = {
+      eventTitle: 'Ultra Arena',
+      eventDate: '12 septembre 2026',
+      deadlineLabel: '31 mars',
+      eventUrl: 'https://overbound-race.com/events/ultra-arena',
+      currentPriceLabel: '49€',
+    }
+
     it('sends the price change reminder to every recipient', async () => {
-      await dispatchPriceChangeReminder({
-        recipients: [{ userId: 'u1', email: 'a@example.com' }],
-        eventTitle: 'Ultra Arena',
-        eventDate: '12 septembre 2026',
-        deadlineLabel: '31 mars',
-        eventUrl: 'https://overbound-race.com/events/ultra-arena',
-        currentPriceLabel: '49€',
-      })
+      await dispatchPriceChangeReminder({ recipients: [{ userId: 'u1', email: 'a@example.com' }], ...reminder })
 
       expect(sendPriceChangeReminderEmailMock).toHaveBeenCalledWith(
         expect.objectContaining({ to: 'a@example.com', deadlineLabel: '31 mars' }),
       )
     })
 
-    it('does not resend when a log already exists for this event/deadline context', async () => {
-      getLastEmailLogMock.mockResolvedValue({ id: 'log-1', sent_at: new Date().toISOString() })
-
+    it('uses a separate campaign per deadline, so the next reminder is not skipped', async () => {
+      await dispatchPriceChangeReminder({ recipients: [{ email: 'a@example.com' }], ...reminder })
       await dispatchPriceChangeReminder({
-        recipients: [{ userId: 'u1', email: 'a@example.com' }],
-        eventTitle: 'Ultra Arena',
-        eventDate: '12 septembre 2026',
-        deadlineLabel: '31 mars',
-        eventUrl: 'https://overbound-race.com/events/ultra-arena',
-        currentPriceLabel: '49€',
+        recipients: [{ email: 'a@example.com' }],
+        ...reminder,
+        deadlineLabel: '30 avril',
       })
 
-      expect(sendPriceChangeReminderEmailMock).not.toHaveBeenCalled()
+      const keys = ledgerMock.loadFinished.mock.calls.map(([key]) => key)
+      expect(keys).toHaveLength(2)
+      expect(keys[0]).not.toBe(keys[1])
     })
   })
 
@@ -193,10 +234,7 @@ describe('email/marketing', () => {
           { userId: 'u1', email: 'daily@example.com' },
           { userId: 'u2', email: 'immediate@example.com' },
         ],
-        eventTitle: 'Ultra Arena',
-        eventDate: '12 septembre 2026',
-        eventLocation: 'SQY',
-        eventUrl: 'https://overbound-race.com/events/ultra-arena',
+        ...event,
       })
 
       expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledTimes(1)
@@ -205,46 +243,20 @@ describe('email/marketing', () => {
       )
     })
 
-    it('defaults to sending when the preferences query errors out (backward compatibility)', async () => {
+    it('sends to nobody when the preferences cannot be read, instead of mailing everyone', async () => {
       supabaseAdminMock.mockReturnValue({
         from: () => ({
           select: () => ({
-            in: async () => ({ data: null, error: new Error('db down') }),
+            in: async () => ({ data: null, error: { message: 'db down' } }),
           }),
         }),
       })
 
-      await dispatchNewEventAnnouncement({
-        recipients: [{ userId: 'u1', email: 'a@example.com' }],
-        eventTitle: 'Ultra Arena',
-        eventDate: '12 septembre 2026',
-        eventLocation: 'SQY',
-        eventUrl: 'https://overbound-race.com/events/ultra-arena',
-      })
+      await expect(
+        dispatchNewEventAnnouncement({ recipients: [{ userId: 'u1', email: 'a@example.com' }], ...event }),
+      ).rejects.toThrow('preference read failed')
 
-      expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('sendMarketingEmail', () => {
-    it('sends and logs for each recipient using the provided sendFn', async () => {
-      const sendFn = vi.fn().mockResolvedValue(undefined)
-
-      await sendMarketingEmail('marketing_promo', [{ userId: 'u1', email: 'a@example.com' }], sendFn)
-
-      expect(sendFn).toHaveBeenCalledTimes(1)
-      expect(recordEmailLogMock).toHaveBeenCalledWith(
-        expect.objectContaining({ emailType: 'marketing_promo' }),
-      )
-    })
-
-    it('does nothing when RESEND_API_KEY is missing', async () => {
-      delete process.env.RESEND_API_KEY
-      const sendFn = vi.fn()
-
-      await sendMarketingEmail('marketing_promo', [{ userId: 'u1', email: 'a@example.com' }], sendFn)
-
-      expect(sendFn).not.toHaveBeenCalled()
+      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
     })
   })
 

@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import { sendMarketingEmail } from '@/lib/email/marketing'
-import type { MarketingRecipient } from '@/lib/email/marketing'
-import { generateUnsubscribeToken, generateUnsubscribeUrl } from '@/lib/email/unsubscribe'
+import { resolveAudience } from '@/lib/email/audience'
+import { runCampaign, type CampaignRecipient } from '@/lib/email/campaign'
+import {
+  deliverMarketingMail,
+  getMarketingTransportName,
+  isMarketingTransportConfigured,
+} from '@/lib/email/transport'
+import { generateMarketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { captureException } from '@/lib/sentry'
-import { listResendAudienceContacts, mapSlugsToAudienceIds } from '@/lib/email/resendAudiences'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+
+// A campaign to a few thousand addresses is paced; it stops on its time budget and is resumed by a rerun.
+export const maxDuration = 60
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -31,191 +38,132 @@ async function handlePost(request: NextRequest) {
     }
     const user = auth.user
 
-    const supabase = await createClient()
-
     // Parse and validate request body
     const body = await request.json()
     const validatedData = sendEmailSchema.parse(body)
 
-    // Test mode: send only to the admin user
-    if (validatedData.testMode) {
-      try {
-        await sendMarketingEmail(
-          'custom_marketing_email' as any,
-          [
-            {
-              email: user.email!,
-              userId: user.id,
-            },
-          ],
-          async (recipient: MarketingRecipient) => {
-            const { Resend } = await import('resend')
-            const resend = new Resend(process.env.RESEND_API_KEY!)
-
-            // Generate unsubscribe URL for test email
-            const unsubscribeUrl = recipient.userId
-              ? generateUnsubscribeUrl(recipient.userId, recipient.email)
-              : undefined
-
-            // Wrap content in EmailLayout with unsubscribe link
-            const emailHtml = wrapHtmlWithLayout({
-              htmlContent: validatedData.bodyHtml,
-              unsubscribeUrl,
-              preview: validatedData.preheader,
-            })
-
-            await resend.emails.send({
-              from: process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com',
-              to: recipient.email,
-              subject: `[TEST] ${validatedData.subject}`,
-              html: emailHtml,
-              text: validatedData.bodyText || undefined,
-              headers: unsubscribeUrl ? {
-                'X-Test-Mode': 'true',
-                'List-Unsubscribe': `<${unsubscribeUrl}>`,
-                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-              } : {
-                'X-Test-Mode': 'true',
-              },
-            })
-          },
-          {
-            test_mode: true,
-            email_subject: validatedData.subject,
-            preheader: validatedData.preheader,
-          },
-        )
-
-        return NextResponse.json({
-          success: true,
-          message: 'Test email sent successfully',
-          recipientCount: 1,
-        })
-      } catch (error) {
-        console.error('Error sending test email:', error)
-        captureException(error as Error, {
-          context: 'test_email_send',
-          adminEmail: user.email,
-          subject: validatedData.subject,
-        })
-        return NextResponse.json(
-          { error: 'Failed to send test email' },
-          { status: 500 },
-        )
-      }
-    }
-
-    // Production mode: resolve distribution list slugs to Resend audiences
-    const { data: selectedLists, error: selectedListsError } = await supabase
-      .from('distribution_lists')
-      .select('id, slug')
-      .in('id', validatedData.listIds)
-
-    if (selectedListsError) {
-      console.error('Error fetching distribution lists:', selectedListsError)
+    if (!isMarketingTransportConfigured()) {
       return NextResponse.json(
-        { error: 'Failed to resolve distribution lists' },
+        { error: `Marketing transport "${getMarketingTransportName()}" is not configured` },
         { status: 500 },
       )
     }
 
-    const { audienceIds, missingSlugs } = mapSlugsToAudienceIds((selectedLists || []).map((list) => list.slug))
-    if (audienceIds.length === 0) {
-      return NextResponse.json(
-        { error: 'No Resend audience configured for the selected lists' },
-        { status: 400 },
-      )
-    }
-
-    if (missingSlugs.length > 0) {
-      console.warn('[admin/distribution-lists/send-email] missing Resend audience mapping', missingSlugs)
-    }
-
-    const uniqueByEmail = new Map<string, MarketingRecipient>()
-    for (const audienceId of audienceIds) {
-      const contacts = await listResendAudienceContacts(audienceId)
-      for (const contact of contacts) {
-        if (contact.unsubscribed) {
-          continue
-        }
-
-        const email = contact.email.trim().toLowerCase()
-        if (!email) {
-          continue
-        }
-
-        if (!uniqueByEmail.has(email)) {
-          uniqueByEmail.set(email, {
-            email,
-            fullName: [contact.first_name, contact.last_name].filter(Boolean).join(' ') || null,
-          })
-        }
+    const buildMessage = (recipient: CampaignRecipient, subject: string) => {
+      const unsubscribeUrl = generateMarketingUnsubscribeUrl({
+        email: recipient.email,
+        userId: recipient.userId,
+      })
+      return {
+        to: recipient.email,
+        subject,
+        html: wrapHtmlWithLayout({
+          htmlContent: validatedData.bodyHtml,
+          unsubscribeUrl,
+          preview: validatedData.preheader,
+        }),
+        text: validatedData.bodyText || undefined,
+        unsubscribeUrl,
       }
     }
 
-    const uniqueSubscribers = Array.from(uniqueByEmail.values())
+    // Test mode: send only to the admin user
+    if (validatedData.testMode) {
+      const result = await deliverMarketingMail(
+        buildMessage({ email: user.email!, userId: user.id }, `[TEST] ${validatedData.subject}`),
+      )
+      if (!result.ok) {
+        console.error('Error sending test email:', result.error)
+        captureException(new Error(result.error.message), {
+          context: 'test_email_send',
+          adminEmail: user.email,
+          subject: validatedData.subject,
+          code: result.error.code,
+        })
+        return NextResponse.json(
+          { error: `Failed to send test email: ${result.error.code}` },
+          { status: 502 },
+        )
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'Test email sent successfully',
+        recipientCount: 1,
+      })
+    }
 
-    if (uniqueSubscribers.length === 0) {
+    // Production mode: the audience comes from Supabase (subscribed, not suppressed, digest-compatible)
+    let audience: CampaignRecipient[]
+    try {
+      audience = await resolveAudience({ listIds: validatedData.listIds })
+    } catch (error) {
+      console.error('Error resolving audience:', error)
+      captureException(error as Error, {
+        context: 'audience_resolution',
+        listIds: validatedData.listIds,
+      })
+      return NextResponse.json(
+        { error: 'Failed to resolve distribution list audience' },
+        { status: 500 },
+      )
+    }
+
+    if (audience.length === 0) {
       return NextResponse.json(
         { error: 'No subscribers found for the selected lists' },
         { status: 400 },
       )
     }
 
-    // Send emails to all subscribers
-    try {
-      await sendMarketingEmail(
-        'custom_marketing_email' as any,
-        uniqueSubscribers,
-        async (recipient: MarketingRecipient) => {
-          const { Resend } = await import('resend')
-          const resend = new Resend(process.env.RESEND_API_KEY!)
-
-          // Generate unsubscribe URL for each recipient
-          const unsubscribeUrl = recipient.userId
-            ? generateUnsubscribeUrl(recipient.userId, recipient.email)
-            : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/unsubscribe/${generateUnsubscribeToken({
-                email: recipient.email,
-              })}`
-
-          // Wrap content in EmailLayout with unsubscribe link
-          const emailHtml = wrapHtmlWithLayout({
-            htmlContent: validatedData.bodyHtml,
-            unsubscribeUrl,
-            preview: validatedData.preheader,
-          })
-
-          await resend.emails.send({
-            from: process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com',
-            to: recipient.email,
-            subject: validatedData.subject,
-            html: emailHtml,
-            text: validatedData.bodyText || undefined,
-            headers: unsubscribeUrl ? {
-              'List-Unsubscribe': `<${unsubscribeUrl}>`,
-              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-            } : undefined,
-          })
-        },
-        {
-          email_subject: validatedData.subject,
-          preheader: validatedData.preheader,
-          list_ids: validatedData.listIds,
-          resend_audience_ids: audienceIds,
-        },
+    // Same lists and same content = same campaign: a rerun resumes it and never mails an address twice.
+    const campaignKey = `distribution-list:${createHash('sha256')
+      .update(
+        JSON.stringify([
+          [...validatedData.listIds].sort(),
+          validatedData.subject,
+          validatedData.preheader ?? '',
+          validatedData.bodyHtml,
+          validatedData.bodyText ?? '',
+        ]),
       )
+      .digest('hex')
+      .slice(0, 32)}`
 
-      return NextResponse.json({
-        success: true,
-        message: 'Emails sent successfully',
-        recipientCount: uniqueSubscribers.length,
+    try {
+      const report = await runCampaign({
+        campaignKey,
+        provider: getMarketingTransportName(),
+        recipients: audience,
+        send: (recipient) => deliverMarketingMail(buildMessage(recipient, validatedData.subject)),
       })
+
+      const complete = report.failed === 0 && report.remaining === 0 && !report.aborted
+      const nothingSent = report.sent === 0 && report.alreadyDone === 0 && report.failed > 0
+      const message = complete
+        ? `Emails sent: ${report.sent}, already sent earlier: ${report.alreadyDone}`
+        : `Partial send: ${report.sent} sent, ${report.failed} failed, ${report.remaining} left. Run the same campaign again to continue.`
+
+      return NextResponse.json(
+        {
+          success: complete,
+          message,
+          recipientCount: report.total,
+          sent: report.sent,
+          failed: report.failed,
+          remaining: report.remaining,
+          alreadyDone: report.alreadyDone,
+          suppressed: report.suppressed,
+          aborted: report.aborted,
+          failures: report.failures.slice(0, 20),
+        },
+        { status: nothingSent ? 502 : 200 },
+      )
     } catch (error) {
       console.error('Error sending emails:', error)
       captureException(error as Error, {
         context: 'bulk_email_send',
         listIds: validatedData.listIds,
-        recipientCount: uniqueSubscribers?.length || 0,
+        recipientCount: audience.length,
         subject: validatedData.subject,
       })
       return NextResponse.json(

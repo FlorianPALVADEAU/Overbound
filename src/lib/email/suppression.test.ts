@@ -11,8 +11,8 @@ describe('recordSuppression', () => {
 
   it('upserts a lowercased address and unsubscribes it on complaint', async () => {
     const upsert = vi.fn().mockResolvedValue({ error: null })
-    const ilike = vi.fn().mockResolvedValue({ error: null })
-    const update = vi.fn().mockReturnValue({ ilike })
+    const eq = vi.fn().mockResolvedValue({ error: null })
+    const update = vi.fn().mockReturnValue({ eq })
     supabaseAdminMock.mockReturnValue({
       from: (table: string) =>
         table === 'email_suppressions' ? { upsert } : { update },
@@ -30,7 +30,7 @@ describe('recordSuppression', () => {
       { onConflict: 'email', ignoreDuplicates: true },
     )
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ subscribed: false }))
-    expect(ilike).toHaveBeenCalledWith('email', 'runner@example.com')
+    expect(eq).toHaveBeenCalledWith('email', 'runner@example.com')
   })
 
   it('does not touch subscriptions on a bounce', async () => {

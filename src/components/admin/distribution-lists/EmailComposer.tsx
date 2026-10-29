@@ -133,7 +133,16 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
       }
 
       setSendStatus('success')
-      setSuccessMessage(`Email envoyé avec succès à ${totalRecipients} destinataires`)
+      if (result.remaining > 0 || result.failed > 0) {
+        // Partial send: keep the form so the same campaign can be run again to continue.
+        setSuccessMessage(
+          `Envoi partiel : ${result.sent} envoyés, ${result.failed} échecs, ${result.remaining} restants. Relance l'envoi pour continuer.`,
+        )
+        return
+      }
+      setSuccessMessage(
+        `Email envoyé avec succès : ${result.sent} destinataires (${result.alreadyDone} déjà servis)`,
+      )
 
       // Reset form after successful send
       setTimeout(() => {

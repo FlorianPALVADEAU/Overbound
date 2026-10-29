@@ -11,6 +11,7 @@ interface EventOpeningEmailProps {
   heroImageUrl?: string
   offerTitle?: string
   offerDescription?: string
+  unsubscribeUrl?: string
 }
 
 export function EventOpeningEmail({
@@ -22,9 +23,10 @@ export function EventOpeningEmail({
   heroImageUrl,
   offerTitle,
   offerDescription,
+  unsubscribeUrl,
 }: EventOpeningEmailProps) {
   return (
-    <EmailLayout preview={`Inscriptions ouvertes — ${eventTitle}`}>
+    <EmailLayout preview={`Inscriptions ouvertes — ${eventTitle}`} unsubscribeUrl={unsubscribeUrl}>
       <Section style={styles.section}>
         {heroImageUrl ? (
           <Section style={styles.heroWrap}>

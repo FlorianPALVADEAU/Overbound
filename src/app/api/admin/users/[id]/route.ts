@@ -219,7 +219,12 @@ async function handleDelete(
 
     const targetEmail = targetAuthUser.user?.email?.trim().toLowerCase() || null
     if (targetEmail) {
-      await deleteResendContactByEmail(targetEmail)
+      try {
+        await deleteResendContactByEmail(targetEmail)
+      } catch (resendError) {
+        // The Resend contact is a projection: a failure must not block the account deletion.
+        console.error('[admin users] resend contact cleanup failed', resendError)
+      }
     }
 
     const { error: authError } = await admin.auth.admin.deleteUser(id)
