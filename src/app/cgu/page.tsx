@@ -60,9 +60,9 @@ const paragraphs = {
     'Éditeur : Palvadeau Organisation, société par actions simplifiée unipersonnelle au capital de 5 000 €, exploitant la marque Overbound, immatriculée au RCS de Versailles sous le numéro 992 578 229, ayant son siège social au 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain, France.',
     'Numéro de TVA intracommunautaire : FR84 992578229.',
     'Directeur de la publication : Florian Palvadeau, Président.',
-    'Email de contact : contact@overbound-race.com – Téléphone : +33 (0)6 52 26 60 54.',
+    'Email de contact : contact@overbound-race.com, Téléphone : +33 (0)6 52 26 60 54.',
     'Hébergement : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis (site). Base de données : Supabase Inc., instance hébergée dans l’Union européenne.',
-    'Support client : contact@overbound-race.com du lundi au vendredi, 9h00 – 18h00 (CET).',
+    'Support client : contact@overbound-race.com du lundi au vendredi, 9h00 à 18h00 (CET).',
   ],
   accesPlateforme: [
     "L’accès à la Plateforme est gratuit hors coûts de connexion (fournis par l’opérateur internet de l’Utilisateur). Certaines rubriques sont accessibles après authentification. Overbound se réserve le droit de restreindre l’accès à certaines sections ou fonctionnalités, notamment pour raisons de maintenance, de sécurité ou d’évolution des services.",
@@ -165,14 +165,14 @@ const paragraphs = {
   loi: [
     "Les CGU sont soumises au droit français. En cas de différend, les parties rechercheront une solution amiable dans un délai de 30 jours.",
     "À défaut d’accord, le litige pourra être porté devant les tribunaux compétents. Pour les consommateurs, conformément à l’article R. 631-3 du Code de la consommation, la juridiction compétente est celle du domicile du défendeur ou du lieu d’exécution de la prestation.",
-    "Médiation de la consommation : l’Utilisateur consommateur peut recourir gratuitement au service de médiation CM2C (Centre de médiation de la consommation des conciliateurs de justice) – 14 rue Saint Jean, 75017 Paris – cm2c.net.",
+    "Médiation de la consommation : l’Utilisateur consommateur peut recourir gratuitement au service de médiation CM2C (Centre de médiation de la consommation des conciliateurs de justice), 14 rue Saint Jean, 75017 Paris, cm2c.net.",
   ],
   contact: [
     "Support général : contact@overbound-race.com",
     "Service inscriptions & billetterie : contact@overbound-race.com",
     "Partenariats & sponsoring : partners@overbound-race.com",
     "Presse : press@overbound-race.com",
-    "Adresse postale : Palvadeau Organisation (Overbound) – 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain",
+    "Adresse postale : Palvadeau Organisation (Overbound), 105 rue de la Brèche du Houx, 78760 Jouars-Pontchartrain",
   ],
 }
 

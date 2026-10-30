@@ -143,6 +143,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   const navItems: NavItem[] = [
     { type: 'link', name: 'Événement', href: featuredEventHref },
     { type: 'link', name: 'Devenir bénévole', href: '/volunteers' },
+    { type: 'link', name: 'Entreprises', href: '/entreprises' },
     {
       type: 'dropdown',
       name: 'La course',
@@ -280,7 +281,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
             <Link href="/" className="flex items-center space-x-2 p-2">
               <Image
                 src="/images/brand/totem_logo_white.png"
-                alt="Overbound – accueil"
+                alt="Overbound, accueil"
                 width={64}
                 height={64}
                 priority

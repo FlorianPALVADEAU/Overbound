@@ -334,7 +334,7 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
           <span>
             {totalCount > 0
-              ? `${rangeStart}–${rangeEnd} sur ${totalCount} inscription${totalCount > 1 ? 's' : ''}`
+              ? `${rangeStart} à ${rangeEnd} sur ${totalCount} inscription${totalCount > 1 ? 's' : ''}`
               : '0 inscription'}
           </span>
           {isFetching && (

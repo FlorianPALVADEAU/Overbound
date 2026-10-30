@@ -129,7 +129,7 @@ export default function CGVPage() {
                   <Link href={`mailto:${COMPANY_INFO.contact.email}`} className="text-primary underline">
                     {COMPANY_INFO.contact.email}
                   </Link>{' '}
-                  – Tél : {COMPANY_INFO.contact.phone}
+                  Tél : {COMPANY_INFO.contact.phone}
                 </p>
               </div>
             </section>

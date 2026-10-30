@@ -14,6 +14,8 @@ Un audit complet du code (architecture, sécurité, RGPD, logique métier, tests
 - **Génération d'email HTML** : lire `docs/guides/email-conventions.md` **avant** de produire le moindre code. Ce fichier est la source de vérité pour le design, la structure et le contenu. Les emails **transactionnels** (billets, reçus) sont envoyés via **Resend** ; les emails **marketing** via **Amazon SES** (voir [ADR-0006](docs/adr/ADR-0006-marketing-email-ses-supabase-audience.md)). Le footer `{{{RESEND_UNSUBSCRIBE_URL}}}` du guide ne vaut que pour Resend ; un mail marketing SES porte le lien généré par `generateMarketingUnsubscribeUrl`.
 - **UI du site (pages, composants visuels)** : lire `docs/design/design-system.md` **avant** d'écrire ou de modifier le moindre composant visuel. N'utiliser que les tokens de `src/app/globals.css` et les primitives de `src/components/ds/` (`Section`, `Container`, `SectionHeader`, `Eyebrow`, `StatRow`, `Pill`) ainsi que les variants `Button`/`Card`. Interdits : hex en classe, `text-gray-*`/`neutral`/`zinc`, `font-black`, `tracking-[…]`, `text-[Npx]`, `dark:`, `max-w-6xl`. `npm run lint:design` bloque toute nouvelle violation. Référence visuelle : route `/design`.
 
+- **Typographie** : jamais de tiret demi-cadratin (U+2013) dans les textes du site, des e-mails ou des docs (il trahit un texte écrit par une IA). Plages : "8 à 10 km" ; incises : virgule ou deux-points. `src/lib/noEnDash.test.ts` fait échouer le build.
+
 ## Stack
 
 - Next.js App Router, TypeScript strict

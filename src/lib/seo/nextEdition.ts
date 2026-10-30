@@ -10,7 +10,7 @@ export interface NextEditionFacts {
   confirmed: boolean
   /** Phrase to follow "prévue" or "aura lieu": "entre avril et juin 2027" or "le 7 février 2027". */
   window: string
-  /** Short value for a figure cell: "Avril–juin 2027" or "7 février 2027". */
+  /** Short value for a figure cell: "Avril à juin 2027" or "7 février 2027". */
   shortLabel: string
   venue: string | null
   detailsStatus: string
@@ -19,7 +19,7 @@ export interface NextEditionFacts {
 export const FALLBACK_NEXT_EDITION: NextEditionFacts = {
   confirmed: false,
   window: NEXT_EDITION.window,
-  shortLabel: 'Avril–juin 2027',
+  shortLabel: 'Avril à juin 2027',
   venue: null,
   detailsStatus: NEXT_EDITION.detailsStatus,
 }

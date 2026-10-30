@@ -47,7 +47,15 @@ const shuffleWithSeed = <T,>(array: T[], seed: number): T[] => {
   return result
 }
 
-const SocialProof = () => {
+interface SocialProofProps {
+  title?: string
+  lead?: string
+}
+
+const SocialProof = ({
+  title = 'Ils ont relevé le défi',
+  lead = "Découvrez les témoignages de nos participants qui ont vécu l'expérience Overbound",
+}: SocialProofProps) => {
   const sectionRef = useRef<HTMLElement | null>(null)
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
@@ -337,10 +345,7 @@ const SocialProof = () => {
   return (
     <Section ref={sectionRef} tone="light" edge="mountain">
       <Container>
-        <SectionHeader
-          title="Ils ont relevé le défi"
-          lead="Découvrez les témoignages de nos participants qui ont vécu l'expérience Overbound"
-        />
+        <SectionHeader title={title} lead={lead} />
 
         <div className="relative z-10 flex w-full flex-col items-center gap-16">
           <Carousel

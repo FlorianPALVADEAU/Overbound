@@ -39,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/blog/categories',
     '/blog/auteurs',
     '/volunteers',
+    '/entreprises',
     '/contact',
     '/cgv',
     '/cgu',

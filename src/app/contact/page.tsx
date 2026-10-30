@@ -12,6 +12,7 @@ const SOCIALS = [
 
 const SHORTCUTS = [
   { label: 'Une question sur ton billet ou la course ?', cta: 'Voir la FAQ', href: '/about/faq' },
+  { label: 'Une équipe ou une entreprise ?', cta: 'Offre entreprises', href: '/entreprises' },
   { label: 'Partenaire ou journaliste ?', cta: 'Partenaires & presse', href: '/about/partners' },
   { label: 'Envie de donner un coup de main ?', cta: 'Devenir bénévole', href: '/volunteers' },
 ]

@@ -98,7 +98,7 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
         answer: `Il faut avoir ${FORMAT_FACTS.minAge} ans minimum.`,
       },
     ],
-    related: [PILLAR_LINKS.loops, PILLAR_LINKS.facts, { href: '/events/formats', label: 'Comparer OPEN et RANKED' }],
+    related: [PILLAR_LINKS.loops, PILLAR_LINKS.facts, { href: '/events/formats', label: 'Comparer OPEN et RANKED' }, { href: '/entreprises', label: 'Team building pour entreprises et CSE' }],
   },
 
   loops: {
@@ -158,7 +158,7 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
           "En OPEN, autant que tu le souhaites dans la plage horaire de l'événement. En RANKED, autant que tu peux tenir : tu es éliminé si tu dépasses le temps limite d'un tour.",
       },
     ],
-    related: [PILLAR_LINKS.paris, PILLAR_LINKS.facts, { href: '/events/formats', label: 'Comparer OPEN et RANKED' }],
+    related: [PILLAR_LINKS.paris, PILLAR_LINKS.facts, { href: '/events/formats', label: 'Comparer OPEN et RANKED' }, { href: '/entreprises', label: 'Team building pour entreprises et CSE' }],
   },
 
   facts: {

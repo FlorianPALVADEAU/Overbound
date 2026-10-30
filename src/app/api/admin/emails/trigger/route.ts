@@ -19,9 +19,12 @@ import {
   sendAdminDigestEmail,
   sendVolunteerRecruitmentEmail,
   sendVolunteerAssignmentEmail,
+  sendB2bQuoteConfirmationEmail,
 } from '@/lib/email'
 import { sendAmbassadorRewardEarnedEmail, sendAmbassadorRewardStatusEmail } from '@/lib/ambassadors/email'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import { loadNextEdition } from '@/lib/seo/loadNextEdition'
+import { labelOf, PROJECT_TYPES, TEAM_SIZES } from '@/lib/b2b/quoteRequest'
 
 export const runtime = 'nodejs'
 
@@ -138,6 +141,19 @@ const handlePost = async (request: NextRequest) => {
           manageUrl: `${ACCOUNT_URL}/tickets`,
         })
         return 'Billet de démonstration envoyé.'
+      },
+      b2b_quote_confirmation: async () => {
+        const edition = await loadNextEdition()
+        await sendB2bQuoteConfirmationEmail({
+          to: user.email!,
+          contactName: fullName ?? 'Claire Martin',
+          companyName: 'Entreprise de démonstration',
+          teamSizeLabel: labelOf(TEAM_SIZES, '10-19'),
+          projectTypeLabel: labelOf(PROJECT_TYPES, 'tickets'),
+          editionWindow: edition.window,
+          editionStatus: edition.detailsStatus,
+        })
+        return 'Confirmation de devis entreprise envoyée.'
       },
       marketing_new_event: async () => {
         assertSent(await sendNewEventAnnouncementEmail({

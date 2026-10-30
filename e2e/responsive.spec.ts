@@ -14,7 +14,7 @@ import { disableAutomaticPopups, freezeHeroVideo } from './support/popups'
 // §4/§5 (accueil, event landing, register) plus the three pages un-gated
 // in §6 (obstacles, formats) -- not the whole site, which is out of scope
 // for this harness's first pass.
-const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats', '/volunteers', '/contact', '/about/our-story', '/about/partners', '/about/faq', '/about/credits']
+const ROUTES = ['/', '/events/ultra-arena-2026', '/events/ultra-arena-2026/register', '/obstacles', '/events/formats', '/volunteers', '/contact', '/about/our-story', '/about/partners', '/about/faq', '/about/credits', '/entreprises']
 
 // Popups depend on live campaigns and timers, and the hero video on an idle
 // delay: left alone, they change the page from run to run and make the

@@ -115,7 +115,7 @@ photothèque et signature graphique (`mountain-vector.svg`) restent celles du si
 | Sujet | Décision |
 |---|---|
 | Architecture de l'accueil | Evergreen, avec un bloc « prochaine édition » alimenté par la base, pas de contenu figé à une édition |
-| Média pour expliquer le concept | Schéma animé SVG **et** emplacement vidéo 30–60 s |
+| Média pour expliquer le concept | Schéma animé SVG **et** emplacement vidéo 30 à 60 s |
 | Périmètre de l'itération 1 | Accueil + page événement + pages mortes + header + image de partage + Lucky Wheel global + contrat responsive |
 | Tunnel d'inscription | Reporté en itération 2, après mesure de l'itération 1 |
 | Exigence transverse | Mobile first et responsive vérifiable par machine, zéro défaut visuel sur toute taille d'écran, y compris les formats inhabituels |

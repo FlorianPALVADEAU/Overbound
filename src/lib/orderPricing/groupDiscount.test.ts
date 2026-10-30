@@ -5,7 +5,7 @@ import type { TierPricedParticipant } from './participantPricing'
 import { amountCode, order, participantsOn, percentCode } from './testFixtures'
 import type { OrderPricing, OrderPricingInput } from './types'
 
-/** Prices: OPEN 50 €, RANKED 70 €. Group tiers: 2 → -10 %, 3 to 5 → -15 %, 6+ → -20 %, OPEN only. */
+/** Prices: OPEN 50 €, RANKED 70 €. Group tiers: 2 → -10 %, 3 to 5 → -15 %, 6+ → -20 %, every ticket counts and is discounted. */
 const price = (input: OrderPricingInput): OrderPricing => {
   const result = computeOrderPricing(input)
   if (!result.ok) throw new Error(`Unexpected pricing error: ${result.error.kind}`)
@@ -45,9 +45,14 @@ describe('computeGroupDiscount', () => {
     expect(duo).toEqual({ percent: 10, amountCents: 2 * (5999 - 5399) })
   })
 
-  it('does not count ranked tickets, nor discount them', () => {
-    const mixed = computeGroupDiscount([participant(), participant({ isOpenFormat: false })])
-    expect(mixed).toEqual({ percent: 0, amountCents: 0 })
+  it('counts a ranked ticket like an open one, and discounts it', () => {
+    const mixed = computeGroupDiscount([participant(), participant({ isOpenFormat: false, basePriceCents: 6999, unitPriceCents: 6999 })])
+    expect(mixed).toEqual({ percent: 10, amountCents: 600 + 700 })
+  })
+
+  it('gives a ranked-only order the same tiers', () => {
+    const ranked = participant({ isOpenFormat: false })
+    expect(computeGroupDiscount([ranked, ranked, ranked]).percent).toBe(15)
   })
 })
 
@@ -65,10 +70,15 @@ describe('computeOrderPricing — group discount', () => {
     expect(price(order({ participants: opens(6) })).totalDue).toBe(24000)
   })
 
-  it('leaves ranked tickets at full price', () => {
+  it('discounts a ranked ticket like an open one, mixed formats counting together', () => {
     const pricing = price(order({ participants: participantsOn('open', 'open', 'ranked') }))
-    expect(pricing.totalDue).toBe(4500 + 4500 + 7000)
-    expect(pricing.participants.map((p) => p.paidPriceCents)).toEqual([4500, 4500, 7000])
+    // 3 tickets: -15 % on every one
+    expect(pricing.participants.map((p) => p.paidPriceCents)).toEqual([4250, 4250, 5950])
+    expect(pricing.totalDue).toBe(4250 + 4250 + 5950)
+  })
+
+  it('discounts a ranked-only duo by 10 %', () => {
+    expect(price(order({ participants: participantsOn('ranked', 'ranked') })).totalDue).toBe(2 * 6300)
   })
 
   it('never discounts the flexible option', () => {

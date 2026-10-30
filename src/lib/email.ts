@@ -19,6 +19,8 @@ import VolunteerApplicationEmail from '@/emails/VolunteerApplicationEmail'
 import VolunteerApplicationConfirmationEmail from '@/emails/VolunteerApplicationConfirmationEmail'
 import SupportContactEmail from '@/emails/SupportContactEmail'
 import SupportContactConfirmationEmail from '@/emails/SupportContactConfirmationEmail'
+import B2bQuoteRequestEmail from '@/emails/B2bQuoteRequestEmail'
+import B2bQuoteConfirmationEmail from '@/emails/B2bQuoteConfirmationEmail'
 import PopupSubscribeConfirmationEmail from '@/emails/PopupSubscribeConfirmationEmail'
 import LuckyWheelRewardEmail from '@/emails/LuckyWheelRewardEmail'
 import LuckyWheelReminderEmail from '@/emails/LuckyWheelReminderEmail'
@@ -205,6 +207,49 @@ export async function sendSupportContactEmail(params: {
           },
         ]
       : undefined,
+  })
+}
+
+export async function sendB2bQuoteRequestEmail(params: {
+  to: string
+  replyTo: string
+  companyName: string
+  fullName: string
+  phone?: string | null
+  teamSizeLabel: string
+  projectTypeLabel: string
+  message?: string | null
+  utmSummary?: string | null
+  submittedAt: string
+}) {
+  const html = await renderEmail(B2bQuoteRequestEmail({ ...params, email: params.replyTo }))
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    replyTo: params.replyTo,
+    subject: `Devis entreprise : ${params.companyName}`,
+    html,
+  })
+}
+
+export async function sendB2bQuoteConfirmationEmail(params: {
+  to: string
+  contactName: string
+  companyName: string
+  teamSizeLabel: string
+  projectTypeLabel: string
+  editionWindow?: string
+  editionStatus?: string
+}) {
+  const html = await renderEmail(B2bQuoteConfirmationEmail(params))
+
+  return resend.emails.send({
+    from: UNFORMAL_FROM,
+    to: params.to,
+    replyTo: SUPPORT_REPLY_TO,
+    subject: 'Votre demande de devis Overbound',
+    html,
   })
 }
 

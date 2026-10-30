@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
 }
 
-const SPONSORING_PDF_URL = '/images/brand/Overbound – Dossier Sponsoring 2026.pdf'
+const SPONSORING_PDF_URL = '/images/brand/Overbound-Dossier-Sponsoring-2026.pdf'
 
 const BENEFITS = [
   {

@@ -49,11 +49,9 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
   const discountAmount = ticketDiscountAmount + upsellDiscountAmount
   // Never discounted: the option is a refund right, not part of the ticket price.
   const flexibleTotal = participants.filter((participant) => participant.flexible).length * input.flexibleFeeCents
-  // The group discount belongs to the OPEN bibs alone; a code is spread over every bib.
+  // The group discount is the same percentage on every bib; a code is spread over every bib by amount.
   const paidPrices = groupApplies
-    ? participants.map((participant) =>
-        participant.isOpenFormat ? applyTierDiscount(participant.unitPriceCents, group.percent) : participant.unitPriceCents,
-      )
+    ? participants.map((participant) => applyTierDiscount(participant.unitPriceCents, group.percent))
     : allocatePaidTicketPrices(
         participants.map((participant) => participant.unitPriceCents),
         ticketDiscountAmount,

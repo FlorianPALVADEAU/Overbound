@@ -25,6 +25,7 @@ export const buildLlmsTxt = (next: NextEditionFacts = FALLBACK_NEXT_EDITION) =>
     '',
     '## Complément',
     link('/events', 'Prochaine édition', "liste d'attente pour l'ouverture des inscriptions"),
+    link('/entreprises', 'Offre entreprises', 'billets en volume, remise de groupe, devis pour les équipes et les CSE'),
     link('/about/faq', 'FAQ', 'billets, transferts, jour J'),
     link('/obstacles', 'Obstacles', 'les obstacles du parcours'),
     link('/llms-full.txt', 'Version complète', 'le contenu des pages de référence en texte'),

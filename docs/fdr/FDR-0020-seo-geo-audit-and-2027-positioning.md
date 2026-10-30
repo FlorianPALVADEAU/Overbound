@@ -37,14 +37,14 @@ Opportunités chiffrées dans l'export (impressions élevées, clics quasi nuls)
 | `race bound` | 617 | 18 | 6,6 | variante de marque : s'approprier |
 | `backyard paris` | 386 | 6 | 8,7 | thème porteur, aucune page ne le cible |
 | `course obstacle paris` / `… 2026` | 163 / 144 | 20 | 4,9 / 6,3 | proche du top, CTR 6 % : title « 2026 » périmé |
-| `course obstacle 2026` (+ variantes) | ~250 cumulées | ~3 | 8–10 | pas de page 2027 |
+| `course obstacle 2026` (+ variantes) | ~250 cumulées | ~3 | 8 à 10 | pas de page 2027 |
 | `backyard race`, `backyard obstacle course` | 57 / 11 | 0 / 6 | 7,7 / 1,3 | forte pertinence, EN |
 | `course obstacle famille 2026` | 20 | 0 | 8,3 | angle famille non traité |
 | `/volunteers` | 2 668 | 85 | 6,5 | requêtes « bénévole marathon / événement sportif » : trafic hors cible, CTR 3 % |
 | `/cgv`, `/cgu` | 1 178 / 668 | 15 | ~2 | 1 800 impressions gaspillées sur des pages légales |
 | `/bootcamps` | 1 296 | 17 | 2,2 | bien classé, CTR 1,3 % : title ou snippet faible |
 | `/races/origin`, `/races/ultra-arena`, `/races/tribale-kids` | 716 | 8 | 2,4 | pages `/races/*` indexées, non liées du site (voir FDR-0015 §6) |
-| `/blog/*` | ~200 | 5 | 1,8–7 | le blog ne rapporte rien |
+| `/blog/*` | ~200 | 5 | 1,8 à 7 | le blog ne rapporte rien |
 
 ## 2. Audit de l'existant
 
@@ -131,7 +131,7 @@ Chaque lot est une PR séparée. Aucun n'est démarré.
 ### Lot B — Contenu qui capte le besoin (P1)
 6. **Page piliers** (une par intention, rédigées pour être citées) : « Course à obstacles à Paris / Île-de-France » (OPEN vs
    RANKED, boucle de 2 km, pour débutants et familles) ; « Qu'est-ce qu'un backyard à obstacles » ; « Overbound : date, lieu,
-   prix, formats » (page de faits). Chaque page : réponse en tête (40–60 mots), tableau de faits, FAQ, maillage interne.
+   prix, formats » (page de faits). Chaque page : réponse en tête (40 à 60 mots), tableau de faits, FAQ, maillage interne.
 7. **Faits dans le HTML de l'accueil** : lieu, type d'événement, formats, « édition précédente : 12 septembre 2026,
    Île de loisirs de Saint-Quentin-en-Yvelines, plus de 300 participants ».
 8. **Corriger `/races/*`** (règle fausse) et les relier, ou les fusionner dans `/events/formats` avec redirection 301.

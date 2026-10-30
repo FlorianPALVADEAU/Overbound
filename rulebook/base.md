@@ -49,7 +49,7 @@ Overbound doit être compris comme un événement :
 ### Identité de l’événement
 | Élément | Référence |
 |---|---|
-| Nom | Overbound Race / Overbound – Backyard à Obstacles 2026 |
+| Nom | Overbound Race / Overbound, Backyard à Obstacles 2026 |
 | Date | 12 septembre 2026 |
 | Lieu | Île de loisirs de Saint-Quentin-en-Yvelines |
 | Territoire | Saint-Quentin-en-Yvelines, Yvelines, Île-de-France |

@@ -8,7 +8,7 @@
 > `assign_open_wave_to_registration`) no longer reflects production behavior. OPEN wave assignment is
 > now a participant-selected choice, revalidated and locked atomically via
 > `assign_selected_wave_to_registration` — see [FDR-0012](FDR-0012-user-selected-open-wave.md). Everything
-> else in this document remains accurate: wave configuration (24 waves, 12:00–15:50), `EventWaves`
+> else in this document remains accurate: wave configuration (24 waves, 12:00 à 15:50), `EventWaves`
 > structure, format detection, RANKED behavior (unaffected), and wave counter maintenance principles
 > (now enforced by the new RPC's own locking rather than the batch refresh described below).
 

@@ -17,6 +17,7 @@ const LINK_GROUPS = [
     title: 'Partenaires',
     links: [
       { label: 'Partenaires & presse', href: '/about/partners' },
+      { label: 'Entreprises & CSE', href: '/entreprises' },
       { label: 'Devenir partenaire', href: '/about/partners#contacts' },
     ],
   },

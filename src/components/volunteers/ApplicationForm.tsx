@@ -170,7 +170,7 @@ export function ApplicationForm({ application }: { application: VolunteerApplica
               <Input
                 id="custom-event"
                 className="h-12 text-base"
-                placeholder="Overbound Lyon – 12 mai"
+                placeholder="Overbound Lyon, 12 mai"
                 value={values.customEventName}
                 onChange={(event) => setValue('customEventName', event.target.value)}
                 aria-invalid={Boolean(errors.customEventName)}

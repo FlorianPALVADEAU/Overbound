@@ -89,7 +89,7 @@ Principes clefs :
 - Sanctions et DNF appliqués fermement pour préserver l'équité.
 
 Fonctionnement détaillé :
-- Arrive au briefing 15–30 min avant ton créneau ; ton numéro, la procédure de départ, et les neutralisations éventuelles seront annoncés.
+- Arrive au briefing 15 à 30 min avant ton créneau ; ton numéro, la procédure de départ, et les neutralisations éventuelles seront annoncés.
 - Le contrôle du parcours et la validation s'effectuent selon la procédure indiquée (scans / checkpoints).
 
 Cas concrets et erreurs fréquentes :
@@ -179,7 +179,7 @@ Cette section est l'une des plus importantes. Pour chaque famille d'obstacles no
 - Conseils : pace-toi, anticipe perte d'adhérence.
 
 ### 5.7 Signature Obstacles
-- Chaque édition peut proposer 1–3 obstacles signature (technicité, spectacle).
+- Chaque édition peut proposer 1 à 3 obstacles signature (technicité, spectacle).
 - Règles spécifiques et consignes seront annoncées au briefing.
 
 ---
@@ -288,10 +288,10 @@ Avant de partir
 - Hydratation + ravitaillement ;
 - Vérifier brief & horaires.
 
-Arrivée 60–30 minutes avant
+Arrivée 60 à 30 minutes avant
 - Retire ton dossard / chouchous ;
 - Repère point médical et zone briefing ;
-- Echauffe 10–20 min ;
+- Echauffe 10 à 20 min ;
 - Vérifie la procédure de validation.
 
 Pendant la course

@@ -45,7 +45,7 @@ export const COMPANY_INFO = {
     brand: 'contact@overbound-race.com',
   },
 
-  supportHours: 'Du lundi au vendredi, 9h00 – 18h00 (CET)',
+  supportHours: 'Du lundi au vendredi, 9h00 à 18h00 (CET)',
 
   hosting: {
     web: {

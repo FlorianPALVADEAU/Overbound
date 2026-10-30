@@ -17,8 +17,7 @@ interface TicketQuantitySelectProps {
   quantity: number
   onChange: (quantity: number) => void
   unitCents: number | null
-  isOpenFormat: boolean
-  otherOpenCount: number
+  otherTicketCount: number
   disabled?: boolean
 }
 
@@ -30,15 +29,14 @@ export default function TicketQuantitySelect({
   quantity,
   onChange,
   unitCents,
-  isOpenFormat,
-  otherOpenCount,
+  otherTicketCount,
   disabled = false,
 }: TicketQuantitySelectProps) {
   const inputId = useId()
   const [forceInput, setForceInput] = useState(false)
   const [draft, setDraft] = useState<string | null>(null)
   const showInput = forceInput || quantity > QUANTITY_DROPDOWN_MAX
-  const pricing = { unitCents: unitCents ?? 0, isOpenFormat, otherOpenCount }
+  const pricing = { unitCents: unitCents ?? 0, otherTicketCount }
   const options = buildQuantityOptions(pricing)
 
   const handleSelect = (value: string) => {
@@ -109,8 +107,6 @@ export default function TicketQuantitySelect({
           />
         </div>
       ) : null}
-
-      {!isOpenFormat ? <p className="text-xs text-muted-foreground">Pas de remise de groupe sur ce format.</p> : null}
 
       {current && quantity > QUANTITY_DROPDOWN_MAX && current.percent > 0 ? (
         <p className="text-xs text-muted-foreground">Remise de groupe : −{current.percent} %</p>

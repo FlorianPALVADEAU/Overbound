@@ -45,7 +45,7 @@ Toujours présent, **toujours en premier** dans le `<body>`, avant tout contenu 
 ### Pourquoi les règles HTML email sont si contraignantes
 
 Les clients mail n'utilisent pas tous un moteur de navigateur moderne :
-- **Outlook 2007–2019 (desktop Windows)** : utilise le moteur de rendu de **Microsoft Word**, pas un navigateur. C'est le client le plus limitant.
+- **Outlook 2007 à 2019 (desktop Windows)** : utilise le moteur de rendu de **Microsoft Word**, pas un navigateur. C'est le client le plus limitant.
 - **Gmail (webmail)** : **supprime entièrement le `<head>` et les blocs `<style>`** avant d'afficher l'email.
 - **Apple Mail, iOS Mail** : bon support CSS, mais quelques quirks sur les polices et les images.
 - **Samsung Mail, clients Android anciens** : support CSS limité et variable.
@@ -66,7 +66,7 @@ Toutes les conventions du document découlent de ces contraintes.
 
 ### Ce qu'Outlook (Word engine) ne supporte pas
 
-Ces propriétés CSS sont **ignorées** par Outlook 2007–2019 :
+Ces propriétés CSS sont **ignorées** par Outlook 2007 à 2019 :
 
 | Propriété | Comportement Outlook |
 |-----------|---------------------|
@@ -147,17 +147,17 @@ Ces éléments sont ignorés par certains clients mais n'empêchent pas la lisib
 
 | Rôle | Taille | Poids | Couleur light | Couleur dark |
 |------|--------|-------|---------------|--------------|
-| Étiquette catégorie | 11–13px | 900 | `#2563eb` | `#60a5fa` |
-| Titre H1 hero | 42–56px | 900 | `#ffffff` | — |
-| Titre H2 section | 28–38px | 900 | `#0f172a` / `#111827` | `#ffffff` |
-| Titre H3 carte | 24–28px | 900 | `#0f172a` | `#ffffff` |
-| Texte corps | 14–17px | 400 | `#475569` | `#cbd5e1` |
+| Étiquette catégorie | 11 à 13px | 900 | `#2563eb` | `#60a5fa` |
+| Titre H1 hero | 42 à 56px | 900 | `#ffffff` | — |
+| Titre H2 section | 28 à 38px | 900 | `#0f172a` / `#111827` | `#ffffff` |
+| Titre H3 carte | 24 à 28px | 900 | `#0f172a` | `#ffffff` |
+| Texte corps | 14 à 17px | 400 | `#475569` | `#cbd5e1` |
 | Texte légal/footer | 12px | 400 | `#94a3b8` | — |
 
 ### Règles typographiques
 - Toutes les étiquettes de catégorie sont en **UPPERCASE**, `letter-spacing: 1px`, `font-weight: 900`.
 - Les titres principaux utilisent systématiquement `font-weight: 900`.
-- `line-height` corps de texte : 23–30px.
+- `line-height` corps de texte : 23 à 30px.
 - Les `<p>` à l'intérieur des `<div>` ont toujours `margin:0; padding:0`.
 
 ---
@@ -198,10 +198,10 @@ Ces éléments sont ignorés par certains clients mais n'empêchent pas la lisib
 ## Section hero
 
 Structure systématique :
-1. **Barre supérieure** (optionnelle) : fond coloré, texte uppercase, 13px, font-weight 900, letter-spacing 1–1.2px
+1. **Barre supérieure** (optionnelle) : fond coloré, texte uppercase, 13px, font-weight 900, letter-spacing 1 à 1.2px
 2. **Image de fond** avec double attribut `background` (inline + style pour Outlook)
 3. **Overlay gradient** : `linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.82))` — varie selon la photo
-4. **Logo** : `https://overbound-race.com/images/brand/totem_logo_white.png`, width 84–90px, centré, `display:block; margin:0 auto 12px auto`
+4. **Logo** : `https://overbound-race.com/images/brand/totem_logo_white.png`, width 84 à 90px, centré, `display:block; margin:0 auto 12px auto`
 5. **Titre** gros, blanc, centré
 6. **CTA** vert `#16a34a` toujours présent dans le hero
 

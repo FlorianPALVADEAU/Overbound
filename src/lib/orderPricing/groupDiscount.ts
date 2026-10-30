@@ -1,14 +1,17 @@
 import { applyTierDiscount, type TierPricedParticipant } from './participantPricing'
 
-/** FDR-0019: one order with several OPEN tickets gets a percentage off those tickets. Highest threshold first. */
-export const GROUP_DISCOUNT_TIERS: ReadonlyArray<{ minOpenTickets: number; percent: number }> = [
-  { minOpenTickets: 6, percent: 20 },
-  { minOpenTickets: 3, percent: 15 },
-  { minOpenTickets: 2, percent: 10 },
+/**
+ * FDR-0019: one order with several tickets, OPEN and RANKED counted together, gets a percentage off
+ * every ticket (the OPEN-only rule was dropped on 2026-10-29: a team mixes formats). Highest threshold first.
+ */
+export const GROUP_DISCOUNT_TIERS: ReadonlyArray<{ minTickets: number; percent: number }> = [
+  { minTickets: 6, percent: 20 },
+  { minTickets: 3, percent: 15 },
+  { minTickets: 2, percent: 10 },
 ]
 
-export const groupDiscountPercent = (openTickets: number): number =>
-  GROUP_DISCOUNT_TIERS.find((groupTier) => openTickets >= groupTier.minOpenTickets)?.percent ?? 0
+export const groupDiscountPercent = (tickets: number): number =>
+  GROUP_DISCOUNT_TIERS.find((groupTier) => tickets >= groupTier.minTickets)?.percent ?? 0
 
 export interface GroupDiscount {
   percent: number
@@ -16,11 +19,10 @@ export interface GroupDiscount {
   amountCents: number
 }
 
-/** Counts the OPEN tickets of one order; RANKED tickets neither count nor get discounted. */
+/** Counts every ticket of one order, whatever its format, and discounts each of them. */
 export const computeGroupDiscount = (participants: readonly TierPricedParticipant[]): GroupDiscount => {
-  const open = participants.filter((participant) => participant.isOpenFormat)
-  const percent = groupDiscountPercent(open.length)
-  const amountCents = open.reduce(
+  const percent = groupDiscountPercent(participants.length)
+  const amountCents = participants.reduce(
     (total, participant) => total + participant.unitPriceCents - applyTierDiscount(participant.unitPriceCents, percent),
     0,
   )

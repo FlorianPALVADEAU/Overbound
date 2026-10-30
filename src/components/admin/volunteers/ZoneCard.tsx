@@ -46,7 +46,7 @@ export function ZoneCard({ board, zone, shift, onCapacityChange, onMove, onChang
               key={summary.capacity ?? 'none'}
               type="number"
               min={0}
-              placeholder="–"
+              placeholder="-"
               defaultValue={summary.capacity ?? ''}
               className="h-8 w-16"
               onBlur={(event) => {

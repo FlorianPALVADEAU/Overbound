@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge'
-import { isOpenFormatTicket } from '@/lib/openSas'
 import { cn } from '@/lib/utils'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { applyTierDiscount } from '@/lib/orderPricing'
@@ -13,8 +12,8 @@ interface TicketCardProps {
   onQuantityChange: (ticketId: string, quantity: number) => void
   defaultCurrency: string
   sellingTier: EventPriceTier | null
-  /** OPEN bibs chosen on the other tickets: they count toward the group discount. */
-  otherOpenCount: number
+  /** Bibs chosen on the other tickets, any format: they count toward the group discount. */
+  otherTicketCount: number
 }
 
 export default function TicketCard({
@@ -23,10 +22,9 @@ export default function TicketCard({
   onQuantityChange,
   defaultCurrency,
   sellingTier,
-  otherOpenCount,
+  otherTicketCount,
 }: TicketCardProps) {
   const isSelected = quantity > 0
-  const isOpenFormat = isOpenFormatTicket(ticket.name, ticket.race?.name)
   const currency = (ticket.currency || defaultCurrency).toLowerCase()
 
   const hasActiveDiscount = Boolean(sellingTier && sellingTier.discount_percentage > 0)
@@ -91,8 +89,7 @@ export default function TicketCard({
             quantity={quantity}
             onChange={(next) => onQuantityChange(ticket.id, next)}
             unitCents={currentPrice ?? null}
-            isOpenFormat={isOpenFormat}
-            otherOpenCount={otherOpenCount}
+            otherTicketCount={otherTicketCount}
             disabled={isSoldOut}
           />
         </div>

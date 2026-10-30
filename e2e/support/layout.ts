@@ -84,6 +84,8 @@ export const assertTapTargetsAreLargeEnough = async (page: Page) => {
       const style = window.getComputedStyle(el)
       if (style.display === 'none' || style.visibility === 'hidden') return
       if ((el as HTMLInputElement).disabled) return
+      // Hidden from people and assistive technology (honeypot): nobody taps it.
+      if (el.closest('[aria-hidden="true"]')) return
 
       // A checkbox or radio is tapped through its label: the label is the target.
       const label = el.closest('label') ?? (el.id ? document.querySelector<HTMLElement>(`label[for="${el.id}"]`) : null)

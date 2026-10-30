@@ -32,6 +32,7 @@ const EMAIL_GROUPS: Array<{
       { type: 'post_event', label: 'Merci post-événement', description: 'Remerciements + feedback après la course.' },
       { type: 'ticket_confirmation', label: 'Confirmation billet', description: 'Envoi du QR code billet.' },
       { type: 'event_update', label: 'Mise à jour événement', description: 'Changement de date/lieu.' },
+      { type: 'b2b_quote_confirmation', label: 'Devis entreprise reçu', description: 'Confirmation envoyée à l’entreprise après sa demande de devis.' },
     ],
   },
   {

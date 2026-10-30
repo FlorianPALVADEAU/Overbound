@@ -28,8 +28,9 @@ describe('computeOrderPricing — tiers', () => {
     expect(price(order()).totalDue).toBe(5000)
   })
 
-  it('applies the active tier to every ticket', () => {
-    expect(price(order({ participants: participantsOn('ranked', 'ranked', 'ranked'), tiers: [tier()] })).totalDue).toBe(16800)
+  it('applies the active tier to every ticket, then the group discount on the tier price', () => {
+    // 3 ranked at 70 €: tier -20 % → 56 €, then group -15 % → 47,60 € each
+    expect(price(order({ participants: participantsOn('ranked', 'ranked', 'ranked'), tiers: [tier()] })).totalDue).toBe(14280)
   })
 
   it('charges the next tier for the participants that do not fit in the active one', () => {
@@ -190,12 +191,13 @@ describe('computeOrderPricing — mixed orders', () => {
         tiers: [tier({ maxRegistrations: 10 }), late],
         tierRegistrationCounts: { early: 5 },
         upsellLines: [{ upsellId: 'tshirt', quantity: 2 }],
-        promos: [ambassador('AMB10', 10)],
+        promos: [ambassador('AMB30', 30)],
       }),
     )
+    // 7 tickets earn the 20 % group discount (7040 cents); the 30 % code is worth more, so it wins
     expect(pricing.ticketSubtotal).toBe(35200)
-    expect(pricing.discountAmount).toBe(3520)
-    expect(pricing.totalDue).toBe(36570)
+    expect(pricing.discountAmount).toBe(10560)
+    expect(pricing.totalDue).toBe(29530)
   })
 
   it('spreads a rounded discount so bib prices add up to what was paid for tickets', () => {

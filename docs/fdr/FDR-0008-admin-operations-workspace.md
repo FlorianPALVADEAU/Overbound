@@ -268,7 +268,7 @@ Les routes précises ne sont pas une obligation de nommage ; le contrat importan
 |---|---|
 | Réponse API de liste, p95 | < 800 ms hors réseau |
 | Premier rendu de la liste, p95 | < 2 s sur poste desktop standard |
-| Taille de page | 25–100 lignes, choix explicite |
+| Taille de page | 25 à 100 lignes, choix explicite |
 | Données chargées côté client | une page, jamais la collection complète |
 
 Ces seuils sont des critères de validation initiale, à réviser avec mesures réelles, pas des garanties d’infrastructure.

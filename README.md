@@ -1,4 +1,4 @@
-# 🌍 Overbound – Site officiel
+# 🌍 Overbound : Site officiel
 
 **Overbound** est une course à obstacles immersive et scénarisée, pensée pour repousser les limites du corps et de l’esprit.  
 Plus qu’un simple événement sportif, Overbound est un **rite de dépassement de soi**, une expérience collective où chaque participant choisit son niveau de difficulté et découvre une ambiance tribale unique.
@@ -14,9 +14,9 @@ Overbound vise à redéfinir le rapport entre sport, aventure et identité, en u
 
 ## 🧩 Formats proposés
 
-- **6 km – Origin** : environ 20 obstacles, difficultés *Standard* ou *Hardcore*.  
-- **12 km – Horizon** : deux boucles, environ 40 obstacles.  
-- **Tribal Kids** : parcours ludique et sécurisé pour les 6–14 ans.  
+- **6 km : Origin** : environ 20 obstacles, difficultés *Standard* ou *Hardcore*.  
+- **12 km : Horizon** : deux boucles, environ 40 obstacles.  
+- **Tribal Kids** : parcours ludique et sécurisé pour les 6 à 14 ans.  
 - **Ultra Arena** : format *battle royale* par équipes, élimination progressive.  
 
 Chaque édition met en avant une **DA forte**, des **obstacles inédits**, et une **ambiance sonore et visuelle** conçue pour immerger les coureurs dès la ligne de départ.

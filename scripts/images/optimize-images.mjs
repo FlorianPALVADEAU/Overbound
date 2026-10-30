@@ -7,7 +7,7 @@ const OUTPUT_DIR = path.join(process.cwd(), "public", "images", "images");
 
 // Config à ajuster selon ton besoin
 const MAX_WIDTH = 1920; // largeur max pour les images hero
-const AVIF_QUALITY = 60; // 50–60 = très bonne perf / qualité ok
+const AVIF_QUALITY = 60; // 50 à 60 = très bonne perf / qualité ok
 
 const VALID_EXT = [".jpg", ".jpeg", ".png", ".JPG", ".JPEG", ".PNG"];
 
@@ -42,7 +42,7 @@ async function optimizeImage(inputPath) {
 
   const image = sharp(inputPath, { failOnError: false });
 
-  // On resize pour éviter les 4000–6000px inutiles
+  // On resize pour éviter les 4000 à 6000px inutiles
   await image
     .resize({
       width: MAX_WIDTH,

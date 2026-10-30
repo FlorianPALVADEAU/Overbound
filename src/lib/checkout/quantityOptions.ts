@@ -15,13 +15,12 @@ export interface QuantityOption {
 interface QuantityOptionsInput {
   /** Price of one bib today, tier already applied. */
   unitCents: number
-  isOpenFormat: boolean
-  /** OPEN bibs of the other tickets in the same order: they count toward the group discount. */
-  otherOpenCount: number
+  /** Bibs of the other tickets in the same order, any format: they count toward the group discount. */
+  otherTicketCount: number
 }
 
-export const quantityOption = ({ unitCents, isOpenFormat, otherOpenCount }: QuantityOptionsInput, quantity: number): QuantityOption => {
-  const percent = isOpenFormat ? groupDiscountPercent(otherOpenCount + quantity) : 0
+export const quantityOption = ({ unitCents, otherTicketCount }: QuantityOptionsInput, quantity: number): QuantityOption => {
+  const percent = groupDiscountPercent(otherTicketCount + quantity)
   const discounted = applyTierDiscount(unitCents, percent)
   return { quantity, unitCents: discounted, percent, totalCents: discounted * quantity }
 }
@@ -32,8 +31,8 @@ export const buildQuantityOptions = (input: QuantityOptionsInput): QuantityOptio
 export interface GroupTierHint {
   label: string
   percent: number
-  /** First OPEN bib count of the order at which this tier applies. */
-  minOpenTickets: number
+  /** First bib count of the order at which this tier applies. */
+  minTickets: number
 }
 
 /** "2 : −10 %", "3 à 5 : −15 %", "6 et + : −20 %", lowest threshold first. */
@@ -42,10 +41,10 @@ export const groupTierHints = (): GroupTierHint[] => {
   return ascending.map((groupTier, index) => {
     const next = ascending[index + 1]
     const range = !next
-      ? `${groupTier.minOpenTickets} et +`
-      : next.minOpenTickets - groupTier.minOpenTickets === 1
-        ? `${groupTier.minOpenTickets}`
-        : `${groupTier.minOpenTickets} à ${next.minOpenTickets - 1}`
-    return { label: range, percent: groupTier.percent, minOpenTickets: groupTier.minOpenTickets }
+      ? `${groupTier.minTickets} et +`
+      : next.minTickets - groupTier.minTickets === 1
+        ? `${groupTier.minTickets}`
+        : `${groupTier.minTickets} à ${next.minTickets - 1}`
+    return { label: range, percent: groupTier.percent, minTickets: groupTier.minTickets }
   })
 }

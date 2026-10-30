@@ -35,6 +35,14 @@ export const COVER = {
     obstacle('wall-over.webp'),
     obstacle('balance-beam.webp'),
   ],
+  /** /entreprises: hero (framed on the upper part), cohesion cards. */
+  enterprises: {
+    hero: photo('P1102314.webp'),
+    heroPosition: '50% 18%',
+    teamwork: obstacle('log-carry1.webp'),
+    together: photo('P1102323.webp'),
+    memory: photo('P1091584.webp'),
+  },
   /** Square cards of the « why Overbound » band on /races/[id], in display order. */
   raceValues: [
     obstacle('log-carry-end.webp'),

@@ -265,7 +265,7 @@ Viens te challenger de manière responsable : respecte le terrain, tes camarades
 
 ### B — Erreurs fréquentes et comment les éviter
 - Partir trop vite : gère ton effort sur la première boucle.
-- Négliger l’échauffement : 10–15 minutes d’activation réduisent les risques.
+- Négliger l’échauffement : 10 à 15 minutes d’activation réduisent les risques.
 - Ne pas vérifier la validation : garde tes chouchous et vérifie les points LAP.
 - S’exposer inutilement sur un obstacle : préfère la variante si ton niveau est incertain.
 

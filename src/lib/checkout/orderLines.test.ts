@@ -118,6 +118,7 @@ describe('buildOrderLines — options under their ticket', () => {
       ['upsell', true],
       ['ticket', false],
       ['upsell', true],
+      ['discount', false], // two bibs: the 10 % group discount line
     ])
     expect(lines[1].details).toEqual(['Camille (M)'])
     expect(lines.reduce((total, line) => total + line.amountCents, 0)).toBe(summary.totalDue)
