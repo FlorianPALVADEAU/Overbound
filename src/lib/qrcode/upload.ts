@@ -48,3 +48,20 @@ export async function generateAndUploadQRCode(token: string): Promise<string> {
     throw error
   }
 }
+
+/**
+ * URL of the QR code image to put in a ticket email. Prefers the stored PNG; if the upload fails,
+ * falls back to the on-demand route so the ticket email still carries a QR code that Gmail can load
+ * (a data: URL would not display).
+ */
+export async function resolveQrImageUrl(
+  token: string,
+  siteUrl: string,
+  upload: (token: string) => Promise<string> = generateAndUploadQRCode,
+): Promise<string> {
+  try {
+    return await upload(token)
+  } catch {
+    return `${siteUrl.replace(/\/$/, '')}/api/qr/${encodeURIComponent(token)}`
+  }
+}

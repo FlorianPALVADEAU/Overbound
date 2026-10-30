@@ -330,8 +330,8 @@ const handlePost = async (request: NextRequest) => {
           shiftStart: '07:00',
           shiftEnd: '11:30',
           arrivalInstructions: 'Rendez-vous à la tente bénévoles pour récupérer ton badge et ton t-shirt.',
-          contactEmail: 'orga@overbound.com',
-          contactPhone: '+33 6 XX XX XX XX',
+          contactEmail: 'contact@overbound-race.com',
+          contactPhone: '+33 6 52 26 60 54',
           checkinUrl: `${SITE_URL}/admin/checkin?event=demo`,
         })
         return 'Brief bénévole envoyé.'

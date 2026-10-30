@@ -22,3 +22,26 @@ export function getLogoUrl(): string {
   return `${getEmailAssetsBaseUrl()}/images/brand/totem_logo.png`
 }
 
+
+/** Photos of the current series, converted to jpg for mail clients (see docs/guides/email-conventions.md). */
+export type EmailPhoto =
+  | 'P1090801'
+  | 'P1091283'
+  | 'P1091298'
+  | 'P1091584'
+  | 'P1102314'
+  | 'P1102323'
+  | 'P1102426'
+  | 'chain-carry3'
+  | 'log-carry1'
+  | 'tire-drag'
+  | 'tire-flip'
+  | 'tire-flip2'
+
+export function getEmailPhotoUrl(photo: EmailPhoto): string {
+  return `${getEmailAssetsBaseUrl()}/images/email/${photo}.jpg`
+}
+
+export function getWhiteLogoUrl(): string {
+  return `${getEmailAssetsBaseUrl()}/images/brand/totem_logo_white.png`
+}

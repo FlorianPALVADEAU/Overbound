@@ -1,7 +1,9 @@
 import * as React from 'react'
-import { Preview, Section, Text, Link, Img, Hr, Button } from '@react-email/components'
+import { Link } from '@react-email/components'
 import EmailLayout from './EmailLayout'
+import { CtaButton, EMAIL_COLORS, Eyebrow, Paragraph, SectionTitle, Title } from './blocks'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import { getFirstName } from '@/lib/email/participantName'
 
 interface PostEventThankYouEmailProps {
   participantName: string
@@ -13,205 +15,83 @@ interface PostEventThankYouEmailProps {
   nextEventUrl: string
 }
 
-export function PostEventThankYouEmail({ participantName, eventTitle, eventId, userId, photosUrl, feedbackUrl, nextEventUrl }: PostEventThankYouEmailProps) {
+export function PostEventThankYouEmail({
+  participantName,
+  eventTitle,
+  eventId,
+  userId,
+  photosUrl,
+  nextEventUrl,
+}: PostEventThankYouEmailProps) {
   const ratingScale = Array.from({ length: 10 }, (_, i) => i + 1)
+  const firstName = getFirstName(participantName)
+  const rateUrl = (rating: number) =>
+    `${getEmailAssetsBaseUrl()}/feedback/rate?userId=${userId}&eventId=${eventId}&rating=${rating}`
 
   return (
-    <EmailLayout preview={`Merci d'avoir participé à ${eventTitle}`}>
-      {/* Hero Image */}
-      <Img
-        src={`${getEmailAssetsBaseUrl()}/images/email/two-sporty-mens-staring-at-the-camera-with-pride.jpg`}
-        alt="Merci de ta participation"
-        width="400"
-        style={styles.heroImage}
-      />
+    <EmailLayout
+      preview={`Merci d’avoir participé à ${eventTitle}. Dis-nous ce que tu en as pensé en un clic.`}
+      hero={{ photo: 'P1102314', alt: 'Des participants Overbound posent ensemble à l’arrivée' }}
+    >
+      <Eyebrow>Merci</Eyebrow>
+      <Title>{firstName ? `Merci ${firstName}` : 'Merci d’avoir été là'}</Title>
+      <Paragraph>
+        Merci d’avoir fait vibrer <strong>{eventTitle}</strong>. On espère que l’expérience t’a plu autant qu’à nous.
+      </Paragraph>
+      {photosUrl ? (
+        <Paragraph>
+          Les photos de l’événement sont en ligne :{' '}
+          <Link href={photosUrl} style={{ color: EMAIL_COLORS.eyebrow, fontWeight: 700 }}>
+            voir la galerie officielle
+          </Link>
+          .
+        </Paragraph>
+      ) : null}
 
-      <Section style={styles.section}>
-        <Text style={styles.heading}>Merci {participantName} !</Text>
-        <Text style={styles.paragraph}>Quelle course ! Merci d'avoir fait vibrer {eventTitle}. On espère que l'expérience t'a plu autant qu'à nous.</Text>
-        {photosUrl ? (
-          <Text style={styles.paragraph}>
-            <Link href={photosUrl} style={styles.link}>Découvre la galerie photos officielle</Link>
-          </Text>
-        ) : null}
+      <SectionTitle>Ton avis nous aide</SectionTitle>
+      <Paragraph>Sur une échelle de 1 à 10, recommanderais-tu {eventTitle} à un ami ? Clique sur ta note, c’est tout.</Paragraph>
+      <table role="presentation" width="100%" cellPadding={0} cellSpacing={0} border={0} style={{ margin: '0 0 4px 0' }}>
+        <tbody>
+          <tr>
+            {ratingScale.map((rating) => (
+              <td key={rating} align="center" style={{ padding: '0 2px' }}>
+                <Link
+                  href={rateUrl(rating)}
+                  style={{
+                    display: 'block',
+                    padding: '10px 0',
+                    border: `2px solid ${EMAIL_COLORS.ink}`,
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    color: EMAIL_COLORS.ink,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                  }}
+                >
+                  {rating}
+                </Link>
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+      <table role="presentation" width="100%" cellPadding={0} cellSpacing={0} border={0} style={{ margin: '0 0 24px 0' }}>
+        <tbody>
+          <tr>
+            <td style={{ fontSize: '12px', color: EMAIL_COLORS.muted }}>Pas du tout</td>
+            <td align="right" style={{ fontSize: '12px', color: EMAIL_COLORS.muted }}>
+              Absolument
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-        {/* Separator */}
-        <Hr style={styles.separator} />
-
-        {/* Rating Section */}
-        <Text style={styles.sectionTitle}>Ton avis compte</Text>
-        <Text style={styles.ratingQuestion}>
-          Sur une échelle de 1 à 10, recommanderais-tu {eventTitle} à un ami ?
-        </Text>
-
-        {/* Rating Scale */}
-        <Section style={styles.ratingSection}>
-          <table style={styles.ratingTable}>
-            <tbody>
-              <tr>
-                {ratingScale.map((rating) => (
-                  <td key={rating} style={styles.ratingCell}>
-                    <Link
-                      href={`${getEmailAssetsBaseUrl()}/feedback/rate?userId=${userId}&eventId=${eventId}&rating=${rating}`}
-                      style={{
-                        ...styles.ratingButton,
-                        ...(rating <= 3
-                          ? styles.ratingButtonRed
-                          : rating <= 7
-                          ? styles.ratingButtonYellow
-                          : styles.ratingButtonGreen),
-                      }}
-                    >
-                      {rating}
-                    </Link>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-          <table style={styles.ratingLabelsTable}>
-            <tbody>
-              <tr>
-                <td style={styles.ratingLabelLeft}>Pas du tout</td>
-                <td style={styles.ratingLabelRight}>Absolument</td>
-              </tr>
-            </tbody>
-          </table>
-        </Section>
-
-        {/* Separator */}
-        <Hr style={styles.separator} />
-
-        {/* CTA */}
-        <Text style={styles.sectionTitle}>Tu veux déjà planifier ton prochain défi ?</Text>
-        {/* CTA Button */}
-        <Section style={styles.buttonContainer}>
-          <Button href={nextEventUrl} style={styles.button}>
-            Je réserve ma prochaine course !
-          </Button>
-        </Section>
-      </Section>
+      <SectionTitle>Et la suite ?</SectionTitle>
+      <Paragraph>Envie de remettre ça ? Les prochaines courses sont là.</Paragraph>
+      <CtaButton href={nextEventUrl}>Voir les prochaines courses</CtaButton>
     </EmailLayout>
   )
 }
 
 export default PostEventThankYouEmail
-
-const styles: Record<string, React.CSSProperties> = {
-  heroImage: {
-    width: '100%',
-    maxWidth: '100%',
-    height: 'auto',
-    maxHeight: '300px',
-    objectFit: 'cover',
-    objectPosition: 'center',
-    borderRadius: '8px',
-    marginBottom: '24px',
-  },
-  buttonContainer: {
-    textAlign: 'center',
-    margin: '32px 0',
-  },
-  button: {
-    backgroundColor: '#16a34a',
-    color: '#ffffff',
-    padding: '14px 28px',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: 600,
-    fontSize: '16px',
-    display: 'inline-block',
-  },
-  section: {
-    lineHeight: '1.6',
-  },
-  heading: {
-    fontSize: '28px',
-    fontWeight: 700,
-    marginBottom: '16px',
-    textAlign: 'center',
-    color: '#111827',
-  },
-  paragraph: {
-    fontSize: '15px',
-    marginBottom: '12px',
-    textAlign: 'center',
-    color: '#6b7280',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'underline',
-    fontWeight: 600,
-  },
-  separator: {
-    border: 'none',
-    borderTop: '1px solid #e5e7eb',
-    margin: '32px 0',
-    width: '100%',
-    height: '1px',
-    borderRadius: '1000px',
-  },
-  sectionTitle: {
-    fontSize: '20px',
-    fontWeight: 600,
-    margin: '0 0 12px 0',
-    textAlign: 'center',
-    color: '#111827',
-  },
-  ratingQuestion: {
-    fontSize: '16px',
-    fontWeight: 600,
-    color: '#111827',
-    textAlign: 'center',
-    margin: '0 0 24px 0',
-  },
-  ratingSection: {
-    marginBottom: '32px',
-  },
-  ratingTable: {
-    width: '100%',
-    margin: '0 auto 12px',
-    borderCollapse: 'separate',
-    borderSpacing: '4px',
-  },
-  ratingCell: {
-    textAlign: 'center',
-  },
-  ratingButton: {
-    display: 'inline-block',
-    width: '40px',
-    height: '40px',
-    lineHeight: '40px',
-    textAlign: 'center',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: 600,
-    fontSize: '14px',
-    color: '#ffffff',
-  },
-  ratingButtonRed: {
-    backgroundColor: '#dc2626',
-  },
-  ratingButtonYellow: {
-    backgroundColor: '#f59e0b',
-  },
-  ratingButtonGreen: {
-    backgroundColor: '#16a34a',
-  },
-  ratingLabelsTable: {
-    width: '100%',
-    margin: '0 auto',
-  },
-  ratingLabelLeft: {
-    fontSize: '12px',
-    color: '#6b7280',
-    textAlign: 'left',
-    width: '50%',
-  },
-  ratingLabelRight: {
-    fontSize: '12px',
-    color: '#6b7280',
-    textAlign: 'right',
-    width: '50%',
-  },
-}

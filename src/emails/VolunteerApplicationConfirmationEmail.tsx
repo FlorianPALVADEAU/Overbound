@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { Preview, Section, Text, Link, Img, Button, Hr } from '@react-email/components'
+import { Link } from '@react-email/components'
 import EmailLayout from './EmailLayout'
-import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import { EMAIL_COLORS, Eyebrow, FactList, Paragraph, SectionTitle, SmallPrint, Steps, Title } from './blocks'
+import { getFirstName } from '@/lib/email/participantName'
 
 interface VolunteerEventSnapshot {
   id: string | null
@@ -17,7 +18,12 @@ export interface VolunteerApplicationConfirmationEmailProps {
   event?: VolunteerEventSnapshot | null
 }
 
-export function VolunteerApplicationConfirmationEmail({ applicantName, preferredMission, submittedAt, event = null }: VolunteerApplicationConfirmationEmailProps) {
+export function VolunteerApplicationConfirmationEmail({
+  applicantName,
+  preferredMission,
+  submittedAt,
+  event = null,
+}: VolunteerApplicationConfirmationEmailProps) {
   const formattedEventDate =
     event?.date && !Number.isNaN(Date.parse(event.date))
       ? new Date(event.date).toLocaleDateString('fr-FR', {
@@ -28,262 +34,48 @@ export function VolunteerApplicationConfirmationEmail({ applicantName, preferred
           timeZone: 'Europe/Paris',
         })
       : null
+  const firstName = getFirstName(applicantName)
 
   return (
-    <EmailLayout preview="On a bien reçu ta candidature bénévole">
-      {/* Hero Image */}
-      <Img
-        src={`${getEmailAssetsBaseUrl()}/images/email/an-armed-crossed-man-talking-in-a-middle-of-a-circle-of-people.jpg`}
-        alt="Candidature bénévole reçue"
-        width="400"
-        style={styles.heroImage}
+    <EmailLayout
+      preview="On a bien reçu ta candidature bénévole. Réponse sous 48 h."
+      hero={{ photo: 'P1090801', alt: 'Des bénévoles Overbound sur le parcours' }}
+    >
+      <Eyebrow>Candidature reçue</Eyebrow>
+      <Title>{firstName ? `Merci ${firstName}` : 'Merci pour ta candidature'}</Title>
+      <Paragraph>
+        On a bien reçu ta candidature pour rejoindre les bénévoles Overbound. On revient vers toi sous 48 heures.
+      </Paragraph>
+
+      <FactList
+        title="Ta candidature"
+        rows={[
+          { label: 'Mission souhaitée', value: preferredMission },
+          { label: 'Événement', value: event?.title },
+          { label: 'Date', value: formattedEventDate },
+          { label: 'Lieu', value: event?.location },
+          { label: 'Reçue le', value: submittedAt },
+        ]}
       />
 
-      <Section style={styles.section}>
-        {/* Success Icon */}
-        <Section style={styles.iconContainer}>
-          <div style={styles.successIcon}>
-            <svg
-              width="64"
-              height="64"
-              viewBox="0 0 64 64"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="32" cy="32" r="32" fill="#fff7ed" />
-              <path
-                d="M20 32l8 8 16-16"
-                stroke="#f97316"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-        </Section>
+      <SectionTitle>La suite</SectionTitle>
+      <Steps
+        items={[
+          { title: 'On vérifie les besoins', text: 'On regarde ce qu’il faut sur l’événement, mission par mission.' },
+          { title: 'On te confirme ton créneau', text: 'Tu reçois un email avec ta mission, tes horaires et les consignes d’arrivée.' },
+        ]}
+      />
 
-        {/* Main Heading */}
-        <Text style={styles.heading}>
-          {applicantName ? `Merci ${applicantName} !` : 'Merci pour ta candidature !'}
-        </Text>
-
-        {/* Greeting */}
-        <Text style={styles.paragraph}>
-          On a bien reçu ta candidature pour rejoindre la <strong>tribu bénévole Overbound</strong>. Notre équipe revient vers toi sous 48 heures avec les prochaines étapes.
-        </Text>
-
-        {/* Separator */}
-        <Hr style={styles.separator} />
-
-        {/* Event Details */}
-        {event && (
-          <Section style={styles.highlightCard}>
-            <Text style={styles.highlightTitle}>
-              {event.title ?? 'Événement Overbound'}
-            </Text>
-            {formattedEventDate && (
-              <Text style={styles.highlightMeta}>
-                📅 <strong>Date :</strong> {formattedEventDate}
-              </Text>
-            )}
-            {event.location && (
-              <Text style={styles.highlightMeta}>
-                📍 <strong>Lieu :</strong> {event.location}
-              </Text>
-            )}
-          </Section>
-        )}
-
-        {/* Mission Card */}
-        <Section style={styles.card}>
-          <Text style={styles.cardTitle}>Ta mission proposée</Text>
-          <Text style={styles.missionText}>{preferredMission}</Text>
-          <Text style={styles.cardNote}>
-            Nous allons vérifier les besoins exacts sur l'événement et te confirmer le créneau idéal au plus vite.
-          </Text>
-        </Section>
-
-        {/* Info Section */}
-        <Section style={styles.infoCard}>
-          <Text style={styles.infoText}>
-            💬 Tu as un empêchement ou un complément d'information à partager ? Réponds directement à cet email, on t'accompagne jusqu'au jour J.
-          </Text>
-          <Text style={styles.submittedText}>
-            Candidature reçue le {submittedAt}
-          </Text>
-        </Section>
-
-        {/* Separator */}
-        <Hr style={styles.separator} />
-
-        {/* Social CTA */}
-        <Text style={styles.socialTitle}>
-          Rejoins la tribu dès maintenant
-        </Text>
-        <Text style={styles.socialText}>
-          En attendant, découvre les coulisses de la tribu et les témoignages des bénévoles de la saison dernière.
-        </Text>
-
-        {/* CTA Button */}
-        <Section style={styles.buttonContainer}>
-          <Button href="https://www.instagram.com/overbound.race" style={styles.button}>
-            Voir la tribu sur Instagram
-          </Button>
-        </Section>
-
-        {/* Footer Message */}
-        <Text style={styles.footerText}>
-          À très bientôt dans la communauté OverBound !
-        </Text>
-      </Section>
+      <SmallPrint>
+        Un empêchement ou une précision à ajouter ? Réponds simplement à cet email. En attendant, tu peux suivre les coulisses
+        sur{' '}
+        <Link href="https://www.instagram.com/overbound.race" style={{ color: EMAIL_COLORS.eyebrow }}>
+          Instagram
+        </Link>
+        .
+      </SmallPrint>
     </EmailLayout>
   )
 }
 
 export default VolunteerApplicationConfirmationEmail
-
-const styles: Record<string, React.CSSProperties> = {
-  heroImage: {
-    width: '100%',
-    maxWidth: '100%',
-    height: 'auto',
-    maxHeight: '300px',
-    objectFit: 'cover',
-    objectPosition: 'center',
-    borderRadius: '8px',
-    marginBottom: '24px',
-  },
-  section: {
-    lineHeight: '1.6',
-  },
-  iconContainer: {
-    textAlign: 'center',
-    marginBottom: '24px',
-  },
-  successIcon: {
-    display: 'inline-block',
-  },
-  heading: {
-    fontSize: '28px',
-    fontWeight: 700,
-    margin: '0 0 16px 0',
-    textAlign: 'center',
-    color: '#111827',
-  },
-  paragraph: {
-    fontSize: '15px',
-    lineHeight: '1.6',
-    margin: '0 0 24px 0',
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  separator: {
-    border: 'none',
-    borderTop: '1px solid #e5e7eb',
-    margin: '32px 0',
-    width: '100%',
-    height: '1px',
-    borderRadius: '1000px',
-  },
-  highlightCard: {
-    backgroundColor: '#fff7ed',
-    border: '2px solid #f97316',
-    borderRadius: '8px',
-    padding: '24px',
-    marginBottom: '24px',
-    textAlign: 'center',
-  },
-  highlightTitle: {
-    fontSize: '20px',
-    fontWeight: 700,
-    margin: '0 0 12px 0',
-    color: '#111827',
-  },
-  highlightMeta: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '0 0 6px 0',
-    lineHeight: '1.6',
-  },
-  card: {
-    backgroundColor: '#f9fafb',
-    borderRadius: '8px',
-    padding: '24px',
-    marginBottom: '24px',
-  },
-  cardTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    margin: '0 0 12px 0',
-    color: '#111827',
-    textAlign: 'center',
-  },
-  missionText: {
-    fontSize: '16px',
-    fontWeight: 700,
-    color: '#f97316',
-    margin: '0 0 16px 0',
-    textAlign: 'center',
-  },
-  cardNote: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '0',
-    textAlign: 'center',
-    lineHeight: '1.6',
-  },
-  infoCard: {
-    backgroundColor: '#f9fafb',
-    borderRadius: '8px',
-    padding: '20px',
-    marginBottom: '24px',
-  },
-  infoText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '0 0 12px 0',
-    textAlign: 'center',
-    lineHeight: '1.6',
-  },
-  submittedText: {
-    fontSize: '13px',
-    color: '#9ca3af',
-    margin: '0',
-    textAlign: 'center',
-  },
-  socialTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    margin: '0 0 12px 0',
-    color: '#111827',
-    textAlign: 'center',
-  },
-  socialText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '0 0 24px 0',
-    textAlign: 'center',
-    lineHeight: '1.6',
-  },
-  buttonContainer: {
-    textAlign: 'center',
-    margin: '24px 0',
-  },
-  button: {
-    backgroundColor: '#f97316',
-    color: '#ffffff',
-    padding: '14px 28px',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: 600,
-    fontSize: '16px',
-    display: 'inline-block',
-  },
-  footerText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    textAlign: 'center',
-    margin: '0',
-    lineHeight: '1.6',
-  },
-}

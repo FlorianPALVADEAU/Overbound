@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
 import { sendAdminPushNotification } from '@/lib/push'
-import { generateAndUploadQRCode } from '@/lib/qrcode/upload'
+import { resolveQrImageUrl } from '@/lib/qrcode/upload'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import { assignBibNumber, BibCapacityExhaustedError, getBibRange, type RaceFormat } from '@/lib/bibNumber'
@@ -545,7 +545,7 @@ export async function POST(request: NextRequest) {
           })
 
           // Generate QR code and upload to Supabase Storage
-          const qrUrl = await generateAndUploadQRCode(qrToken)
+          const qrUrl = await resolveQrImageUrl(qrToken, siteUrl)
 
           await sendTicketEmail({
             to: registration.email,

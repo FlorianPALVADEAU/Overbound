@@ -1,8 +1,38 @@
 import * as React from 'react'
-import { Preview, Section, Text, Hr, Link, Img, Button } from '@react-email/components'
+import { Img, Link } from '@react-email/components'
 import EmailLayout from './EmailLayout'
-import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import {
+  Callout,
+  Checklist,
+  CtaButton,
+  EMAIL_COLORS,
+  Eyebrow,
+  FactList,
+  Paragraph,
+  SectionTitle,
+  SmallPrint,
+  Steps,
+  Title,
+} from './blocks'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { HEALTH_PROOF } from '@/constants/participantNotice'
+import { VENUE_ACCESS } from '@/constants/venueAccess'
+import { COMPANY_INFO } from '@/constants/companyInfo'
+import { getFirstName } from '@/lib/email/participantName'
+import { formatTransferFee, TICKET_TRANSFER_FEE_CENTS } from '@/lib/tickets/transferPolicy'
+
+export interface TicketEmailProps {
+  participantName: string
+  eventTitle: string
+  eventDate: string
+  eventLocation: string
+  ticketName: string
+  startTime?: string | null
+  waveIndex?: number | null
+  bibNumber?: number | null
+  qrUrl: string
+  manageUrl: string
+}
 
 export default function TicketEmail({
   participantName,
@@ -15,251 +45,168 @@ export default function TicketEmail({
   bibNumber,
   qrUrl,
   manageUrl,
-}: {
-  participantName: string
-  eventTitle: string
-  eventDate: string
-  eventLocation: string
-  ticketName: string
-  startTime?: string | null
-  waveIndex?: number | null
-  bibNumber?: number | null
-  qrUrl: string
-  manageUrl: string
-}) {
+}: TicketEmailProps) {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://overbound-race.com'
+  const firstName = getFirstName(participantName)
+  const holder = participantName.includes('@') ? participantName : participantName.toUpperCase()
 
   return (
-    <EmailLayout preview={`Ton billet OverBound — ${eventTitle}`}>
-      {/* Hero Image */}
-      <Img
-        src={`${getEmailAssetsBaseUrl()}/images/email/two-runners-going-downhill-with-chains-on-their-backs.jpg`}
-        alt="Ton billet Overbound"
-        width="400"
-        style={styles.heroImage}
+    <EmailLayout
+      preview={`Ton billet pour ${eventTitle} : ton QR code est dans cet email.`}
+      hero={{ photo: 'tire-flip', alt: 'Un participant retourne un pneu sur le parcours Overbound' }}
+    >
+      <Eyebrow>Inscription confirmée</Eyebrow>
+      <Title>{firstName ? `${firstName}, tu es inscrit·e` : 'Tu es inscrit·e'}</Title>
+      <Paragraph>
+        Ton inscription à <strong>{eventTitle}</strong> est validée. Ton billet est juste en dessous : le jour J, tu montres
+        ce QR code à l’entrée.
+      </Paragraph>
+
+      {/* QR code */}
+      <table
+        role="presentation"
+        width="100%"
+        cellPadding={0}
+        cellSpacing={0}
+        border={0}
+        style={{ border: `2px solid ${EMAIL_COLORS.ink}`, borderRadius: '16px', margin: '0 0 16px 0' }}
+      >
+        <tbody>
+          <tr>
+            <td align="center" style={{ padding: '24px 16px 8px 16px' }}>
+              <Img
+                src={qrUrl}
+                alt={`QR code du billet de ${participantName}`}
+                width="220"
+                height="220"
+                style={{ display: 'block', width: '220px', height: '220px', margin: '0 auto' }}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style={{ padding: '4px 16px 4px 16px', fontSize: '12px', letterSpacing: '1.5px', textTransform: 'uppercase', color: EMAIL_COLORS.muted }}>
+              Billet nominatif
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style={{ padding: '0 16px 4px 16px', fontSize: '20px', lineHeight: '26px', fontWeight: 800, color: EMAIL_COLORS.ink }}>
+              {holder}
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style={{ padding: '0 16px 24px 16px', fontSize: '14px', lineHeight: '20px', color: EMAIL_COLORS.muted }}>
+              {ticketName}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <SmallPrint>
+        Fais une capture d’écran de ce QR code. Tu l’auras sur ton téléphone même sans réseau le jour J. Si l’image ne
+        s’affiche pas, ouvre ton billet avec le bouton ci-dessous.
+      </SmallPrint>
+
+      <CtaButton href={manageUrl}>Ouvrir mon billet</CtaButton>
+
+      <Callout tone="warning" title={`Ce billet est au nom de ${participantName}`}>
+        <>
+          Le QR code est lié à cette personne. Au contrôle, ta pièce d’identité doit porter le même nom : sinon l’entrée est
+          refusée. Tu ne peux pas venir ? Transfère le billet à la personne qui viendra à ta place depuis{' '}
+          <Link href={manageUrl} style={{ color: EMAIL_COLORS.eyebrow, textDecoration: 'underline' }}>
+            ton compte
+          </Link>
+          , au plus tard la veille de l’événement ({formatTransferFee(TICKET_TRANSFER_FEE_CENTS)}). Passer ton QR code à
+          quelqu’un d’autre ne marche pas.
+        </>
+      </Callout>
+
+      <FactList
+        title="Ton événement"
+        rows={[
+          { label: 'Date', value: eventDate },
+          { label: 'Lieu', value: eventLocation },
+          { label: 'Ton billet', value: ticketName },
+          { label: 'Heure de départ', value: startTime },
+          { label: 'SAS de départ', value: waveIndex ? `SAS n°${waveIndex}` : null },
+          { label: 'Dossard', value: bibNumber ? `N°${bibNumber}` : null },
+        ]}
       />
 
-      <Section style={styles.section}>
-        {/* Success Icon */}
-        <Section style={styles.iconContainer}>
-          <div style={styles.successIcon}>
-            <svg
-              width="64"
-              height="64"
-              viewBox="0 0 64 64"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="32" cy="32" r="32" fill="#d1fae5" />
-              <path
-                d="M20 32l8 8 16-16"
-                stroke="#16a34a"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-        </Section>
+      <SectionTitle>Le jour J en 3 étapes</SectionTitle>
+      <Steps
+        items={[
+          {
+            title: `Arrive ${VENUE_ACCESS.arriveBeforeDeparture} avant ton départ`,
+            text: (
+              <>
+                {VENUE_ACCESS.entrance} {VENUE_ACCESS.parkingFee}{' '}
+                <Link href={VENUE_ACCESS.mapsUrl} style={{ color: EMAIL_COLORS.eyebrow, textDecoration: 'underline' }}>
+                  Ouvrir le plan
+                </Link>
+              </>
+            ),
+          },
+          {
+            title: 'Retire ton dossard',
+            text: 'Montre ton QR code, ta pièce d’identité et ton Pass Prévention Santé. Les infos de retrait te sont envoyées par email avant l’événement.',
+          },
+          {
+            title: 'Prends ton départ',
+            text: startTime
+              ? `Ton SAS de départ est ton groupe de départ. Présente-toi à l’entrée du SAS à ${startTime}.`
+              : 'Rends-toi à la ligne de départ à l’heure indiquée sur ton billet.',
+          },
+        ]}
+      />
 
-        {/* Main Heading */}
-        <Text style={styles.heading}>
-          Ton billet est prêt !
-        </Text>
+      <SectionTitle>À avoir sur toi</SectionTitle>
+      <Checklist
+        items={[
+          'Ta pièce d’identité',
+          'Ce QR code, en capture d’écran',
+          <>
+            Ton {HEALTH_PROOF.name}, délivré par {HEALTH_PROOF.issuer}, <strong>ou</strong> {HEALTH_PROOF.alternative}
+          </>,
+          'Des vêtements de rechange laissés dans ta voiture',
+        ]}
+      />
 
-        {/* Greeting */}
-        <Text style={styles.paragraph}>
-          Salut {participantName}, merci pour ton inscription à <strong>{eventTitle}</strong>.
-        </Text>
+      <Callout tone="warning" title="Sans PPS ou licence, tu ne pars pas">
+        Il est contrôlé {HEALTH_PROOF.checkpoint}. {HEALTH_PROOF.consequence}
+      </Callout>
 
-        <Text style={styles.paragraph}>
-          Ton billet est maintenant disponible ! Clique sur le bouton ci-dessous pour y accéder et visualiser ton QR code de check-in.
-        </Text>
+      <SmallPrint>
+        {VENUE_ACCESS.publicTransport} {VENUE_ACCESS.bagDrop} {VENUE_ACCESS.noChangingRooms}
+      </SmallPrint>
 
-        {/* CTA Button - Moved up */}
-        <Section style={styles.buttonContainerTop}>
-          <Button href={manageUrl} style={styles.button}>
-            Voir mon billet
-          </Button>
-        </Section>
+      <SectionTitle>Une question ?</SectionTitle>
+      <Paragraph muted>
+        Réponds simplement à cet email, ou écris-nous à{' '}
+        <Link href={`mailto:${COMPANY_INFO.emails.support}`} style={{ color: EMAIL_COLORS.eyebrow, textDecoration: 'underline' }}>
+          {COMPANY_INFO.emails.support}
+        </Link>
+        .
+      </Paragraph>
 
-        {/* Separator */}
-        <Hr style={styles.separator} />
-
-        {/* Event Details Card */}
-        <Section style={styles.card}>
-          <Text style={styles.cardTitle}>Détails de ton événement</Text>
-          <table style={styles.cardTable}>
-            <tbody>
-              <tr>
-                <td style={styles.cardLabel}>📅 Date</td>
-                <td style={styles.cardValue}>{eventDate}</td>
-              </tr>
-              <tr>
-                <td style={styles.cardLabel}>📍 Lieu</td>
-                <td style={styles.cardValue}>{eventLocation}</td>
-              </tr>
-              <tr>
-                <td style={styles.cardLabel}>🎯 Format</td>
-                <td style={styles.cardValue}>{ticketName}</td>
-              </tr>
-              {startTime ? (
-                <tr>
-                  <td style={styles.cardLabel}>⏱ Départ</td>
-                  <td style={styles.cardValue}>{startTime}</td>
-                </tr>
-              ) : null}
-              {waveIndex ? (
-                <tr>
-                  <td style={styles.cardLabel}>🚦 SAS</td>
-                  <td style={styles.cardValue}>SAS {waveIndex}</td>
-                </tr>
-              ) : null}
-              {bibNumber ? (
-                <tr>
-                  <td style={styles.cardLabel}>🔢 Dossard</td>
-                  <td style={styles.cardValue}>N° {bibNumber}</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </Section>
-        {startTime ? (
-          <Text style={styles.paragraph}>
-            Merci de te présenter au minimum 1h avant ton départ.
-          </Text>
-        ) : null}
-        <Text style={styles.paragraph}>
-          <strong>À apporter au retrait du dossard :</strong> ton Pass Prévention Santé (PPS) FFA ou ta licence FFA en
-          cours de validité, et une pièce d&apos;identité. Sans justificatif, le départ est refusé et le billet n&apos;est
-          pas remboursé.
-        </Text>
-        <Text style={styles.paragraph}>
-          <strong>Assurance :</strong> l&apos;assurance d&apos;Overbound couvre les dommages dont Overbound est
-          responsable, pas ceux que tu te causes à toi-même. Nous te recommandons une assurance individuelle accident.
-          Détails à l&apos;article 12 des CGV.
-        </Text>
-        <Text style={styles.footerText}>
-          Ta participation est soumise à la décharge de responsabilité signée lors de la commande. Si quelqu&apos;un
-          t&apos;a inscrit, il l&apos;a acceptée en ton nom : lis-la avant l&apos;événement.{' '}
-          <Link href={`${siteUrl}/decharge`} style={styles.link}>
-            Lire la décharge
-          </Link>
-          {' · '}
-          <Link href={`${siteUrl}${OFFICIAL_RULEBOOK_PDF_PATH}`} style={styles.link}>
-            Règlement officiel (PDF)
-          </Link>
-          {' · '}
-          <Link href={`${siteUrl}/cgv`} style={styles.link}>
-            CGV
-          </Link>
-          . Une pièce d&apos;identité te sera demandée au retrait du dossard.
-        </Text>
-      </Section>
+      <SmallPrint>
+        <strong>Assurance :</strong> l’assurance d’Overbound couvre les dommages dont Overbound est responsable, pas ceux que
+        tu te causes à toi-même. Nous te recommandons une assurance individuelle accident. Détails à l’article 12 des CGV.
+      </SmallPrint>
+      <SmallPrint>
+        Ta participation est soumise à la décharge de responsabilité signée lors de la commande. Si quelqu’un t’a inscrit·e,
+        il l’a acceptée en ton nom : lis-la avant l’événement.{' '}
+        <Link href={`${siteUrl}/decharge`} style={{ color: EMAIL_COLORS.eyebrow }}>
+          Lire la décharge
+        </Link>
+        {' · '}
+        <Link href={`${siteUrl}${OFFICIAL_RULEBOOK_PDF_PATH}`} style={{ color: EMAIL_COLORS.eyebrow }}>
+          Règlement officiel (PDF)
+        </Link>
+        {' · '}
+        <Link href={`${siteUrl}/cgv`} style={{ color: EMAIL_COLORS.eyebrow }}>
+          CGV
+        </Link>
+      </SmallPrint>
     </EmailLayout>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  heroImage: {
-    width: '100%',
-    maxWidth: '100%',
-    height: 'auto',
-    maxHeight: '300px',
-    objectFit: 'cover',
-    objectPosition: 'center',
-    borderRadius: '8px',
-    marginBottom: '24px',
-  },
-  section: {
-    lineHeight: '1.6',
-  },
-  iconContainer: {
-    textAlign: 'center',
-    marginBottom: '24px',
-  },
-  successIcon: {
-    display: 'inline-block',
-  },
-  heading: {
-    fontSize: '28px',
-    fontWeight: 700,
-    margin: '0 0 16px 0',
-    textAlign: 'center',
-    color: '#111827',
-  },
-  paragraph: {
-    fontSize: '15px',
-    lineHeight: '1.6',
-    margin: '0 0 24px 0',
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  separator: {
-    border: 'none',
-    borderTop: '1px solid #e5e7eb',
-    margin: '32px 0',
-    width: '100%',
-    height: '1px',
-    borderRadius: '1000px',
-  },
-  card: {
-    backgroundColor: '#f9fafb',
-    borderRadius: '8px',
-    padding: '24px',
-    marginBottom: '24px',
-  },
-  cardTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    margin: '0 0 16px 0',
-    color: '#111827',
-    textAlign: 'center',
-  },
-  cardTable: {
-    width: '100%',
-    borderCollapse: 'collapse',
-  },
-  cardLabel: {
-    fontSize: '14px',
-    color: '#6b7280',
-    paddingBottom: '12px',
-    verticalAlign: 'top',
-    width: '40%',
-  },
-  cardValue: {
-    fontSize: '15px',
-    color: '#111827',
-    fontWeight: 600,
-    paddingBottom: '12px',
-    verticalAlign: 'top',
-  },
-  buttonContainer: {
-    textAlign: 'center',
-    margin: '24px 0',
-  },
-  buttonContainerTop: {
-    textAlign: 'center',
-    margin: '32px 0',
-  },
-  button: {
-    backgroundColor: '#16a34a',
-    color: '#ffffff',
-    padding: '14px 28px',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: 600,
-    fontSize: '16px',
-    display: 'inline-block',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'underline',
-  },
-  footerText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    textAlign: 'center',
-    margin: '0',
-  },
 }

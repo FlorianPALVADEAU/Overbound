@@ -6,7 +6,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
 import { notifyAmbassadorRewardsForOrder } from '@/lib/ambassadors/rewardsNotifications'
-import * as QRCode from 'qrcode'
+import { resolveQrImageUrl } from '@/lib/qrcode/upload'
 import { REGULATION_VERSION } from '@/constants/registration'
 import { keepHealthDataWithConsent } from '@/lib/legal/healthData'
 import { fingerprintWaiver } from '@/lib/legal/waiverDocument'
@@ -30,6 +30,7 @@ import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
+import { buildReceiptBreakdown } from '@/lib/email/receiptBreakdown'
 import { readRequestAssignments, validateUpsellAssignments } from '@/lib/upsells/assignments'
 import { CGV_VERSION } from '@/constants/legalVersions'
 
@@ -244,11 +245,10 @@ export async function POST(request: NextRequest) {
       participantTierIds.length = participants.length
     }
 
-    const ticketLineItems = new Map<
-      string,
-      { ticketId: string; tierId: string | null; unitPrice: number; quantity: number }
-    >()
     let ticketSubtotal = 0
+    // Paid price of each participant's ticket, by position, for the per-participant receipt.
+    const participantTicketCents: number[] = participants.map(() => 0)
+    const participantTierLabels: Array<string | null> = participants.map(() => null)
 
     participants.forEach((participant, index) => {
       const ticket = ticketMap.get(participant.ticketId)
@@ -261,13 +261,9 @@ export async function POST(request: NextRequest) {
       const discountMultiplier = tier ? 1 - tier.discount_percentage / 100 : 1
       const unitPrice = Math.round(basePrice * discountMultiplier)
 
-      const key = `${ticket.id}:${tierId ?? 'base'}`
-      const existing = ticketLineItems.get(key)
-      if (existing) {
-        existing.quantity += 1
-      } else {
-        ticketLineItems.set(key, { ticketId: ticket.id, tierId, unitPrice, quantity: 1 })
-      }
+      participantTicketCents[index] = unitPrice
+      participantTierLabels[index] = tier?.name ?? null
+
       ticketSubtotal += unitPrice
     })
 
@@ -731,7 +727,7 @@ export async function POST(request: NextRequest) {
 
     const ticketEmailTasks = createdRegistrations.map(async ({ registration, ticket, participantName }) => {
       try {
-        const qrCodeBase64 = await QRCode.toDataURL(registration.qr_code_token).then((url) => url.split(',')[1])
+        const qrUrl = await resolveQrImageUrl(registration.qr_code_token, siteUrl)
         const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', {
           dateStyle: 'full',
           timeZone: 'Europe/Paris',
@@ -747,7 +743,7 @@ export async function POST(request: NextRequest) {
           startTime: formatWaveStartTime(registration.start_time),
           waveIndex: registration.wave_index,
           bibNumber: registration.bib_number,
-          qrUrl: `data:image/png;base64,${qrCodeBase64}`,
+          qrUrl,
           manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`,
         })
       } catch (emailError) {
@@ -766,60 +762,32 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        const ticketItems = Array.from(ticketLineItems.values())
-          .map((item) => {
-            const ticket = ticketMap.get(item.ticketId)
-            if (!ticket) return null
-            const tierLabel = item.tierId ? ` — ${tiersById.get(item.tierId)?.name ?? 'Palier'}` : ''
-            return {
-              description: `${eventRow.title} — ${ticket.name}${tierLabel}`,
-              quantity: item.quantity,
-              unitPrice: toMajor(item.unitPrice),
-              total: toMajor(item.unitPrice * item.quantity),
-            }
-          })
-          .filter(Boolean) as Array<{
-            description: string
-            quantity: number
-            unitPrice: number
-            total: number
-          }>
-
-        const upsellItems = upsells
-          .map((item: { upsellId: string; quantity: number }) => {
-            const upsell = upsellMap.get(item.upsellId)
-            if (!upsell) return null
-            const quantity = item.quantity || 0
-            const unitPriceCents = upsell.price_cents
-
-            return {
-              description: upsell.name,
-              quantity,
-              unitPrice: toMajor(unitPriceCents),
-              total: toMajor(unitPriceCents * quantity),
-            }
-          })
-          .filter(Boolean) as Array<{
-            description: string
-            quantity: number
-            unitPrice: number
-            total: number
-          }>
-
-        // The receipt must add up to what was charged: list the flexible option on its own line.
         const flexibleCount = flexibleParticipantIndices.size
-        const flexibleItems =
-          flexibleCount > 0
-            ? [
-                {
-                  description: 'Option billet flexible',
-                  quantity: flexibleCount,
-                  unitPrice: toMajor(FLEXIBLE_TICKET_FEE_CENTS),
-                  total: toMajor(FLEXIBLE_TICKET_FEE_CENTS * flexibleCount),
-                },
-              ]
-            : []
-        const receiptItems = [...ticketItems, ...upsellItems, ...flexibleItems]
+        const { participants: receiptParticipants, orderLines } = buildReceiptBreakdown({
+          participants: participants.map((participant, index) => {
+            const ticket = ticketMap.get(participant.ticketId)
+            const tierLabel = participantTierLabels[index]
+            return {
+              name: `${participant.firstName ?? ''} ${participant.lastName ?? ''}`.trim() || null,
+              ticketLabel: `${ticket?.name ?? 'Billet'}${tierLabel ? `, ${tierLabel}` : ''}`,
+              ticketUnitCents: participantTicketCents[index],
+              flexible: flexibleParticipantIndices.has(index),
+            }
+          }),
+          options: upsells.flatMap((item: { upsellId: string; quantity: number; meta?: Record<string, unknown> }) => {
+            const upsell = upsellMap.get(item.upsellId)
+            if (!upsell || !(item.quantity > 0)) return []
+            return [
+              {
+                name: upsell.name as string,
+                unitCents: upsell.price_cents as number,
+                quantity: item.quantity,
+                assignments: readRequestAssignments(item.meta),
+              },
+            ]
+          }),
+          flexibleFeeCents: FLEXIBLE_TICKET_FEE_CENTS,
+        })
         const subtotalCents = ticketSubtotal + upsellSubtotal + FLEXIBLE_TICKET_FEE_CENTS * flexibleCount
         const discountCents = discountApplied > 0 ? discountApplied : 0
         const totalCents = paymentIntent.amount ?? Math.max(subtotalCents - discountCents, 0)
@@ -831,7 +799,8 @@ export async function POST(request: NextRequest) {
           invoiceNumber: order.id,
           invoiceDate: new Date(order.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
           eventName: eventRow.title,
-          items: receiptItems,
+          participants: receiptParticipants,
+          orderLines,
           subtotal: toMajor(subtotalCents),
           discount: discountCents > 0 ? toMajor(discountCents) : undefined,
           discountLabel:

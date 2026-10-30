@@ -1,6 +1,8 @@
 import * as React from 'react'
-import { Body, Container, Head, Html, Section, Text, Link } from '@react-email/components'
-import { getEmailAssetsBaseUrl, getLogoUrl } from '@/lib/email/config'
+import { Body, Container, Head, Html, Preview, Section, Text, Link } from '@react-email/components'
+import { getEmailAssetsBaseUrl, getWhiteLogoUrl, type EmailPhoto } from '@/lib/email/config'
+import { HeroPhoto } from './blocks'
+
 interface EmailLayoutProps {
   preview?: string
   children: React.ReactNode
@@ -8,32 +10,50 @@ interface EmailLayoutProps {
   supportEmail?: string
   showSocialLinks?: boolean
   showNavigationLinks?: boolean
+  /** Full-width photo between the header band and the content. */
+  hero?: { photo: EmailPhoto; alt: string }
 }
+
+/** Phones: full-width card, tighter padding. Ignored by Gmail webmail, which stays readable. */
+const MOBILE_CSS = `
+  @media only screen and (max-width: 620px) {
+    .container { width: 100% !important; border-radius: 0 !important; }
+    .pad { padding: 24px 20px !important; }
+  }
+`
 
 export function EmailLayout({
   preview,
   children,
   unsubscribeUrl,
-  supportEmail,
   showSocialLinks = false,
   showNavigationLinks = false,
+  hero,
 }: EmailLayoutProps) {
-  // Use absolute URL for email compatibility
-  const logoSrc = getLogoUrl()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://overbound-race.com'
 
   return (
-    <Html>
-      <Head />
-      {/* Preview text shown in many mail clients */}
-      {preview ? <meta name="preview" content={preview} /> : null}
+    <Html lang="fr" dir="ltr">
+      <Head>
+        <meta name="color-scheme" content="light only" />
+        <meta name="supported-color-schemes" content="light only" />
+        <meta name="x-apple-disable-message-reformatting" />
+        <style>{MOBILE_CSS}</style>
+      </Head>
+      {preview ? <Preview>{preview}</Preview> : null}
       <Body style={styles.body}>
-        <Container style={styles.container}>
+        <Container className="container" style={styles.container}>
           <Section style={styles.header}>
-            <img src={logoSrc} alt="Overbound" width={80} style={styles.logo} />
+            <a href={baseUrl} style={styles.logoLink}>
+              <img src={getWhiteLogoUrl()} alt="Overbound" width={72} style={styles.logo} />
+            </a>
           </Section>
 
-          <Section style={styles.content}>{children}</Section>
+          {hero ? <HeroPhoto photo={hero.photo} alt={hero.alt} /> : null}
+
+          <Section className="pad" style={styles.content}>
+            {children}
+          </Section>
 
           {/* Social Media Links */}
           {showSocialLinks && (
@@ -132,27 +152,34 @@ export default EmailLayout
 
 const styles: Record<string, React.CSSProperties> = {
   body: {
-    backgroundColor: '#f3f4f6',
-    fontFamily: 'Arial, sans-serif',
-    color: '#111827',
-    padding: '20px 0',
+    backgroundColor: '#eceee9',
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    color: '#2b2f33',
+    margin: 0,
+    padding: '24px 0',
   },
   container: {
     backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '28px',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    width: '600px',
     maxWidth: '600px',
     margin: '0 auto',
   },
   header: {
+    backgroundColor: '#141414',
+    padding: '20px 24px',
     textAlign: 'center',
-    marginBottom: '12px',
+  },
+  logoLink: {
+    textDecoration: 'none',
   },
   logo: {
     display: 'block',
     margin: '0 auto',
   },
   content: {
+    padding: '32px 32px 24px 32px',
     lineHeight: 1.5,
   },
   socialSection: {
@@ -189,20 +216,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
   },
   footer: {
-    marginTop: '20px',
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: '12px',
+    padding: '16px 32px 28px 32px',
+    borderTop: '1px solid #e4e6e1',
   },
   small: {
     fontSize: '12px',
-    color: '#acacac',
-    marginBottom: '8px',
+    lineHeight: '18px',
+    color: '#6b7078',
+    margin: '0 0 8px 0',
   },
   link: {
-    color: '#2563eb',
-    textDecoration: 'none',
+    color: '#1c7a1c',
+    textDecoration: 'underline',
   },
   smallLink: {
-    color: '#9b9b9b',
+    color: '#6b7078',
   },
 }

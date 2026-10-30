@@ -27,6 +27,7 @@ import LuckyWheelReminderEmail from '@/emails/LuckyWheelReminderEmail'
 import { TransferHandedOverEmail, TransferReceivedEmail } from '@/emails/TicketTransferEmail'
 import { FlexibleRefundEmail } from '@/emails/TicketRefundEmail'
 import { renderEmail } from '@/lib/email/render'
+import type { ReceiptLine, ReceiptParticipant } from '@/lib/email/receiptBreakdown'
 import { deliverMarketingMail, type SendResult } from '@/lib/email/transport'
 import { generateMarketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 
@@ -52,6 +53,7 @@ export async function sendTicketEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Ton billet — ${params.eventTitle}`,
     html,
@@ -64,12 +66,12 @@ export async function sendReceiptEmail(params: {
   invoiceNumber: string
   invoiceDate: string
   eventName: string
-  items: Array<{
-    description: string
-    quantity: number
-    unitPrice: number
-    total: number
-  }>
+  /** Flat list of lines, for an order without per-participant detail. */
+  items?: ReceiptLine[]
+  /** Per-participant detail; takes precedence over `items`. */
+  participants?: ReceiptParticipant[]
+  /** Lines that belong to the order, not to one participant. */
+  orderLines?: ReceiptLine[]
   subtotal: number
   discount?: number
   discountLabel?: string
@@ -84,6 +86,7 @@ export async function sendReceiptEmail(params: {
 
   return resend.emails.send({
     from: FORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Reçu de paiement — ${params.eventName}`,
     html,
@@ -101,6 +104,7 @@ export async function sendOnboardingEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: 'Bienvenue !',
     html,
@@ -117,6 +121,7 @@ export async function sendProfileCompletionReminderEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: 'Complète ton profil',
     html,
@@ -142,6 +147,7 @@ export async function sendEventPrepEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `${weeksLabel}`,
     html,
@@ -162,6 +168,7 @@ export async function sendPostEventThankYouEmail(params: {
 
   return resend.emails.send({
     from: FORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Merci pour ${params.eventTitle}`,
     html,
@@ -271,6 +278,7 @@ export async function sendSupportContactConfirmationEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: 'Nous avons bien reçu ta demande',
     html,
@@ -319,6 +327,7 @@ export async function sendEventOpeningEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Inscriptions ouvertes — ${params.eventTitle}`,
     html,
@@ -393,6 +402,7 @@ export async function sendInactiveUserEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: 'On repart ensemble ? 🏁',
     html,
@@ -417,6 +427,7 @@ export async function sendAbandonedCheckoutEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Ton inscription à ${params.eventTitle} est presque terminée`,
     html,
@@ -438,6 +449,7 @@ export async function sendEventUpdateEmail(params: {
 
   return resend.emails.send({
     from: FORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Mise à jour — ${params.eventTitle}`,
     html,
@@ -464,6 +476,7 @@ export async function sendAdminDigestEmail(params: {
 
   return resend.emails.send({
     from: FORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Digest admin — ${params.periodLabel}`,
     html,
@@ -493,8 +506,9 @@ export async function sendVolunteerRecruitmentEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
-    subject: `Nous avons besoin de toi pour ${params.headlineEvent.title}`,
+    subject: `Bénévole sur ${params.headlineEvent.title} : inscription offerte`,
     html,
   })
 }
@@ -516,6 +530,7 @@ export async function sendVolunteerAssignmentEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Ta mission bénévole — ${params.eventTitle}`,
     html,
@@ -566,6 +581,7 @@ export async function sendVolunteerApplicationConfirmationEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: 'On a bien reçu ta candidature bénévole',
     html,
@@ -583,6 +599,7 @@ export async function sendPopupSubscribeConfirmationEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: 'Bienvenue dans la communauté Overbound !',
     html,
@@ -608,6 +625,7 @@ export async function sendLuckyWheelRewardEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: `Tu as gagné : ${params.rewardName}`,
     html,
@@ -635,6 +653,7 @@ export async function sendLuckyWheelReminderEmail(params: {
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
+    replyTo: SUPPORT_REPLY_TO,
     to: params.to,
     subject: params.isLastChance
       ? `Dernières heures pour ${params.rewardName}`

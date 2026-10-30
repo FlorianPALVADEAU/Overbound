@@ -58,6 +58,7 @@ vi.mock('@/lib/push', () => ({
 
 vi.mock('@/lib/qrcode/upload', () => ({
   generateAndUploadQRCode: generateAndUploadQRCodeMock,
+  resolveQrImageUrl: (token: string) => generateAndUploadQRCodeMock(token),
 }))
 
 vi.mock('@/lib/analytics/metaCapi', () => ({

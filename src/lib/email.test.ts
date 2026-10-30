@@ -43,6 +43,7 @@ describe('sendTicketEmail', () => {
     expect(sendMock).toHaveBeenCalledWith({
       from: "Florian d'Overbound <no-reply@overbound-race.com>",
       to: baseParams.to,
+      replyTo: 'contact@overbound-race.com',
       subject: `Ton billet — ${baseParams.eventTitle}`,
       html: '<html>ticket</html>',
     })
@@ -127,6 +128,7 @@ describe('sendReceiptEmail', () => {
     expect(sendMock).toHaveBeenCalledWith({
       from: 'Overbound <no-reply@overbound-race.com>',
       to: baseParams.to,
+      replyTo: 'contact@overbound-race.com',
       subject: `Reçu de paiement — ${baseParams.eventName}`,
       html: '<html>receipt</html>',
     })
