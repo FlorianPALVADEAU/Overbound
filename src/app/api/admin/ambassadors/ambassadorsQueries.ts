@@ -69,7 +69,7 @@ export interface AdminAmbassadorDetailResponse {
   }>
   rewards: Array<AdminAmbassadorReward & {
     program_year: number
-    expires_at: string
+    expires_at: string | null
     cancelled_at: string | null
     cancellation_reason: string | null
     is_expired: boolean

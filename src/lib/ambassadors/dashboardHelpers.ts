@@ -1,22 +1,12 @@
-import type { AmbassadorRaceFormat, AmbassadorRewardStatus } from '@/types/Ambassador'
+import type { AmbassadorRewardStatus } from '@/types/Ambassador'
 
 export const resolveRewardStatus = (value: string | null | undefined): AmbassadorRewardStatus => {
   const normalized = String(value || '').toLowerCase()
   if (normalized === 'claimed') return 'claimed'
   if (normalized === 'fulfilled') return 'fulfilled'
+  if (normalized === 'cancelled') return 'cancelled'
   return 'earned'
 }
-
-export const inferFormatFromLabels = (
-  ticketName: string | null | undefined,
-  raceName: string | null | undefined,
-): AmbassadorRaceFormat => {
-  const haystack = `${ticketName || ''} ${raceName || ''}`.toLowerCase()
-  return haystack.includes('ranked') ? 'ranked' : 'open'
-}
-
-export const pointsForFormat = (format: AmbassadorRaceFormat): number =>
-  format === 'ranked' ? 2 : 1
 
 export const deriveNameFromEmail = (email: string): string => {
   const local = email.split('@')[0] || email

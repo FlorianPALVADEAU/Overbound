@@ -1,21 +1,15 @@
 import type {
+  AmbassadorBonusRule,
   AmbassadorNextReward,
   AmbassadorPaymentStatus,
+  AmbassadorProgramRules,
   AmbassadorRaceFormat,
+  AmbassadorRewardKind,
+  AmbassadorRewardLevel,
 } from '@/types/Ambassador'
 
-export const AMBASSADOR_REWARD_LEVELS = [
-  { reward_level: 1, reward_name: 'Badge ambassadeur + accès classement', points_required: 1 },
-  { reward_level: 2, reward_name: 'Récompense starter (réduction / avantage course)', points_required: 2 },
-  { reward_level: 3, reward_name: 'Réduction 50% sur un dossard (utilisable sous 72h)', points_required: 3 },
-  { reward_level: 4, reward_name: 'Dossard Open offert', points_required: 5 },
-  { reward_level: 5, reward_name: 'Upgrade VIP (file prioritaire + badge spécial)', points_required: 8 },
-  { reward_level: 6, reward_name: 'T-shirt ambassadeur / mise en avant réseau', points_required: 10 },
-  { reward_level: 7, reward_name: 'Statut confirmé (avantages exclusifs)', points_required: 15 },
-  { reward_level: 8, reward_name: 'Pack Média Offert', points_required: 20 },
-  { reward_level: 9, reward_name: 'Dossard offert édition suivante', points_required: 25 },
-  { reward_level: 10, reward_name: 'Statut ambassadeur officiel (premium)', points_required: 30 },
-] as const
+export const POINTS_OPEN = 1
+export const POINTS_RANKED = 2
 
 export const resolveRaceFormat = (value: string | null | undefined): AmbassadorRaceFormat =>
   String(value || '').toLowerCase() === 'ranked' ? 'ranked' : 'open'
@@ -28,37 +22,66 @@ export const resolvePaymentStatus = (value: string | null | undefined): Ambassad
   return 'pending'
 }
 
-export const getNextReward = (totalPoints: number): AmbassadorNextReward | null => {
-  const level = AMBASSADOR_REWARD_LEVELS.find((item) => totalPoints < item.points_required)
-  if (!level) {
-    return null
-  }
+/** Rows of the latest `effective_year` that is not after `programYear`. Same rule as the SQL functions. */
+export const pickEffectiveRows = <T extends { effective_year: number }>(rows: T[], programYear: number): T[] => {
+  const years = rows.map((row) => row.effective_year).filter((year) => year <= programYear)
+  if (years.length === 0) return []
+  const effectiveYear = Math.max(...years)
+  return rows.filter((row) => row.effective_year === effectiveYear)
+}
+
+export interface RewardLevelRow extends AmbassadorRewardLevel {
+  effective_year: number
+}
+
+export interface ProgramRulesRow extends AmbassadorBonusRule {
+  effective_year: number
+}
+
+export const buildProgramRules = (
+  levelRows: RewardLevelRow[],
+  ruleRows: ProgramRulesRow[],
+  programYear: number,
+): AmbassadorProgramRules => {
+  const levels = pickEffectiveRows(levelRows, programYear)
+    .map(({ effective_year: _effectiveYear, ...level }) => level)
+    .sort((a, b) => a.points_required - b.points_required)
+  const [rule] = pickEffectiveRows(ruleRows, programYear)
+  const bonus = rule
+    ? { base_points: rule.base_points, interval_points: rule.interval_points, reward_name: rule.reward_name }
+    : null
+  return { levels, bonus }
+}
+
+export const getNextReward = (
+  levels: AmbassadorRewardLevel[],
+  totalPoints: number,
+): AmbassadorNextReward | null => {
+  const level = levels.find((item) => totalPoints < item.points_required)
+  if (!level) return null
 
   return {
     reward_level: level.reward_level,
     reward_name: level.reward_name,
     points_required: level.points_required,
-    points_remaining: Math.max(level.points_required - totalPoints, 0),
+    points_remaining: level.points_required - totalPoints,
   }
 }
 
-export const getCurrentRewardLevel = (totalPoints: number) => {
-  return AMBASSADOR_REWARD_LEVELS.reduce(
-    (maxUnlocked, level) => (totalPoints >= level.points_required ? level.reward_level : maxUnlocked),
-    0,
-  )
+export const getCurrentRewardLevel = (levels: AmbassadorRewardLevel[], totalPoints: number): number =>
+  levels.reduce((unlocked, level) => (totalPoints >= level.points_required ? Math.max(unlocked, level.reward_level) : unlocked), 0)
+
+/** Bonus rewards are numbered after the last ladder level, so the first bonus of a 10-level ladder is level 11. */
+export const getFirstBonusLevel = (levels: AmbassadorRewardLevel[]): number =>
+  levels.reduce((max, level) => Math.max(max, level.reward_level), 0) + 1
+
+export const getRewardKind = (levels: AmbassadorRewardLevel[], rewardLevel: number): AmbassadorRewardKind =>
+  levels.find((level) => level.reward_level === rewardLevel)?.kind ?? 'bib'
+
+export const getExtraTicketsEarned = (bonus: AmbassadorBonusRule | null, totalPoints: number): number => {
+  if (!bonus || totalPoints < bonus.base_points + bonus.interval_points) return 0
+  return Math.floor((totalPoints - bonus.base_points) / bonus.interval_points)
 }
 
-export const EXTRA_TICKET_BASE_LEVEL = 11
-export const EXTRA_TICKET_BASE_POINTS = 30
-export const EXTRA_TICKET_INTERVAL = 3
-
-export const getExtraTicketsEarned = (totalPoints: number): number => {
-  if (totalPoints <= EXTRA_TICKET_BASE_POINTS) return 0
-  return Math.floor((totalPoints - EXTRA_TICKET_BASE_POINTS) / EXTRA_TICKET_INTERVAL)
-}
-
-export const getNextExtraTicketPointsRequired = (totalPoints: number): number => {
-  const earned = getExtraTicketsEarned(totalPoints)
-  return EXTRA_TICKET_BASE_POINTS + (earned + 1) * EXTRA_TICKET_INTERVAL
-}
+export const getNextExtraTicketPointsRequired = (bonus: AmbassadorBonusRule, totalPoints: number): number =>
+  bonus.base_points + (getExtraTicketsEarned(bonus, totalPoints) + 1) * bonus.interval_points

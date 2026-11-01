@@ -1,9 +1,52 @@
 import { Resend } from 'resend'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
+import { buildReferralUrl } from '@/lib/attribution/referral'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 const EMAIL_FROM = process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com'
+const SUPPORT_EMAIL = 'contact@overbound-race.com'
+
+const escapeHtml = (value: string) =>
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+/** Tells the team an ambassador claimed a reward. Names come from user profiles, so they are escaped. */
+export async function sendAmbassadorRewardClaimRequestEmail(params: {
+  ambassadorName: string
+  ambassadorEmail: string
+  userId: string
+  ambassadorCode: string | null
+  reward: { reward_level: number; reward_name: string; claimed_at: string | null }
+}) {
+  const { ambassadorName, ambassadorEmail, userId, ambassadorCode, reward } = params
+  const siteUrl = getEmailAssetsBaseUrl()
+  const adminAmbassadorsUrl = `${siteUrl}/dashboard?tab=ambassadors&search=${encodeURIComponent(ambassadorEmail)}`
+  const adminUsersUrl = `${siteUrl}/dashboard?tab=users&search=${encodeURIComponent(ambassadorEmail)}`
+  const claimedAt = new Date(reward.claimed_at ?? Date.now()).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })
+
+  const html = wrapHtmlWithLayout({
+    preview: 'Demande de récompense ambassadeur',
+    htmlContent: `
+      <h2 style="margin: 0 0 12px; font-size: 20px;">Un ambassadeur réclame sa récompense</h2>
+      <p style="margin: 0 0 12px;">Nom: <strong>${escapeHtml(ambassadorName)}</strong></p>
+      <p style="margin: 0 0 12px;">Email: <strong>${escapeHtml(ambassadorEmail)}</strong></p>
+      <p style="margin: 0 0 12px;">User ID: <strong>${escapeHtml(userId)}</strong></p>
+      ${ambassadorCode ? `<p style="margin: 0 0 12px;">Code ambassadeur: <strong>${escapeHtml(ambassadorCode)}</strong></p>` : ''}
+      <p style="margin: 0 0 12px;">Récompense: <strong>Palier ${reward.reward_level} : ${escapeHtml(reward.reward_name)}</strong></p>
+      <p style="margin: 0 0 12px;">Réclamée le: <strong>${claimedAt}</strong></p>
+      <p style="margin: 16px 0 0;"><a href="${adminAmbassadorsUrl}" style="color: #2563eb; text-decoration: none;">Ouvrir la gestion des ambassadeurs</a></p>
+      <p style="margin: 8px 0 0;"><a href="${adminUsersUrl}" style="color: #2563eb; text-decoration: none;">Ouvrir le profil utilisateur</a></p>
+    `,
+  })
+
+  const { error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to: SUPPORT_EMAIL,
+    subject: 'Un ambassadeur réclame sa récompense',
+    html,
+  })
+  if (error) throw new Error(`Resend: ${error.message}`)
+}
 
 export async function sendAmbassadorRewardEarnedEmail(params: {
   to: string
@@ -43,6 +86,41 @@ export async function sendAmbassadorRewardEarnedEmail(params: {
     subject: 'Nouveau palier ambassadeur débloqué',
     html,
   })
+}
+
+/** One email when an ambassador is a few points away from their next goal. Names are escaped. */
+export async function sendAmbassadorPointsNudgeEmail(params: {
+  to: string
+  fullName?: string | null
+  ambassadorCode?: string | null
+  goalName: string
+  pointsRemaining: number
+}) {
+  const { to, fullName, ambassadorCode, goalName, pointsRemaining } = params
+  const siteUrl = getEmailAssetsBaseUrl()
+  const points = `${pointsRemaining} point${pointsRemaining > 1 ? 's' : ''}`
+  const shareLink = ambassadorCode ? buildReferralUrl(siteUrl, ambassadorCode) : null
+
+  const html = wrapHtmlWithLayout({
+    preview: `Plus que ${points} avant ta prochaine récompense`,
+    htmlContent: `
+      <h2 style="margin: 0 0 12px; font-size: 20px;">Plus que ${points}</h2>
+      <p style="margin: 0 0 12px;">Salut ${escapeHtml(fullName?.trim().split(/\s+/)[0] || 'ambassadeur')}, il te reste ${points} pour débloquer <strong>${escapeHtml(goalName)}</strong>.</p>
+      ${shareLink ? `<p style="margin: 0 0 12px;">Ton lien à partager, le code ${escapeHtml(ambassadorCode ?? '')} s'applique tout seul : <a href="${shareLink}" style="color: #2563eb; text-decoration: none;">${shareLink}</a></p>` : ''}
+      <p style="margin: 12px 0 0;">
+        Suis ta progression sur ton
+        <a href="${siteUrl}/ambassadors/dashboard" style="color: #2563eb; text-decoration: none;">espace ambassadeur</a>.
+      </p>
+    `,
+  })
+
+  const { error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `Plus que ${points} avant ${goalName}`,
+    html,
+  })
+  if (error) throw new Error(`Resend: ${error.message}`)
 }
 
 export async function sendAmbassadorRewardStatusEmail(params: {

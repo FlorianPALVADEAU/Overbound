@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   resolveRewardStatus,
-  inferFormatFromLabels,
-  pointsForFormat,
   deriveNameFromEmail,
   formatRecruitName,
   formatLeaderboardName,
@@ -20,44 +18,17 @@ describe('resolveRewardStatus', () => {
     expect(resolveRewardStatus('FULFILLED')).toBe('fulfilled')
   })
 
+  it('returns "cancelled" for "cancelled" so a cancelled reward is never shown as claimable', () => {
+    expect(resolveRewardStatus('cancelled')).toBe('cancelled')
+    expect(resolveRewardStatus('CANCELLED')).toBe('cancelled')
+  })
+
   it('defaults to "earned" for anything else', () => {
     expect(resolveRewardStatus('earned')).toBe('earned')
     expect(resolveRewardStatus('')).toBe('earned')
     expect(resolveRewardStatus(null)).toBe('earned')
     expect(resolveRewardStatus(undefined)).toBe('earned')
     expect(resolveRewardStatus('unknown')).toBe('earned')
-  })
-})
-
-describe('inferFormatFromLabels', () => {
-  it('returns "ranked" when ticket name contains "ranked"', () => {
-    expect(inferFormatFromLabels('Dossard Ranked', null)).toBe('ranked')
-    expect(inferFormatFromLabels('ranked elite', null)).toBe('ranked')
-  })
-
-  it('returns "ranked" when race name contains "ranked"', () => {
-    expect(inferFormatFromLabels(null, 'Course Ranked')).toBe('ranked')
-  })
-
-  it('is case-insensitive', () => {
-    expect(inferFormatFromLabels('RANKED', null)).toBe('ranked')
-    expect(inferFormatFromLabels(null, 'RaNkEd')).toBe('ranked')
-  })
-
-  it('returns "open" when neither label contains "ranked"', () => {
-    expect(inferFormatFromLabels('Dossard Open', 'Course trail')).toBe('open')
-    expect(inferFormatFromLabels(null, null)).toBe('open')
-    expect(inferFormatFromLabels('', '')).toBe('open')
-  })
-})
-
-describe('pointsForFormat', () => {
-  it('returns 2 for ranked', () => {
-    expect(pointsForFormat('ranked')).toBe(2)
-  })
-
-  it('returns 1 for open', () => {
-    expect(pointsForFormat('open')).toBe(1)
   })
 })
 

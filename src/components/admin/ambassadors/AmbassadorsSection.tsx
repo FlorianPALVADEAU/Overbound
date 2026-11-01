@@ -44,7 +44,6 @@ import {
   useAddManualReferralWithPoints,
 } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import type { AmbassadorRewardStatus } from '@/types/Ambassador'
-import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 
 const STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
@@ -209,13 +208,13 @@ export function AmbassadorsSection() {
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Ambassadeurs</p>
-              <p className="text-xs text-muted-foreground">Année {pointsData?.program_year ?? 'en cours'} · ouvrez une fiche pour gérer les récompenses sans les mélanger.</p>
+              <p className="text-xs text-muted-foreground">Saison en cours · ouvrez une fiche pour gérer les récompenses sans les mélanger.</p>
             </div>
             <div className="flex gap-2">
               <Select value={globalYear} onValueChange={setGlobalYear}>
                 <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="current">Année en cours</SelectItem>
+                  <SelectItem value="current">Saison en cours</SelectItem>
                   {globalYears.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -401,7 +400,6 @@ export function AmbassadorsSection() {
                   <div className="border-t md:hidden">
                     <div className="space-y-2 p-3">
                       {ambassadorRewards.map((reward) => {
-                        const expired = isAmbassadorRewardExpired(reward.expires_at)
                         return (
                           <div key={reward.id} className="space-y-3 rounded-xl border bg-background p-3">
                             <div className="flex items-start justify-between gap-3">
@@ -411,12 +409,11 @@ export function AmbassadorsSection() {
                               </div>
                               <div className="flex shrink-0 flex-wrap justify-end gap-1">
                                 <Badge className={STATUS_STYLES[reward.status]}>{STATUS_LABELS[reward.status]}</Badge>
-                                {expired ? <Badge variant="outline">Expirée</Badge> : null}
                               </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                              <span>Année <strong className="text-foreground">{reward.program_year ?? '—'}</strong></span>
-                              <span>Expire <strong className="text-foreground">{formatDateTime(reward.expires_at)}</strong></span>
+                              <span>Gagnée <strong className="text-foreground">{formatDateTime(reward.earned_at)}</strong></span>
+                              <span>Expire <strong className="text-foreground">{reward.expires_at ? formatDateTime(reward.expires_at) : 'jamais'}</strong></span>
                             </div>
                             <Select
                               value={reward.status}
@@ -512,19 +509,18 @@ export function AmbassadorsSection() {
                 </Select>
               </div>
               {visibleDetailRewards.length === 0 ? (
-                <p className="rounded-xl border p-3 text-sm text-muted-foreground">Aucune récompense pour cette année.</p>
+                <p className="rounded-xl border p-3 text-sm text-muted-foreground">Aucune récompense pour cette saison.</p>
               ) : visibleDetailRewards.map((reward) => (
                 <div key={reward.id} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{reward.program_year} · Palier {reward.reward_level} — {reward.reward_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Expire le {formatDateTime(reward.expires_at)}
+                      Gagnée le {formatDateTime(reward.earned_at)} · Expire {reward.expires_at ? `le ${formatDateTime(reward.expires_at)}` : 'jamais'}
                       {reward.cancellation_reason ? ` · Motif : ${reward.cancellation_reason}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={STATUS_STYLES[reward.status]}>{STATUS_LABELS[reward.status]}</Badge>
-                    {reward.is_expired ? <Badge variant="outline">Expirée</Badge> : null}
                     {reward.status !== 'cancelled' ? (
                       <Select
                         value={reward.status}

@@ -1,185 +1,120 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { Resend } from 'resend'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
-import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
-import { getEmailAssetsBaseUrl } from '@/lib/email/config'
-import type { AmbassadorReward, AmbassadorRewardStatus } from '@/types/Ambassador'
-import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
+import { sendAmbassadorRewardClaimRequestEmail } from '@/lib/ambassadors/email'
+import { loadProgramRules } from '@/lib/ambassadors/programRules'
+import { getRewardKind } from '@/lib/ambassadors/program'
+import { claimAmbassadorReward, releaseAmbassadorRewardClaim, type ClaimFailure } from '@/lib/ambassadors/rewardClaims'
+import { loadCurrentSeason } from '@/lib/ambassadors/season'
+import type { AmbassadorReward } from '@/types/Ambassador'
+
+export const runtime = 'nodejs'
 
 const claimBodySchema = z.object({
   reward_level: z.number().int().positive(),
 })
 
-export const runtime = 'nodejs'
-const resend = new Resend(process.env.RESEND_API_KEY!)
-const SUPPORT_EMAIL = 'contact@overbound-race.com'
-const EMAIL_FROM = process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com'
-
-const resolveRewardStatus = (value: string | null | undefined): AmbassadorRewardStatus => {
-  const normalized = String(value || '').toLowerCase()
-  if (normalized === 'claimed') return 'claimed'
-  if (normalized === 'fulfilled') return 'fulfilled'
-  if (normalized === 'cancelled') return 'cancelled'
-  return 'earned'
+const FAILURES: Record<ClaimFailure, { status: number; error: string }> = {
+  NOT_FOUND: { status: 404, error: 'Ce palier n’est pas encore débloqué.' },
+  EXPIRED: { status: 409, error: 'Cette récompense a expiré à la fin de la saison.' },
+  NOT_CLAIMABLE: { status: 409, error: 'Cette récompense ne peut pas être réclamée.' },
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json().catch(() => null)
-    const parsed = claimBodySchema.safeParse(payload)
+    const parsed = claimBodySchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json({ error: 'reward_level invalide.' }, { status: 400 })
     }
-    const { reward_level: rewardLevel } = parsed.data
 
     const supabase = await createSupabaseServer()
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
     }
 
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, role, full_name')
       .eq('id', user.id)
       .maybeSingle()
-
     if (profileError) {
       console.error('[ambassador rewards] profile error', profileError)
       return NextResponse.json({ error: 'Erreur profil' }, { status: 500 })
     }
-
-    if (!hasAmbassadorAccess({ role: profileData?.role ?? null, email: user.email ?? null })) {
+    if (!hasAmbassadorAccess({ role: profile?.role ?? null, email: user.email ?? null })) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
     const admin = supabaseAdmin()
-
-    const { data: ambassadorData, error: ambassadorError } = await admin
+    const { data: ambassador, error: ambassadorError } = await admin
       .from('ambassadors')
-      .select('id, promotional_codes ( code )')
+      .select('id')
       .eq('profile_id', user.id)
       .eq('is_active', true)
       .maybeSingle()
-
     if (ambassadorError) {
       console.error('[ambassador rewards] ambassador error', ambassadorError)
       return NextResponse.json({ error: 'Erreur ambassadeur' }, { status: 500 })
     }
-
-    if (!ambassadorData) {
+    if (!ambassador) {
       return NextResponse.json({ error: 'Ambassadeur introuvable.' }, { status: 404 })
     }
 
-    const { data: rewardData, error: rewardError } = await admin
-      .from('ambassador_rewards')
-      .select('id, reward_level, reward_name, status, program_year, earned_at, expires_at, claimed_at, fulfilled_at, cancelled_at, cancellation_reason')
-      .eq('ambassador_id', ambassadorData.id)
-      .eq('reward_level', rewardLevel)
+    // Only a reward of the running season can be claimed; archived ones are closed.
+    const { season: programYear } = await loadCurrentSeason(admin)
+    const claim = await claimAmbassadorReward(admin, {
+      ambassadorId: ambassador.id,
+      programYear,
+      rewardLevel: parsed.data.reward_level,
+    })
+    if (!claim.ok) {
+      const failure = FAILURES[claim.reason]
+      return NextResponse.json({ error: failure.error }, { status: failure.status })
+    }
+
+    const { reward } = claim
+    const { data: codeRow } = await admin
+      .from('ambassador_promotional_codes')
+      .select('promotional_code:promotional_codes(code)')
+      .eq('ambassador_id', ambassador.id)
+      .eq('is_current', true)
       .maybeSingle()
-
-    if (rewardError) {
-      console.error('[ambassador rewards] reward lookup error', rewardError)
-      return NextResponse.json({ error: 'Erreur récompense' }, { status: 500 })
-    }
-
-    if (!rewardData) {
-      return NextResponse.json({ error: 'Ce palier n\'est pas encore débloqué.' }, { status: 404 })
-    }
-
-    const currentStatus = resolveRewardStatus(rewardData.status)
-    if (isAmbassadorRewardExpired(rewardData.expires_at)) {
-      return NextResponse.json({ error: 'Cette récompense a expiré le 31 décembre.' }, { status: 409 })
-    }
-    if (currentStatus !== 'earned') {
-      return NextResponse.json({ error: 'Cette récompense ne peut pas être réclamée.' }, { status: 409 })
-    }
-
-    const { data: updatedReward, error: updateError } = await admin
-      .from('ambassador_rewards')
-      .update({
-        status: 'claimed',
-        claimed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', rewardData.id)
-      .select('id, reward_level, reward_name, status, program_year, earned_at, expires_at, claimed_at, fulfilled_at, cancelled_at, cancellation_reason')
-      .single()
-
-    if (updateError || !updatedReward) {
-      console.error('[ambassador rewards] reward update error', updateError)
-      return NextResponse.json({ error: 'Impossible de réclamer la récompense.' }, { status: 500 })
-    }
-
-    const ambassadorName = profileData?.full_name?.trim() || user.user_metadata?.full_name || user.email || user.id
-    const ambassadorEmail = user.email ?? 'email_inconnu'
-    const promoValue = Array.isArray((ambassadorData as any)?.promotional_codes)
-      ? (ambassadorData as any)?.promotional_codes?.[0]
-      : (ambassadorData as any)?.promotional_codes
-    const ambassadorCode = promoValue?.code ?? null
-    const siteUrl = getEmailAssetsBaseUrl()
-    const adminUsersUrl = `${siteUrl}/dashboard?tab=users&search=${encodeURIComponent(ambassadorEmail)}`
-    const adminAmbassadorsUrl = `${siteUrl}/dashboard?tab=ambassadors&search=${encodeURIComponent(ambassadorEmail)}`
+    const promotionalCode = Array.isArray(codeRow?.promotional_code) ? codeRow?.promotional_code[0] : codeRow?.promotional_code
 
     try {
-      const emailHtml = wrapHtmlWithLayout({
-        preview: 'Demande de récompense ambassadeur',
-        htmlContent: `
-          <h2 style="margin: 0 0 12px; font-size: 20px;">Un ambassadeur réclame sa récompense</h2>
-          <p style="margin: 0 0 12px;">Nom: <strong>${ambassadorName}</strong></p>
-          <p style="margin: 0 0 12px;">Email: <strong>${ambassadorEmail}</strong></p>
-          <p style="margin: 0 0 12px;">User ID: <strong>${user.id}</strong></p>
-          ${ambassadorCode ? `<p style="margin: 0 0 12px;">Code ambassadeur: <strong>${ambassadorCode}</strong></p>` : ''}
-          <p style="margin: 0 0 12px;">Récompense: <strong>Palier ${updatedReward.reward_level} — ${updatedReward.reward_name}</strong></p>
-          <p style="margin: 0 0 12px;">Réclamée le: <strong>${new Date(updatedReward.claimed_at ?? new Date().toISOString()).toLocaleString('fr-FR')}</strong></p>
-          <p style="margin: 16px 0 0;">
-            <a href="${adminAmbassadorsUrl}" style="color: #2563eb; text-decoration: none;">Ouvrir la gestion des ambassadeurs</a>
-          </p>
-          <p style="margin: 8px 0 0;">
-            <a href="${adminUsersUrl}" style="color: #2563eb; text-decoration: none;">Ouvrir le profil utilisateur</a>
-          </p>
-        `,
-      })
-
-      await resend.emails.send({
-        from: EMAIL_FROM,
-        to: SUPPORT_EMAIL,
-        subject: 'un ambassadeur réclame sa récompense',
-        html: emailHtml,
+      await sendAmbassadorRewardClaimRequestEmail({
+        ambassadorName: profile?.full_name?.trim() || user.user_metadata?.full_name || user.email || user.id,
+        ambassadorEmail: user.email ?? 'email_inconnu',
+        userId: user.id,
+        ambassadorCode: promotionalCode?.code ?? null,
+        reward,
       })
     } catch (emailError) {
       console.error('[ambassador rewards] email error', emailError)
-      await admin
-        .from('ambassador_rewards')
-        .update({
-          status: 'earned',
-          claimed_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', updatedReward.id)
-      return NextResponse.json({ error: 'Impossible d\'envoyer le mail de reclamation.' }, { status: 502 })
+      await releaseAmbassadorRewardClaim(admin, reward.id).catch((releaseError) =>
+        console.error('[ambassador rewards] release error', releaseError),
+      )
+      return NextResponse.json({ error: 'Impossible d’envoyer le mail de réclamation.' }, { status: 502 })
     }
 
+    const { levels } = await loadProgramRules(admin, programYear)
     const response: AmbassadorReward = {
-      id: updatedReward.id,
-      reward_level: updatedReward.reward_level,
-      reward_name: updatedReward.reward_name,
-      status: resolveRewardStatus(updatedReward.status),
-      program_year: updatedReward.program_year,
-      earned_at: updatedReward.earned_at,
-      expires_at: updatedReward.expires_at,
-      claimed_at: updatedReward.claimed_at,
-      fulfilled_at: updatedReward.fulfilled_at,
-      cancelled_at: updatedReward.cancelled_at,
-      cancellation_reason: updatedReward.cancellation_reason,
-      is_expired: isAmbassadorRewardExpired(updatedReward.expires_at),
+      id: reward.id,
+      reward_level: reward.reward_level,
+      reward_name: reward.reward_name,
+      kind: getRewardKind(levels, reward.reward_level),
+      points_required: reward.points_required,
+      status: reward.status,
+      program_year: reward.program_year,
+      earned_at: reward.earned_at,
+      expires_at: reward.expires_at,
+      claimed_at: reward.claimed_at,
+      fulfilled_at: reward.fulfilled_at,
     }
-
     return NextResponse.json({ reward: response })
   } catch (error) {
     console.error('[ambassador rewards] unexpected error', error)

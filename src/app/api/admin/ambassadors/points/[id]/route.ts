@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { getCurrentProgramYear } from '@/lib/ambassadors/rewardLifecycle'
+import { loadCurrentSeason } from '@/lib/ambassadors/season'
 
 export const runtime = 'nodejs'
 
@@ -28,9 +28,8 @@ async function handlePatch(
 
     const { id } = await params
     const payload = payloadSchema.parse(await request.json())
-    const programYear = payload.program_year ?? getCurrentProgramYear()
-
     const admin = supabaseAdmin()
+    const programYear = payload.program_year ?? (await loadCurrentSeason(admin)).season
 
     const { data: updated, error } = await admin
       .rpc('admin_adjust_ambassador_points', {
@@ -57,14 +56,6 @@ async function handlePatch(
         )
       }
       return NextResponse.json({ error: 'Impossible de mettre à jour les points.' }, { status: 500 })
-    }
-
-    if (programYear === getCurrentProgramYear()) {
-      const { error: rewardsError } = await admin.rpc('ambassador_ensure_rewards', { p_ambassador_id: id })
-      if (rewardsError) {
-        console.error('[admin ambassadors points] ensure rewards error', rewardsError)
-        return NextResponse.json({ error: 'Impossible de synchroniser les récompenses.' }, { status: 500 })
-      }
     }
 
     return NextResponse.json({ points: updated, program_year: programYear })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { getCurrentProgramYear } from '@/lib/ambassadors/rewardLifecycle'
+import { loadCurrentSeason } from '@/lib/ambassadors/season'
 
 export const runtime = 'nodejs'
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const requestedYear = Number(request.nextUrl.searchParams.get('year'))
     const programYear = Number.isInteger(requestedYear) && requestedYear >= 2020 && requestedYear <= 2100
       ? requestedYear
-      : getCurrentProgramYear()
+      : (await loadCurrentSeason(admin)).season
 
     const { data: ambassadors, error: ambassadorsError } = await admin
       .from('ambassadors')

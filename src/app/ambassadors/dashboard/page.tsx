@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import { redirect, useRouter } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useSession } from '@/app/api/session/sessionQueries'
@@ -14,8 +14,6 @@ import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 function AmbassadorDashboardContent() {
   const searchParams = useSearchParams()
   const viewAs = searchParams.get('as')
-  const router = useRouter()
-  const requestedYear = Number(searchParams.get('year'))
   const { data: session, isLoading } = useSession()
   const role = session?.profile?.role ?? null
   const isAdmin = role === 'admin'
@@ -26,7 +24,6 @@ function AmbassadorDashboardContent() {
   const { data, isLoading: dashboardLoading, error, refetch } = useAmbassadorDashboard({
     enabled: Boolean(session?.user && canAccessAmbassadorDashboard),
     viewAs: isAdmin && viewAs ? viewAs : null,
-    year: Number.isInteger(requestedYear) ? requestedYear : null,
   })
 
   if (isLoading) {
@@ -93,29 +90,11 @@ function AmbassadorDashboardContent() {
           </Link>
         </div>
       ) : null}
-      {data.available_program_years.length > 1 ? (
-        <div className="sticky top-0 z-40 flex items-center gap-2 overflow-x-auto border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
-          <span className="text-sm font-medium">Année :</span>
-          {data.available_program_years.map((year) => (
-            <Button
-              key={year}
-              size="sm"
-              variant={year === data.program_year ? 'default' : 'outline'}
-              onClick={() => {
-                const params = new URLSearchParams(searchParams.toString())
-                params.set('year', String(year))
-                router.replace(`/ambassadors/dashboard?${params.toString()}`)
-              }}
-            >
-              {year}
-            </Button>
-          ))}
-        </div>
-      ) : null}
       <AmbassadorDashboard
         fullName={isAdmin && viewAs ? undefined : (session.profile?.full_name ?? undefined)}
         email={isAdmin && viewAs ? undefined : (session.user?.email ?? undefined)}
         data={data}
+        adminView={isAdmin && Boolean(viewAs)}
         onRewardClaimed={() => {
           void refetch()
         }}

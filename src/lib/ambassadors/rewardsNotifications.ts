@@ -1,59 +1,49 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendAmbassadorRewardEarnedEmail } from '@/lib/ambassadors/email'
+import { nudgeAmbassadorNearGoal } from '@/lib/ambassadors/pointsNudge'
 
-export async function notifyAmbassadorRewardsForOrder(
-  admin: SupabaseClient,
-  orderId: string,
-) {
-  const { data: registration } = await admin
-    .from('registrations')
-    .select('promotional_code_id')
-    .eq('order_id', orderId)
-    .not('promotional_code_id', 'is', null)
-    .limit(1)
-    .maybeSingle()
+type NotificationClient = Pick<SupabaseClient, 'from' | 'auth'>
 
-  const promotionalCodeId = registration?.promotional_code_id
-  if (!promotionalCodeId) return
-
+/** Returns true when a reward email was sent. */
+async function notifyAmbassador(admin: NotificationClient, ambassadorId: string): Promise<boolean> {
   const { data: ambassador } = await admin
     .from('ambassadors')
-    .select('id, profile_id, promo:promotional_codes(code)')
-    .eq('promotional_code_id', promotionalCodeId)
+    .select('id, profile_id')
+    .eq('id', ambassadorId)
     .eq('is_active', true)
     .maybeSingle()
-
-  if (!ambassador?.id || !ambassador.profile_id) return
+  if (!ambassador?.profile_id) return false
 
   const { data: rewards } = await admin
     .from('ambassador_rewards')
     .select('id, reward_level, reward_name')
     .eq('ambassador_id', ambassador.id)
     .eq('status', 'earned')
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .is('notified_at', null)
+    .order('reward_level', { ascending: true })
+  if (!rewards || rewards.length === 0) return false
 
-  if (!rewards || rewards.length === 0) return
-
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('full_name')
-    .eq('id', ambassador.profile_id)
-    .maybeSingle()
-
-  const { data: authUser } = await admin.auth.admin.getUserById(ambassador.profile_id)
+  const [{ data: profile }, { data: authUser }, { data: codeRow }] = await Promise.all([
+    admin.from('profiles').select('full_name').eq('id', ambassador.profile_id).maybeSingle(),
+    admin.auth.admin.getUserById(ambassador.profile_id),
+    admin
+      .from('ambassador_promotional_codes')
+      .select('promotional_code:promotional_codes(code)')
+      .eq('ambassador_id', ambassador.id)
+      .eq('is_current', true)
+      .maybeSingle(),
+  ])
   const email = authUser?.user?.email
-  if (!email) return
+  if (!email) return false
 
-  const promoValue = Array.isArray((ambassador as any)?.promo) ? (ambassador as any)?.promo?.[0] : (ambassador as any)?.promo
+  const promotionalCode = Array.isArray(codeRow?.promotional_code) ? codeRow?.promotional_code[0] : codeRow?.promotional_code
 
   await sendAmbassadorRewardEarnedEmail({
     to: email,
     fullName: profile?.full_name ?? null,
-    ambassadorCode: promoValue?.code ?? null,
-    rewards: rewards.map((reward) => ({
-      reward_level: reward.reward_level,
-      reward_name: reward.reward_name,
-    })),
+    ambassadorCode: promotionalCode?.code ?? null,
+    rewards: rewards.map(({ reward_level, reward_name }) => ({ reward_level, reward_name })),
   })
 
   await admin
@@ -63,4 +53,29 @@ export async function notifyAmbassadorRewardsForOrder(
       'id',
       rewards.map((reward) => reward.id),
     )
+  return true
+}
+
+/**
+ * Emails every ambassador credited by this order about rewards they have not been told about yet.
+ * The ledger tells who was credited, so a retired code or a multi-code ambassador is still reached.
+ */
+export async function notifyAmbassadorRewardsForOrder(admin: NotificationClient, orderId: string) {
+  const { data: events } = await admin
+    .from('ambassador_points_events')
+    .select('ambassador_id')
+    .eq('order_id', orderId)
+    .is('revoked_at', null)
+
+  const ambassadorIds = Array.from(new Set((events ?? []).map((event) => event.ambassador_id as string)))
+  for (const ambassadorId of ambassadorIds) {
+    const rewardEmailSent = await notifyAmbassador(admin, ambassadorId)
+    // One email per order: a reward email already says where the ambassador stands.
+    // A failed nudge must never hide the credit or the reward email that already went out.
+    if (!rewardEmailSent) {
+      await nudgeAmbassadorNearGoal(admin, ambassadorId).catch((error) =>
+        console.error('[ambassador nudge] failed', ambassadorId, error),
+      )
+    }
+  }
 }
