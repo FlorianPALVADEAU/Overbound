@@ -52,7 +52,7 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 |---------|---------|--------------|
 | **Wave Assignment** | 24 vagues OPEN (08h-11h50) vs départ unique RANKED (15h). Format detection via noms ticket/race. | src/lib/openSas.ts, src/lib/slotAssignment.ts, src/app/api/registrations/create/route.ts |
 | **Group Membership** | Packs entreprise (captain + members) avec synchronisation d'ancre de vague. Anchor init via creator/member_join/admin. | src/lib/groups/*, migrations/20260416_groups.sql, migrations/20260512_groups_anchor_source.sql |
-| **Ambassador Program** | Points (1pt OPEN, 2pts RANKED), 10 reward levels, extra tickets. Multi-promo codes. | src/lib/ambassadors/program.ts, api/ambassadors/* |
+| **Ambassador Program** | Points (1pt OPEN, 2pts RANKED), saison continue (`ambassador_program_season`), paliers en base (8 en 2027), dossard bonus tous les 5 pts au-dessus de 30. Multi-promo codes, lien `/?ref=CODE`. | src/lib/ambassadors/*, src/lib/attribution/referral.ts, api/ambassadors/* |
 | **Email System** | 4 phases : unsubscribe → distribution lists → granular prefs → admin interface. RLS strict. Audience marketing = Supabase (`resolveAudience`), envoi marketing = SES via `runCampaign`, transactionnel = Resend. | src/lib/email/*, api/admin/distribution-lists/* |
 | **Registration State** | État parallèles : claim_status + approval_status + checked_in. Workflow complexe d'approbation. | src/types/Registration.ts, api/checkin/* |
 | **Pricing & Tiers** | Prix dynamiques par tier (discount %), auto-activation. Promo codes (cumulative rules). | src/lib/pricing.ts, src/types/EventPriceTier.ts |
@@ -95,10 +95,13 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 - Toute modification de l'article 9 (report/annulation) passe par `docs/guides/legal.md` : revue d'avocat requise, voir `docs/legal/CGV-report-annulation-organisateur-2026-10.md`.
 
 ### Ambassador points awarded
-⚠️ Points awarded via RPC `award_ambassador_points_for_order()` — ne jamais insérer directly.
-- Cherche `promotional_code_id` dans l'order
-- If code ∈ `ambassador_promotional_codes`, UPDATE ambassador_points
-- Points par format : OPEN=1, RANKED=2 (detecté via registration.race_format)
+⚠️ Points awarded via RPC `award_ambassador_points_for_order()` (aussi appelée par des triggers) — ne jamais insérer ni mettre à jour les agrégats directement.
+- Seul `ambassador_sync_points()` écrit `ambassador_points_years` (recalcul depuis le ledger). `ambassador_points` (cumul à vie) est déprécié.
+- Points par format : OPEN=1, RANKED=2 (`tickets.race_format`). Aucun point pour l'auto-parrainage, une commande à 0 € ou une inscription annulée.
+- Remboursement ou annulation : triggers → `revoke_ambassador_points()` (événement marqué `revoked_at`, jamais supprimé).
+- Paliers et règle des dossards bonus : tables `ambassador_reward_levels` / `ambassador_program_rules`, versionnées par `effective_year`. Ne plus rien coder en dur.
+- Un code est ambassadeur s'il est dans `ambassadors.promotional_code_id` **ou** dans `ambassador_promotional_codes`. Toujours `AMBASSADOR_LINK_SELECT` + `isAmbassadorPromoRow` (`src/lib/orderPricing/mappers.ts`), jamais `ambassadors:ambassadors(id)` seul : un ambassadeur à plusieurs codes n'a ses codes supplémentaires que dans la seconde table.
+- Plus d'année civile : `program_year` est la clé de **saison** (`ambassador_program_season`, lue via `loadCurrentSeason`). Ne jamais la dériver de la date. Les récompenses expirent à `ends_at` de la saison. Une commande créée avant `started_at` ne donne aucun point. Voir FDR-0006, amendements 2026-11-01 et 2026-11-02.
 
 ## Docs de référence
 

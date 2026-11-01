@@ -5,6 +5,7 @@ visuel**, au même titre que `docs/guides/email-conventions.md` pour les emails.
 
 - Décision technique : [ADR-0005](../adr/ADR-0005-design-system.md)
 - Référence vivante : route `/design` (local et preview Vercel, 404 en production)
+- Rendu de référence de l'espace ambassadeur, données fixes : route `/design/ambassadeur` (même règle : 404 en production). Elle sert aux tests de mise en page `e2e/ambassador-dashboard.spec.ts`.
 - Code : tokens dans `src/app/globals.css`, primitives dans `src/components/ds/`, variants dans
   `src/components/ui/button.tsx` et `src/components/ui/card.tsx`
 - Garde-fou : `npm run lint:design` (inclus dans `npm run lint`)

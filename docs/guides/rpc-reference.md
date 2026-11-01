@@ -22,8 +22,6 @@ Les signatures qui suivent sont conservées pour comprendre les appels existants
 - `get_active_tier_promo_code`
 - `check_and_advance_tier_progression`
 - `increment_promo_code_usage`
-- `ambassador_reward_level_for_points`
-- `ambassador_ensure_rewards`
 
 ---
 
@@ -141,103 +139,53 @@ it('fails when no capacity', async () => {
 ## award_ambassador_points_for_order
 
 ### Purpose
-Awards ambassador points when their promotional code is used in an order (1pt OPEN, 2pts RANKED).
+Crédite les points ambassadeur d'une commande payée avec un code ambassadeur (1 pt par inscription OPEN, 2 pts par inscription RANKED). Réécrite pour la saison continue : voir [implementation-guide-ambassador.md](./implementation-guide-ambassador.md) et le [FDR-0006](../fdr/FDR-0006-ambassador-program-points-and-rewards.md) (amendements 2026-11-01 et 2026-11-02).
 
 ### Signature
 ```sql
-SELECT award_ambassador_points_for_order(
-  p_order_id UUID
-) RETURNS JSON;
+SELECT award_ambassador_points_for_order(p_order_id UUID);  -- RETURNS void
 ```
 
-### Parameters
+`EXECUTE` réservé à `service_role`. Appelée par les triggers `orders_award_ambassador_points_trigger` et `registrations_award_ambassador_points_trigger`, et, de façon redondante mais idempotente, par le webhook Stripe et `registrations/create`.
 
-| Param | Type | Description | Required |
-|-------|------|-------------|----------|
-| `p_order_id` | UUID | Order associated with promo code | Yes |
-
-### Returns
-
-```json
-{
-  "success": true,
-  "ambassador_id": "amb-uuid",
-  "points_awarded": 5,
-  "total_points": 35,
-  "reward_level": 2
-}
-```
+### Ce qui est ignoré (aucun point)
+- commande créée avant `ambassador_program_season.started_at` (pas de rétroactivité) ;
+- commande à 0 € ;
+- auto-parrainage (l'email du participant est celui du compte de l'ambassadeur) ;
+- inscription annulée.
 
 ### Side Effects
 
-✅ **Modifies**:
-- `ambassador_points.total_points` (increment)
-- `ambassador_points.recruits_open` or `recruits_ranked` (increment based on format)
-- `ambassador_points_history` (insert audit entry)
+Modifie :
+- `ambassador_points_events` : une ligne par couple (ambassadeur, inscription), unique, donc l'appel est idempotent ;
+- `ambassador_points_years` : recalculé depuis le ledger par `ambassador_sync_points` (seul écrivain) ;
+- `ambassador_rewards` : créées par `ambassador_reconcile_rewards` pour chaque palier atteint, avec `expires_at` = `ends_at` de la saison.
 
-✅ **Does NOT**:
-- Update order
-- Send emails (handled separately in email service)
-- Create reward entries (lazy-loaded on dashboard)
+Ne fait pas : envoyer d'email (voir `rewardsNotifications.ts`), modifier la commande, toucher à l'ancienne table `ambassador_points` (dépréciée).
 
-### Business Logic
+### Fonctions liées
 
-1. **Lookup**: Find ambassador by promotional_code_id
-2. **Detect Format**: Check registration format (OPEN or RANKED)
-3. **Award**: +1pt per OPEN, +2pts per RANKED
-4. **Update Tracking**: Increment recruits_open or recruits_ranked
-5. **Audit**: Log in ambassador_points_history
-
-### Error Scenarios
-
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| `Promo code not found` | Invalid code ID | Check code was inserted correctly |
-| `Ambassador not found` | Code exists but no ambassador | Link code to ambassador first |
-| `Already awarded` | Points already given for this order | Check for duplicate calls |
+| Fonction | Rôle |
+|---|---|
+| `revoke_ambassador_points(p_order_id, p_registration_id, p_reason)` | Pose `revoked_at` sur le ledger (jamais de suppression), retourne le nombre de lignes. Appelée par les triggers sur `registrations.cancelled_at` et `orders.status` (`refunded`, `cancelled`) |
+| `ambassador_sync_points(p_ambassador_id, p_program_year)` | Recalcule l'agrégat de la saison (ledger + corrections admin) puis réconcilie les récompenses |
+| `ambassador_reconcile_rewards(p_ambassador_id, p_program_year)` | Crée, annule ou rouvre les récompenses selon les points et l'échelle de la saison |
+| `ambassador_ensure_rewards(p_ambassador_id)` | Réconcilie la saison en cours |
+| `ambassador_current_season()`, `ambassador_season_started_at()` | Lecture de la ligne unique `ambassador_program_season` |
+| `admin_adjust_ambassador_points(p_ambassador_id, p_program_year, p_total_points, p_recruits_open, p_recruits_ranked, p_reason, p_actor_profile_id, p_idempotency_key)` | Correction admin avec motif et clé d'idempotence |
+| `admin_credit_manual_referral(p_ambassador_id, p_registration_id, p_points, p_race_format)` | Crédit d'un parrainage hors ligne, retourne un booléen |
 
 ### Usage Pattern
 
 ```typescript
-// From src/app/api/webhooks/stripe/route.ts and src/app/api/registrations/create/route.ts
-
-const result = await supabase.rpc('award_ambassador_points_for_order', {
-  p_order_id: order.id,
-});
-
-if (!result.data?.success) {
-  console.warn(`Points award failed for order ${order.id}`);
-}
+// Le crédit est fait par les triggers. L'appel applicatif reste possible et idempotent :
+const { error } = await admin.rpc('award_ambassador_points_for_order', { p_order_id: order.id })
+if (error) console.warn(`Points award failed for order ${order.id}`, error)
 ```
 
 ### Testing
 
-```typescript
-// Happy path: OPEN format award
-it('awards 1pt per OPEN registration', async () => {
-  const result = await rpc('award_ambassador_points_for_order', {
-    p_registration_count: 3,
-    // assume OPEN format detected
-  });
-  expect(result.data.points_awarded).toBe(3);
-});
-
-// Edge case: RANKED format (2pts each)
-it('awards 2pts per RANKED registration', async () => {
-  const result = await rpc('award_ambassador_points_for_order', {
-    p_registration_count: 2,
-    // assume RANKED format detected
-  });
-  expect(result.data.points_awarded).toBe(4);
-});
-
-// Edge case: duplicate call protection
-it('prevents duplicate points for same order', async () => {
-  await rpc('award_ambassador_points_for_order', {...});
-  const result2 = await rpc('award_ambassador_points_for_order', {...});
-  expect(result2.data.success).toBe(false);
-});
-```
+Le comportement SQL se vérifie sur la base de dev, dans une transaction annulée : attribution avant et après `started_at`, second appel sans effet (idempotence), remboursement (`revoked_at` posé, récompense non réclamée annulée), commande à 0 € et auto-parrainage sans point.
 
 ---
 
@@ -449,20 +397,9 @@ return {
 ### Pattern 2: Ambassador points award (webhook)
 
 ```typescript
-// Stripe webhook: order completed
-
-for (const promo of order.promotional_codes) {
-  const { data: awarded, error } = await supabase.rpc(
-    'award_ambassador_points_for_order',
-    {
-      p_order_id: order.id,
-      p_promotional_code_id: promo.id,
-      p_registration_count: order.registrations.length,
-    }
-  );
-
-  if (error) console.error('Points award failed:', error);
-}
+// Stripe webhook: commande payée. Les triggers ont déjà crédité les points : l'appel est idempotent.
+const { error } = await admin.rpc('award_ambassador_points_for_order', { p_order_id: order.id })
+if (error) console.error('Points award failed:', error)
 ```
 
 ### Pattern 3: Group sync (anchor change)

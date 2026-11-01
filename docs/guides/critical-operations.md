@@ -160,19 +160,19 @@ When applied with `v_dry_run := FALSE`, the script writes snapshots into `event_
 
 ### What It Does
 
-Manually adjust ambassador's total points (e.g., for award fulfillment, correction, or special bonus).
+Corrige à la main les points d'un ambassadeur **pour la saison en cours**, avec un motif obligatoire et une clé d'idempotence. Passe par la RPC `admin_adjust_ambassador_points`, qui écrit une ligne dans `ambassador_points_adjustments` puis recalcule l'agrégat via `ambassador_sync_points`.
 
 ### When to Use
 
-- Correct data entry error (wrong points awarded)
-- Award points for out-of-band referrals (phone, in-person signup)
-- Apply bonus for milestone or special campaign
-- Deduct points for refund (rare, but possible)
+- Corriger une erreur de saisie ou d'attribution
+- Créditer un parrainage hors ligne (téléphone, en personne) : préférer `POST /api/admin/ambassadors/manual-referrals`, qui rattache le crédit à une inscription réelle
+- Appliquer un geste commercial exceptionnel
 
 ### Prerequisites
 
-- Ambassador exists in database
-- Admin credentials
+- L'ambassadeur existe
+- Compte admin (`requireAdmin`)
+- Un motif d'au moins 3 caractères
 
 ### API Endpoint
 
@@ -181,39 +181,26 @@ PATCH /api/admin/ambassadors/points/[ambassador_id]
 
 Body:
 {
-  "total_points": 50,
-  "recruits_open": 30,
-  "recruits_ranked": 10,
-  "notes": "Manual adjustment: awarded 5pts for event sponsorship"
+  "total_points": 12,
+  "recruits_open": 8,
+  "recruits_ranked": 2,
+  "reason": "Parrainages pris par téléphone, voir ticket 123",
+  "idempotency_key": "<uuid>",
+  "program_year": 2027          // optionnel, saison en cours par défaut
 }
 ```
 
 ### Impacts
 
-⚠️ **Critical**: Changing total_points automatically:
-- Updates next reward calculation
-- May unlock/downgrade reward level
-- Does NOT create ambassador_rewards entries (rewards calculated dynamically)
-- May affect leaderboard ranking
-
-### Approval Workflow
-
-1. Admin makes change via `/admin/ambassadors/points/[id]` PATCH
-2. Log entry created with old/new points + reason
-3. System auto-emails ambassador (optional)
-4. Leaderboard refreshes
-5. Rewards recalculate on next dashboard load
+⚠️ **Critique** : la correction change les paliers atteints.
+- `ambassador_reconcile_rewards` crée les récompenses des paliers atteints et annule les `earned` devenues injustifiées.
+- Les récompenses `claimed` et `fulfilled` ne sont jamais touchées : la vue `ambassador_rewards_over_granted` les liste pour décision humaine.
+- Le classement change.
+- Rejouer la même `idempotency_key` ne double pas la correction.
 
 ### Rollback
 
-```sql
-UPDATE ambassador_points
-SET total_points = OLD_VALUE,
-    recruits_open = OLD_OPEN,
-    recruits_ranked = OLD_RANKED,
-    updated_at = NOW()
-WHERE ambassador_id = 'AMB_ID';
-```
+Ne pas modifier les tables à la main. Poser une nouvelle correction qui ramène les valeurs voulues (nouvelle clé d'idempotence, motif explicite). L'historique des corrections reste dans `ambassador_points_adjustments`.
 
 ---
 

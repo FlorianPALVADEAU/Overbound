@@ -1,340 +1,174 @@
 # Implementation Guide: Ambassador Program
 
-**For**: Developers implementing ambassador features, dashboards, rewards  
-**Related**: [FDR-0006](../fdr/FDR-0006-ambassador-program-points-and-rewards.md)
+**Pour** : développeurs qui touchent aux points, aux récompenses, au dashboard ou au lien de parrainage
+**Voir aussi** : [FDR-0006](../fdr/FDR-0006-ambassador-program-points-and-rewards.md) (décisions, amendements 2026-11-01 et 2026-11-02), [rpc-reference.md](./rpc-reference.md)
+
+Dernière mise à jour : 2026-11-03. Ce guide décrit le code tel qu'il est. L'ancien système (10 paliers codés en dur, année civile, billets bonus tous les 3 points) n'existe plus.
 
 ---
 
-## Quick Overview
+## Vue d'ensemble
 
-**Flow**:
-1. Ambassador gets promotional code
-2. Shares with friends
-3. Friend registers + pays with code → points awarded
-4. Ambassador sees points on dashboard + unlocks rewards
-5. Admin approves/fulfills rewards
-
----
-
-## File Structure
-
-```
-src/
-├── lib/ambassadors/
-│   ├── program.ts                    # Reward levels + formulas
-│   ├── dashboardHelpers.ts           # Query helpers
-│   ├── access.ts                     # Permissions
-│   ├── email.ts                      # Notification emails
-│   └── rewardsNotifications.ts       # Webhook: points awarded
-├── app/api/ambassadors/
-│   ├── dashboard/route.ts            # GET full dashboard
-│   └── rewards/claim/route.ts        # POST claim reward
-└── tests/
-    ├── program.test.ts
-    └── access.test.ts
-```
+1. Un ambassadeur a un ou plusieurs codes promo (`ambassador_promotional_codes`).
+2. Un ami s'inscrit avec le code, tapé à la main ou appliqué par le lien `/?ref=CODE`.
+3. La commande payée déclenche `award_ambassador_points_for_order` (triggers SQL, plus un appel redondant du webhook Stripe et de `registrations/create`). Le ledger reçoit une ligne par inscription.
+4. `ambassador_sync_points` recalcule l'agrégat de la saison, `ambassador_reconcile_rewards` crée les récompenses de chaque palier atteint.
+5. L'ambassadeur voit l'avancement sur `/ambassadors/dashboard`, réclame ses récompenses, l'équipe les remet à la main (statut `fulfilled`).
+6. Un email de relance part quand l'ambassadeur est à 2 points ou moins du palier suivant.
 
 ---
 
-## Core: Reward Levels & Formulas
+## Saison
 
-**File**: [src/lib/ambassadors/program.ts](../../../src/lib/ambassadors/program.ts)
+Il n'y a plus d'année civile. `program_year` (sur les événements de points, les agrégats et les récompenses) est la clé d'une **saison**, lue dans la table à ligne unique `ambassador_program_season`.
 
-```typescript
-export const AMBASSADOR_REWARD_LEVELS = [
-  { reward_level: 1, reward_name: 'Badge ambassadeur + leaderboard', points_required: 1 },
-  { reward_level: 2, reward_name: 'Récompense starter', points_required: 2 },
-  // ... through level 10 at 30pts
-  { reward_level: 10, reward_name: 'Statut ambassadeur officiel', points_required: 30 },
-]
+| Colonne | Rôle |
+|---|---|
+| `current_season` | Valeur de `program_year` de la saison en cours (2027 aujourd'hui) |
+| `started_at` | Une commande créée avant cet instant ne donne aucun point (pas de rétroactivité) |
+| `ends_at` | Copiée dans `ambassador_rewards.expires_at` au moment où une récompense est gagnée. Vide : pas d'expiration |
 
-// Get current reward level
-export const getCurrentRewardLevel = (totalPoints: number) => {
-  return AMBASSADOR_REWARD_LEVELS.reduce(
-    (max, level) => (totalPoints >= level.points_required ? level.reward_level : max),
-    0
-  )
-}
+Lecture côté application : `loadCurrentSeason(admin)` dans [season.ts](../../src/lib/ambassadors/season.ts). Ne jamais dériver la saison de la date du jour.
 
-// Get next reward to aim for
-export const getNextReward = (totalPoints: number): AmbassadorNextReward | null => {
-  const next = AMBASSADOR_REWARD_LEVELS.find((l) => totalPoints < l.points_required)
-  return next
-    ? {
-        reward_level: next.reward_level,
-        reward_name: next.reward_name,
-        points_required: next.points_required,
-        points_remaining: Math.max(next.points_required - totalPoints, 0),
-      }
-    : null
-}
+### Remettre les compteurs à zéro (nouvelle saison)
 
-// Extra tickets beyond level 10
-export const getExtraTicketsEarned = (totalPoints: number): number => {
-  if (totalPoints <= 30) return 0
-  return Math.floor((totalPoints - 30) / 3)
-}
-```
+1. Sauvegarder la base.
+2. Copier les totaux dans `ambassador_season_archive` (`season`, `ambassador_id`, totaux).
+3. Passer les récompenses `earned` de l'ancienne saison en `cancelled` avec un motif, et écrire l'événement d'audit. Les récompenses `claimed` et `fulfilled` restent : le dashboard les montre en lecture seule dans "Édition précédente".
+4. Supprimer ledger, corrections et agrégats de l'ancienne saison.
+5. Ajouter une échelle avec un nouvel `effective_year`, puis mettre à jour `current_season`, `started_at`, `ends_at`.
+6. Modèle complet : `supabase/migrations/20261102120000_ambassador_season_reset.sql`. Elle s'applique avant le déploiement du code (FDR-0009).
 
 ---
 
-## Dashboard Query
+## Points
 
-**File**: [src/app/api/ambassadors/dashboard/route.ts](../../../src/app/api/ambassadors/dashboard/route.ts) → `GET /api/ambassadors/dashboard`
+| Table / fonction | Rôle |
+|---|---|
+| `ambassador_points_events` | Ledger. Une ligne par couple (ambassadeur, inscription). Jamais supprimée : une révocation pose `revoked_at` |
+| `ambassador_points_adjustments` | Corrections admin, avec motif et clé d'idempotence |
+| `ambassador_points_years` | Agrégat par saison (`total_points`, `recruits_open`, `recruits_ranked`). Écrit **uniquement** par `ambassador_sync_points` |
+| `award_ambassador_points_for_order` | Attribution. Ignore : commande antérieure à `started_at`, commande à 0 €, auto-parrainage, inscription annulée |
+| `revoke_ambassador_points` | Appelée par les triggers sur `registrations.cancelled_at` et `orders.status` (`refunded`, `cancelled`) |
+| `admin_adjust_ambassador_points`, `admin_credit_manual_referral` | Corrections et parrainages hors ligne, tous deux via `ambassador_sync_points` |
 
-Returns complete dashboard data:
+Points par format : OPEN = 1, RANKED = 2 (`tickets.race_format`). Ne jamais insérer dans les agrégats, ne jamais détecter le format par ID.
 
-```typescript
-export async GET(req: Request) {
-  const userId = await getCurrentUserId()
-  
-  // 1. Get ambassador record + code
-  const ambassador = await getAmbassadorByUserId(userId)
-  
-  // 2. Get total points
-  const points = await getAmbassadorPoints(ambassador.id)
-  
-  // 3. Get rewards (earned, claimed, fulfilled)
-  const rewards = await getAmbassadorRewards(ambassador.id)
-  
-  // 4. Get leaderboard (top 10)
-  const leaderboard = await getAmbassadorLeaderboard(ambassador.id)
-  
-  // 5. Get recruits table (with payment status)
-  const recruits = await getAmbassadorRecruits(ambassador.id)
-  
-  return {
-    code: ambassador.promotional_code_slug,
-    total_points: points.total_points,
-    points_breakdown: {
-      open_count: points.recruits_open,
-      ranked_count: points.recruits_ranked,
-    },
-    rewards: [
-      { id: '...', reward_level: 1, status: 'earned', earned_at: '...' },
-      { id: '...', reward_level: 2, status: 'claimed', claimed_at: '...' },
-    ],
-    next_reward: getNextReward(points.total_points),
-    leaderboard: {
-      current_user_rank: 5,
-      total_ambassadors: 127,
-      top: [
-        { rank: 1, name: 'Alice', points: 150, is_current_user: false },
-        // ...
-      ],
-    },
-    recruits_table: [
-      { id: '...', name: 'Bob', points: 2, race_format: 'ranked', payment_status: 'paid' },
-      // ...
-    ],
-  }
-}
-```
+### Reconnaître un code ambassadeur
+
+Un code est ambassadeur s'il est lié à un ambassadeur par `ambassadors.promotional_code_id` (ancien lien, un seul code) **ou** par `ambassador_promotional_codes` (plusieurs codes). Un ambassadeur à plusieurs codes n'a ses codes supplémentaires que dans la seconde table.
+
+Toute requête qui doit savoir si un code est ambassadeur sélectionne `AMBASSADOR_LINK_SELECT` et teste `isAmbassadorPromoRow(row)` ([mappers.ts](../../src/lib/orderPricing/mappers.ts)). Ne pas réécrire `ambassadors:ambassadors(id)` à la main : c'est le bug qui a fait ignorer des codes valides (validation, règle "un seul code ambassadeur", référence dans le webhook).
 
 ---
 
-## Points Award (RPC Entry Point)
+## Paliers et récompenses
 
-**File**: RPC `award_ambassador_points_for_order()` (Supabase SQL)
+Les paliers vivent en base, versionnés par `effective_year` : `ambassador_reward_levels` (palier, points, nom, description, `kind`) et `ambassador_program_rules` (dossard bonus : `bonus_base_points`, `bonus_interval_points`, `bonus_reward_name`). Une saison utilise les lignes de l'`effective_year` le plus récent inférieur ou égal à sa clé. Changer l'échelle, c'est ajouter des lignes, jamais modifier celles de la saison en cours.
 
-Called from Stripe webhook when order is paid:
+Échelle de la saison 2027 (modifiable en base) : 1 badge, 3 code -50 %, 5 T-shirt, 8 dossard Open, 12 mise en avant réseaux, 20 dossard Ranked, 25 pack média, 30 Ambassadeur Or. Au-dessus de 30 : un dossard offert tous les 5 points, sans plafond.
 
-```typescript
-// In webhook handler
-const { error } = await supabase.rpc('award_ambassador_points_for_order', {
-  p_order_id: order.id,
-})
+Code de lecture :
 
-if (!error) {
-  // Notify ambassador (optional)
-  await notifyAmbassadorRewardsForOrder(ambassador.id)
-}
-```
+| Fichier | Rôle |
+|---|---|
+| [programRules.ts](../../src/lib/ambassadors/programRules.ts) | `loadProgramRules(admin, season)` : seule source des paliers |
+| [program.ts](../../src/lib/ambassadors/program.ts) | Fonctions pures : `buildProgramRules`, `getNextReward`, `getCurrentRewardLevel`, `getExtraTicketsEarned`, `getRewardKind` |
 
-**What RPC does**:
-1. Fetch order.promotional_code_id
-2. Check if code ∈ ambassador_promotional_codes
-3. Detect format from the registrations/order items
-4. Award `+1` per OPEN registration or `+2` per RANKED registration
-5. Insert the points event and update `ambassador_points`
+### Cycle de vie d'une récompense
+
+`earned` (gagnée, `expires_at` = fin de saison) puis `claimed` (réclamée par l'ambassadeur) puis `fulfilled` (remise par l'équipe). `cancelled` : annulée par le système (révocation de points, reset). `ambassador_reconcile_rewards` annule les `earned` devenues injustifiées et rouvre celles qu'elle avait annulées si les points reviennent. Les `claimed` et `fulfilled` ne sont jamais touchées.
+
+Réclamation : `POST /api/ambassadors/rewards/claim` avec `{ reward_level }`, logique dans [rewardClaims.ts](../../src/lib/ambassadors/rewardClaims.ts). Échecs : `NOT_FOUND` (404), `EXPIRED` (409, "expiré à la fin de la saison"), `NOT_CLAIMABLE` (409). Si l'email à l'équipe échoue, la réclamation est relâchée (`releaseAmbassadorRewardClaim`) pour pouvoir réessayer.
 
 ---
 
-## Reward Claiming
+## Dashboard
 
-**File**: [src/app/api/ambassadors/rewards/claim/route.ts](../../../src/app/api/ambassadors/rewards/claim/route.ts) → `POST /api/ambassadors/rewards/claim`
+Route : `GET /api/ambassadors/dashboard` (paramètre `view_as` réservé aux admins). Chargement : [loadAmbassadorDashboard.ts](../../src/lib/ambassadors/dashboard/loadAmbassadorDashboard.ts). Page : `src/app/ambassadors/dashboard/page.tsx` (client, session puis dashboard).
 
-```typescript
-export async POST(req: Request) {
-  const { reward_id } = await req.json()
-  const userId = await getCurrentUserId()
-  
-  // 1. Get reward
-  const reward = await getAmbassadorReward(reward_id)
-  
-  // 2. Verify ownership
-  const ambassador = await getAmbassadorByUserId(userId)
-  if (reward.ambassador_id !== ambassador.id) {
-    throw new Error('Not your reward')
-  }
-  
-  // 3. Verify earned
-  if (reward.status !== 'earned') {
-    throw new Error('Reward not earned yet')
-  }
-  
-  // 4. Mark claimed
-  await supabase
-    .from('ambassador_rewards')
-    .update({ status: 'claimed', claimed_at: new Date().toISOString() })
-    .eq('id', reward_id)
-  
-  // 5. Create fulfillment task (admin has to verify + issue)
-  await createFulfillmentTask(reward)
-  
-  return { success: true }
-}
-```
+Logique pure, sans accès base, avec tests :
+
+| Fichier | Rôle |
+|---|---|
+| `dashboard/goal.ts` | Objectif en cours, amis nécessaires, résumé du dossard bonus |
+| `dashboard/ladder.ts` | Échelle avec état de chaque palier, récompenses réclamables et expiration |
+| `dashboard/leaderboard.ts` | Top 3, rang, écart à combler (`chase`) |
+| `dashboard/recruits.ts` | Filleuls de la saison (filtre `started_at` ou événement du ledger) |
+| `dashboard/previousEdition.ts` | Totaux archivés et récompenses réclamées des éditions closes |
+
+Composants sous `src/components/ambassadors/` : `AmbassadorDashboard` (orchestre), `AmbassadorGoalCard`, `AmbassadorShareCard`, `AmbassadorClaimable`, `AmbassadorLadder`, `AmbassadorLeaderboard`, `AmbassadorActivity`, `AmbassadorPreviousEdition`, `AmbassadorRules`. Primitives du design system uniquement (voir [design-system.md](../design/design-system.md)). Hooks : `useClaimAmbassadorReward`, `usePointsSinceLastVisit`.
+
+Page de référence avec données fixes : `/design/ambassadeur` (404 en production). Elle sert aux tests de mise en page et à la revue de design.
 
 ---
 
-## Debugging Queries
+## Lien de parrainage
 
-### Check Ambassador & Points
+Le bouton "Partager" envoie `https://…/?ref=CODE` ([referral.ts](../../src/lib/attribution/referral.ts)).
+
+- `UtmCapture` (layout racine) garde le code 30 jours dans `localStorage` (`overbound-referral`), en majuscules. Dernier lien gagnant. Un code mal formé est ignoré.
+- `usePromoCode` lit ce code à l'ouverture du tunnel, le valide par `/api/promotions/validate` et l'applique s'il répond `is_ambassador: true`. Le code est effacé après la tentative. Un code invalide ou non ambassadeur est écarté sans message, le champ reste libre.
+- Le paramètre est `ref` et non `code` : le callback OAuth utilise déjà `code`.
+
+---
+
+## Email de relance
+
+[pointsNudge.ts](../../src/lib/ambassadors/pointsNudge.ts), appelé par `rewardsNotifications.ts` après une attribution, seulement si aucun email de récompense n'est parti. Seuil : `NUDGE_MAX_POINTS_REMAINING` (2). Une relance par palier et par saison : la ligne `ambassador_nudges (ambassador_id, season, points_required)` est réservée avant l'envoi et supprimée si l'envoi échoue. Une erreur de relance ne bloque jamais l'attribution des points.
+
+---
+
+## Admin
+
+`src/app/api/admin/ambassadors/` : liste, détail, `points` (correction avec motif et clé d'idempotence, saison en cours par défaut), `manual-referrals`, `promo-codes`. Les corrections passent par `admin_adjust_ambassador_points`, jamais par un `UPDATE` direct.
+
+---
+
+## Tests
+
+- Vitest : `src/lib/ambassadors/**/*.test.ts` (paliers, objectif, échelle, classement, filleuls, réclamation, relance, notifications), `src/lib/attribution/referral.test.ts`, `src/lib/orderPricing/mappers.test.ts`, `src/app/api/promotions/validate/route.test.ts`.
+- Playwright : `e2e/ambassador-dashboard.spec.ts` (contrat responsive sur 12 tailles d'écran), `e2e/ambassador-dashboard-flow.spec.ts` (accès, réclamation, partage, classement), `e2e/ambassador-referral.spec.ts` (lien `?ref=`). Les API y sont simulées : ils prouvent le comportement du front, pas celui de la base.
+- Le comportement SQL (attribution, non-rétroactivité, idempotence, remboursement, expiration) se vérifie sur la base de dev, dans une transaction annulée.
+
+---
+
+## Requêtes de contrôle
 
 ```sql
-SELECT 
-  a.id, p.email,
-  ap.total_points,
-  ap.recruits_open, ap.recruits_ranked,
-  COUNT(DISTINCT ape.id) as events_tracked
-FROM ambassadors a
-JOIN profiles p ON a.profile_id = p.id
-JOIN ambassador_points ap ON a.id = ap.ambassador_id
-LEFT JOIN ambassador_points_events ape ON a.id = ape.ambassador_id
-WHERE p.email = 'ambassador@example.com'
-GROUP BY a.id, p.email, ap.total_points, ap.recruits_open, ap.recruits_ranked;
-```
+-- Saison en cours
+SELECT current_season, started_at, ends_at FROM ambassador_program_season;
 
-### Check Rewards Status
+-- Points d'un ambassadeur dans la saison
+SELECT total_points, recruits_open, recruits_ranked
+FROM ambassador_points_years
+WHERE ambassador_id = 'AMB_ID' AND program_year = (SELECT current_season FROM ambassador_program_season);
 
-```sql
-SELECT 
-  r.id, r.reward_level, r.reward_name,
-  r.status,
-  r.earned_at, r.claimed_at, r.fulfilled_at
-FROM ambassador_rewards r
-WHERE r.ambassador_id = 'AMB_ID'
-ORDER BY r.reward_level DESC;
-```
+-- Ledger d'un ambassadeur (les lignes révoquées ont revoked_at)
+SELECT registration_id, points, race_format, created_at, revoked_at, revoked_reason
+FROM ambassador_points_events WHERE ambassador_id = 'AMB_ID' ORDER BY created_at DESC;
 
-### Check Points for Specific Event
+-- Récompenses
+SELECT reward_level, reward_name, status, earned_at, expires_at, claimed_at, fulfilled_at
+FROM ambassador_rewards WHERE ambassador_id = 'AMB_ID' ORDER BY reward_level;
 
-```sql
-SELECT 
-  ape.id, ape.points_awarded,
-  ape.race_format,
-  r.email as referral_email,
-  ape.awarded_at
-FROM ambassador_points_events ape
-JOIN registrations reg ON ape.registration_id = reg.id
-JOIN auth.users u ON reg.user_id = u.id
-WHERE ape.ambassador_id = 'AMB_ID'
-  AND ape.event_id = 'EVENT_ID'
-ORDER BY ape.awarded_at DESC;
+-- Récompenses déjà remises mais plus justifiées par les points (décision humaine)
+SELECT * FROM ambassador_rewards_over_granted;
+
+-- Codes d'un ambassadeur, avec l'ancien lien
+SELECT pc.code, apc.is_current, (a.promotional_code_id = pc.id) AS legacy_link
+FROM ambassador_promotional_codes apc
+JOIN promotional_codes pc ON pc.id = apc.promotional_code_id
+JOIN ambassadors a ON a.id = apc.ambassador_id
+WHERE apc.ambassador_id = 'AMB_ID';
 ```
 
 ---
 
-## Testing
+## Pièges
 
-```typescript
-describe('Ambassador Points', () => {
-  it('should award 1 point for OPEN registration with amb code', async () => {
-    // Create order with promotional_code_id pointing to amb_promo
-    // Create OPEN registration
-    // Call RPC award_ambassador_points_for_order
-    // Verify ambassador_points.total_points incremented by 1
-  })
-  
-  it('should award 2 points for RANKED registration', async () => {
-    // Similar, but RANKED registration
-    // Verify total_points incremented by 2
-  })
-  
-  it('should not award points if order has no amb code', async () => {
-    // Order without promotional_code_id
-    // Verify no points awarded
-  })
-})
-
-describe('Rewards', () => {
-  it('should unlock level 4 when reaching 5 points', () => {
-    const level = getCurrentRewardLevel(5)
-    expect(level).toBe(4)
-  })
-  
-  it('should calculate extra tickets: 33 pts = 1 extra', () => {
-    const extra = getExtraTicketsEarned(33)
-    expect(extra).toBe(1)
-  })
-})
-```
-
----
-
-## Common Patterns
-
-### Access Control
-
-**File**: [src/lib/ambassadors/access.ts](../../../src/lib/ambassadors/access.ts)
-
-```typescript
-// Check if user is ambassador
-export const isAmbassador = async (userId: UUID): Promise<boolean> => {
-  const { count } = await supabase
-    .from('ambassadors')
-    .select('id', { count: 'exact' })
-    .eq('profile_id', userId)
-  return count > 0
-}
-
-// Check if can view dashboard
-export const canViewAmbassadorDashboard = async (userId: UUID, ambassadorId: UUID) => {
-  // Only ambassador or admin can view
-  const ambassador = await getAmbassadorById(ambassadorId)
-  return ambassador.profile_id === userId || isAdmin(userId)
-}
-```
-
-### Email Notifications
-
-**File**: [src/lib/ambassadors/email.ts](../../../src/lib/ambassadors/email.ts)
-
-```typescript
-export const notifyAmbassadorRewardsForOrder = async (ambassadorId: UUID) => {
-  const ambassador = await getAmbassadorById(ambassadorId)
-  const points = await getAmbassadorPoints(ambassadorId)
-  const nextReward = getNextReward(points.total_points)
-  
-  await sendEmail({
-    to: ambassador.email,
-    template: 'ambassador_points_awarded',
-    data: {
-      points_new: points.total_points,
-      next_reward: nextReward?.reward_name,
-      points_remaining: nextReward?.points_remaining,
-    }
-  })
-}
-```
-
----
-
-## Monitoring
-
-- [ ] ambassador_points.total_points > sum(ambassador_points_events.points_awarded) → out-of-sync
-- [ ] Rewards claimed but not fulfilled (admin backlog)
-- [ ] Leaderboard is current (updated after each award)
-- [ ] Multi-code ambassadors (is_current unique or not?)
-
+- Ne pas écrire dans `ambassador_points_years` ni dans l'ancienne table `ambassador_points` (dépréciée).
+- Ne pas coder un palier en dur : tout vient de la base.
+- Ne pas dériver `program_year` de la date.
+- Ne pas tester `ambassadors:ambassadors(id)` pour savoir si un code est ambassadeur : utiliser `isAmbassadorPromoRow`.
+- Les migrations s'appliquent avant le déploiement du code qui les lit : `20261101120000`, `20261102120000`, `20261103120000`.
