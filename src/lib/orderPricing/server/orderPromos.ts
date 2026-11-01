@@ -1,6 +1,6 @@
 import { fail, ok, type Result } from '../types'
 import type { HttpFailure } from './httpFailure'
-import type { PromoPriceRow } from '../mappers'
+import { AMBASSADOR_LINK_SELECT, type PromoPriceRow } from '../mappers'
 import type { PricingSupabase } from './supabaseClient'
 
 export interface PromoRow extends PromoPriceRow {
@@ -18,7 +18,7 @@ const PROMO_COLUMNS = `
   id, code, discount_percent, discount_amount, currency, is_active, valid_from, valid_until,
   usage_limit, used_count, target_upsell_id,
   events:promotional_code_events(event_id),
-  ambassadors:ambassadors(id)
+  ${AMBASSADOR_LINK_SELECT}
 `
 
 /** Active, within its dates, under its usage limit, and allowed on this event. */

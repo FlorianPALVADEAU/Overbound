@@ -35,6 +35,7 @@ type PromoRow = {
   target_upsell_id?: string | null
   events?: Array<{ event_id: string }>
   ambassadors?: Array<{ id: string }>
+  ambassador_codes?: Array<{ ambassador_id: string }>
 }
 
 const BASE_PROMO: PromoRow = {
@@ -192,5 +193,34 @@ describe('POST /api/promotions/validate — product-line discount targeting (FDR
 
     expect(response.status).toBe(409)
     expect(json.error).toMatch(/code promo billet/)
+  })
+})
+
+describe('POST /api/promotions/validate — ambassador codes', () => {
+  it('flags a code kept on the ambassador as an ambassador code', async () => {
+    supabaseAdminMock.mockReturnValue(buildAdmin({ promo: { ...BASE_PROMO, code: 'ADA20', ambassadors: [{ id: 'amb-1' }] } }))
+
+    const json = await (await POST(buildRequest({ code: 'ADA20', eventId: EVENT_ID }))).json()
+
+    expect(json.promotionalCode.is_ambassador).toBe(true)
+  })
+
+  // An ambassador with several codes only has the extra ones in ambassador_promotional_codes.
+  it('flags a code that is only in the multi-code table as an ambassador code', async () => {
+    supabaseAdminMock.mockReturnValue(
+      buildAdmin({ promo: { ...BASE_PROMO, code: 'OVERBOUND-FLO', ambassador_codes: [{ ambassador_id: 'amb-1' }] } }),
+    )
+
+    const json = await (await POST(buildRequest({ code: 'OVERBOUND-FLO', eventId: EVENT_ID }))).json()
+
+    expect(json.promotionalCode.is_ambassador).toBe(true)
+  })
+
+  it('does not flag a code that belongs to no ambassador', async () => {
+    supabaseAdminMock.mockReturnValue(buildAdmin({ promo: { ...BASE_PROMO, code: 'WELCOME' } }))
+
+    const json = await (await POST(buildRequest({ code: 'WELCOME', eventId: EVENT_ID }))).json()
+
+    expect(json.promotionalCode.is_ambassador).toBe(false)
   })
 })

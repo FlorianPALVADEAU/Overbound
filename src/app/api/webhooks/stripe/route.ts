@@ -1,4 +1,5 @@
 import Stripe from 'stripe'
+import { AMBASSADOR_LINK_SELECT, isAmbassadorPromoRow } from '@/lib/orderPricing'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
@@ -29,11 +30,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
 })
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
-
-const hasAmbassadorLink = (value: unknown) => {
-  if (Array.isArray(value)) return value.length > 0
-  return Boolean(value && typeof value === 'object')
-}
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -226,14 +222,14 @@ export async function POST(request: NextRequest) {
         if (typeof ambassador_referral_code === 'string' && ambassador_referral_code.trim().length > 0) {
           const { data: ambassadorPromoRow, error: ambassadorPromoError } = await admin
             .from('promotional_codes')
-            .select('id, ambassadors:ambassadors(id)')
+            .select(`id, ${AMBASSADOR_LINK_SELECT}`)
             .ilike('code', ambassador_referral_code.trim().toUpperCase())
             .maybeSingle()
 
           if (ambassadorPromoError) {
             console.error('Error finding ambassador referral code:', ambassadorPromoError)
           } else {
-            const isAmbassadorCode = hasAmbassadorLink((ambassadorPromoRow as any)?.ambassadors)
+            const isAmbassadorCode = isAmbassadorPromoRow(ambassadorPromoRow)
             ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromoRow?.id ?? null : null
           }
         }

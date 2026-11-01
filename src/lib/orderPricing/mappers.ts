@@ -27,10 +27,20 @@ export interface PromoPriceRow {
   discount_amount: number | null
   target_upsell_id?: string | null
   ambassadors?: unknown
+  ambassador_codes?: unknown
 }
 
 export const hasAmbassadorLink = (value: unknown) =>
   Array.isArray(value) ? value.length > 0 : Boolean(value && typeof value === 'object')
+
+/**
+ * Embeds that tell whether a promo code belongs to an ambassador: the single code kept on the
+ * ambassador (legacy) and the multi-code table. An ambassador with several codes is only in the second.
+ */
+export const AMBASSADOR_LINK_SELECT = 'ambassadors:ambassadors(id), ambassador_codes:ambassador_promotional_codes(ambassador_id)'
+
+export const isAmbassadorPromoRow = (row?: { ambassadors?: unknown; ambassador_codes?: unknown } | null) =>
+  hasAmbassadorLink(row?.ambassadors) || hasAmbassadorLink(row?.ambassador_codes)
 
 export const toPricingTicket = (row: TicketPriceRow): PricingTicket => ({
   id: row.id,
@@ -54,7 +64,7 @@ export const toPricingPromo = (row: PromoPriceRow): PricingPromo => ({
   discountPercent: row.discount_percent,
   discountAmountCents: row.discount_amount,
   targetUpsellId: row.target_upsell_id ?? null,
-  isAmbassador: hasAmbassadorLink(row.ambassadors),
+  isAmbassador: isAmbassadorPromoRow(row),
 })
 
 /** A code already validated in the browser, as the checkout keeps it in state. */

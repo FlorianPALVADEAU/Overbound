@@ -10,7 +10,7 @@ import { computeOrderPricing, toPricingSummary, type OrderPricing } from '@/lib/
 import {
   buildPricingInput,
   fetchTierRegistrationCounts,
-  hasAmbassadorLink,
+  isAmbassadorPromoRow,
   loadOrderPromos,
   pricingErrorFailure,
   promoRejectionFailure,
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     const currency = (tickets[0]?.currency || 'eur').toLowerCase()
     const appliedPromos = appliedPromoPayload(pricing, promos.value)
     const primaryPromo = appliedPromos.find((promo) => !promo.is_ambassador) ?? appliedPromos[0] ?? null
-    const ambassadorReferralCode = promos.value.find((promo) => hasAmbassadorLink(promo.ambassadors))?.code ?? null
+    const ambassadorReferralCode = promos.value.find((promo) => isAmbassadorPromoRow(promo))?.code ?? null
     const metadata = buildOrderMetadata({
       pricing,
       currency,

@@ -1,5 +1,6 @@
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 import Stripe from 'stripe'
+import { AMBASSADOR_LINK_SELECT, isAmbassadorPromoRow } from '@/lib/orderPricing'
 import { NextRequest, NextResponse } from 'next/server'
 import { createRegistrationRequestSchema } from '@/lib/checkout/registrationRequestSchema'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
@@ -37,11 +38,6 @@ import { readRequestAssignments, validateUpsellAssignments } from '@/lib/upsells
 import { CGV_VERSION } from '@/constants/legalVersions'
 
 export const runtime = 'nodejs'
-
-const hasAmbassadorLink = (value: unknown) => {
-  if (Array.isArray(value)) return value.length > 0
-  return Boolean(value && typeof value === 'object')
-}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-08-27.basil',
@@ -346,11 +342,11 @@ export async function POST(request: NextRequest) {
     if (ambassadorReferralCandidate) {
       const { data: ambassadorPromo } = await admin
         .from('promotional_codes')
-        .select('id, ambassadors:ambassadors(id)')
+        .select(`id, ${AMBASSADOR_LINK_SELECT}`)
         .ilike('code', ambassadorReferralCandidate)
         .maybeSingle()
 
-      const isAmbassadorCode = hasAmbassadorLink(ambassadorPromo?.ambassadors)
+      const isAmbassadorCode = isAmbassadorPromoRow(ambassadorPromo)
 
       ambassadorReferralPromoId = isAmbassadorCode ? ambassadorPromo?.id ?? null : null
     }

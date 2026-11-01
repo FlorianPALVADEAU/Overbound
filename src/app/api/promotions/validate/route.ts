@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { checkPromoQuota, hasAmbassadorLink, isTierExclusiveCode, promoRejectionMessage } from '@/lib/orderPricing'
+import { AMBASSADOR_LINK_SELECT, checkPromoQuota, isAmbassadorPromoRow, isTierExclusiveCode, promoRejectionMessage } from '@/lib/orderPricing'
 
 
 const validateBodySchema = z.object({
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         used_count,
         target_upsell_id,
         events:promotional_code_events(event_id),
-        ambassadors:ambassadors(id)
+        ${AMBASSADOR_LINK_SELECT}
       `,
       )
       .ilike('code', normalizedCode)
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     if (uniqueExistingCodes.length > 0) {
       const { data: existingPromoRows, error: existingPromoError } = await admin
         .from('promotional_codes')
-        .select('code, target_upsell_id, ambassadors:ambassadors(id)')
+        .select(`code, target_upsell_id, ${AMBASSADOR_LINK_SELECT}`)
         .in('code', uniqueExistingCodes)
 
       if (existingPromoError) {
@@ -162,10 +162,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Same combination rules as the payment API: the incoming code comes last, so only it can be refused.
-      const toQuotaPromo = (row: { code: string; target_upsell_id?: string | null; ambassadors?: unknown }) => ({
+      const toQuotaPromo = (row: { code: string; target_upsell_id?: string | null; ambassadors?: unknown; ambassador_codes?: unknown }) => ({
         code: row.code,
         targetUpsellId: row.target_upsell_id ?? null,
-        isAmbassador: hasAmbassadorLink(row.ambassadors),
+        isAmbassador: isAmbassadorPromoRow(row),
       })
       const { rejections } = checkPromoQuota([
         ...(existingPromoRows ?? []).map(toQuotaPromo),
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
         discount_percent: promotionalCode.discount_percent,
         discount_amount: promotionalCode.discount_amount,
         currency: promotionalCode.currency,
-        is_ambassador: hasAmbassadorLink((promotionalCode as { ambassadors?: unknown }).ambassadors),
+        is_ambassador: isAmbassadorPromoRow(promotionalCode),
         target_upsell_id: promotionalCode.target_upsell_id,
       },
     })
