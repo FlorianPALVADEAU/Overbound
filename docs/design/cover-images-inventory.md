@@ -25,7 +25,7 @@ central (le texte du hero se pose à gauche et en bas). Image de partage : `.jpg
 | Emplacement | Fichier actuel | Source |
 |---|---|---|
 | Hero (affiche de la vidéo, 1920×1280) | `images/hero_header_poster.webp` (+ `.avif`) | `src/components/homepage/HeroHeader.tsx:82` |
-| Hero (vidéo en boucle) | `videos/hero_header_video.mp4` / `.webm` | `HeroHeader.tsx:101` |
+| Hero (vidéo en boucle) | `videos/hero_header2.mp4` | `HeroHeader.tsx:102` |
 | Concept : 10 vignettes d'obstacles | `obstacles/*.webp` (balance-beam, barbels, chain-carry1, farmer-carry, log-carry1, monkey-bars, tire-drag, tire-flip, wall-over, wall-under) | `src/components/homepage/ConceptExplainer.tsx` |
 
 ## Page événement (`/events/[slug]`)

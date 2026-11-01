@@ -99,8 +99,7 @@ export const HeroHeader = () => {
                         preload="metadata"
                         className="absolute left-0 top-0 h-full w-full object-cover"
                     >
-                        <source src="/videos/hero_header_video.webm" type="video/webm" />
-                        <source src="/videos/hero_header_video.mp4" type="video/mp4" />
+                        <source src="/videos/hero_header2.mp4" type="video/mp4" />
                     </video>
                 ) : null}
 
