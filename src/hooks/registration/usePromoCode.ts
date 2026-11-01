@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { clearReferralCode, readReferralCode } from '@/lib/attribution/referral'
 import type { AppliedPromo } from '@/components/registration/types'
 import { MAX_PROMO_CODES_PER_ORDER } from '@/lib/orderPricing'
 
@@ -6,6 +7,40 @@ export function usePromoCode(eventId: string) {
   const [appliedPromos, setAppliedPromos] = useState<AppliedPromo[]>([])
   const [promoInput, setPromoInput] = useState('')
   const [promoError, setPromoError] = useState<string | null>(null)
+
+  const requestPromo = useCallback(
+    async (code: string, existingCodes: string[]): Promise<AppliedPromo> => {
+      const response = await fetch('/api/promotions/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, eventId, existingCodes }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error || 'Code promo invalide')
+      }
+
+      return ((await response.json()) as { promotionalCode: AppliedPromo }).promotionalCode
+    },
+    [eventId],
+  )
+
+  // A friend who arrived through an ambassador link (?ref=CODE) gets the code applied once. A code
+  // that is invalid or not an ambassador code is dropped silently: the field stays empty and usable.
+  const referralTried = useRef(false)
+  useEffect(() => {
+    if (referralTried.current) return
+    referralTried.current = true
+    const referral = readReferralCode()
+    if (!referral) return
+    clearReferralCode()
+    requestPromo(referral, [])
+      .then((promo) => {
+        if (promo.is_ambassador) setAppliedPromos((previous) => (previous.length === 0 ? [promo] : previous))
+      })
+      .catch(() => undefined)
+  }, [requestPromo])
 
   const validatePromoCode = useCallback(async () => {
     const normalized = promoInput.trim().toUpperCase()
@@ -25,29 +60,14 @@ export function usePromoCode(eventId: string) {
     }
 
     try {
-      const response = await fetch('/api/promotions/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: normalized,
-          eventId,
-          existingCodes: appliedPromos.map((promo) => promo.code),
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error || 'Code promo invalide')
-      }
-
-      const data = (await response.json()) as { promotionalCode: AppliedPromo }
-      setAppliedPromos((previous) => [...previous, data.promotionalCode])
+      const promo = await requestPromo(normalized, appliedPromos.map((applied) => applied.code))
+      setAppliedPromos((previous) => [...previous, promo])
       setPromoInput('')
       setPromoError(null)
     } catch (error) {
       setPromoError(error instanceof Error ? error.message : "Impossible d'appliquer ce code")
     }
-  }, [appliedPromos, eventId, promoInput])
+  }, [appliedPromos, promoInput, requestPromo])
 
   const removePromo = useCallback((code: string) => {
     setAppliedPromos((previous) => previous.filter((promo) => promo.code !== code))
