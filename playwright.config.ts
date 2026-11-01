@@ -41,7 +41,7 @@ export default defineConfig({
     // The responsive contract runs once per viewport in the matrix.
     ...Object.entries(VIEWPORTS).map(([name, viewport]) => ({
       name,
-      testMatch: /(responsive|checkout-layout)\.spec\.ts$/,
+      testMatch: /(responsive|checkout-layout|ambassador-dashboard)\.spec\.ts$/,
       use: { viewport },
     })),
     // Behaviour specs (e.g. Lucky Wheel placement) run once: their
@@ -54,7 +54,7 @@ export default defineConfig({
     },
     {
       name: 'functional-desktop-1280x800',
-      testIgnore: /(responsive|checkout-layout)\.spec\.ts$/,
+      testIgnore: /(responsive|checkout-layout|ambassador-dashboard)\.spec\.ts$/,
       use: { viewport: VIEWPORTS['desktop-1280x800'] },
     },
   ],
