@@ -3,12 +3,14 @@ import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell } from '@/types/Upsell'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import type { TshirtOffer } from '@/lib/tshirtOffer'
 
 export interface EventRegisterDataResponse {
   event: Event & { tickets?: Ticket[]; price_tiers?: EventPriceTier[] }
   tickets: Ticket[]
   upsells: Upsell[]
   availableSpots: number
+  tshirtOffer: TshirtOffer | null
   /** Active registrations per price tier, for the same tier seating as the payment API. */
   tierRegistrationCounts: Record<string, number>
   user: {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { validateCheckout, type CheckoutValidationInput } from './checkoutValidation'
+import { buildTshirtOffer } from '@/lib/tshirtOffer'
 import { participant } from './testDraft'
 
 const input = (overrides: Partial<CheckoutValidationInput> = {}): CheckoutValidationInput => ({
@@ -50,6 +51,15 @@ describe('validateCheckout', () => {
     expect(validateCheckout(input({ participants: noWave, hasGroupAnchor: true })).isValid).toBe(true)
   })
 
+  it('asks for the OPEN SAS when the option is ticked, even for a member of an anchored group', () => {
+    const ticked = [participant({ companion: true, companionWaveIndex: null })]
+    expect(validateCheckout(input({ participants: ticked, hasGroupAnchor: true })).firstInvalidId).toBe('participant-1-companion-wave')
+    const chosen = [participant({ companion: true, companionWaveIndex: 7 })]
+    expect(validateCheckout(input({ participants: chosen })).isValid).toBe(true)
+    // An option that is not ticked asks nothing, even with a stale SAS left behind.
+    expect(validateCheckout(input({ participants: [participant({ companion: false, companionWaveIndex: null })] })).isValid).toBe(true)
+  })
+
   it('asks for consent when medical information is given', () => {
     const result = validateCheckout(input({ participants: [participant({ medicalInfo: 'Asthme' })] }))
     expect(result.firstInvalidId).toBe('participant-1-health-consent')
@@ -65,6 +75,25 @@ describe('validateCheckout', () => {
   it('requires the group attestation only when asked', () => {
     expect(validateCheckout(input({ groupAttestation: false })).consentErrors.groupAttestation).toBeDefined()
     expect(validateCheckout(input({ groupAttestation: true })).isValid).toBe(true)
+  })
+
+  it('asks for a T-shirt size only from the participants the offer still covers', () => {
+    const order = [participant(), participant({ id: 'participant-2' })]
+    const result = validateCheckout(input({ participants: order, ticketCount: 2, tshirtOffer: buildTshirtOffer(60, 59) }))
+    expect(result.participantErrors['participant-1']?.tshirtSize).toBe('Choisis la taille de ton T-shirt.')
+    expect(result.participantErrors['participant-2']?.tshirtSize).toBeUndefined()
+    expect(result.firstInvalidId).toBe('participant-1-tshirt-size')
+  })
+
+  it('accepts the order once the covered participants chose a size, or when no offer applies', () => {
+    expect(validateCheckout(input({ participants: [participant({ tshirtSize: 'M' })], tshirtOffer: buildTshirtOffer(60, 10) })).isValid).toBe(true)
+    expect(validateCheckout(input({ tshirtOffer: buildTshirtOffer(60, 60) })).isValid).toBe(true)
+    expect(validateCheckout(input({ tshirtOffer: null })).isValid).toBe(true)
+  })
+
+  it('rejects a size that is not on the list', () => {
+    const result = validateCheckout(input({ participants: [participant({ tshirtSize: 'XXXL' })], tshirtOffer: buildTshirtOffer(60, 0) }))
+    expect(result.participantErrors['participant-1']?.tshirtSize).toBeDefined()
   })
 
   it('keeps the participants section open while some bibs have no participant yet', () => {

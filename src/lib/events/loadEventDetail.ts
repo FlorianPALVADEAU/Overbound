@@ -1,8 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { loadTshirtOffer } from '@/lib/tshirtOfferServer'
 import { getEffectiveEventStatus } from '@/lib/events/registrationStatus'
 import type { EventDetailResponse } from '@/app/api/events/[id]/eventDetailQueries'
 
-export type PublicEventDetail = Pick<EventDetailResponse, 'event' | 'availableSpots'>
+export type PublicEventDetail = Pick<EventDetailResponse, 'event' | 'availableSpots' | 'tshirtOffer'>
 
 const isUUID = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
@@ -76,5 +77,6 @@ export async function loadPublicEventDetail(id: string): Promise<PublicEventDeta
       status: getEffectiveEventStatus(event),
     } as PublicEventDetail['event'],
     availableSpots,
+    tshirtOffer: await loadTshirtOffer(admin, event),
   }
 }

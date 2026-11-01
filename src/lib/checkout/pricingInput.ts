@@ -14,6 +14,8 @@ export interface CheckoutPricingState {
   ticketSlots: string[]
   /** Participants filled so far; a slot without one yet is not flexible. */
   flexibleBySlot: boolean[]
+  /** Participants who also run the OPEN on a second bib; a slot without one yet has no option. */
+  companionBySlot: boolean[]
   tickets: TicketPriceRow[]
   tiers: TierRow[]
   tierRegistrationCounts: Record<string, number>
@@ -28,6 +30,7 @@ export const buildCheckoutPricingInput = (state: CheckoutPricingState): OrderPri
   participants: state.ticketSlots.map((ticketId, index) => ({
     ticketId,
     flexible: state.flexibleBySlot[index] === true,
+    companion: state.companionBySlot[index] === true,
   })),
   tickets: state.tickets.map(toPricingTicket),
   tiers: state.tiers.map(toPricingTier),

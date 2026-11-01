@@ -41,6 +41,7 @@ export default function MultiStepEventRegistration({
   upsells,
   user,
   availableSpots,
+  tshirtOffer = null,
   initialTicketId = null,
   initialWaveIndex = null,
   groupIntent = null,
@@ -56,7 +57,14 @@ export default function MultiStepEventRegistration({
 
   const { ticketSelections, setTicketSelections, ticketMap, selectedTicketSlots, totalParticipants, handleTicketQuantityChange } =
     useTicketSelections(tickets)
-  const { participants, setParticipants, handleParticipantChange, handleWaveSelection } = useParticipants(
+  const {
+    participants,
+    setParticipants,
+    handleParticipantChange,
+    handleWaveSelection,
+    handleCompanionToggle,
+    handleCompanionWaveSelection,
+  } = useParticipants(
     selectedTicketSlots,
     user,
     suppressEmptyParticipantsSyncRef,
@@ -66,10 +74,12 @@ export default function MultiStepEventRegistration({
   const { consents, setConsent, setSignature } = useCheckoutConsents()
 
   const flexibleBySlot = useMemo(() => participants.map((participant) => participant.flexible === true), [participants])
+  const companionBySlot = useMemo(() => participants.map((participant) => participant.companion === true), [participants])
   const checkout = useOrderPricing(
     {
       ticketSlots: selectedTicketSlots,
       flexibleBySlot,
+      companionBySlot,
       tickets,
       tiers: eventPriceTiers,
       tierRegistrationCounts,
@@ -79,7 +89,7 @@ export default function MultiStepEventRegistration({
     },
     currency,
   )
-  const amountKey = JSON.stringify([ticketSelections, upsellState.selectedUpsells, promo.appliedPromos.map((p) => p.code), flexibleBySlot])
+  const amountKey = JSON.stringify([ticketSelections, upsellState.selectedUpsells, promo.appliedPromos.map((p) => p.code), flexibleBySlot, participants.map((p) => p.companion === true ? (p.companionWaveIndex ?? 0) : null)])
   const { payment, isCreating, preparePayment } = usePaymentIntent(event, amountKey)
   const summary = payment.pricing ?? checkout.summary
 
@@ -100,6 +110,7 @@ export default function MultiStepEventRegistration({
     hasGroupAnchor: Boolean(groupAnchor),
     consents,
     needsGroupAttestation,
+    tshirtOffer,
   })
 
   const completeById = useMemo(
@@ -241,6 +252,11 @@ export default function MultiStepEventRegistration({
                   errorsByParticipant={showErrors ? validation.participantErrors : {}}
                   completeById={completeById}
                   groupAnchor={groupAnchor}
+                  eventDate={event.date}
+                  currency={currency}
+                  onCompanionToggle={handleCompanionToggle}
+                  onCompanionWaveSelect={handleCompanionWaveSelection}
+                  tshirtOffer={tshirtOffer}
                 />
               </RegistrationSection>
             ) : null}

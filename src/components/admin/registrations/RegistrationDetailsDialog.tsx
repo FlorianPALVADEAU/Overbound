@@ -268,6 +268,16 @@ export function RegistrationDetailsDialog({
                   : 'Non'}
               </span>
             </div>
+            {registration.tshirt_offer ? (
+              <div className={rowClassName}>
+                <span className="text-muted-foreground">T-shirt offert</span>
+                <span>
+                  {registration.tshirt_offer.won
+                    ? `Oui, taille ${registration.tshirt_offer.size ?? 'non renseignée'}`
+                    : 'Non (hors des premiers inscrits)'}
+                </span>
+              </div>
+            ) : null}
             <div className={rowClassName}>
               <span className="text-muted-foreground">Options upsell</span>
               <span className="space-y-1">

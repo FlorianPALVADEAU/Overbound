@@ -6,6 +6,9 @@ import { participantsToAlign } from '@/lib/checkout/sharedWave'
 import { joinName } from '@/lib/registration'
 import { countComplete, nextIncompleteParticipantId } from '@/lib/checkout/participantProgress'
 import ParticipantPanel, { participantPanelId } from './ParticipantPanel'
+import { resolveCompanionOffer } from '@/lib/tickets/openCompanion'
+import { isParticipantOffered, type TshirtOffer } from '@/lib/tshirtOffer'
+import { TshirtOfferNote } from '@/components/tshirt/TshirtOfferNote'
 import type { EventTicket, Participant } from './types'
 
 interface ParticipantsStepProps {
@@ -20,6 +23,12 @@ interface ParticipantsStepProps {
   completeById: Record<string, boolean>
   groupBanner?: ReactNode
   groupAnchor: { waveIndex: number; startTime: string } | null
+  eventDate: string
+  currency: string
+  onCompanionToggle: (participantId: string, enabled: boolean) => void
+  onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
+  /** Free T-shirt offer: the first participants it covers get a size field. */
+  tshirtOffer?: TshirtOffer | null
 }
 
 export default function ParticipantsStep({
@@ -32,6 +41,11 @@ export default function ParticipantsStep({
   completeById,
   groupBanner,
   groupAnchor,
+  eventDate,
+  currency,
+  onCompanionToggle,
+  onCompanionWaveSelect,
+  tshirtOffer = null,
 }: ParticipantsStepProps) {
   // One shortcut at a time: under the first participant others could follow.
   const leader = groupAnchor ? undefined : participants.find((participant) => participantsToAlign(participants, participant.id).length > 0)
@@ -54,6 +68,10 @@ export default function ParticipantsStep({
   return (
     <div className="space-y-5">
       {groupBanner}
+      <TshirtOfferNote
+        offer={tshirtOffer}
+        hint={participants.length > 1 ? 'La taille se choisit dans la fiche de chaque participant concerné.' : undefined}
+      />
       {participants.length > 1 && !groupAnchor ? (
         <p className="text-sm text-muted-foreground">
           Pour partir ensemble, choisis le même SAS pour chacun, ou crée un groupe en haut de page.
@@ -90,6 +108,11 @@ export default function ParticipantsStep({
               onWaveSelect={onWaveSelect}
               errors={errors}
               groupAnchor={groupAnchor}
+              companionOffer={resolveCompanionOffer(ticketMap[participant.ticketId] ?? {}, Object.values(ticketMap), eventDate)}
+              currency={currency}
+              tshirtOffered={isParticipantOffered(tshirtOffer, index)}
+              onCompanionToggle={onCompanionToggle}
+              onCompanionWaveSelect={onCompanionWaveSelect}
               collapsible={collapsible}
               // Errors revealed on pay: the panel must be open for the page to focus the field.
               open={!collapsible || openId === participant.id || Object.keys(errors).length > 0}

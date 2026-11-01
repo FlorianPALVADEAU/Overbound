@@ -29,6 +29,8 @@ export interface BreakdownParticipantInput {
   ticketLabel: string
   ticketUnitCents: number
   flexible: boolean
+  /** OPEN companion bib taken with this ticket: its own line, at its fixed price. */
+  companion?: { label: string; cents: number }
 }
 
 export interface BreakdownOptionInput {
@@ -58,6 +60,7 @@ export function buildReceiptBreakdown(input: {
     name: participant.name?.trim() || `Participant ${index + 1}`,
     lines: [
       line(participant.ticketLabel, participant.ticketUnitCents, 1),
+      ...(participant.companion ? [line(participant.companion.label, participant.companion.cents, 1)] : []),
       ...(participant.flexible ? [line('Option billet flexible', input.flexibleFeeCents, 1)] : []),
     ],
   }))

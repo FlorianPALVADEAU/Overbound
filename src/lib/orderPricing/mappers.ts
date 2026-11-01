@@ -1,4 +1,5 @@
 import { isOpenFormatTicket } from '@/lib/openSas'
+import { parseOpenCompanionConfig } from '@/lib/tickets/openCompanion'
 import type { PricingPromo, PricingTicket, PricingTier } from './types'
 
 /** Database rows to pricing engine input. The only place that knows both shapes. */
@@ -8,6 +9,7 @@ export interface TicketPriceRow {
   name: string
   final_price_cents: number | null
   race?: { name?: string | null } | null
+  operations_config?: Record<string, unknown> | null
 }
 
 export interface TierRow {
@@ -35,6 +37,7 @@ export const toPricingTicket = (row: TicketPriceRow): PricingTicket => ({
   name: row.name,
   finalPriceCents: row.final_price_cents,
   isOpenFormat: isOpenFormatTicket(row.name, row.race?.name),
+  companionPriceCents: parseOpenCompanionConfig(row.operations_config)?.priceCents ?? null,
 })
 
 export const toPricingTier = (row: TierRow): PricingTier => ({

@@ -103,6 +103,18 @@ export async function refundFlexibleTicket(params: {
   )
   if (!eligibility.eligible) throw new FlexibleRefundError(eligibility.reason)
 
+  // The OPEN companion bib goes with its RANKED bib and is refunded with it (its price, never a fee).
+  const { data: companions, error: companionsError } = await admin
+    .from('registrations')
+    .select('paid_ticket_cents, cancelled_at, checked_in')
+    .eq('companion_of', registrationId)
+  if (companionsError) throw companionsError
+  const liveCompanions = (companions ?? []).filter((companion) => !companion.cancelled_at)
+  if (liveCompanions.some((companion) => companion.checked_in)) throw new FlexibleRefundError('CHECKED_IN')
+  const refundCents =
+    eligibility.amountCents +
+    liveCompanions.reduce((total, companion) => total + ((companion.paid_ticket_cents as number | null) ?? 0), 0)
+
   const paymentIntentId = registration.stripe_payment_intent_id as string | null
   if (!paymentIntentId || paymentIntentId.startsWith('free_')) throw new FlexibleRefundError('NOTHING_PAID')
 
@@ -113,7 +125,7 @@ export async function refundFlexibleTicket(params: {
       registration_id: registrationId,
       user_id: userId,
       stripe_payment_intent_id: paymentIntentId,
-      amount_cents: eligibility.amountCents,
+      amount_cents: refundCents,
       currency,
       reason: 'flexible',
       status: 'pending',
@@ -130,7 +142,7 @@ export async function refundFlexibleTicket(params: {
     const refund = await stripe.refunds.create(
       {
         payment_intent: paymentIntentId,
-        amount: eligibility.amountCents,
+        amount: refundCents,
         reason: 'requested_by_customer',
         // Shown on the refund in the Stripe dashboard: who asked, from where, and under which rule.
         metadata: {
@@ -164,5 +176,5 @@ export async function refundFlexibleTicket(params: {
     throw new FlexibleRefundError('CANCEL_FAILED')
   }
 
-  return { amountCents: eligibility.amountCents, currency, eventTitle: event?.title ?? null, eventDate: event?.date ?? null }
+  return { amountCents: refundCents, currency, eventTitle: event?.title ?? null, eventDate: event?.date ?? null }
 }

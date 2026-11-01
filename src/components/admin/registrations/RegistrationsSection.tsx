@@ -490,6 +490,11 @@ export function RegistrationsSection({ eventId, lockEventFilter = false }: Regis
                               }`
                             : 'Non'}
                         </span>
+                        {registration.tshirt_offer?.won ? (
+                          <span className="text-xs text-success">
+                            T-shirt offert : {registration.tshirt_offer.size ?? 'taille manquante'}
+                          </span>
+                        ) : null}
                       </div>
                     </TableCell>
                     <TableCell>

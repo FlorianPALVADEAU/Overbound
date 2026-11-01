@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { getEffectiveEventStatus, isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { fetchTierRegistrationCounts } from '@/lib/orderPricing/server'
+import { loadTshirtOffer } from '@/lib/tshirtOfferServer'
 
 export const runtime = 'nodejs'
 
@@ -128,6 +129,7 @@ export async function GET(
         })),
       })),
       availableSpots,
+      tshirtOffer: await loadTshirtOffer(admin, event),
       tierRegistrationCounts,
       user: user
         ? {

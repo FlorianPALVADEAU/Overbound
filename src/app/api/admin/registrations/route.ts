@@ -5,6 +5,7 @@ import {
   countRegistrationsByOrder,
 } from '@/lib/admin/orderRevenue'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { loadTshirtWinnerIds } from '@/lib/tshirtOfferServer'
 
 type UpsellMeta = { sizes?: unknown; size?: unknown } | null | undefined
 
@@ -44,6 +45,7 @@ interface EventSummary {
   title: string | null
   date: string | null
   location: string | null
+  tshirt_offer_quota?: number | null
 }
 
 interface TicketSummary {
@@ -270,7 +272,7 @@ export async function GET(request: Request) {
       eventIds.length
         ? adminClient
             .from('events')
-            .select('id, title, date, location')
+            .select('id, title, date, location, tshirt_offer_quota')
             .in('id', eventIds)
         : Promise.resolve({ data: [] as EventSummary[], error: null }),
       ticketIds.length
@@ -314,6 +316,28 @@ export async function GET(request: Request) {
         date: event.date ?? null,
         location: event.location ?? null,
       })
+    }
+    // Free T-shirt offer: who is among the first N of their event (best effort, the list never fails over it).
+    const tshirtWinnersByEvent = new Map<string, Set<string>>()
+    await Promise.all(
+      (eventsResult.data ?? [])
+        .filter((event) => event.tshirt_offer_quota)
+        .map(async (event) => {
+          try {
+            tshirtWinnersByEvent.set(event.id, await loadTshirtWinnerIds(adminClient, event))
+          } catch (error) {
+            console.error('[admin registrations] tshirt winners error', error)
+          }
+        }),
+    )
+    const tshirtSizeById = new Map<string, string | null>()
+    if (tshirtWinnersByEvent.size > 0 && registrationIds.length > 0) {
+      const { data: sizeRows, error: sizeError } = await adminClient
+        .from('registrations')
+        .select('id, tshirt_size')
+        .in('id', registrationIds)
+      if (sizeError) console.error('[admin registrations] tshirt sizes error', sizeError)
+      for (const sizeRow of sizeRows ?? []) tshirtSizeById.set(sizeRow.id, sizeRow.tshirt_size ?? null)
     }
     const ticketMap = new Map<string, any>()
     for (const ticket of ticketsResult.data ?? []) {
@@ -684,6 +708,9 @@ export async function GET(request: Request) {
         has_tshirt: tshirtQuantity > 0,
         tshirt_quantity: tshirtQuantity,
         tshirt_sizes: tshirtSizes,
+        tshirt_offer: tshirtWinnersByEvent.has(row.event_id ?? '')
+          ? { won: tshirtWinnersByEvent.get(row.event_id ?? '')!.has(row.id), size: tshirtSizeById.get(row.id) ?? null }
+          : null,
         participant_profile:
           row.user_id
             ? profileMap.get(row.user_id) ?? null

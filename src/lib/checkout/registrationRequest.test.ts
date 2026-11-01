@@ -22,6 +22,14 @@ describe('buildRegistrationRequest', () => {
     expect(createRegistrationRequestSchema.safeParse(request).success).toBe(true)
   })
 
+  it('sends the T-shirt size when one was chosen, and nothing otherwise', () => {
+    const chosen = buildRegistrationRequest(signedDraft({ participants: [participant({ tshirtSize: 'M' })] }), { paymentIntentId: 'pi_1' })
+    expect(chosen.participants?.[0]?.tshirtSize).toBe('M')
+    expect(createRegistrationRequestSchema.safeParse(chosen).success).toBe(true)
+    const none = buildRegistrationRequest(signedDraft(), { paymentIntentId: 'pi_1' })
+    expect(none.participants?.[0]).not.toHaveProperty('tshirtSize')
+  })
+
   it('sends options by participant position', () => {
     const draft = signedDraft({
       participants: [participant(), participant({ id: 'participant-2' })],
@@ -47,8 +55,24 @@ describe('isSignedDraft', () => {
 describe('buildPaymentIntentRequest', () => {
   it('sends what the server needs to check age, SAS, flexible option and group before charging', () => {
     const body = buildPaymentIntentRequest({ ...signedDraft(), userEmail: 'camille@example.com' }, null)
-    expect(body.participants?.[0]).toEqual({ ticketId: 'open', flexible: false, birthDate: '1990-05-04', selectedWaveIndex: 3 })
+    expect(body.participants?.[0]).toEqual({
+      ticketId: 'open',
+      flexible: false,
+      birthDate: '1990-05-04',
+      selectedWaveIndex: 3,
+      companionWaveIndex: null,
+    })
     expect(body.groupId).toBe('group-1')
+    expect(paymentIntentRequestSchema.safeParse(body).success).toBe(true)
+  })
+
+  it('sends the companion SAS so the server can check it before charging', () => {
+    const draft = signedDraft()
+    const body = buildPaymentIntentRequest(
+      { ...draft, userEmail: 'camille@example.com', participants: [{ ...draft.participants[0]!, companion: true, companionWaveIndex: 8 }] },
+      null,
+    )
+    expect(body.participants?.[0]?.companionWaveIndex).toBe(8)
     expect(paymentIntentRequestSchema.safeParse(body).success).toBe(true)
   })
 })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { countOrderTshirtWinners } from '@/lib/tshirtOfferServer'
 
 export const runtime = 'nodejs'
 
@@ -178,7 +179,15 @@ export async function GET(
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
 
+    // Free T-shirts won by this order. Best effort: the confirmation never fails over a bonus line.
+    const tshirtWinners = await countOrderTshirtWinners(
+      admin,
+      registration.event_id,
+      (orderRegistrations ?? []).map((item) => item.id),
+    )
+
     return NextResponse.json({
+      tshirtWinners,
       registrations: orderRegistrations ?? [],
       registration: {
         ...registration,

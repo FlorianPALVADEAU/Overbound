@@ -15,6 +15,8 @@ export interface TierPricedParticipant {
   unitPriceCents: number
   isOpenFormat: boolean
   flexible: boolean
+  /** Absent means no companion bib. */
+  companionPriceCents?: number
 }
 
 export const applyTierDiscount = (priceCents: number, discountPercentage: number) =>
@@ -38,6 +40,11 @@ export const priceParticipants = (
       return fail({ kind: 'TICKET_PRICE_MISSING', ticketId: ticket.id, ticketName: ticket.name })
     }
 
+    const companionPriceCents = participant.companion ? (ticket.companionPriceCents ?? 0) : 0
+    if (participant.companion && companionPriceCents <= 0) {
+      return fail({ kind: 'COMPANION_UNAVAILABLE', ticketId: ticket.id, ticketName: ticket.name })
+    }
+
     const tierId = tierIdByParticipant[index] ?? null
     const tier = tierId ? tierById.get(tierId) : undefined
     priced.push({
@@ -47,6 +54,7 @@ export const priceParticipants = (
       unitPriceCents: tier ? applyTierDiscount(ticket.finalPriceCents, tier.discountPercentage) : ticket.finalPriceCents,
       isOpenFormat: ticket.isOpenFormat,
       flexible: participant.flexible,
+      companionPriceCents,
     })
   }
 

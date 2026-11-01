@@ -11,7 +11,7 @@ export async function resolveGroupAnchorFromProfile(
 ): Promise<{ eventId: string; waveIndex: number; startTime: string } | null> {
   const { data: rows, error } = await admin
     .from('registrations')
-    .select('event_id, wave_index, start_time, created_at, ticket:tickets(operations_config)')
+    .select('event_id, wave_index, start_time, created_at, companion_of, ticket:tickets(operations_config)')
     .eq('user_id', profileId)
     .not('event_id', 'is', null)
     .not('wave_index', 'is', null)
@@ -21,6 +21,8 @@ export async function resolveGroupAnchorFromProfile(
   if (error) throw error
 
   for (const row of rows ?? []) {
+    // An OPEN companion bib keeps its own SAS: it never sets the group's departure.
+    if ((row as any).companion_of) continue
     const ticket = firstRelation((row as any).ticket) as any
     if (ticket?.operations_config?.departure_mode !== 'wave') {
       continue

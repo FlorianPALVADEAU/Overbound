@@ -3,6 +3,8 @@ import type { Registration } from '@/types/Registration'
 import type { SuccessOrderRegistration } from '@/components/events/success/EventSuccessView'
 
 export interface EventSuccessResponse {
+  /** Free T-shirts won by this order (0 when none or no offer). */
+  tshirtWinners?: number
   registrations: SuccessOrderRegistration[]
   registration: Registration & {
     ticket: any

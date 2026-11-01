@@ -2,10 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import type { TshirtOffer } from '@/lib/tshirtOffer'
 
 export interface FeaturedEventResponse {
   event: (Event & { tickets?: Ticket[]; price_tiers?: EventPriceTier[] }) | null
   availableSpots?: number
+  tshirtOffer?: TshirtOffer | null
 }
 
 export const FEATURED_EVENT_QUERY_KEY = ['events', 'featured'] as const

@@ -49,6 +49,8 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
   const discountAmount = ticketDiscountAmount + upsellDiscountAmount
   // Never discounted: the option is a refund right, not part of the ticket price.
   const flexibleTotal = participants.filter((participant) => participant.flexible).length * input.flexibleFeeCents
+  // Never discounted either: a fixed-price second bib, outside promo codes and the group discount.
+  const companionTotal = sum(participants.map((participant) => participant.companionPriceCents ?? 0))
   // The group discount is the same percentage on every bib; a code is spread over every bib by amount.
   const paidPrices = groupApplies
     ? participants.map((participant) => applyTierDiscount(participant.unitPriceCents, group.percent))
@@ -61,6 +63,7 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
     participants: participants.map(({ isOpenFormat: _isOpenFormat, ...participant }, index) => ({
       ...participant,
       paidPriceCents: paidPrices[index] ?? participant.unitPriceCents,
+      companionPriceCents: participant.companionPriceCents ?? 0,
     })),
     tierAllocations: seating.value.allocations,
     baseTicketSubtotal,
@@ -70,11 +73,12 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
     upsellSubtotal,
     upsellSubtotalsById,
     flexibleTotal,
+    companionTotal,
     discounts,
     ticketDiscountAmount,
     upsellDiscountAmount,
     discountAmount,
-    totalDue: Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0) + flexibleTotal,
+    totalDue: Math.max(ticketSubtotal + upsellSubtotal - discountAmount, 0) + flexibleTotal + companionTotal,
     rejections: [...quota.rejections, ...rejections],
   })
 }

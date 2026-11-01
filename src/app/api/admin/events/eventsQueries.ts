@@ -61,6 +61,7 @@ export interface AdminEventPayload {
   longitude?: number | null
   capacity: number
   ranked_bib_capacity?: number | null
+  tshirt_offer_quota?: number | null
   status: Event['status']
   external_provider?: string | null
   external_event_id?: string | null

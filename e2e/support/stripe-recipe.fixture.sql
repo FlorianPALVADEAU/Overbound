@@ -15,7 +15,7 @@ from events e,
        ('e2e00000-0000-4000-8000-0000000000a1'::uuid, 'OPEN - E2E', 5000, 'open',
         '{"profile_key":"ticket-default-v1","departure_mode":"wave","fixed_start_time":null,"departure_change_policy":"reassign"}'),
        ('e2e00000-0000-4000-8000-0000000000a2'::uuid, 'RANKED - E2E', 7000, 'ranked',
-        '{"profile_key":"ticket-default-v1","departure_mode":"none","fixed_start_time":null,"departure_change_policy":"preserve"}')
+        '{"profile_key":"ticket-default-v1","departure_mode":"none","fixed_start_time":null,"departure_change_policy":"preserve","open_companion":{"ticket_id":"e2e00000-0000-4000-8000-0000000000a1","price_cents":2900,"ranked_max_duration_minutes":230,"min_gap_minutes":20}}')
      ) as t(id, name, price, format, config)
 where e.id = 'e2e00000-0000-4000-8000-000000000001';
 

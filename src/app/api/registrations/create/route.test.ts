@@ -156,6 +156,7 @@ function createAdmin(
     groupRow?: Record<string, unknown> | null
     upsellRows?: Array<Record<string, unknown>>
     upsellInserts?: Array<Record<string, unknown>>
+    registrationInserts?: Array<Record<string, unknown>>
   } = {},
 ) {
   let registrationCount = 0
@@ -174,7 +175,11 @@ function createAdmin(
       if (table === 'tickets') {
         return {
           select() {
-            return { in: async () => ({ data: ticketRows, error: null }) }
+            const byIds = async (_column: string, ids: string[]) => ({
+              data: ticketRows.filter((ticket) => ids.includes(ticket.id as string)),
+              error: null,
+            })
+            return { in: byIds, eq: () => ({ in: byIds }) }
           },
         }
       }
@@ -235,6 +240,7 @@ function createAdmin(
             }
           },
           insert(payload: Record<string, unknown>) {
+            overrides.registrationInserts?.push(payload)
             return {
               select() {
                 return {
@@ -400,6 +406,38 @@ describe('POST /api/registrations/create', () => {
     })
     // Free orders have no receipt to send (amount is 0).
     expect(paymentIntentsRetrieveMock).not.toHaveBeenCalled()
+  })
+
+  describe('free T-shirt size', () => {
+    const orderWithSize = (tshirtSize?: string) =>
+      baseBody({
+        paymentIntentId: 'free_abc123',
+        freeOrderMetadata: { currency: 'eur' },
+        participants: [{ ...baseBody().participants[0], ...(tshirtSize ? { tshirtSize } : {}) }],
+      })
+
+    it('stores the size the participant chose', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ registrationInserts }))
+
+      const response = await POST(jsonRequest(orderWithSize('L')))
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts[0]).toMatchObject({ tshirt_size: 'L' })
+    })
+
+    it('ignores a size that is not on the list and writes nothing when none is sent', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ registrationInserts }))
+
+      await POST(jsonRequest(orderWithSize('XXXL')))
+      await POST(jsonRequest(orderWithSize()))
+
+      expect(registrationInserts).toHaveLength(2)
+      for (const insert of registrationInserts) expect(insert).not.toHaveProperty('tshirt_size')
+    })
   })
 
   it('creates a paid RANKED registration via a confirmed Stripe PaymentIntent', async () => {
@@ -681,5 +719,128 @@ describe('POST /api/registrations/create', () => {
 
     expect(response.status).toBe(422)
     expect(body.error).toMatch(/dossard/i)
+  })
+
+  describe('open companion bib', () => {
+    const COMPANION_RANKED_ROW = {
+      ...RANKED_TICKET_ROW,
+      operations_config: {
+        open_companion: { ticket_id: 'open-1', price_cents: 2900, ranked_max_duration_minutes: 230, min_gap_minutes: 20 },
+      },
+    }
+    const COMPANION_OPEN_ROW = { ...OPEN_TICKET_ROW, id: 'open-1', operations_config: { departure_mode: 'wave' } }
+    const companionIntent = (metadata: Record<string, string>) => ({
+      id: 'pi_1',
+      status: 'succeeded',
+      amount: 9900,
+      currency: 'eur',
+      metadata: { ticket_prices: '7000', ...metadata },
+      payment_method_types: ['card'],
+    })
+    const PAID_COMPANION = { companion_participants: '0', companion_waves: '7', companion_prices: '2900' }
+
+    it('creates a second OPEN registration linked to the RANKED one, on the SAS paid for', async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(companionIntent(PAID_COMPANION))
+      const registrationInserts: Array<Record<string, unknown>> = []
+      const waveCalls: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({
+          ticketRows: [COMPANION_RANKED_ROW, COMPANION_OPEN_ROW],
+          registrationInserts,
+          rpcOverrides: {
+            assign_selected_wave_to_registration: async (args) => {
+              waveCalls.push(args as Record<string, unknown>)
+              return {
+                data: { wave_index: 7, start_time: '2026-09-12T11:10:00.000Z', wave_capacity: 50, wave_position: 4 },
+                error: null,
+              }
+            },
+          },
+        }),
+      )
+
+      const response = await POST(jsonRequest(baseBody()))
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts).toHaveLength(2)
+      expect(registrationInserts[1]).toMatchObject({
+        ticket_id: 'open-1',
+        companion_of: 'reg-1',
+        paid_ticket_cents: 2900,
+        flexible_refund: false,
+        promotional_code_id: null,
+        event_price_tier_id: null,
+        email: 'alice@example.com',
+      })
+      expect(waveCalls).toEqual([{ p_event_id: 'event-1', p_registration_id: 'reg-2', p_wave_index: 7 }])
+      // One ticket email per bib, and the receipt carries the companion on its own line.
+      expect(sendTicketEmailMock).toHaveBeenCalledTimes(2)
+      expect(sendTicketEmailMock.mock.calls.map(([mail]) => mail.ticketName).sort()).toEqual(['Fury RANKED', 'Primal OPEN'])
+      const receipt = sendReceiptEmailMock.mock.calls[0][0]
+      expect(receipt.participants[0].lines.map((line: { description: string }) => line.description)).toEqual([
+        'Fury RANKED',
+        'Option OPEN : Primal OPEN',
+      ])
+      expect(receipt.subtotal).toBe(79)
+    })
+
+    it('never forces the group anchor onto the companion bib', async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(companionIntent(PAID_COMPANION))
+      const waveCalls: string[] = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({
+          ticketRows: [COMPANION_RANKED_ROW, COMPANION_OPEN_ROW],
+          groupRow: { id: 'group-1', anchor_event_id: 'event-1', anchor_wave_index: 3 },
+          rpcOverrides: {
+            sync_registration_to_group_anchor: async () => {
+              waveCalls.push('anchor')
+              return { error: null }
+            },
+          },
+        }),
+      )
+
+      const response = await POST(jsonRequest(baseBody({ groupId: 'group-1' })))
+
+      expect(response.status).toBe(200)
+      expect(waveCalls).toEqual([])
+    })
+
+    it('creates no companion when the payment did not include one, whatever the request says', async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(companionIntent({}))
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [COMPANION_RANKED_ROW, COMPANION_OPEN_ROW], registrationInserts }),
+      )
+
+      const response = await POST(
+        jsonRequest(baseBody({ participants: [{ ...baseBody().participants[0], companionWaveIndex: 7 }] })),
+      )
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts).toHaveLength(1)
+    })
+
+    it('refuses with 422 when the SAS filled up between payment and registration', async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(companionIntent(PAID_COMPANION))
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({
+          ticketRows: [COMPANION_RANKED_ROW, COMPANION_OPEN_ROW],
+          rpcOverrides: {
+            assign_selected_wave_to_registration: async () => ({
+              error: new Error('SELECTED_WAVE_UNAVAILABLE: wave 7 unavailable'),
+            }),
+          },
+        }),
+      )
+
+      const response = await POST(jsonRequest(baseBody()))
+
+      expect(response.status).toBe(422)
+    })
   })
 })

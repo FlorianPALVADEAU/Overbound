@@ -19,6 +19,7 @@ describe('toPricingSummary', () => {
       ],
       upsellTotal: 2000,
       flexibleTotal: 0,
+      companionTotal: 0,
       discountAmount: 1500,
       discounts: [
         { code: 'SUMMER', amountCents: 500, upsellId: null },

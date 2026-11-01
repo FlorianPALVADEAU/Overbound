@@ -19,8 +19,11 @@ import {
 import { paymentIntentRequestSchema, readOrderCodes, readOrderParticipants } from '@/lib/checkout/paymentIntentRequest'
 import { buildOrderMetadata } from './stripeMetadata'
 import { checkOrderEligibility } from '@/lib/checkout/orderEligibility'
+import { checkCompanionOrder, countCompanions } from '@/lib/checkout/companionEligibility'
+import { parseOpenCompanionConfig } from '@/lib/tickets/openCompanion'
 import {
   countActiveRegistrations,
+  fetchCompanionWaves,
   fetchTicketsForSelections,
   fetchUpsellsForEvent,
   groupHasAnchorOnEvent,
@@ -89,8 +92,20 @@ export async function POST(request: NextRequest) {
     })
     if (ineligible) return respondJson({ error: ineligible }, 422)
 
+    // The companion bib is a registration of its own: it takes a spot of the event like any bib.
+    const companionCount = countCompanions(body.participants)
+    const openTicketIds = [
+      ...new Set(tickets.flatMap((ticket) => parseOpenCompanionConfig(ticket.operations_config)?.openTicketId ?? [])),
+    ]
+    const companionError = checkCompanionOrder(body.participants, {
+      eventDate: event.date,
+      tickets,
+      waves: companionCount > 0 ? await fetchCompanionWaves(admin, event.id, openTicketIds) : [],
+    })
+    if (companionError) return respondJson({ error: companionError }, 422)
+
     const availableSpots = (event.capacity ?? 0) - (await countActiveRegistrations(admin, event.id))
-    if (requestedCount > availableSpots) {
+    if (requestedCount + companionCount > availableSpots) {
       return respondJson({ error: "Plus assez de places disponibles pour l'ensemble des participants." }, 409)
     }
 
@@ -138,6 +153,7 @@ export async function POST(request: NextRequest) {
       primaryPromoCode: primaryPromo?.code ?? '',
       ambassadorReferralCode,
       utmParams: serializeUtmParams(body.utmParams),
+      companionWaveIndexes: body.participants.map((participant) => participant.companionWaveIndex ?? null),
     })
     const summary = toPricingSummary(pricing, currency)
 

@@ -4,7 +4,7 @@ import type { UpsellSummaryItem } from '@/lib/upsells/summary'
 /** One line of an order summary, ready to render. Amounts in cents. */
 export interface OrderLine {
   key: string
-  kind: 'ticket' | 'upsell' | 'flexible' | 'discount'
+  kind: 'ticket' | 'upsell' | 'companion' | 'flexible' | 'discount'
   label: string
   details: string[]
   amountCents: number
@@ -98,6 +98,11 @@ const upsellLines = (items: readonly UpsellSummaryItem[], names: OrderLineNames)
   return { byTicket, loose }
 }
 
+const companionLine = (summary: PricingSummary): OrderLine[] =>
+  summary.companionTotal
+    ? [{ key: 'companion', kind: 'companion', label: 'Option OPEN', details: ['Second dossard, départ après le RANKED'], amountCents: summary.companionTotal }]
+    : []
+
 const flexibleLine = (summary: PricingSummary): OrderLine[] =>
   summary.flexibleTotal ? [{ key: 'flexible', kind: 'flexible', label: 'Billet flexible', details: [], amountCents: summary.flexibleTotal }] : []
 
@@ -155,6 +160,7 @@ export const buildOrderLines = (
     ...(summary.ticketLines ? grouped : tickets),
     ...orphans,
     ...loose,
+    ...companionLine(summary),
     ...flexibleLine(summary),
     ...discountLines(summary, names),
   ]

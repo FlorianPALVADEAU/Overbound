@@ -7,6 +7,7 @@ import { notifyEventOpening } from '@/lib/email/eventOpenings'
 import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { parseBibCapacity, validateBibConfigChange } from '@/lib/events/bibCapacity'
+import { parseTshirtQuota } from '@/lib/tshirtOffer'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -165,6 +166,7 @@ const handlePut = async (
       location,
       capacity,
       ranked_bib_capacity,
+      tshirt_offer_quota,
       status,
       external_provider,
       external_event_id,
@@ -211,6 +213,7 @@ const handlePut = async (
         location,
         capacity: parseInt(capacity) || 0,
         ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
+        tshirt_offer_quota: parseTshirtQuota(tshirt_offer_quota),
         status: status || 'draft',
         external_provider: external_provider || null,
         external_event_id: external_event_id || null,

@@ -17,12 +17,22 @@ const registrationRow = (patch: Record<string, unknown> = {}) => ({
   ...patch,
 })
 
-const buildAdmin = (row: unknown, options: { reserveError?: unknown; cancelError?: unknown } = {}) => {
+const buildAdmin = (
+  row: unknown,
+  options: { reserveError?: unknown; cancelError?: unknown; companions?: Array<Record<string, unknown>> } = {},
+) => {
   const refundUpdates: Array<Record<string, unknown>> = []
   const rpc = vi.fn(async () => ({ data: { already_cancelled: false }, error: options.cancelError ?? null }))
   const from = vi.fn((table: string) => {
     if (table === 'registrations') {
-      return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: row, error: null }) }) }) }
+      return {
+        select: () => ({
+          eq: (column: string) =>
+            column === 'companion_of'
+              ? Promise.resolve({ data: options.companions ?? [], error: null })
+              : { maybeSingle: async () => ({ data: row, error: null }) },
+        }),
+      }
     }
     return {
       insert: () => ({
@@ -100,5 +110,40 @@ describe('refundFlexibleTicket', () => {
     await expect(
       refundFlexibleTicket({ admin, stripe, userId: 'buyer', registrationId: 'reg-1', now: NOW }),
     ).rejects.toMatchObject({ code: 'CANCEL_FAILED' })
+  })
+
+  it('refunds the companion bib with its RANKED bib, in one Stripe refund', async () => {
+    const { admin, rpc, refundUpdates } = buildAdmin(registrationRow({ paid_ticket_cents: 7000 }), {
+      companions: [{ paid_ticket_cents: 2900, cancelled_at: null, checked_in: false }],
+    })
+    const stripe = stripeReturning(async () => ({ id: 're_1' }))
+
+    const result = await refundFlexibleTicket({ admin, stripe, userId: 'buyer', registrationId: 'reg-1', now: NOW })
+
+    expect(result.amountCents).toBe(9900)
+    expect(stripe.refunds.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 9900 }), expect.anything())
+    expect(refundUpdates.at(-1)).toMatchObject({ status: 'succeeded' })
+    // One RPC call: the database cancels the companion in the same transaction.
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a companion that is already cancelled', async () => {
+    const { admin } = buildAdmin(registrationRow({ paid_ticket_cents: 7000 }), {
+      companions: [{ paid_ticket_cents: 2900, cancelled_at: '2027-07-01T00:00:00Z', checked_in: false }],
+    })
+    const stripe = stripeReturning(async () => ({ id: 're_1' }))
+    const result = await refundFlexibleTicket({ admin, stripe, userId: 'buyer', registrationId: 'reg-1', now: NOW })
+    expect(result.amountCents).toBe(7000)
+  })
+
+  it('refuses, before any refund, when the companion bib was already checked in', async () => {
+    const { admin } = buildAdmin(registrationRow({ paid_ticket_cents: 7000 }), {
+      companions: [{ paid_ticket_cents: 2900, cancelled_at: null, checked_in: true }],
+    })
+    const stripe = stripeReturning(async () => ({ id: 're_1' }))
+    await expect(
+      refundFlexibleTicket({ admin, stripe, userId: 'buyer', registrationId: 'reg-1', now: NOW }),
+    ).rejects.toMatchObject({ code: 'CHECKED_IN' })
+    expect(stripe.refunds.create).not.toHaveBeenCalled()
   })
 })

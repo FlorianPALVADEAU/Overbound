@@ -22,13 +22,15 @@ export async function syncOpenRegistrationsToWave({
 
   const { data: rows, error } = await admin
     .from('registrations')
-    .select('id, user_id, wave_index, ticket:tickets(operations_config)')
+    .select('id, user_id, wave_index, companion_of, ticket:tickets(operations_config)')
     .eq('event_id', eventId)
     .in('user_id', profileIds)
 
   if (error) throw error
 
   const waveRows = (rows ?? []).filter((row: any) => {
+    // An OPEN companion bib keeps the SAS chosen at checkout: the group anchor never moves it.
+    if (row.companion_of) return false
     const ticket = firstRelation(row.ticket) as any
     return ticket?.operations_config?.departure_mode === 'wave'
   }) as Array<{ id: string; wave_index: number | null }>

@@ -5,6 +5,7 @@ import { disableAutomaticPopups } from './popups'
 // Opt-in only (E2E_STRIPE_RECIPE=1): it creates real orders in the target database.
 
 export const RECIPE_EVENT_SLUG = 'e2e-checkout'
+export const RECIPE_EVENT_ID = 'e2e00000-0000-4000-8000-000000000001'
 export const OPEN_TICKET_ID = 'e2e00000-0000-4000-8000-0000000000a1'
 export const RANKED_TICKET_ID = 'e2e00000-0000-4000-8000-0000000000a2'
 
@@ -29,8 +30,8 @@ export const prepareBrowser = async (page: Page) => {
   })
 }
 
-export const signIn = async (page: Page) => {
-  const { email, password } = recipeUser()
+export const signIn = async (page: Page, credentials: { email: string; password: string } = recipeUser()) => {
+  const { email, password } = credentials
   await page.goto('/auth/login')
   await page.locator('input[type="email"]').first().fill(email)
   await page.locator('input[type="password"]').first().fill(password)
@@ -63,6 +64,13 @@ export const fillParticipant = async (page: Page, n: number, { wave }: { wave: b
 
 export const setFlexible = async (page: Page, n: number) => {
   await page.locator(`#participant-${n}-flexible`).click()
+}
+
+/** Ticks the OPEN option of a RANKED participant and picks the SAS at `optionIndex` (0-based) of the picker. */
+export const setCompanion = async (page: Page, n: number, optionIndex: number) => {
+  await page.locator(`#participant-${n}-companion`).click()
+  await page.locator(`#participant-${n}-companion-wave`).click()
+  await page.getByRole('option').nth(optionIndex).click()
 }
 
 export const applyPromo = async (page: Page, code: string) => {

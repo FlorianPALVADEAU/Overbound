@@ -1,6 +1,7 @@
 import type { Participant } from '@/components/registration/types'
 import { needsHealthDataConsent } from '@/lib/legal/healthData'
 import { CONSENT_FIELD_IDS, participantFieldId, TICKETS_SECTION_ID, type ConsentField, type ParticipantField } from './fieldIds'
+import { isParticipantOffered, isTshirtSize, type TshirtOffer } from '@/lib/tshirtOffer'
 import { isAdultOnEventDate, MINIMUM_AGE } from './participantAge'
 
 export const REQUIRED_MESSAGE = 'Ce champ est obligatoire.'
@@ -19,6 +20,8 @@ export interface CheckoutValidationInput {
   /** Undefined when the buyer registers only themself. */
   groupAttestation: boolean | undefined
   hasSignature: boolean
+  /** Free T-shirt offer: the first participants it still covers must pick a size. */
+  tshirtOffer?: TshirtOffer | null
 }
 
 export type ParticipantErrors = Partial<Record<ParticipantField, string>>
@@ -32,7 +35,7 @@ export interface CheckoutValidation {
   firstInvalidId: string | null
 }
 
-const participantErrorsOf = (participant: Participant, input: CheckoutValidationInput): ParticipantErrors => {
+const participantErrorsOf = (participant: Participant, input: CheckoutValidationInput, index: number): ParticipantErrors => {
   const errors: ParticipantErrors = {}
   const required: ParticipantField[] = ['firstName', 'lastName', 'email', 'birthDate', 'emergencyContactName', 'emergencyContactPhone']
   for (const field of required) {
@@ -45,6 +48,12 @@ const participantErrorsOf = (participant: Participant, input: CheckoutValidation
   }
   if (input.ticketUsesWaveSelection(participant.ticketId) && !input.hasGroupAnchor && !participant.selectedWaveIndex) {
     errors.wave = 'Choisis ton SAS de départ.'
+  }
+  if (participant.companion === true && !participant.companionWaveIndex) {
+    errors.companionWave = 'Choisis ton SAS OPEN.'
+  }
+  if (isParticipantOffered(input.tshirtOffer, index) && !isTshirtSize(participant.tshirtSize)) {
+    errors.tshirtSize = 'Choisis la taille de ton T-shirt.'
   }
   if (needsHealthDataConsent(participant.medicalInfo) && participant.healthDataConsent !== true) {
     errors.healthDataConsent = 'Ton accord est nécessaire pour enregistrer ces informations.'
@@ -66,7 +75,7 @@ const consentErrorsOf = (input: CheckoutValidationInput) => {
 export const validateCheckout = (input: CheckoutValidationInput): CheckoutValidation => {
   const ticketsValid = input.ticketCount > 0
   const participantErrors = Object.fromEntries(
-    input.participants.map((participant) => [participant.id, participantErrorsOf(participant, input)]),
+    input.participants.map((participant, index) => [participant.id, participantErrorsOf(participant, input, index)]),
   )
   const participantsValid =
     input.participants.length === input.ticketCount &&

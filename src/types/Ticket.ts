@@ -28,6 +28,13 @@ export interface TicketOperationsConfig {
   departure_change_policy?: TicketDepartureChangePolicy
   /** ISO timestamp used when departure_mode=fixed and policy=reassign. */
   fixed_start_time?: Timestamp | null
+  /** "Option OPEN" of a RANKED ticket, see `src/lib/tickets/openCompanion.ts`. */
+  open_companion?: {
+    ticket_id: UUID
+    price_cents: number
+    ranked_max_duration_minutes: number
+    min_gap_minutes: number
+  } | null
   [key: string]: unknown
 }
 

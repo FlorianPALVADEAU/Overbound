@@ -36,6 +36,7 @@ export const buildRegistrationRequest = (draft: SignedDraft, payment: PaymentRef
     medicalInfo: participant.medicalInfo,
     healthDataConsent: participant.healthDataConsent === true,
     selectedWaveIndex: participant.selectedWaveIndex ?? null,
+    ...(participant.tshirtSize ? { tshirtSize: participant.tshirtSize } : {}),
   })),
   upsells: draftUpsellRequest(draft),
   promoCodes: draft.promoCodes,

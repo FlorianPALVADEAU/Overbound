@@ -149,6 +149,7 @@ export default function EventRegisterPage() {
               : null
           }
           availableSpots={data.availableSpots}
+          tshirtOffer={data.tshirtOffer}
           initialTicketId={ticketQueryParam}
           initialWaveIndex={waveQueryParam}
           groupIntent={groupIntent}

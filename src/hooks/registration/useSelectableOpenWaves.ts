@@ -4,6 +4,7 @@ export type SelectableWave = {
   wave_index: number
   start_time: string
   remaining: number
+  capacity: number
 }
 
 /**
@@ -11,7 +12,12 @@ export type SelectableWave = {
  * it does not depend on any other field. The real capacity check happens again
  * server-side at registration creation.
  */
-export function useSelectableOpenWaves(eventId: string, ticketId: string | undefined, enabled: boolean) {
+export function useSelectableOpenWaves(
+  eventId: string,
+  ticketId: string | undefined,
+  enabled: boolean,
+  { includeFull = false }: { includeFull?: boolean } = {},
+) {
   const [waves, setWaves] = useState<SelectableWave[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,7 +32,7 @@ export function useSelectableOpenWaves(eventId: string, ticketId: string | undef
     setIsLoading(true)
     setError(null)
 
-    fetch(`/api/events/${eventId}/open-waves/selectable?ticketId=${encodeURIComponent(ticketId)}`)
+    fetch(`/api/events/${eventId}/open-waves/selectable?ticketId=${encodeURIComponent(ticketId)}${includeFull ? '&includeFull=true' : ''}`)
       .then(async (response) => {
         if (!response.ok) {
           const body = await response.json().catch(() => ({}))
@@ -47,7 +53,7 @@ export function useSelectableOpenWaves(eventId: string, ticketId: string | undef
     return () => {
       cancelled = true
     }
-  }, [eventId, ticketId, enabled])
+  }, [eventId, ticketId, enabled, includeFull])
 
   return { waves, isLoading, error }
 }

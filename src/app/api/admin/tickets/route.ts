@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { checkTicketCompanion } from './companionGuard'
 import {
   decodeTicketsCursor,
   encodeTicketsCursor,
@@ -182,6 +183,9 @@ const handlePost = async (request: NextRequest) => {
       .eq('organization_id', auth.organizationId)
       .maybeSingle()
     if (!event) return NextResponse.json({ error: 'Événement inaccessible' }, { status: 404 })
+
+    const companionError = await checkTicketCompanion(admin, auth.organizationId, { event_id, name, operations_config })
+    if (companionError) return NextResponse.json({ error: companionError }, { status: 400 })
 
     const { data: ticket, error } = await admin
       .from('tickets')

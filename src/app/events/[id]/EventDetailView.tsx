@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { UltraArenaEventOver } from '@/components/events/landing/UltraArenaEventOver'
 import { EventHero } from '@/components/events/landing/EventHero'
+import { TshirtOfferNote } from '@/components/tshirt/TshirtOfferNote'
 import { EventTicketDepartures } from '@/components/events/landing/EventTicketDepartures'
 import { EventAnnouncedPanel } from '@/components/events/landing/EventAnnouncedPanel'
 import { EventFinalCta } from '@/components/events/landing/EventFinalCta'
@@ -189,7 +190,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
   // Derived values
   // -------------------------------------------------------------------------
 
-  const { event, availableSpots, existingRegistration } = data
+  const { event, availableSpots, existingRegistration, tshirtOffer } = data
   const user = session?.user
 
   const tickets = (event.tickets ?? []).map((t) => ({ ...t, race: t.race ?? undefined }))
@@ -269,6 +270,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
         location={event.location}
         startingPriceLabel={startingPriceLabel}
         availableSpots={availableSpots}
+        tshirtOffer={tshirtOffer}
         statusLabel={getEventStatusLabel(event.status)}
         statusVariant={getEventStatusVariant(event.status)}
         isOnSale={isOnSale}
@@ -305,6 +307,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
           }}
           notice={
             <>
+              {isOnSale ? <TshirtOfferNote offer={tshirtOffer} /> : null}
               {isAnnounced ? (
                 <EventAnnouncedPanel
                   formattedSalesStart={formattedSalesStart}

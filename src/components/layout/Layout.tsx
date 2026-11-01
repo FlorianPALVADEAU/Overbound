@@ -7,6 +7,7 @@ import { MaintenanceBanner } from './MaintenanceBanner'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { PromotionsBanner } from './PromotionsBanner'
+import { TshirtOfferBar } from '@/components/tshirt/TshirtOfferBar'
 import { useSession, SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -134,6 +135,7 @@ export function Layout({ children }: LayoutProps) {
           isLoading={isLoading}
         />
         <PromotionsBanner />
+        <TshirtOfferBar />
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">{children}</main>
         <div className={isAccountArea ? 'hidden md:block' : undefined}>
           <Footer />

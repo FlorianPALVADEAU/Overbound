@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { checkTicketCompanion, findTicketsUsingAsCompanion } from '../companionGuard'
 
 const handlePut = async (
   request: NextRequest,
@@ -35,6 +36,9 @@ const handlePut = async (
       .eq('organization_id', auth.organizationId)
       .maybeSingle()
     if (!scopedEvent) return NextResponse.json({ error: 'Événement inaccessible' }, { status: 404 })
+
+    const companionError = await checkTicketCompanion(admin, auth.organizationId, { id, event_id, name, operations_config })
+    if (companionError) return NextResponse.json({ error: companionError }, { status: 400 })
 
     const { data: ticket, error } = await admin
       .from('tickets')
@@ -87,8 +91,17 @@ const handleDelete = async (
     const url = new URL(request.url)
     const forceDelete = url.searchParams.get('force') === 'true'
 
-    // Vérifier s'il y a des inscriptions utilisant ce ticket
+    // Un billet OPEN vendu comme option d'un billet RANKED ne se supprime pas : l'option casserait au paiement.
     const admin = supabaseAdmin()
+    const owners = await findTicketsUsingAsCompanion(admin, auth.organizationId, id)
+    if (owners.length > 0) {
+      return NextResponse.json(
+        { error: `Ce billet est le billet OPEN de l’option de : ${owners.join(', ')}. Retire d’abord l’option.` },
+        { status: 409 },
+      )
+    }
+
+    // Vérifier s'il y a des inscriptions utilisant ce ticket
     const { count } = await admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })

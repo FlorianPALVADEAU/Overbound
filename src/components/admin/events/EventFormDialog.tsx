@@ -32,6 +32,7 @@ export interface EventFormValues {
   longitude: string
   capacity: string
   ranked_bib_capacity: string
+  tshirt_offer_quota: string
   status: Event['status']
   external_provider: string
   external_event_id: string
@@ -63,6 +64,7 @@ const DEFAULT_VALUES: EventFormValues = {
   longitude: '',
   capacity: '0',
   ranked_bib_capacity: '',
+  tshirt_offer_quota: '',
   status: 'draft',
   external_provider: 'none',
   external_event_id: '',
@@ -281,6 +283,30 @@ export function EventFormDialog({
             <p className="md:col-span-2 text-xs text-muted-foreground">
               Les dossards sont numérotés sur une plage unique : RANKED de 1 à {rankedBibs || 'N'}, puis OPEN de {rankedBibs + 1} à la capacité totale. Sans capacité totale, toute inscription est refusée.
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tshirt_offer_quota">T-shirt offert aux N premiers participants</Label>
+            <Input
+              id="tshirt_offer_quota"
+              type="number"
+              min="1"
+              className="md:max-w-xs"
+              value={values.tshirt_offer_quota}
+              onChange={(event) => handleChange('tshirt_offer_quota', event.target.value)}
+              placeholder="60"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tout billet confondu, dans l&apos;ordre des inscriptions (dossards compagnons exclus). Vide : pas d&apos;offre, les annonces du site disparaissent.
+            </p>
+            {!isCreateMode && eventId && initialValues.tshirt_offer_quota ? (
+              <a
+                href={`/api/admin/events/${eventId}/tshirts?format=csv`}
+                className="inline-flex text-xs font-medium text-primary underline underline-offset-4"
+              >
+                Télécharger la liste des gagnants avec tailles (CSV)
+              </a>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

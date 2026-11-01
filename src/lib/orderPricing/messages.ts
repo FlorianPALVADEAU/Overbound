@@ -21,5 +21,7 @@ export const pricingErrorMessage = (error: PricingError): string => {
       return `Le billet « ${error.ticketName} » n'a pas encore de tarif.`
     case 'TIERS_SOLD_OUT':
       return 'Tous les paliers de prix sont complets pour cet événement.'
+    case 'COMPANION_UNAVAILABLE':
+      return `Le billet « ${error.ticketName} » ne propose pas l'option OPEN.`
   }
 }

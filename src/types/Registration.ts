@@ -160,6 +160,8 @@ export interface AdminRegistration extends Registration {
   has_tshirt?: boolean | null
   tshirt_quantity?: number | null
   tshirt_sizes?: string[] | null
+  /** Free T-shirt offer of the event: null when it has none. */
+  tshirt_offer?: { won: boolean; size: string | null } | null
   signatures?: RegistrationSignature[] | null
   requires_document: boolean,
   documents_count?: number | null

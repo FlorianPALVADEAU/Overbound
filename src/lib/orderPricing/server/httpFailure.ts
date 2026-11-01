@@ -11,6 +11,7 @@ const PRICING_ERROR_STATUS: Record<PricingError['kind'], number> = {
   UNKNOWN_TICKET: 422,
   TICKET_PRICE_MISSING: 422,
   TIERS_SOLD_OUT: 409,
+  COMPANION_UNAVAILABLE: 422,
 }
 
 export const pricingErrorFailure = (error: PricingError): HttpFailure => ({

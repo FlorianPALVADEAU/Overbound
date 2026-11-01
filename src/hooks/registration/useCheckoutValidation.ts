@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { EventTicket, Participant } from '@/components/registration/types'
 import { validateCheckout } from '@/lib/checkout/checkoutValidation'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
+import type { TshirtOffer } from '@/lib/tshirtOffer'
 import type { CheckoutConsents } from './useCheckoutConsents'
 
 interface CheckoutValidationArgs {
@@ -12,6 +13,7 @@ interface CheckoutValidationArgs {
   hasGroupAnchor: boolean
   consents: CheckoutConsents
   needsGroupAttestation: boolean
+  tshirtOffer?: TshirtOffer | null
 }
 
 /**
@@ -19,7 +21,7 @@ interface CheckoutValidationArgs {
  * first tries to pay; then every problem shows and the page takes them to the
  * first one, focused for keyboards and screen readers.
  */
-export function useCheckoutValidation({ participants, ticketCount, eventDate, ticketMap, hasGroupAnchor, consents, needsGroupAttestation }: CheckoutValidationArgs) {
+export function useCheckoutValidation({ participants, ticketCount, eventDate, ticketMap, hasGroupAnchor, consents, needsGroupAttestation, tshirtOffer }: CheckoutValidationArgs) {
   const validation = useMemo(
     () =>
       validateCheckout({
@@ -38,8 +40,9 @@ export function useCheckoutValidation({ participants, ticketCount, eventDate, ti
         },
         groupAttestation: needsGroupAttestation ? consents.groupAttestation : undefined,
         hasSignature: Boolean(consents.signatureImage),
+        tshirtOffer,
       }),
-    [participants, ticketCount, eventDate, ticketMap, hasGroupAnchor, consents, needsGroupAttestation],
+    [participants, ticketCount, eventDate, ticketMap, hasGroupAnchor, consents, needsGroupAttestation, tshirtOffer],
   )
   const [showErrors, setShowErrors] = useState(false)
   const [focusRequest, setFocusRequest] = useState(0)

@@ -148,6 +148,27 @@ export default function CGVPage() {
                 Chaque événement est décrit dans une fiche détaillée précisant : le format, la distance, le niveau de
                 difficulté, les obstacles, la date, le lieu, les horaires et les tarifs.
               </p>
+              <h3 id="option-open" className="text-xl font-semibold">Option « format OPEN » (second dossard)</h3>
+              <p>
+                <strong>Principe :</strong> lorsque la fiche d'un billet RANKED la propose, l'acheteur peut ajouter, pour
+                chaque participant, l'option « format OPEN » au prix fixe affiché lors de la commande. Elle donne droit à
+                un second dossard, avec son propre QR code, sa propre médaille et son propre départ (SAS) sur le billet
+                OPEN de l'événement, en plus du dossard RANKED. Le prix de l'option n'est pas remisable : les codes
+                promotionnels et la remise groupe ne s'y appliquent pas.
+              </p>
+              <p>
+                <strong>Départ :</strong> le SAS OPEN est choisi lors de la commande, parmi les SAS disponibles qui
+                partent au moins 20 minutes après l'heure limite de fin du RANKED, indiquée au moment du choix. Les SAS
+                complets ou trop proches du RANKED ne sont pas sélectionnables. Le départ du dossard OPEN n'est pas lié à
+                l'éventuel départ commun d'un groupe.
+              </p>
+              <p>
+                <strong>Un seul ensemble :</strong> le dossard OPEN de l'option suit le dossard RANKED auquel il est
+                rattaché. Il ne peut être ni transféré, ni annulé, ni remboursé séparément : le transfert (article 8)
+                et l'annulation (article 10) du dossard RANKED comprennent le dossard OPEN. Le prix de l'option est
+                alors remboursé avec le billet dans les cas où celui-ci l'est. En cas d'annulation de l'événement par
+                Overbound, l'article 9 s'applique à chacun des deux dossards.
+              </p>
             </section>
 
             {/* 4. Inscription */}
@@ -391,7 +412,8 @@ export default function CGVPage() {
               <p>
                 <strong>Montant remboursé :</strong> le prix effectivement payé pour ce billet, après déduction des
                 réductions et codes promotionnels appliqués à la commande, réparties entre les billets au prorata de leur
-                prix. Le prix de l'option billet flexible, les autres options (textile, photos…) et les frais de transfert
+                prix. Si le billet comprend l'option « format OPEN » (article 3), son prix est remboursé avec le billet. Le
+                prix de l'option billet flexible, les autres options (textile, photos…) et les frais de transfert
                 éventuels ne sont pas remboursés.
               </p>
               <p>

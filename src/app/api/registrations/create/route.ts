@@ -11,6 +11,7 @@ import { REGULATION_VERSION } from '@/constants/registration'
 import { keepHealthDataWithConsent } from '@/lib/legal/healthData'
 import { fingerprintWaiver } from '@/lib/legal/waiverDocument'
 import { FLEXIBLE_TICKET_FEE_CENTS, parseNumberList } from '@/lib/tickets/flexibleTicket'
+import { parseOpenCompanionConfig, readPaidCompanions } from '@/lib/tickets/openCompanion'
 import { captureException } from '@/lib/sentry'
 import {
   formatWaveStartTime,
@@ -27,6 +28,7 @@ import {
 import { assignBibNumber, BibCapacityExhaustedError, getBibRange, type RaceFormat } from '@/lib/bibNumber'
 import { sendAdminPushNotification } from '@/lib/push'
 import { sendMetaCapiEvent } from '@/lib/analytics/metaCapi'
+import { isTshirtSize } from '@/lib/tshirtOffer'
 import { markResendContactAsRegistered } from '@/lib/email/resendAudiences'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { validateUpsellQuantities } from '@/lib/upsells/quantity'
@@ -427,6 +429,70 @@ export async function POST(request: NextRequest) {
       isFreeOrder ? [] : parseNumberList(paymentIntent.metadata.flexible_participants),
     )
     const paidTicketPrices = isFreeOrder ? [] : parseNumberList(paymentIntent.metadata.ticket_prices)
+    // Companion bibs (option OPEN): validated and paid when the PaymentIntent was prepared, never read from this request.
+    const paidCompanions = new Map(
+      (isFreeOrder ? [] : readPaidCompanions(paymentIntent.metadata)).map((companion) => [companion.participantIndex, companion]),
+    )
+    const companionOpenTicketIds = [
+      ...new Set(
+        [...paidCompanions.keys()].flatMap((participantIndex) => {
+          const parentTicket = ticketMap.get(participants[participantIndex]?.ticketId ?? '')
+          return parseOpenCompanionConfig(parentTicket?.operations_config)?.openTicketId ?? []
+        }),
+      ),
+    ]
+    const companionTickets = new Map<string, (typeof tickets)[number]>()
+    if (companionOpenTicketIds.length > 0) {
+      const { data: openTickets, error: openTicketsError } = await admin
+        .from('tickets')
+        .select('*, race:races!tickets_race_id_fkey (id, name, distance_km)')
+        .eq('event_id', eventId)
+        .in('id', companionOpenTicketIds)
+      if (openTicketsError) throw openTicketsError
+      for (const openTicket of openTickets ?? []) companionTickets.set(openTicket.id, openTicket)
+    }
+    const companionRegistrations: Array<{
+      registration: CreatedRegistrationRecord
+      ticket: (typeof tickets)[number]
+      participantName: string | null
+    }> = []
+
+    // The signed waiver is stored once per bib, companion bibs included.
+    const recordSignature = async (registrationId: string, participant: (typeof participants)[number]) => {
+      if (!signatureImage) return
+      // Text actually served by this deployment; stored so the signed wording can be proven later.
+      const signedDocument = fingerprintWaiver()
+      const signatureRecord = {
+        registration_id: registrationId,
+        regulation_version: typeof signatureMetadata?.regulationVersion === 'string'
+          ? signatureMetadata.regulationVersion
+          : REGULATION_VERSION,
+        signed_at:
+          typeof signatureMetadata?.signedAt === 'string'
+            ? signatureMetadata.signedAt
+            : new Date().toISOString(),
+        signature_data: JSON.stringify({
+          imageDataUrl: signatureImage,
+          participant: {
+            firstName: participant.firstName,
+            lastName: participant.lastName,
+            email: participant.email,
+            birthDate: participant.birthDate,
+            emergencyContactName: participant.emergencyContactName,
+            emergencyContactPhone: participant.emergencyContactPhone,
+            medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
+            healthDataConsent: participant.healthDataConsent === true,
+          },
+          disclaimer,
+          document: signedDocument,
+        }),
+      }
+
+      const { error: signatureError } = await admin.from('registration_signatures').insert(signatureRecord)
+      if (signatureError) {
+        console.error('Erreur création signature:', signatureError)
+      }
+    }
 
     for (const [index, participant] of participants.entries()) {
       const ticket = ticketMap.get(participant.ticketId)
@@ -475,6 +541,8 @@ export async function POST(request: NextRequest) {
           distance_min_km: 1,
           flexible_refund: flexibleParticipantIndices.has(index),
           paid_ticket_cents: isFreeOrder ? 0 : (paidTicketPrices[index] ?? null),
+          // Only a stored choice: whether the offer covers this registration is derived from creation order.
+          ...(isTshirtSize(participant.tshirtSize) ? { tshirt_size: participant.tshirtSize } : {}),
         })
         .select()
         .single()
@@ -600,42 +668,98 @@ export async function POST(request: NextRequest) {
 
       createdRegistrations.push({ registration, ticket, participant, participantName })
 
-      if (signatureImage) {
-        // Text actually served by this deployment; stored so the signed wording can be proven later.
-        const signedDocument = fingerprintWaiver()
-        const signatureRecord = {
-          registration_id: registration.id,
-          regulation_version: typeof signatureMetadata?.regulationVersion === 'string'
-            ? signatureMetadata.regulationVersion
-            : REGULATION_VERSION,
-          signed_at:
-            typeof signatureMetadata?.signedAt === 'string'
-              ? signatureMetadata.signedAt
-              : new Date().toISOString(),
-          signature_data: JSON.stringify({
-            imageDataUrl: signatureImage,
-            participant: {
-        firstName: participant.firstName,
-        lastName: participant.lastName,
-        email: participant.email,
-        birthDate: participant.birthDate,
-        emergencyContactName: participant.emergencyContactName,
-        emergencyContactPhone: participant.emergencyContactPhone,
-        medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
-        healthDataConsent: participant.healthDataConsent === true,
-      },
-            disclaimer,
-            document: signedDocument,
-          }),
+      await recordSignature(registration.id, participant)
+
+      const paidCompanion = paidCompanions.get(index)
+      const companionTicket = companionTickets.get(
+        parseOpenCompanionConfig(ticket.operations_config)?.openTicketId ?? '',
+      )
+      if (paidCompanion && companionTicket) {
+        const companionBibRange = getBibRange(eventRow, 'open')
+        if (!companionBibRange) {
+          console.error(`Capacité dossard non configurée pour l'événement ${eventId} (open)`)
+          return NextResponse.json({ error: 'Capacité dossard non configurée pour ce format (open).' }, { status: 422 })
         }
 
-        const { error: signatureError } = await admin
-          .from('registration_signatures')
-          .insert(signatureRecord)
+        const companionTokens = generateTokens()
+        // A companion bib is a registration of its own, linked to the RANKED one. It carries no promo
+        // code: ambassador points read the order's registrations by promotional_code_id, and the
+        // companion earns none.
+        const { data: companion, error: companionError } = await admin
+          .from('registrations')
+          .insert({
+            user_id: userId,
+            event_id: eventId,
+            ticket_id: companionTicket.id,
+            event_price_tier_id: null,
+            order_id: order.id,
+            email: participant.email || user.email,
+            provider: 'internal',
+            provider_registration_id: null,
+            stripe_payment_intent_id: paymentIntent.id,
+            qr_code_token: companionTokens.qr,
+            // No transfer link: the companion bib only moves with its RANKED bib.
+            transfer_token: null,
+            checked_in: false,
+            claim_status: 'pending',
+            approval_status: 'approved',
+            race_id: companionTicket.race?.id || null,
+            promotional_code_id: null,
+            distance_ideal_km: 1,
+            distance_min_km: 1,
+            flexible_refund: false,
+            paid_ticket_cents: paidCompanion.priceCents,
+            companion_of: registration.id,
+          })
+          .select()
+          .single()
 
-        if (signatureError) {
-          console.error('Erreur création signature:', signatureError)
+        if (companionError || !companion) {
+          console.error('Erreur création dossard compagnon:', companionError)
+          throw companionError
         }
+
+        try {
+          companion.bib_number = await assignBibNumber({
+            admin,
+            eventId,
+            registrationId: companion.id,
+            raceFormat: 'open',
+            bibRange: companionBibRange,
+          })
+          companion.race_format = 'open'
+        } catch (bibError) {
+          if (bibError instanceof BibCapacityExhaustedError) {
+            return NextResponse.json({ error: 'Plus aucun dossard disponible pour ce format.' }, { status: 422 })
+          }
+          console.error('Erreur attribution dossard compagnon:', bibError)
+          throw bibError
+        }
+
+        // The group anchor never applies to a companion bib: it keeps the SAS chosen at checkout.
+        try {
+          const companionAssignment = await assignSelectedWaveToRegistration({
+            admin,
+            eventId,
+            registrationId: companion.id,
+            waveIndex: paidCompanion.waveIndex,
+          })
+          companion.start_time = companionAssignment.startTime
+          companion.wave_index = companionAssignment.waveIndex
+          companion.wave_capacity = companionAssignment.waveCapacity
+          companion.wave_position = companionAssignment.wavePosition
+          companion.auto_assigned = false
+          companion.assignment_constraint_breached = false
+        } catch (assignmentError) {
+          if (assignmentError instanceof SelectedWaveUnavailableError) {
+            return NextResponse.json({ error: 'SAS choisi indisponible, merci de sélectionner un autre créneau.' }, { status: 422 })
+          }
+          console.error('Erreur attribution SAS OPEN du compagnon:', assignmentError)
+          throw assignmentError
+        }
+
+        companionRegistrations.push({ registration: companion, ticket: companionTicket, participantName })
+        await recordSignature(companion.id, participant)
       }
     }
 
@@ -725,7 +849,7 @@ export async function POST(request: NextRequest) {
       amountLabel,
     ].filter(Boolean).join(' • ')
 
-    const ticketEmailTasks = createdRegistrations.map(async ({ registration, ticket, participantName }) => {
+    const ticketEmailTasks = [...createdRegistrations, ...companionRegistrations].map(async ({ registration, ticket, participantName }) => {
       try {
         const qrUrl = await resolveQrImageUrl(registration.qr_code_token, siteUrl)
         const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', {
@@ -763,6 +887,15 @@ export async function POST(request: NextRequest) {
         }
 
         const flexibleCount = flexibleParticipantIndices.size
+        const companionTotalCents = [...paidCompanions.values()].reduce((total, companion) => total + companion.priceCents, 0)
+        const companionReceiptLine = (index: number) => {
+          const paid = paidCompanions.get(index)
+          if (!paid) return undefined
+          const openTicket = companionTickets.get(
+            parseOpenCompanionConfig(ticketMap.get(participants[index]?.ticketId ?? '')?.operations_config)?.openTicketId ?? '',
+          )
+          return { label: `Option OPEN${openTicket ? ` : ${openTicket.name}` : ''}`, cents: paid.priceCents }
+        }
         const { participants: receiptParticipants, orderLines } = buildReceiptBreakdown({
           participants: participants.map((participant, index) => {
             const ticket = ticketMap.get(participant.ticketId)
@@ -772,6 +905,7 @@ export async function POST(request: NextRequest) {
               ticketLabel: `${ticket?.name ?? 'Billet'}${tierLabel ? `, ${tierLabel}` : ''}`,
               ticketUnitCents: participantTicketCents[index],
               flexible: flexibleParticipantIndices.has(index),
+              companion: companionReceiptLine(index),
             }
           }),
           options: upsells.flatMap((item: { upsellId: string; quantity: number; meta?: Record<string, unknown> }) => {
@@ -788,7 +922,7 @@ export async function POST(request: NextRequest) {
           }),
           flexibleFeeCents: FLEXIBLE_TICKET_FEE_CENTS,
         })
-        const subtotalCents = ticketSubtotal + upsellSubtotal + FLEXIBLE_TICKET_FEE_CENTS * flexibleCount
+        const subtotalCents = ticketSubtotal + upsellSubtotal + FLEXIBLE_TICKET_FEE_CENTS * flexibleCount + companionTotalCents
         const discountCents = discountApplied > 0 ? discountApplied : 0
         const totalCents = paymentIntent.amount ?? Math.max(subtotalCents - discountCents, 0)
 

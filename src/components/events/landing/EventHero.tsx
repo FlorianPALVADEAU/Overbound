@@ -8,6 +8,7 @@ import { HeroFrame } from '@/components/hero/HeroFrame'
 import { containerClass, DISPLAY_TITLE, Pill } from '@/components/ds'
 import { cn } from '@/lib/utils'
 import { SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
+import { tshirtHeadline, type TshirtOffer } from '@/lib/tshirtOffer'
 
 interface Props {
   title: string
@@ -18,6 +19,8 @@ interface Props {
   startingPriceLabel: string | null
   /** Real remaining spots, shown only while sales are open. */
   availableSpots: number | null
+  /** T-shirt offer of the event, shown as a tag while stock lasts. */
+  tshirtOffer?: TshirtOffer | null
   statusLabel: string
   statusVariant: 'default' | 'destructive' | 'secondary' | 'outline'
   isOnSale: boolean
@@ -54,6 +57,7 @@ export function EventHero({
   location,
   startingPriceLabel,
   availableSpots,
+  tshirtOffer,
   statusLabel,
   statusVariant,
   isOnSale,
@@ -83,6 +87,11 @@ export function EventHero({
         </h1>
         {description ? (
           <p className="mt-6 line-clamp-2 max-w-xl text-lead text-foreground/75">{description}</p>
+        ) : null}
+        {isOnSale && tshirtOffer && tshirtHeadline(tshirtOffer) ? (
+          <Pill variant="tag" className="mt-6">
+            {tshirtHeadline(tshirtOffer)}
+          </Pill>
         ) : null}
         <ul className="mt-6 flex flex-wrap gap-2">
           {COURSE_HIGHLIGHTS.map((item) => (

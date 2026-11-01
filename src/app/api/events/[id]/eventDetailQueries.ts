@@ -2,10 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import type { TshirtOffer } from '@/lib/tshirtOffer'
 
 export interface EventDetailResponse {
   event: Event & { tickets?: Ticket[]; price_tiers?: EventPriceTier[] }
   availableSpots: number
+  tshirtOffer: TshirtOffer | null
   existingRegistration: {
     id: string
     checked_in: boolean

@@ -120,6 +120,7 @@ export default function EventSuccessPage() {
     <EventSuccessView
       registration={data.registration}
       registrations={data.registrations}
+      tshirtWinners={data.tshirtWinners ?? 0}
       eventSlug={params.id}
       hasFirstName={Boolean(getFirstName(session?.profile?.full_name))}
     />

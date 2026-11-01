@@ -4,6 +4,7 @@ import type { Ticket } from '@/types/Ticket'
 import type { Upsell, UpsellOptions } from '@/types/Upsell'
 import type { PromotionalCode } from '@/types/PromotionalCode'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import type { TshirtOffer } from '@/lib/tshirtOffer'
 
 export interface EventTicket extends Ticket {
   current_registrations?: number
@@ -45,9 +46,15 @@ export type Participant = {
   medicalInfo: string
   /** Explicit consent (art. 9 GDPR) to keep `medicalInfo`; optional so drafts saved before it still load. */
   healthDataConsent?: boolean
+  /** Size of the free T-shirt, asked only while the offer covers this participant. */
+  tshirtSize?: string
   /** "Billet flexible" option: refundable without justification until J-7. */
   flexible?: boolean
   selectedWaveIndex?: number | null
+  /** "Option OPEN": the participant also runs the OPEN, on a second bib. */
+  companion?: boolean
+  /** SAS of that second bib, chosen when the option is ticked. */
+  companionWaveIndex?: number | null
 }
 
 export type SelectedUpsellState = Record<string, { quantity: number; meta?: Record<string, any> }>
@@ -75,6 +82,8 @@ export interface MultiStepEventRegistrationProps {
   upsells: EventUpsell[]
   user: EventUser | null
   availableSpots: number
+  /** Free T-shirt offer of the event, null when it has none. */
+  tshirtOffer?: TshirtOffer | null
   initialTicketId?: string | null
   /** Slot preselected from the event page; applied once to the first matching participant. */
   initialWaveIndex?: number | null

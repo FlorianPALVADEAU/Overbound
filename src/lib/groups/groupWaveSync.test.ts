@@ -9,6 +9,7 @@ type RegistrationRow = {
   wave_index: number | null
   start_time: string | null
   created_at?: string
+  companion_of?: string | null
   ticket?: any
 }
 
@@ -226,5 +227,69 @@ describe('syncOpenRegistrationsToWave', () => {
     const ranked = admin.registrations.find((row) => row.id === 'ranked-untouched')
     expect(ranked?.wave_index).toBe(3)
     expect(admin.rpcCalls).toEqual([{ registrationId: 'open-to-move', waveIndex: 1 }])
+  })
+})
+
+describe('OPEN companion bib and the group anchor', () => {
+  const waveTicket = { operations_config: { departure_mode: 'wave' } }
+
+  it('never takes the departure of a companion bib as the group anchor', async () => {
+    const admin = new FakeAdmin()
+    admin.registrations = [
+      {
+        id: 'companion',
+        user_id: 'u1',
+        event_id: 'e1',
+        wave_index: 9,
+        start_time: '2026-09-12T11:30:00.000Z',
+        created_at: '2026-06-02T10:00:00.000Z',
+        companion_of: 'ranked-1',
+        ticket: waveTicket,
+      },
+    ]
+
+    expect(await resolveGroupAnchorFromProfile(admin as any, 'u1')).toBeNull()
+  })
+
+  it('skips the companion and still anchors on a regular OPEN bib', async () => {
+    const admin = new FakeAdmin()
+    admin.registrations = [
+      {
+        id: 'companion',
+        user_id: 'u1',
+        event_id: 'e1',
+        wave_index: 9,
+        start_time: '2026-09-12T11:30:00.000Z',
+        created_at: '2026-06-03T10:00:00.000Z',
+        companion_of: 'ranked-1',
+        ticket: waveTicket,
+      },
+      {
+        id: 'regular',
+        user_id: 'u1',
+        event_id: 'e1',
+        wave_index: 2,
+        start_time: '2026-09-12T10:10:00.000Z',
+        created_at: '2026-06-02T10:00:00.000Z',
+        companion_of: null,
+        ticket: waveTicket,
+      },
+    ]
+
+    expect(await resolveGroupAnchorFromProfile(admin as any, 'u1')).toMatchObject({ waveIndex: 2 })
+  })
+
+  it('does not move a companion bib to the anchor wave when a member joins', async () => {
+    const admin = new FakeAdmin()
+    admin.registrations = [
+      { id: 'companion', user_id: 'u1', event_id: 'event-1', wave_index: 9, start_time: null, companion_of: 'ranked-1', ticket: waveTicket },
+      { id: 'regular', user_id: 'u1', event_id: 'event-1', wave_index: 2, start_time: null, companion_of: null, ticket: waveTicket },
+    ]
+
+    const result = await syncOpenRegistrationsToWave({ admin, eventId: 'event-1', waveIndex: 5, profileIds: ['u1'] })
+
+    expect(admin.rpcCalls).toEqual([{ registrationId: 'regular', waveIndex: 5 }])
+    expect(result.moved).toBe(1)
+    expect(admin.registrations.find((row) => row.id === 'companion')?.wave_index).toBe(9)
   })
 })

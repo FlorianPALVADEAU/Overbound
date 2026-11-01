@@ -6,6 +6,7 @@ import {
   order,
   participantsOn,
   percentCode,
+  rankedTicket,
   tier,
 } from './testFixtures'
 import type { OrderPricing, OrderPricingInput } from './types'
@@ -177,6 +178,75 @@ describe('computeOrderPricing — flexible option', () => {
     )
     expect(pricing.flexibleTotal).toBe(1780)
     expect(pricing.totalDue).toBe(6780)
+  })
+})
+
+describe('computeOrderPricing — OPEN companion', () => {
+  // RANKED 70 € with a 29 € OPEN companion bib; OPEN 50 €.
+  const withCompanion = [openTicket(), rankedTicket({ companionPriceCents: 2900 })]
+
+  it('adds the fixed companion price to a RANKED bib', () => {
+    const pricing = price(order({ tickets: withCompanion, participants: [{ ticketId: 'ranked', flexible: false, companion: true }] }))
+    expect(pricing.companionTotal).toBe(2900)
+    expect(pricing.participants[0]?.companionPriceCents).toBe(2900)
+    expect(pricing.totalDue).toBe(9900)
+  })
+
+  it('charges nothing for a participant without the option', () => {
+    const pricing = price(order({ tickets: withCompanion, participants: participantsOn('ranked') }))
+    expect(pricing.companionTotal).toBe(0)
+    expect(pricing.totalDue).toBe(7000)
+  })
+
+  it('never discounts the companion, whatever the code', () => {
+    const pricing = price(
+      order({
+        tickets: withCompanion,
+        participants: [{ ticketId: 'ranked', flexible: false, companion: true }],
+        promos: [percentCode('HALF', 50)],
+      }),
+    )
+    // 70 € - 50 % = 35 €, plus the full 29 €
+    expect(pricing.totalDue).toBe(6400)
+  })
+
+  it('does not count the companion bib toward the group discount', () => {
+    // One RANKED bib plus its companion is two bibs, but still one ticket: no group discount.
+    const pricing = price(
+      order({ tickets: withCompanion, participants: [{ ticketId: 'ranked', flexible: false, companion: true }] }),
+    )
+    expect(pricing.groupDiscount.amountCents).toBe(0)
+    expect(pricing.totalDue).toBe(7000 + 2900)
+  })
+
+  it('applies the group discount to the tickets only, not to the companions', () => {
+    // 2 RANKED at 70 € with -10 % group discount = 126 €, plus 2 companions at 29 € in full.
+    const pricing = price(
+      order({
+        tickets: withCompanion,
+        participants: [
+          { ticketId: 'ranked', flexible: false, companion: true },
+          { ticketId: 'ranked', flexible: false, companion: true },
+        ],
+      }),
+    )
+    expect(pricing.groupDiscount.applied).toBe(true)
+    expect(pricing.totalDue).toBe(12600 + 5800)
+  })
+
+  it('leaves the paid ticket price of the RANKED bib untouched (refund is built from both amounts)', () => {
+    const pricing = price(
+      order({ tickets: withCompanion, participants: [{ ticketId: 'ranked', flexible: true, companion: true }] }),
+    )
+    expect(pricing.participants[0]?.paidPriceCents).toBe(7000)
+    expect(pricing.totalDue).toBe(7000 + 2900 + 890)
+  })
+
+  it('refuses the option on a ticket that has none', () => {
+    const result = computeOrderPricing(
+      order({ participants: [{ ticketId: 'ranked', flexible: false, companion: true }] }),
+    )
+    expect(result).toEqual({ ok: false, error: { kind: 'COMPANION_UNAVAILABLE', ticketId: 'ranked', ticketName: 'Ultra Arena RANKED' } })
   })
 })
 

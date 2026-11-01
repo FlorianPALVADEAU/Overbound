@@ -15,6 +15,7 @@ export const OPEN_FORMAT_RULES = {
   lastSasDeparture: '15h50',
   sasIntervalMinutes: 10,
   windowHours: 7,
+  failedObstacleBurpees: 10,
   lastLapStart: '18h45',
   courseClosing: '19h00',
 } as const

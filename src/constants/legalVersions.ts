@@ -7,4 +7,4 @@
  * src/app/cgv/page.tsx changes in substance: it is stamped on every order so the
  * terms accepted by a buyer can be proven.
  */
-export const CGV_VERSION = '2026-10-27'
+export const CGV_VERSION = '2026-10-31'

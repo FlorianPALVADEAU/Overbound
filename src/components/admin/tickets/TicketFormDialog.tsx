@@ -14,10 +14,14 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Clock } from 'lucide-react'
 import type { Event } from '@/types/Event'
 import type { Race } from '@/types/Race'
 import type { Ticket, TicketDepartureChangePolicy, TicketDepartureMode } from '@/types/Ticket'
+import { emptyCompanionForm, type CompanionFormValues } from '@/lib/tickets/openCompanionAdmin'
+import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 
 export interface TicketFormValues {
   event_id: string
@@ -32,6 +36,7 @@ export interface TicketFormValues {
   departure_mode: TicketDepartureMode
   departure_change_policy: TicketDepartureChangePolicy
   fixed_start_time: string
+  companion: CompanionFormValues
 }
 
 interface TicketFormDialogProps {
@@ -40,7 +45,13 @@ interface TicketFormDialogProps {
   events: Event[]
   races: Race[]
   initialValues: TicketFormValues
+  /** Ticket being edited, left out of the OPEN ticket choices. */
+  editingTicketId?: string
+  /** Every ticket, to pick the OPEN ticket of the option among those of the chosen event. */
+  tickets?: Ticket[]
   loading?: boolean
+  /** Why the last save failed. Shown inside the dialog: the page behind it is covered by the overlay. */
+  error?: string | null
   onOpenChange: (open: boolean) => void
   onSubmit: (values: TicketFormValues) => void
 }
@@ -58,6 +69,7 @@ const DEFAULT_VALUES: TicketFormValues = {
   departure_mode: 'none',
   departure_change_policy: 'preserve',
   fixed_start_time: '',
+  companion: emptyCompanionForm(),
 }
 
 export function TicketFormDialog({
@@ -66,7 +78,10 @@ export function TicketFormDialog({
   events,
   races,
   initialValues,
+  editingTicketId,
+  tickets = [],
   loading,
+  error,
   onOpenChange,
   onSubmit,
 }: TicketFormDialogProps) {
@@ -89,6 +104,16 @@ export function TicketFormDialog({
   const handleChange = (field: keyof TicketFormValues, value: TicketFormValues[keyof TicketFormValues]) => {
     setValues((prev) => ({ ...prev, [field]: value as any }))
   }
+
+  const handleCompanionChange = (patch: Partial<CompanionFormValues>) => {
+    setValues((prev) => ({ ...prev, companion: { ...prev.companion, ...patch } }))
+  }
+
+  // The option is issued on a SAS ticket of the same event, and carried by a single-start ticket.
+  const openTicketChoices = tickets.filter(
+    (ticket) => ticket.event_id === values.event_id && ticket.id !== editingTicketId && ticketUsesWaveSelection(ticket),
+  )
+  const canCarryCompanion = values.departure_mode !== 'wave'
 
   const handleSubmit = () => {
     onSubmit({
@@ -245,8 +270,95 @@ export function TicketFormDialog({
                 </p>
               </div>
             ) : null}
+            {canCarryCompanion ? (
+              <div className="space-y-3 border-t pt-4">
+                <Label htmlFor="ticket-companion" className="flex cursor-pointer items-start gap-3 font-normal">
+                  <Checkbox
+                    id="ticket-companion"
+                    checked={values.companion.enabled}
+                    onCheckedChange={(checked) => handleCompanionChange({ enabled: checked === true })}
+                    className="mt-0.5"
+                  />
+                  <span className="block space-y-1">
+                    <span className="block text-sm font-semibold">Option OPEN</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Propose, pour un prix fixe, un second dossard sur un billet OPEN de l’événement. Chaque participant choisit
+                      son SAS OPEN au moment où il coche l’option.
+                    </span>
+                  </span>
+                </Label>
+                {values.companion.enabled ? (
+                  <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Billet OPEN de l’option *</Label>
+                      <Select
+                        value={values.companion.openTicketId}
+                        onValueChange={(value) => handleCompanionChange({ openTicketId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={values.event_id ? 'Choisis le billet OPEN' : 'Choisis d’abord un événement'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {openTicketChoices.map((ticket) => (
+                            <SelectItem key={ticket.id} value={ticket.id}>
+                              {ticket.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {values.event_id && openTicketChoices.length === 0 ? (
+                        <p className="text-xs text-destructive">
+                          Aucun billet en départ par SAS pour cet événement. Crée d’abord le billet OPEN.
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ticket-companion-price">Prix de l’option (centimes) *</Label>
+                      <Input
+                        id="ticket-companion-price"
+                        type="number"
+                        min="1"
+                        value={values.companion.priceCents}
+                        onChange={(event) => handleCompanionChange({ priceCents: event.target.value })}
+                        placeholder="2900 = 29€"
+                      />
+                      <p className="text-xs text-muted-foreground">Prix fixe, jamais remisé, hors codes promo et paliers.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ticket-companion-duration">Durée maximale du RANKED (minutes) *</Label>
+                      <Input
+                        id="ticket-companion-duration"
+                        type="number"
+                        min="1"
+                        value={values.companion.rankedMaxDurationMinutes}
+                        onChange={(event) => handleCompanionChange({ rankedMaxDurationMinutes: event.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ticket-companion-gap">Délai de récupération (minutes) *</Label>
+                      <Input
+                        id="ticket-companion-gap"
+                        type="number"
+                        min="0"
+                        value={values.companion.minGapMinutes}
+                        onChange={(event) => handleCompanionChange({ minGapMinutes: event.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Premier SAS OPEN autorisé = départ du RANKED + durée maximale + délai.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
+
+        {error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>

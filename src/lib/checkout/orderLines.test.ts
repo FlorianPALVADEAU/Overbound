@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeOrderPricing, toPricingSummary } from '@/lib/orderPricing'
-import { order, participantsOn, percentCode, tier } from '@/lib/orderPricing/testFixtures'
+import { openTicket, order, participantsOn, percentCode, rankedTicket, tier } from '@/lib/orderPricing/testFixtures'
 import { summarizeUpsells } from '@/lib/upsells/summary'
 import { buildOrderLines, type OrderLineNames } from './orderLines'
 
@@ -92,6 +92,24 @@ describe('buildOrderLines', () => {
       details: ['Non cumulable : plus avantageux que la remise groupe'],
       amountCents: -3000,
     })
+  })
+})
+
+describe('buildOrderLines — OPEN companion', () => {
+  const tickets = [openTicket(), rankedTicket({ companionPriceCents: 2900 })]
+
+  it('lists the companion on its own line and still adds up to the total', () => {
+    const { summary, lines } = linesFor({
+      tickets,
+      participants: [{ ticketId: 'ranked', flexible: true, companion: true }],
+    })
+    expect(lines.find((line) => line.kind === 'companion')).toMatchObject({ label: 'Option OPEN', amountCents: 2900 })
+    expect(lines.reduce((total, line) => total + line.amountCents, 0)).toBe(summary.totalDue)
+  })
+
+  it('shows no companion line when nobody took the option', () => {
+    const { lines } = linesFor({ tickets, participants: participantsOn('ranked') })
+    expect(lines.some((line) => line.kind === 'companion')).toBe(false)
   })
 })
 

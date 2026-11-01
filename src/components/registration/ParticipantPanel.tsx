@@ -4,6 +4,7 @@ import { joinName } from '@/lib/registration'
 import { cn } from '@/lib/utils'
 import ParticipantForm from './ParticipantForm'
 import type { ParticipantErrors } from '@/lib/checkout/checkoutValidation'
+import type { CompanionOffer } from '@/lib/tickets/openCompanion'
 import type { EventTicket, Participant } from './types'
 
 interface ParticipantPanelProps {
@@ -15,6 +16,11 @@ interface ParticipantPanelProps {
   onWaveSelect: (participantId: string, waveIndex: number | null) => void
   errors: ParticipantErrors
   groupAnchor: { waveIndex: number; startTime: string } | null
+  companionOffer: CompanionOffer | null
+  currency: string
+  tshirtOffered: boolean
+  onCompanionToggle: (participantId: string, enabled: boolean) => void
+  onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
   /** False for a lone participant: the form is simply shown. */
   collapsible: boolean
   open: boolean

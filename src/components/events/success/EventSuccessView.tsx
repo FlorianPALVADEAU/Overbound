@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Clock, Download, Mail, MapPin, QrCode, Trophy, Users } from 'lucide-react'
+import { Calendar, Clock, Download, Mail, MapPin, QrCode, Shirt, Trophy, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,6 +34,8 @@ interface EventSuccessViewProps {
   /** Every registration of the order (a group purchase can hold many). */
   registrations: SuccessOrderRegistration[]
   eventSlug: string
+  /** Free T-shirts won by this order. */
+  tshirtWinners?: number
   hasFirstName: boolean
   /** Dev preview only. */
   preview?: boolean
@@ -62,6 +64,7 @@ export function EventSuccessView({
   registration,
   registrations,
   eventSlug,
+  tshirtWinners = 0,
   hasFirstName,
   preview = false,
 }: EventSuccessViewProps) {
@@ -88,6 +91,13 @@ export function EventSuccessView({
             </Badge>
           </div>
         </div>
+
+        {tshirtWinners > 0 ? (
+          <p className="mb-10 flex items-center justify-center gap-2 text-center text-sm font-semibold">
+            <Shirt aria-hidden className="size-4 shrink-0 text-primary" />
+            {tshirtWinners > 1 ? `${tshirtWinners} T-shirts offerts` : 'T-shirt offert'} : à retirer avec ton dossard.
+          </p>
+        ) : null}
 
         <div className="mb-12">
           <PurchaseCelebration

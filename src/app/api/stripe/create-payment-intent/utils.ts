@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { NextResponse } from 'next/server'
 import type { PricingSupabase } from '@/lib/orderPricing/server'
 import type { UpsellType } from '@/types/Upsell'
+import type { CompanionWaveRow } from '@/lib/checkout/companionEligibility'
 
 export const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-08-27.basil',
@@ -63,6 +64,22 @@ export const fetchUpsellsForEvent = async (supabase: PricingSupabase, eventId: s
     .or(`event_id.eq.${eventId},event_id.is.null`)
   if (error) throw error
   return (data ?? []) as OrderUpsellRow[]
+}
+
+/** SAS of the event's OPEN tickets, to check a companion bib's departure before payment. */
+export const fetchCompanionWaves = async (
+  supabase: PricingSupabase,
+  eventId: string,
+  openTicketIds: string[],
+): Promise<CompanionWaveRow[]> => {
+  if (openTicketIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('event_waves')
+    .select('ticket_id, wave_index, start_time, capacity, assigned_count, is_closed')
+    .eq('event_id', eventId)
+    .in('ticket_id', openTicketIds)
+  if (error) throw error
+  return (data ?? []) as CompanionWaveRow[]
 }
 
 export const countActiveRegistrations = async (supabase: PricingSupabase, eventId: string) => {

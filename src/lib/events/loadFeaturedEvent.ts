@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { selectFeaturedEvent } from '@/lib/events/featuredEvent'
+import { loadTshirtOffer } from '@/lib/tshirtOfferServer'
 import { getEffectiveEventStatus } from '@/lib/events/registrationStatus'
 import type { FeaturedEventResponse } from '@/app/api/events/featured/featuredEventQueries'
 
@@ -45,5 +46,5 @@ export async function loadFeaturedEvent(): Promise<FeaturedEventResponse> {
 
   const availableSpots = Math.max((featured.capacity || 0) - (totalRegistrations || 0), 0)
 
-  return { event: featured, availableSpots }
+  return { event: featured, availableSpots, tshirtOffer: await loadTshirtOffer(supabase, featured) }
 }

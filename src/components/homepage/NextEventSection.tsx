@@ -9,6 +9,7 @@ import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { useParallax } from '@/hooks/useParallax'
 import { Container, DISPLAY_TITLE, Eyebrow, Pill, Section } from '@/components/ds'
 import { cn } from '@/lib/utils'
+import { tshirtHeadline } from '@/lib/tshirtOffer'
 
 export function NextEventSection() {
   const { data, isLoading } = useFeaturedEvent()
@@ -55,6 +56,11 @@ export function NextEventSection() {
           {facts.priceLabel ? (
             <Pill variant="tag" className="py-2 text-sm normal-case">
               {facts.priceLabel}
+            </Pill>
+          ) : null}
+          {isOnSale && data?.tshirtOffer && tshirtHeadline(data.tshirtOffer) ? (
+            <Pill variant="tag" className="py-2">
+              {tshirtHeadline(data.tshirtOffer)}
             </Pill>
           ) : null}
           {typeof data?.availableSpots === "number" ? (

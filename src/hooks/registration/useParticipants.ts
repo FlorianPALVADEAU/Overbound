@@ -18,6 +18,8 @@ const emptyParticipant = (position: number, ticketId: string, buyer: EventUser |
     healthDataConsent: false,
     flexible: false,
     selectedWaveIndex: null,
+    companion: false,
+    companionWaveIndex: null,
   }
 }
 
@@ -41,8 +43,10 @@ export function useParticipants(
       // Bibs follow the ticket slots one by one: keep who is typed, re-attach them to their slot, add blanks.
       const kept = previous.slice(0, selectedTicketSlots.length).map((participant, index) => {
         const ticketId = selectedTicketSlots[index] as string
-        // SAS belong to a ticket: a bib that changes ticket must pick its SAS again.
-        return ticketId === participant.ticketId ? participant : { ...participant, ticketId, selectedWaveIndex: null }
+        // SAS belong to a ticket, and so does the OPEN option: a bib that changes ticket starts those over.
+        return ticketId === participant.ticketId
+          ? participant
+          : { ...participant, ticketId, selectedWaveIndex: null, companion: false, companionWaveIndex: null }
       })
       const added = selectedTicketSlots
         .slice(kept.length)
@@ -89,5 +93,24 @@ export function useParticipants(
     )
   }, [])
 
-  return { participants, setParticipants, handleParticipantChange, handleWaveSelection }
+  const handleCompanionToggle = useCallback((participantId: string, enabled: boolean) => {
+    setParticipants((prev) =>
+      prev.map((p) =>
+        p.id === participantId ? { ...p, companion: enabled, companionWaveIndex: enabled ? p.companionWaveIndex ?? null : null } : p,
+      ),
+    )
+  }, [])
+
+  const handleCompanionWaveSelection = useCallback((participantId: string, waveIndex: number | null) => {
+    setParticipants((prev) => prev.map((p) => (p.id === participantId ? { ...p, companionWaveIndex: waveIndex } : p)))
+  }, [])
+
+  return {
+    participants,
+    setParticipants,
+    handleParticipantChange,
+    handleWaveSelection,
+    handleCompanionToggle,
+    handleCompanionWaveSelection,
+  }
 }

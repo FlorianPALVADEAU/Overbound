@@ -5,6 +5,7 @@ import { buildCheckoutPricingInput, type CheckoutPricingState } from './pricingI
 const state = (overrides: Partial<CheckoutPricingState> = {}): CheckoutPricingState => ({
   ticketSlots: ['open', 'open'],
   flexibleBySlot: [true],
+  companionBySlot: [],
   tickets: [{ id: 'open', name: 'Primal OPEN', final_price_cents: 5000 }],
   tiers: [],
   tierRegistrationCounts: {},
@@ -25,5 +26,31 @@ describe('buildCheckoutPricingInput', () => {
   it('treats a slot without participant yet as not flexible', () => {
     const input = buildCheckoutPricingInput(state({ flexibleBySlot: [] }))
     expect(input.participants.every((participant) => !participant.flexible)).toBe(true)
+  })
+
+  it('adds the OPEN companion of a RANKED bib, priced from the ticket contract, with a slot not yet filled left out', () => {
+    const rankedWithOption = {
+      id: 'ranked',
+      name: 'Fury RANKED',
+      final_price_cents: 7000,
+      operations_config: {
+        open_companion: { ticket_id: 'open', price_cents: 2900, ranked_max_duration_minutes: 230, min_gap_minutes: 20 },
+      },
+    }
+    const input = buildCheckoutPricingInput(
+      state({
+        ticketSlots: ['ranked', 'ranked'],
+        flexibleBySlot: [],
+        companionBySlot: [true],
+        tickets: [rankedWithOption],
+        upsells: [],
+        selectedUpsells: {},
+        appliedPromos: [],
+      }),
+    )
+    expect(input.participants.map((participant) => participant.companion)).toEqual([true, false])
+    const result = computeOrderPricing(input)
+    if (!result.ok) throw new Error('priced order expected')
+    expect(result.value.companionTotal).toBe(2900)
   })
 })

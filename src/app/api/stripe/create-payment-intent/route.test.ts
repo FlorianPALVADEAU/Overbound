@@ -36,7 +36,7 @@ const ticket = (id: string, name: string, price: number) => ({
   name,
   final_price_cents: price,
   currency: 'eur',
-  operations_config: null,
+  operations_config: null as Record<string, unknown> | null,
   race: null,
   event: EVENT,
 })
@@ -66,6 +66,7 @@ interface Database {
   tierCounts: Array<{ event_price_tier_id: string | null }>
   groups: Array<{ id: string; anchor_event_id: string; anchor_wave_index: number }>
   groupMembers: Array<{ group_id: string; profile_id: string }>
+  waves: Array<Record<string, unknown>>
 }
 
 /** A Supabase client stand-in: every query resolves to the rows of its table. */
@@ -87,6 +88,7 @@ const fakeSupabase = (db: Database, { denyRegistrations = false, denyPromos = fa
       if (table === 'group_members') {
         return { data: db.groupMembers.find((m) => m.group_id === byGroup && m.profile_id === byProfile) ?? null, error: null }
       }
+      if (table === 'event_waves') return { data: db.waves, error: null }
       if (table === 'groups') return { data: db.groups.find((g) => g.id === byId) ?? null, error: null }
       if (table === 'registrations') {
         if (denyRegistrations) return { data: null, count: null, error: { code: '42501', message: 'permission denied for table registrations' } }
@@ -128,6 +130,7 @@ const defaultDb = (): Database => ({
   tierCounts: [],
   groups: [],
   groupMembers: [],
+  waves: [],
 })
 
 const adult = (ticketId: string, selectedWaveIndex: number | null = null, flexible = false) => ({
@@ -279,5 +282,81 @@ describe('POST /api/stripe/create-payment-intent', () => {
     db.registrationCount = 999
     const response = await post(body())
     expect(response.status).toBe(409)
+  })
+
+  describe('open companion', () => {
+    const COMPANION_CONFIG = {
+      open_companion: { ticket_id: 'open', price_cents: 2900, ranked_max_duration_minutes: 230, min_gap_minutes: 20 },
+    }
+    const withCompanionRanked = () => {
+      db.tickets = [ticket('open', 'Primal OPEN', 5000), { ...ticket('ranked', 'Fury RANKED', 7000), operations_config: COMPANION_CONFIG }]
+    }
+    // Event day 2027-09-12: RANKED 8h00 Paris = 06:00Z, first allowed OPEN start 12h10 Paris = 10:10Z.
+    const wave = (overrides: Record<string, unknown> = {}) => ({
+      ticket_id: 'open',
+      wave_index: 5,
+      start_time: '2027-09-12T11:00:00.000Z',
+      capacity: 50,
+      assigned_count: 10,
+      is_closed: false,
+      ...overrides,
+    })
+    const rankedWithCompanion = (companionWaveIndex: number | null = 5) => ({
+      ...adult('ranked'),
+      companionWaveIndex,
+    })
+    const companionOrder = (participant = rankedWithCompanion()) =>
+      body({ ticketSelections: [{ ticketId: 'ranked', quantity: 1 }], participants: [participant] })
+
+    it('charges the companion on top of the RANKED ticket and records its SAS and price', async () => {
+      withCompanionRanked()
+      db.waves = [wave()]
+      const response = await post(companionOrder())
+      expect(response.status).toBe(200)
+      expect(chargedMetadata()).toMatchObject({
+        amount: 9900,
+        metadata: { companion_participants: '0', companion_waves: '5', companion_prices: '2900', ticket_prices: '7000' },
+      })
+    })
+
+    it('refuses a SAS that starts before the RANKED can be finished and rested from', async () => {
+      withCompanionRanked()
+      db.waves = [wave({ start_time: '2027-09-12T10:00:00.000Z' })]
+      const response = await post(companionOrder())
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('Trop tôt')
+      expect(paymentIntentsCreateMock).not.toHaveBeenCalled()
+    })
+
+    it('refuses a full SAS', async () => {
+      withCompanionRanked()
+      db.waves = [wave({ assigned_count: 50 })]
+      const response = await post(companionOrder())
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('complet')
+    })
+
+    it('refuses the option on a ticket that does not offer it', async () => {
+      db.waves = [wave()]
+      const response = await post(companionOrder())
+      expect(response.status).toBe(422)
+      expect(paymentIntentsCreateMock).not.toHaveBeenCalled()
+    })
+
+    it('counts the companion bib as a spot of the event', async () => {
+      withCompanionRanked()
+      db.waves = [wave()]
+      db.registrationCount = 999
+      const response = await post(companionOrder())
+      expect(response.status).toBe(409)
+    })
+
+    it('does not discount the companion with a code', async () => {
+      withCompanionRanked()
+      db.waves = [wave()]
+      db.promos = [promoRow('HALF', { discount_percent: 50 })]
+      await post({ ...companionOrder(), promoCodes: ['HALF'] })
+      expect(chargedMetadata()).toMatchObject({ amount: 3500 + 2900, metadata: { companion_prices: '2900' } })
+    })
   })
 })

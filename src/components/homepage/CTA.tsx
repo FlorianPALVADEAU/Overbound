@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Button } from '../ui/button'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 import { getNextPriceChange } from '@/lib/pricing'
-import { Container, DISPLAY_TITLE, Section } from '@/components/ds'
+import { tshirtHeadline } from '@/lib/tshirtOffer'
+import { Container, DISPLAY_TITLE, Pill, Section } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
 const CTA = () => {
@@ -50,6 +51,9 @@ const CTA = () => {
               ? `Le tarif change le ${nextChangeDate}. Réserve ta place avant.`
               : "Rejoins la tribu Overbound et repousse tes limites."}
           </p>
+          {data?.tshirtOffer && tshirtHeadline(data.tshirtOffer) ? (
+            <Pill variant="tag">{tshirtHeadline(data.tshirtOffer)}</Pill>
+          ) : null}
         </div>
         <Button asChild size="hero" className="w-full sm:w-auto">
           <Link href={registerHref}>Je m&apos;inscris maintenant</Link>

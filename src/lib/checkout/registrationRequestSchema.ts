@@ -15,6 +15,7 @@ export const registrationParticipantSchema = z.object({
   medicalInfo: z.string().optional(),
   healthDataConsent: z.boolean().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
+  tshirtSize: z.string().optional(),
 })
 
 export const createRegistrationRequestSchema = z.object({

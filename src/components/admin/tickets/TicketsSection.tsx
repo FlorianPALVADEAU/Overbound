@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import type { Ticket } from '@/types/Ticket'
+import { companionConfigFromForm, companionFormFromConfig, emptyCompanionForm } from '@/lib/tickets/openCompanionAdmin'
+import { parseOpenCompanionConfig } from '@/lib/tickets/openCompanion'
 import { TicketFormDialog, type TicketFormValues } from './TicketFormDialog'
 import { EventWavesSection } from '@/components/admin/events/EventOpenWavesSection'
 import {
@@ -24,6 +26,7 @@ import {
   createAdminTicket,
   deleteAdminTicket,
   updateAdminTicket,
+  useAdminTickets,
   useAdminTicketsPage,
   type AdminTicketPayload,
 } from '@/app/api/admin/tickets/ticketsQueries'
@@ -66,6 +69,7 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
       departure_mode: 'none',
       departure_change_policy: 'preserve',
       fixed_start_time: '',
+      companion: emptyCompanionForm(),
     }
   }
 
@@ -82,6 +86,7 @@ function buildFormValues(ticket?: Ticket): TicketFormValues {
     departure_mode: ticket.operations_config?.departure_mode ?? 'none',
     departure_change_policy: ticket.operations_config?.departure_change_policy ?? 'preserve',
     fixed_start_time: toLocalDateTimeInput(ticket.operations_config?.fixed_start_time),
+    companion: companionFormFromConfig(ticket.operations_config),
   }
 }
 
@@ -93,6 +98,21 @@ const formatPrice = (cents: number | null | undefined, currency?: string | null)
     style: 'currency',
     currency: (currency || 'EUR').toUpperCase(),
   })
+}
+
+/** Shows the "Option OPEN" of a ticket, so a missing or broken one is visible in the list. */
+function CompanionBadge({ ticket, tickets }: { ticket: Ticket; tickets: Ticket[] }) {
+  const companion = parseOpenCompanionConfig(ticket.operations_config)
+  if (!companion) return null
+  const target = tickets.find((candidate) => candidate.id === companion.openTicketId)
+  if (!target) {
+    return <span className="text-xs text-destructive">Option OPEN : billet OPEN introuvable</span>
+  }
+  return (
+    <span className="text-xs text-primary">
+      Option OPEN {formatPrice(companion.priceCents, ticket.currency)} : {target.name}
+    </span>
+  )
 }
 
 const TICKET_SORTS = new Set(['created_at', 'name', 'final_price_cents'])
@@ -155,6 +175,8 @@ export function TicketsSection() {
     refetch: refetchTickets,
   } = useAdminTicketsPage({ cursor, limit, query: deferredSearch || undefined, eventId: activeEventFilter, sort, direction })
   const tickets = ticketsPage?.tickets ?? []
+  // Whole catalogue, not the visible page: the OPEN ticket of an option may sit on another page.
+  const { data: allTickets = [] } = useAdminTickets()
   const combinedLoading = ticketsLoading || eventsLoading || racesLoading
   const combinedError = ticketsError || eventsError || racesError
 
@@ -204,6 +226,7 @@ export function TicketsSection() {
   }, [scopedEventId, searchParams])
 
   const handleCreateClick = () => {
+    setMessage(null)
     setDialogMode('create')
     setSelectedTicket(null)
     setFormValues(buildFormValues())
@@ -211,6 +234,7 @@ export function TicketsSection() {
   }
 
   const handleEdit = (ticket: Ticket) => {
+    setMessage(null)
     setDialogMode('edit')
     setSelectedTicket(ticket)
     setFormValues(buildFormValues(ticket))
@@ -274,6 +298,15 @@ export function TicketsSection() {
       return
     }
 
+    // A SAS ticket is the target of an option, never its carrier.
+    const companion = companionConfigFromForm(
+      values.departure_mode === 'wave' ? { ...values.companion, enabled: false } : values.companion,
+    )
+    if (!companion.ok) {
+      setMessage({ type: 'error', text: companion.error })
+      return
+    }
+
     setSubmitting(true)
     setMessage(null)
 
@@ -294,6 +327,7 @@ export function TicketsSection() {
         fixed_start_time: values.departure_mode === 'fixed' && values.fixed_start_time
           ? new Date(values.fixed_start_time).toISOString()
           : null,
+        ...(companion.config ? { open_companion: companion.config } : {}),
       },
     }
 
@@ -387,6 +421,7 @@ export function TicketsSection() {
             <span className="text-xs text-muted-foreground">
               Max {ticket.max_participants || '∞'} participant{ticket.max_participants > 1 ? 's' : ''}
             </span>
+            <CompanionBadge ticket={ticket} tickets={allTickets} />
           </div>
         ),
       },
@@ -482,8 +517,11 @@ export function TicketsSection() {
         mode={dialogMode}
         initialValues={formValues}
         loading={submitting}
+        error={dialogOpen && message?.type === 'error' ? message.text : null}
         events={events}
         races={races}
+        tickets={allTickets}
+        editingTicketId={selectedTicket?.id}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
       />

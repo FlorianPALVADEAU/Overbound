@@ -14,7 +14,7 @@ import {
   OPEN_JOURNEY,
   RANKED_JOURNEY,
 } from '@/components/events/formats/content'
-import { SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
+import { OPEN_FORMAT_RULES, SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
 import { formatPrice, getCurrentTicketPrice } from '@/lib/pricing'
@@ -54,7 +54,7 @@ export default function FormatsPage() {
         title="OPEN ou RANKED : même parcours, deux façons de courir"
         description={
           <>
-            <p>OPEN : ton rythme, jusqu&apos;à 7 h, sans pénalité. RANKED : départ à 8h00, le dernier debout gagne.</p>
+            <p>OPEN : ton rythme, jusqu&apos;à 7 h, 10 burpees par obstacle raté. RANKED : départ à 8h00, le dernier debout gagne.</p>
             <ul className="flex flex-wrap justify-center gap-2 lg:justify-start">
               {HERO_FACTS.map((fact) => (
                 <li

@@ -9,6 +9,9 @@ export const runtime = 'nodejs'
  * The choice is free — it depends on no other field. This list is a UX
  * convenience; the real check happens again server-side at registration
  * creation (assign_selected_wave_to_registration).
+ *
+ * `includeFull=true` also lists the full slots (with their capacity), for the OPEN
+ * companion picker, which shows them greyed instead of hiding them.
  */
 export async function GET(
   request: Request,
@@ -17,6 +20,7 @@ export async function GET(
   const { id } = await params
   const url = new URL(request.url)
   const ticketId = z.string().uuid().safeParse(url.searchParams.get('ticketId'))
+  const includeFull = url.searchParams.get('includeFull') === 'true'
 
   if (!ticketId.success) {
     return NextResponse.json({ error: 'Billet invalide.' }, { status: 400 })
@@ -62,11 +66,12 @@ export async function GET(
   }
 
   const selectable = (waves ?? [])
-    .filter((wave) => (wave.assigned_count ?? 0) < (wave.capacity ?? 0))
+    .filter((wave) => includeFull || (wave.assigned_count ?? 0) < (wave.capacity ?? 0))
     .map((wave) => ({
       wave_index: wave.wave_index,
       start_time: wave.start_time,
       remaining: Math.max((wave.capacity ?? 0) - (wave.assigned_count ?? 0), 0),
+      capacity: wave.capacity ?? 0,
     }))
 
   return NextResponse.json({ waves: selectable })

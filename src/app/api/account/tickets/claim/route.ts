@@ -166,6 +166,18 @@ const handlePost = async (request: NextRequest) => {
       )
     }
 
+    // The OPEN companion bib follows its RANKED bib to the new holder (it cannot be transferred alone).
+    const { data: companionRows, error: companionsError } = await admin
+      .from('registrations')
+      .select('id, user_id, email, qr_code_token, claim_status, is_affiliated, guarantor_user_id, flexible_refund')
+      .eq('companion_of', registration.id)
+      .is('cancelled_at', null)
+    if (companionsError) {
+      console.error('[claim] companion lookup error', companionsError)
+      return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 })
+    }
+    const companions = companionRows ?? []
+
     // Matching on the token makes the hand-over atomic: only one concurrent claimant can win.
     const { data: transferred, error: updateError } = await admin
       .from('registrations')
@@ -189,23 +201,8 @@ const handlePost = async (request: NextRequest) => {
       return NextResponse.json({ error: 'Ce lien a déjà été utilisé.' }, { status: 409 })
     }
 
-    // The buyer's waiver does not cover the new holder: store a fresh one. If that fails, give the bib back.
-    const now = new Date()
-    const document = fingerprintWaiver()
-    const { error: signatureError } = await admin.from('registration_signatures').insert(
-      buildTransferSignatureRecord(submission, {
-        registrationId: registration.id,
-        signerUserId: user.id,
-        signerEmail: user.email,
-        previousHolderId: registration.user_id,
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
-        userAgent: request.headers.get('user-agent'),
-        now,
-        document,
-      }),
-    )
-    if (signatureError) {
-      console.error('[claim] signature insert error', signatureError)
+    // Gives every bib of the hand-over back to the previous holder, the RANKED one with its transfer link.
+    const giveBack = async () => {
       await admin
         .from('registrations')
         .update({
@@ -218,6 +215,62 @@ const handlePost = async (request: NextRequest) => {
           guarantor_user_id: registration.guarantor_user_id,
         })
         .eq('id', registration.id)
+      for (const companion of companions) {
+        await admin
+          .from('registrations')
+          .update({
+            user_id: companion.user_id,
+            email: companion.email,
+            qr_code_token: companion.qr_code_token,
+            claim_status: companion.claim_status,
+            is_affiliated: companion.is_affiliated,
+            guarantor_user_id: companion.guarantor_user_id,
+            flexible_refund: companion.flexible_refund,
+          })
+          .eq('id', companion.id)
+      }
+    }
+
+    for (const companion of companions) {
+      const { error: companionUpdateError } = await admin
+        .from('registrations')
+        .update(
+          buildHandOverUpdate({
+            newHolderId: user.id,
+            newHolderEmail: user.email,
+            previousHolderId: registration.user_id,
+            newQrToken: randomUUID(),
+          }),
+        )
+        .eq('id', companion.id)
+      if (companionUpdateError) {
+        console.error('[claim] companion update error', companionUpdateError)
+        await giveBack()
+        return NextResponse.json({ error: 'Impossible de transférer ce billet.' }, { status: 500 })
+      }
+    }
+
+    // The buyer's waiver does not cover the new holder: store a fresh one per bib. If that fails, give the bibs back.
+    const now = new Date()
+    const document = fingerprintWaiver()
+    const handedOverIds = [registration.id, ...companions.map((companion) => companion.id)]
+    const { error: signatureError } = await admin.from('registration_signatures').insert(
+      handedOverIds.map((registrationId) =>
+        buildTransferSignatureRecord(submission, {
+          registrationId,
+          signerUserId: user.id,
+          signerEmail: user.email,
+          previousHolderId: registration.user_id,
+          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+          userAgent: request.headers.get('user-agent'),
+          now,
+          document,
+        }),
+      ),
+    )
+    if (signatureError) {
+      console.error('[claim] signature insert error', signatureError)
+      await giveBack()
       return NextResponse.json({ error: 'Impossible d’enregistrer ta signature. Réessaie.' }, { status: 500 })
     }
 
@@ -225,9 +278,11 @@ const handlePost = async (request: NextRequest) => {
       console.error('[claim] could not mark transfer as claimed', consumeError)
     })
 
-    await redactFormerHolderWaiver(admin, registration.id, now).catch((redactError) => {
-      console.error('[claim] could not redact the former holder safety data', redactError)
-    })
+    for (const handedOverId of handedOverIds) {
+      await redactFormerHolderWaiver(admin, handedOverId, now).catch((redactError) => {
+        console.error('[claim] could not redact the former holder safety data', redactError)
+      })
+    }
 
     await notifyTransferParties({
       admin,

@@ -17,6 +17,8 @@ export interface PricingTicket {
   finalPriceCents: number | null
   /** Resolved by the caller with `isOpenFormatTicket`, never guessed here. */
   isOpenFormat: boolean
+  /** Fixed price of the OPEN companion bib sold with this ticket. Null: the ticket has no such option. */
+  companionPriceCents?: number | null
 }
 
 export interface PricingTier {
@@ -45,6 +47,8 @@ export interface PricingPromo {
 export interface PricingParticipantInput {
   ticketId: string
   flexible: boolean
+  /** Adds the OPEN companion bib (a second bib, priced apart from the ticket and never discounted). */
+  companion?: boolean
 }
 
 export interface UpsellLineInput {
@@ -75,6 +79,8 @@ export interface PricedParticipant {
   /** What this bib really costs once ticket promo codes are spread over the order. */
   paidPriceCents: number
   flexible: boolean
+  /** Price of this participant's OPEN companion bib; 0 when they have none. */
+  companionPriceCents: number
 }
 
 export type DiscountTarget = { kind: 'tickets' } | { kind: 'upsell'; upsellId: string }
@@ -123,6 +129,7 @@ export interface OrderPricing {
   upsellSubtotal: number
   upsellSubtotalsById: Record<string, number>
   flexibleTotal: number
+  companionTotal: number
   discounts: AppliedDiscount[]
   ticketDiscountAmount: number
   upsellDiscountAmount: number
@@ -136,3 +143,4 @@ export type PricingError =
   | { kind: 'UNKNOWN_TICKET'; ticketId: string }
   | { kind: 'TICKET_PRICE_MISSING'; ticketId: string; ticketName: string }
   | { kind: 'TIERS_SOLD_OUT' }
+  | { kind: 'COMPANION_UNAVAILABLE'; ticketId: string; ticketName: string }

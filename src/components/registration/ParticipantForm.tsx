@@ -1,3 +1,5 @@
+import { Shirt } from 'lucide-react'
+import { TSHIRT_SIZES } from '@/lib/tshirtOffer'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +14,8 @@ import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWa
 import { RANKED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import { participantFieldId, type ParticipantField } from '@/lib/checkout/fieldIds'
 import type { ParticipantErrors } from '@/lib/checkout/checkoutValidation'
+import type { CompanionOffer } from '@/lib/tickets/openCompanion'
+import CompanionOption from './CompanionOption'
 import type { EventTicket, Participant } from './types'
 
 interface ParticipantFormProps {
@@ -23,6 +27,13 @@ interface ParticipantFormProps {
   /** Shown only once the visitor has tried to pay. */
   errors: ParticipantErrors
   groupAnchor: { waveIndex: number; startTime: string } | null
+  /** The OPEN option of this participant's ticket; null when the ticket has none. */
+  companionOffer: CompanionOffer | null
+  currency: string
+  /** The free T-shirt offer still covers this participant. */
+  tshirtOffered: boolean
+  onCompanionToggle: (participantId: string, enabled: boolean) => void
+  onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
 }
 
 export default function ParticipantForm({
@@ -33,6 +44,11 @@ export default function ParticipantForm({
   onWaveSelect,
   errors,
   groupAnchor,
+  companionOffer,
+  currency,
+  tshirtOffered,
+  onCompanionToggle,
+  onCompanionWaveSelect,
 }: ParticipantFormProps) {
   const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
   const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
@@ -147,6 +163,48 @@ export default function ParticipantForm({
         ) : null}
         {isRankedFormat ? (
           <p className="text-sm text-muted-foreground">Format RANKED : départ unique à {RANKED_FORMAT_RULES.departure}, rien à choisir.</p>
+        ) : null}
+        {companionOffer ? (
+          <CompanionOption
+            eventId={eventId}
+            participant={participant}
+            offer={companionOffer}
+            currency={currency}
+            onToggle={onCompanionToggle}
+            onWaveSelect={onCompanionWaveSelect}
+            error={errors.companionWave}
+          />
+        ) : null}
+
+        {tshirtOffered ? (
+          <div className="space-y-4">
+            <h3 className="text-eyebrow font-semibold uppercase text-subtle">T-shirt offert</h3>
+            <div className="space-y-2">
+              <Label htmlFor={idOf('tshirtSize')}>
+                <Shirt aria-hidden className="size-4 text-primary" />
+                Taille <span className="text-destructive" aria-hidden>*</span>
+              </Label>
+              <Select value={participant.tshirtSize ?? ''} onValueChange={(value) => onFieldChange(participant.id, 'tshirtSize', value)}>
+                <SelectTrigger
+                  id={idOf('tshirtSize')}
+                  size="lg"
+                  aria-invalid={Boolean(errors.tshirtSize)}
+                  aria-describedby={errors.tshirtSize ? errorId('tshirtSize') : undefined}
+                  className={cn('w-full sm:max-w-sm', errors.tshirtSize && errorClass)}
+                >
+                  <SelectValue placeholder="Choisis ta taille" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TSHIRT_SIZES.map((size) => (
+                    <SelectItem key={size} value={size}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errorText('tshirtSize')}
+            </div>
+          </div>
         ) : null}
 
         <div className="space-y-4">

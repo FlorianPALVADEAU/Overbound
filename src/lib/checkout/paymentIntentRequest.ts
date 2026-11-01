@@ -20,6 +20,8 @@ export const paymentIntentRequestSchema = z.object({
         flexible: z.boolean().optional(),
         birthDate: z.string().optional(),
         selectedWaveIndex: z.number().int().positive().nullable().optional(),
+        /** OPEN SAS of the companion bib. Set means the participant takes the option. */
+        companionWaveIndex: z.number().int().positive().nullable().optional(),
       }),
     )
     .min(1),
@@ -64,7 +66,11 @@ export const readOrderCodes = (request: PaymentIntentRequest): { codes: string[]
 
 /** One pricing entry per bib, in participant order. */
 export const readOrderParticipants = (request: PaymentIntentRequest) =>
-  request.participants.map((participant) => ({ ticketId: participant.ticketId, flexible: participant.flexible === true }))
+  request.participants.map((participant) => ({
+    ticketId: participant.ticketId,
+    flexible: participant.flexible === true,
+    companion: participant.companionWaveIndex != null,
+  }))
 
 /** The body of POST /api/stripe/create-payment-intent, built from the same draft as the registration request. */
 export const buildPaymentIntentRequest = (
@@ -80,6 +86,7 @@ export const buildPaymentIntentRequest = (
     flexible: participant.flexible === true,
     birthDate: participant.birthDate,
     selectedWaveIndex: participant.selectedWaveIndex ?? null,
+    companionWaveIndex: participant.companion === true ? (participant.companionWaveIndex ?? null) : null,
   })),
   upsells: draftUpsellRequest(draft),
   promoCodes: draft.promoCodes,

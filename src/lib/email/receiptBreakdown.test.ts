@@ -65,4 +65,27 @@ describe('buildReceiptBreakdown', () => {
       ['T-shirt', 1, 20],
     ])
   })
+
+  it('lists the OPEN companion on its own line under its participant, before the flexible option', () => {
+    const { participants: result } = buildReceiptBreakdown({
+      participants: [
+        {
+          name: 'Alice Martin',
+          ticketLabel: 'Fury RANKED',
+          ticketUnitCents: 7000,
+          flexible: true,
+          companion: { label: 'Option OPEN : Primal OPEN', cents: 2900 },
+        },
+      ],
+      flexibleFeeCents: 890,
+      options: [],
+    })
+
+    expect(result[0].lines.map((l) => [l.description, l.total])).toEqual([
+      ['Fury RANKED', 70],
+      ['Option OPEN : Primal OPEN', 29],
+      ['Option billet flexible', 8.9],
+    ])
+    expect(sumLines(result[0].lines)).toBeCloseTo(107.9)
+  })
 })

@@ -12,6 +12,7 @@ import {
   payWithCard,
   prepareBrowser,
   recipeEnabled,
+  setCompanion,
   setFlexible,
   signIn,
   signWaiver,
@@ -115,5 +116,41 @@ test.describe('Stripe recipe', () => {
     expect(await summaryTotalCents(page)).toBe(0)
     await clickPay(page)
     await expectSuccess(page)
+  })
+
+  test('8. a RANKED bib with the OPEN option: +29 €, an unreachable SAS is greyed, two bibs are created', async ({ page }) => {
+    await openCheckout(page, RANKED_TICKET_ID)
+    await fillParticipant(page, 1, { wave: false })
+    const base = await summaryTotalCents(page)
+    await page.locator('#participant-1-companion').click()
+    await page.locator('#participant-1-companion-wave').click()
+    // SAS 1 (12h00) starts before the RANKED can be finished and rested from: greyed with its reason.
+    await expect(page.getByRole('option').nth(0)).toHaveAttribute('aria-disabled', 'true')
+    await expect(page.getByRole('option').nth(0)).toContainText('Trop tôt')
+    await page.getByRole('option').nth(1).click()
+    await signWaiver(page)
+    expect(await summaryTotalCents(page)).toBe(base + 2900)
+    await clickPay(page)
+    await payWithCard(page, TEST_CARDS.success)
+    await expectSuccess(page)
+  })
+
+  test('9. a flexible RANKED bib with the OPEN option is cancelled and refunded as one set', async ({ page }) => {
+    await openCheckout(page, RANKED_TICKET_ID)
+    await fillParticipant(page, 1, { wave: false })
+    const base = await summaryTotalCents(page)
+    await setCompanion(page, 1, 2)
+    await setFlexible(page, 1)
+    await signWaiver(page)
+    expect(await summaryTotalCents(page)).toBe(base + 2900 + 890)
+    await clickPay(page)
+    await payWithCard(page, TEST_CARDS.success)
+    await expectSuccess(page)
+
+    // The cancellation goes through the real route, with the buyer's session.
+    const registrationId = new URL(page.url()).searchParams.get('registration_id')
+    const response = await page.request.post(`/api/account/tickets/${registrationId}/refund`, { data: { confirm: true } })
+    expect(response.status()).toBe(200)
+    expect((await response.json()).refundedCents).toBe(base + 2900)
   })
 })

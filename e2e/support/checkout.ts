@@ -23,7 +23,13 @@ const OPEN_TICKET = {
 
 const BUYER = { id: '00000000-0000-4000-8000-00000000b0b0', email: 'camille@example.com', fullName: 'Camille Martin' }
 
-const registerData = (signedIn: boolean) => ({
+export interface StubTshirtOffer {
+  quota: number
+  claimed: number
+  remaining: number
+}
+
+const registerData = (signedIn: boolean, tshirtOffer: StubTshirtOffer | null) => ({
   event: {
     id: EVENT_ID,
     slug: EVENT_SLUG,
@@ -37,6 +43,7 @@ const registerData = (signedIn: boolean) => ({
   tickets: [OPEN_TICKET],
   upsells: [],
   availableSpots: 120,
+  tshirtOffer,
   tierRegistrationCounts: {},
   user: signedIn ? BUYER : null,
 })
@@ -49,7 +56,10 @@ export interface CheckoutCapture {
 const json = (request: Request) => request.postDataJSON() as Record<string, unknown>
 
 /** Answers every API of the register page. Signed in: a buyer whose group has no departure yet. */
-export const stubCheckoutApis = async (page: Page, { signedIn }: { signedIn: boolean }): Promise<CheckoutCapture> => {
+export const stubCheckoutApis = async (
+  page: Page,
+  { signedIn, tshirtOffer = null }: { signedIn: boolean; tshirtOffer?: StubTshirtOffer | null },
+): Promise<CheckoutCapture> => {
   let paymentIntentBody: Record<string, unknown> | null = null
   let registrationBody: Record<string, unknown> | null = null
 
@@ -71,7 +81,7 @@ export const stubCheckoutApis = async (page: Page, { signedIn }: { signedIn: boo
   await page.route('**/api/groups/my', (route) =>
     route.fulfill({ json: signedIn ? { id: 'group-1', name: 'Team', invite_code: 'AB12CD34', members: [], anchor_event_id: null } : null }),
   )
-  await page.route(`**/api/events/${EVENT_SLUG}/register-data**`, (route) => route.fulfill({ json: registerData(signedIn) }))
+  await page.route(`**/api/events/${EVENT_SLUG}/register-data**`, (route) => route.fulfill({ json: registerData(signedIn, tshirtOffer) }))
   await page.route('**/open-waves/selectable**', (route) =>
     route.fulfill({ json: { waves: [{ wave_index: 1, start_time: '2030-09-12T10:00:00.000Z', remaining: 40 }] } }),
   )

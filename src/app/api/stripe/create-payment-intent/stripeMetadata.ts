@@ -8,13 +8,21 @@ interface OrderMetadataArgs {
   primaryPromoCode: string
   ambassadorReferralCode: string | null
   utmParams: string
+  /** SAS OPEN chosen for each participant's companion bib, by position; null when they have none. */
+  companionWaveIndexes: Array<number | null>
 }
 
 /**
  * Order facts carried by the PaymentIntent (or the free order) and read back by
  * /api/registrations/create and the Stripe webhook. Stripe metadata values are strings.
  */
-export const buildOrderMetadata = ({ pricing, currency, primaryPromoCode, ambassadorReferralCode, utmParams }: OrderMetadataArgs) => ({
+export const buildOrderMetadata = ({ pricing, currency, primaryPromoCode, ambassadorReferralCode, utmParams, companionWaveIndexes }: OrderMetadataArgs) => {
+  const companions = pricing.participants.flatMap((participant, index) =>
+    participant.companionPriceCents > 0 && companionWaveIndexes[index] != null
+      ? [{ index, waveIndex: companionWaveIndexes[index] as number, priceCents: participant.companionPriceCents }]
+      : [],
+  )
+  return {
   currency,
   discount_applied: pricing.discountAmount.toString(),
   tier_allocations: JSON.stringify(
@@ -29,4 +37,8 @@ export const buildOrderMetadata = ({ pricing, currency, primaryPromoCode, ambass
     pricing.participants.flatMap((participant, index) => (participant.flexible ? [index] : [])),
   ),
   ticket_prices: serializeNumberList(pricing.participants.map((participant) => participant.paidPriceCents)),
-})
+  companion_participants: serializeNumberList(companions.map((companion) => companion.index)),
+  companion_waves: serializeNumberList(companions.map((companion) => companion.waveIndex)),
+  companion_prices: serializeNumberList(companions.map((companion) => companion.priceCents)),
+  }
+}

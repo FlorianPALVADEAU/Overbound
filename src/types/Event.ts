@@ -15,6 +15,8 @@ export interface Event {
   longitude?: number | null
   capacity: number
   ranked_bib_capacity?: number | null
+  /** T-shirt offert aux N premiers participants ; null = pas d'offre. */
+  tshirt_offer_quota?: number | null
   status: EventStatus
   external_provider?: string | null
   external_event_id?: string | null

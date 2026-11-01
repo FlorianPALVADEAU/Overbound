@@ -8,7 +8,9 @@ export type ParticipantField =
   | 'emergencyContactName'
   | 'emergencyContactPhone'
   | 'wave'
+  | 'companionWave'
   | 'healthDataConsent'
+  | 'tshirtSize'
 
 const PARTICIPANT_FIELD_SUFFIX: Record<ParticipantField, string> = {
   firstName: 'firstName',
@@ -18,7 +20,9 @@ const PARTICIPANT_FIELD_SUFFIX: Record<ParticipantField, string> = {
   emergencyContactName: 'emergency',
   emergencyContactPhone: 'emergencyPhone',
   wave: 'wave',
+  companionWave: 'companion-wave',
   healthDataConsent: 'health-consent',
+  tshirtSize: 'tshirt-size',
 }
 
 export const participantFieldId = (participantId: string, field: ParticipantField) =>

@@ -34,6 +34,7 @@ export function useOrderPricing(state: Omit<CheckoutPricingState, 'now'>, curren
     currency,
     state.ticketSlots,
     state.flexibleBySlot,
+    state.companionBySlot,
     state.tickets,
     state.tiers,
     state.tierRegistrationCounts,

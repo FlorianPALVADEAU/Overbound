@@ -27,6 +27,8 @@ export interface PricingSummary {
   upsellTotal: number
   /** Absent in drafts saved before the flexible option existed. */
   flexibleTotal?: number
+  /** Absent in drafts saved before the OPEN companion existed. */
+  companionTotal?: number
   discountAmount: number
   /** Absent in drafts saved before discounts were itemised. */
   discounts?: PricingSummaryDiscount[]
@@ -62,6 +64,7 @@ export const toPricingSummary = (pricing: OrderPricing, currency: string): Prici
   ticketLines: groupTicketLines(pricing.participants),
   upsellTotal: pricing.upsellSubtotal,
   flexibleTotal: pricing.flexibleTotal,
+  companionTotal: pricing.companionTotal,
   discountAmount: pricing.discountAmount,
   discounts: pricing.discounts.map((discount) => ({
     code: discount.code,
@@ -78,6 +81,7 @@ export const emptyPricingSummary = (currency: string): PricingSummary => ({
   ticketLines: [],
   upsellTotal: 0,
   flexibleTotal: 0,
+  companionTotal: 0,
   discountAmount: 0,
   discounts: [],
   totalDue: 0,

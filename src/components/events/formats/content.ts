@@ -36,7 +36,7 @@ export const COMPARE_ROWS: CompareRow[] = [
   },
   {
     label: 'Obstacle raté',
-    open: 'Aucune pénalité.',
+    open: `${OPEN_FORMAT_RULES.failedObstacleBurpees} burpees par obstacle échoué.`,
     ranked: `${RANKED_FORMAT_RULES.failedObstacleBurpees} burpees par obstacle échoué.`,
   },
   {
@@ -71,7 +71,7 @@ export const OPEN_JOURNEY: JourneyStep[] = [
   {
     time: 'Ton départ',
     title: 'Tu lances ton premier tour',
-    text: `Une boucle de ${SHARED_FORMAT_RULES.loopKm} km et plus de 10 obstacles. Aucune pénalité si tu rates un obstacle.`,
+    text: `Une boucle de ${SHARED_FORMAT_RULES.loopKm} km et plus de 10 obstacles. Obstacle échoué : ${OPEN_FORMAT_RULES.failedObstacleBurpees} burpees sur place, comptés par un bénévole.`,
   },
   {
     time: `Jusqu'à ${OPEN_FORMAT_RULES.windowHours} h`,
@@ -139,8 +139,8 @@ export const PICKER_QUESTIONS: PickerQuestion[] = [
   {
     id: 'penalty',
     question: 'Un obstacle raté ?',
-    open: 'J\'aimerais pouvoir réessayer sans sanction',
-    ranked: 'Je suis prêt à faire des burpees',
+    open: 'Quelques burpees, ça passe',
+    ranked: 'Je suis prêt à en faire beaucoup',
   },
 ]
 
@@ -155,12 +155,12 @@ export const FORMAT_FAQS = [
   {
     id: 'difference',
     question: 'Quelle est la vraie différence entre OPEN et RANKED ?',
-    answer: `Le parcours est identique. En OPEN tu as jusqu'à ${OPEN_FORMAT_RULES.windowHours} h (parcours fermé à ${OPEN_FORMAT_RULES.courseClosing}) pour faire autant de tours que tu veux, sans pénalité. En RANKED, tout le monde part à ${RANKED_FORMAT_RULES.departure}, le temps par tour diminue et un tour hors temps t'élimine.`,
+    answer: `Le parcours est identique. En OPEN tu as jusqu'à ${OPEN_FORMAT_RULES.windowHours} h (parcours fermé à ${OPEN_FORMAT_RULES.courseClosing}) pour faire autant de tours que tu veux, avec ${OPEN_FORMAT_RULES.failedObstacleBurpees} burpees par obstacle échoué. En RANKED, tout le monde part à ${RANKED_FORMAT_RULES.departure}, le temps par tour diminue et un tour hors temps t'élimine.`,
   },
   {
     id: 'beginner',
     question: 'Je débute, quel format choisir ?',
-    answer: 'OPEN. Aucune pénalité, aucune élimination, et tu choisis ton rythme.',
+    answer: `OPEN. Pas d'élimination, tu choisis ton rythme, et un obstacle raté coûte ${OPEN_FORMAT_RULES.failedObstacleBurpees} burpees.`,
   },
   {
     id: 'open-laps',
@@ -180,7 +180,7 @@ export const FORMAT_FAQS = [
   {
     id: 'penalty',
     question: 'Que se passe-t-il si je rate un obstacle ?',
-    answer: `En OPEN, rien. En RANKED, ${RANKED_FORMAT_RULES.failedObstacleBurpees} burpees par obstacle échoué. Certains obstacles sont obligatoires.`,
+    answer: `${OPEN_FORMAT_RULES.failedObstacleBurpees} burpees sur place en OPEN, ${RANKED_FORMAT_RULES.failedObstacleBurpees} en RANKED, comptés par un bénévole. Les mêmes obstacles sont obligatoires dans les deux formats.`,
   },
   {
     id: 'ranked-podium',
