@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { ChevronDown, MoreHorizontal } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
@@ -66,7 +67,12 @@ export function OperationsListTable<T>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {actions.map((action) => <DropdownMenuItem key={action.id} variant={action.destructive ? 'destructive' : 'default'} disabled={action.disabled?.(item)} onSelect={() => action.onSelect(item)}>{action.label}</DropdownMenuItem>)}
+        {actions.map((action, index) => (
+          <Fragment key={action.id}>
+            {action.destructive && index > 0 && !actions[index - 1].destructive ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuItem variant={action.destructive ? 'destructive' : 'default'} disabled={action.disabled?.(item)} onSelect={() => action.onSelect(item)}>{action.label}</DropdownMenuItem>
+          </Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   ) : null
@@ -103,11 +109,11 @@ export function OperationsListTable<T>({
           )
         })}
       </div>
-      <Table className="hidden table-fixed md:table">
+      <Table className="hidden md:table">
       <TableHeader>
         <TableRow>
           {canSelect ? <TableHead className="w-10"><Checkbox aria-label="Sélectionner toutes les lignes" checked={allSelected} onCheckedChange={toggleAll} /></TableHead> : null}
-          {visibleColumns.map((column) => <TableHead key={column.id} className={cn('truncate', column.headerClassName)}>{column.header}</TableHead>)}
+          {visibleColumns.map((column) => <TableHead key={column.id} className={cn('whitespace-nowrap', column.headerClassName)}>{column.header}</TableHead>)}
           {actions.length > 0 ? <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead> : null}
         </TableRow>
       </TableHeader>
@@ -118,17 +124,8 @@ export function OperationsListTable<T>({
           return (
             <TableRow key={itemId} data-state={selected ? 'selected' : undefined} className={cn('even:bg-foreground/[0.03]', onItemOpen && 'cursor-pointer')} onClick={() => onItemOpen?.(item)}>
               {canSelect ? <TableCell className="w-10" onClick={(event) => event.stopPropagation()}><Checkbox aria-label={`Sélectionner la ligne ${itemId}`} checked={selected} onCheckedChange={() => toggleItem(itemId)} /></TableCell> : null}
-              {visibleColumns.map((column) => <TableCell key={column.id} className={cn('min-w-0 whitespace-normal break-words overflow-hidden text-ellipsis', column.className)}>{column.cell(item)}</TableCell>)}
-              {actions.length > 0 ? (
-                <TableCell className="w-12" onClick={(event) => event.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions pour ${itemId}`}><MoreHorizontal /></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {actions.map((action) => <DropdownMenuItem key={action.id} variant={action.destructive ? 'destructive' : 'default'} disabled={action.disabled?.(item)} onSelect={() => action.onSelect(item)}>{action.label}</DropdownMenuItem>)}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              ) : null}
+              {visibleColumns.map((column) => <TableCell key={column.id} className={cn('min-w-24 max-w-md whitespace-normal break-words align-top', column.className)}>{column.cell(item)}</TableCell>)}
+              {actions.length > 0 ? <TableCell className="w-12 align-top" onClick={(event) => event.stopPropagation()}>{renderActions(item, itemId)}</TableCell> : null}
             </TableRow>
           )
         })}

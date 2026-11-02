@@ -8,6 +8,7 @@ import { OperationsListErrorState } from './OperationsListErrorState'
 import { OperationsListPagination } from './OperationsListPagination'
 import { OperationsListTable } from './OperationsListTable'
 import { OperationsListToolbar } from './OperationsListToolbar'
+import { useColumnVisibility } from './columnVisibility'
 import type {
   CursorPagination,
   ListResponse,
@@ -33,6 +34,8 @@ interface OperationsListProps<T> {
   onSearchChange?: (value: string) => void
   visibleColumnIds?: readonly string[]
   onVisibleColumnIdsChange?: (columnIds: string[]) => void
+  /** Remembers the column choice per list. Defaults to the item label. */
+  storageKey?: string
   selectedIds?: readonly string[]
   onSelectedIdsChange?: (ids: string[]) => void
   rowActions?: OperationsListAction<T>[]
@@ -68,6 +71,7 @@ export function OperationsList<T>({
   onSearchChange,
   visibleColumnIds,
   onVisibleColumnIdsChange,
+  storageKey,
   selectedIds,
   onSelectedIdsChange,
   rowActions,
@@ -85,8 +89,11 @@ export function OperationsList<T>({
 }: OperationsListProps<T>) {
   const items = data?.items ?? []
   const selectedItems = selectedIds ? items.filter((item) => selectedIds.includes(getItemId(item))) : []
-  const initialVisibleColumns = columns.filter((column) => !column.hiddenByDefault).map((column) => column.id)
-  const effectiveVisibleColumns = visibleColumnIds ?? initialVisibleColumns
+  const { visibleColumnIds: effectiveVisibleColumns, setVisibleColumnIds } = useColumnVisibility(
+    storageKey ?? itemLabel,
+    columns,
+    { value: visibleColumnIds, onChange: onVisibleColumnIdsChange },
+  )
   const hasDetail = Boolean(selectedItem && renderDetail && detailTitle && onSelectedItemChange)
 
   const clearSelection = () => onSelectedIdsChange?.([])
@@ -101,8 +108,8 @@ export function OperationsList<T>({
         filters={filters}
         onFilterChange={onFilterChange}
         columns={columns}
-        visibleColumnIds={visibleColumnIds}
-        onVisibleColumnIdsChange={onVisibleColumnIdsChange}
+        visibleColumnIds={effectiveVisibleColumns}
+        onVisibleColumnIdsChange={setVisibleColumnIds}
         actions={toolbarActions}
       />
       {selectedItems.length > 0 && bulkActions && bulkActions.length > 0 ? (
@@ -115,7 +122,7 @@ export function OperationsList<T>({
       {status === 'error' ? <OperationsListErrorState message={errorMessage} onRetry={onRetry} /> : null}
       {status !== 'error' && items.length === 0 && status !== 'loading' ? (emptyState ?? <OperationsListEmptyState />) : null}
       {status !== 'error' && (items.length > 0 || status === 'loading') ? (
-        <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} position="top" />
+        <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} position="top" shown={items.length} />
       ) : null}
       {status !== 'error' && (items.length > 0 || status === 'loading') ? (
         <div aria-busy={status === 'loading'} className={status === 'stale' ? 'opacity-65' : undefined}>
@@ -131,7 +138,7 @@ export function OperationsList<T>({
           />
         </div>
       ) : null}
-      {status !== 'error' ? <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} position="bottom" /> : null}
+      {status !== 'error' ? <OperationsListPagination pagination={{ ...pagination, nextCursor: data?.nextCursor ?? pagination.nextCursor, total: data?.total ?? pagination.total }} onPaginationChange={onPaginationChange} isLoading={status === 'loading'} itemLabel={itemLabel} position="bottom" shown={items.length} /> : null}
       {hasDetail && selectedItem && renderDetail && detailTitle && onSelectedItemChange ? (
         <OperationsListDetailPanel open title={detailTitle(selectedItem)} description={detailDescription?.(selectedItem)} onOpenChange={(open) => !open && onSelectedItemChange(null)}>{renderDetail(selectedItem)}</OperationsListDetailPanel>
       ) : null}

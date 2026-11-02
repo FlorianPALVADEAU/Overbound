@@ -52,47 +52,17 @@ const handlePatch = async (
   }
 }
 
-const handleDelete = async (
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> => {
-  try {
-    const auth = await requireAdminOrganization(request)
-    if (!auth.ok) return auth.response
-
-    const { id } = await params
-
-    const admin = supabaseAdmin()
-
-    // Vérifier que l'inscription existe
-    const { data: registration, error: fetchError } = await admin
-      .from('registrations')
-      .select('id, email, event_id, ticket_id, order_id, organization_id')
-      .eq('id', id)
-      .eq('organization_id', auth.organizationId)
-      .single()
-
-    if (fetchError || !registration) {
-      return NextResponse.json({ error: 'Inscription introuvable' }, { status: 404 })
-    }
-
-    // Supprimer l'inscription
-    const { error: deleteError } = await admin
-      .from('registrations')
-      .delete()
-      .eq('id', id)
-
-    if (deleteError) {
-      console.error('Erreur suppression registration:', deleteError)
-      throw deleteError
-    }
-
-    return NextResponse.json({ success: true })
-
-  } catch (error) {
-    console.error('Erreur DELETE registration:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
-  }
+/**
+ * A registration is never hard-deleted: orders, signatures, upsells, wave counters and ambassador points
+ * all reference it. Cancel it instead (POST /api/admin/registrations/[id]/cancel).
+ */
+const handleDelete = async (request: NextRequest): Promise<NextResponse> => {
+  const auth = await requireAdminOrganization(request)
+  if (!auth.ok) return auth.response
+  return NextResponse.json(
+    { error: 'Une inscription ne se supprime pas : annule-la (avec remboursement si besoin).', code: 'USE_CANCEL' },
+    { status: 410 },
+  )
 }
 
 export const DELETE = withRequestLogging(handleDelete, {
