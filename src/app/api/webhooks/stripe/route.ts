@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           await sendAdminPushNotification({
             title: 'Paiement OK sans inscription (multi)',
             body: `${paymentIntent.id} • ${paymentIntent.amount / 100} ${(paymentIntent.currency || 'eur').toUpperCase()}`,
-            url: `${siteUrl}/dashboard?tab=members${event_id ? `&event=${event_id}` : ''}`,
+            url: event_id ? `${siteUrl}/dashboard/events/${event_id}/participants` : `${siteUrl}/dashboard/participants`,
           })
         } catch (pushError) {
           console.error('[push] multi-flow warning notification error', pushError)
@@ -527,7 +527,7 @@ export async function POST(request: NextRequest) {
           await sendAdminPushNotification({
             title: 'Nouvelle inscription payée',
             body: details,
-            url: `${siteUrl}/dashboard?tab=members${event_id ? `&event=${event_id}` : ''}`,
+            url: event_id ? `${siteUrl}/dashboard/events/${event_id}/participants` : `${siteUrl}/dashboard/participants`,
           })
         } catch (pushError) {
           console.error('[push] notification error', pushError)

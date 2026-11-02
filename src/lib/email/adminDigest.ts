@@ -3,7 +3,7 @@ import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 import { sendAdminDigestEmail } from '@/lib/email'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
-const ADMIN_LOGS_URL = `${SITE_URL}/admin?tab=logs`
+const ADMIN_LOGS_URL = `${SITE_URL}/dashboard/logs`
 
 interface AdminRecipient {
   userId: string

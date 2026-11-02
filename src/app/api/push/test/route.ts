@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     await sendAdminPushNotification({
       title: 'Test notification Overbound',
       body: 'Ta configuration Web Push fonctionne ✅',
-      url: '/dashboard?tab=members',
+      url: '/dashboard/participants',
     })
 
     return NextResponse.json({ success: true })

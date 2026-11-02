@@ -20,8 +20,8 @@ export async function sendAmbassadorRewardClaimRequestEmail(params: {
 }) {
   const { ambassadorName, ambassadorEmail, userId, ambassadorCode, reward } = params
   const siteUrl = getEmailAssetsBaseUrl()
-  const adminAmbassadorsUrl = `${siteUrl}/dashboard?tab=ambassadors&search=${encodeURIComponent(ambassadorEmail)}`
-  const adminUsersUrl = `${siteUrl}/dashboard?tab=users&search=${encodeURIComponent(ambassadorEmail)}`
+  const adminAmbassadorsUrl = `${siteUrl}/dashboard/ambassadors?search=${encodeURIComponent(ambassadorEmail)}`
+  const adminUsersUrl = `${siteUrl}/dashboard/users?search=${encodeURIComponent(ambassadorEmail)}`
   const claimedAt = new Date(reward.claimed_at ?? Date.now()).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })
 
   const html = wrapHtmlWithLayout({

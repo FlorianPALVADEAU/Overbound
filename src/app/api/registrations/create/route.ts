@@ -957,7 +957,7 @@ export async function POST(request: NextRequest) {
     const pushNotificationTask = sendAdminPushNotification({
       title: 'Nouvelle inscription payée',
       body: details,
-      url: `${siteUrl}/dashboard?tab=members&event=${eventRow.id}`,
+      url: `${siteUrl}/dashboard/events/${eventRow.id}/participants`,
     }).catch((pushError) => {
       console.error('[push] notification error', pushError)
     })

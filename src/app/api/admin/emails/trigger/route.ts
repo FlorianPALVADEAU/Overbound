@@ -40,7 +40,7 @@ const SITE_URL = getEmailAssetsBaseUrl()
 const ACCOUNT_URL = `${SITE_URL}/account`
 const EVENTS_URL = `${SITE_URL}/events`
 const BLOG_URL = `${SITE_URL}/blog`
-const ADMIN_LOGS_URL = `${SITE_URL}/admin?tab=logs`
+const ADMIN_LOGS_URL = `${SITE_URL}/dashboard/logs`
 const CAMPAIGN_HERO_IMAGE_PATH =
   '/images/og/crowd.jpg'
 
