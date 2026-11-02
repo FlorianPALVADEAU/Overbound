@@ -4,7 +4,12 @@ import { redirect, useParams, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
+import { VolunteerHelpContact } from '@/components/admin/VolunteerHelpContact'
 import { useSession } from '@/app/api/session/sessionQueries'
+
+const Loading = () => (
+  <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Chargement…</main>
+)
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false)
@@ -26,11 +31,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(retryTimer)
   }, [profileRetryCount, refetch, session?.profile?.role, session?.user])
 
-  // Preserve the legacy tab host until each legacy domain has a route.
-  if (searchParams.has('tab')) return children
-  if (!hasMounted || isLoading || isFetching || (session?.user && !session.profile?.role && profileRetryCount < 2)) return <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Chargement…</main>
+  // A background refetch (window focus, retry) must not unmount the page: it would drop open dialogs, filters and drafts.
+  if (!hasMounted || isLoading || (isFetching && !session) || (session?.user && !session.profile?.role && profileRetryCount < 2)) return <Loading />
   if (!session?.user) redirect('/auth/login?next=/dashboard')
-  if (session.profile?.role === 'volunteer') return <main className="min-h-screen bg-background p-6"><VolunteerAccessControl /></main>
+  if (session.profile?.role === 'volunteer') {
+    return (
+      <main className="min-h-screen bg-background p-6">
+        <div className="mx-auto max-w-xl space-y-6">
+          <VolunteerAccessControl />
+          <VolunteerHelpContact />
+        </div>
+      </main>
+    )
+  }
   if (session.profile?.role !== 'admin') redirect('/account')
 
   const eventId = typeof params.eventId === 'string' ? params.eventId : searchParams.get('event')
@@ -43,7 +56,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Chargement…</main>}>
+    <Suspense fallback={<Loading />}>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </Suspense>
   )

@@ -153,7 +153,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   )
   const { data, error, isLoading, isFetching, refetch } = useEventParticipants(params)
   const { data: options } = useEventParticipantOptions(eventId)
-  const participants = data?.participants ?? []
+  const participants = useMemo(() => data?.participants ?? [], [data])
   const page = data?.page
 
   useEffect(() => {

@@ -1,9 +1,9 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { EventParticipantsList } from '@/components/admin/events/EventParticipantsList'
+import { AdminParticipantsPage } from '@/components/admin/events/AdminParticipantsPage'
 
 export default function EventParticipantsPage() {
   const { eventId } = useParams<{ eventId: string }>()
-  return <EventParticipantsList eventId={eventId} />
+  return <AdminParticipantsPage eventId={eventId} />
 }

@@ -16,6 +16,7 @@ import { toParticipantsCsv } from '@/lib/admin/participantsCsv'
 export const runtime = 'nodejs'
 
 const routeParamsSchema = z.object({ id: z.string().uuid() })
+const UTF8_BOM = String.fromCharCode(0xfeff)
 const PAGE = 1000
 /** Hard stop so a runaway export cannot exhaust the function; far above any event size. */
 const MAX_ROWS = 50_000
@@ -76,7 +77,7 @@ const handleGet = async (request: NextRequest, { params }: { params: Promise<{ i
     )
 
     // BOM so Excel reads the accents as UTF-8.
-    return new NextResponse(`﻿${csv}`, {
+    return new NextResponse(UTF8_BOM + csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="participants-${eventId}.csv"`,

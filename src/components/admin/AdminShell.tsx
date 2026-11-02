@@ -19,7 +19,7 @@ interface AdminShellProps {
 export function AdminShell({ fullName, eventId, children }: AdminShellProps) {
   return (
     <div className="min-h-screen bg-background md:flex">
-      <AdminSidebar profileRole="admin" fullName={fullName} />
+      <AdminSidebar profileRole="admin" fullName={fullName} eventId={eventId} />
       <div className="min-w-0 flex-1">
         <header className="space-y-3 border-b border-border bg-surface-deep px-4 py-3 md:space-y-4 md:px-6 md:py-4 lg:px-8">
           <div className="flex items-center justify-between gap-3">
