@@ -7,35 +7,23 @@ import {
   type ParticipantDirection,
   participantSortSchema,
 } from '@/lib/admin/eventParticipants'
+import {
+  PARTICIPANT_COLUMNS,
+  applyParticipantFilters,
+  enrichParticipants,
+  findUserIdsByName,
+  participantFiltersSchema,
+  type ParticipantRegistrationRow,
+} from '@/lib/admin/participantsQuery'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
 
 const routeParamsSchema = z.object({ id: z.string().uuid() })
-const querySchema = z.object({
+const querySchema = participantFiltersSchema.extend({
   cursor: z.string().min(1).optional(),
   direction: z.enum(['asc', 'desc']).default('desc'),
   limit: z.coerce.number().int().min(25).max(100).default(50),
-  query: z.string().trim().min(1).max(160).optional(),
-  check_in: z.enum(['all', 'checked_in', 'not_checked_in']).default('all'),
   sort: participantSortSchema.default('created_at'),
 })
-
-type RegistrationRow = {
-  id: string
-  user_id: string | null
-  ticket_id: string | null
-  order_id: string | null
-  email: string
-  checked_in: boolean
-  claim_status: string | null
-  approval_status: string | null
-  created_at: string
-  start_time: string | null
-  wave_index: number | null
-  cancelled_at: string | null
-}
-
-const sanitizeSearchTerm = (value: string) => value.replace(/[%,().]/g, ' ').replace(/\s+/g, ' ').trim()
 
 export async function GET(
   request: NextRequest,
@@ -54,7 +42,7 @@ export async function GET(
   }
 
   const { id: eventId } = parsedParams.data
-  const { cursor, direction, limit, query: rawQuery, check_in: checkIn, sort } = parsedQuery.data
+  const { cursor, direction, limit, sort, ...filters } = parsedQuery.data
 
   let decodedCursor: ReturnType<typeof decodeParticipantsCursor> | null = null
   if (cursor) {
@@ -92,19 +80,12 @@ export async function GET(
       cursorValue = cursorValueCandidate
     }
 
-    let registrationsQuery = admin
-      .from('registrations')
-      .select(
-        'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index, cancelled_at',
-        { count: 'exact' },
-      )
-      .eq('event_id', eventId)
-
-    if (checkIn === 'checked_in') registrationsQuery = registrationsQuery.eq('checked_in', true)
-    if (checkIn === 'not_checked_in') registrationsQuery = registrationsQuery.eq('checked_in', false)
-
-    const searchTerm = rawQuery ? sanitizeSearchTerm(rawQuery) : ''
-    if (searchTerm) registrationsQuery = registrationsQuery.ilike('email', `%${searchTerm}%`)
+    const nameMatches = await findUserIdsByName(admin, filters.query)
+    let registrationsQuery = applyParticipantFilters(
+      admin.from('registrations').select(PARTICIPANT_COLUMNS, { count: 'exact' }).eq('event_id', eventId),
+      filters,
+      nameMatches,
+    )
 
     if (decodedCursor && cursorValue) {
       const operator = direction === 'asc' ? 'gt' : 'lt'
@@ -121,99 +102,8 @@ export async function GET(
     if (error) throw error
 
     const hasNextPage = (pageRows?.length ?? 0) > limit
-    const registrations = ((pageRows ?? []).slice(0, limit) as RegistrationRow[])
-    const ticketIds = registrations.flatMap((row) => (row.ticket_id ? [row.ticket_id] : []))
-    const profileIds = registrations.flatMap((row) => (row.user_id ? [row.user_id] : []))
-    const orderIds = registrations.flatMap((row) => (row.order_id ? [row.order_id] : []))
-
-    const [ticketsResult, profilesResult, membershipsResult, ordersResult] = await Promise.all([
-      ticketIds.length
-        ? admin.from('tickets').select('id, name, operations_config').in('id', ticketIds)
-        : Promise.resolve({ data: [], error: null }),
-      profileIds.length
-        ? admin.from('profiles').select('id, full_name').in('id', profileIds)
-        : Promise.resolve({ data: [], error: null }),
-      profileIds.length
-        ? admin.from('group_members').select('profile_id, group:groups(id, name)').in('profile_id', profileIds)
-        : Promise.resolve({ data: [], error: null }),
-      orderIds.length
-        ? admin.from('orders').select('id, status, amount_total, currency').in('id', orderIds)
-        : Promise.resolve({ data: [], error: null }),
-    ])
-
-    for (const [resource, result] of Object.entries({
-      tickets: ticketsResult,
-      profiles: profilesResult,
-      groups: membershipsResult,
-      orders: ordersResult,
-    })) {
-      if (result.error) console.error(`[admin event participants] ${resource} lookup error`, result.error)
-    }
-
-    const tickets = new Map(
-      (ticketsResult.data ?? []).map((ticket: any) => [
-        ticket.id,
-        {
-          name: ticket.name ?? null,
-          operationsConfig: ticket.operations_config ?? null,
-        },
-      ]),
-    )
-    const profiles = new Map(
-      (profilesResult.data ?? []).map((profile: any) => [profile.id, profile.full_name ?? null]),
-    )
-    const groups = new Map(
-      (membershipsResult.data ?? []).map((membership: any) => {
-        const group = Array.isArray(membership.group) ? membership.group[0] : membership.group
-        return [membership.profile_id, group?.name ?? null]
-      }),
-    )
-    const orders = new Map(
-      (ordersResult.data ?? []).map((order: any) => [
-        order.id,
-        {
-          status: order.status ?? null,
-          amountCents: order.amount_total ?? null,
-          currency: order.currency ?? null,
-        },
-      ]),
-    )
-
-    const participants = registrations.map((registration) => {
-      const ticket = registration.ticket_id ? tickets.get(registration.ticket_id) : null
-      const order = registration.order_id ? orders.get(registration.order_id) : null
-      const operations = resolveTicketOperationsProfile(ticket?.operationsConfig)
-      return {
-        id: registration.id,
-        participant: {
-          name: registration.user_id ? profiles.get(registration.user_id) ?? null : null,
-          email: registration.email,
-          accountStatus: registration.user_id ? 'claimed' : 'guest',
-        },
-        registration: {
-          claimStatus: registration.claim_status,
-          approvalStatus: registration.approval_status,
-          checkedIn: registration.checked_in,
-          createdAt: registration.created_at,
-          // Soft-cancelled bibs (flexible refund) stay listed so admins see what happened.
-          cancelledAt: registration.cancelled_at,
-        },
-        ticket: {
-          id: registration.ticket_id,
-          name: ticket?.name ?? null,
-          operations: {
-            status: operations.status,
-            departureMode: operations.departureMode,
-          },
-        },
-        departure: {
-          startTime: registration.start_time,
-          waveIndex: registration.wave_index,
-        },
-        group: registration.user_id ? groups.get(registration.user_id) ?? null : null,
-        payment: order ?? null,
-      }
-    })
+    const registrations = ((pageRows ?? []).slice(0, limit) as unknown as ParticipantRegistrationRow[])
+    const participants = await enrichParticipants(admin, registrations)
 
     const lastRegistration = registrations.at(-1)
     const nextCursor = hasNextPage && lastRegistration
