@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
+import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import {
   OperationsList,
   type OperationsListAction,
@@ -13,6 +14,7 @@ import {
 } from '@/components/admin/operations'
 import {
   useAdminQuoteRequests,
+  useDeleteQuoteRequest,
   useUpdateQuoteRequestStatus,
   type AdminQuoteRequest,
 } from '@/app/api/admin/b2b-quotes/b2bQuotesQueries'
@@ -113,6 +115,8 @@ export function B2bQuotesSection() {
     query: deferredSearch || undefined,
   })
   const updateStatus = useUpdateQuoteRequestStatus()
+  const deleteRequest = useDeleteQuoteRequest()
+  const [requestToDelete, setRequestToDelete] = useState<AdminQuoteRequest | null>(null)
 
   useEffect(() => {
     setCursor(null)
@@ -156,6 +160,7 @@ export function B2bQuotesSection() {
       onSelect: (request: AdminQuoteRequest) => updateStatus.mutate({ id: request.id, status: target.value }),
       disabled: (request: AdminQuoteRequest) => request.status === target.value || updateStatus.isPending,
     })),
+    { id: 'delete', label: 'Supprimer', destructive: true, onSelect: setRequestToDelete },
   ]
 
   const newCount = status === 'all' ? requests.filter((request) => request.status === 'new').length : null
@@ -171,6 +176,29 @@ export function B2bQuotesSection() {
             : 'Demandes reçues depuis la page /entreprises, de la plus récente à la plus ancienne.'
         }
       />
+
+      <DeleteConfirmationDialog
+        open={requestToDelete !== null}
+        onOpenChange={(open) => !open && setRequestToDelete(null)}
+        title="Supprimer la demande de devis"
+        entityName={requestToDelete?.company_name ?? ''}
+        entityType="demande"
+        warningMessage="La demande disparaît définitivement du pipeline. L’e-mail de confirmation déjà envoyé n’est pas rappelé."
+        loading={deleteRequest.isPending}
+        onConfirm={() => {
+          if (!requestToDelete) return
+          deleteRequest.mutate(
+            { id: requestToDelete.id },
+            { onSuccess: () => { setSelectedId(null); setRequestToDelete(null) } },
+          )
+        }}
+      />
+
+      {deleteRequest.error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{deleteRequest.error.message || 'Impossible de supprimer la demande.'}</AlertDescription>
+        </Alert>
+      ) : null}
 
       {updateStatus.error ? (
         <Alert variant="destructive">

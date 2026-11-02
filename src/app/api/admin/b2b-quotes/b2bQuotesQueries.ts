@@ -53,3 +53,13 @@ export const useUpdateQuoteRequestStatus = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ADMIN_B2B_QUOTES_QUERY_KEY }),
   })
 }
+
+export const useDeleteQuoteRequest = () => {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, { id: string }>({
+    mutationFn: async ({ id }) => {
+      await axiosClient.delete(`/admin/b2b-quotes/${id}`)
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ADMIN_B2B_QUOTES_QUERY_KEY }),
+  })
+}

@@ -37,4 +37,27 @@ const handlePatch = async (request: NextRequest, { params }: { params: Promise<{
   }
 }
 
+const handleDelete = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) return auth.response
+
+    const { id } = await params
+    if (!z.string().uuid().safeParse(id).success) {
+      return NextResponse.json({ error: 'Identifiant invalide' }, { status: 400 })
+    }
+
+    const { data, error } = await supabaseAdmin().from('b2b_quote_requests').delete().eq('id', id).select('id').maybeSingle()
+    if (error) throw error
+    if (!data) return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Erreur DELETE b2b-quotes:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
+export const DELETE = withRequestLogging(handleDelete, { actionType: 'Suppression demande de devis' })
+
 export const PATCH = withRequestLogging(handlePatch, { actionType: 'Mise à jour statut demande de devis' })

@@ -60,7 +60,7 @@ export function UsersSection() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const initialUrl = useMemo(() => parseOperationsListUrlState(searchParams, { filterIds: ['role'] }), [searchParams])
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search')?.trim() ?? '')
   const deferredSearch = useDeferredValue(searchTerm.trim())
   const [roleFilter, setRoleFilter] = useState<AdminUser['role'] | 'all'>((initialUrl.filters.role as AdminUser['role'] | undefined) ?? 'all')
   const [limit, setLimit] = useState(initialUrl.limit)
