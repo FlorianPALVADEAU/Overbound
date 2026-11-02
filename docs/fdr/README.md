@@ -31,3 +31,4 @@ Template: `docs/templates/fdr-template.md`
 - [FDR-0019 - Prix unique et remise de groupe (Open)](./FDR-0019-single-price-and-group-discount.md) — Accepted
 - [FDR-0020 - Audit SEO/GEO et positionnement 2027](./FDR-0020-seo-geo-audit-and-2027-positioning.md) — Proposed
 - [FDR-0021 - Option OPEN (second dossard) sur un billet RANKED](./FDR-0021-open-companion-option.md) — Accepted
+- [FDR-0022 - Refonte du back-office : pilotage, participants, commandes](./FDR-0022-admin-dashboard-overhaul.md) — Accepted, migration à appliquer à la main
