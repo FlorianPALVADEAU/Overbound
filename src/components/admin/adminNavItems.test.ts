@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS, hrefForNavItem, resolveActiveNavValue } from './adminNavItems'
+import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS, hrefForNavItem, pageUsesEventContext, resolveActiveNavValue } from './adminNavItems'
 
 const EVENT = '0d0272d2-647c-4b7b-8c68-3c9a3ecb99d9'
 const item = (value: string) => ADMIN_NAV_ITEMS.find((candidate) => candidate.value === value)!
@@ -44,6 +44,16 @@ describe('admin navigation', () => {
 
     it('highlights nothing for an unknown page', () => {
       expect(resolveActiveNavValue('/dashboard/nope')).toBeUndefined()
+    })
+  })
+
+  describe('pageUsesEventContext', () => {
+    it.each(['/dashboard', '/dashboard/orders', '/dashboard/checkin', `/dashboard/events/${EVENT}/participants`, `/dashboard/events/${EVENT}`])('%s uses the event selected in the top bar', (pathname) => {
+      expect(pageUsesEventContext(pathname)).toBe(true)
+    })
+
+    it.each(['/dashboard/events', '/dashboard/logs', '/dashboard/promocodes', '/dashboard/users', '/dashboard/maintenance'])('%s does not', (pathname) => {
+      expect(pageUsesEventContext(pathname)).toBe(false)
     })
   })
 })

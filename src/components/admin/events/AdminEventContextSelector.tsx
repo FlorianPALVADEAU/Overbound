@@ -144,7 +144,7 @@ export function AdminEventContextSelector({ eventId }: AdminEventContextSelector
           </Link>
         </Button>
         <Button asChild size="sm" variant="secondary" disabled={!selectedEvent}>
-          <Link href={selectedEvent ? `/dashboard?tab=checkin&event=${selectedEvent.id}` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
+          <Link href={selectedEvent ? `/dashboard/checkin?event=${selectedEvent.id}` : '#'} aria-disabled={!selectedEvent} tabIndex={selectedEvent ? undefined : -1}>
             Check-in <ChevronRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>

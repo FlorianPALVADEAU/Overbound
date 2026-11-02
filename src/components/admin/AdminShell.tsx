@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { Eyebrow } from '@/components/ds'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminEventContextSelector } from '@/components/admin/events/AdminEventContextSelector'
+import { pageUsesEventContext } from '@/components/admin/adminNavItems'
 
 interface AdminShellProps {
   fullName?: string | null
@@ -17,6 +19,7 @@ interface AdminShellProps {
 
 /** Frame of every back-office page: sidebar, top bar with the event context, content area. */
 export function AdminShell({ fullName, eventId, children }: AdminShellProps) {
+  const pathname = usePathname()
   return (
     <div className="min-h-screen bg-background md:flex">
       <AdminSidebar profileRole="admin" fullName={fullName} eventId={eventId} />
@@ -31,7 +34,7 @@ export function AdminShell({ fullName, eventId, children }: AdminShellProps) {
               </Button>
             </div>
           </div>
-          <AdminEventContextSelector eventId={eventId} />
+          {pageUsesEventContext(pathname) ? <AdminEventContextSelector eventId={eventId} /> : null}
         </header>
         <main className="mx-auto w-full max-w-screen-2xl min-w-0 space-y-6 px-4 py-4 md:space-y-8 md:px-6 md:py-8 lg:px-8">
           {children}

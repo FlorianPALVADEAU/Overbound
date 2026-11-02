@@ -117,3 +117,15 @@ export function hrefForNavItem(item: AdminNavItem, eventId: string | null): stri
   if (item.value === 'tickets') return `/dashboard/events/${encoded}/tickets`
   return `${item.href}?event=${encoded}`
 }
+
+const EVENT_AWARE_PAGES = new Set(['overview', 'participants', 'orders', 'tickets', 'checkin', 'volunteers'])
+
+/**
+ * Whether the event chosen in the top bar changes what the page shows. Elsewhere (logs, promo codes,
+ * accounts...) the selector would only take room, so the shell hides it.
+ */
+export function pageUsesEventContext(pathname: string): boolean {
+  const active = resolveActiveNavValue(pathname)
+  if (active === 'events') return /^\/dashboard\/events\/[^/]+/.test(pathname)
+  return active !== undefined && EVENT_AWARE_PAGES.has(active)
+}
