@@ -17,7 +17,7 @@ export const participantFiltersSchema = z.object({
 export type ParticipantFilters = z.infer<typeof participantFiltersSchema>
 
 export const PARTICIPANT_COLUMNS =
-  'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index, cancelled_at, cancellation_reason, bib_number'
+  'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index, cancelled_at, cancellation_reason, bib_number, paid_ticket_cents'
 
 export interface ParticipantRegistrationRow {
   id: string
@@ -34,6 +34,7 @@ export interface ParticipantRegistrationRow {
   cancelled_at: string | null
   cancellation_reason: string | null
   bib_number: number | null
+  paid_ticket_cents: number | null
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -101,6 +102,8 @@ export interface ParticipantRecord {
     cancelledAt: string | null
     cancellationReason: string | null
     bibNumber: number | null
+    /** What the ticket itself cost; the most an admin refund can give back. */
+    paidTicketCents: number | null
   }
   ticket: {
     id: string | null
@@ -193,6 +196,7 @@ export async function enrichParticipants(admin: Admin, registrations: Participan
         cancelledAt: registration.cancelled_at,
         cancellationReason: registration.cancellation_reason,
         bibNumber: registration.bib_number,
+        paidTicketCents: registration.paid_ticket_cents,
       },
       ticket: {
         id: registration.ticket_id,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 
-type LoggedMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+type LoggedMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 const LOGGED_METHODS: LoggedMethod[] = ['POST', 'PUT', 'PATCH', 'DELETE']
 const MAX_BODY_LENGTH = 8_192

@@ -17,6 +17,9 @@ describe('participant URL state', () => {
       sort: 'email',
       direction: 'asc',
       checkIn: 'checked_in',
+      status: 'all',
+      ticketId: null,
+      wave: null,
       cursor: 'abc',
       limit: 100,
       selectedId: 'registration-1',
@@ -37,6 +40,9 @@ describe('participant URL state', () => {
         sort: 'email',
         direction: 'asc',
         checkIn: 'not_checked_in',
+        status: 'all',
+        ticketId: null,
+        wave: null,
         cursor: 'next-page',
         limit: 100,
         selectedId: 'registration-1',
@@ -45,6 +51,19 @@ describe('participant URL state', () => {
 
     expect(query).toBe('view=participants&sort=email&direction=asc&check_in=not_checked_in&cursor=next-page&limit=100&selected=registration-1')
     expect(query).not.toContain('alice')
+  })
+
+  it('keeps the ticket, SAS and status filters in the URL', () => {
+    const ticketId = '0d0272d2-647c-4b7b-8c68-3c9a3ecb99d9'
+    const state = parseParticipantUrlState(new URLSearchParams(`ticket=${ticketId}&wave=none&status=cancelled`))
+    expect(state).toMatchObject({ ticketId, wave: 'none', status: 'cancelled' })
+    const query = writeParticipantUrlState(new URLSearchParams(), { ...DEFAULT_PARTICIPANT_URL_STATE, ticketId, wave: '7', status: 'active' })
+    expect(query).toBe(`status=active&ticket=${ticketId}&wave=7`)
+  })
+
+  it('ignores a malformed ticket or SAS', () => {
+    const state = parseParticipantUrlState(new URLSearchParams('ticket=nope&wave=abc&status=weird'))
+    expect(state).toMatchObject({ ticketId: null, wave: null, status: 'all' })
   })
 
   it('omits defaults to keep copied URLs short and stable', () => {

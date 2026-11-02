@@ -2,7 +2,19 @@
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEventParticipants, type EventParticipantCheckInFilter, type EventParticipantSort, type EventParticipantRow } from '@/app/api/admin/events/participantsQueries'
+import {
+  participantsExportUrl,
+  useEventParticipantOptions,
+  useEventParticipants,
+  useResendTicket,
+  type EventParticipantCheckInFilter,
+  type EventParticipantRow,
+  type EventParticipantSort,
+  type EventParticipantStatusFilter,
+} from '@/app/api/admin/events/participantsQueries'
+import { CancelRegistrationDialog } from './CancelRegistrationDialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Download, RefreshCw } from 'lucide-react'
 import { TicketChangePreviewPanel } from './TicketChangePreviewPanel'
 import { WaveChangePreviewPanel } from './WaveChangePreviewPanel'
 import {
@@ -32,6 +44,9 @@ const formatDate = (value: string | null) =>
     ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
     : '—'
 
+const formatClock = (value: string) =>
+  new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).format(new Date(value))
+
 const formatAmount = (amount: number | null, currency: string | null) => {
   if (amount === null) return '—'
   return new Intl.NumberFormat('fr-FR', {
@@ -48,6 +63,9 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search.trim())
   const [checkIn, setCheckIn] = useState<EventParticipantCheckInFilter>(initialUrlState.checkIn)
+  const [status, setStatus] = useState<EventParticipantStatusFilter>(initialUrlState.status)
+  const [ticketId, setTicketId] = useState<string | null>(initialUrlState.ticketId)
+  const [wave, setWave] = useState<string | null>(initialUrlState.wave)
   const [sort, setSort] = useState<EventParticipantSort>(initialUrlState.sort)
   const [direction, setDirection] = useState<'asc' | 'desc'>(initialUrlState.direction)
   const [limit, setLimit] = useState(initialUrlState.limit)
@@ -57,6 +75,9 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const [selectedParticipant, setSelectedParticipant] = useState<EventParticipantRow | null>(null)
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(initialUrlState.selectedId)
   const [selectedPreview, setSelectedPreview] = useState<ParticipantPreviewAction>('ticket')
+  const [cancelTarget, setCancelTarget] = useState<EventParticipantRow | null>(null)
+  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+  const resendTicket = useResendTicket()
   const hasInitializedSearch = useRef(false)
 
   useEffect(() => {
@@ -78,6 +99,21 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     setCheckIn(value as EventParticipantCheckInFilter)
   }
 
+  const changeStatus = (value: string) => {
+    resetPagination()
+    setStatus(value as EventParticipantStatusFilter)
+  }
+
+  const changeTicket = (value: string) => {
+    resetPagination()
+    setTicketId(value || null)
+  }
+
+  const changeWave = (value: string) => {
+    resetPagination()
+    setWave(value || null)
+  }
+
   const changeSort = (value: string) => {
     resetPagination()
     setSort(value as EventParticipantSort)
@@ -93,6 +129,9 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   useEffect(() => {
     const next = parseParticipantUrlState(searchParams, eventId)
     setCheckIn((current) => current === next.checkIn ? current : next.checkIn)
+    setStatus((current) => current === next.status ? current : next.status)
+    setTicketId((current) => current === next.ticketId ? current : next.ticketId)
+    setWave((current) => current === next.wave ? current : next.wave)
     setSort((current) => current === next.sort ? current : next.sort)
     setDirection((current) => current === next.direction ? current : next.direction)
     setLimit((current) => current === next.limit ? current : next.limit)
@@ -102,17 +141,18 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   }, [eventId, searchParams])
 
   useEffect(() => {
-    const next = writeParticipantUrlState(searchParams, { checkIn, sort, direction, cursor, limit, selectedId: selectedParticipantId })
+    const next = writeParticipantUrlState(searchParams, { checkIn, status, ticketId, wave, sort, direction, cursor, limit, selectedId: selectedParticipantId })
     const current = searchParams.toString()
     if (next === current) return
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
-  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, selectedParticipantId, sort])
+  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, selectedParticipantId, sort, status, ticketId, wave])
 
   const params = useMemo(
-    () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, sort }),
-    [checkIn, cursor, deferredSearch, direction, eventId, limit, sort],
+    () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, status, ticketId, wave, sort }),
+    [checkIn, cursor, deferredSearch, direction, eventId, limit, sort, status, ticketId, wave],
   )
-  const { data, error, isLoading, isFetching } = useEventParticipants(params)
+  const { data, error, isLoading, isFetching, refetch } = useEventParticipants(params)
+  const { data: options } = useEventParticipantOptions(eventId)
   const participants = data?.participants ?? []
   const page = data?.page
 
@@ -139,10 +179,40 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
       id: 'check-in',
       label: 'Check-in',
       value: checkIn === 'all' ? '' : checkIn,
-      allLabel: 'Tous les statuts',
+      allLabel: 'Tous les check-ins',
       options: [
         { value: 'checked_in', label: 'Effectué' },
         { value: 'not_checked_in', label: 'À faire' },
+      ],
+    },
+    {
+      id: 'status',
+      label: 'Statut',
+      value: status === 'all' ? '' : status,
+      allLabel: 'Actives et annulées',
+      options: [
+        { value: 'active', label: 'Actives' },
+        { value: 'cancelled', label: 'Annulées' },
+      ],
+    },
+    {
+      id: 'ticket',
+      label: 'Billet',
+      value: ticketId ?? '',
+      allLabel: 'Tous les billets',
+      options: (options?.tickets ?? []).map((ticket) => ({ value: ticket.id, label: ticket.name })),
+    },
+    {
+      id: 'wave',
+      label: 'SAS',
+      value: wave ?? '',
+      allLabel: 'Tous les SAS',
+      options: [
+        { value: 'none', label: 'Sans SAS' },
+        ...(options?.waves ?? []).map((item) => ({
+          value: String(item.waveIndex),
+          label: item.startTime ? `SAS ${item.waveIndex} · ${formatClock(item.startTime)}` : `SAS ${item.waveIndex}`,
+        })),
       ],
     },
     {
@@ -175,7 +245,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     {
       id: 'participant',
       header: 'Participant',
-      cell: (participant) => <><p className="font-medium">{participant.participant.name ?? 'Nom non renseigné'}</p><p className="truncate text-xs text-muted-foreground">{participant.participant.email}</p></>,
+      cell: (participant) => <><p className="font-medium">{participant.participant.name ?? 'Nom non renseigné'}</p><p className="break-all text-xs text-muted-foreground">{participant.participant.email}</p></>,
     },
     {
       id: 'status',
@@ -187,25 +257,45 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
       id: 'ticket',
       mobile: 'summary',
       header: 'Billet',
-      cell: (participant) => <><p>{participant.ticket.name ?? '—'}</p><p className="truncate text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</p></>,
+      cell: (participant) => <><p>{participant.ticket.name ?? '—'}</p><p className="text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</p></>,
     },
+    { id: 'bib', mobile: 'detail', header: 'Dossard', cell: (participant) => participant.registration.bibNumber ?? '—' },
     {
       id: 'departure',
       mobile: 'detail',
       header: 'Départ',
       cell: (participant) => participant.departure.startTime ? <><p>{formatDate(participant.departure.startTime)}</p><p className="text-xs text-muted-foreground">SAS {participant.departure.waveIndex ?? '—'}</p></> : '—',
-      hiddenByDefault: true,
     },
-    { id: 'group', mobile: 'detail', header: 'Groupe', cell: (participant) => participant.group ?? '—', hiddenByDefault: true },
     {
       id: 'payment',
       mobile: 'detail',
       header: 'Paiement',
       cell: (participant) => participant.payment ? <><p>{participant.payment.status ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</p></> : '—',
-      hiddenByDefault: true,
     },
+    { id: 'group', mobile: 'detail', header: 'Groupe', cell: (participant) => participant.group ?? '—', hiddenByDefault: true },
     { id: 'created-at', mobile: 'detail', header: 'Inscrit le', cell: (participant) => formatDate(participant.registration.createdAt), hiddenByDefault: true },
+    { id: 'cancellation', mobile: 'detail', header: 'Motif d’annulation', cell: (participant) => participant.registration.cancellationReason ?? '—', hiddenByDefault: true },
   ]
+
+  const copyEmails = async (items: EventParticipantRow[]) => {
+    const emails = [...new Set(items.map((item) => item.participant.email))].join(', ')
+    try {
+      await navigator.clipboard.writeText(emails)
+      setNotice({ tone: 'success', text: `${items.length} adresse${items.length > 1 ? 's' : ''} copiée${items.length > 1 ? 's' : ''}.` })
+    } catch {
+      setNotice({ tone: 'error', text: 'Copie impossible : autorise l’accès au presse-papiers.' })
+    }
+  }
+
+  const sendTicketAgain = (participant: EventParticipantRow) => {
+    resendTicket.mutate(
+      { registrationId: participant.id },
+      {
+        onSuccess: (result) => setNotice({ tone: 'success', text: `Billet renvoyé à ${result.to}.` }),
+        onError: (mutationError) => setNotice({ tone: 'error', text: mutationError.message }),
+      },
+    )
+  }
 
   const rowActions: OperationsListAction<EventParticipantRow>[] = [
     {
@@ -220,64 +310,126 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
       onSelect: (participant) => openParticipant(participant, 'wave'),
       disabled: (participant) => getParticipantQuickActionState(participant).wave.disabled,
     },
+    {
+      id: 'resend-ticket',
+      label: 'Renvoyer le billet',
+      onSelect: sendTicketAgain,
+      disabled: (participant) => Boolean(participant.registration.cancelledAt) || resendTicket.isPending,
+    },
+    { id: 'copy-email', label: 'Copier l’e-mail', onSelect: (participant) => void copyEmails([participant]) },
+    {
+      id: 'cancel',
+      label: 'Annuler l’inscription',
+      destructive: true,
+      onSelect: setCancelTarget,
+      disabled: (participant) => Boolean(participant.registration.cancelledAt),
+    },
   ]
 
+  const exportUrl = participantsExportUrl(params)
+
   return (
-    <OperationsList
-      data={{ items: participants, nextCursor: page?.nextCursor ?? null, total: page?.totalCount }}
-      status={error ? 'error' : isLoading && !data ? 'loading' : isFetching ? 'stale' : 'idle'}
-      errorMessage={error?.message}
-      onRetry={() => window.location.reload()}
-      getItemId={(participant) => participant.id}
-      columns={columns}
-      filters={filters}
-      onFilterChange={(filterId, value) => {
-        resetPagination()
-        if (filterId === 'check-in') changeCheckIn(value || 'all')
-        if (filterId === 'sort') changeSort(value as EventParticipantSort)
-        if (filterId === 'direction') setDirection(value as 'asc' | 'desc')
-        if (filterId === 'limit') changeLimit(value)
-      }}
-      search={search}
-      searchPlaceholder="Nom, email ou identifiant"
-      onSearchChange={setSearch}
-      selectedIds={selectedIds}
-      onSelectedIdsChange={setSelectedIds}
-      rowActions={rowActions}
-      pagination={{ cursor, previousCursors, nextCursor: page?.nextCursor ?? null, total: page?.totalCount }}
-      onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => {
-        setCursor(nextCursor)
-        setPreviousCursors(nextPreviousCursors)
-      }}
-      itemLabel="participant"
-      selectedItem={selectedParticipant}
-      onSelectedItemChange={(participant) => {
-        setSelectedParticipant(participant)
-        setSelectedParticipantId(participant?.id ?? null)
-      }}
-      detailTitle={(participant) => participant.participant.name ?? 'Participant'}
-      detailDescription={() => 'Consultez l’inscription et prévisualisez une correction avant de la confirmer.'}
-      renderDetail={(participant) => {
-        const actions = getParticipantQuickActionState(participant)
-        return <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3" aria-label="Actions participant">
-            <span className="mr-1 text-sm font-medium">Prévisualiser</span>
-            <Button type="button" size="sm" variant={selectedPreview === 'ticket' ? 'secondary' : 'outline'} onClick={() => setSelectedPreview('ticket')} disabled={actions.ticket.disabled}>Changement de billet</Button>
-            <Button type="button" size="sm" variant={selectedPreview === 'wave' ? 'secondary' : 'outline'} onClick={() => setSelectedPreview('wave')} disabled={actions.wave.disabled}>Changement de SAS</Button>
-            {actions.wave.disabled ? <span className="text-xs text-muted-foreground">{actions.wave.reason}</span> : null}
+    <div className="space-y-3">
+      {notice ? (
+        <Alert variant={notice.tone === 'error' ? 'destructive' : 'default'} role="status">
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span>{notice.text}</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setNotice(null)}>Fermer</Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      <OperationsList
+        storageKey="event-participants"
+        data={{ items: participants, nextCursor: page?.nextCursor ?? null, total: page?.totalCount }}
+        status={error ? 'error' : isLoading && !data ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={error?.message}
+        onRetry={() => void refetch()}
+        getItemId={(participant) => participant.id}
+        columns={columns}
+        filters={filters}
+        onFilterChange={(filterId, value) => {
+          if (filterId === 'check-in') changeCheckIn(value || 'all')
+          if (filterId === 'status') changeStatus(value || 'all')
+          if (filterId === 'ticket') changeTicket(value)
+          if (filterId === 'wave') changeWave(value)
+          if (filterId === 'sort') changeSort(value as EventParticipantSort)
+          if (filterId === 'direction') {
+            resetPagination()
+            setDirection(value as 'asc' | 'desc')
+          }
+          if (filterId === 'limit') changeLimit(value)
+        }}
+        search={search}
+        searchPlaceholder="Nom, e-mail ou identifiant"
+        onSearchChange={setSearch}
+        toolbarActions={
+          <>
+            <Button type="button" variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+              <RefreshCw className={isFetching ? 'animate-spin' : undefined} />
+              Actualiser
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href={exportUrl} download><Download />Exporter en CSV</a>
+            </Button>
+          </>
+        }
+        selectedIds={selectedIds}
+        onSelectedIdsChange={setSelectedIds}
+        bulkActions={[{ id: 'copy-emails', label: 'Copier les e-mails', onSelect: (items) => void copyEmails(items) }]}
+        rowActions={rowActions}
+        pagination={{ cursor, previousCursors, nextCursor: page?.nextCursor ?? null, total: page?.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPreviousCursors }) => {
+          setCursor(nextCursor)
+          setPreviousCursors(nextPreviousCursors)
+        }}
+        itemLabel="participant"
+        selectedItem={selectedParticipant}
+        onSelectedItemChange={(participant) => {
+          setSelectedParticipant(participant)
+          setSelectedParticipantId(participant?.id ?? null)
+        }}
+        detailTitle={(participant) => participant.participant.name ?? participant.participant.email}
+        detailDescription={() => 'Consultez l’inscription, prévisualisez une correction avant de la confirmer, ou annulez-la.'}
+        renderDetail={(participant) => {
+          const actions = getParticipantQuickActionState(participant)
+          const cancelled = Boolean(participant.registration.cancelledAt)
+          return <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-3" aria-label="Actions participant">
+              <span className="mr-1 text-sm font-medium">Prévisualiser</span>
+              <Button type="button" size="sm" variant={selectedPreview === 'ticket' ? 'secondary' : 'outline'} onClick={() => setSelectedPreview('ticket')} disabled={actions.ticket.disabled}>Changement de billet</Button>
+              <Button type="button" size="sm" variant={selectedPreview === 'wave' ? 'secondary' : 'outline'} onClick={() => setSelectedPreview('wave')} disabled={actions.wave.disabled}>Changement de SAS</Button>
+              {actions.wave.disabled ? <span className="text-xs text-muted-foreground">{actions.wave.reason}</span> : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" disabled={cancelled || resendTicket.isPending} onClick={() => sendTicketAgain(participant)}>Renvoyer le billet</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => void copyEmails([participant])}>Copier l’e-mail</Button>
+              <Button type="button" size="sm" variant="destructive" disabled={cancelled} onClick={() => setCancelTarget(participant)}>Annuler l’inscription</Button>
+            </div>
+            <div className="grid gap-4 text-sm sm:grid-cols-2">
+              <div><p className="text-muted-foreground">Email</p><p className="break-all">{participant.participant.email}</p></div>
+              <div><p className="text-muted-foreground">Inscription</p><p className="break-all font-mono text-xs">{participant.id}</p></div>
+              <div><p className="text-muted-foreground">Billet</p><p>{participant.ticket.name ?? '—'}</p></div>
+              <div><p className="text-muted-foreground">Dossard</p><p>{participant.registration.bibNumber ?? '—'}</p></div>
+              <div><p className="text-muted-foreground">Départ</p><p>{participant.departure.startTime ? `${formatDate(participant.departure.startTime)} · SAS ${participant.departure.waveIndex ?? '—'}` : '—'}</p></div>
+              <div><p className="text-muted-foreground">Groupe</p><p>{participant.group ?? 'Aucun'}</p></div>
+              <div><p className="text-muted-foreground">Paiement</p><p>{participant.payment ? `${participant.payment.status ?? '—'} · ${formatAmount(participant.payment.amountCents, participant.payment.currency)}` : '—'}</p></div>
+              <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(participant.registration.createdAt)}</p></div>
+              {cancelled ? <div className="sm:col-span-2"><p className="text-muted-foreground">Annulée le {formatDate(participant.registration.cancelledAt ?? null)}</p><p>{participant.registration.cancellationReason ?? 'Motif non renseigné'}</p></div> : null}
+            </div>
+            {selectedPreview === 'ticket' ? <TicketChangePreviewPanel eventId={eventId} participant={participant} /> : null}
+            {selectedPreview === 'wave' ? <WaveChangePreviewPanel eventId={eventId} participant={participant} /> : null}
           </div>
-          <div className="grid gap-4 text-sm sm:grid-cols-2">
-            <div><p className="text-muted-foreground">Email</p><p className="break-all">{participant.participant.email}</p></div>
-            <div><p className="text-muted-foreground">Inscription</p><p className="font-mono text-xs break-all">{participant.id}</p></div>
-            <div><p className="text-muted-foreground">Billet</p><p>{participant.ticket.name ?? '—'}</p></div>
-            <div><p className="text-muted-foreground">Départ</p><p>{participant.departure.startTime ? `${formatDate(participant.departure.startTime)} · SAS ${participant.departure.waveIndex ?? '—'}` : '—'}</p></div>
-            <div><p className="text-muted-foreground">Groupe</p><p>{participant.group ?? 'Aucun'}</p></div>
-            <div><p className="text-muted-foreground">Paiement</p><p>{participant.payment ? `${participant.payment.status ?? '—'} · ${formatAmount(participant.payment.amountCents, participant.payment.currency)}` : '—'}</p></div>
-          </div>
-          {selectedPreview === 'ticket' ? <TicketChangePreviewPanel eventId={eventId} participant={participant} /> : null}
-          {selectedPreview === 'wave' ? <WaveChangePreviewPanel eventId={eventId} participant={participant} /> : null}
-        </div>
-      }}
-    />
+        }}
+      />
+      <CancelRegistrationDialog
+        participant={cancelTarget}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+        onCancelled={(text) => {
+          setCancelTarget(null)
+          setSelectedParticipantId(null)
+          setNotice({ tone: 'success', text })
+        }}
+      />
+    </div>
   )
 }
