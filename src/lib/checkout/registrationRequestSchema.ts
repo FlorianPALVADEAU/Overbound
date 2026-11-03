@@ -12,6 +12,10 @@ export const registrationParticipantSchema = z.object({
   birthDate: z.string().optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
+  guardianName: z.string().optional(),
+  guardianPhone: z.string().optional(),
+  referentName: z.string().optional(),
+  referentPhone: z.string().optional(),
   medicalInfo: z.string().optional(),
   healthDataConsent: z.boolean().optional(),
   selectedWaveIndex: z.number().int().positive().nullable().optional(),
@@ -39,6 +43,7 @@ export const createRegistrationRequestSchema = z.object({
       accepted: z.boolean(),
       rulebookAccepted: z.boolean().optional(),
       groupAttestation: z.boolean().optional(),
+      minorAttestation: z.boolean().optional(),
     })
     .default({ read: false, accepted: false, rulebookAccepted: false }),
   freeOrderMetadata: z.record(z.string(), z.string()).nullable().optional(),

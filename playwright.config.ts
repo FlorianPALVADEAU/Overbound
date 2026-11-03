@@ -49,7 +49,7 @@ export default defineConfig({
     // The checkout is mostly bought from a phone: its flow also runs at phone size.
     {
       name: 'checkout-phone-390x844',
-      testMatch: /checkout\.spec\.ts$/,
+      testMatch: /checkout(-minors)?\.spec\.ts$/,
       use: { viewport: VIEWPORTS['phone-390x844'] },
     },
     {

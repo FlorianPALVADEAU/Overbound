@@ -17,6 +17,8 @@ export interface Event {
   ranked_bib_capacity?: number | null
   /** T-shirt offert aux N premiers participants ; null = pas d'offre. */
   tshirt_offer_quota?: number | null
+  /** Âge minimal le jour de l'événement : 18, ou 16 quand l'édition admet les mineurs sur le format OPEN. */
+  minimum_age?: number
   status: EventStatus
   external_provider?: string | null
   external_event_id?: string | null

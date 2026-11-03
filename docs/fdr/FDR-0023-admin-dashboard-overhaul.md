@@ -1,4 +1,4 @@
-# FDR-0022 - Refonte du back-office : pilotage, participants, commandes
+# FDR-0023 - Refonte du back-office : pilotage, participants, commandes
 
 - **Statut** : Accepted (code livré sur la branche `worktree-admin-dashboard-overhaul`, migration à appliquer à la main)
 - **Date** : 2026-11-03

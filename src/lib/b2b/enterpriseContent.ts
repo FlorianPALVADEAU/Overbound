@@ -1,5 +1,5 @@
 import { HEALTH_PROOF } from '@/constants/participantNotice'
-import { OPEN_FORMAT_RULES, RANKED_FORMAT_RULES } from '@/constants/raceFormatRules'
+import { AGE_RULE_SHORT, OPEN_FORMAT_RULES, RANKED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import { FALLBACK_NEXT_EDITION, type NextEditionFacts } from '@/lib/seo/nextEdition'
 import { BRAND, FORMAT_FACTS, PREVIOUS_EDITION, SITE_URL } from '@/lib/seo/siteFacts'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/structuredData'
@@ -75,7 +75,7 @@ export const buildEnterpriseFaq = (next: NextEditionFacts = FALLBACK_NEXT_EDITIO
     },
     {
       question: 'Quel est l\'âge minimum ?',
-      answer: `L'âge minimum est de ${FORMAT_FACTS.minAge} ans.`,
+      answer: `L'âge minimum est de ${AGE_RULE_SHORT}.`,
     },
     {
       question: "Proposez-vous autre chose que des billets ?",
@@ -105,7 +105,7 @@ export const buildGoodToKnow = (next: NextEditionFacts = FALLBACK_NEXT_EDITION):
   },
   {
     title: 'Sur place',
-    text: `À la dernière édition : village avec zones de repos et restauration, dépôt de sacs, spectateurs bienvenus. Parking payant (6 € par véhicule), accès possible en transports en commun comme en voiture. Pas de douches, et pas de vestiaires : des toilettes publiques. Prévoyez des vêtements de rechange. ${nextVenueNote(next)} Participants à partir de ${FORMAT_FACTS.minAge} ans.`,
+    text: `À la dernière édition : village avec zones de repos et restauration, dépôt de sacs, spectateurs bienvenus. Parking payant (6 € par véhicule), accès possible en transports en commun comme en voiture. Pas de douches, et pas de vestiaires : des toilettes publiques. Prévoyez des vêtements de rechange. ${nextVenueNote(next)} Participants à partir de ${AGE_RULE_SHORT}.`,
   },
 ]
 

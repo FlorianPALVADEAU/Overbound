@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { TICKETS_SECTION_ID } from '@/lib/checkout/fieldIds'
+import { ageRuleSentence } from '@/lib/events/minimumAge'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import TicketCard from './TicketCard'
 import type { EventTicket } from './types'
@@ -13,6 +14,8 @@ interface TicketSelectionStepProps {
   sellingTier: EventPriceTier | null
   availableSpots: number
   showErrors: boolean
+  /** `events.minimum_age`: drives the age rule shown above the tickets. */
+  minimumAge: number
   groupBanner?: ReactNode
 }
 
@@ -24,6 +27,7 @@ export default function TicketSelectionStep({
   sellingTier,
   availableSpots,
   showErrors,
+  minimumAge,
   groupBanner,
 }: TicketSelectionStepProps) {
   const ticketCountExcluding = (ticketId: string) =>
@@ -32,7 +36,7 @@ export default function TicketSelectionStep({
 
   return (
     <div id={TICKETS_SECTION_ID} tabIndex={-1} className="space-y-3 outline-none">
-      <p className="text-sm text-muted-foreground">Réservé aux personnes majeures (18 ans le jour de l&apos;événement).</p>
+      <p className="text-sm text-muted-foreground">{ageRuleSentence(minimumAge)}</p>
       {groupBanner}
 
       {tickets.map((ticket) => (

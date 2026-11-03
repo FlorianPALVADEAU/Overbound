@@ -1,4 +1,6 @@
 import {
+  AGE_RULE_ANSWER,
+  AGE_RULE_SHORT,
   OPEN_FORMAT_RULES,
   RANKED_FORMAT_RULES,
   RANKED_LAP_TIME_LIMITS,
@@ -111,7 +113,7 @@ export const RANKED_JOURNEY: JourneyStep[] = [
 export const PRACTICAL_INFOS = [
   { title: 'Même parcours', text: `Une boucle de ${SHARED_FORMAT_RULES.loopKm} km, plus de 10 obstacles, identique en OPEN et en RANKED.` },
   { title: 'Obstacles adaptés', text: 'Les obstacles de port et de soulèvement sont adaptés aux femmes comme aux hommes.' },
-  { title: 'Âge minimum', text: `${SHARED_FORMAT_RULES.minAge} ans révolus.` },
+  { title: 'Âge minimum', text: `${AGE_RULE_SHORT}.` },
   { title: 'Matériel', text: 'Aucun matériel obligatoire.' },
   { title: 'Ravitaillement', text: 'Un ravitaillement est prévu pour les deux formats, sur le site.' },
 ]
@@ -205,7 +207,7 @@ export const FORMAT_FAQS = [
   {
     id: 'age',
     question: 'Y a-t-il un âge minimum ?',
-    answer: `Oui, ${SHARED_FORMAT_RULES.minAge} ans révolus pour les deux formats.`,
+    answer: `Oui. ${AGE_RULE_ANSWER}`,
   },
   {
     id: 'gear',

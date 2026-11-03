@@ -23,6 +23,7 @@ export interface OrderTicketRow {
     location: string
     status: string
     capacity: number | null
+    minimum_age: number
     price_tiers: Array<{
       id: string
       discount_percentage: number
@@ -47,7 +48,7 @@ export const fetchTicketsForSelections = async (supabase: PricingSupabase, ticke
       `id, name, final_price_cents, currency, operations_config,
       race:races!tickets_race_id_fkey(name),
       event:events (
-        id, title, date, sales_start, location, status, capacity,
+        id, title, date, sales_start, location, status, capacity, minimum_age,
         price_tiers:event_price_tiers(id, discount_percentage, available_from, available_until, display_order, max_registrations)
       )`,
     )

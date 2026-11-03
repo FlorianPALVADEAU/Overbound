@@ -6,7 +6,7 @@ import { CheckIcon, ChevronRightIcon, DownloadIcon, RotateCcwIcon, SendIcon, Tic
 import { AccountDataBoundary, type AuthenticatedAccountData } from '@/components/account/AccountDataBoundary'
 import { AccountScreen, Eyebrow } from '@/components/account/AccountScreen'
 import { Button } from '@/components/ui/button'
-import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { OFFICIAL_RULEBOOK_PDF_PATH, PARENTAL_AUTHORIZATION_PDF_PATH } from '@/constants/registration'
 import { useFlexibleRefund } from '@/hooks/account/useFlexibleRefund'
 import { useTicketTransfer, type TransferUiState } from '@/hooks/account/useTicketTransfer'
 import { formatLongDate } from '@/lib/account/format'
@@ -211,6 +211,11 @@ function TicketsArchiveContent({ user, profile, registrations }: AuthenticatedAc
           Règlement officiel
         </Link>{' '}
         (PDF)
+        {' · '}
+        <Link href={PARENTAL_AUTHORIZATION_PDF_PATH} target="_blank" className="font-semibold text-foreground underline-offset-4 hover:underline">
+          Autorisation parentale
+        </Link>{' '}
+        (PDF, participants de 16 ou 17 ans)
       </p>
     </AccountScreen>
   )

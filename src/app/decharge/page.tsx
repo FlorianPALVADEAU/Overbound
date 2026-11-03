@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { OFFICIAL_RULEBOOK_PDF_PATH, REGULATION_VERSION } from '@/constants/registration'
+import { OFFICIAL_RULEBOOK_PDF_PATH, PARENTAL_AUTHORIZATION_PDF_PATH, REGULATION_VERSION } from '@/constants/registration'
 import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_TITLE } from '@/constants/waiver'
 import { Container, DISPLAY_TITLE, Eyebrow, Section } from '@/components/ds'
 import { cn } from '@/lib/utils'
@@ -32,6 +32,10 @@ export default function WaiverPage() {
           Documents liés :{' '}
           <Link href={OFFICIAL_RULEBOOK_PDF_PATH} className="text-primary hover:underline">
             règlement officiel (PDF)
+          </Link>
+          {' · '}
+          <Link href={PARENTAL_AUTHORIZATION_PDF_PATH} className="text-primary hover:underline">
+            autorisation parentale, participants de 16 ou 17 ans (PDF)
           </Link>
           {' · '}
           <Link href="/cgv" className="text-primary hover:underline">

@@ -7,6 +7,10 @@ export type ParticipantField =
   | 'birthDate'
   | 'emergencyContactName'
   | 'emergencyContactPhone'
+  | 'guardianName'
+  | 'guardianPhone'
+  | 'referentName'
+  | 'referentPhone'
   | 'wave'
   | 'companionWave'
   | 'healthDataConsent'
@@ -19,6 +23,10 @@ const PARTICIPANT_FIELD_SUFFIX: Record<ParticipantField, string> = {
   birthDate: 'birthDate',
   emergencyContactName: 'emergency',
   emergencyContactPhone: 'emergencyPhone',
+  guardianName: 'guardian',
+  guardianPhone: 'guardianPhone',
+  referentName: 'referent',
+  referentPhone: 'referentPhone',
   wave: 'wave',
   companionWave: 'companion-wave',
   healthDataConsent: 'health-consent',
@@ -33,6 +41,7 @@ export const CONSENT_FIELD_IDS = {
   rulebookAccepted: 'rulebook-accepted',
   disclaimerAccepted: 'disclaimer-accepted',
   groupAttestation: 'group-attestation',
+  minorAttestation: 'minor-attestation',
   signature: 'signature-pad',
 } as const
 

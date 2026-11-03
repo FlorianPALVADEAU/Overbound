@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 import { CGV_VERSION } from '@/constants/legalVersions'
-import { HEALTH_PROOF_SENTENCE } from '@/constants/participantNotice'
+import {
+  HEALTH_PROOF_MINOR_SENTENCE,
+  HEALTH_PROOF_SENTENCE,
+  MINOR_EMERGENCY_PROCEDURE,
+  PARTICIPANTS_ARE_THIRD_PARTIES,
+} from '@/constants/participantNotice'
 import { TICKET_TRANSFER_FEE_CENTS, formatTransferFee } from '@/lib/tickets/transferPolicy'
 import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 import { Container, Section } from '@/components/ds'
@@ -175,9 +180,17 @@ export default function CGVPage() {
             <section id="inscription" className="mb-12">
               <h2 className="text-2xl font-bold">4. Modalités d'inscription</h2>
               <p>
-                <strong>Conditions d'âge :</strong> la participation aux événements payants de l'édition 2026 est
-                réservée aux personnes majeures (18 ans révolus à la date de l'événement). Les conditions d'âge des
-                éditions suivantes sont précisées sur la page de chaque événement.
+                <strong>Conditions d'âge :</strong> la participation est réservée aux personnes majeures (18 ans
+                révolus à la date de l'événement), sauf si la page de l'événement indique qu'il est ouvert aux
+                participants de 16 et 17 ans. Dans ce cas, un participant de 16 ou 17 ans ne peut s'inscrire qu'au
+                format OPEN, jamais au format RANKED, et doit remplir les conditions de l'article 11. Aucune
+                inscription n'est acceptée avant 16 ans. Overbound refuse ou annule l'inscription d'un participant
+                qui ne remplit pas ces conditions.
+              </p>
+              <p>
+                <strong>Billet d'un participant mineur :</strong> l'acheteur d'un billet pour un participant de 16 ou
+                17 ans certifie être son représentant légal ou agir avec l'accord de celui-ci. Il renseigne à
+                l'inscription les coordonnées du représentant légal et de l'adulte référent (article 11).
               </p>
               <p>
                 <strong>Création de compte :</strong> L'inscription nécessite la création d'un compte personnel avec
@@ -435,8 +448,20 @@ export default function CGVPage() {
             <section id="conditions-participation" className="mb-12">
               <h2 className="text-2xl font-bold">11. Conditions de participation</h2>
               <p>
-                <strong>Âge :</strong> la participation à l'édition 2026 est réservée aux personnes majeures. Aucun
-                dossard ne peut être transféré à une personne mineure.
+                <strong>Âge :</strong> la participation est réservée aux personnes majeures, sauf ouverture de
+                l'événement aux participants de 16 et 17 ans (article 4). Aucun dossard ne peut être transféré à une
+                personne mineure.
+              </p>
+              <p>
+                <strong>Participants de 16 et 17 ans :</strong> sur un événement qui leur est ouvert, ils participent
+                au format OPEN uniquement. Au retrait du dossard, le mineur remet l'autorisation parentale (modèle
+                fourni par Overbound) signée par son représentant légal et par lui-même, et présente sa pièce
+                d'identité et l'attestation de santé prévue ci-dessous. Un adulte référent, désigné à l'inscription,
+                est présent sur le site et joignable pendant toute la participation du mineur. Sans l'un de ces
+                éléments, le départ est refusé et le prix du billet n'est pas remboursé. En dehors de l'épreuve, le
+                mineur reste sous la responsabilité de son représentant légal et de l'adulte référent : Overbound
+                n'assure ni garde ni surveillance de mineurs, sans préjudice de ses obligations de sécurité pendant
+                l'épreuve. {MINOR_EMERGENCY_PROCEDURE}
               </p>
               <p>
                 <strong>Aptitude physique :</strong> chaque participant certifie disposer d'une condition physique
@@ -444,11 +469,13 @@ export default function CGVPage() {
               </p>
               <p>
                 <strong>Justificatif de santé :</strong> {HEALTH_PROOF_SENTENCE} Il appartient à chaque participant
-                de l'obtenir avant l'événement, y compris pour les dossards reçus par transfert.
+                de l'obtenir avant l'événement, y compris pour les dossards reçus par transfert. {HEALTH_PROOF_MINOR_SENTENCE}
               </p>
               <p>
                 <strong>Décharge signée :</strong> chaque participant signe personnellement la décharge de
-                responsabilité. La signature d'une autre personne ne vaut pas pour lui.
+                responsabilité. La signature d'une autre personne ne vaut pas pour lui, sauf pour un participant
+                mineur : sa décharge est signée par son représentant légal, ou par la personne qui agit avec l'accord
+                de celui-ci.
               </p>
               <p>
                 <strong>Identité :</strong> le dossard est personnel. Une pièce d'identité est demandée au retrait du
@@ -488,8 +515,9 @@ export default function CGVPage() {
               <p>
                 <strong>Assurance responsabilité civile :</strong> conformément à l'article L321-1 du Code du sport,
                 Overbound est assurée auprès de {COMPANY_INFO.insurance.insurer} (contrat «{' '}
-                {COMPANY_INFO.insurance.product} » n° {COMPANY_INFO.insurance.policyNumber}, valable du{' '}
-                {COMPANY_INFO.insurance.validFrom} au {COMPANY_INFO.insurance.validUntil}) pour sa responsabilité
+                {COMPANY_INFO.insurance.product} » n° {COMPANY_INFO.insurance.policyNumber}, souscrit le{' '}
+                {COMPANY_INFO.insurance.validFrom}, première échéance le {COMPANY_INFO.insurance.validUntil}, renouvelé
+                chaque année par tacite reconduction) pour sa responsabilité
                 civile au titre des activités suivantes : {COMPANY_INFO.insurance.coveredActivities}. Plafonds de
                 garantie :
               </p>
@@ -515,15 +543,12 @@ export default function CGVPage() {
                 frais médicaux, son invalidité ou son décès restent alors à sa charge, sauf assurance personnelle.
               </p>
               <p>
-                <strong>Dommage causé à un autre participant :</strong> Overbound ne s'engage pas sur la prise en
-                charge, par son contrat, d'un dommage qu'un participant cause à un autre participant sans faute
-                d'Overbound. Chaque participant doit vérifier que sa responsabilité civile personnelle (assurance
-                habitation, licence sportive) couvre ce cas.
+                <strong>Dommage causé à un autre participant :</strong> {PARTICIPANTS_ARE_THIRD_PARTIES}
               </p>
               <p>
-                <strong>Dossard transféré et éditions suivantes :</strong> le contrat ci-dessus est celui en vigueur à
-                la date de publication de ces CGV. Overbound communique l'attestation applicable à chaque édition sur
-                demande.
+                <strong>Validité :</strong> le contrat ci-dessus est celui en vigueur à la date de publication de ces
+                CGV. Overbound communique sur demande l'attestation d'assurance en vigueur à la date de chaque
+                événement.
               </p>
               <p>
                 <strong>Assurance individuelle accident :</strong> Overbound recommande à chaque participant de

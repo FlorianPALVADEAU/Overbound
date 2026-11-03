@@ -82,9 +82,9 @@ const paragraphs = {
   duree: [
     'Compte utilisateur : durée d’activité du compte + 3 ans à compter de la dernière interaction pour relances marketing (intérêt légitime).',
     'Données relatives aux événements (inscriptions, factures) : 10 ans conformément aux obligations comptables et contractuelles.',
-    'Décharges signées et preuves de transfert (identité, signature, date, adresse IP) : 10 ans après l’événement, durée de prescription d’une action en réparation d’un dommage corporel (article 2226 du Code civil).',
+    'Décharges signées et preuves de transfert (identité, signature, date, adresse IP) : 10 ans après l’événement, durée de prescription d’une action en réparation d’un dommage corporel (article 2226 du Code civil). Pour un participant mineur, la prescription ne court qu’à sa majorité (article 2235 du Code civil) : sa décharge et son autorisation parentale sont conservées jusqu’à ses 28 ans.',
     'Informations de santé et contact d’urgence : supprimés automatiquement 30 jours après l’événement, ou dès le transfert du dossard pour l’ancien titulaire.',
-    'Documents PPS ou autorisations parentales : durée de l’événement + 1 an, puis archivage sécurisé ou suppression.',
+    'Documents PPS : durée de l’événement + 1 an, puis suppression. Autorisations parentales : jusqu’aux 28 ans du participant, comme sa décharge (voir ci-dessus).',
     'Logs techniques : 12 mois maximum.',
     'Cookies : durée maximale de 13 mois. Choix de consentement renouvelé tous les 12 mois ; justificatif de consentement (choix, date, adresse IP tronquée) conservé 13 mois.',
     'Images et contenus médiatiques : 5 ans, ou suppression anticipée sur demande justifiée.',
@@ -112,7 +112,9 @@ const paragraphs = {
   ],
   mineurs: [
     'L’accès à la Plateforme est possible dès 16 ans. Pour les mineurs de moins de 18 ans souhaitant s’inscrire à un événement payant, une autorisation parentale est exigée.',
-    'Les données relatives aux mineurs sont traitées avec une vigilance renforcée : accès restreint, durée de conservation limitée à 3 ans, suppression sur simple demande du représentant légal.',
+    'Les données relatives aux mineurs sont traitées avec une vigilance renforcée : accès restreint, suppression sur demande du représentant légal, sauf les données qu’Overbound doit conserver pour une obligation légale (factures) ou pour la constatation, l’exercice ou la défense de droits en justice (décharge signée, autorisation parentale), pendant les durées indiquées à l’article 6.',
+    'Participant de 16 ou 17 ans à un événement ouvert aux mineurs : Overbound collecte le nom et le numéro de téléphone du représentant légal et de l’adulte référent, pour l’inscription, le contrôle des papiers au retrait du dossard et pour les prévenir en cas d’incident (exécution du contrat et sécurité des participants). Ces coordonnées sont supprimées automatiquement 30 jours après l’événement.',
+    'L’autorisation parentale papier remise au retrait du dossard est conservée, avec la décharge, jusqu’aux 28 ans du participant (article 6), puis détruite. L’attestation de santé du mineur est contrôlée sur place et n’est pas enregistrée ; seuls la date du contrôle et l’identité du bénévole qui l’a effectué sont conservées.',
   ],
   cookies: [
     'Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, maintien de session), ainsi que, uniquement avec le consentement de l’utilisateur et finalité par finalité, des traceurs de mesure d’audience (Google Analytics, Google Tag Manager) et de publicité (Meta Pixel et API de conversions Meta).',

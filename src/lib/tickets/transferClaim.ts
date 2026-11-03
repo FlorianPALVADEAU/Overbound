@@ -59,6 +59,10 @@ export const buildHandOverUpdate = (context: HandOverContext) => ({
   guarantor_user_id: context.previousHolderId,
   // The "billet flexible" refund belongs to the buyer: a transferred bib loses it.
   flexible_refund: false,
+  // A bib only moves to an adult: the minor's papers checked for the former holder do not follow it.
+  is_minor: false,
+  minor_papers_verified_at: null,
+  minor_papers_verified_by: null,
 })
 
 interface SignatureContext {

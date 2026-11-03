@@ -19,11 +19,15 @@ import {
   XIcon
 } from 'lucide-react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
+import type { MinorPapersChecks } from '@/lib/checkin/minorPapers'
+import { MinorPapersDialog } from './MinorPapersDialog'
 
 interface Registration {
   id: string
   email: string
   checked_in: boolean
+  is_minor?: boolean
+  minor_papers_verified_at?: string | null
   qr_code_token: string
   created_at: string
   tickets: {
@@ -49,6 +53,8 @@ export function VolunteerCheckin() {
   const [scanToken, setScanToken] = useState('')
   const [loading, setLoading] = useState(true)
   const [scanLoading, setScanLoading] = useState(false)
+  // A minor scanned or ticked without controlled papers: the desk dialog asks for them before retrying.
+  const [pendingMinor, setPendingMinor] = useState<{ token: string; email: string } | null>(null)
   const [refreshLoading, setRefreshLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
@@ -123,7 +129,7 @@ export function VolunteerCheckin() {
   }, [searchTerm, registrations])
 
   const submitScan = useCallback(
-    async (token: string) => {
+    async (token: string, minorChecks?: MinorPapersChecks) => {
       const trimmed = token.trim()
 
       if (!trimmed) {
@@ -142,15 +148,21 @@ export function VolunteerCheckin() {
           },
           body: JSON.stringify({
             token: trimmed,
+            ...(minorChecks ? { minorChecks } : {}),
           }),
         })
 
         const data = await response.json()
 
         if (!response.ok) {
+          if (data.code === 'MINOR_PAPERS_REQUIRED') {
+            setPendingMinor({ token: trimmed, email: data.registration?.email ?? 'Ce participant' })
+            return
+          }
           setMessage({ type: 'error', text: data.error || 'Erreur lors du check-in' })
           return
         }
+        setPendingMinor(null)
 
         const alreadyChecked =
           registrations.find((r) => r.id === data.registration.id)?.checked_in ?? false
@@ -208,6 +220,10 @@ export function VolunteerCheckin() {
       const data = await response.json()
 
       if (!response.ok) {
+        if (data.code === 'MINOR_PAPERS_REQUIRED') {
+          setPendingMinor({ token: registration.qr_code_token, email: registration.email })
+          return
+        }
         setMessage({ type: 'error', text: data.error || 'Erreur lors du check-in manuel' })
         return
       }
@@ -365,6 +381,13 @@ export function VolunteerCheckin() {
 
   return (
     <div className="space-y-8">
+      <MinorPapersDialog
+        key={pendingMinor?.token ?? 'closed'}
+        email={pendingMinor?.email ?? null}
+        submitting={scanLoading}
+        onCancel={() => setPendingMinor(null)}
+        onConfirm={(checks) => pendingMinor && submitScan(pendingMinor.token, checks)}
+      />
       <StatRow
         compact
         stats={[
@@ -566,6 +589,11 @@ export function VolunteerCheckin() {
                             >
                               {registration.checked_in ? 'Présent' : 'En attente'}
                             </Badge>
+                            {registration.is_minor ? (
+                              <Badge variant="outline" className="border-warning/40 bg-warning/15 text-warning">
+                                {registration.minor_papers_verified_at ? 'Mineur, papiers contrôlés' : 'Mineur, papiers à contrôler'}
+                              </Badge>
+                            ) : null}
                           </div>
                           <p className="truncate text-sm text-muted-foreground">
                             {ticket?.name || 'Ticket non défini'}

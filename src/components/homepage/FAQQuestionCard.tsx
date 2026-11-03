@@ -15,7 +15,7 @@ export const FAQQuestionCard = ({ question, loading, error }: { question: Questi
   }
 
   return (
-    <FaqAccordionItem title={question.title}>
+    <FaqAccordionItem id={question.id} title={question.title}>
       {question.answer && question.answer.length > 0 ? <RichText value={question.answer} /> : null}
       {question.relatedLinks && question.relatedLinks.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2 pt-2 text-xs sm:text-sm">

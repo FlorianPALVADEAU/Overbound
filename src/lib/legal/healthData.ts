@@ -1,3 +1,5 @@
+import { MINOR_CONTACT_FIELDS } from '@/lib/checkout/minorContacts'
+
 /**
  * Medical notes are health data (art. 9 GDPR): they are only kept when the
  * participant ticked the dedicated, explicit consent. Without it they are dropped.
@@ -30,13 +32,17 @@ export const redactParticipantSafetyData = (signatureData: string, now: Date): s
   }
   if (!parsed || typeof parsed !== 'object') return null
   const record = parsed as { participant?: Record<string, unknown> }
+  const participant = record.participant ?? {}
+  // A minor's representative and adult on site are contacts for the day too: cleared when present.
+  const minorContacts = Object.fromEntries(MINOR_CONTACT_FIELDS.filter((field) => field in participant).map((field) => [field, '']))
   return JSON.stringify({
     ...record,
     participant: {
-      ...(record.participant ?? {}),
+      ...participant,
       medicalInfo: '',
       emergencyContactName: '',
       emergencyContactPhone: '',
+      ...minorContacts,
     },
     safetyDataRedactedAt: now.toISOString(),
   })

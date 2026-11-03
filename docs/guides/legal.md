@@ -192,23 +192,7 @@ Notes :
 
 Below are ready-to-review frontmatter and template snippets populated with the information you provided. Use these as drafts only — send to your legal contact for validation.
 
-### Association — `ASSOCIATION OVERBOUND RACE` (example frontmatter)
-
----
-title: "Convention de partenariat - ASSOCIATION OVERBOUND RACE"
-version: 0.1
-author: "Florian PALVADEAU <florian.plvd@gmail.com>"
-legal_review: false
-reviewed_by: ""
-review_date: ""
-notes: "Draft de convention + clauses standard — vérifier statuts et subventions"
----
-
-### Association — sample clause (contact + RGPD)
-
-Contact légal : Florian PALVADEAU — florian.plvd@gmail.com — 06 52 26 60 54
-
-Protection des données : Les données collectées par l'ASSOCIATION OVERBOUND RACE seront utilisées conformément à la Politique de Confidentialité de l'association et aux lois applicables (RGPD). Les personnes peuvent exercer leurs droits en contactant le président à l'adresse ci‑dessus.
+L'association Overbound Race n'est plus utilisée et sa fermeture est prévue (décision du 2026-11-03) : ne plus la citer dans un texte légal ou un contrat. Le seul organisateur est la SASU Palvadeau Organisation.
 
 ### SASU — `Palvadeau Organisation / OVERBOUND` (example frontmatter)
 

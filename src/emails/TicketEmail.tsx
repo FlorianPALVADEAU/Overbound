@@ -14,8 +14,8 @@ import {
   Steps,
   Title,
 } from './blocks'
-import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
-import { HEALTH_PROOF } from '@/constants/participantNotice'
+import { OFFICIAL_RULEBOOK_PDF_PATH, PARENTAL_AUTHORIZATION_PDF_PATH } from '@/constants/registration'
+import { HEALTH_PROOF, HEALTH_PROOF_MINOR } from '@/constants/participantNotice'
 import { VENUE_ACCESS } from '@/constants/venueAccess'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 import { getFirstName } from '@/lib/email/participantName'
@@ -32,6 +32,8 @@ export interface TicketEmailProps {
   bibNumber?: number | null
   qrUrl: string
   manageUrl: string
+  /** Participant aged 16 or 17: other papers at pickup (health attestation, parental authorization, adult referent). */
+  isMinor?: boolean
 }
 
 export default function TicketEmail({
@@ -45,9 +47,11 @@ export default function TicketEmail({
   bibNumber,
   qrUrl,
   manageUrl,
+  isMinor = false,
 }: TicketEmailProps) {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://overbound-race.com'
   const firstName = getFirstName(participantName)
+  const parentalAuthorizationUrl = `${siteUrl}${PARENTAL_AUTHORIZATION_PDF_PATH}`
   const holder = participantName.includes('@') ? participantName : participantName.toUpperCase()
 
   return (
@@ -148,7 +152,9 @@ export default function TicketEmail({
           },
           {
             title: 'Retire ton dossard',
-            text: 'Montre ton QR code, ta pièce d’identité et ton Pass Prévention Santé. Les infos de retrait te sont envoyées par email avant l’événement.',
+            text: isMinor
+              ? 'Montre ton QR code et ta pièce d’identité, remets l’autorisation parentale signée par ton représentant légal et par toi, et l’attestation de santé pour mineurs. Ton adulte référent est présent avec toi. Les infos de retrait te sont envoyées par email avant l’événement.'
+              : 'Montre ton QR code, ta pièce d’identité et ton Pass Prévention Santé. Les infos de retrait te sont envoyées par email avant l’événement.',
           },
           {
             title: 'Prends ton départ',
@@ -164,15 +170,34 @@ export default function TicketEmail({
         items={[
           'Ta pièce d’identité',
           'Ce QR code, en capture d’écran',
-          <>
-            Ton {HEALTH_PROOF.name}, délivré par {HEALTH_PROOF.issuer}, <strong>ou</strong> {HEALTH_PROOF.alternative}
-          </>,
+          ...(isMinor
+            ? [
+                <>
+                  L’
+                  <Link href={parentalAuthorizationUrl} style={{ color: EMAIL_COLORS.eyebrow, textDecoration: 'underline' }}>
+                    autorisation parentale (PDF)
+                  </Link>
+                  , à imprimer et à faire signer par ton représentant légal et par toi
+                </>,
+                <>
+                  L’{HEALTH_PROOF_MINOR.name} délivrée par {HEALTH_PROOF_MINOR.issuer}, <strong>ou</strong>{' '}
+                  {HEALTH_PROOF_MINOR.alternative}. Si une réponse du questionnaire est « oui » : {HEALTH_PROOF_MINOR.certificate}
+                </>,
+                'Ton adulte référent (majeur), présent sur le site et joignable par téléphone pendant toute ta course',
+              ]
+            : [
+                <>
+                  Ton {HEALTH_PROOF.name}, délivré par {HEALTH_PROOF.issuer}, <strong>ou</strong> {HEALTH_PROOF.alternative}
+                </>,
+              ]),
           'Des vêtements de rechange laissés dans ta voiture',
         ]}
       />
 
-      <Callout tone="warning" title="Sans PPS ou licence, tu ne pars pas">
-        Il est contrôlé {HEALTH_PROOF.checkpoint}. {HEALTH_PROOF.consequence}
+      <Callout tone="warning" title={isMinor ? 'Sans ces papiers, tu ne pars pas' : 'Sans PPS ou licence, tu ne pars pas'}>
+        {isMinor
+          ? `Ils sont contrôlés ${HEALTH_PROOF.checkpoint}. ${HEALTH_PROOF.consequence}`
+          : `Il est contrôlé ${HEALTH_PROOF.checkpoint}. ${HEALTH_PROOF.consequence}`}
       </Callout>
 
       <SmallPrint>
@@ -202,6 +227,15 @@ export default function TicketEmail({
         <Link href={`${siteUrl}${OFFICIAL_RULEBOOK_PDF_PATH}`} style={{ color: EMAIL_COLORS.eyebrow }}>
           Règlement officiel (PDF)
         </Link>
+        {' · '}
+        {isMinor && (
+          <>
+            {' · '}
+            <Link href={parentalAuthorizationUrl} style={{ color: EMAIL_COLORS.eyebrow }}>
+              Autorisation parentale (PDF)
+            </Link>
+          </>
+        )}
         {' · '}
         <Link href={`${siteUrl}/cgv`} style={{ color: EMAIL_COLORS.eyebrow }}>
           CGV

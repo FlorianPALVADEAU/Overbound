@@ -34,6 +34,8 @@ export type RegistrationDisclaimer = {
   rulebookAccepted: boolean
   /** Set only when the buyer registers other people and vouches for them. */
   groupAttestation?: boolean
+  /** Set only when a participant is a minor: the buyer attests being their legal representative. */
+  minorAttestation?: boolean
 }
 
 export type RegistrationDraft = {

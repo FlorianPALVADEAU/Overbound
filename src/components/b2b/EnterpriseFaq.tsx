@@ -15,8 +15,8 @@ export function EnterpriseFaq({ items }: { items: EnterpriseFaqItem[] }) {
           </Button>
         </div>
         <div className="grid w-full grid-cols-1 items-start gap-6 md:grid-cols-2">
-          {items.map(({ question, answer }) => (
-            <FaqAccordionItem key={question} title={question}>
+          {items.map(({ question, answer }, index) => (
+            <FaqAccordionItem key={question} id={`enterprise-${index}`} title={question}>
               <p>{answer}</p>
             </FaqAccordionItem>
           ))}

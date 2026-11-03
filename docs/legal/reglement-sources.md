@@ -12,8 +12,8 @@ notes: "Point d'entrée pour réécrire le règlement officiel (PDF) depuis une 
 
 ## Comment l'utiliser
 
-Le règlement officiel (`public/documents/reglementation-officielle-overbound-6-2026.pdf`, chemin dans
-`OFFICIAL_RULEBOOK_PDF_PATH`) date de juin 2026 et n'intègre pas les décisions d'octobre 2026. Pour le
+Le règlement officiel (`public/documents/reglementation-officielle-overbound-2027.pdf`, chemin dans
+`OFFICIAL_RULEBOOK_PDF_PATH`) est l'édition 2027. Le PDF 2026 (`reglementation-officielle-overbound-6-2026.pdf`) reste en place pour l'historique. Pour le
 réécrire : reprendre chaque section ci-dessous, vérifier le texte source indiqué (il fait foi), puis aligner le
 PDF. Ne jamais introduire dans le règlement une règle qui contredit les CGV ou la décharge : en cas de conflit,
 modifier d'abord la source, puis le règlement.
@@ -39,7 +39,7 @@ Documents qui font foi, par ordre de priorité pour un participant :
 ### Participation
 | Règle | Source | Fondement |
 |---|---|---|
-| Édition 2026 réservée aux majeurs (18 ans révolus le jour J) ; aucun transfert vers un mineur | CGV art. 4 et 11, décharge §6, `MINIMUM_PARTICIPANT_AGE` | capacité à contracter et à signer la décharge |
+| Majeurs (18 ans révolus le jour J), sauf événement ouvert aux 16 et 17 ans (`events.minimum_age = 16`) : format OPEN uniquement, représentant légal et adulte référent, papiers contrôlés au retrait du dossard, procédure de secours (FDR-0022, revue : `2026-11-mineurs-16-17-review.md`) ; aucun transfert vers un mineur | CGV art. 4 et 11, décharge §6 et §18 à §21, `MINIMUM_PARTICIPANT_AGE`, `HEALTH_PROOF_MINOR`, `MINOR_EMERGENCY_PROCEDURE` | capacité à contracter et à signer la décharge |
 | Aptitude physique attestée par le participant | décharge §5, CGV art. 11 | preuve de l'information |
 | Justificatif de santé : **PPS FFA obligatoire pour l'édition 2026** (ou licence FFA en cours de validité), tous formats, contrôlé au retrait du dossard avec une pièce d'identité ; sans justificatif, départ refusé et billet non remboursé (décidé le 2026-10-15). Source unique : `HEALTH_PROOF` dans `src/constants/participantNotice.ts` | CGV art. 11, décharge §5, tunnel (bloc « Avant de signer »), email billet, formulaire de transfert, FAQ | délégation FFA pour la course à obstacles ; PPS exigé par la FFA pour les non-licenciés en compétition. Hypothèse à confirmer avec la FFA / la préfecture : licence FFA acceptée à la place du PPS, certificat médical non accepté |
 | Pièce d'identité au retrait du dossard ; départ refusé si l'identité ne correspond pas | CGV art. 11, décharge §12, email billet | dossard personnel |
@@ -81,7 +81,7 @@ Documents qui font foi, par ordre de priorité pour un participant :
 | RC organisateur AXA France IARD, contrat n° 0000011530476604, valable du 11/09/2026 au 01/01/2027, plafond 9 M€ dommages corporels par année | `COMPANY_INFO.insurance`, CGV art. 12, décharge §11 | art. L321-1 C. sport ; Cass. 1re civ. 28 janv. 2026 n° 24-20.866 |
 | L'assurance ne couvre pas les dommages corporels du participant sans faute d'Overbound ; assurance individuelle accident recommandée | CGV art. 12, décharge §11, formulaire de transfert | même arrêt |
 | Contrat à tacite reconduction : l'édition suivante est couverte aux mêmes conditions (confirmé par Florian le 2026-10-09). Mettre à jour `COMPANY_INFO.insurance` avec la nouvelle attestation dès qu'elle est disponible | `COMPANY_INFO.insurance` | — |
-| **Réponse écrite d'AXA (2026-10-15)** : la RC couvre les dommages causés aux tiers, participants compris, dont la cause est imputable à Overbound, dans la limite du contrat ; elle ne couvre pas les dommages que les participants se causent à eux-mêmes ; AXA recommande une assurance individuelle accident. **Non répondu** : RC d'un participant envers un autre participant (L321-1), bénéficiaires d'un transfert. Les textes ne l'affirment pas : « Overbound ne s'engage pas sur la prise en charge… » | `src/constants/participantNotice.ts`, CGV art. 12, CGU art. 13, décharge §11, tunnel | art. L321-1 C. sport |
+| **Réponses d'AXA** (agence Combe-Grimprel, 2026-10-15 et 2026-11-03) et contrat n° 11530476604 : la RC couvre les dommages causés aux tiers, participants compris, dont la cause est imputable à Overbound, dans la limite du contrat ; elle ne couvre pas les dommages que les participants se causent à eux-mêmes ; **les pratiquants sportifs ont la qualité de tiers entre eux** (conditions particulières p. 2) : la RC d'un participant envers un autre peut être garantie, sous réserve des conditions du contrat ; aucune exclusion liée à l'âge ni aux obstacles, aucune condition d'autorisation parentale, d'adulte référent ou de questionnaire de santé ; reconduction tacite au 01/01/2027, évolutions réservées. **Non confirmé par écrit** : dispense de toute formalité pour l'accueil de mineurs ; bénéficiaires d'un transfert. **Exclusion à connaître (p. 7)** : dommages résultant du non-respect des règles techniques et sportives fixées par les fédérations délégataires. Les textes reprennent ces formulations (`PARTICIPANTS_ARE_THIRD_PARTIES`) et n'affirment ni la couverture des mineurs ni celle des transferts | `src/constants/participantNotice.ts`, CGV art. 12, CGU art. 13, décharge §11, tunnel, FAQ | art. L321-1 C. sport |
 
 ### Données personnelles
 | Règle | Source | Fondement |
@@ -94,7 +94,8 @@ Documents qui font foi, par ordre de priorité pour un participant :
 ## Points ouverts
 
 - PPS : décidé pour l'édition 2026 (voir tableau). Reste : le contrôle au retrait du dossard n'est pas outillé dans le check-in (procédure bénévoles à écrire), et le règlement officiel (PDF) doit être réécrit pour le mentionner.
-- Relancer AXA sur la RC participant envers participant, les bénéficiaires de transfert et l'édition suivante (l'attestation s'arrête au 01/01/2027).
+- Mineurs de 16 et 17 ans : le règlement officiel (PDF) doit reprendre les conditions et la procédure de secours ; textes à faire relire (voir `2026-11-mineurs-16-17-review.md`) ; confirmation écrite d'AXA et de la FFA à obtenir avant toute ouverture.
+- Relancer AXA sur les bénéficiaires de transfert et sur la dispense de formalité pour les mineurs. RC participant envers participant et reconduction : répondus le 2026-11-03 (voir tableau Assurance).
 - Contenus Sanity (FAQ publiée) à aligner à la main avec `fallback-inscriptions-assurance-pps`.
 - **Médiateur de la consommation** : aucune adhésion à ce jour (2026-10-09), alors que les CGV et CGU citent CM2C.
   L'adhésion est obligatoire avant toute vente à un consommateur (art. L612-1 C. conso), sanction jusqu'à

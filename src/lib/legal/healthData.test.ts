@@ -35,6 +35,21 @@ describe('redactParticipantSafetyData', () => {
     expect(isSafetyDataRedacted(original)).toBe(false)
   })
 
+  it('also clears the representative and the adult on site of a minor, and adds nothing for an adult', () => {
+    const minor = JSON.stringify({
+      participant: { firstName: 'Léa', guardianName: 'Anne', guardianPhone: '0611', referentName: 'Anne', referentPhone: '0611' },
+    })
+    expect(JSON.parse(redactParticipantSafetyData(minor, now)!).participant).toMatchObject({
+      firstName: 'Léa',
+      guardianName: '',
+      guardianPhone: '',
+      referentName: '',
+      referentPhone: '',
+    })
+    const adult = JSON.stringify({ participant: { firstName: 'Ana' } })
+    expect(JSON.parse(redactParticipantSafetyData(adult, now)!).participant).not.toHaveProperty('guardianName')
+  })
+
   it('returns null for unreadable data', () => {
     expect(redactParticipantSafetyData('not json', now)).toBeNull()
   })

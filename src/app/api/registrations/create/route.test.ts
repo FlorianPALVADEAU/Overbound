@@ -71,6 +71,7 @@ const EVENT_ROW = {
   location: 'SQY',
   capacity: 6000,
   ranked_bib_capacity: 1000,
+  minimum_age: 18,
   price_tiers: [],
 }
 
@@ -104,6 +105,7 @@ function baseBody(overrides: Record<string, unknown> = {}) {
         firstName: 'Alice',
         lastName: 'Runner',
         email: 'alice@example.com',
+        birthDate: '1990-05-04',
       },
     ],
     upsells: [],
@@ -157,6 +159,7 @@ function createAdmin(
     upsellRows?: Array<Record<string, unknown>>
     upsellInserts?: Array<Record<string, unknown>>
     registrationInserts?: Array<Record<string, unknown>>
+    signatureInserts?: Array<Record<string, unknown>>
   } = {},
 ) {
   let registrationCount = 0
@@ -258,7 +261,12 @@ function createAdmin(
         }
       }
       if (table === 'registration_signatures') {
-        return { insert: async () => ({ error: null }) }
+        return {
+          insert: async (row: Record<string, unknown>) => {
+            overrides.signatureInserts?.push(row)
+            return { error: null }
+          },
+        }
       }
       if (table === 'registration_upsells') {
         return {
@@ -464,8 +472,8 @@ describe('POST /api/registrations/create', () => {
   describe('options chosen per participant', () => {
     const TSHIRT = { id: 'tshirt-1', name: 'T-shirt', type: 'tshirt', price_cents: 1200, currency: 'eur' }
     const twoParticipants = [
-      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com' },
-      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com' },
+      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com', birthDate: '1990-05-04' },
+      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com', birthDate: '1992-01-15' },
     ]
     const paidIntent = {
       id: 'pi_1',
@@ -571,6 +579,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               selectedWaveIndex: 5,
@@ -583,6 +592,226 @@ describe('POST /api/registrations/create', () => {
 
     expect(response.status).toBe(200)
     expect(body.success).toBe(true)
+  })
+
+  describe('minors', () => {
+    const MINOR = {
+      ticketId: 'ticket-1',
+      firstName: 'Léa',
+      lastName: 'Runner',
+      email: 'lea@example.com',
+      birthDate: '2009-09-13',
+      guardianName: 'Anne Runner',
+      guardianPhone: '0612345678',
+      referentName: 'Anne Runner',
+      referentPhone: '0612345678',
+      selectedWaveIndex: 5,
+    }
+    const freeOrder = (participant: Record<string, unknown>, minorAttestation = true) =>
+      baseBody({
+        paymentIntentId: 'free_abc123',
+        freeOrderMetadata: { currency: 'eur' },
+        participants: [participant],
+        disclaimer: { read: true, accepted: true, rulebookAccepted: true, minorAttestation },
+      })
+
+    it('registers a 17 year old on OPEN as a minor and keeps the contacts with the waiver', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      const signatureInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts[0]).toMatchObject({ is_minor: true })
+      const signed = JSON.parse(signatureInserts[0].signature_data as string)
+      expect(signed.participant).toMatchObject({ guardianName: 'Anne Runner', referentPhone: '0612345678' })
+      expect(signed.disclaimer).toMatchObject({ minorAttestation: true })
+    })
+
+    it('refuses a minor when the signer did not attest being the legal representative, and creates nothing', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder(MINOR, false)))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('représentant légal')
+      expect(registrationInserts).toHaveLength(0)
+    })
+
+    it('marks an adult as not a minor and stores no minor contact', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      const signatureInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder({ ...MINOR, birthDate: '1990-05-04', guardianName: undefined, guardianPhone: undefined, referentName: undefined, referentPhone: undefined })))
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts[0]).toMatchObject({ is_minor: false })
+      expect(JSON.parse(signatureInserts[0].signature_data as string).participant).not.toHaveProperty('guardianName')
+    })
+
+    it('refuses a minor when the edition is limited to adults, and creates nothing', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [OPEN_TICKET_ROW], registrationInserts }))
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('18 ans')
+      expect(registrationInserts).toHaveLength(0)
+    })
+
+    it('refuses a minor on the RANKED format', async () => {
+      mockAuthedUser('user-1')
+      supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [RANKED_TICKET_ROW], eventOverrides: { minimum_age: 16 } }))
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('OPEN')
+    })
+
+    it('refuses a minor without the adult on site', async () => {
+      mockAuthedUser('user-1')
+      supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 } }))
+
+      const response = await POST(jsonRequest(freeOrder({ ...MINOR, referentName: '', referentPhone: '' })))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('adulte référent')
+    })
+
+    it('names the signer on the waiver, who is not a participant when a parent orders for minors', async () => {
+      mockAuthedUser('user-1')
+      const signatureInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, signatureInserts }),
+      )
+
+      await POST(jsonRequest(freeOrder(MINOR)))
+
+      const signed = JSON.parse(signatureInserts[0].signature_data as string)
+      expect(signed.signer).toEqual({ userId: 'user-1', email: 'alice@example.com' })
+      expect(signed.participant.email).toBe('lea@example.com')
+    })
+
+    describe('orders with several participants', () => {
+      const SECOND_MINOR = { ...MINOR, firstName: 'Noé', email: 'noe@example.com', birthDate: '2010-01-20', selectedWaveIndex: 6 }
+      const ADULT = {
+        ticketId: 'ticket-1',
+        firstName: 'Anne',
+        lastName: 'Runner',
+        email: 'anne@example.com',
+        birthDate: '1980-02-10',
+        selectedWaveIndex: 5,
+      }
+      const groupOrder = (participants: Array<Record<string, unknown>>, minorAttestation?: boolean) =>
+        baseBody({
+          paymentIntentId: 'free_abc123',
+          freeOrderMetadata: { currency: 'eur' },
+          ticketSelections: [{ ticketId: 'ticket-1', quantity: participants.length }],
+          participants,
+          disclaimer: { read: true, accepted: true, rulebookAccepted: true, groupAttestation: true, minorAttestation },
+        })
+
+      it('registers two minors with one attestation, one bib and one waiver each, all naming the same signer', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        const signatureInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([MINOR, SECOND_MINOR], true)))
+
+        expect(response.status).toBe(200)
+        expect(registrationInserts.map((row) => row.is_minor)).toEqual([true, true])
+        const signed = signatureInserts.map((row) => JSON.parse(row.signature_data as string))
+        expect(signed.map((item) => item.participant.firstName)).toEqual(['Léa', 'Noé'])
+        expect(signed.every((item) => item.signer.userId === 'user-1' && item.disclaimer.minorAttestation === true)).toBe(true)
+      })
+
+      it('flags only the minor in a parent and child order, and keeps minor contacts off the adult', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        const signatureInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([ADULT, MINOR], true)))
+
+        expect(response.status).toBe(200)
+        expect(registrationInserts.map((row) => row.is_minor)).toEqual([false, true])
+        const signed = signatureInserts.map((row) => JSON.parse(row.signature_data as string))
+        expect(signed[0].participant).not.toHaveProperty('guardianName')
+        expect(signed[1].participant).toMatchObject({ guardianName: 'Anne Runner' })
+      })
+
+      it('needs the attestation as soon as one of the participants is a minor', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([ADULT, MINOR], false)))
+
+        expect(response.status).toBe(422)
+        expect(registrationInserts).toHaveLength(0)
+      })
+
+      it('does not ask for the attestation when every participant is an adult', async () => {
+        mockAuthedUser('user-1')
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 } }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([ADULT, { ...ADULT, email: 'paul@example.com' }])))
+
+        expect(response.status).toBe(200)
+      })
+
+      it('refuses the whole order when one of the minors is under 16, and creates nothing', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([MINOR, { ...SECOND_MINOR, birthDate: '2012-03-01' }], true)))
+
+        expect(response.status).toBe(422)
+        expect((await response.json()).error).toContain('Participant 2')
+        expect(registrationInserts).toHaveLength(0)
+      })
+
+      it('refuses the whole order when the second minor lacks the adult on site', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([MINOR, { ...SECOND_MINOR, referentName: '', referentPhone: '' }], true)))
+
+        expect(response.status).toBe(422)
+        expect((await response.json()).error).toContain('Participant 2')
+        expect(registrationInserts).toHaveLength(0)
+      })
+    })
   })
 
   it('returns 422 when an OPEN participant submits no selectedWaveIndex and has no group anchor', async () => {
@@ -600,6 +829,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
             },
@@ -638,6 +868,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               selectedWaveIndex: 5,
@@ -683,6 +914,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               // Deliberately different from the anchor (3) — must be ignored server-side.

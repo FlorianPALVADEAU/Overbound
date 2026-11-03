@@ -20,7 +20,7 @@ Ne pas déduire de ce tableau que les migrations sont appliquées en production 
 
 ## Amendement 2026-11-01 : règles en base, points révocables
 
-Migration : `supabase/migrations/20261101120000_ambassador_program_rules_and_revocation.sql` (écrite, **non appliquée**, à relire puis appliquer **avant** de déployer le code qui la lit).
+Migration : `supabase/migrations/20261101120000_ambassador_program_rules_and_revocation.sql` (appliquée en production le 2026-11-03 avant le déploiement du code, avec la suivante).
 
 | Sujet | Décision |
 |---|---|
@@ -37,7 +37,7 @@ Reste ouvert : le niveau 8 « Remboursement total » et les niveaux 2, 5 et 7 (a
 
 ## Amendement 2026-11-02 : une saison continue, reset de l'édition 2026
 
-Migration : `supabase/migrations/20261102120000_ambassador_season_reset.sql` (écrite, **non appliquée**, **sauvegarde de la base obligatoire avant**, à appliquer **avant** de déployer le code).
+Migration : `supabase/migrations/20261102120000_ambassador_season_reset.sql` (appliquée en production le 2026-11-03 après sauvegarde de la base, avant le déploiement du code). Pour un prochain reset : sauvegarde de la base obligatoire avant, migration appliquée avant le code.
 
 | Sujet | Décision |
 |---|---|

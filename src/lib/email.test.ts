@@ -50,6 +50,22 @@ describe('sendTicketEmail', () => {
     expect(result).toBeUndefined()
   })
 
+  it('attaches the parental authorization PDF for a minor ticket', async () => {
+    await sendTicketEmail({ ...baseParams, isMinor: true })
+
+    const payload = sendMock.mock.calls[0][0]
+    expect(payload.attachments).toEqual([
+      expect.objectContaining({ filename: 'autorisation-parentale.pdf', contentType: 'application/pdf' }),
+    ])
+    expect(Buffer.from(payload.attachments[0].content, 'base64').subarray(0, 4).toString()).toBe('%PDF')
+  })
+
+  it('attaches nothing to an adult ticket', async () => {
+    await sendTicketEmail(baseParams)
+
+    expect(sendMock.mock.calls[0][0].attachments).toBeUndefined()
+  })
+
   it('propagates the resolved Resend response (including embedded API errors) without throwing', async () => {
     sendMock.mockResolvedValueOnce({
       data: null,
