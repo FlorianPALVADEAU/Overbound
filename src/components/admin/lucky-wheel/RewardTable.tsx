@@ -69,6 +69,6 @@ export function RewardTable({ rewards, loading, deletingId, onEdit, onDelete, pa
   ]
 
   return (
-    <OperationsList data={{ items: rewards, nextCursor: pagination.nextCursor, total: pagination.total }} status={loading ? 'loading' : 'idle'} getItemId={(reward) => reward.id} columns={columns} rowActions={actions} pagination={{ ...pagination, limit: 25 }} onPaginationChange={onPaginationChange} itemLabel="récompense" />
+    <OperationsList storageKey="lucky-wheel-rewards" data={{ items: rewards, nextCursor: pagination.nextCursor, total: pagination.total }} status={loading ? 'loading' : 'idle'} getItemId={(reward) => reward.id} columns={columns} rowActions={actions} pagination={{ ...pagination, limit: 25 }} onPaginationChange={onPaginationChange} itemLabel="récompense" />
   )
 }

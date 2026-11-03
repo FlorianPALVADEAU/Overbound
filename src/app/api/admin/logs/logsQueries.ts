@@ -1,56 +1,40 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import axiosClient from '../../axiosClient'
 import type { AdminRequestLog } from '@/types/AdminRequestLog'
 
-export interface AdminLogsFilters {
-  method?: string
-  status?: string
-  userEmail?: string
-  actionType?: string
-  search?: string
+export interface AdminLogsParams {
+  cursor?: string | null
+  limit?: number
+  method?: string | null
+  status?: number | null
+  query?: string
   startDate?: string
   endDate?: string
-  limit?: number
-  page?: number
 }
 
-interface LogsResponse {
+export interface AdminLogsPage {
   logs: AdminRequestLog[]
-  count: number
+  page: { limit: number; totalCount: number; nextCursor: string | null }
 }
 
-const ADMIN_LOGS_QUERY_KEY = ['admin', 'logs'] as const
+export const ADMIN_LOGS_QUERY_KEY = ['admin', 'logs'] as const
 
-const buildQueryString = (filters: AdminLogsFilters) => {
-  const params = new URLSearchParams()
-  if (filters.method) params.set('method', filters.method)
-  if (filters.status) params.set('status', filters.status)
-  if (filters.userEmail) params.set('userEmail', filters.userEmail)
-  if (filters.actionType) params.set('actionType', filters.actionType)
-  if (filters.search) params.set('search', filters.search)
-  if (filters.startDate) params.set('startDate', filters.startDate)
-  if (filters.endDate) params.set('endDate', filters.endDate)
-  if (filters.limit) params.set('limit', String(filters.limit))
-  if (filters.page) params.set('page', String(filters.page))
-  return params.toString()
+async function fetchAdminLogs(params: AdminLogsParams): Promise<AdminLogsPage> {
+  const search = new URLSearchParams({ limit: String(params.limit ?? 100) })
+  if (params.cursor) search.set('cursor', params.cursor)
+  if (params.method) search.set('method', params.method)
+  if (params.status) search.set('status', String(params.status))
+  if (params.query?.trim()) search.set('query', params.query.trim())
+  if (params.startDate) search.set('startDate', params.startDate)
+  if (params.endDate) search.set('endDate', params.endDate)
+  const response = await axiosClient.get<AdminLogsPage>(`/admin/logs?${search.toString()}`)
+  return response.data
 }
 
-const fetchAdminLogs = async (filters: AdminLogsFilters): Promise<LogsResponse> => {
-  const query = buildQueryString(filters)
-  const response = await fetch(`/api/admin/logs${query ? `?${query}` : ''}`)
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}))
-    throw new Error(payload.error || 'Impossible de récupérer les logs')
-  }
-  const data = (await response.json()) as LogsResponse
-  return data
-}
-
-export const useAdminLogs = (filters: AdminLogsFilters) =>
-  useQuery<LogsResponse, Error>({
-    queryKey: [...ADMIN_LOGS_QUERY_KEY, filters],
-    queryFn: () => fetchAdminLogs(filters),
-    staleTime: 30_000,
+export const useAdminLogs = (params: AdminLogsParams) =>
+  useQuery<AdminLogsPage, Error>({
+    queryKey: [...ADMIN_LOGS_QUERY_KEY, params.cursor ?? null, params.limit ?? 100, params.method ?? '', params.status ?? '', params.query ?? '', params.startDate ?? '', params.endDate ?? ''],
+    queryFn: () => fetchAdminLogs(params),
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
   })
-
-export { ADMIN_LOGS_QUERY_KEY }

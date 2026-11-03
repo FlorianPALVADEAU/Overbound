@@ -1,546 +1,207 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { Badge } from '@/components/ui/badge'
+import { useDeferredValue, useEffect, useRef, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { useAdminLogs } from '@/app/api/admin/logs/logsQueries'
+import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
+import { OperationsList, type OperationsListColumn, type OperationsListFilter } from '@/components/admin/operations'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { useAdminLogs, type AdminLogsFilters } from '@/app/api/admin/logs/logsQueries'
-import type { AdminRequestLog } from '@/types/AdminRequestLog'
+import { LOG_METHODS } from '@/lib/admin/logsList'
 import { cn } from '@/lib/utils'
-import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
-
-const METHOD_OPTIONS = ['POST', 'PUT', 'PATCH', 'DELETE']
+import type { AdminRequestLog } from '@/types/AdminRequestLog'
 
 const STATUS_OPTIONS = [200, 201, 204, 400, 401, 403, 404, 409, 422, 429, 500]
-const UNSET_VALUE = '__all__'
+const LIMITS = [50, 100, 200]
+const PILL = 'inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-semibold'
 
 const formatDateTime = (value: string) =>
-  new Date(value).toLocaleString('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'medium',
-  })
+  new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'Europe/Paris' }).format(new Date(value))
 
 const getMethodStyles = (method: string) => {
   switch (method.toUpperCase()) {
     case 'POST':
-      return 'bg-success/20 text-success border border-success/40'
+      return 'border-success/40 bg-success/20 text-success'
     case 'PUT':
-      return 'bg-warning/20 text-warning border border-warning/50'
+      return 'border-warning/50 bg-warning/20 text-warning'
     case 'PATCH':
-      return 'bg-info/20 text-info border border-info/40'
+      return 'border-info/40 bg-info/20 text-info'
     case 'DELETE':
-      return 'bg-destructive/20 text-destructive border border-destructive/50'
+      return 'border-destructive/50 bg-destructive/20 text-destructive'
     default:
-      return 'bg-muted text-muted-foreground border border-transparent'
+      return 'border-transparent bg-muted text-muted-foreground'
   }
 }
 
 const getStatusStyles = (status: number) => {
-  if (status >= 500) return 'bg-destructive/20 text-destructive border border-destructive/50'
-  if (status >= 400) return 'bg-warning/20 text-warning border border-warning/40'
-  if (status >= 200 && status < 300) return 'bg-success/20 text-success border border-success/30'
-  return 'bg-muted text-muted-foreground border border-transparent'
+  if (status >= 500) return 'border-destructive/50 bg-destructive/20 text-destructive'
+  if (status >= 400) return 'border-warning/40 bg-warning/20 text-warning'
+  if (status >= 200 && status < 300) return 'border-success/30 bg-success/20 text-success'
+  return 'border-transparent bg-muted text-muted-foreground'
 }
 
-const buildInitialFilters = (): AdminLogsFilters => ({
-  limit: 100,
-  page: 1,
-})
+const columns: OperationsListColumn<AdminRequestLog>[] = [
+  {
+    id: 'summary',
+    header: 'Résumé',
+    cell: (log) => (
+      <>
+        <p className="font-medium">{log.summary}</p>
+        {log.action_type ? <p className="text-xs text-muted-foreground">{log.action_type}</p> : null}
+        {log.error_message ? <p className="text-xs text-destructive">{log.error_message}</p> : null}
+      </>
+    ),
+    mobileCell: (log) => <span className="line-clamp-2 font-medium">{log.summary}</span>,
+  },
+  { id: 'date', mobile: 'summary', header: 'Quand', cell: (log) => <span className="whitespace-nowrap text-xs">{formatDateTime(log.created_at)}</span> },
+  {
+    id: 'method',
+    mobile: 'summary',
+    header: 'Méthode',
+    cell: (log) => <span className={cn(PILL, getMethodStyles(log.method))}>{log.method}</span>,
+  },
+  {
+    id: 'status',
+    mobile: 'summary',
+    header: 'Statut',
+    cell: (log) => <span className={cn(PILL, getStatusStyles(log.status_code))}>{log.status_code}</span>,
+  },
+  { id: 'path', mobile: 'detail', header: 'Chemin', cell: (log) => <span className="break-all font-mono text-xs">{log.path}</span> },
+  { id: 'user', mobile: 'detail', header: 'Utilisateur', cell: (log) => <span className="break-all text-xs">{log.user_email || '—'}</span> },
+  { id: 'duration', mobile: 'detail', header: 'Durée', cell: (log) => <span className="whitespace-nowrap text-xs">{log.duration_ms} ms</span>, hiddenByDefault: true },
+  { id: 'ip', mobile: 'detail', header: 'Adresse IP', cell: (log) => <span className="font-mono text-xs">{log.ip_address || '—'}</span>, hiddenByDefault: true },
+]
 
+/** Journal of the admin's write requests: who did what, when, and how it ended. */
 export function AdminLogsSection() {
-  const queryClient = useQueryClient()
-  const [filters, setFilters] = useState<AdminLogsFilters>(buildInitialFilters)
-  const [textInputs, setTextInputs] = useState({
-    userEmail: '',
-    actionType: '',
-    search: '',
+  const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search.trim())
+  const [method, setMethod] = useState<string | null>(null)
+  const [status, setStatus] = useState<number | null>(null)
+  const [limit, setLimit] = useState(100)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [previousCursors, setPreviousCursors] = useState<string[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const hasInitializedFilters = useRef(false)
+
+  // A new filter starts again from the first page.
+  useEffect(() => {
+    if (!hasInitializedFilters.current) {
+      hasInitializedFilters.current = true
+      return
+    }
+    setCursor(null)
+    setPreviousCursors([])
+  }, [deferredSearch, method, status, limit, startDate, endDate])
+
+  const { data, error, isLoading, isFetching, refetch } = useAdminLogs({
+    cursor,
+    limit,
+    method,
+    status,
+    query: deferredSearch || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
   })
-  const [selectedLog, setSelectedLog] = useState<AdminRequestLog | null>(null)
-  const { data, isLoading, isFetching, error } = useAdminLogs(filters)
+  const logs = data?.logs ?? []
+  const selected = logs.find((log) => log.id === selectedId) ?? null
 
-  const logs: AdminRequestLog[] = data?.logs ?? []
-  const count = data?.count ?? 0
-
-  const handleFilterChange = <Key extends keyof AdminLogsFilters>(key: Key, value: AdminLogsFilters[Key]) => {
-    setFilters((previous) => ({
-      ...previous,
-      [key]: value,
-      page: 1,
-    }))
-  }
-
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      setFilters((previous) => ({
-        ...previous,
-        userEmail: textInputs.userEmail.trim() ? textInputs.userEmail.trim() : undefined,
-        actionType: textInputs.actionType.trim() ? textInputs.actionType.trim() : undefined,
-        search: textInputs.search.trim() ? textInputs.search.trim() : undefined,
-        page: 1,
-      }))
-    }, 400)
-
-    return () => clearTimeout(debounce)
-  }, [textInputs.userEmail, textInputs.actionType, textInputs.search])
-
-  const resetFilters = () => {
-    setFilters(buildInitialFilters())
-    setTextInputs({
-      userEmail: '',
-      actionType: '',
-      search: '',
-    })
-    queryClient.invalidateQueries({ queryKey: ['admin', 'logs'] })
-  }
-
-  const activeFiltersCount = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => {
-      if (key === 'limit' || key === 'page') return false
-      return Boolean(value)
-    }).length
-  }, [filters])
-
-  const limit = filters.limit ?? 100
-  const currentPage = filters.page ?? 1
-  const totalPages = Math.max(1, Math.ceil(count / limit))
-  const startIndex = count === 0 ? 0 : (currentPage - 1) * limit + 1
-  const endIndex = Math.min(currentPage * limit, count)
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setFilters((previous) => ({
-        ...previous,
-        page: totalPages,
-      }))
-    }
-  }, [currentPage, totalPages])
-
-  const goToPage = (page: number) => {
-    setFilters((previous) => ({
-      ...previous,
-      page,
-    }))
-  }
-
-  const pageButtons = useMemo(() => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1)
-    }
-
-    const pages: Array<number | 'ellipsis'> = [1]
-    const start = Math.max(2, currentPage - 2)
-    const end = Math.min(totalPages - 1, currentPage + 2)
-
-    if (start > 2) {
-      pages.push('ellipsis')
-    }
-
-    for (let page = start; page <= end; page += 1) {
-      pages.push(page)
-    }
-
-    if (end < totalPages - 1) {
-      pages.push('ellipsis')
-    }
-
-    pages.push(totalPages)
-    return pages
-  }, [currentPage, totalPages])
+  const filters: OperationsListFilter[] = [
+    { id: 'method', label: 'Méthode', value: method ?? '', allLabel: 'Toutes les méthodes', options: LOG_METHODS.map((value) => ({ value, label: value })) },
+    { id: 'status', label: 'Statut', value: status ? String(status) : '', allLabel: 'Tous les statuts', options: STATUS_OPTIONS.map((value) => ({ value: String(value), label: String(value) })) },
+    { id: 'limit', label: 'Lignes', value: String(limit), options: LIMITS.map((value) => ({ value: String(value), label: String(value) })) },
+  ]
 
   return (
-    <section className="space-y-8">
-      <AdminPageHeader eyebrow="Système" title="Journal des actions" description="Historique des requêtes sensibles (POST / PUT / DELETE) et transferts de billets." />
-      <Card variant="info">
-        <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="space-y-1">
-              <Label>Méthode</Label>
-              <Select
-                value={filters.method ?? UNSET_VALUE}
-                onValueChange={(value) =>
-                  handleFilterChange('method', value === UNSET_VALUE ? undefined : value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UNSET_VALUE}>Toutes</SelectItem>
-                  {METHOD_OPTIONS.map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Statut</Label>
-              <Select
-                value={filters.status ?? UNSET_VALUE}
-                onValueChange={(value) =>
-                  handleFilterChange('status', value === UNSET_VALUE ? undefined : value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UNSET_VALUE}>Tous</SelectItem>
-                  {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status} value={String(status)}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2 space-y-1 md:col-span-1">
-              <Label>Utilisateur</Label>
-              <Input
-                placeholder="Email ou ID"
-                value={textInputs.userEmail}
-                onChange={(event) =>
-                  setTextInputs((previous) => ({ ...previous, userEmail: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Action</Label>
-              <Input
-                placeholder="Type d'action"
-                value={textInputs.actionType}
-                onChange={(event) =>
-                  setTextInputs((previous) => ({ ...previous, actionType: event.target.value }))
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="col-span-2 space-y-1 md:col-span-1">
-              <Label>Recherche libre</Label>
-              <Input
-                placeholder="Résumé, chemin, email…"
-                value={textInputs.search}
-                onChange={(event) =>
-                  setTextInputs((previous) => ({ ...previous, search: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Date de début</Label>
-              <Input
-                type="date"
-                value={filters.startDate ?? ''}
-                onChange={(event) => handleFilterChange('startDate', event.target.value || undefined)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Date de fin</Label>
-              <Input
-                type="date"
-                value={filters.endDate ?? ''}
-                onChange={(event) => handleFilterChange('endDate', event.target.value || undefined)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Résultats</Label>
-              <div className="flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm text-muted-foreground">
-                100 par page
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/10 px-3 py-2 md:px-4">
-            <div className="text-sm text-muted-foreground">
-              {isLoading ? 'Chargement…' : `${count} événements trouvés`}
-              {activeFiltersCount > 0 ? ` • ${activeFiltersCount} filtre${activeFiltersCount > 1 ? 's' : ''} actifs` : ''}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={resetFilters} size="sm">
-                Réinitialiser
-              </Button>
-              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['admin', 'logs'] })} size="sm" disabled={isFetching}>
-                Actualiser
-              </Button>
-            </div>
-          </div>
-
-          {error ? (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error.message}
-            </div>
-          ) : null}
-
-          <div className="hidden overflow-hidden rounded-xl border border-muted-foreground/20 bg-card shadow-sm md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Quand</TableHead>
-                  <TableHead>Résumé</TableHead>
-                  <TableHead>Méthode</TableHead>
-                  <TableHead>Chemin</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Durée</TableHead>
-                  <TableHead>Utilisateur</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow
-                    key={log.id}
-                    className="cursor-pointer transition-colors hover:bg-muted/60"
-                    onClick={() => setSelectedLog(log)}
-                  >
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {formatDateTime(log.created_at)}
-                    </TableCell>
-                    <TableCell className="max-w-[360px] space-y-1 text-sm">
-                      <p className="font-medium leading-tight text-foreground line-clamp-2">{log.summary}</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        {log.action_type ? (
-                          <span className="rounded-full bg-muted px-2 py-0.5 font-medium">
-                            {log.action_type}
-                          </span>
-                        ) : null}
-                        {log.error_message ? (
-                          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-destructive">
-                            {log.error_message}
-                          </span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell className="min-w-[90px]">
-                      <span
-                        className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${getMethodStyles(log.method)}`}
-                      >
-                        {log.method}
-                      </span>
-                    </TableCell>
-                    <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
-                      {log.path}
-                    </TableCell>
-                    <TableCell className="min-w-[90px]">
-                      <span
-                        className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusStyles(log.status_code)}`}
-                      >
-                        {log.status_code}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {log.duration_ms} ms
-                    </TableCell>
-                    <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground">
-                      {log.user_email || '—'}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {logs.length === 0 && !isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
-                      Aucun log trouvé pour ces critères.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="space-y-2 md:hidden">
-            {logs.map((log) => (
-              <button
-                key={log.id}
-                type="button"
-                className="w-full rounded-xl border border-muted-foreground/20 bg-card p-3 text-left shadow-sm transition-colors hover:bg-muted/60"
-                onClick={() => setSelectedLog(log)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs text-muted-foreground">{formatDateTime(log.created_at)}</p>
-                    <p className="mt-1 line-clamp-2 text-sm font-medium">{log.summary}</p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${getStatusStyles(log.status_code)}`}>
-                    {log.status_code}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className={`rounded-full px-2 py-0.5 font-semibold ${getMethodStyles(log.method)}`}>{log.method}</span>
-                  <span className="max-w-full truncate">{log.path}</span>
-                  <span>{log.duration_ms} ms</span>
-                </div>
-                {log.user_email ? <p className="mt-2 truncate text-xs text-muted-foreground">{log.user_email}</p> : null}
-              </button>
-            ))}
-            {logs.length === 0 && !isLoading ? (
-              <div className="rounded-xl border border-muted-foreground/20 px-3 py-8 text-center text-sm text-muted-foreground">
-                Aucun log trouvé pour ces critères.
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-muted-foreground">
-              {count === 0 ? 'Aucun résultat' : `Affichage ${startIndex}-${endIndex} sur ${count}`}
-            </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Système"
+        title="Journal des actions"
+        description="Historique des requêtes sensibles (POST, PUT, PATCH, DELETE) et transferts de billets."
+      />
+      <OperationsList
+        storageKey="logs"
+        data={{ items: logs, nextCursor: data?.page.nextCursor ?? null, total: data?.page.totalCount }}
+        status={error ? 'error' : isLoading && !data ? 'loading' : isFetching ? 'stale' : 'idle'}
+        errorMessage={error?.message}
+        onRetry={() => void refetch()}
+        getItemId={(log) => log.id}
+        columns={columns}
+        filters={filters}
+        onFilterChange={(filterId, value) => {
+          if (filterId === 'method') setMethod(value || null)
+          if (filterId === 'status') setStatus(value ? Number(value) : null)
+          if (filterId === 'limit') setLimit(Number(value))
+        }}
+        search={search}
+        searchPlaceholder="Résumé, chemin, e-mail, action ou erreur"
+        onSearchChange={setSearch}
+        toolbarActions={
+          <>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage <= 1 || isFetching}
-              >
-                Précédent
-              </Button>
-              <div className="flex items-center gap-1">
-                {pageButtons.map((page, index) =>
-                  page === 'ellipsis' ? (
-                    <span key={`ellipsis-${index}`} className="px-2 text-sm text-muted-foreground">
-                      …
-                    </span>
-                  ) : (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? 'secondary' : 'outline'}
-                      size="sm"
-                      onClick={() => goToPage(page)}
-                      disabled={isFetching}
-                    >
-                      {page}
-                    </Button>
-                  )
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Page {currentPage} / {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage >= totalPages || isFetching}
-              >
-                Suivant
-              </Button>
+              <Label htmlFor="logs-start" className="text-label font-semibold uppercase text-subtle">Du</Label>
+              <Input id="logs-start" type="date" className="w-40" value={startDate} max={endDate || undefined} onChange={(event) => setStartDate(event.target.value)} />
+              <Label htmlFor="logs-end" className="text-label font-semibold uppercase text-subtle">au</Label>
+              <Input id="logs-end" type="date" className="w-40" value={endDate} min={startDate || undefined} onChange={(event) => setEndDate(event.target.value)} />
             </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+              <RefreshCw className={isFetching ? 'animate-spin' : undefined} />
+              Actualiser
+            </Button>
+          </>
+        }
+        pagination={{ cursor, previousCursors, nextCursor: data?.page.nextCursor ?? null, total: data?.page.totalCount, limit }}
+        onPaginationChange={({ cursor: nextCursor, previousCursors: nextPrevious }) => {
+          setCursor(nextCursor)
+          setPreviousCursors(nextPrevious)
+        }}
+        itemLabel="log"
+        selectedItem={selected}
+        onSelectedItemChange={(log) => setSelectedId(log?.id ?? null)}
+        detailTitle={(log) => log.summary}
+        detailDescription={(log) => `${log.method} ${log.path}`}
+        renderDetail={(log) => (
+          <div className="space-y-4 text-sm">
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <Info label="Date" value={formatDateTime(log.created_at)} />
+              <Info label="Durée" value={`${log.duration_ms} ms`} />
+              <Info label="Méthode" value={log.method} />
+              <Info label="Statut" value={String(log.status_code)} />
+              <Info label="Utilisateur" value={log.user_email || '—'} />
+              <Info label="Adresse IP" value={log.ip_address || '—'} />
+              {log.action_type ? <Info label="Action" value={log.action_type} /> : null}
+            </dl>
+            <Info label="Chemin" value={log.path} mono />
+            {log.error_message ? (
+              <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{log.error_message}</p>
+            ) : null}
+            {log.query_params ? <JsonBlock title="Query params" data={log.query_params} /> : null}
+            {log.body ? <JsonBlock title="Payload" data={log.body} /> : null}
+            {log.metadata ? <JsonBlock title="Métadonnées" data={log.metadata} /> : null}
           </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={Boolean(selectedLog)} onOpenChange={(open) => !open && setSelectedLog(null)}>
-        <DialogContent className="w-[80vw] !max-w-none bg-card">
-          <DialogHeader>
-            <DialogTitle>Détail du log</DialogTitle>
-            <DialogDescription>
-              {selectedLog ? `${selectedLog.method} ${selectedLog.path}` : ''}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedLog ? (
-            <div className="grid gap-4 text-sm">
-              <div className="grid gap-1">
-                <Label className="text-label font-semibold uppercase text-subtle">Résumé</Label>
-                <p className="font-medium">{selectedLog.summary}</p>
-                {selectedLog.action_type ? (
-                  <p className="text-xs text-muted-foreground">{selectedLog.action_type}</p>
-                ) : null}
-              </div>
-
-              <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <InfoTile
-                  label="Méthode"
-                  value={selectedLog.method}
-                  valueClassName={cn(
-                    'inline-flex min-w-[64px] justify-center rounded-full px-2.5 py-1 text-xs font-semibold',
-                    getMethodStyles(selectedLog.method),
-                  )}
-                />
-                <InfoTile
-                  label="Statut"
-                  value={String(selectedLog.status_code)}
-                  valueClassName={cn(
-                    'inline-flex min-w-[64px] justify-center rounded-full px-2.5 py-1 text-xs font-semibold',
-                    getStatusStyles(selectedLog.status_code),
-                  )}
-                />
-                <InfoTile label="Durée" value={`${selectedLog.duration_ms} ms`} />
-                <InfoTile label="Utilisateur" value={selectedLog.user_email || '—'} />
-                <InfoTile label="Date" value={formatDateTime(selectedLog.created_at)} />
-                <InfoTile label="Adresse IP" value={selectedLog.ip_address || '—'} />
-              </div>
-
-              <div className="grid gap-2">
-                <Label className="text-label font-semibold uppercase text-subtle">Chemin</Label>
-                <code className="block max-w-full overflow-x-auto rounded-md bg-muted px-2 py-1 text-xs">
-                {selectedLog.path}
-              </code>
-              </div>
-
-              {selectedLog.query_params ? (
-                <JsonBlock title="Query params" data={selectedLog.query_params} />
-              ) : null}
-
-              {selectedLog.body ? <JsonBlock title="Payload" data={selectedLog.body} /> : null}
-
-              {selectedLog.metadata ? <JsonBlock title="Métadonnées" data={selectedLog.metadata} /> : null}
-
-              {selectedLog.error_message ? (
-                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  {selectedLog.error_message}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </section>
-  )
-}
-
-interface InfoTileProps {
-  label: string
-  value: string
-  className?: string
-  valueClassName?: string
-}
-
-function InfoTile({ label, value, className, valueClassName }: InfoTileProps) {
-  return (
-    <div
-      className={cn(
-        'flex min-w-[160px] flex-col gap-1 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 shadow-sm',
-        className,
-      )}
-    >
-      <p className="text-label font-semibold uppercase text-subtle">{label}</p>
-      <p className={cn('text-sm font-medium text-foreground break-words', valueClassName)}>{value}</p>
+        )}
+      />
     </div>
   )
 }
 
-interface JsonBlockProps {
-  title: string
-  data: unknown
+function Info({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="space-y-1">
+      <dt className="text-label font-semibold uppercase text-subtle">{label}</dt>
+      <dd className={cn('break-all font-medium', mono && 'font-mono text-xs')}>{value}</dd>
+    </div>
+  )
 }
 
-function JsonBlock({ title, data }: JsonBlockProps) {
+function JsonBlock({ title, data }: { title: string; data: unknown }) {
   return (
-    <div className="grid gap-1">
-      <Label className="text-label font-semibold uppercase text-subtle">{title}</Label>
-      <pre className="max-h-64 overflow-auto rounded-md bg-muted/40 px-3 py-2 text-xs">
-        {JSON.stringify(data, null, 2)}
-      </pre>
+    <div className="space-y-1">
+      <p className="text-label font-semibold uppercase text-subtle">{title}</p>
+      <pre className="max-h-64 overflow-auto rounded-xl bg-muted/40 px-3 py-2 text-xs">{JSON.stringify(data, null, 2)}</pre>
     </div>
   )
 }

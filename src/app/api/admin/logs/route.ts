@@ -1,77 +1,56 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { decodeKeysetCursor, encodeKeysetCursor, keysetAfterFilter, type KeysetCursor } from '@/lib/admin/keysetCursor'
+import { applyLogFilters, logsQuerySchema } from '@/lib/admin/logsList'
+import type { AdminRequestLog } from '@/types/AdminRequestLog'
 
+/** Request journal, newest first, paged by keyset so a long history stays fast and stable. */
 export async function GET(request: Request) {
   const auth = await requireAdmin(request)
-  if (!auth.ok) {
-    return auth.response
+  if (!auth.ok) return auth.response
+
+  const parsed = logsQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams.entries()))
+  if (!parsed.success) return NextResponse.json({ error: 'Paramètres de liste invalides' }, { status: 400 })
+  const { cursor, limit, ...filters } = parsed.data
+
+  let decodedCursor: KeysetCursor | null = null
+  try {
+    if (cursor) decodedCursor = decodeKeysetCursor(cursor)
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Cursor invalide' }, { status: 400 })
   }
-  const user = auth.user
 
   try {
     const admin = supabaseAdmin()
-    const url = new URL(request.url)
-    const params = url.searchParams
+    // The count ignores the cursor: "x sur N" is the size of the filtered result, not of what remains.
+    const { count, error: countError } = await applyLogFilters(
+      admin.from('admin_request_logs').select('id', { count: 'exact', head: true }),
+      filters,
+    )
+    if (countError) throw countError
 
-    const method = params.get('method')
-    const status = params.get('status')
-    const userEmail = params.get('userEmail')
-    const actionType = params.get('actionType')
-    const search = params.get('search')
-    const startDate = params.get('startDate')
-    const endDate = params.get('endDate')
-    const page = Math.max(parseInt(params.get('page') || '1', 10) || 1, 1)
-    const limit = 100
-    const offset = (page - 1) * limit
-
-    let query = admin
-      .from('admin_request_logs')
-      .select('*', { count: 'exact' })
+    let pageQuery = applyLogFilters(admin.from('admin_request_logs').select('*'), filters)
+    if (decodedCursor) pageQuery = pageQuery.or(keysetAfterFilter(decodedCursor))
+    const { data, error } = await pageQuery
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .order('id', { ascending: false })
+      .limit(limit + 1)
+    if (error) throw error
 
-    if (method) {
-      query = query.eq('method', method.toUpperCase())
-    }
-
-    if (status) {
-      query = query.eq('status_code', parseInt(status, 10))
-    }
-
-    if (userEmail) {
-      query = query.ilike('user_email', `%${userEmail}%`)
-    }
-
-    if (actionType) {
-      query = query.ilike('action_type', `%${actionType}%`)
-    }
-
-    if (startDate) {
-      query = query.gte('created_at', new Date(startDate).toISOString())
-    }
-
-    if (endDate) {
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      query = query.lte('created_at', end.toISOString())
-    }
-
-    if (search) {
-      query = query.or(
-        `path.ilike.%${search}%,summary.ilike.%${search}%,user_email.ilike.%${search}%`
-      )
-    }
-
-    const { data: logs, error: fetchError, count } = await query
-
-    if (fetchError) {
-      throw fetchError
-    }
-
-    return NextResponse.json({ logs: logs ?? [], count: count ?? 0, viewer: user })
-  } catch (fetchError) {
-    console.error('Erreur récupération logs:', fetchError)
+    const rows = (data ?? []) as AdminRequestLog[]
+    const logs = rows.slice(0, limit)
+    const last = logs.at(-1)
+    return NextResponse.json({
+      logs,
+      page: {
+        limit,
+        totalCount: count ?? 0,
+        nextCursor: rows.length > limit && last ? encodeKeysetCursor({ createdAt: last.created_at, id: last.id }) : null,
+      },
+    })
+  } catch (error) {
+    console.error('[admin logs] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

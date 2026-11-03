@@ -9,6 +9,7 @@ import {
   type OrderRegistrationRow,
   type OrderRow,
 } from '@/lib/admin/ordersList'
+import { keysetAfterFilter } from '@/lib/admin/keysetCursor'
 import { sanitizeSearchTerm } from '@/lib/admin/participantsQuery'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -53,9 +54,7 @@ export async function GET(request: NextRequest) {
       ordersQuery = ordersQuery.or(clauses.join(','))
     }
     if (decodedCursor) {
-      ordersQuery = ordersQuery.or(
-        `created_at.lt."${decodedCursor.createdAt}",and(created_at.eq."${decodedCursor.createdAt}",id.lt.${decodedCursor.id})`,
-      )
+      ordersQuery = ordersQuery.or(keysetAfterFilter(decodedCursor))
     }
 
     const { data, error, count } = await ordersQuery

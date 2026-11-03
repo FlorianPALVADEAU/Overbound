@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { decodeKeysetCursor, encodeKeysetCursor, type KeysetCursor } from './keysetCursor'
 
 export const ORDER_STATUSES = ['paid', 'pending', 'cancelled', 'refunded'] as const
 export type OrderListStatus = (typeof ORDER_STATUSES)[number]
@@ -12,20 +13,9 @@ export const ordersQuerySchema = z.object({
 })
 export type OrdersQuery = z.infer<typeof ordersQuerySchema>
 
-const cursorSchema = z.object({ createdAt: z.string().min(1), id: z.string().uuid() })
-export type OrdersCursor = z.infer<typeof cursorSchema>
-
-export const encodeOrdersCursor = (cursor: OrdersCursor) => Buffer.from(JSON.stringify(cursor)).toString('base64url')
-
-export function decodeOrdersCursor(value: string): OrdersCursor {
-  try {
-    const parsed = cursorSchema.parse(JSON.parse(Buffer.from(value, 'base64url').toString('utf8')))
-    if (Number.isNaN(Date.parse(parsed.createdAt))) throw new Error('date')
-    return parsed
-  } catch {
-    throw new Error('Cursor de pagination invalide')
-  }
-}
+export type OrdersCursor = KeysetCursor
+export const encodeOrdersCursor = encodeKeysetCursor
+export const decodeOrdersCursor = decodeKeysetCursor
 
 export interface OrderRow {
   id: string

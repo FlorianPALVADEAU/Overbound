@@ -136,6 +136,15 @@ export function LuckyWheelSection() {
     [campaigns, selectedCampaignId],
   )
 
+  // The lists are paginated: every page lives under its own key, so a write invalidates the whole family
+  // instead of patching one cached array that the table never reads. A campaign carries its reward count,
+  // so a reward write refreshes the campaigns too.
+  const refreshCampaigns = () => queryClient.invalidateQueries({ queryKey: adminLuckyWheelCampaignsQueryKey })
+  const refreshRewards = async () => {
+    if (selectedCampaignId) await queryClient.invalidateQueries({ queryKey: adminLuckyWheelRewardsQueryKey(selectedCampaignId) })
+    await refreshCampaigns()
+  }
+
   // Campaigns ---------------------------------------------------------------
 
   const handleCreateCampaignClick = () => {
@@ -159,9 +168,7 @@ export function LuckyWheelSection() {
     setCampaignDeletingId(campaign.id)
     try {
       await deleteAdminLuckyWheelCampaign(campaign.id)
-      queryClient.setQueryData<LuckyWheelCampaign[]>(adminLuckyWheelCampaignsQueryKey, (previous) =>
-        (previous ?? []).filter((c) => c.id !== campaign.id),
-      )
+      await refreshCampaigns()
       if (selectedCampaignId === campaign.id) setSelectedCampaignId(null)
       setMessage({ type: 'success', text: 'Campagne supprimée' })
     } catch (error) {
@@ -173,10 +180,8 @@ export function LuckyWheelSection() {
 
   const handleTogglePause = async (campaign: LuckyWheelCampaign, paused: boolean) => {
     try {
-      const updated = await pauseAdminLuckyWheelCampaign(campaign.id, paused)
-      queryClient.setQueryData<LuckyWheelCampaign[]>(adminLuckyWheelCampaignsQueryKey, (previous) =>
-        (previous ?? []).map((c) => (c.id === campaign.id ? { ...c, paused: updated.paused } : c)),
-      )
+      await pauseAdminLuckyWheelCampaign(campaign.id, paused)
+      await refreshCampaigns()
       setMessage({
         type: 'success',
         text: paused ? 'Campagne mise en pause' : 'Campagne reprise',
@@ -202,18 +207,13 @@ export function LuckyWheelSection() {
     setMessage(null)
     try {
       if (campaignDialogMode === 'create') {
-        const { campaign: created, warnings } = await createAdminLuckyWheelCampaign(payload)
-        queryClient.setQueryData<LuckyWheelCampaign[]>(adminLuckyWheelCampaignsQueryKey, (previous) => [
-          created,
-          ...(previous ?? []),
-        ])
+        const { warnings } = await createAdminLuckyWheelCampaign(payload)
+        await refreshCampaigns()
         const warningText = describeCampaignWarning(warnings)
         setMessage(warningText ? { type: 'warning', text: warningText } : { type: 'success', text: 'Campagne créée' })
       } else if (selectedCampaign) {
-        const { campaign: updated, warnings } = await updateAdminLuckyWheelCampaign(selectedCampaign.id, payload)
-        queryClient.setQueryData<LuckyWheelCampaign[]>(adminLuckyWheelCampaignsQueryKey, (previous) =>
-          (previous ?? []).map((c) => (c.id === selectedCampaign.id ? updated : c)),
-        )
+        const { warnings } = await updateAdminLuckyWheelCampaign(selectedCampaign.id, payload)
+        await refreshCampaigns()
         const warningText = describeCampaignWarning(warnings)
         setMessage(warningText ? { type: 'warning', text: warningText } : { type: 'success', text: 'Campagne mise à jour' })
       }
@@ -246,11 +246,7 @@ export function LuckyWheelSection() {
     setRewardDeletingId(reward.id)
     try {
       await deleteAdminLuckyWheelReward(reward.id)
-      if (selectedCampaignId) {
-        queryClient.setQueryData<LuckyWheelReward[]>(adminLuckyWheelRewardsQueryKey(selectedCampaignId), (previous) =>
-          (previous ?? []).filter((r) => r.id !== reward.id),
-        )
-      }
+      await refreshRewards()
       setMessage({ type: 'success', text: 'Récompense supprimée' })
     } catch (error) {
       setMessage({ type: 'error', text: errorMessage(error, 'Erreur lors de la suppression') })
@@ -265,18 +261,13 @@ export function LuckyWheelSection() {
     setMessage(null)
     try {
       if (rewardDialogMode === 'create') {
-        const created = await createAdminLuckyWheelReward(payload)
-        queryClient.setQueryData<LuckyWheelReward[]>(adminLuckyWheelRewardsQueryKey(selectedCampaignId), (previous) => [
-          created,
-          ...(previous ?? []),
-        ])
+        await createAdminLuckyWheelReward(payload)
+        await refreshRewards()
         setMessage({ type: 'success', text: 'Récompense créée' })
       } else if (selectedReward) {
         const { campaign_id: _campaignId, ...updatePayload } = payload
-        const updated = await updateAdminLuckyWheelReward(selectedReward.id, updatePayload)
-        queryClient.setQueryData<LuckyWheelReward[]>(adminLuckyWheelRewardsQueryKey(selectedCampaignId), (previous) =>
-          (previous ?? []).map((r) => (r.id === selectedReward.id ? updated : r)),
-        )
+        await updateAdminLuckyWheelReward(selectedReward.id, updatePayload)
+        await refreshRewards()
         setMessage({ type: 'success', text: 'Récompense mise à jour' })
       }
       setRewardDialogOpen(false)

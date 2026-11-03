@@ -91,6 +91,6 @@ export function CampaignTable({
   ]
 
   return (
-    <OperationsList data={{ items: campaigns, nextCursor: pagination.nextCursor, total: pagination.total }} status={loading ? 'loading' : 'idle'} getItemId={(campaign) => campaign.id} columns={columns} rowActions={actions} search={search} searchPlaceholder="Rechercher une campagne…" onSearchChange={onSearchChange} pagination={{ ...pagination, limit: 25 }} onPaginationChange={onPaginationChange} itemLabel="campagne" />
+    <OperationsList storageKey="lucky-wheel-campaigns" data={{ items: campaigns, nextCursor: pagination.nextCursor, total: pagination.total }} status={loading ? 'loading' : 'idle'} getItemId={(campaign) => campaign.id} columns={columns} rowActions={actions} search={search} searchPlaceholder="Rechercher une campagne…" onSearchChange={onSearchChange} pagination={{ ...pagination, limit: 25 }} onPaginationChange={onPaginationChange} itemLabel="campagne" />
   )
 }
