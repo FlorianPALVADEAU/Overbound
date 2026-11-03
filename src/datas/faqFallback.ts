@@ -1,7 +1,7 @@
 import type { PortableTextBlock } from '@portabletext/types'
 import type { FAQDocument } from '@/app/about/faq/FAQPageContent'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
-import { HEALTH_PROOF_MINOR_SENTENCE, MINOR_EMERGENCY_PROCEDURE } from '@/constants/participantNotice'
+import { HEALTH_PROOF_MINOR_SENTENCE, MINOR_EMERGENCY_PROCEDURE, PARTICIPANTS_ARE_THIRD_PARTIES } from '@/constants/participantNotice'
 import { OPEN_FORMAT_RULES, RANKED_FORMAT_RULES, RANKED_LAP_TIME_LIMITS_SUMMARY, SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 
 export const block = (text: string): PortableTextBlock => ({
@@ -155,7 +155,7 @@ export const faqFallback: FAQDocument[] = [
         'Il ne couvre pas les dommages que tu te causes à toi-même sans faute d’Overbound, par exemple une chute sur un obstacle conforme : tes frais médicaux, ton invalidité ou ton décès restent alors à ta charge. Nous te recommandons une assurance individuelle accident.',
       ),
       block(
-        'Overbound ne s’engage pas sur la prise en charge d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound : vérifie que ta responsabilité civile personnelle couvre ce cas.',
+        PARTICIPANTS_ARE_THIRD_PARTIES,
       ),
     ],
     category: 'inscriptions',

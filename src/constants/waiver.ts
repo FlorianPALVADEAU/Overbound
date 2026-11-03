@@ -9,7 +9,12 @@
  * Drafted without a lawyer's review (see docs/legal/2026-10-transfer-and-waiver-review.md).
  */
 
-import { HEALTH_PROOF_MINOR_SENTENCE, HEALTH_PROOF_SENTENCE, MINOR_EMERGENCY_PROCEDURE } from './participantNotice'
+import {
+  HEALTH_PROOF_MINOR_SENTENCE,
+  HEALTH_PROOF_SENTENCE,
+  MINOR_EMERGENCY_PROCEDURE,
+  PARTICIPANTS_ARE_THIRD_PARTIES,
+} from './participantNotice'
 
 export const WAIVER_TITLE =
   'Décharge de responsabilité, acceptation des risques et autorisation d’utilisation d’image — Overbound'
@@ -68,7 +73,7 @@ export const WAIVER_CLAUSES: readonly WaiverClause[] = [
   },
   {
     id: '11',
-    text: 'Overbound est assurée en responsabilité civile auprès d’AXA France IARD, conformément à l’article L321-1 du Code du sport (plafond de 9 000 000 € par année d’assurance pour les dommages corporels). Cette assurance couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound. Elle ne couvre pas les dommages que je me cause à moi-même sans faute d’Overbound : mes frais médicaux, mon invalidité ou mon décès restent alors à ma charge. Overbound ne s’engage pas sur la prise en charge, par son contrat, d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound : il m’appartient de vérifier que ma responsabilité civile personnelle couvre ce cas. Je suis informé(e) de l’intérêt de souscrire une assurance individuelle accident (indemnités en cas de blessure, d’invalidité ou de décès) et je reconnais avoir été invité(e) à vérifier mes garanties avant l’événement. Le contrat et ses garanties sont détaillés à l’article 12 des CGV.',
+    text: `Overbound est assurée en responsabilité civile auprès d’AXA France IARD, conformément à l’article L321-1 du Code du sport (plafond de 9 000 000 € par année d’assurance pour les dommages corporels). Cette assurance couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound. Elle ne couvre pas les dommages que je me cause à moi-même sans faute d’Overbound : mes frais médicaux, mon invalidité ou mon décès restent alors à ma charge. ${PARTICIPANTS_ARE_THIRD_PARTIES} Je suis informé(e) de l’intérêt de souscrire une assurance individuelle accident (indemnités en cas de blessure, d’invalidité ou de décès) et je reconnais avoir été invité(e) à vérifier mes garanties avant l’événement. Le contrat et ses garanties sont détaillés à l’article 12 des CGV.`,
   },
   {
     id: '12',

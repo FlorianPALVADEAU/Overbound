@@ -3,15 +3,20 @@
  * insurance cover, in one place. The CGV, the waiver, the checkout, the ticket email and the
  * transfer form all read from here, so they cannot drift apart.
  *
- * The insurance wording follows AXA's written answer (Overbound's agency, October 2026): the
- * policy covers damage to third parties, participants included, when Overbound is at fault; it
- * does not cover damage participants cause to themselves. AXA did NOT answer whether damage one
- * participant causes to another is covered, nor whether a transferred bib is covered, nor whether
- * the next edition is: the texts must not claim any of the three.
+ * The insurance wording follows the contract (AXA France IARD, conditions particulières, page 2: sporting
+ * participants are third parties between them) and the agency's written answers (October and November 2026):
+ * the policy covers damage to third parties, participants included, when Overbound is at fault; it does not
+ * cover damage participants cause to themselves; a participant's liability towards another may be covered,
+ * subject to the policy's conditions. AXA did NOT confirm in writing that minors are covered, nor that a
+ * transferred bib is: the texts must not claim either.
  *
  * Changing any wording that appears in the waiver requires bumping `REGULATION_VERSION`.
  * Drafted without a lawyer's review (see docs/legal/2026-10-transfer-and-waiver-review.md).
  */
+
+/** Liability of a participant towards another, as the contract words it. One wording for every text. */
+export const PARTICIPANTS_ARE_THIRD_PARTIES =
+  'Le contrat d’Overbound précise que les pratiquants sportifs ont la qualité de tiers entre eux : la responsabilité civile d’un participant envers un autre participant peut donc être garantie, dans les limites et conditions du contrat. Overbound ne s’engage pas sur une prise en charge dans tous les cas : chaque participant vérifie aussi que sa responsabilité civile personnelle (assurance habitation, licence sportive) couvre ce cas.'
 
 /** Health proof asked for this edition. Update for the next edition. */
 export const HEALTH_PROOF = {
@@ -84,13 +89,13 @@ export const PARTICIPANT_NOTICE: readonly NoticeSection[] = [
     title: 'Ce que l’assurance d’Overbound couvre',
     items: [
       'La responsabilité civile d’Overbound (AXA France IARD) : les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound, dans les limites du contrat.',
+      PARTICIPANTS_ARE_THIRD_PARTIES,
     ],
   },
   {
     title: 'Ce qu’elle ne couvre pas',
     items: [
       'Les dommages que tu te causes à toi-même, sans faute d’Overbound : une chute sur un obstacle conforme, par exemple. Frais médicaux, invalidité ou décès restent alors à ta charge.',
-      'Overbound ne s’engage pas sur la prise en charge, par son contrat, d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound. Vérifie que ta responsabilité civile personnelle (assurance habitation, licence) couvre ce cas.',
     ],
   },
   {

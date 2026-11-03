@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link'
 import { COMPANY_INFO } from '@/constants/companyInfo'
 import { CGV_VERSION } from '@/constants/legalVersions'
-import { HEALTH_PROOF_MINOR_SENTENCE, HEALTH_PROOF_SENTENCE, MINOR_EMERGENCY_PROCEDURE } from '@/constants/participantNotice'
+import {
+  HEALTH_PROOF_MINOR_SENTENCE,
+  HEALTH_PROOF_SENTENCE,
+  MINOR_EMERGENCY_PROCEDURE,
+  PARTICIPANTS_ARE_THIRD_PARTIES,
+} from '@/constants/participantNotice'
 import { TICKET_TRANSFER_FEE_CENTS, formatTransferFee } from '@/lib/tickets/transferPolicy'
 import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 import { Container, Section } from '@/components/ds'
@@ -537,10 +542,7 @@ export default function CGVPage() {
                 frais médicaux, son invalidité ou son décès restent alors à sa charge, sauf assurance personnelle.
               </p>
               <p>
-                <strong>Dommage causé à un autre participant :</strong> Overbound ne s'engage pas sur la prise en
-                charge, par son contrat, d'un dommage qu'un participant cause à un autre participant sans faute
-                d'Overbound. Chaque participant doit vérifier que sa responsabilité civile personnelle (assurance
-                habitation, licence sportive) couvre ce cas.
+                <strong>Dommage causé à un autre participant :</strong> {PARTICIPANTS_ARE_THIRD_PARTIES}
               </p>
               <p>
                 <strong>Dossard transféré et éditions suivantes :</strong> le contrat ci-dessus est celui en vigueur à

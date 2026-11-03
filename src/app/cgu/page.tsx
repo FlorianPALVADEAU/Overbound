@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
+import { PARTICIPANTS_ARE_THIRD_PARTIES } from '@/constants/participantNotice'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 import { containerClass } from '@/components/ds'
 import { LegalHeader } from '@/components/legal/LegalHeader'
@@ -122,7 +123,7 @@ const paragraphs = {
   assurances: [
     "Overbound souscrit un contrat de responsabilité civile organisateur (AXA France IARD) couvrant les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound, dans les limites du contrat détaillé à l’article 12 des CGV.",
     "Cette assurance ne couvre pas les dommages que le participant se cause à lui-même sans faute d’Overbound : ses frais médicaux, son invalidité ou son décès restent alors à sa charge.",
-    "Overbound ne s’engage pas sur la prise en charge, par son contrat, d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound. Chaque participant vérifie que sa responsabilité civile personnelle couvre ce cas.",
+    PARTICIPANTS_ARE_THIRD_PARTIES,
     "Chaque participant est invité à souscrire une assurance individuelle accident couvrant les dommages corporels auxquels il s’expose (indemnités en cas de blessure, d’invalidité ou de décès). Une licence fédérale sportive ou une assurance personnelle multisport peut déjà l’inclure.",
     "Pour l’édition 2026, un Pass Prévention Santé (PPS) de la FFA, ou une licence FFA en cours de validité, est exigé au retrait du dossard (article 11 des CGV).",
     "Les effets personnels restent sous la responsabilité du participant. Des zones de consigne sécurisées peuvent être proposées, sans constituer une obligation de résultat.",

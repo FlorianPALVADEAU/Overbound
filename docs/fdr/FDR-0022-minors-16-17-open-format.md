@@ -27,7 +27,7 @@ est floue : la confirmation écrite point par point reste à obtenir avant toute
 | Surveillance | Overbound n'assure ni garde ni surveillance de mineurs hors épreuve : l'adulte référent en répond. |
 | Transfert | Un dossard ne se transfère qu'à un majeur. Le transfert remet à zéro les champs mineur. |
 | Données | Coordonnées effacées 30 jours après l'événement (purge existante). Autorisation parentale papier conservée un an. Attestation de santé jamais enregistrée. |
-| Assurance | Aucun texte n'affirme que le mineur est couvert. Le représentant légal est informé de l'intérêt d'une assurance individuelle accident et de la clause 11. |
+| Assurance | Réponse d'AXA du 2026-11-03 et contrat : aucune exclusion liée à l'âge ni aux obstacles, aucune condition d'autorisation parentale, d'adulte référent ou de questionnaire ; les pratiquants sportifs sont tiers entre eux. AXA ne confirme pas par écrit une dispense de toute formalité pour les mineurs, donc les textes ne promettent pas la couverture du mineur. Le représentant légal est informé de l'intérêt d'une assurance individuelle accident (non couverte par le contrat actuel) et de la clause 11. **Risque** : le contrat exclut les dommages résultant du non-respect des règles techniques et sportives des fédérations délégataires (p. 7) : le contrôle des papiers et du justificatif de santé protège aussi la garantie. |
 
 ## Versions
 

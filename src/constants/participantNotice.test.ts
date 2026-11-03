@@ -4,6 +4,7 @@ import {
   HEALTH_PROOF_SENTENCE,
   MINOR_EMERGENCY_PROCEDURE,
   PARTICIPANT_NOTICE_PLAIN_TEXT,
+  PARTICIPANTS_ARE_THIRD_PARTIES,
 } from './participantNotice'
 import { WAIVER_CLAUSES, WAIVER_PLAIN_TEXT } from './waiver'
 
@@ -18,9 +19,15 @@ describe('participant notice', () => {
     expect(PARTICIPANT_NOTICE_PLAIN_TEXT).toMatch(/assurance individuelle accident/)
   })
 
-  it('never claims cover for damage between participants, which the insurer has not confirmed', () => {
-    expect(PARTICIPANT_NOTICE_PLAIN_TEXT).toMatch(/ne s’engage pas sur la prise en charge/)
-    expect(WAIVER_PLAIN_TEXT).toMatch(/ne s’engage pas sur la prise en charge/)
+  it('words the liability between participants as the contract does: third parties, subject to its conditions', () => {
+    expect(PARTICIPANT_NOTICE_PLAIN_TEXT).toContain(PARTICIPANTS_ARE_THIRD_PARTIES)
+    expect(WAIVER_PLAIN_TEXT).toContain(PARTICIPANTS_ARE_THIRD_PARTIES)
+    expect(PARTICIPANTS_ARE_THIRD_PARTIES).toMatch(/qualité de tiers entre eux/)
+    expect(PARTICIPANTS_ARE_THIRD_PARTIES).toMatch(/dans les limites et conditions du contrat/)
+  })
+
+  it('never promises cover in every case between participants', () => {
+    expect(PARTICIPANTS_ARE_THIRD_PARTIES).toMatch(/ne s’engage pas sur une prise en charge dans tous les cas/)
     expect(WAIVER_PLAIN_TEXT).not.toMatch(/couvre la responsabilité civile des participants/i)
   })
 
