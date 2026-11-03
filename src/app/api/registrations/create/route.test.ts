@@ -607,8 +607,13 @@ describe('POST /api/registrations/create', () => {
       referentPhone: '0612345678',
       selectedWaveIndex: 5,
     }
-    const freeOrder = (participant: Record<string, unknown>) =>
-      baseBody({ paymentIntentId: 'free_abc123', freeOrderMetadata: { currency: 'eur' }, participants: [participant] })
+    const freeOrder = (participant: Record<string, unknown>, minorAttestation = true) =>
+      baseBody({
+        paymentIntentId: 'free_abc123',
+        freeOrderMetadata: { currency: 'eur' },
+        participants: [participant],
+        disclaimer: { read: true, accepted: true, rulebookAccepted: true, minorAttestation },
+      })
 
     it('registers a 17 year old on OPEN as a minor and keeps the contacts with the waiver', async () => {
       mockAuthedUser('user-1')
@@ -624,6 +629,21 @@ describe('POST /api/registrations/create', () => {
       expect(registrationInserts[0]).toMatchObject({ is_minor: true })
       const signed = JSON.parse(signatureInserts[0].signature_data as string)
       expect(signed.participant).toMatchObject({ guardianName: 'Anne Runner', referentPhone: '0612345678' })
+      expect(signed.disclaimer).toMatchObject({ minorAttestation: true })
+    })
+
+    it('refuses a minor when the signer did not attest being the legal representative, and creates nothing', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder(MINOR, false)))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('représentant légal')
+      expect(registrationInserts).toHaveLength(0)
     })
 
     it('marks an adult as not a minor and stores no minor contact', async () => {

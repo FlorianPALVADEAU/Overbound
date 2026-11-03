@@ -6,6 +6,8 @@ export interface CheckoutConsents {
   rulebookAccepted: boolean
   /** A buyer registering other people vouches for their acceptance (porte-fort, art. 1204 C. civ.). */
   groupAttestation: boolean
+  /** A buyer registering a 16 or 17 year old vouches for being their legal representative (waiver clause 18). */
+  minorAttestation: boolean
   signatureImage: string | null
   /** When the current signature was drawn. */
   signedAt: string | null
@@ -16,6 +18,7 @@ const UNSIGNED: CheckoutConsents = {
   disclaimerAccepted: false,
   rulebookAccepted: false,
   groupAttestation: false,
+  minorAttestation: false,
   signatureImage: null,
   signedAt: null,
 }
@@ -25,7 +28,7 @@ export function useCheckoutConsents() {
   const [consents, setConsents] = useState<CheckoutConsents>(UNSIGNED)
 
   const setConsent = useCallback(
-    (field: 'disclaimerRead' | 'disclaimerAccepted' | 'rulebookAccepted' | 'groupAttestation') => (checked: boolean) =>
+    (field: 'disclaimerRead' | 'disclaimerAccepted' | 'rulebookAccepted' | 'groupAttestation' | 'minorAttestation') => (checked: boolean) =>
       setConsents((previous) => ({ ...previous, [field]: checked })),
     [],
   )

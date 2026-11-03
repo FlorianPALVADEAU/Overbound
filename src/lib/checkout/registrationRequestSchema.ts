@@ -43,6 +43,7 @@ export const createRegistrationRequestSchema = z.object({
       accepted: z.boolean(),
       rulebookAccepted: z.boolean().optional(),
       groupAttestation: z.boolean().optional(),
+      minorAttestation: z.boolean().optional(),
     })
     .default({ read: false, accepted: false, rulebookAccepted: false }),
   freeOrderMetadata: z.record(z.string(), z.string()).nullable().optional(),

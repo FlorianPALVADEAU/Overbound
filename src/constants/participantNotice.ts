@@ -53,6 +53,15 @@ export const HEALTH_PROOF_MINOR_SENTENCE = `Pour un participant de 16 ou 17 ans,
 export const MINOR_EMERGENCY_PROCEDURE =
   'En cas de blessure ou de malaise d’un mineur, les secours de l’événement le prennent en charge, l’organisation prévient dès que possible l’adulte référent puis le représentant légal aux numéros communiqués à l’inscription, et appelle les secours publics (15 ou 112) en cas d’urgence.'
 
+/**
+ * Box the signer ticks when the order includes a minor. It repeats clause 18 of the waiver in the first person, so
+ * the parent says it in the checkout instead of only signing a long text. Singular and plural read the same.
+ */
+export const minorAttestationLabel = (names: readonly string[]): string => {
+  const who = names.length > 1 ? `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]}` : (names[0] ?? 'ce participant')
+  return `J’atteste être le représentant légal de ${who}, ou agir avec l’accord de son représentant légal. Je lui ai expliqué les risques et les consignes de sécurité. Il signera avec moi l’autorisation parentale papier au retrait du dossard, avec sa pièce d’identité.`
+}
+
 export interface NoticeSection {
   title: string
   items: readonly string[]

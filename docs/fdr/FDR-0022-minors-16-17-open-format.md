@@ -20,7 +20,7 @@ est floue. Décision du 2026-11-03 (Florian Palvadeau) : ne pas insister auprès
 | Quel format | OPEN uniquement. Jamais RANKED avant 18 ans. Un billet dont le format est ambigu est refusé (détection par `isOpenFormatTicket`). |
 | Interrupteur | `events.minimum_age` : 18 (défaut, majeurs uniquement) ou 16. Champ dans le formulaire admin de l'événement. Revenir à 18 est refusé tant que des mineurs non annulés sont inscrits. |
 | À l'inscription | Nom et téléphone du représentant légal et de l'adulte référent, obligatoires. Une case « c'est la même personne ». Stockés dans la décharge signée (`registration_signatures.signature_data.participant`), jamais dans Stripe. |
-| Qui signe | Le représentant légal, ou la personne qui agit avec son accord (clause 18 de la décharge). Un seul texte de décharge pour tous, avec les clauses 18 à 21 pour les mineurs. |
+| Qui signe | Le représentant légal, ou la personne qui agit avec son accord (clause 18 de la décharge). Un seul texte de décharge pour tous, avec les clauses 18 à 21 pour les mineurs. Commande groupée parent + mineur : l'acheteur signe une fois, et doit cocher une case dédiée (`minorAttestation`, libellé `minorAttestationLabel`) disant qu'il est le représentant légal des mineurs de la commande, qu'il leur a expliqué les risques et que chacun signera l'autorisation parentale papier au retrait. La case est exigée par le serveur (422 sinon) et conservée avec la signature. Le mineur ne signe que le papier. |
 | Au retrait du dossard | Contrôle sur papier par un bénévole : autorisation parentale signée par le représentant légal et le mineur, pièce d'identité du mineur, adulte référent présent et joignable, attestation de santé pour mineurs. Le serveur refuse le check-in (409 `MINOR_PAPERS_REQUIRED`) tant que les quatre cases ne sont pas cochées, et enregistre qui a contrôlé et quand. |
 | Santé | Attestation du questionnaire de santé pour mineurs de la FFA, ou licence FFA ; certificat médical si une réponse est « oui ». Source unique : `HEALTH_PROOF_MINOR` dans `participantNotice.ts`. À confirmer avec la FFA. |
 | Secours | Procédure unique (`MINOR_EMERGENCY_PROCEDURE`) reprise dans la décharge, les CGV et le notice. À reprendre dans le règlement officiel (PDF). |
@@ -36,14 +36,20 @@ est floue. Décision du 2026-11-03 (Florian Palvadeau) : ne pas insister auprès
 
 ## Checklist avant d'ouvrir un événement aux mineurs
 
-1. Appliquer la migration `20261104100000_minor_participants.sql`, puis déployer.
+1. ~~Appliquer la migration `20261104100000_minor_participants.sql`~~ : appliquée en production par Florian Palvadeau le 2026-11-03, puis déployer.
 2. ~~Confirmation écrite d'AXA~~ : abandonnée par décision du 2026-11-03 (risque assumé par l'organisateur, voir ligne Assurance).
 3. Confirmer avec la FFA que le questionnaire mineurs vaut pour Overbound et ce que donne un « oui ».
 4. Faire relire par un avocat les textes listés dans la revue juridique, puis corriger les constantes.
 5. Régénérer le règlement officiel (PDF) depuis `rulebook/overbound-reglement-officiel.md` (version 1.1 : âge, participant de 16 ou 17 ans, secours, image) et corriger l'entité organisatrice (voir revue juridique, question 13).
-6. Imprimer le modèle d'autorisation parentale et le remettre aux bénévoles du retrait des dossards ; prévoir le rangement (ou un scan archivé) jusqu'aux 28 ans du participant, puis la destruction.
+6. Imprimer le modèle d'autorisation parentale et le remettre aux bénévoles du retrait des dossards. Les autorisations signées seront scannées et stockées en base (décision du 2026-11-03) jusqu'aux 28 ans du participant, puis détruites : bucket privé, accès réservé aux administrateurs, aucune URL publique, journal des accès. Le papier original peut être détruit une fois le scan vérifié.
 7. Aligner la FAQ Sanity publiée (voir ci-dessous).
 8. Passer l'événement à `minimum_age = 16` dans l'admin.
+
+## Autres décisions du 2026-11-03
+
+- Organisateur unique : Palvadeau Organisation (SASU). L'association Overbound Race n'apparaît plus dans le règlement ni dans les guides.
+- Flux de paiement historique : `webhooks/stripe` ne crée plus d'inscription (le chemin à billet unique ne contrôlait ni l'âge ni la décharge, et plus rien n'en crée les paiements). Un paiement qui n'est pas du flux multi-participants déclenche une alerte admin « flux inconnu ».
+- Format Tribal Kids : hors périmètre de l'édition 2027, il aura ses propres conditions.
 
 ## Textes statiques
 

@@ -223,6 +223,13 @@ export async function POST(request: NextRequest) {
       }
       participantIsMinor.push(admission.isMinor)
     }
+    // The signer vouches for being the minor's legal representative (waiver clause 18); stored with the signature.
+    if (participantIsMinor.some(Boolean) && disclaimer?.minorAttestation !== true) {
+      return NextResponse.json(
+        { error: "Un participant est mineur : le signataire doit attester être son représentant légal." },
+        { status: 422 },
+      )
+    }
 
     // Generate unique tokens
     const generateTokens = () => ({ qr: uuidv4(), transfer: uuidv4() })

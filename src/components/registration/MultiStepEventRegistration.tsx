@@ -17,7 +17,10 @@ import { usePromoCode } from '@/hooks/registration/usePromoCode'
 import { useRegistrationDraftSync } from '@/hooks/registration/useRegistrationDraftSync'
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useUpsells } from '@/hooks/registration/useUpsells'
+import { minorParticipantNames } from '@/lib/checkout/minorParticipants'
+import { ADULT_AGE } from '@/lib/checkout/participantAge'
 import type { GroupIntent } from '@/lib/groups/invite'
+import { isOpenFormatTicket } from '@/lib/openSas'
 import { pricingErrorMessage, promoRejectionMessage } from '@/lib/orderPricing'
 import ConfirmationStep from './ConfirmationStep'
 import GroupPanel from './GroupPanel'
@@ -101,6 +104,19 @@ export default function MultiStepEventRegistration({
     [myGroup, event.id],
   )
   const needsGroupAttestation = participants.length > 1
+  const minorNames = useMemo(
+    () =>
+      minorParticipantNames(participants, {
+        eventDate: event.date,
+        minimumAge: event.minimum_age ?? ADULT_AGE,
+        ticketIsOpenFormat: (ticketId) => {
+          const ticket = ticketMap[ticketId]
+          return ticket ? isOpenFormatTicket(ticket.name, ticket.race?.name) : false
+        },
+      }),
+    [participants, event.date, event.minimum_age, ticketMap],
+  )
+  const needsMinorAttestation = minorNames.length > 0
 
   const { validation, showErrors, revealErrors } = useCheckoutValidation({
     participants,
@@ -111,6 +127,7 @@ export default function MultiStepEventRegistration({
     hasGroupAnchor: Boolean(groupAnchor),
     consents,
     needsGroupAttestation,
+    needsMinorAttestation,
     tshirtOffer,
   })
 
@@ -133,6 +150,7 @@ export default function MultiStepEventRegistration({
     paymentIntentId: payment.paymentIntentId,
     consents,
     needsGroupAttestation,
+    needsMinorAttestation,
   })
   useRegistrationDraftSync(
     draft,
@@ -292,6 +310,9 @@ export default function MultiStepEventRegistration({
                   onSignatureChange={setSignature}
                   groupAttestation={needsGroupAttestation ? consents.groupAttestation : undefined}
                   onGroupAttestationChange={setConsent('groupAttestation')}
+                  minorAttestation={needsMinorAttestation ? consents.minorAttestation : undefined}
+                  minorNames={minorNames}
+                  onMinorAttestationChange={setConsent('minorAttestation')}
                 />
               </RegistrationSection>
             ) : null}

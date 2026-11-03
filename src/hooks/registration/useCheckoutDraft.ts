@@ -7,10 +7,12 @@ interface CheckoutDraftArgs extends Omit<CheckoutDraftState, 'signature' | 'disc
   consents: CheckoutConsents
   /** The buyer registers other people: their attestation travels with the draft. */
   needsGroupAttestation: boolean
+  /** A participant is a minor: the legal representative's attestation travels with the draft. */
+  needsMinorAttestation: boolean
 }
 
 /** The current checkout as one draft, rebuilt only when something in it changes. */
-export function useCheckoutDraft({ consents, needsGroupAttestation, ...state }: CheckoutDraftArgs): RegistrationDraft {
+export function useCheckoutDraft({ consents, needsGroupAttestation, needsMinorAttestation, ...state }: CheckoutDraftArgs): RegistrationDraft {
   const { eventId, user, ticketSelections, participants, selectedUpsells, appliedPromos, ambassadorReferralCode, groupId, summary, clientSecret, paymentIntentId } = state
   return useMemo(
     () =>
@@ -32,8 +34,9 @@ export function useCheckoutDraft({ consents, needsGroupAttestation, ...state }: 
           accepted: consents.disclaimerAccepted,
           rulebookAccepted: consents.rulebookAccepted,
           ...(needsGroupAttestation ? { groupAttestation: consents.groupAttestation } : {}),
+          ...(needsMinorAttestation ? { minorAttestation: consents.minorAttestation } : {}),
         },
       }),
-    [eventId, user, ticketSelections, participants, selectedUpsells, appliedPromos, ambassadorReferralCode, groupId, summary, clientSecret, paymentIntentId, consents, needsGroupAttestation],
+    [eventId, user, ticketSelections, participants, selectedUpsells, appliedPromos, ambassadorReferralCode, groupId, summary, clientSecret, paymentIntentId, consents, needsGroupAttestation, needsMinorAttestation],
   )
 }

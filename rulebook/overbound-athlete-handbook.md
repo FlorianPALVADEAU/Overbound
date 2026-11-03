@@ -26,7 +26,7 @@ Notre objectif est simple : proposer un événement premium, lisible, exigeant e
 
 **Lieu :** indiqué sur billet/site
 
-**Organisateur :** Association OVERBOUND RACE
+**Organisateur :** Palvadeau Organisation (marque Overbound)
 
 **Formats :** OPEN (participatif) / RANKED (compétitif)
 

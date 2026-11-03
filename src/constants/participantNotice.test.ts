@@ -3,6 +3,7 @@ import {
   HEALTH_PROOF_MINOR_SENTENCE,
   HEALTH_PROOF_SENTENCE,
   MINOR_EMERGENCY_PROCEDURE,
+  minorAttestationLabel,
   PARTICIPANT_NOTICE_PLAIN_TEXT,
   PARTICIPANTS_ARE_THIRD_PARTIES,
 } from './participantNotice'
@@ -70,6 +71,15 @@ describe('participants aged 16 or 17', () => {
   it('keeps the parental authorization until the minor can no longer sue, not one year', () => {
     expect(WAIVER_PLAIN_TEXT).toMatch(/autorisation parentale, avec la présente décharge, jusqu’aux 28 ans/)
     expect(WAIVER_PLAIN_TEXT).not.toMatch(/un an après l’événement/)
+  })
+
+  it('words the legal representative attestation for one minor or several, and never waives a right', () => {
+    const one = minorAttestationLabel(['Léo'])
+    const two = minorAttestationLabel(['Léo', 'Mia'])
+    expect(one).toMatch(/représentant légal de Léo, ou agir avec l’accord/)
+    expect(two).toMatch(/représentant légal de Léo et Mia/)
+    expect(one).toMatch(/autorisation parentale papier/)
+    expect(one).not.toMatch(/renonc/i)
   })
 
   it('gives every waiver clause a distinct number', () => {

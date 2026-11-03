@@ -17,6 +17,7 @@ interface CheckoutValidationArgs {
   hasGroupAnchor: boolean
   consents: CheckoutConsents
   needsGroupAttestation: boolean
+  needsMinorAttestation: boolean
   tshirtOffer?: TshirtOffer | null
 }
 
@@ -25,7 +26,7 @@ interface CheckoutValidationArgs {
  * first tries to pay; then every problem shows and the page takes them to the
  * first one, focused for keyboards and screen readers.
  */
-export function useCheckoutValidation({ participants, ticketCount, eventDate, minimumAge = ADULT_AGE, ticketMap, hasGroupAnchor, consents, needsGroupAttestation, tshirtOffer }: CheckoutValidationArgs) {
+export function useCheckoutValidation({ participants, ticketCount, eventDate, minimumAge = ADULT_AGE, ticketMap, hasGroupAnchor, consents, needsGroupAttestation, needsMinorAttestation, tshirtOffer }: CheckoutValidationArgs) {
   const validation = useMemo(
     () =>
       validateCheckout({
@@ -48,10 +49,11 @@ export function useCheckoutValidation({ participants, ticketCount, eventDate, mi
           disclaimerAccepted: consents.disclaimerAccepted,
         },
         groupAttestation: needsGroupAttestation ? consents.groupAttestation : undefined,
+        minorAttestation: needsMinorAttestation ? consents.minorAttestation : undefined,
         hasSignature: Boolean(consents.signatureImage),
         tshirtOffer,
       }),
-    [participants, ticketCount, eventDate, minimumAge, ticketMap, hasGroupAnchor, consents, needsGroupAttestation, tshirtOffer],
+    [participants, ticketCount, eventDate, minimumAge, ticketMap, hasGroupAnchor, consents, needsGroupAttestation, needsMinorAttestation, tshirtOffer],
   )
   const [showErrors, setShowErrors] = useState(false)
   const [focusRequest, setFocusRequest] = useState(0)

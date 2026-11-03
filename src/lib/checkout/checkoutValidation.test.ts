@@ -112,6 +112,15 @@ describe('validateCheckout', () => {
     expect(validateCheckout(input({ groupAttestation: true })).isValid).toBe(true)
   })
 
+  it('asks the signer of an order with a minor to attest being the legal representative', () => {
+    const refused = validateCheckout(input({ minorAttestation: false }))
+    expect(refused.isValid).toBe(false)
+    expect(refused.consentErrors.minorAttestation).toBeDefined()
+    expect(refused.firstInvalidId).toBe('minor-attestation')
+    expect(validateCheckout(input({ minorAttestation: true })).isValid).toBe(true)
+    expect(validateCheckout(input()).consentErrors.minorAttestation).toBeUndefined()
+  })
+
   it('asks for a T-shirt size only from the participants the offer still covers', () => {
     const order = [participant(), participant({ id: 'participant-2' })]
     const result = validateCheckout(input({ participants: order, ticketCount: 2, tshirtOffer: buildTshirtOffer(60, 59) }))

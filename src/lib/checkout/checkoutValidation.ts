@@ -21,9 +21,11 @@ export interface CheckoutValidationInput {
   ticketUsesWaveSelection: (ticketId: string) => boolean
   /** A member of an anchored group never picks a SAS: the group's departure wins. */
   hasGroupAnchor: boolean
-  consents: Record<Exclude<ConsentField, 'groupAttestation' | 'signature'>, boolean>
+  consents: Record<Exclude<ConsentField, 'groupAttestation' | 'minorAttestation' | 'signature'>, boolean>
   /** Undefined when the buyer registers only themself. */
   groupAttestation: boolean | undefined
+  /** Undefined when no participant is a minor. */
+  minorAttestation?: boolean
   hasSignature: boolean
   /** Free T-shirt offer: the first participants it still covers must pick a size. */
   tshirtOffer?: TshirtOffer | null
@@ -83,6 +85,7 @@ const consentErrorsOf = (input: CheckoutValidationInput) => {
     if (!accepted) errors[field] = REQUIRED_MESSAGE
   }
   if (input.groupAttestation === false) errors.groupAttestation = REQUIRED_MESSAGE
+  if (input.minorAttestation === false) errors.minorAttestation = REQUIRED_MESSAGE
   if (!input.hasSignature) errors.signature = 'Dessine ta signature pour continuer.'
   return errors
 }

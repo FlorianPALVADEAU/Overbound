@@ -41,6 +41,7 @@ export const CONSENT_FIELD_IDS = {
   rulebookAccepted: 'rulebook-accepted',
   disclaimerAccepted: 'disclaimer-accepted',
   groupAttestation: 'group-attestation',
+  minorAttestation: 'minor-attestation',
   signature: 'signature-pad',
 } as const
 

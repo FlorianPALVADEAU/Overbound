@@ -6,7 +6,7 @@
 - Version : 1.1
 - Date de mise à jour : 3 novembre 2026
 - Statut du document : version de travail consolidée
-- Entité organisatrice : Association OVERBOUND RACE (à harmoniser avec les CGV avant publication)
+- Entité organisatrice : Palvadeau Organisation, SASU, RCS Versailles 992 578 229 (marque Overbound)
 - Événement concerné : Overbound
 
 ### 1. Introduction
