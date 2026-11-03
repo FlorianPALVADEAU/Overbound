@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
     }
     const ineligible = checkOrderEligibility(body.participants, {
       eventDate: event.date,
+      minimumAge: event.minimum_age,
       tickets,
       hasGroupAnchor: await groupHasAnchorOnEvent(admin, body.groupId, body.userId, event.id),
     })

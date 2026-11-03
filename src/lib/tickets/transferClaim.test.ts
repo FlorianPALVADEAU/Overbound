@@ -18,6 +18,9 @@ describe('buildHandOverUpdate', () => {
       is_affiliated: true,
       guarantor_user_id: 'old-user',
       flexible_refund: false,
+      is_minor: false,
+      minor_papers_verified_at: null,
+      minor_papers_verified_by: null,
     })
   })
 })

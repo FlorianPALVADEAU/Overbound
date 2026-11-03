@@ -106,6 +106,7 @@ export default function MultiStepEventRegistration({
     participants,
     ticketCount: totalParticipants,
     eventDate: event.date,
+    minimumAge: event.minimum_age,
     ticketMap,
     hasGroupAnchor: Boolean(groupAnchor),
     consents,
@@ -233,6 +234,7 @@ export default function MultiStepEventRegistration({
                 sellingTier={sellingTier}
                 availableSpots={availableSpots}
                 showErrors={showErrors}
+                minimumAge={event.minimum_age ?? 18}
               />
             </RegistrationSection>
 

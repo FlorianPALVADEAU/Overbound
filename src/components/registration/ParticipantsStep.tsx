@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import type { ParticipantErrors } from '@/lib/checkout/checkoutValidation'
 import { participantsToAlign } from '@/lib/checkout/sharedWave'
 import { joinName } from '@/lib/registration'
+import { isMinorOnEventDate } from '@/lib/checkout/participantAge'
 import { countComplete, nextIncompleteParticipantId } from '@/lib/checkout/participantProgress'
 import ParticipantPanel, { participantPanelId } from './ParticipantPanel'
 import { resolveCompanionOffer } from '@/lib/tickets/openCompanion'
@@ -111,6 +112,7 @@ export default function ParticipantsStep({
               companionOffer={resolveCompanionOffer(ticketMap[participant.ticketId] ?? {}, Object.values(ticketMap), eventDate)}
               currency={currency}
               tshirtOffered={isParticipantOffered(tshirtOffer, index)}
+              isMinor={isMinorOnEventDate(participant.birthDate, eventDate)}
               onCompanionToggle={onCompanionToggle}
               onCompanionWaveSelect={onCompanionWaveSelect}
               collapsible={collapsible}

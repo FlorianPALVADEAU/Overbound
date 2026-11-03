@@ -71,6 +71,7 @@ const EVENT_ROW = {
   location: 'SQY',
   capacity: 6000,
   ranked_bib_capacity: 1000,
+  minimum_age: 18,
   price_tiers: [],
 }
 
@@ -104,6 +105,7 @@ function baseBody(overrides: Record<string, unknown> = {}) {
         firstName: 'Alice',
         lastName: 'Runner',
         email: 'alice@example.com',
+        birthDate: '1990-05-04',
       },
     ],
     upsells: [],
@@ -157,6 +159,7 @@ function createAdmin(
     upsellRows?: Array<Record<string, unknown>>
     upsellInserts?: Array<Record<string, unknown>>
     registrationInserts?: Array<Record<string, unknown>>
+    signatureInserts?: Array<Record<string, unknown>>
   } = {},
 ) {
   let registrationCount = 0
@@ -258,7 +261,12 @@ function createAdmin(
         }
       }
       if (table === 'registration_signatures') {
-        return { insert: async () => ({ error: null }) }
+        return {
+          insert: async (row: Record<string, unknown>) => {
+            overrides.signatureInserts?.push(row)
+            return { error: null }
+          },
+        }
       }
       if (table === 'registration_upsells') {
         return {
@@ -464,8 +472,8 @@ describe('POST /api/registrations/create', () => {
   describe('options chosen per participant', () => {
     const TSHIRT = { id: 'tshirt-1', name: 'T-shirt', type: 'tshirt', price_cents: 1200, currency: 'eur' }
     const twoParticipants = [
-      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com' },
-      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com' },
+      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com', birthDate: '1990-05-04' },
+      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com', birthDate: '1992-01-15' },
     ]
     const paidIntent = {
       id: 'pi_1',
@@ -571,6 +579,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               selectedWaveIndex: 5,
@@ -583,6 +592,86 @@ describe('POST /api/registrations/create', () => {
 
     expect(response.status).toBe(200)
     expect(body.success).toBe(true)
+  })
+
+  describe('minors', () => {
+    const MINOR = {
+      ticketId: 'ticket-1',
+      firstName: 'Léa',
+      lastName: 'Runner',
+      email: 'lea@example.com',
+      birthDate: '2009-09-13',
+      guardianName: 'Anne Runner',
+      guardianPhone: '0612345678',
+      referentName: 'Anne Runner',
+      referentPhone: '0612345678',
+      selectedWaveIndex: 5,
+    }
+    const freeOrder = (participant: Record<string, unknown>) =>
+      baseBody({ paymentIntentId: 'free_abc123', freeOrderMetadata: { currency: 'eur' }, participants: [participant] })
+
+    it('registers a 17 year old on OPEN as a minor and keeps the contacts with the waiver', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      const signatureInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts[0]).toMatchObject({ is_minor: true })
+      const signed = JSON.parse(signatureInserts[0].signature_data as string)
+      expect(signed.participant).toMatchObject({ guardianName: 'Anne Runner', referentPhone: '0612345678' })
+    })
+
+    it('marks an adult as not a minor and stores no minor contact', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      const signatureInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder({ ...MINOR, birthDate: '1990-05-04', guardianName: undefined, guardianPhone: undefined, referentName: undefined, referentPhone: undefined })))
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts[0]).toMatchObject({ is_minor: false })
+      expect(JSON.parse(signatureInserts[0].signature_data as string).participant).not.toHaveProperty('guardianName')
+    })
+
+    it('refuses a minor when the edition is limited to adults, and creates nothing', async () => {
+      mockAuthedUser('user-1')
+      const registrationInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [OPEN_TICKET_ROW], registrationInserts }))
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('18 ans')
+      expect(registrationInserts).toHaveLength(0)
+    })
+
+    it('refuses a minor on the RANKED format', async () => {
+      mockAuthedUser('user-1')
+      supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [RANKED_TICKET_ROW], eventOverrides: { minimum_age: 16 } }))
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('OPEN')
+    })
+
+    it('refuses a minor without the adult on site', async () => {
+      mockAuthedUser('user-1')
+      supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 } }))
+
+      const response = await POST(jsonRequest(freeOrder({ ...MINOR, referentName: '', referentPhone: '' })))
+
+      expect(response.status).toBe(422)
+      expect((await response.json()).error).toContain('adulte référent')
+    })
   })
 
   it('returns 422 when an OPEN participant submits no selectedWaveIndex and has no group anchor', async () => {
@@ -600,6 +689,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
             },
@@ -638,6 +728,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               selectedWaveIndex: 5,
@@ -683,6 +774,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
+              birthDate: '1990-05-04',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               // Deliberately different from the anchor (3) — must be ignored server-side.

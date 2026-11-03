@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { decideMinorPapers, minorPapersChecksSchema, MINOR_PAPERS_REQUIRED_MESSAGE } from '@/lib/checkin/minorPapers'
 
 const checkinBodySchema = z.object({
   token: z.string().min(1, 'Token QR manquant'),
   action: z.enum(['checkin', 'undo']).optional(),
+  /** A minor's papers, controlled at the desk: sent together with the check-in. */
+  minorChecks: minorPapersChecksSchema.optional(),
 })
 
 export async function POST(req: Request) {
@@ -16,7 +19,7 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
-    const { token, action } = parsed.data
+    const { token, action, minorChecks } = parsed.data
 
     const supabase = await createSupabaseServer()
     const {
@@ -54,6 +57,8 @@ export async function POST(req: Request) {
         id,
         email,
         checked_in,
+        is_minor,
+        minor_papers_verified_at,
         start_time,
         wave_index,
         tickets (
@@ -100,15 +105,38 @@ export async function POST(req: Request) {
       )
     }
 
+    // Un mineur ne part pas sans contrôle de ses papiers au retrait du dossard.
+    const minorPapers =
+      requestedAction === 'checkin'
+        ? decideMinorPapers({
+            isMinor: registration.is_minor === true,
+            verifiedAt: registration.minor_papers_verified_at,
+            checks: minorChecks,
+          })
+        : 'not_a_minor'
+
+    if (minorPapers === 'papers_required') {
+      return NextResponse.json(
+        { error: MINOR_PAPERS_REQUIRED_MESSAGE, code: 'MINOR_PAPERS_REQUIRED', registration: { email: registration.email } },
+        { status: 409 }
+      )
+    }
+
     // Effectuer le check-in / undo
     const { data: updatedRegistration, error } = await admin
       .from('registrations')
-      .update({ checked_in: requestedAction === 'checkin' })
+      .update({
+        checked_in: requestedAction === 'checkin',
+        ...(minorPapers === 'verify_now'
+          ? { minor_papers_verified_at: new Date().toISOString(), minor_papers_verified_by: user.id }
+          : {}),
+      })
       .eq('qr_code_token', token)
       .select(`
         id,
         email,
         checked_in,
+        is_minor,
         start_time,
         wave_index,
         tickets (
@@ -147,6 +175,7 @@ export async function POST(req: Request) {
           registration_id: updatedRegistration.id,
           actor_role: profile.role ?? null,
           action: requestedAction,
+          ...(minorPapers === 'verify_now' ? { minor_papers_verified: true } : {}),
         },
         error_message: null,
       })
@@ -166,6 +195,7 @@ export async function POST(req: Request) {
         ticket_name: updatedRegistration.tickets?.[0]?.name,
         event_title: updatedRegistration.tickets?.[0]?.events?.[0]?.title,
         checked_in: updatedRegistration.checked_in,
+        is_minor: updatedRegistration.is_minor === true,
         start_time: updatedRegistration.start_time ?? null,
         wave_index: updatedRegistration.wave_index ?? null,
       }
@@ -223,6 +253,8 @@ export async function GET(req: Request) {
         checked_in,
         qr_code_token,
         created_at,
+        is_minor,
+        minor_papers_verified_at,
         start_time,
         wave_index,
         tickets (

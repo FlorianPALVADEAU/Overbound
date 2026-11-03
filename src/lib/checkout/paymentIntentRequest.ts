@@ -19,6 +19,11 @@ export const paymentIntentRequestSchema = z.object({
         ticketId: z.string().min(1),
         flexible: z.boolean().optional(),
         birthDate: z.string().optional(),
+        /** Under 18 only: checked before payment, never sent to Stripe. */
+        guardianName: z.string().optional(),
+        guardianPhone: z.string().optional(),
+        referentName: z.string().optional(),
+        referentPhone: z.string().optional(),
         selectedWaveIndex: z.number().int().positive().nullable().optional(),
         /** OPEN SAS of the companion bib. Set means the participant takes the option. */
         companionWaveIndex: z.number().int().positive().nullable().optional(),
@@ -85,6 +90,10 @@ export const buildPaymentIntentRequest = (
     ticketId: participant.ticketId,
     flexible: participant.flexible === true,
     birthDate: participant.birthDate,
+    guardianName: participant.guardianName,
+    guardianPhone: participant.guardianPhone,
+    referentName: participant.referentName,
+    referentPhone: participant.referentPhone,
     selectedWaveIndex: participant.selectedWaveIndex ?? null,
     companionWaveIndex: participant.companion === true ? (participant.companionWaveIndex ?? null) : null,
   })),

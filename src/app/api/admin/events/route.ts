@@ -5,6 +5,7 @@ import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { isRankedCapacityWithinTotal, parseBibCapacity } from '@/lib/events/bibCapacity'
+import { parseMinimumAge } from '@/lib/events/minimumAge'
 import { parseTshirtQuota } from '@/lib/tshirtOffer'
 import {
   adminEventDirectionSchema,
@@ -147,6 +148,7 @@ const handlePost = async (request: NextRequest) => {
       location,
       capacity,
       ranked_bib_capacity,
+      minimum_age,
       tshirt_offer_quota,
       status,
       external_provider,
@@ -185,6 +187,7 @@ const handlePost = async (request: NextRequest) => {
         location,
         capacity: parseInt(capacity) || 0,
         ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
+        minimum_age: parseMinimumAge(minimum_age),
         tshirt_offer_quota: parseTshirtQuota(tshirt_offer_quota),
         status: status || 'draft',
         external_provider: external_provider || null,

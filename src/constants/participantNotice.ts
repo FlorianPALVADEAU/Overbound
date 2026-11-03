@@ -28,6 +28,26 @@ export const HEALTH_PROOF = {
 
 export const HEALTH_PROOF_SENTENCE = `Pour cette édition, le ${HEALTH_PROOF.name} délivré par ${HEALTH_PROOF.issuer} est obligatoire (ou ${HEALTH_PROOF.alternative}). Il est contrôlé ${HEALTH_PROOF.checkpoint}, avec une pièce d’identité. ${HEALTH_PROOF.consequence}`
 
+/**
+ * Health proof asked of a participant aged 16 or 17 (events open to minors only). To confirm with the FFA
+ * before opening an event to minors: that Overbound can be selected on pps.athle.fr, and what a "yes" answer
+ * to the questionnaire leads to. Change the wording here and nowhere else.
+ */
+export const HEALTH_PROOF_MINOR = {
+  name: 'attestation du questionnaire de santé pour mineurs',
+  issuer: 'la FFA',
+  /** Accepted instead of the attestation. */
+  alternative: 'une licence FFA en cours de validité',
+  /** Asked when an answer of the questionnaire is "yes". */
+  certificate: 'un certificat médical d’absence de contre-indication à la pratique de la course à obstacles, de moins de six mois',
+} as const
+
+export const HEALTH_PROOF_MINOR_SENTENCE = `Pour un participant de 16 ou 17 ans, le ${HEALTH_PROOF.name} est remplacé par l’${HEALTH_PROOF_MINOR.name} délivrée par ${HEALTH_PROOF_MINOR.issuer}, remplie avec un représentant légal (ou ${HEALTH_PROOF_MINOR.alternative}). Si une réponse du questionnaire est « oui », ${HEALTH_PROOF_MINOR.certificate} est exigé à la place. ${HEALTH_PROOF.consequence}`
+
+/** What happens when a minor is hurt or unwell. Same text in the waiver, the CGV and the rulebook. */
+export const MINOR_EMERGENCY_PROCEDURE =
+  'En cas de blessure ou de malaise d’un mineur, les secours de l’événement le prennent en charge, l’organisation prévient sans délai l’adulte référent puis le représentant légal aux numéros communiqués à l’inscription, et appelle les secours publics (15 ou 112) en cas d’urgence.'
+
 export interface NoticeSection {
   title: string
   items: readonly string[]
@@ -46,9 +66,18 @@ export const PARTICIPANT_NOTICE: readonly NoticeSection[] = [
     title: 'Tes engagements',
     items: [
       HEALTH_PROOF_SENTENCE,
-      'Tu es majeur(e) et apte physiquement. Tu n’as pas connaissance d’une contre-indication médicale.',
+      'Tu as l’âge requis par l’événement (18 ans, ou 16 ans au format OPEN quand l’événement est ouvert aux mineurs) et tu es apte physiquement. Tu n’as pas connaissance d’une contre-indication médicale.',
       'Tu respectes le règlement, le briefing de sécurité et les consignes de l’organisation. En cas de danger, tu t’arrêtes et tu préviens.',
       'Le dossard est personnel : une pièce d’identité est demandée au retrait.',
+    ],
+  },
+  {
+    title: 'Si le participant a 16 ou 17 ans',
+    items: [
+      'Format OPEN uniquement, et seulement si l’événement est ouvert aux mineurs. Le représentant légal signe la décharge, ou donne son accord à la personne qui la signe.',
+      'Au retrait du dossard : autorisation parentale signée par le représentant légal et par le mineur, pièce d’identité du mineur, attestation de santé pour mineurs, et présence de l’adulte référent. Sans ces éléments, le départ est refusé et le billet n’est pas remboursé.',
+      'Un adulte référent est présent sur le site et joignable pendant toute la participation. Overbound n’assure ni garde ni surveillance du mineur en dehors de l’épreuve.',
+      MINOR_EMERGENCY_PROCEDURE,
     ],
   },
   {

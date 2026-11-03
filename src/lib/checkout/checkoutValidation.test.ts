@@ -7,6 +7,8 @@ const input = (overrides: Partial<CheckoutValidationInput> = {}): CheckoutValida
   participants: [participant()],
   ticketCount: 1,
   eventDate: '2026-09-12T06:00:00.000Z',
+  minimumAge: 18,
+  ticketIsOpenFormat: (ticketId) => ticketId === 'open',
   ticketUsesWaveSelection: (ticketId) => ticketId === 'open',
   hasGroupAnchor: false,
   consents: { disclaimerRead: true, rulebookAccepted: true, disclaimerAccepted: true },
@@ -38,6 +40,39 @@ describe('validateCheckout', () => {
   it('refuses a participant under 18 on the event day', () => {
     const result = validateCheckout(input({ participants: [participant({ birthDate: '2010-01-01' })] }))
     expect(result.participantErrors['participant-1']?.birthDate).toContain('18 ans')
+  })
+
+  describe('minors, edition open from 16', () => {
+    const minor = (overrides = {}) => participant({ birthDate: '2009-09-13', ...overrides })
+    const guardians = { guardianName: 'Anne Martin', guardianPhone: '0612345678', referentName: 'Anne Martin', referentPhone: '0612345678' }
+    const edition16 = (overrides: Partial<CheckoutValidationInput> = {}) => input({ minimumAge: 16, ...overrides })
+
+    it('accepts a 17 year old on OPEN with the representative and the adult on site', () => {
+      expect(validateCheckout(edition16({ participants: [minor(guardians)] })).isValid).toBe(true)
+    })
+
+    it('asks a minor for the representative and the adult on site, and points at the first one', () => {
+      const result = validateCheckout(edition16({ participants: [minor({ ...guardians, guardianPhone: '', referentName: '' })] }))
+      expect(result.participantErrors['participant-1']).toEqual({
+        guardianPhone: 'Ce champ est obligatoire.',
+        referentName: 'Ce champ est obligatoire.',
+      })
+      expect(result.firstInvalidId).toBe('participant-1-guardianPhone')
+    })
+
+    it('does not ask an adult for them', () => {
+      expect(validateCheckout(edition16()).isValid).toBe(true)
+    })
+
+    it('refuses a minor on a ticket that is not OPEN', () => {
+      const result = validateCheckout(edition16({ participants: [minor({ ...guardians, ticketId: 'ranked' })] }))
+      expect(result.participantErrors['participant-1']?.birthDate).toContain('OPEN')
+    })
+
+    it('refuses someone younger than the edition minimum', () => {
+      const result = validateCheckout(edition16({ participants: [participant({ birthDate: '2010-09-13' })] }))
+      expect(result.participantErrors['participant-1']?.birthDate).toContain('16 ans')
+    })
   })
 
   it('refuses a malformed email', () => {

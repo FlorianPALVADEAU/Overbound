@@ -3,6 +3,8 @@ import Stripe from 'stripe'
 import { AMBASSADOR_LINK_SELECT, isAmbassadorPromoRow } from '@/lib/orderPricing'
 import { NextRequest, NextResponse } from 'next/server'
 import { createRegistrationRequestSchema } from '@/lib/checkout/registrationRequestSchema'
+import { admitParticipant } from '@/lib/checkout/orderEligibility'
+import { MINOR_CONTACT_FIELDS } from '@/lib/checkout/minorContacts'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
@@ -175,7 +177,7 @@ export async function POST(request: NextRequest) {
     // Get event info with price tiers
     const { data: eventRow, error: eventError } = await admin
       .from('events')
-      .select('id, title, date, location, capacity, ranked_bib_capacity, price_tiers:event_price_tiers(*)')
+      .select('id, title, date, location, capacity, ranked_bib_capacity, minimum_age, price_tiers:event_price_tiers(*)')
       .eq('id', eventId)
       .single()
 
@@ -207,6 +209,20 @@ export async function POST(request: NextRequest) {
     tickets.forEach((ticket) => {
       ticketMap.set(ticket.id, ticket)
     })
+
+    // Age rules are checked before payment too; repeated here because a free order never goes through
+    // that route and the request body is the client's. Also tells which bibs belong to a minor.
+    const participantIsMinor: boolean[] = []
+    for (const [index, participant] of participants.entries()) {
+      const admission = admitParticipant(participant, ticketMap.get(participant.ticketId), {
+        eventDate: eventRow.date,
+        minimumAge: eventRow.minimum_age,
+      })
+      if (!admission.admitted) {
+        return NextResponse.json({ error: `Participant ${index + 1} : ${admission.reason}` }, { status: 422 })
+      }
+      participantIsMinor.push(admission.isMinor)
+    }
 
     // Generate unique tokens
     const generateTokens = () => ({ qr: uuidv4(), transfer: uuidv4() })
@@ -478,6 +494,8 @@ export async function POST(request: NextRequest) {
             emergencyContactPhone: participant.emergencyContactPhone,
             medicalInfo: keepHealthDataWithConsent(participant.medicalInfo, participant.healthDataConsent),
             healthDataConsent: participant.healthDataConsent === true,
+            // Minors only: contacts for the day, redacted with the other safety data after the event.
+            ...Object.fromEntries(MINOR_CONTACT_FIELDS.filter((field) => participant[field]?.trim()).map((field) => [field, participant[field]?.trim()])),
           },
           disclaimer,
           document: signedDocument,
@@ -536,6 +554,7 @@ export async function POST(request: NextRequest) {
           distance_ideal_km: 1,
           distance_min_km: 1,
           flexible_refund: flexibleParticipantIndices.has(index),
+          is_minor: participantIsMinor[index] === true,
           paid_ticket_cents: isFreeOrder ? 0 : (paidTicketPrices[index] ?? null),
           // Only a stored choice: whether the offer covers this registration is derived from creation order.
           ...(isTshirtSize(participant.tshirtSize) ? { tshirt_size: participant.tshirtSize } : {}),

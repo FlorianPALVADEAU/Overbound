@@ -69,7 +69,7 @@ const paragraphs = {
     "Overbound met en œuvre tous les moyens raisonnables pour assurer un accès continu mais n'est tenue à aucune obligation de résultat. La Plateforme peut être momentanément indisponible sans préavis. En cas d’interruption prolongée (supérieure à 48h), Overbound informera les utilisateurs via email ou bannière d’information.",
   ],
   compte: [
-    "L’inscription est réservée aux personnes physiques âgées d’au moins 16 ans (18 ans pour les inscriptions payantes). Un contrôle de majorité peut être requis. L’Utilisateur s’engage à fournir des informations exactes et à les mettre à jour. Overbound peut suspendre ou supprimer tout compte contenant des informations fausses, incomplètes, obsolètes ou usurpées.",
+    "L’inscription est réservée aux personnes physiques âgées d’au moins 16 ans (18 ans pour les inscriptions payantes, sauf pour un événement ouvert aux participants de 16 et 17 ans, dans les conditions de l’article 4 des CGV : accord du représentant légal et format OPEN uniquement). Un contrôle d’âge peut être requis. L’Utilisateur s’engage à fournir des informations exactes et à les mettre à jour. Overbound peut suspendre ou supprimer tout compte contenant des informations fausses, incomplètes, obsolètes ou usurpées.",
     "Chaque identifiant est strictement personnel. Tout usage non autorisé doit être signalé immédiatement à contact@overbound-race.com. Overbound décline toute responsabilité en cas d'utilisation frauduleuse du compte due à une négligence (partage d’identifiants, absence de mot de passe robuste).",
     "L’inscription à un événement suppose l’acceptation des règles spécifiques de l’événement, du règlement sportif correspondant et, le cas échéant, de conditions particulières de participation.",
   ],

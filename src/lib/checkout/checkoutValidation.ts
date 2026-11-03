@@ -2,7 +2,8 @@ import type { Participant } from '@/components/registration/types'
 import { needsHealthDataConsent } from '@/lib/legal/healthData'
 import { CONSENT_FIELD_IDS, participantFieldId, TICKETS_SECTION_ID, type ConsentField, type ParticipantField } from './fieldIds'
 import { isParticipantOffered, isTshirtSize, type TshirtOffer } from '@/lib/tshirtOffer'
-import { isAdultOnEventDate, MINIMUM_AGE } from './participantAge'
+import { MINOR_CONTACT_FIELDS } from './minorContacts'
+import { ageRefusalMessage, classifyParticipantAge } from './participantAge'
 
 export const REQUIRED_MESSAGE = 'Ce champ est obligatoire.'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -12,6 +13,10 @@ export interface CheckoutValidationInput {
   /** Bibs the visitor selected; participants follow them one by one. */
   ticketCount: number
   eventDate: string
+  /** `events.minimum_age`: 18, or 16 when the edition admits minors on the OPEN format. */
+  minimumAge: number
+  /** Whether a ticket is of the OPEN format, the only one a minor may book. */
+  ticketIsOpenFormat: (ticketId: string) => boolean
   /** Whether a ticket asks its holder to pick a departure SAS. */
   ticketUsesWaveSelection: (ticketId: string) => boolean
   /** A member of an anchored group never picks a SAS: the group's departure wins. */
@@ -43,8 +48,19 @@ const participantErrorsOf = (participant: Participant, input: CheckoutValidation
     if (typeof value !== 'string' || !value.trim()) errors[field] = REQUIRED_MESSAGE
   }
   if (!errors.email && !EMAIL_PATTERN.test(participant.email.trim())) errors.email = 'Adresse email invalide.'
-  if (!errors.birthDate && !isAdultOnEventDate(participant.birthDate, input.eventDate)) {
-    errors.birthDate = `Il faut avoir ${MINIMUM_AGE} ans le jour de l'événement.`
+  if (!errors.birthDate) {
+    const age = classifyParticipantAge({
+      birthDate: participant.birthDate,
+      eventDate: input.eventDate,
+      minimumAge: input.minimumAge,
+      isOpenFormat: input.ticketIsOpenFormat(participant.ticketId),
+    })
+    if (age.status === 'refused') errors.birthDate = ageRefusalMessage(age.reason, input.minimumAge)
+    if (age.status === 'minor') {
+      for (const field of MINOR_CONTACT_FIELDS) {
+        if (!participant[field]?.trim()) errors[field] = REQUIRED_MESSAGE
+      }
+    }
   }
   if (input.ticketUsesWaveSelection(participant.ticketId) && !input.hasGroupAnchor && !participant.selectedWaveIndex) {
     errors.wave = 'Choisis ton SAS de départ.'

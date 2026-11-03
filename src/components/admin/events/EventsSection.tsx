@@ -12,6 +12,7 @@ import { Plus } from 'lucide-react'
 import { EventFormDialog, type EventFormValues } from './EventFormDialog'
 import type { Event } from '@/types/Event'
 import type { EventPriceTier } from '@/types/EventPriceTier'
+import { parseMinimumAge } from '@/lib/events/minimumAge'
 import {
   adminEventsQueryKey,
   createAdminEvent,
@@ -47,6 +48,7 @@ function buildFormValues(event?: Event): EventFormValues {
       longitude: '',
       capacity: '0',
       ranked_bib_capacity: '',
+      minimum_age: '18',
       tshirt_offer_quota: '',
       status: 'draft',
       external_provider: 'none',
@@ -68,6 +70,7 @@ function buildFormValues(event?: Event): EventFormValues {
     longitude: event.longitude?.toString() || '',
     capacity: event.capacity.toString(),
     ranked_bib_capacity: event.ranked_bib_capacity?.toString() ?? '',
+    minimum_age: String(parseMinimumAge(event.minimum_age)),
     tshirt_offer_quota: event.tshirt_offer_quota?.toString() ?? '',
     status: event.status,
     external_provider: event.external_provider || 'none',
@@ -90,6 +93,7 @@ function toPayload(values: EventFormValues): AdminEventPayload {
     longitude: values.longitude ? parseFloat(values.longitude) : null,
     capacity: parseInt(values.capacity, 10) || 0,
     ranked_bib_capacity: values.ranked_bib_capacity ? parseInt(values.ranked_bib_capacity, 10) : null,
+    minimum_age: parseMinimumAge(values.minimum_age),
     tshirt_offer_quota: values.tshirt_offer_quota ? parseInt(values.tshirt_offer_quota, 10) : null,
     status: values.status,
     external_provider: values.external_provider === 'none' ? null : values.external_provider,

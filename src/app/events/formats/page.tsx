@@ -29,7 +29,7 @@ const BG = {
 const HERO_FACTS = [
   `${SHARED_FORMAT_RULES.loopKm} km par tour`,
   '10+ obstacles',
-  `${SHARED_FORMAT_RULES.minAge} ans et +`,
+  `${SHARED_FORMAT_RULES.minAge} ans et +, ${SHARED_FORMAT_RULES.minorMinAge} ans en OPEN selon l'événement`,
 ]
 
 export default function FormatsPage() {

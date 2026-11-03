@@ -39,7 +39,7 @@ Documents qui font foi, par ordre de priorité pour un participant :
 ### Participation
 | Règle | Source | Fondement |
 |---|---|---|
-| Édition 2026 réservée aux majeurs (18 ans révolus le jour J) ; aucun transfert vers un mineur | CGV art. 4 et 11, décharge §6, `MINIMUM_PARTICIPANT_AGE` | capacité à contracter et à signer la décharge |
+| Majeurs (18 ans révolus le jour J), sauf événement ouvert aux 16 et 17 ans (`events.minimum_age = 16`) : format OPEN uniquement, représentant légal et adulte référent, papiers contrôlés au retrait du dossard, procédure de secours (FDR-0022, revue : `2026-11-mineurs-16-17-review.md`) ; aucun transfert vers un mineur | CGV art. 4 et 11, décharge §6 et §18 à §21, `MINIMUM_PARTICIPANT_AGE`, `HEALTH_PROOF_MINOR`, `MINOR_EMERGENCY_PROCEDURE` | capacité à contracter et à signer la décharge |
 | Aptitude physique attestée par le participant | décharge §5, CGV art. 11 | preuve de l'information |
 | Justificatif de santé : **PPS FFA obligatoire pour l'édition 2026** (ou licence FFA en cours de validité), tous formats, contrôlé au retrait du dossard avec une pièce d'identité ; sans justificatif, départ refusé et billet non remboursé (décidé le 2026-10-15). Source unique : `HEALTH_PROOF` dans `src/constants/participantNotice.ts` | CGV art. 11, décharge §5, tunnel (bloc « Avant de signer »), email billet, formulaire de transfert, FAQ | délégation FFA pour la course à obstacles ; PPS exigé par la FFA pour les non-licenciés en compétition. Hypothèse à confirmer avec la FFA / la préfecture : licence FFA acceptée à la place du PPS, certificat médical non accepté |
 | Pièce d'identité au retrait du dossard ; départ refusé si l'identité ne correspond pas | CGV art. 11, décharge §12, email billet | dossard personnel |
@@ -94,6 +94,7 @@ Documents qui font foi, par ordre de priorité pour un participant :
 ## Points ouverts
 
 - PPS : décidé pour l'édition 2026 (voir tableau). Reste : le contrôle au retrait du dossard n'est pas outillé dans le check-in (procédure bénévoles à écrire), et le règlement officiel (PDF) doit être réécrit pour le mentionner.
+- Mineurs de 16 et 17 ans : le règlement officiel (PDF) doit reprendre les conditions et la procédure de secours ; textes à faire relire (voir `2026-11-mineurs-16-17-review.md`) ; confirmation écrite d'AXA et de la FFA à obtenir avant toute ouverture.
 - Relancer AXA sur la RC participant envers participant, les bénéficiaires de transfert et l'édition suivante (l'attestation s'arrête au 01/01/2027).
 - Contenus Sanity (FAQ publiée) à aligner à la main avec `fallback-inscriptions-assurance-pps`.
 - **Médiateur de la consommation** : aucune adhésion à ce jour (2026-10-09), alors que les CGV et CGU citent CM2C.

@@ -113,6 +113,8 @@ const paragraphs = {
   mineurs: [
     'L’accès à la Plateforme est possible dès 16 ans. Pour les mineurs de moins de 18 ans souhaitant s’inscrire à un événement payant, une autorisation parentale est exigée.',
     'Les données relatives aux mineurs sont traitées avec une vigilance renforcée : accès restreint, durée de conservation limitée à 3 ans, suppression sur simple demande du représentant légal.',
+    'Participant de 16 ou 17 ans à un événement ouvert aux mineurs : Overbound collecte le nom et le numéro de téléphone du représentant légal et de l’adulte référent, pour l’inscription, le contrôle des papiers au retrait du dossard et pour les prévenir en cas d’incident (exécution du contrat et sécurité des participants). Ces coordonnées sont supprimées automatiquement 30 jours après l’événement.',
+    'L’autorisation parentale papier remise au retrait du dossard est conservée un an après l’événement, puis détruite. L’attestation de santé du mineur est contrôlée sur place et n’est pas enregistrée ; seuls la date du contrôle et l’identité du bénévole qui l’a effectué sont conservées.',
   ],
   cookies: [
     'Overbound utilise des cookies nécessaires au fonctionnement du site (authentification, maintien de session), ainsi que, uniquement avec le consentement de l’utilisateur et finalité par finalité, des traceurs de mesure d’audience (Google Analytics, Google Tag Manager) et de publicité (Meta Pixel et API de conversions Meta).',
