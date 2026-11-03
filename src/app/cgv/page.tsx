@@ -515,8 +515,9 @@ export default function CGVPage() {
               <p>
                 <strong>Assurance responsabilité civile :</strong> conformément à l'article L321-1 du Code du sport,
                 Overbound est assurée auprès de {COMPANY_INFO.insurance.insurer} (contrat «{' '}
-                {COMPANY_INFO.insurance.product} » n° {COMPANY_INFO.insurance.policyNumber}, valable du{' '}
-                {COMPANY_INFO.insurance.validFrom} au {COMPANY_INFO.insurance.validUntil}) pour sa responsabilité
+                {COMPANY_INFO.insurance.product} » n° {COMPANY_INFO.insurance.policyNumber}, souscrit le{' '}
+                {COMPANY_INFO.insurance.validFrom}, première échéance le {COMPANY_INFO.insurance.validUntil}, renouvelé
+                chaque année par tacite reconduction) pour sa responsabilité
                 civile au titre des activités suivantes : {COMPANY_INFO.insurance.coveredActivities}. Plafonds de
                 garantie :
               </p>
@@ -545,9 +546,9 @@ export default function CGVPage() {
                 <strong>Dommage causé à un autre participant :</strong> {PARTICIPANTS_ARE_THIRD_PARTIES}
               </p>
               <p>
-                <strong>Dossard transféré et éditions suivantes :</strong> le contrat ci-dessus est celui en vigueur à
-                la date de publication de ces CGV. Overbound communique l'attestation applicable à chaque édition sur
-                demande.
+                <strong>Validité :</strong> le contrat ci-dessus est celui en vigueur à la date de publication de ces
+                CGV. Overbound communique sur demande l'attestation d'assurance en vigueur à la date de chaque
+                événement.
               </p>
               <p>
                 <strong>Assurance individuelle accident :</strong> Overbound recommande à chaque participant de

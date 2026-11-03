@@ -61,6 +61,11 @@ describe('participants aged 16 or 17', () => {
     expect(PARTICIPANT_NOTICE_PLAIN_TEXT).not.toMatch(/mineur[^.]*(est|sont) couvert/i)
   })
 
+  it('keeps the parental authorization until the minor can no longer sue, not one year', () => {
+    expect(WAIVER_PLAIN_TEXT).toMatch(/autorisation parentale, avec la présente décharge, jusqu’aux 28 ans/)
+    expect(WAIVER_PLAIN_TEXT).not.toMatch(/un an après l’événement/)
+  })
+
   it('gives every waiver clause a distinct number', () => {
     const ids = WAIVER_CLAUSES.map((clause) => clause.id)
     expect(new Set(ids).size).toBe(ids.length)

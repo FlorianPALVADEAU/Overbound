@@ -105,7 +105,7 @@ export const WAIVER_CLAUSES: readonly WaiverClause[] = [
   },
   {
     id: '19',
-    text: `Participant de 16 ou 17 ans, contrôle au retrait du dossard. Le mineur remet à l’organisation : l’autorisation parentale, sur le modèle fourni par Overbound, signée par le représentant légal et par le mineur ; sa pièce d’identité ; l’attestation de santé des mineurs. ${HEALTH_PROOF_MINOR_SENTENCE} L’adulte référent est également présent. Overbound conserve l’autorisation parentale un an après l’événement. Sans l’un de ces éléments, le départ est refusé et le prix du billet n’est pas remboursé.`,
+    text: `Participant de 16 ou 17 ans, contrôle au retrait du dossard. Le mineur remet à l’organisation : l’autorisation parentale, sur le modèle fourni par Overbound, signée par le représentant légal et par le mineur ; sa pièce d’identité ; l’attestation de santé des mineurs. ${HEALTH_PROOF_MINOR_SENTENCE} L’adulte référent est également présent. Overbound conserve l’autorisation parentale, avec la présente décharge, jusqu’aux 28 ans du participant, la prescription d’une action en responsabilité ne courant qu’à sa majorité. Sans l’un de ces éléments, le départ est refusé et le prix du billet n’est pas remboursé.`,
   },
   {
     id: '20',
@@ -113,7 +113,7 @@ export const WAIVER_CLAUSES: readonly WaiverClause[] = [
   },
   {
     id: '21',
-    text: `Participant de 16 ou 17 ans, secours, image, données et assurance. ${MINOR_EMERGENCY_PROCEDURE} Le représentant légal autorise les premiers secours, tout traitement médical d’urgence et toute hospitalisation jugés nécessaires par les secours. Il donne, pour le mineur, l’autorisation d’image de la clause 14. Les noms et numéros de téléphone du représentant légal et de l’adulte référent servent à l’inscription, au contrôle des papiers et à les prévenir en cas d’incident ; ils sont effacés 30 jours après l’événement, selon la clause 15. Le représentant légal est informé de l’intérêt de souscrire, pour le mineur, une assurance individuelle accident, et reconnaît avoir été invité à vérifier les garanties dont le mineur bénéficie déjà (responsabilité civile familiale, assurance scolaire ou extrascolaire, licence). Les informations de la clause 11 sur l’assurance d’Overbound lui sont communiquées pour le mineur.`,
+    text: `Participant de 16 ou 17 ans, secours, image, données et assurance. ${MINOR_EMERGENCY_PROCEDURE} Le représentant légal autorise les premiers secours, tout traitement médical d’urgence et toute hospitalisation jugés nécessaires par les secours. Il donne, pour le mineur, l’autorisation d’image de la clause 14. Les noms et numéros de téléphone du représentant légal et de l’adulte référent servent à l’inscription, au contrôle des papiers et à les prévenir en cas d’incident ; ils sont effacés 30 jours après l’événement, selon la politique de confidentialité. Le représentant légal est informé de l’intérêt de souscrire, pour le mineur, une assurance individuelle accident, et reconnaît avoir été invité à vérifier les garanties dont le mineur bénéficie déjà (responsabilité civile familiale, assurance scolaire ou extrascolaire, licence). Les informations de la clause 11 sur l’assurance d’Overbound lui sont communiquées pour le mineur.`,
   },
 ]
 

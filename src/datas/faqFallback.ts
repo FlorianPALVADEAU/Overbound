@@ -149,7 +149,7 @@ export const faqFallback: FAQDocument[] = [
         `Participant de 16 ou 17 ans (événements ouverts aux mineurs, format OPEN uniquement) : autorisation parentale signée par le représentant légal et par le mineur, pièce d’identité du mineur et présence d’un adulte référent au retrait du dossard. ${HEALTH_PROOF_MINOR_SENTENCE} ${MINOR_EMERGENCY_PROCEDURE}`,
       ),
       block(
-        'Overbound est assurée en responsabilité civile (AXA France IARD) : le contrat couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound.',
+        'Overbound est assurée en responsabilité civile (AXA France IARD) : le contrat couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound, dans les limites et conditions du contrat.',
       ),
       block(
         'Il ne couvre pas les dommages que tu te causes à toi-même sans faute d’Overbound, par exemple une chute sur un obstacle conforme : tes frais médicaux, ton invalidité ou ton décès restent alors à ta charge. Nous te recommandons une assurance individuelle accident.',

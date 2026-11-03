@@ -51,7 +51,7 @@ export const HEALTH_PROOF_MINOR_SENTENCE = `Pour un participant de 16 ou 17 ans,
 
 /** What happens when a minor is hurt or unwell. Same text in the waiver, the CGV and the rulebook. */
 export const MINOR_EMERGENCY_PROCEDURE =
-  'En cas de blessure ou de malaise d’un mineur, les secours de l’événement le prennent en charge, l’organisation prévient sans délai l’adulte référent puis le représentant légal aux numéros communiqués à l’inscription, et appelle les secours publics (15 ou 112) en cas d’urgence.'
+  'En cas de blessure ou de malaise d’un mineur, les secours de l’événement le prennent en charge, l’organisation prévient dès que possible l’adulte référent puis le représentant légal aux numéros communiqués à l’inscription, et appelle les secours publics (15 ou 112) en cas d’urgence.'
 
 export interface NoticeSection {
   title: string
