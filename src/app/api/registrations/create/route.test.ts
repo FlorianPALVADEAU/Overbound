@@ -692,6 +692,126 @@ describe('POST /api/registrations/create', () => {
       expect(response.status).toBe(422)
       expect((await response.json()).error).toContain('adulte référent')
     })
+
+    it('names the signer on the waiver, who is not a participant when a parent orders for minors', async () => {
+      mockAuthedUser('user-1')
+      const signatureInserts: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, signatureInserts }),
+      )
+
+      await POST(jsonRequest(freeOrder(MINOR)))
+
+      const signed = JSON.parse(signatureInserts[0].signature_data as string)
+      expect(signed.signer).toEqual({ userId: 'user-1', email: 'alice@example.com' })
+      expect(signed.participant.email).toBe('lea@example.com')
+    })
+
+    describe('orders with several participants', () => {
+      const SECOND_MINOR = { ...MINOR, firstName: 'Noé', email: 'noe@example.com', birthDate: '2010-01-20', selectedWaveIndex: 6 }
+      const ADULT = {
+        ticketId: 'ticket-1',
+        firstName: 'Anne',
+        lastName: 'Runner',
+        email: 'anne@example.com',
+        birthDate: '1980-02-10',
+        selectedWaveIndex: 5,
+      }
+      const groupOrder = (participants: Array<Record<string, unknown>>, minorAttestation?: boolean) =>
+        baseBody({
+          paymentIntentId: 'free_abc123',
+          freeOrderMetadata: { currency: 'eur' },
+          ticketSelections: [{ ticketId: 'ticket-1', quantity: participants.length }],
+          participants,
+          disclaimer: { read: true, accepted: true, rulebookAccepted: true, groupAttestation: true, minorAttestation },
+        })
+
+      it('registers two minors with one attestation, one bib and one waiver each, all naming the same signer', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        const signatureInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([MINOR, SECOND_MINOR], true)))
+
+        expect(response.status).toBe(200)
+        expect(registrationInserts.map((row) => row.is_minor)).toEqual([true, true])
+        const signed = signatureInserts.map((row) => JSON.parse(row.signature_data as string))
+        expect(signed.map((item) => item.participant.firstName)).toEqual(['Léa', 'Noé'])
+        expect(signed.every((item) => item.signer.userId === 'user-1' && item.disclaimer.minorAttestation === true)).toBe(true)
+      })
+
+      it('flags only the minor in a parent and child order, and keeps minor contacts off the adult', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        const signatureInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([ADULT, MINOR], true)))
+
+        expect(response.status).toBe(200)
+        expect(registrationInserts.map((row) => row.is_minor)).toEqual([false, true])
+        const signed = signatureInserts.map((row) => JSON.parse(row.signature_data as string))
+        expect(signed[0].participant).not.toHaveProperty('guardianName')
+        expect(signed[1].participant).toMatchObject({ guardianName: 'Anne Runner' })
+      })
+
+      it('needs the attestation as soon as one of the participants is a minor', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([ADULT, MINOR], false)))
+
+        expect(response.status).toBe(422)
+        expect(registrationInserts).toHaveLength(0)
+      })
+
+      it('does not ask for the attestation when every participant is an adult', async () => {
+        mockAuthedUser('user-1')
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 } }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([ADULT, { ...ADULT, email: 'paul@example.com' }])))
+
+        expect(response.status).toBe(200)
+      })
+
+      it('refuses the whole order when one of the minors is under 16, and creates nothing', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([MINOR, { ...SECOND_MINOR, birthDate: '2012-03-01' }], true)))
+
+        expect(response.status).toBe(422)
+        expect((await response.json()).error).toContain('Participant 2')
+        expect(registrationInserts).toHaveLength(0)
+      })
+
+      it('refuses the whole order when the second minor lacks the adult on site', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(
+          createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
+        )
+
+        const response = await POST(jsonRequest(groupOrder([MINOR, { ...SECOND_MINOR, referentName: '', referentPhone: '' }], true)))
+
+        expect(response.status).toBe(422)
+        expect((await response.json()).error).toContain('Participant 2')
+        expect(registrationInserts).toHaveLength(0)
+      })
+    })
   })
 
   it('returns 422 when an OPEN participant submits no selectedWaveIndex and has no group anchor', async () => {

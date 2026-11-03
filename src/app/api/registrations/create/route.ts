@@ -493,6 +493,8 @@ export async function POST(request: NextRequest) {
             : new Date().toISOString(),
         signature_data: JSON.stringify({
           imageDataUrl: signatureImage,
+          // The buyer signs for the whole order and is not always a participant (a parent ordering for minors).
+          signer: { userId: user.id, email: user.email ?? null },
           participant: {
             firstName: participant.firstName,
             lastName: participant.lastName,

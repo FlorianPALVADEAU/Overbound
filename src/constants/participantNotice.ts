@@ -58,8 +58,11 @@ export const MINOR_EMERGENCY_PROCEDURE =
  * the parent says it in the checkout instead of only signing a long text. Singular and plural read the same.
  */
 export const minorAttestationLabel = (names: readonly string[]): string => {
-  const who = names.length > 1 ? `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]}` : (names[0] ?? 'ce participant')
-  return `J’atteste être le représentant légal de ${who}, ou agir avec l’accord de son représentant légal. Je lui ai expliqué les risques et les consignes de sécurité. Il signera avec moi l’autorisation parentale papier au retrait du dossard, avec sa pièce d’identité.`
+  if (names.length > 1) {
+    const who = `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]}`
+    return `J’atteste être le représentant légal de ${who}, ou agir avec l’accord de leurs représentants légaux. Je leur ai expliqué les risques et les consignes de sécurité. Chacun signera avec moi l’autorisation parentale papier au retrait du dossard, avec sa pièce d’identité.`
+  }
+  return `J’atteste être le représentant légal de ${names[0] ?? 'ce participant'}, ou agir avec l’accord de son représentant légal. Je lui ai expliqué les risques et les consignes de sécurité. Il signera avec moi l’autorisation parentale papier au retrait du dossard, avec sa pièce d’identité.`
 }
 
 export interface NoticeSection {

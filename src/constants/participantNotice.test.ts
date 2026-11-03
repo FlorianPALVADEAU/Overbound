@@ -77,9 +77,13 @@ describe('participants aged 16 or 17', () => {
     const one = minorAttestationLabel(['Léo'])
     const two = minorAttestationLabel(['Léo', 'Mia'])
     expect(one).toMatch(/représentant légal de Léo, ou agir avec l’accord/)
-    expect(two).toMatch(/représentant légal de Léo et Mia/)
+    expect(two).toMatch(/représentant légal de Léo et Mia, ou agir avec l’accord de leurs représentants légaux/)
+    expect(two).toMatch(/Je leur ai expliqué/)
+    expect(two).toMatch(/Chacun signera/)
+    expect(one).toMatch(/Il signera/)
     expect(one).toMatch(/autorisation parentale papier/)
     expect(one).not.toMatch(/renonc/i)
+    expect(two).not.toMatch(/renonc/i)
   })
 
   it('gives every waiver clause a distinct number', () => {

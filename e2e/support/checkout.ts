@@ -29,7 +29,7 @@ export interface StubTshirtOffer {
   remaining: number
 }
 
-const registerData = (signedIn: boolean, tshirtOffer: StubTshirtOffer | null) => ({
+const registerData = (signedIn: boolean, tshirtOffer: StubTshirtOffer | null, minimumAge: number) => ({
   event: {
     id: EVENT_ID,
     slug: EVENT_SLUG,
@@ -39,6 +39,7 @@ const registerData = (signedIn: boolean, tshirtOffer: StubTshirtOffer | null) =>
     status: 'on_sale',
     capacity: 1000,
     price_tiers: [],
+    minimum_age: minimumAge,
   },
   tickets: [OPEN_TICKET],
   upsells: [],
@@ -58,7 +59,7 @@ const json = (request: Request) => request.postDataJSON() as Record<string, unkn
 /** Answers every API of the register page. Signed in: a buyer whose group has no departure yet. */
 export const stubCheckoutApis = async (
   page: Page,
-  { signedIn, tshirtOffer = null }: { signedIn: boolean; tshirtOffer?: StubTshirtOffer | null },
+  { signedIn, tshirtOffer = null, minimumAge = 18 }: { signedIn: boolean; tshirtOffer?: StubTshirtOffer | null; minimumAge?: number },
 ): Promise<CheckoutCapture> => {
   let paymentIntentBody: Record<string, unknown> | null = null
   let registrationBody: Record<string, unknown> | null = null
@@ -81,7 +82,7 @@ export const stubCheckoutApis = async (
   await page.route('**/api/groups/my', (route) =>
     route.fulfill({ json: signedIn ? { id: 'group-1', name: 'Team', invite_code: 'AB12CD34', members: [], anchor_event_id: null } : null }),
   )
-  await page.route(`**/api/events/${EVENT_SLUG}/register-data**`, (route) => route.fulfill({ json: registerData(signedIn, tshirtOffer) }))
+  await page.route(`**/api/events/${EVENT_SLUG}/register-data**`, (route) => route.fulfill({ json: registerData(signedIn, tshirtOffer, minimumAge) }))
   await page.route('**/open-waves/selectable**', (route) =>
     route.fulfill({ json: { waves: [{ wave_index: 1, start_time: '2030-09-12T10:00:00.000Z', remaining: 40 }] } }),
   )
@@ -113,6 +114,36 @@ export const fillFirstParticipant = async (page: Page) => {
   await page.locator('#participant-1-emergency').fill('Léo Martin')
   await page.locator('#participant-1-emergencyPhone').fill('0612345678')
   await page.locator('#participant-1-wave').click()
+  await page.getByRole('option').first().click()
+}
+
+export interface StubParticipant {
+  firstName: string
+  lastName: string
+  email: string
+  birthDate: string
+  /** Minors only: the legal representative, also the adult on site by default. */
+  guardian?: { name: string; phone: string }
+}
+
+/** Fills participant `position` (1-based) completely, SAS included. Others unfold on click, in order. */
+export const fillParticipant = async (page: Page, position: number, participant: StubParticipant) => {
+  if (position > 1) await page.getByRole('button').filter({ hasText: 'À compléter' }).first().click()
+  const field = (name: string) => page.locator(`#participant-${position}-${name}`)
+  await field('firstName').fill(participant.firstName)
+  await field('lastName').fill(participant.lastName)
+  await field('email').fill(participant.email)
+  await field('birthDate').fill(participant.birthDate)
+  await field('emergency').fill('Anne Martin')
+  await field('emergencyPhone').fill('0612345678')
+  if (participant.guardian) {
+    await field('guardian').fill(participant.guardian.name)
+    await field('guardianPhone').fill(participant.guardian.phone)
+    // The adult on site is asked explicitly; here it is the same person.
+    await field('referent').fill(participant.guardian.name)
+    await field('referentPhone').fill(participant.guardian.phone)
+  }
+  await field('wave').click()
   await page.getByRole('option').first().click()
 }
 
