@@ -3,10 +3,10 @@
 ## Formats OPEN & RANKED
 
 ### 0. Informations documentaires
-- Version : 1.0
-- Date de mise à jour : 13 mai 2026
+- Version : 1.1
+- Date de mise à jour : 3 novembre 2026
 - Statut du document : version de travail consolidée
-- Entité organisatrice : Association OVERBOUND RACE
+- Entité organisatrice : Association OVERBOUND RACE (à harmoniser avec les CGV avant publication)
 - Événement concerné : Overbound
 
 ### 1. Introduction
@@ -30,6 +30,10 @@ L’inscription vaut acceptation du présent règlement, des conditions généra
 Le participant doit disposer d’une aptitude physique compatible avec l’effort demandé. L’organisation peut refuser le départ, suspendre une participation ou annuler une inscription si elle constate une incohérence manifeste, une fraude, une fausse identité, une inscription non conforme ou un état incompatible avec la pratique sportive.
 
 Aucune participation non inscrite n’est autorisée. Aucune personne ne peut prendre le départ sous l’identité d’un tiers ou sous un dossard qui ne lui a pas été attribué.
+
+**Âge.** La participation est réservée aux personnes de 18 ans révolus le jour de l’événement. Lorsque la page de l’événement indique qu’il est ouvert aux participants de 16 et 17 ans, une personne de 16 ou 17 ans le jour de l’événement peut y participer au seul format OPEN. Aucune participation n’est possible avant 16 ans, ni au format RANKED avant 18 ans. Un dossard de participant mineur ne peut être transféré qu’à une personne majeure.
+
+**Participant de 16 ou 17 ans.** Le participant mineur remet à l’organisation, au retrait du dossard : (a) l’autorisation parentale, sur le modèle fourni par Overbound, signée par son représentant légal et par lui-même ; (b) sa pièce d’identité ; (c) l’attestation du questionnaire de santé pour mineurs délivrée par la Fédération française d’athlétisme (ou une licence FFA en cours de validité), ou, si une réponse du questionnaire est « oui », un certificat médical d’absence de contre-indication à la pratique de la course à obstacles datant de moins de six mois. Un adulte référent, majeur, désigné à l’inscription, est présent sur le site et joignable par téléphone pendant toute la participation du mineur. Sans l’un de ces éléments, le départ est refusé. L’organisation peut refuser ou interrompre la participation d’un mineur dont l’adulte référent est absent ou injoignable. En dehors de l’épreuve (village, parking, attente, trajets), le mineur reste sous la responsabilité de son représentant légal et de l’adulte référent : l’organisation n’assure ni garde ni surveillance de mineurs, sans préjudice de ses obligations de sécurité pendant l’épreuve.
 
 ### 4. Acceptation des risques
 La participation implique l’acceptation des risques normaux et prévisibles liés à une épreuve sportive d’obstacles, notamment les chutes, glissades, contacts, impacts, contusions, coupures superficielles, fatigue, déshydratation et incidents liés au terrain.
@@ -118,6 +122,8 @@ Après un abandon ou un retrait médical, la reprise de course n’est autorisé
 
 En RANKED, un abandon équivaut à un abandon non terminé et ne donne droit à aucune reprise de tour.
 
+**Participant mineur.** En cas de blessure ou de malaise d’un participant de 16 ou 17 ans, les secours de l’événement le prennent en charge, l’organisation prévient dès que possible l’adulte référent puis le représentant légal aux numéros communiqués à l’inscription, et appelle les secours publics (15 ou 112) en cas d’urgence. Le représentant légal autorise les premiers secours, tout traitement médical d’urgence et toute hospitalisation jugés nécessaires par les secours.
+
 ### 13. Chronométrage, validation des tours et résultats
 Les dispositifs officiels de validation et de chronométrage font foi : puce, bracelet, marqueur, poinçon, contrôle manuel ou tout autre moyen prévu par l’organisation.
 
@@ -135,7 +141,7 @@ L’organisation statue sur la base des constatations du staff, des enregistreme
 ### 15. Droit à l’image
 Le participant autorise, dans les limites de la loi et des autorisations liées à son inscription, la captation et l’exploitation de son image, de sa voix et de sa présence sur l’événement par l’organisation, ses prestataires et les médias autorisés.
 
-Cette autorisation couvre notamment la photographie, la vidéo, la diffusion numérique et les contenus promotionnels ou documentaires liés à l’événement.
+Cette autorisation couvre notamment la photographie, la vidéo, la diffusion numérique et les contenus promotionnels ou documentaires liés à l’événement. Pour un participant mineur, elle est donnée par son représentant légal.
 
 ### 16. Données personnelles
 Les données personnelles sont traitées pour les besoins de l’inscription, de la gestion sportive, de la sécurité, de la communication et du suivi administratif de l’épreuve.

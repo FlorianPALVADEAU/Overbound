@@ -48,6 +48,7 @@ export async function sendTicketEmail(params: {
   bibNumber?: number | null
   qrUrl: string
   manageUrl: string
+  isMinor?: boolean
 }) {
   const html = await renderEmail(TicketEmail(params))
 

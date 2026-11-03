@@ -409,6 +409,7 @@ export async function POST(request: NextRequest) {
       assignment_constraint_breached: boolean
       bib_number: number | null
       race_format: RaceFormat | null
+      is_minor?: boolean | null
     }
 
     const createdRegistrations: Array<{
@@ -884,6 +885,7 @@ export async function POST(request: NextRequest) {
           bibNumber: registration.bib_number,
           qrUrl,
           manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`,
+          isMinor: registration.is_minor === true,
         })
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)

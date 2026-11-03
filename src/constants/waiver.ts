@@ -45,7 +45,7 @@ export const WAIVER_CLAUSES: readonly WaiverClause[] = [
   },
   {
     id: '4',
-    text: 'Dans les limites autorisées par la loi, je renonce, pour moi-même et mes ayants droit, à rechercher la responsabilité d’Overbound, de ses dirigeants, salariés, bénévoles, partenaires, prestataires et des propriétaires du site pour les dommages résultant des risques normaux de la pratique décrits au point 1 ou de mon propre comportement. Cette renonciation ne s’applique ni aux dommages corporels causés par une faute d’Overbound, ni à une faute lourde ou intentionnelle.',
+    text: 'Dans les limites autorisées par la loi, je renonce, pour moi-même et mes ayants droit, à rechercher la responsabilité d’Overbound, de ses dirigeants, salariés, bénévoles, partenaires, prestataires et des propriétaires du site pour les dommages résultant des risques normaux de la pratique décrits au point 1 ou de mon propre comportement. Cette renonciation ne s’applique ni aux dommages corporels causés par une faute d’Overbound, ni à une faute lourde ou intentionnelle. Elle ne s’applique pas non plus à un participant de 16 ou 17 ans : son représentant légal reconnaît seulement avoir été informé des risques et des règles de sécurité, sans renoncer à aucun droit du mineur.',
   },
   {
     id: '5',
@@ -101,7 +101,7 @@ export const WAIVER_CLAUSES: readonly WaiverClause[] = [
   },
   {
     id: '18',
-    text: 'Participant de 16 ou 17 ans, représentant légal. Si le participant a 16 ou 17 ans le jour de l’événement, la personne qui signe la présente décharge atteste être son représentant légal (père, mère ou tuteur) ou agir avec l’accord de celui-ci. Le représentant légal autorise la participation du mineur au seul format OPEN, reconnaît avoir pris connaissance des risques décrits à la clause 1, et accepte la présente décharge en son nom et pour le compte du mineur. Il garantit l’exactitude des coordonnées qu’il a communiquées pour lui-même et pour l’adulte référent, et leur joignabilité pendant toute la durée de l’événement. Le dossard d’un mineur ne peut être transféré qu’à une personne majeure.',
+    text: 'Participant de 16 ou 17 ans, représentant légal. Si le participant a 16 ou 17 ans le jour de l’événement, la personne qui signe la présente décharge atteste être son représentant légal (père, mère ou tuteur) ou agir avec l’accord de celui-ci. Le représentant légal autorise la participation du mineur au seul format OPEN, reconnaît avoir pris connaissance des risques décrits à la clause 1, et accepte, en son nom et pour le compte du mineur, les engagements de la présente décharge, à l’exception de la renonciation à recours de la clause 4, qui ne s’applique pas au mineur. Il garantit l’exactitude des coordonnées qu’il a communiquées pour lui-même et pour l’adulte référent, et leur joignabilité pendant toute la durée de l’événement. Le dossard d’un mineur ne peut être transféré qu’à une personne majeure.',
   },
   {
     id: '19',

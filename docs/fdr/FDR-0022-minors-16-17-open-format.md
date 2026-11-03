@@ -10,7 +10,7 @@
 
 L'assureur (agence AXA) a répondu que le projet « n'exclut pas la participation de mineurs » et recommande
 d'informer systématiquement participants et représentants légaux sur l'assurance individuelle accident. La réponse
-est floue : la confirmation écrite point par point reste à obtenir avant toute ouverture.
+est floue. Décision du 2026-11-03 (Florian Palvadeau) : ne pas insister auprès de l'agence ; la confirmation écrite point par point n'est plus un préalable, le risque est assumé en connaissance de cause (voir ligne Assurance).
 
 ## Décision
 
@@ -27,7 +27,7 @@ est floue : la confirmation écrite point par point reste à obtenir avant toute
 | Surveillance | Overbound n'assure ni garde ni surveillance de mineurs hors épreuve : l'adulte référent en répond. |
 | Transfert | Un dossard ne se transfère qu'à un majeur. Le transfert remet à zéro les champs mineur. |
 | Données | Coordonnées effacées 30 jours après l'événement (purge existante). Autorisation parentale papier conservée avec la décharge jusqu'aux 28 ans du participant (prescription suspendue pendant la minorité, article 2235 du Code civil). Attestation de santé jamais enregistrée. |
-| Assurance | Réponse d'AXA du 2026-11-03 et contrat : aucune exclusion liée à l'âge ni aux obstacles, aucune condition d'autorisation parentale, d'adulte référent ou de questionnaire ; les pratiquants sportifs sont tiers entre eux. AXA ne confirme pas par écrit une dispense de toute formalité pour les mineurs, donc les textes ne promettent pas la couverture du mineur. Le représentant légal est informé de l'intérêt d'une assurance individuelle accident (non couverte par le contrat actuel) et de la clause 11. **Risque** : le contrat exclut les dommages résultant du non-respect des règles techniques et sportives des fédérations délégataires (p. 7) : le contrôle des papiers et du justificatif de santé protège aussi la garantie. |
+| Assurance | Décision du 2026-11-03 : ouverture sans confirmation écrite d'AXA sur les formalités. Réponse d'AXA du 2026-11-03 et contrat : aucune exclusion liée à l'âge ni aux obstacles, aucune condition d'autorisation parentale, d'adulte référent ou de questionnaire ; les pratiquants sportifs sont tiers entre eux. AXA ne confirme pas par écrit une dispense de toute formalité pour les mineurs, donc les textes ne promettent pas la couverture du mineur. Le représentant légal est informé de l'intérêt d'une assurance individuelle accident (non couverte par le contrat actuel) et de la clause 11. **Risque** : le contrat exclut les dommages résultant du non-respect des règles techniques et sportives des fédérations délégataires (p. 7) : le contrôle des papiers et du justificatif de santé protège aussi la garantie. |
 
 ## Versions
 
@@ -37,10 +37,10 @@ est floue : la confirmation écrite point par point reste à obtenir avant toute
 ## Checklist avant d'ouvrir un événement aux mineurs
 
 1. Appliquer la migration `20261104100000_minor_participants.sql`, puis déployer.
-2. Obtenir la confirmation écrite d'AXA (questions de l'e-mail point par point).
+2. ~~Confirmation écrite d'AXA~~ : abandonnée par décision du 2026-11-03 (risque assumé par l'organisateur, voir ligne Assurance).
 3. Confirmer avec la FFA que le questionnaire mineurs vaut pour Overbound et ce que donne un « oui ».
 4. Faire relire par un avocat les textes listés dans la revue juridique, puis corriger les constantes.
-5. Réécrire le règlement officiel (PDF) : conditions mineurs, procédure de secours.
+5. Régénérer le règlement officiel (PDF) depuis `rulebook/overbound-reglement-officiel.md` (version 1.1 : âge, participant de 16 ou 17 ans, secours, image) et corriger l'entité organisatrice (voir revue juridique, question 13).
 6. Imprimer le modèle d'autorisation parentale et le remettre aux bénévoles du retrait des dossards ; prévoir le rangement (ou un scan archivé) jusqu'aux 28 ans du participant, puis la destruction.
 7. Aligner la FAQ Sanity publiée (voir ci-dessous).
 8. Passer l'événement à `minimum_age = 16` dans l'admin.

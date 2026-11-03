@@ -61,6 +61,12 @@ describe('participants aged 16 or 17', () => {
     expect(PARTICIPANT_NOTICE_PLAIN_TEXT).not.toMatch(/mineur[^.]*(est|sont) couvert/i)
   })
 
+  it('never makes a minor or a legal representative waive the minor\'s right to sue', () => {
+    expect(WAIVER_PLAIN_TEXT).toMatch(/Elle ne s’applique pas non plus à un participant de 16 ou 17 ans/)
+    expect(WAIVER_PLAIN_TEXT).toMatch(/à l’exception de la renonciation à recours de la clause 4/)
+    expect(WAIVER_PLAIN_TEXT).not.toMatch(/accepte la présente décharge en son nom et pour le compte du mineur/)
+  })
+
   it('keeps the parental authorization until the minor can no longer sue, not one year', () => {
     expect(WAIVER_PLAIN_TEXT).toMatch(/autorisation parentale, avec la présente décharge, jusqu’aux 28 ans/)
     expect(WAIVER_PLAIN_TEXT).not.toMatch(/un an après l’événement/)
