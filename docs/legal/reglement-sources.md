@@ -12,8 +12,8 @@ notes: "Point d'entrée pour réécrire le règlement officiel (PDF) depuis une 
 
 ## Comment l'utiliser
 
-Le règlement officiel (`public/documents/reglementation-officielle-overbound-6-2026.pdf`, chemin dans
-`OFFICIAL_RULEBOOK_PDF_PATH`) date de juin 2026 et n'intègre pas les décisions d'octobre 2026. Pour le
+Le règlement officiel (`public/documents/reglementation-officielle-overbound-2027.pdf`, chemin dans
+`OFFICIAL_RULEBOOK_PDF_PATH`) est l'édition 2027. Le PDF 2026 (`reglementation-officielle-overbound-6-2026.pdf`) reste en place pour l'historique. Pour le
 réécrire : reprendre chaque section ci-dessous, vérifier le texte source indiqué (il fait foi), puis aligner le
 PDF. Ne jamais introduire dans le règlement une règle qui contredit les CGV ou la décharge : en cas de conflit,
 modifier d'abord la source, puis le règlement.
