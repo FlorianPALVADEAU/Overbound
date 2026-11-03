@@ -43,6 +43,18 @@ describe('TicketEmail', () => {
     expect(html).toMatch(/le départ est refusé/)
   })
 
+  it('links the parental authorization PDF for a participant aged 16 or 17', async () => {
+    const html = await renderEmail(TicketEmail({ ...base, isMinor: true }))
+
+    expect(html).toContain('href="https://overbound-race.com/documents/autorisation-parentale.pdf"')
+  })
+
+  it('does not link the parental authorization PDF for an adult', async () => {
+    const html = await renderEmail(TicketEmail({ ...base, isMinor: false }))
+
+    expect(html).not.toContain('autorisation-parentale.pdf')
+  })
+
   it('keeps the adult wording when the participant is not a minor', async () => {
     const html = await renderEmail(TicketEmail({ ...base, isMinor: false }))
 

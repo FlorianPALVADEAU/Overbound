@@ -14,7 +14,7 @@ import {
   Steps,
   Title,
 } from './blocks'
-import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { OFFICIAL_RULEBOOK_PDF_PATH, PARENTAL_AUTHORIZATION_PDF_PATH } from '@/constants/registration'
 import { HEALTH_PROOF, HEALTH_PROOF_MINOR } from '@/constants/participantNotice'
 import { VENUE_ACCESS } from '@/constants/venueAccess'
 import { COMPANY_INFO } from '@/constants/companyInfo'
@@ -51,6 +51,7 @@ export default function TicketEmail({
 }: TicketEmailProps) {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://overbound-race.com'
   const firstName = getFirstName(participantName)
+  const parentalAuthorizationUrl = `${siteUrl}${PARENTAL_AUTHORIZATION_PDF_PATH}`
   const holder = participantName.includes('@') ? participantName : participantName.toUpperCase()
 
   return (
@@ -171,7 +172,13 @@ export default function TicketEmail({
           'Ce QR code, en capture d’écran',
           ...(isMinor
             ? [
-                'L’autorisation parentale (modèle fourni par Overbound), signée par ton représentant légal et par toi',
+                <>
+                  L’
+                  <Link href={parentalAuthorizationUrl} style={{ color: EMAIL_COLORS.eyebrow, textDecoration: 'underline' }}>
+                    autorisation parentale (PDF)
+                  </Link>
+                  , à imprimer et à faire signer par ton représentant légal et par toi
+                </>,
                 <>
                   L’{HEALTH_PROOF_MINOR.name} délivrée par {HEALTH_PROOF_MINOR.issuer}, <strong>ou</strong>{' '}
                   {HEALTH_PROOF_MINOR.alternative}. Si une réponse du questionnaire est « oui » : {HEALTH_PROOF_MINOR.certificate}
@@ -220,6 +227,15 @@ export default function TicketEmail({
         <Link href={`${siteUrl}${OFFICIAL_RULEBOOK_PDF_PATH}`} style={{ color: EMAIL_COLORS.eyebrow }}>
           Règlement officiel (PDF)
         </Link>
+        {' · '}
+        {isMinor && (
+          <>
+            {' · '}
+            <Link href={parentalAuthorizationUrl} style={{ color: EMAIL_COLORS.eyebrow }}>
+              Autorisation parentale (PDF)
+            </Link>
+          </>
+        )}
         {' · '}
         <Link href={`${siteUrl}/cgv`} style={{ color: EMAIL_COLORS.eyebrow }}>
           CGV

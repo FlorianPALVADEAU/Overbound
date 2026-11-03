@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Instagram, Music2 } from 'lucide-react'
-import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { OFFICIAL_RULEBOOK_PDF_PATH, PARENTAL_AUTHORIZATION_PDF_PATH } from '@/constants/registration'
 
 const LINK_GROUPS = [
   {
@@ -42,6 +42,7 @@ const LINK_GROUPS = [
       { label: 'Gérer mes cookies', href: '/cookies#preferences' },
       { label: 'Supprimer mes données', href: '/privacy-policies#droits' },
       { label: 'Règlement officiel', href: OFFICIAL_RULEBOOK_PDF_PATH },
+      { label: 'Autorisation parentale (16-17 ans)', href: PARENTAL_AUTHORIZATION_PDF_PATH },
       { label: 'Crédits', href: '/about/credits' },
     ],
   },

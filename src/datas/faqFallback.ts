@@ -1,6 +1,6 @@
 import type { PortableTextBlock } from '@portabletext/types'
 import type { FAQDocument } from '@/app/about/faq/FAQPageContent'
-import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { OFFICIAL_RULEBOOK_PDF_PATH, PARENTAL_AUTHORIZATION_PDF_PATH } from '@/constants/registration'
 import { HEALTH_PROOF_MINOR_SENTENCE, MINOR_EMERGENCY_PROCEDURE, PARTICIPANTS_ARE_THIRD_PARTIES } from '@/constants/participantNotice'
 import { OPEN_FORMAT_RULES, RANKED_FORMAT_RULES, RANKED_LAP_TIME_LIMITS_SUMMARY, SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 
@@ -160,7 +160,10 @@ export const faqFallback: FAQDocument[] = [
     ],
     category: 'inscriptions',
     order: 4,
-    relatedLinks: [{ label: 'CGV, article 12', href: '/cgv#responsabilite' }],
+    relatedLinks: [
+      { label: 'CGV, article 12', href: '/cgv#responsabilite' },
+      { label: 'Autorisation parentale (16-17 ans)', href: PARENTAL_AUTHORIZATION_PDF_PATH },
+    ],
   },
   {
     _id: 'fallback-preparation-training',

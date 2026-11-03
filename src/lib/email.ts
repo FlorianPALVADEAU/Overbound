@@ -1,4 +1,7 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { Resend } from 'resend'
+import { PARENTAL_AUTHORIZATION_PDF_PATH } from '@/constants/registration'
 import TicketEmail from '@/emails/TicketEmail'
 import OnboardingEmail from '@/emails/OnboardingEmail'
 import ProfileCompletionReminderEmail from '@/emails/ProfileCompletionReminderEmail'
@@ -51,6 +54,7 @@ export async function sendTicketEmail(params: {
   isMinor?: boolean
 }) {
   const html = await renderEmail(TicketEmail(params))
+  const attachments = params.isMinor ? [await parentalAuthorizationAttachment()] : undefined
 
   return resend.emails.send({
     from: UNFORMAL_FROM,
@@ -58,7 +62,18 @@ export async function sendTicketEmail(params: {
     to: params.to,
     subject: `Ton billet — ${params.eventTitle}`,
     html,
+    attachments,
   })
+}
+
+/** Parental authorization form, attached to minor ticket emails. Read from public/ like the OG route does. */
+async function parentalAuthorizationAttachment() {
+  const file = await readFile(path.join(process.cwd(), 'public', PARENTAL_AUTHORIZATION_PDF_PATH))
+  return {
+    filename: 'autorisation-parentale.pdf',
+    content: file.toString('base64'),
+    contentType: 'application/pdf',
+  }
 }
 
 export async function sendReceiptEmail(params: {
