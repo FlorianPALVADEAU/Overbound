@@ -171,4 +171,4 @@ WHERE apc.ambassador_id = 'AMB_ID';
 - Ne pas coder un palier en dur : tout vient de la base.
 - Ne pas dériver `program_year` de la date.
 - Ne pas tester `ambassadors:ambassadors(id)` pour savoir si un code est ambassadeur : utiliser `isAmbassadorPromoRow`.
-- Les migrations s'appliquent avant le déploiement du code qui les lit : `20261101120000`, `20261102120000`, `20261103120000`.
+- Les migrations s'appliquent avant le déploiement du code qui les lit : `20261101120000`, `20261102120000`, `20261103120000` (toutes trois appliquées en production le 2026-11-03).

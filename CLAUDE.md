@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Site événementiel public complet pour **Overbound** (course à obstacles, 12 septembre 2026) : catalogue d'événements/courses, inscription multi-étapes avec paiement Stripe, gestion de groupes entreprise avec ancrage de vague, programme ambassadeur, back-office admin, check-in bénévoles le jour J, système d'emails RGPD à 4 phases, blog, bootcamps, volontariat.
+Site événementiel public complet pour **Overbound** (course à obstacles ; 1re édition tenue le 12 septembre 2026, 2e édition le 24 avril 2027) : catalogue d'événements/courses, inscription multi-étapes avec paiement Stripe, gestion de groupes entreprise avec ancrage de vague, programme ambassadeur, back-office admin, check-in bénévoles le jour J, système d'emails RGPD à 4 phases, blog, bootcamps, volontariat.
 
 Il n'y a pas de module CRM partenariats fonctionnel dans le code — seulement une page marketing statique de logos sponsors (`src/datas/Partners.ts`). Les documents `docs/product/vision.md` et `docs/architecture/overview.md` décrivent encore une cible "CRM léger partenariats" avec architecture hexagonale stricte qui n'a jamais été implémentée : ne t'y fie pas pour comprendre le produit réel, réfère-toi à ce fichier et à [ADR-0004](docs/adr/ADR-0004-architecture-reality-vs-hexagonal-theory.md).
 
@@ -50,7 +50,7 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 
 | Domaine | Summary | Fichiers clés |
 |---------|---------|--------------|
-| **Wave Assignment** | 24 vagues OPEN (08h-11h50) vs départ unique RANKED (15h). Format detection via noms ticket/race. | src/lib/openSas.ts, src/lib/slotAssignment.ts, src/app/api/registrations/create/route.ts |
+| **Wave Assignment** | 24 vagues OPEN (12h00-15h50, toutes les 10 min) vs départ unique RANKED (8h00). Format detection via noms ticket/race. | src/lib/openSas.ts, src/lib/slotAssignment.ts, src/app/api/registrations/create/route.ts |
 | **Group Membership** | Packs entreprise (captain + members) avec synchronisation d'ancre de vague. Anchor init via creator/member_join/admin. | src/lib/groups/*, migrations/20260416_groups.sql, migrations/20260512_groups_anchor_source.sql |
 | **Ambassador Program** | Points (1pt OPEN, 2pts RANKED), saison continue (`ambassador_program_season`), paliers en base (8 en 2027), dossard bonus tous les 5 pts au-dessus de 30. Multi-promo codes, lien `/?ref=CODE`. | src/lib/ambassadors/*, src/lib/attribution/referral.ts, api/ambassadors/* |
 | **Email System** | 4 phases : unsubscribe → distribution lists → granular prefs → admin interface. RLS strict. Audience marketing = Supabase (`resolveAudience`), envoi marketing = SES via `runCampaign`, transactionnel = Resend. | src/lib/email/*, api/admin/distribution-lists/* |
