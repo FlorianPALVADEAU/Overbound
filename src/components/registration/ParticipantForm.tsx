@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Shirt } from 'lucide-react'
 import { TSHIRT_SIZES } from '@/lib/tshirtOffer'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,6 +33,7 @@ interface ParticipantFormProps {
   currency: string
   /** The free T-shirt offer still covers this participant. */
   tshirtOffered: boolean
+  isMinor: boolean
   onCompanionToggle: (participantId: string, enabled: boolean) => void
   onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
 }
@@ -47,9 +49,26 @@ export default function ParticipantForm({
   companionOffer,
   currency,
   tshirtOffered,
+  isMinor,
   onCompanionToggle,
   onCompanionWaveSelect,
 }: ParticipantFormProps) {
+  // The adult on site is often the representative: one tick copies them, and edits follow while it stays ticked.
+  const [referentIsGuardian, setReferentIsGuardian] = useState(
+    Boolean(participant.guardianName) &&
+      participant.guardianName === participant.referentName &&
+      participant.guardianPhone === participant.referentPhone,
+  )
+  const changeField = (key: keyof Participant, value: string) => {
+    onFieldChange(participant.id, key, value)
+    if (referentIsGuardian && key === 'guardianName') onFieldChange(participant.id, 'referentName', value)
+    if (referentIsGuardian && key === 'guardianPhone') onFieldChange(participant.id, 'referentPhone', value)
+  }
+  const toggleReferentIsGuardian = (checked: boolean) => {
+    setReferentIsGuardian(checked)
+    onFieldChange(participant.id, 'referentName', checked ? (participant.guardianName ?? '') : '')
+    onFieldChange(participant.id, 'referentPhone', checked ? (participant.guardianPhone ?? '') : '')
+  }
   const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
   const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
   const { waves: selectableWaves, isLoading: wavesLoading, error: wavesError } = useSelectableOpenWaves(
@@ -68,7 +87,17 @@ export default function ParticipantForm({
     ) : null
 
   const field = (
-    key: 'firstName' | 'lastName' | 'email' | 'birthDate' | 'emergencyContactName' | 'emergencyContactPhone',
+    key:
+      | 'firstName'
+      | 'lastName'
+      | 'email'
+      | 'birthDate'
+      | 'emergencyContactName'
+      | 'emergencyContactPhone'
+      | 'guardianName'
+      | 'guardianPhone'
+      | 'referentName'
+      | 'referentPhone',
     label: string,
     props: { type?: string; placeholder?: string; autoComplete?: string; inputMode?: 'tel' | 'email' } = {},
   ) => (
@@ -79,8 +108,8 @@ export default function ParticipantForm({
       <Input
         id={idOf(key)}
         type={props.type}
-        value={participant[key]}
-        onChange={(e) => onFieldChange(participant.id, key, e.target.value)}
+        value={participant[key] ?? ''}
+        onChange={(e) => changeField(key, e.target.value)}
         placeholder={props.placeholder}
         autoComplete={props.autoComplete}
         inputMode={props.inputMode}
@@ -112,6 +141,30 @@ export default function ParticipantForm({
             {field('emergencyContactPhone', 'Son téléphone', { type: 'tel', placeholder: '06 12 34 56 78', autoComplete: 'tel', inputMode: 'tel' })}
           </div>
         </div>
+
+        {isMinor ? (
+          <div className="space-y-4">
+            <h3 className="text-eyebrow font-semibold uppercase text-subtle">Avant 18 ans</h3>
+            <p className="text-sm text-muted-foreground">
+              Un représentant légal signe une autorisation parentale, à apporter avec ta pièce d&apos;identité au retrait du dossard. Un
+              adulte reste joignable sur place pendant toute ta participation.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {field('guardianName', 'Représentant légal', { placeholder: 'Nom et prénom' })}
+              {field('guardianPhone', 'Son téléphone', { type: 'tel', placeholder: '06 12 34 56 78', autoComplete: 'tel', inputMode: 'tel' })}
+            </div>
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+              <Checkbox checked={referentIsGuardian} onCheckedChange={(checked) => toggleReferentIsGuardian(checked === true)} />
+              Il sera aussi l&apos;adulte présent sur place
+            </label>
+            {referentIsGuardian ? null : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {field('referentName', 'Adulte présent sur place', { placeholder: 'Nom et prénom' })}
+                {field('referentPhone', 'Son téléphone', { type: 'tel', placeholder: '06 12 34 56 78', inputMode: 'tel' })}
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {usesWaveSelection ? (
           <div className="space-y-4">

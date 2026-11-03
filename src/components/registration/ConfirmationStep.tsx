@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import SignaturePad from '@/components/forms/SignaturePad'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
-import { PARTICIPANT_NOTICE } from '@/constants/participantNotice'
+import { minorAttestationLabel, PARTICIPANT_NOTICE } from '@/constants/participantNotice'
 import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_SUMMARY, WAIVER_TITLE } from '@/constants/waiver'
 import { CONSENT_FIELD_IDS } from '@/lib/checkout/fieldIds'
 
@@ -23,6 +23,10 @@ interface ConfirmationStepProps {
   /** Defined only when the order covers other participants: the buyer must vouch for them. */
   groupAttestation?: boolean
   onGroupAttestationChange?: (checked: boolean) => void
+  /** Defined only when the order includes a minor: the signer must say they are the legal representative. */
+  minorAttestation?: boolean
+  minorNames?: readonly string[]
+  onMinorAttestationChange?: (checked: boolean) => void
 }
 
 export default function ConfirmationStep({
@@ -37,9 +41,14 @@ export default function ConfirmationStep({
   onSignatureChange,
   groupAttestation,
   onGroupAttestationChange,
+  minorAttestation,
+  minorNames = [],
+  onMinorAttestationChange,
 }: ConfirmationStepProps) {
   const showGroupAttestation = groupAttestation !== undefined
   const showGroupAttestationError = showErrors && showGroupAttestation && !groupAttestation
+  const showMinorAttestation = minorAttestation !== undefined
+  const showMinorAttestationError = showErrors && showMinorAttestation && !minorAttestation
   const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false)
   const showDisclaimerReadError = showErrors && !disclaimerRead
   const showDisclaimerAcceptedError = showErrors && !disclaimerAccepted
@@ -77,6 +86,17 @@ export default function ConfirmationStep({
             onChange: (checked: boolean) => onGroupAttestationChange?.(checked),
             label:
               "J'inscris d'autres personnes : j'atteste agir avec leur accord, leur avoir transmis la décharge, le règlement et les CGV, et je me porte fort de leur acceptation.",
+          },
+        ]
+      : []),
+    ...(showMinorAttestation
+      ? [
+          {
+            id: CONSENT_FIELD_IDS.minorAttestation,
+            checked: minorAttestation === true,
+            error: showMinorAttestationError,
+            onChange: (checked: boolean) => onMinorAttestationChange?.(checked),
+            label: minorAttestationLabel(minorNames),
           },
         ]
       : []),

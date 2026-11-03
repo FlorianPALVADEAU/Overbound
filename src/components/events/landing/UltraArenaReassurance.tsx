@@ -23,23 +23,25 @@ const BADGES = [
   { icon: Clock, title: 'Organisation lisible', text: "Horaires, format, logistique et règles expliqués simplement à l'avance." },
 ]
 
-const EXTRA_INFOS = [
+const extraInfos = (minimumAge: number) => [
   { icon: Eye, text: 'Spectateurs bienvenus sur le village.' },
   { icon: Backpack, text: 'Dépôt de sacs prévu sur site.' },
-  { icon: Baby, text: 'Événement réservé aux 18 ans et plus.' },
+  { icon: Baby, text: minimumAge < 18 ? `Dès ${minimumAge} ans : format OPEN uniquement avant 18 ans, avec autorisation parentale.` : 'Événement réservé aux 18 ans et plus.' },
   { icon: Camera, text: 'Photos officielles après course.' },
   { icon: ArrowLeftRight, text: 'Modalités de transfert dans le guide coureur.' },
 ]
 
 interface Props {
   location: string
+  /** `events.minimum_age`. */
+  minimumAge: number
   locationMapUrl: string
 }
 
 const formatConfigTime = (time: { hour: number; minute: number }) =>
   `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
 
-export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
+export function UltraArenaReassurance({ location, locationMapUrl, minimumAge }: Props) {
   const rankedStartLabel = formatConfigTime(RANKED_START_CONFIG)
   const openFirstDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.firstDeparture)
   const openLastDepartureLabel = formatConfigTime(OPEN_SAS_CONFIG.lastDeparture)
@@ -102,7 +104,7 @@ export function UltraArenaReassurance({ location, locationMapUrl }: Props) {
               <CardTitle>Infos essentielles</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              {EXTRA_INFOS.map(({ icon: Icon, text }) => (
+              {extraInfos(minimumAge).map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-start gap-2">
                   <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   {text}

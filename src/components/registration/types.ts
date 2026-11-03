@@ -43,6 +43,12 @@ export type Participant = {
   birthDate: string
   emergencyContactName: string
   emergencyContactPhone: string
+  /** Under 18 only: legal representative who signs the parental authorization. */
+  guardianName?: string
+  guardianPhone?: string
+  /** Under 18 only: adult on site, reachable for the whole participation. May be the representative. */
+  referentName?: string
+  referentPhone?: string
   medicalInfo: string
   /** Explicit consent (art. 9 GDPR) to keep `medicalInfo`; optional so drafts saved before it still load. */
   healthDataConsent?: boolean

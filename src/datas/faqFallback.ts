@@ -1,6 +1,7 @@
 import type { PortableTextBlock } from '@portabletext/types'
 import type { FAQDocument } from '@/app/about/faq/FAQPageContent'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
+import { HEALTH_PROOF_MINOR_SENTENCE, MINOR_EMERGENCY_PROCEDURE, PARTICIPANTS_ARE_THIRD_PARTIES } from '@/constants/participantNotice'
 import { OPEN_FORMAT_RULES, RANKED_FORMAT_RULES, RANKED_LAP_TIME_LIMITS_SUMMARY, SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
 
 export const block = (text: string): PortableTextBlock => ({
@@ -145,13 +146,16 @@ export const faqFallback: FAQDocument[] = [
         'Pour cette édition, le Pass Prévention Santé (PPS) de la FFA, ou une licence FFA en cours de validité, est obligatoire. Il est contrôlé au retrait du dossard avec une pièce d’identité. Sans justificatif valable, le départ est refusé et le billet n’est pas remboursé.',
       ),
       block(
-        'Overbound est assurée en responsabilité civile (AXA France IARD) : le contrat couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound.',
+        `Participant de 16 ou 17 ans (événements ouverts aux mineurs, format OPEN uniquement) : autorisation parentale signée par le représentant légal et par le mineur, pièce d’identité du mineur et présence d’un adulte référent au retrait du dossard. ${HEALTH_PROOF_MINOR_SENTENCE} ${MINOR_EMERGENCY_PROCEDURE}`,
+      ),
+      block(
+        'Overbound est assurée en responsabilité civile (AXA France IARD) : le contrat couvre les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound, dans les limites et conditions du contrat.',
       ),
       block(
         'Il ne couvre pas les dommages que tu te causes à toi-même sans faute d’Overbound, par exemple une chute sur un obstacle conforme : tes frais médicaux, ton invalidité ou ton décès restent alors à ta charge. Nous te recommandons une assurance individuelle accident.',
       ),
       block(
-        'Overbound ne s’engage pas sur la prise en charge d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound : vérifie que ta responsabilité civile personnelle couvre ce cas.',
+        PARTICIPANTS_ARE_THIRD_PARTIES,
       ),
     ],
     category: 'inscriptions',

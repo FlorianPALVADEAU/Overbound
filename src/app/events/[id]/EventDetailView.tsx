@@ -290,6 +290,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
           tickets={tickets as never}
           eventPriceTiers={eventPriceTiers}
           eventDate={event.date}
+          minimumAge={event.minimum_age ?? 18}
           currency={currency}
           isOnSale={isOnSale}
           wavesByTicket={wavesByTicket}
@@ -374,7 +375,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
       />
 
       <Section id="infos-pratiques" backgroundSrc={LANDING_BACKGROUNDS.reassurance}>
-        <UltraArenaReassurance location={event.location} locationMapUrl={locationMapUrl} />
+        <UltraArenaReassurance location={event.location} locationMapUrl={locationMapUrl} minimumAge={event.minimum_age ?? 18} />
       </Section>
 
       {hasBothFormats ? (

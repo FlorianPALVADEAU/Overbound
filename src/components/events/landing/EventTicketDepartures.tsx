@@ -12,7 +12,7 @@ import { getCurrentPriceTier, type EventPriceTier } from '@/types/EventPriceTier
 import { formatWaveStartTime } from '@/lib/openSas'
 import { Container, DISPLAY_TITLE, SectionHeader } from '@/components/ds'
 import { cn } from '@/lib/utils'
-import { SHARED_FORMAT_RULES } from '@/constants/raceFormatRules'
+import { ageRuleHeadline } from '@/lib/events/minimumAge'
 import {
   describeTicketDeparture,
   splitDepartureWaves,
@@ -72,6 +72,8 @@ interface Props {
   tickets: ChooserTicket[]
   eventPriceTiers: EventPriceTier[]
   eventDate: string
+  /** `events.minimum_age`: 18, or 16 once the event is open to minors on the OPEN format. */
+  minimumAge: number
   currency: string
   isOnSale: boolean
   /** Slots per ticket id; undefined until the overview has loaded. */
@@ -124,6 +126,7 @@ export function EventTicketDepartures({
   tickets,
   eventPriceTiers,
   eventDate,
+  minimumAge,
   currency,
   isOnSale,
   wavesByTicket,
@@ -157,8 +160,12 @@ export function EventTicketDepartures({
       <div className="mt-6 flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
         <IdCard className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
         <p className="text-sm text-foreground sm:text-base">
-          <span className="font-semibold">Réservé aux {SHARED_FORMAT_RULES.minAge} ans et plus.</span> PPS de la FFA ou
-          licence FFA en cours de validité exigé. Une pièce d&apos;identité est contrôlée au retrait du dossard.
+          <span className="font-semibold">{ageRuleHeadline(minimumAge)}</span>{' '}
+          {minimumAge < 18
+            ? 'Les 16 et 17 ans courent au format OPEN uniquement, avec autorisation parentale et un adulte référent sur place. '
+            : ''}
+          PPS de la FFA ou licence FFA en cours de validité exigé. Une pièce d&apos;identité est contrôlée au retrait du
+          dossard.
         </p>
       </div>
 

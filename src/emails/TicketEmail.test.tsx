@@ -32,6 +32,24 @@ describe('TicketEmail', () => {
     expect(html).toMatch(/le départ est refusé/)
   })
 
+  it('tells a participant aged 16 or 17 which papers to bring instead of the PPS', async () => {
+    const html = await renderEmail(TicketEmail({ ...base, isMinor: true }))
+
+    expect(html).toMatch(/autorisation parentale/)
+    expect(html).toMatch(/questionnaire de santé pour mineurs/)
+    expect(html).toMatch(/adulte référent/)
+    expect(html).toMatch(/Sans ces papiers, tu ne pars pas/)
+    expect(html).not.toMatch(/Sans PPS ou licence/)
+    expect(html).toMatch(/le départ est refusé/)
+  })
+
+  it('keeps the adult wording when the participant is not a minor', async () => {
+    const html = await renderEmail(TicketEmail({ ...base, isMinor: false }))
+
+    expect(html).not.toMatch(/autorisation parentale/)
+    expect(html).toMatch(/Sans PPS ou licence/)
+  })
+
   it('omits departure, SAS and bib rows when they are not assigned yet', async () => {
     const html = await renderEmail(TicketEmail({ ...base, startTime: null, waveIndex: null, bibNumber: null }))
 

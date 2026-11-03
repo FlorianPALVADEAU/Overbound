@@ -26,9 +26,9 @@ Bienvenue à Overbound — un parcours d’obstacles « backyard » pensé pour 
 - Date : (voir communication officielle)
 - Lieu : (voir billet / site)
 - Horaires : annoncés par l’organisation — peuvent être modifiés pour sécurité/météo
-- Organisateur : Association OVERBOUND RACE
+- Organisateur : Palvadeau Organisation (marque Overbound)
 - Formats : OPEN (participatif) / RANKED (compétitif)
-- Public : majorité 18+ pour cette édition (vérifier conditions d’âge)
+- Public : 18 ans révolus ; 16 et 17 ans au format OPEN uniquement, sur un événement ouvert aux mineurs (autorisation parentale et adulte référent)
 
 > IMPORTANT : Les horaires et certains éléments du parcours peuvent être modifiés pour raisons de sécurité, météo ou contraintes opérationnelles. Vérifiez les communications officielles avant de vous déplacer.
 

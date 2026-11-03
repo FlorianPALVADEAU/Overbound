@@ -1,10 +1,12 @@
 'use client'
 
-import { useId, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
+  /** Stable key of the question. Keeps aria-controls identical on server and client. */
+  id: string
   title: string
   children: ReactNode
 }
@@ -13,9 +15,9 @@ interface Props {
  * One question of the site FAQ: the card of the homepage, reused wherever a FAQ appears.
  * The answer stays in the HTML while closed (hidden), so crawlers and assistants read it.
  */
-export function FaqAccordionItem({ title, children }: Props) {
+export function FaqAccordionItem({ id, title, children }: Props) {
   const [isOpen, setIsOpen] = useState(false)
-  const panelId = useId()
+  const panelId = `faq-panel-${id}`
 
   return (
     <div

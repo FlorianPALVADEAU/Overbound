@@ -1,3 +1,4 @@
+import { AGE_RULE_ANSWER, AGE_RULE_SHORT } from '@/constants/raceFormatRules'
 import { BRAND, FORMAT_FACTS, PILLAR_LINKS, PREVIOUS_EDITION, type PageLink } from './siteFacts'
 import { FALLBACK_NEXT_EDITION, type NextEditionFacts } from './nextEdition'
 
@@ -35,7 +36,7 @@ export interface PillarContent {
 const commonFacts = (next: NextEditionFacts): PillarFact[] => [
   { label: 'Format', value: `Boucle de ${FORMAT_FACTS.loopKm} km, 10+ obstacles, tours répétés` },
   { label: 'Deux modes', value: 'OPEN (sans classement) et RANKED (élimination)' },
-  { label: 'Âge minimum', value: `${FORMAT_FACTS.minAge} ans` },
+  { label: 'Âge minimum', value: AGE_RULE_SHORT },
   { label: 'Dernière édition', value: `${PREVIOUS_EDITION.dateLabel}, ${PREVIOUS_EDITION.venue}` },
   { label: 'Participants', value: PREVIOUS_EDITION.participants },
   { label: 'Prochaine édition', value: next.confirmed ? `${next.window}${next.venue ? `, ${next.venue}` : ''}` : `${next.window} (date et lieu à confirmer)` },
@@ -95,7 +96,7 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
       },
       {
         question: 'Quel âge faut-il avoir ?',
-        answer: `Il faut avoir ${FORMAT_FACTS.minAge} ans minimum.`,
+        answer: `Il faut avoir ${AGE_RULE_ANSWER}`,
       },
     ],
     related: [PILLAR_LINKS.loops, PILLAR_LINKS.facts, { href: '/events/formats', label: 'Comparer OPEN et RANKED' }, { href: '/entreprises', label: 'Team building pour entreprises et CSE' }],

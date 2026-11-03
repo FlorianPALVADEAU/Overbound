@@ -57,22 +57,14 @@ Overbound doit être compris comme un événement :
 | Capacité cible à moyen terme | Jusqu’à environ 1000 participants ou plus selon autorisations et capacité opérationnelle |
 
 ### Structure organisatrice
-**Association Overbound Race**
-- Association loi 1901
-- N° RNA : W782010881
-- SIREN : 102 454 055
-- SIRET : 102 454 055 00017
-- Siège social : 105 Rue de la Brèche du Houx, 78760 Jouars-Pontchartrain
-- Président : Florian PALVADEAU
-- Site : https://overbound-race.com
-
-**Palvadeau Organisation / OVERBOUND**
+**Palvadeau Organisation (marque OVERBOUND)**
 - SASU immatriculée au RCS de Versailles
 - RCS : 992 578 229
 - Siège social : 105 Rue de la Brèche du Houx, 78760 Jouars-Pontchartrain
 - Président : Florian PALVADEAU
+- Site : https://overbound-race.com
 
-L’association porte la dimension sportive, associative, territoriale et institutionnelle. La SASU porte la dimension commerciale, la marque, certains encaissements, le sponsoring, le merchandising et la production de contenu.
+Palvadeau Organisation organise l’événement, encaisse les inscriptions, porte la marque et le contrat d’assurance. L’association Overbound Race n’intervient plus (décision du 3 novembre 2026).
 
 ### Logique générale de l’événement
 - deux formats sportifs complémentaires : OPEN et RANKED

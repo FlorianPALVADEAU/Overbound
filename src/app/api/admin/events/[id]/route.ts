@@ -7,6 +7,7 @@ import { notifyEventOpening } from '@/lib/email/eventOpenings'
 import { computeUniquePaidRevenueCents } from '@/lib/admin/orderRevenue'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { parseBibCapacity, validateBibConfigChange } from '@/lib/events/bibCapacity'
+import { parseMinimumAge, validateMinimumAgeChange } from '@/lib/events/minimumAge'
 import { parseTshirtQuota } from '@/lib/tshirtOffer'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
@@ -149,7 +150,7 @@ const handlePut = async (
     const supabase = await createSupabaseServer()
     const { data: existingEvent } = await supabase
       .from('events')
-      .select('id, status, title, date, location, subtitle, slug, capacity, ranked_bib_capacity')
+      .select('id, status, title, date, location, subtitle, slug, capacity, ranked_bib_capacity, minimum_age')
       .eq('id', id)
       .eq('organization_id', auth.organizationId)
       .single()
@@ -166,6 +167,7 @@ const handlePut = async (
       location,
       capacity,
       ranked_bib_capacity,
+      minimum_age,
       tshirt_offer_quota,
       status,
       external_provider,
@@ -175,6 +177,26 @@ const handlePut = async (
 
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
+
+    // A client that does not send the age keeps the stored one: never reset it to 18 by omission.
+    const currentMinimumAge = parseMinimumAge(existingEvent?.minimum_age)
+    const nextMinimumAge = minimum_age === undefined ? currentMinimumAge : parseMinimumAge(minimum_age)
+    if (nextMinimumAge !== currentMinimumAge) {
+      const { count: activeMinors } = await admin
+        .from('registrations')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', id)
+        .eq('is_minor', true)
+        .is('cancelled_at', null)
+      const minimumAgeError = validateMinimumAgeChange({
+        next: nextMinimumAge,
+        current: currentMinimumAge,
+        activeMinorRegistrations: activeMinors ?? 0,
+      })
+      if (minimumAgeError) {
+        return NextResponse.json({ error: minimumAgeError }, { status: 409 })
+      }
+    }
 
     const nextRanked = parseBibCapacity(ranked_bib_capacity)
     const { data: bibRows } = await admin
@@ -213,6 +235,7 @@ const handlePut = async (
         location,
         capacity: parseInt(capacity) || 0,
         ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
+        minimum_age: nextMinimumAge,
         tshirt_offer_quota: parseTshirtQuota(tshirt_offer_quota),
         status: status || 'draft',
         external_provider: external_provider || null,

@@ -32,6 +32,8 @@ export interface EventFormValues {
   longitude: string
   capacity: string
   ranked_bib_capacity: string
+  /** `events.minimum_age` as typed in the form: "18" (adults only) or "16" (open to 16 to 17 year olds, OPEN format). */
+  minimum_age: string
   tshirt_offer_quota: string
   status: Event['status']
   external_provider: string
@@ -64,6 +66,7 @@ const DEFAULT_VALUES: EventFormValues = {
   longitude: '',
   capacity: '0',
   ranked_bib_capacity: '',
+  minimum_age: '18',
   tshirt_offer_quota: '',
   status: 'draft',
   external_provider: 'none',
@@ -282,6 +285,22 @@ export function EventFormDialog({
             </div>
             <p className="md:col-span-2 text-xs text-muted-foreground">
               Les dossards sont numérotés sur une plage unique : RANKED de 1 à {rankedBibs || 'N'}, puis OPEN de {rankedBibs + 1} à la capacité totale. Sans capacité totale, toute inscription est refusée.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="minimum_age">Âge minimum des participants</Label>
+            <Select value={values.minimum_age} onValueChange={(value) => handleChange('minimum_age', value)}>
+              <SelectTrigger id="minimum_age" className="md:max-w-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="18">18 ans : majeurs uniquement</SelectItem>
+                <SelectItem value="16">16 ans : mineurs de 16 et 17 ans admis (format OPEN)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              À 16 ans, le tunnel demande le représentant légal et l&apos;adulte présent sur place, refuse le format RANKED aux mineurs, et le check-in bloque le départ tant que les papiers ne sont pas contrôlés. Ne passe à 16 qu&apos;après la confirmation écrite de l&apos;assureur et la relecture des textes juridiques. Impossible de revenir à 18 quand des mineurs sont inscrits.
             </p>
           </div>
 

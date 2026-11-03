@@ -12,7 +12,16 @@ vi.mock('@/lib/supabase/server', () => ({
 
 import { GET, POST } from './route'
 
-const REGISTRATION_ROW = {
+const REGISTRATION_ROW: {
+  id: string
+  email: string
+  checked_in: boolean
+  is_minor?: boolean
+  minor_papers_verified_at?: string | null
+  start_time: string
+  wave_index: number
+  tickets: Array<{ name: string; events: Array<{ title: string; date: string; location: string }> }>
+} = {
   id: 'reg-1',
   email: 'runner@example.com',
   checked_in: false,
@@ -58,6 +67,7 @@ function createAdmin(options: {
   registrations?: typeof REGISTRATION_ROW[]
   readError?: unknown
   updateError?: unknown
+  updates?: Array<Record<string, unknown>>
 }) {
   const registration = options.registration
   return {
@@ -93,6 +103,7 @@ function createAdmin(options: {
             return selectQuery
           },
           update(payload: { checked_in: boolean }) {
+            options.updates?.push(payload)
             return {
               eq() {
                 return {
@@ -214,6 +225,76 @@ describe('POST /api/checkin', () => {
     const response = await POST(jsonRequest({ token: 'qr-1', action: 'undo' }))
 
     expect(response.status).toBe(409)
+  })
+
+  describe('minor participant', () => {
+    const MINOR_ROW = { ...REGISTRATION_ROW, is_minor: true, minor_papers_verified_at: null }
+    const CHECKS = { authorizationSigned: true, identityChecked: true, referentIdentified: true, healthAttestationSeen: true }
+
+    it('refuses the check-in until the papers are controlled, and changes nothing', async () => {
+      mockAuthedUser('volunteer')
+      const updates: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ registration: MINOR_ROW, updates }))
+
+      const response = await POST(jsonRequest({ token: 'qr-1' }))
+      const body = await response.json()
+
+      expect(response.status).toBe(409)
+      expect(body.code).toBe('MINOR_PAPERS_REQUIRED')
+      expect(updates).toHaveLength(0)
+    })
+
+    it('checks the minor in and records who controlled the papers when the four checks are sent', async () => {
+      mockAuthedUser('volunteer')
+      const updates: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(createAdmin({ registration: MINOR_ROW, updates }))
+
+      const response = await POST(jsonRequest({ token: 'qr-1', minorChecks: CHECKS }))
+
+      expect(response.status).toBe(200)
+      expect(updates[0]).toMatchObject({ checked_in: true, minor_papers_verified_by: 'user-1' })
+      expect(typeof updates[0].minor_papers_verified_at).toBe('string')
+    })
+
+    it('rejects an incomplete set of checks', async () => {
+      mockAuthedUser('volunteer')
+      supabaseAdminMock.mockReturnValue(createAdmin({ registration: MINOR_ROW }))
+
+      const response = await POST(jsonRequest({ token: 'qr-1', minorChecks: { ...CHECKS, identityChecked: false } }))
+
+      expect(response.status).toBe(400)
+    })
+
+    it('does not ask again for a minor whose papers were already controlled', async () => {
+      mockAuthedUser('volunteer')
+      const updates: Array<Record<string, unknown>> = []
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ registration: { ...MINOR_ROW, minor_papers_verified_at: '2027-09-11T07:30:00.000Z' }, updates }),
+      )
+
+      const response = await POST(jsonRequest({ token: 'qr-1' }))
+
+      expect(response.status).toBe(200)
+      expect(updates[0]).toEqual({ checked_in: true })
+    })
+
+    it('lets a volunteer undo a minor check-in without any check', async () => {
+      mockAuthedUser('admin')
+      supabaseAdminMock.mockReturnValue(createAdmin({ registration: { ...MINOR_ROW, checked_in: true } }))
+
+      const response = await POST(jsonRequest({ token: 'qr-1', action: 'undo' }))
+
+      expect(response.status).toBe(200)
+    })
+
+    it('never asks an adult for the checks', async () => {
+      mockAuthedUser('volunteer')
+      supabaseAdminMock.mockReturnValue(createAdmin({ registration: { ...REGISTRATION_ROW, is_minor: false } }))
+
+      const response = await POST(jsonRequest({ token: 'qr-1' }))
+
+      expect(response.status).toBe(200)
+    })
   })
 
   it('returns 500 when the update fails', async () => {

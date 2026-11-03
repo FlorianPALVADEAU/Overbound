@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link'
+import { PARTICIPANTS_ARE_THIRD_PARTIES } from '@/constants/participantNotice'
 import { OFFICIAL_RULEBOOK_PDF_PATH } from '@/constants/registration'
 import { containerClass } from '@/components/ds'
 import { LegalHeader } from '@/components/legal/LegalHeader'
@@ -50,7 +51,7 @@ const paragraphs = {
   definitions: [
     '« Plateforme » : ensemble des sites, applications web ou mobiles exploités par Overbound, et tous services numériques associés.',
     '« Utilisateur » : toute personne naviguant sur la Plateforme, qu’elle dispose ou non d’un compte.',
-    '« Membre » : toute personne physique majeure disposant d’un compte personnel et authentifié sur la Plateforme.',
+    '« Membre » : toute personne physique âgée d’au moins 16 ans disposant d’un compte personnel et authentifié sur la Plateforme.',
     '« Organisateur » : toute entité (association, société, collectivité) mandatée par Overbound pour produire un événement sportif publié sur la Plateforme.',
     '« Participant » : toute personne inscrite à un événement ou entraînement via la Plateforme.',
     '« Contenus » : données, textes, visuels, vidéos, podcasts, programmes d’entraînement, plans ou informations publiées par Overbound, ses partenaires ou les utilisateurs.',
@@ -69,7 +70,7 @@ const paragraphs = {
     "Overbound met en œuvre tous les moyens raisonnables pour assurer un accès continu mais n'est tenue à aucune obligation de résultat. La Plateforme peut être momentanément indisponible sans préavis. En cas d’interruption prolongée (supérieure à 48h), Overbound informera les utilisateurs via email ou bannière d’information.",
   ],
   compte: [
-    "L’inscription est réservée aux personnes physiques âgées d’au moins 16 ans (18 ans pour les inscriptions payantes). Un contrôle de majorité peut être requis. L’Utilisateur s’engage à fournir des informations exactes et à les mettre à jour. Overbound peut suspendre ou supprimer tout compte contenant des informations fausses, incomplètes, obsolètes ou usurpées.",
+    "L’inscription est réservée aux personnes physiques âgées d’au moins 16 ans (18 ans pour les inscriptions payantes, sauf pour un événement ouvert aux participants de 16 et 17 ans, dans les conditions de l’article 4 des CGV : accord du représentant légal et format OPEN uniquement). Un contrôle d’âge peut être requis. L’Utilisateur s’engage à fournir des informations exactes et à les mettre à jour. Overbound peut suspendre ou supprimer tout compte contenant des informations fausses, incomplètes, obsolètes ou usurpées.",
     "Chaque identifiant est strictement personnel. Tout usage non autorisé doit être signalé immédiatement à contact@overbound-race.com. Overbound décline toute responsabilité en cas d'utilisation frauduleuse du compte due à une négligence (partage d’identifiants, absence de mot de passe robuste).",
     "L’inscription à un événement suppose l’acceptation des règles spécifiques de l’événement, du règlement sportif correspondant et, le cas échéant, de conditions particulières de participation.",
   ],
@@ -109,22 +110,22 @@ const paragraphs = {
   conditionsCourse: [
     "Chaque participant certifie disposer d’une condition physique adaptée à la pratique d’une course à obstacles et s’engage à respecter les consignes de sécurité transmises par l’organisation.",
     "Le port des équipements obligatoires (chaussures adaptées, protections, tenue) peut être vérifié à l’entrée de la zone de départ. Le non-respect entraîne une mise hors course sans remboursement.",
-    "Les mineurs sont acceptés uniquement sur les formats autorisés et avec un accompagnant sur site.",
+    "Les participants de 16 et 17 ans sont acceptés uniquement au format OPEN, sur un événement ouvert aux mineurs, avec une autorisation parentale et un adulte référent présent sur le site (articles 4 et 11 des CGV). Aucun participant de moins de 16 ans n’est accepté.",
     "L’accès aux zones techniques est réservé aux participants et staff. Toute introduction de matériel non autorisé est interdite.",
     "La consommation d’alcool ou de substances dopantes est strictement prohibée. Un contrôle antidopage peut être diligenté (Code mondial antidopage).",
   ],
   responsabilite: [
     "Overbound agit comme éditeur de la Plateforme et, dans certains cas, comme organisateur. Sa responsabilité ne peut être engagée qu’en cas de faute prouvée. Les partenaires restent responsables de leurs prestations (sécurité, restauration, hébergement).",
-    "Overbound ne peut être tenue responsable des dommages indirects (perte de chance, préjudice commercial, perte de données) ni des manquements imputables à l’utilisateur (erreur de saisie, matériel inadapté).",
+    "Overbound ne peut être tenue responsable des dommages indirects (préjudice commercial, perte de données) ni des manquements imputables à l’utilisateur (erreur de saisie, matériel inadapté). Cette limite ne s’applique ni à un dommage corporel, ni à une faute lourde ou intentionnelle d’Overbound, ni aux droits que la loi reconnaît au consommateur.",
     "Overbound se réserve le droit de suspendre l’accès d’un utilisateur en cas de violation grave des CGU, sans indemnité. Les sommes dues restent exigibles.",
     "Les contenus fournis à titre informatif (programmes d’entraînement, conseils) ne remplacent pas l’avis d’un professionnel de santé. L’utilisateur demeure responsable de sa condition physique.",
   ],
   assurances: [
     "Overbound souscrit un contrat de responsabilité civile organisateur (AXA France IARD) couvrant les dommages causés à des tiers, participants compris, lorsque la cause est imputable à Overbound, dans les limites du contrat détaillé à l’article 12 des CGV.",
     "Cette assurance ne couvre pas les dommages que le participant se cause à lui-même sans faute d’Overbound : ses frais médicaux, son invalidité ou son décès restent alors à sa charge.",
-    "Overbound ne s’engage pas sur la prise en charge, par son contrat, d’un dommage qu’un participant cause à un autre participant sans faute d’Overbound. Chaque participant vérifie que sa responsabilité civile personnelle couvre ce cas.",
+    PARTICIPANTS_ARE_THIRD_PARTIES,
     "Chaque participant est invité à souscrire une assurance individuelle accident couvrant les dommages corporels auxquels il s’expose (indemnités en cas de blessure, d’invalidité ou de décès). Une licence fédérale sportive ou une assurance personnelle multisport peut déjà l’inclure.",
-    "Pour l’édition 2026, un Pass Prévention Santé (PPS) de la FFA, ou une licence FFA en cours de validité, est exigé au retrait du dossard (article 11 des CGV).",
+    "Un justificatif de santé est exigé au retrait du dossard : Pass Prévention Santé (PPS) de la FFA ou licence FFA en cours de validité, et pour un participant de 16 ou 17 ans l’attestation du questionnaire de santé pour mineurs ou un certificat médical (article 11 des CGV).",
     "Les effets personnels restent sous la responsabilité du participant. Des zones de consigne sécurisées peuvent être proposées, sans constituer une obligation de résultat.",
     "En cas d’événement international, il appartient au participant de vérifier la validité de ses garanties (assurance voyage, rapatriement).",
   ],
