@@ -60,21 +60,21 @@ export const dashboardData = (overrides: Partial<AmbassadorDashboardData> = {}):
  * The page asks Supabase for a local session before it calls /api/session, and treats "none" as a visitor.
  * A cookie in the format of @supabase/ssr, with a far-future expiry, is read without any network call.
  */
-const signInLocally = async (page: Page, email: string) => {
+export const signInLocally = async (page: Page, email: string, userId = 'amb-user') => {
   loadEnvConfig(process.cwd())
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   if (!supabaseUrl) throw new Error('NEXT_PUBLIC_SUPABASE_URL is required (.env.local)')
 
   const expiresAt = Math.floor(Date.now() / 1000) + 24 * 60 * 60
   const base64Url = (value: string) => Buffer.from(value).toString('base64url')
-  const accessToken = [base64Url('{"alg":"HS256","typ":"JWT"}'), base64Url(JSON.stringify({ sub: 'amb-user', exp: expiresAt })), 'e2e'].join('.')
+  const accessToken = [base64Url('{"alg":"HS256","typ":"JWT"}'), base64Url(JSON.stringify({ sub: userId, exp: expiresAt })), 'e2e'].join('.')
   const session = {
     access_token: accessToken,
     refresh_token: 'e2e-refresh',
     token_type: 'bearer',
     expires_in: 24 * 60 * 60,
     expires_at: expiresAt,
-    user: { id: 'amb-user', aud: 'authenticated', role: 'authenticated', email, app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' },
+    user: { id: userId, aud: 'authenticated', role: 'authenticated', email, app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' },
   }
   const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
   await page.context().addCookies([

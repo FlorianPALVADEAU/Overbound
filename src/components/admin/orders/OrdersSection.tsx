@@ -10,9 +10,9 @@ import { OperationsList, type OperationsListAction, type OperationsListColumn, t
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ORDER_STATUSES, type OrderListItem, type OrderListStatus } from '@/lib/admin/ordersList'
+import { ORDER_STATUSES, ORDER_STATUS_LABEL, type OrderListItem, type OrderListStatus } from '@/lib/admin/ordersList'
 
-const STATUS_LABEL: Record<OrderListStatus, string> = { paid: 'Payée', pending: 'En attente', cancelled: 'Annulée', refunded: 'Remboursée' }
+const STATUS_LABEL = ORDER_STATUS_LABEL
 const STATUS_CLASS: Record<OrderListStatus, string> = {
   paid: 'border-success/40 bg-success/15 text-success',
   pending: 'border-warning/40 bg-warning/15 text-warning',

@@ -26,6 +26,7 @@ import {
   writeParticipantUrlState,
 } from './participantUrlState'
 import { Badge } from '@/components/ui/badge'
+import { orderStatusLabel } from '@/lib/admin/ordersList'
 import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
 import { Button } from '@/components/ui/button'
 import {
@@ -270,7 +271,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
       id: 'payment',
       mobile: 'detail',
       header: 'Paiement',
-      cell: (participant) => participant.payment ? <><p>{participant.payment.status ?? '—'}</p><p className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</p></> : '—',
+      cell: (participant) => participant.payment ? <><p>{orderStatusLabel(participant.payment.status)}</p><p className="text-xs text-muted-foreground">{formatAmount(participant.payment.amountCents, participant.payment.currency)}</p></> : '—',
     },
     { id: 'group', mobile: 'detail', header: 'Groupe', cell: (participant) => participant.group ?? '—', hiddenByDefault: true },
     { id: 'created-at', mobile: 'detail', header: 'Inscrit le', cell: (participant) => formatDate(participant.registration.createdAt), hiddenByDefault: true },
@@ -412,7 +413,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
               <div><p className="text-muted-foreground">Dossard</p><p>{participant.registration.bibNumber ?? '—'}</p></div>
               <div><p className="text-muted-foreground">Départ</p><p>{participant.departure.startTime ? `${formatDate(participant.departure.startTime)} · SAS ${participant.departure.waveIndex ?? '—'}` : '—'}</p></div>
               <div><p className="text-muted-foreground">Groupe</p><p>{participant.group ?? 'Aucun'}</p></div>
-              <div><p className="text-muted-foreground">Paiement</p><p>{participant.payment ? `${participant.payment.status ?? '—'} · ${formatAmount(participant.payment.amountCents, participant.payment.currency)}` : '—'}</p></div>
+              <div><p className="text-muted-foreground">Paiement</p><p>{participant.payment ? `${orderStatusLabel(participant.payment.status)} · ${formatAmount(participant.payment.amountCents, participant.payment.currency)}` : '—'}</p></div>
               <div><p className="text-muted-foreground">Inscrit le</p><p>{formatDate(participant.registration.createdAt)}</p></div>
               {cancelled ? <div className="sm:col-span-2"><p className="text-muted-foreground">Annulée le {formatDate(participant.registration.cancelledAt ?? null)}</p><p>{participant.registration.cancellationReason ?? 'Motif non renseigné'}</p></div> : null}
             </div>

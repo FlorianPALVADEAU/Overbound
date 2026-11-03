@@ -4,6 +4,19 @@ import { decodeKeysetCursor, encodeKeysetCursor, type KeysetCursor } from './key
 export const ORDER_STATUSES = ['paid', 'pending', 'cancelled', 'refunded'] as const
 export type OrderListStatus = (typeof ORDER_STATUSES)[number]
 
+export const ORDER_STATUS_LABEL: Record<OrderListStatus, string> = {
+  paid: 'Payée',
+  pending: 'En attente',
+  cancelled: 'Annulée',
+  refunded: 'Remboursée',
+}
+
+/** French label of an order status; an unknown value is shown as received rather than hidden. */
+export const orderStatusLabel = (status: string | null): string => {
+  if (!status) return '—'
+  return ORDER_STATUS_LABEL[status as OrderListStatus] ?? status
+}
+
 export const ordersQuerySchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(25).max(100).default(50),

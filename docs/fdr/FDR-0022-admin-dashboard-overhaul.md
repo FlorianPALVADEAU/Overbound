@@ -59,8 +59,25 @@ refusé par la contrainte. La vue d'ensemble, les participants, les commandes et
   promotions, paliers de prix, bénévoles, e-mails, inscriptions...). Seules les routes citées plus haut sont couvertes.
 - L'API des points ambassadeurs renvoie tous les ambassadeurs et garde des `any` historiques ; la pagination de
   ses deux listes est faite dans le navigateur.
-- Aucun écran n'a été vérifié dans un navigateur : le contrat responsive (`npm run test:e2e`) n'a pas été rejoué
-  sur les pages refaites.
+- Les écrans ont été vérifiés dans un vrai navigateur, mais avec l'API simulée : cela prouve le comportement du
+  front, pas celui de Supabase ni de Stripe. Le remboursement Stripe réel et les triggers de points ambassadeur ne
+  se vérifient qu'avec la migration appliquée, sur la base de dev.
+
+## Vérification faite sans toucher à la base
+
+- **Navigateur** : `e2e/admin-dashboard.spec.ts` (19 scénarios : aperçu, participants, annulation, commandes, journal,
+  ambassadeurs, navigation) et `e2e/admin-overflow.spec.ts` (aucun défilement horizontal de 320 à 1920 px sur les
+  cinq pages). Toutes les routes `/api` sont simulées en mémoire (`e2e/support/admin.ts`) et le serveur de dev tourne
+  avec une URL Supabase factice, donc aucun appel ne part vers une vraie base. Commande :
+  `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9 npx playwright test e2e/admin-dashboard.spec.ts e2e/admin-overflow.spec.ts --project=functional-desktop-1280x800`.
+  Les captures (`e2e/admin-smoke.spec.ts`, `ADMIN_SHOTS_DIR`) ont servi à relire le rendu bureau et téléphone.
+- **Routes** : tests de requête avec un enregistreur de constructeur PostgREST (`src/lib/admin/queryRecorder.ts`)
+  pour logs, commandes, export CSV et annulation : filtres, curseur, taille de page, 400, 403, 404, 500 sans fuite.
+- **Migration** : appliquée, rejouée puis exercée sur un Postgres 17 local jetable avec un schéma minimal copié des
+  migrations : annulation avec compagnon OPEN, recomptage du SAS, idempotence, refus d'un dossard déjà présent ou
+  d'un compagnon présent (rien d'à moitié annulé), motif obligatoire et coupé à 200 caractères, contrainte
+  `ticket_refunds.reason`, index d'un seul remboursement actif, droits réservés à `service_role`.
+  Limite : ce schéma n'a ni les triggers ni les RLS de la vraie base.
 
 ## Tests
 

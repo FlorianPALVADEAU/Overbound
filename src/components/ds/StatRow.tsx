@@ -31,7 +31,8 @@ export function StatRow({ stats, compact = false, className }: Props) {
       )}
     >
       {stats.map(({ label, value, unit, highlight }) => (
-        <div key={label} className="flex min-w-0 flex-col gap-2 bg-background p-4 sm:p-6">
+        // An odd last cell fills the whole phone row instead of leaving a grey hole beside it.
+        <div key={label} className="flex min-w-0 flex-col gap-2 bg-background p-4 last:odd:col-span-2 sm:p-6 lg:last:odd:col-span-1">
           <dt className="text-label font-semibold uppercase text-subtle">{label}</dt>
           <dd className="min-w-0">
             <span className={cn('font-display font-bold leading-none', compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl', highlight && 'text-primary')}>
