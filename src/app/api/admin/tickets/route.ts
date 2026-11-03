@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { operationsConfigOf, ticketUpdateSchema } from '@/lib/admin/ticketInput'
 import { checkTicketCompanion } from './companionGuard'
 import {
   decodeTicketsCursor,
@@ -154,25 +155,13 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const body = await request.json()
-    const {
-      event_id,
-      race_id,
-      name,
-      description,
-      price,
-      currency,
-      max_participants,
-      operations_config,
-    } = body
-
-    // Validation
-    if (!name || !event_id || price === undefined) {
-      return NextResponse.json(
-        { error: 'Champs obligatoires manquants' },
-        { status: 400 }
-      )
+    const body: unknown = await request.json().catch(() => null)
+    const parsed = ticketUpdateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Champs obligatoires manquants' }, { status: 400 })
     }
+    const { event_id, race_id, name, description, price, currency, max_participants } = parsed.data
+    const operations_config = operationsConfigOf(parsed.data)
 
     // Utiliser supabaseAdmin pour insérer
     const admin = supabaseAdmin()
@@ -191,11 +180,11 @@ const handlePost = async (request: NextRequest) => {
       .from('tickets')
       .insert({
         event_id,
-        race_id: race_id || null,
+        race_id,
         name,
         description: description || null,
-        final_price_cents: parseInt(price),
-        max_participants: parseInt(max_participants) || 0,
+        final_price_cents: price,
+        max_participants: max_participants ?? 0,
         requires_document: false,
         document_types: [],
         currency: currency || 'eur',

@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { operationsConfigOf, ticketUpdateSchema } from '@/lib/admin/ticketInput'
 import { checkTicketCompanion, findTicketsUsingAsCompanion } from '../companionGuard'
 
 const handlePut = async (
@@ -15,17 +16,13 @@ const handlePut = async (
     }
     const { id } = await params
 
-    const body = await request.json()
-    const {
-      event_id,
-      race_id,
-      name,
-      description,
-      price,
-      currency,
-      max_participants,
-      operations_config,
-    } = body
+    const body: unknown = await request.json().catch(() => null)
+    const parsed = ticketUpdateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
+    }
+    const { event_id, race_id, name, description, price, currency, max_participants } = parsed.data
+    const operations_config = operationsConfigOf(parsed.data)
 
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
@@ -44,12 +41,12 @@ const handlePut = async (
       .from('tickets')
       .update({
         event_id,
-        race_id: race_id || null,
+        race_id,
         name,
         description: description || null,
-        final_price_cents: parseInt(price),
+        final_price_cents: price,
         currency: currency || 'eur',
-        max_participants: parseInt(max_participants) || 0,
+        max_participants: max_participants ?? 0,
         requires_document: false,
         document_types: [],
         updated_at: new Date().toISOString(),

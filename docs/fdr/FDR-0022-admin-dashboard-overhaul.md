@@ -32,6 +32,10 @@ de tableau inaccessibles, et un ancien système d'onglets (`?tab=`) qui coexista
 | Session | Le layout ne démonte plus tout le back-office à chaque rafraîchissement de session : les dialogues et brouillons ouverts survivent au retour sur l'onglet. |
 | Contact bénévole | Plus de numéro codé en dur : `COMPANY_INFO`. |
 | Devis B2B | Suppression ajoutée (route, test, action dans la liste). |
+| Journal (logs) | Sur `OperationsList`. L'API est validée par Zod et passe en pagination par curseur (`created_at`, `id`), le curseur étant partagé avec les commandes (`keysetCursor.ts`). Filtres méthode, statut, recherche (résumé, chemin, e-mail, action, erreur) et dates (jours de Paris). Le compte reste celui du résultat filtré, curseur exclu. |
+| Ambassadeurs | Classement de la saison et récompenses sont deux `OperationsList` (pagination côté client via `useClientPagination`, l'API renvoie tout). Une ligne ouvre la fiche. Changement de statut, annulation et réouverture partagent `useRewardActions` ; le motif se saisit dans un dialogue (plus de `window.prompt`) et les échecs s'affichent au lieu de rejeter sans bruit. Le fichier de 890 lignes est découpé en cinq composants. |
+| Lucky Wheel | Les listes utilisaient déjà `OperationsList`, mais les écritures mettaient à jour une clé de cache que les tableaux paginés ne lisent pas : une campagne créée, supprimée ou mise en pause n'apparaissait qu'après rechargement. Les écritures invalident désormais toute la famille de requêtes. |
+| Validation Zod | `PUT /api/admin/promotional-codes/[id]` (partage le schéma de la création, 409 sur code en double, 404 si absent, plus de `any`) ; `POST /api/admin/tickets` et `PUT /api/admin/tickets/[id]` (un prix non numérique renvoie 400 au lieu d'écrire `NaN`). |
 
 ## Migration (à appliquer à la main, avant le déploiement)
 
@@ -51,10 +55,16 @@ refusé par la contrainte. La vue d'ensemble, les participants, les commandes et
   50 000 au plus) : correct à l'échelle actuelle, à remplacer par une agrégation SQL versionnée au-delà.
 - Rembourser le prix d'un billet ne rembourse ni les upsells ni les frais de l'option flexible.
 - `/api/admin/registrations` (GET, CSV historique) reste en place mais plus aucun écran ne l'appelle.
-- Les listes Ambassadeurs, Lucky Wheel et Logs n'utilisent pas encore `OperationsList`.
+- 30 routes sous `src/app/api/admin` n'ont toujours pas de schéma Zod (groupes, événements, courses, obstacles,
+  promotions, paliers de prix, bénévoles, e-mails, inscriptions...). Seules les routes citées plus haut sont couvertes.
+- L'API des points ambassadeurs renvoie tous les ambassadeurs et garde des `any` historiques ; la pagination de
+  ses deux listes est faite dans le navigateur.
+- Aucun écran n'a été vérifié dans un navigateur : le contrat responsive (`npm run test:e2e`) n'a pas été rejoué
+  sur les pages refaites.
 
 ## Tests
 
 `overview`, `cancelRegistration`, `resendTicket`, `participantsCsv`, `ordersList`, `legacyTabRoutes`,
 `columnVisibility`, `adminNavItems`, `participantUrlState`, `CancelRegistrationDialog` (saisie du montant),
-DELETE des devis B2B.
+DELETE des devis B2B, `logsList` (schéma, jours de Paris, curseur), `clientPagination`, `rewardStatus`,
+`ambassadorFilters`, PUT des codes promo, `ticketInput`.

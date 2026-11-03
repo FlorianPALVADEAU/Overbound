@@ -2,38 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-
-function validateDiscount(payload: any) {
-  const { discount_percent, discount_amount } = payload
-  if ((discount_percent && discount_amount) || (!discount_percent && !discount_amount)) {
-    return 'Spécifiez soit un pourcentage, soit un montant de réduction.'
-  }
-  if (discount_percent && (discount_percent < 0 || discount_percent > 100)) {
-    return 'Le pourcentage de réduction doit être compris entre 0 et 100.'
-  }
-  if (discount_amount && discount_amount < 0) {
-    return 'Le montant de réduction doit être positif.'
-  }
-  return null
-}
-
-function sanitizePayload(body: any) {
-  return {
-    code: body.code,
-    name: body.name,
-    description: body.description || null,
-    discount_percent: body.discount_percent ?? null,
-    discount_amount: body.discount_amount ?? null,
-    currency: body.currency || 'eur',
-    valid_from: body.valid_from,
-    valid_until: body.valid_until,
-    usage_limit: body.usage_limit ?? null,
-    is_active: body.is_active ?? true,
-    tier_order: body.tier_order ?? null,
-    auto_activate: body.auto_activate ?? false,
-    updated_at: new Date().toISOString(),
-  }
-}
+import { promotionalCodeInputSchema, toPromotionalCodeRow } from '@/lib/admin/promotionalCodeInput'
 
 async function fetchPromotionalCode(id: string) {
   const admin = supabaseAdmin()
@@ -58,25 +27,30 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { id } = await params
-    const payload = await request.json()
-    const validationError = validateDiscount(payload)
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 })
+    const body: unknown = await request.json().catch(() => null)
+    const parsed = promotionalCodeInputSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }
+    const payload = parsed.data
 
     const admin = supabaseAdmin()
-    const updatePayload = sanitizePayload(payload)
-
     const { data: promotionalCode, error: updateError } = await admin
       .from('promotional_codes')
-      .update(updatePayload)
+      .update({ ...toPromotionalCodeRow(payload), updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
-      .single()
+      .maybeSingle()
 
-    if (updateError) throw updateError
+    if (updateError) {
+      if (updateError.code === '23505') {
+        return NextResponse.json({ error: 'Ce code promotionnel existe déjà' }, { status: 409 })
+      }
+      throw updateError
+    }
+    if (!promotionalCode) return NextResponse.json({ error: 'Code promo introuvable' }, { status: 404 })
 
-    const eventIds: string[] = payload.event_ids || []
+    const eventIds = payload.event_ids ?? []
     const { error: deleteRelationsError } = await admin
       .from('promotional_code_events')
       .delete()
