@@ -1,5 +1,8 @@
 import type { SendResult } from '@/lib/email/transport'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+
+const triggerBodySchema = z.object({ type: z.string().trim().min(1) })
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -70,12 +73,11 @@ const handlePost = async (request: NextRequest) => {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    const payload = await request.json().catch(() => ({}))
-    const type = typeof payload?.type === 'string' ? payload.type : ''
-
-    if (!type) {
+    const parsedPayload = triggerBodySchema.safeParse(await request.json().catch(() => null))
+    if (!parsedPayload.success) {
       return NextResponse.json({ error: 'Type d’email manquant.' }, { status: 400 })
     }
+    const type = parsedPayload.data.type
 
     const fullName = profile.full_name ?? user.user_metadata?.full_name ?? user.email
 
