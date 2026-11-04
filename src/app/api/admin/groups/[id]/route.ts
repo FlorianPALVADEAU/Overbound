@@ -4,6 +4,7 @@ import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { getUserIdsFromPromoRegistrations, resolvePromoCode } from '@/app/api/admin/groups/promoGroupUtils'
 import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
 import { groupUpdateSchema } from '@/lib/admin/groupInput'
+import { captainChangeErrorResponse } from '@/lib/admin/groupCaptain'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -132,30 +133,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     if (typeof body.captain_id === 'string' && body.captain_id.length > 0) {
-      const { data: memberRow } = await admin
-        .from('group_members')
-        .select('id')
-        .eq('group_id', id)
-        .eq('profile_id', body.captain_id)
-        .maybeSingle()
-
-      if (!memberRow) {
-        return NextResponse.json({ error: 'Le capitaine doit être membre du groupe' }, { status: 400 })
+      // Changement de capitaine atomique (RPC) : pas de deux capitaines ni de groupe sans capitaine en cas d'échec.
+      const { error: captainError } = await admin.rpc('admin_set_group_captain', {
+        p_group_id: id,
+        p_captain_id: body.captain_id,
+        p_organization_id: auth.organizationId,
+      })
+      if (captainError) {
+        return captainChangeErrorResponse(captainError, 'admin groups update')
       }
-
-      await admin
-        .from('group_members')
-        .update({ role: 'member' })
-        .eq('group_id', id)
-        .eq('role', 'captain')
-
-      await admin
-        .from('group_members')
-        .update({ role: 'captain' })
-        .eq('group_id', id)
-        .eq('profile_id', body.captain_id)
-
-      updates.captain_id = body.captain_id
     }
 
     if (body.anchor_event_id === null) {

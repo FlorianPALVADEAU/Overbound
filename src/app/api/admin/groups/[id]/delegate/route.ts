@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { groupDelegateSchema } from '@/lib/admin/groupInput'
+import { captainChangeErrorResponse } from '@/lib/admin/groupCaptain'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAdmin(request)
+    const auth = await requireAdminOrganization(request)
     if (!auth.ok) {
       return auth.response
     }
@@ -15,41 +16,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }
-    const { new_captain_id } = parsed.data
 
-    const admin = supabaseAdmin()
-
-    const { data: targetMember } = await admin
-      .from('group_members')
-      .select('id')
-      .eq('group_id', id)
-      .eq('profile_id', new_captain_id)
-      .maybeSingle()
-
-    if (!targetMember) {
-      return NextResponse.json({ error: 'Ce membre n\'appartient pas au groupe' }, { status: 400 })
-    }
-
-    await admin
-      .from('group_members')
-      .update({ role: 'member' })
-      .eq('group_id', id)
-      .eq('role', 'captain')
-
-    await admin
-      .from('group_members')
-      .update({ role: 'captain' })
-      .eq('group_id', id)
-      .eq('profile_id', new_captain_id)
-
-    const { error } = await admin
-      .from('groups')
-      .update({ captain_id: new_captain_id, updated_at: new Date().toISOString() })
-      .eq('id', id)
-
+    const { error } = await supabaseAdmin().rpc('admin_set_group_captain', {
+      p_group_id: id,
+      p_captain_id: parsed.data.new_captain_id,
+      p_organization_id: auth.organizationId,
+    })
     if (error) {
-      console.error('[admin groups delegate] update error', error)
-      return NextResponse.json({ error: 'Erreur délégation' }, { status: 500 })
+      return captainChangeErrorResponse(error, 'admin groups delegate')
     }
 
     return NextResponse.json({ ok: true })
