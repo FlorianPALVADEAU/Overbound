@@ -79,6 +79,15 @@ export const useAdminUsersPage = (params: AdminUsersPageParams = {}) =>
     placeholderData: keepPreviousData,
   })
 
+/** Recherche serveur pour les sélecteurs (membres de groupe). Ne charge jamais la liste complète. */
+export const useAdminUserSearch = (term: string, enabled: boolean) =>
+  useQuery<AdminUser[], Error>({
+    queryKey: [...ADMIN_USERS_QUERY_KEY, 'search', term],
+    queryFn: async () => (await fetchAdminUsersPage({ query: term || undefined, limit: 100, sort: 'full_name', direction: 'asc' })).users,
+    enabled,
+    placeholderData: keepPreviousData,
+  })
+
 export const updateAdminUser = async (
   id: string,
   payload: Partial<Pick<AdminUser, 'role' | 'full_name' | 'phone' | 'date_of_birth' | 'marketing_opt_in' | 'ambassador_promotional_code_id'>>,
