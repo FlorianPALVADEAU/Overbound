@@ -59,32 +59,13 @@ const handlePut = async (
       throw raceError
     }
 
-    // Supprimer les anciennes associations d'obstacles
-    const { error: deleteError } = await admin
-      .from('race_obstacles')
-      .delete()
-      .eq('race_id', id)
-
-    if (deleteError) {
-      console.error('Erreur lors de la suppression des obstacles:', deleteError)
-    }
-
-    // Créer les nouvelles associations
-    if (obstacle_ids && obstacle_ids.length > 0) {
-      const obstacleAssociations = obstacle_ids.map((obstacleId: string, index: number) => ({
-        race_id: id,
-        obstacle_id: obstacleId,
-        order_position: index + 1,
-        is_mandatory: true
-      }))
-
-      const { error: obstacleError } = await admin
-        .from('race_obstacles')
-        .insert(obstacleAssociations)
-
-      if (obstacleError) {
-        console.error('Erreur lors de l\'association des obstacles:', obstacleError)
-      }
+    // Obstacles remplacés en une transaction (RPC) : pas de course sans obstacle après un échec à mi-parcours.
+    const { error: obstaclesError } = await admin.rpc('admin_set_race_obstacles', {
+      p_race_id: id,
+      p_obstacle_ids: obstacle_ids ?? [],
+    })
+    if (obstaclesError) {
+      throw new Error(`Remplacement des obstacles échoué : ${obstaclesError.message}`)
     }
 
     // Récupérer la course mise à jour avec ses obstacles
