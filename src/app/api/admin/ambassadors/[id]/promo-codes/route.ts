@@ -82,7 +82,11 @@ async function handlePost(
     }
 
     const { id: ambassadorId } = await params
-    const payload = assignSchema.parse(await request.json())
+    const parsed = assignSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Données invalides', details: parsed.error.issues }, { status: 400 })
+    }
+    const payload = parsed.data
     const admin = supabaseAdmin()
 
     if (payload.set_as_current) {
