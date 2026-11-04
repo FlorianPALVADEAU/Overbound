@@ -4,7 +4,15 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 
-const toCsv = (waves: any[]) => {
+interface WaveCsvRow {
+  wave_index: number
+  start_time: string
+  capacity: number | null
+  assigned_count: number | null
+  is_closed: boolean | null
+}
+
+const toCsv = (waves: WaveCsvRow[]) => {
   const header = ['wave_index', 'start_time', 'capacity', 'assigned_count', 'is_closed']
   const lines = [header.join(',')]
 
@@ -23,6 +31,21 @@ const toCsv = (waves: any[]) => {
 }
 
 const ticketIdSchema = z.string().uuid()
+
+const patchWavesSchema = z.object({
+  capacity_all: z.number().int().min(0).optional(),
+  wave_index: z.number().int().positive().optional(),
+  capacity: z.number().int().min(0).optional(),
+  is_closed: z.boolean().optional(),
+  start_time: z.string().datetime({ offset: true }).optional(),
+})
+
+interface EventWaveUpdate {
+  updated_at: string
+  capacity?: number
+  is_closed?: boolean
+  start_time?: string
+}
 const createWavesSchema = z.discriminatedUnion('mode', [
   z.object({
     mode: z.literal('single'),
@@ -119,7 +142,7 @@ export async function GET(
       console.error('[admin waves] profiles fetch error', profilesError)
     }
 
-    const profileMap = new Map((profiles ?? []).map((profile: any) => [profile.id, profile.full_name ?? null]))
+    const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name ?? null]))
     const participants = (rows ?? []).map((row) => {
       const profileName = row.user_id ? profileMap.get(row.user_id) ?? null : null
       const fallbackName = row.email.split('@')[0] || 'Nom non renseigné'
@@ -241,6 +264,10 @@ async function handleProvision(
     .insert(rows)
 
   if (provisionError) {
+    // Contrainte event_waves_ticket_wave_unique : deux initialisations concurrentes calculent le même wave_index.
+    if (provisionError.code === '23505') {
+      return NextResponse.json({ error: 'Les SAS viennent d’être initialisés, recharger la page' }, { status: 409 })
+    }
     console.error('[admin waves] provision error', provisionError)
     return NextResponse.json({ error: 'Impossible d’initialiser les SAS' }, { status: 500 })
   }
@@ -293,23 +320,18 @@ async function handlePatch(
     return NextResponse.json({ error: 'Ce billet n’est pas configuré pour un départ par SAS' }, { status: 422 })
   }
 
-  const payload = await request.json().catch(() => ({}))
-  const capacityAll = Number.isFinite(Number(payload.capacity_all)) ? Number(payload.capacity_all) : null
-  const waveIndex = Number.isFinite(Number(payload.wave_index)) ? Number(payload.wave_index) : null
-  const capacity = Number.isFinite(Number(payload.capacity)) ? Number(payload.capacity) : null
-  const isClosed = typeof payload.is_closed === 'boolean' ? payload.is_closed : null
-  const parsedStartTime = typeof payload.start_time === 'string'
-    ? z.string().datetime({ offset: true }).safeParse(payload.start_time)
-    : null
-
-  if (parsedStartTime && !parsedStartTime.success) {
-    return NextResponse.json({ error: 'Heure de départ invalide' }, { status: 400 })
+  const parsedPayload = patchWavesSchema.safeParse(await request.json().catch(() => null))
+  if (!parsedPayload.success) {
+    return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
   }
+  const payload = parsedPayload.data
+  const capacityAll = payload.capacity_all ?? null
+  const waveIndex = payload.wave_index ?? null
+  const capacity = payload.capacity ?? null
+  const isClosed = payload.is_closed ?? null
+  const startTime = payload.start_time ?? null
 
   if (capacityAll !== null) {
-    if (capacityAll < 0) {
-      return NextResponse.json({ error: 'Capacité invalide' }, { status: 400 })
-    }
     const { error } = await admin
       .from('event_waves')
       .update({ capacity: capacityAll, updated_at: new Date().toISOString() })
@@ -328,15 +350,10 @@ async function handlePatch(
     return NextResponse.json({ error: 'wave_index manquant' }, { status: 400 })
   }
 
-  const updates: Record<string, any> = { updated_at: new Date().toISOString() }
-  if (capacity !== null) {
-    if (capacity < 0) {
-      return NextResponse.json({ error: 'Capacité invalide' }, { status: 400 })
-    }
-    updates.capacity = capacity
-  }
+  const updates: EventWaveUpdate = { updated_at: new Date().toISOString() }
+  if (capacity !== null) updates.capacity = capacity
   if (isClosed !== null) updates.is_closed = isClosed
-  if (parsedStartTime?.success) updates.start_time = parsedStartTime.data
+  if (startTime !== null) updates.start_time = startTime
 
   const { error } = await admin
     .from('event_waves')

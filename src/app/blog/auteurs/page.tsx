@@ -1,9 +1,14 @@
+import { COVER } from '@/constants/coverImages'
 import { ogImageUrl } from '@/lib/seo/ogImage'
 import { client } from '@/sanity/lib/client'
 import { authorsWithCountsQuery } from '@/sanity/lib/queries'
 import { urlFor } from '@/sanity/lib/image'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
+import { containerClass } from '@/components/ds'
+import { PageHero } from '@/components/hero/PageHero'
+import { cn } from '@/lib/utils'
 
 export const revalidate = 300
 
@@ -46,26 +51,40 @@ export const metadata: Metadata = {
 export default async function BlogAuthorsIndex() {
   const authors = await client.fetch(authorsWithCountsQuery)
   return (
-    <main className="max-w-5xl mx-auto p-6 h-min-screen">
-      <h1 className="text-3xl font-bold mb-6">Auteurs</h1>
-      <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {authors.map((a: any) => (
-          <li key={a.slug} className="border rounded-xl p-4 flex items-center gap-3">
-            {a.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={urlFor(a.avatar).width(56).height(56).url()} alt="" className="w-14 h-14 rounded-full" />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-muted" />
-            )}
-            <div className="flex-1">
-              <Link href={`/blog/auteur/${a.slug}`} className="font-semibold">
-                {a.name}
+    <main className="min-h-screen bg-background text-foreground">
+      <PageHero
+        image={{ src: COVER.pages.blog, alt: 'Auteurs du blog OverBound', position: '50% 30%' }}
+        title="Auteurs"
+        description="Qui écrit les conseils et les actus de la tribu OverBound."
+      />
+
+      <div className={cn(containerClass(), 'py-16')}>
+        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {authors.map((a: any) => (
+            <li key={a.slug} className="border rounded-2xl">
+              <Link href={`/blog/auteur/${a.slug}`} className="flex items-center gap-3 p-4">
+                {a.avatar ? (
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
+                    <Image
+                      src={urlFor(a.avatar).width(112).height(112).url()}
+                      alt=""
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-14 w-14 shrink-0 rounded-full bg-muted" />
+                )}
+                <div className="flex-1">
+                  <div className="font-semibold">{a.name}</div>
+                  <div className="text-xs text-muted-foreground">{a.count} article(s)</div>
+                </div>
               </Link>
-              <div className="text-xs opacity-60">{a.count} article(s)</div>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     </main>
   )
 }

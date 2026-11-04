@@ -28,7 +28,7 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { id } = await params
-    const parsed = adminUpsellPayloadSchema.safeParse(await request.json())
+    const parsed = adminUpsellPayloadSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Données invalides' }, { status: 400 })
 
     const admin = supabaseAdmin()

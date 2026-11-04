@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { eventCreateSchema } from '@/lib/admin/eventInput'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { dispatchNewEventAnnouncement, getMarketingOptInRecipients } from '@/lib/email/marketing'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
@@ -136,7 +137,10 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const body = await request.json()
+    const parsed = eventCreateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Champs obligatoires manquants' }, { status: 400 })
+    }
     const {
       slug,
       title,
@@ -154,17 +158,9 @@ const handlePost = async (request: NextRequest) => {
       external_provider,
       external_event_id,
       external_url
-    } = body
+    } = parsed.data
 
-    // Validation
-    if (!slug || !title || !date || !location) {
-      return NextResponse.json(
-        { error: 'Champs obligatoires manquants' },
-        { status: 400 }
-      )
-    }
-
-    const totalCapacity = parseInt(capacity) || 0
+    const totalCapacity = capacity
     if (!isRankedCapacityWithinTotal(totalCapacity, parseBibCapacity(ranked_bib_capacity))) {
       return NextResponse.json(
         { error: 'Les dossards RANKED ne peuvent pas dépasser la capacité totale.' },
@@ -185,7 +181,7 @@ const handlePost = async (request: NextRequest) => {
         date: new Date(date).toISOString(),
         sales_start: sales_start ? new Date(sales_start).toISOString() : null,
         location,
-        capacity: parseInt(capacity) || 0,
+        capacity,
         ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
         minimum_age: parseMinimumAge(minimum_age),
         tshirt_offer_quota: parseTshirtQuota(tshirt_offer_quota),

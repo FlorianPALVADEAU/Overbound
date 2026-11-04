@@ -37,7 +37,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .eq('profile_id', profile_id)
       .maybeSingle()
 
-    if (existingMembership) {
+    // Déjà membre de CE groupe : une requête précédente a inséré le membre puis échoué avant la synchro
+    // de vague. On reprend la synchro sans réinsérer, pour qu'un nouvel essai aboutisse.
+    const alreadyInThisGroup = existingMembership?.group_id === id
+    if (existingMembership && !alreadyInThisGroup) {
       return NextResponse.json({ error: 'Cet utilisateur appartient déjà à un groupe' }, { status: 409 })
     }
 
@@ -51,13 +54,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Profil introuvable' }, { status: 404 })
     }
 
-    const { error } = await admin
-      .from('group_members')
-      .insert({ group_id: id, profile_id, role: 'member' })
+    if (!alreadyInThisGroup) {
+      const { error } = await admin
+        .from('group_members')
+        .insert({ group_id: id, profile_id, role: 'member' })
 
-    if (error) {
-      console.error('[admin groups members] add error', error)
-      return NextResponse.json({ error: 'Erreur ajout membre' }, { status: 500 })
+      if (error) {
+        // Ajout concurrent dans un autre groupe entre la lecture et l'insertion.
+        if (error.code === '23505') {
+          return NextResponse.json({ error: 'Cet utilisateur appartient déjà à un groupe' }, { status: 409 })
+        }
+        console.error('[admin groups members] add error', error)
+        return NextResponse.json({ error: 'Erreur ajout membre' }, { status: 500 })
+      }
     }
 
     let anchorEventId = group.anchor_event_id as string | null
@@ -70,7 +79,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         anchorEventId = memberAnchor.eventId
         anchorWaveIndex = memberAnchor.waveIndex
         anchorStartTime = memberAnchor.startTime
-        await admin
+        const { error: anchorError } = await admin
           .from('groups')
           .update({
             anchor_event_id: anchorEventId,
@@ -82,6 +91,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             updated_at: new Date().toISOString(),
           })
           .eq('id', id)
+        if (anchorError) {
+          console.error('[admin groups members] anchor init error', anchorError)
+          return NextResponse.json({ error: 'Erreur ancre de groupe' }, { status: 500 })
+        }
       }
     }
 

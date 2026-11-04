@@ -82,7 +82,7 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const parsed = promotionalCodeInputSchema.safeParse(await request.json())
+    const parsed = promotionalCodeInputSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }

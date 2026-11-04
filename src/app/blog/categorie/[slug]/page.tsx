@@ -3,10 +3,11 @@ import { ogImageUrl } from '@/lib/seo/ogImage'
 import { client } from '@/sanity/lib/client'
 import { postsByCategorySlugQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
-import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import BlogPagination from '@/components/blog/BlogPagination'
 import type { Metadata } from 'next'
-import { containerClass } from '@/components/ds'
+import { containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { PageHero } from '@/components/hero/PageHero'
 import { cn } from '@/lib/utils'
 
 export const revalidate = 60
@@ -81,39 +82,36 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
   const pageCount = Math.max(1, Math.ceil((total || 0) / pageSize))
 
   if (!category) {
-    return <div className="max-w-5xl mx-auto p-6">Catégorie introuvable.</div>
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <div className={cn(containerClass(), 'py-24 text-center')}>
+          <p className={cn(DISPLAY_TITLE, 'text-display-md')}>Catégorie introuvable</p>
+          <Link href="/blog/categories" className="mt-4 inline-block text-sm text-primary hover:underline">
+            Voir toutes les catégories
+          </Link>
+        </div>
+      </main>
+    )
   }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="relative isolate overflow-hidden py-14">
-        <div className="absolute inset-0">
-          <Image src={COVER.pages.blog} alt="Catégorie OverBound" fill sizes="100vw" className="object-cover object-center" />
-          <div className="absolute inset-0 bg-background/45" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
-        </div>
-        <div className={cn(containerClass(), 'relative z-10')}>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Catégorie:&nbsp;{category.title}</h1>
-        </div>
-      </section>
-      <div className={cn(containerClass(), 'py-20')}>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <PageHero
+        image={{ src: COVER.pages.blog, alt: 'Catégorie OverBound', position: '50% 30%' }}
+        title={<>Catégorie&nbsp;: {category.title}</>}
+      />
+      <div className={cn(containerClass(), 'py-16')}>
+      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {items?.map((p: any) => (
           <BlogArticleItem key={p._id} post={p} />
         ))}
       </div>
 
-      {pageCount > 1 && (
-        <nav className="flex items-center justify-center gap-3 mt-8">
-          {current > 1 && (
-            <Link href={`/blog/categorie/${slug}?page=${current - 1}`} className="px-3 py-1 border rounded-full">Précédent</Link>
-          )}
-          <span className="text-sm opacity-70">Page {current} / {pageCount}</span>
-          {current < pageCount && (
-            <Link href={`/blog/categorie/${slug}?page=${current + 1}`} className="px-3 py-1 border rounded-full">Suivant</Link>
-          )}
-        </nav>
-      )}
+      <BlogPagination
+        current={current}
+        pageCount={pageCount}
+        hrefFor={(page) => `/blog/categorie/${slug}?page=${page}`}
+      />
       </div>
     </main>
   )

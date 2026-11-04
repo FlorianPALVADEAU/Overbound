@@ -1,9 +1,7 @@
+import { z } from 'zod'
 import type { supabaseAdmin } from '@/lib/supabase/server'
 
 type AdminClient = ReturnType<typeof supabaseAdmin>
-
-const MAX_USERS = 5000
-const PAGE_SIZE = 1000
 
 export const resolvePromoCode = async (admin: AdminClient, promotionalCodeInput: string) => {
   const normalized = promotionalCodeInput.trim()
@@ -26,49 +24,25 @@ export const resolvePromoCode = async (admin: AdminClient, promotionalCodeInput:
   return byCode ?? null
 }
 
+const registrantRowsSchema = z.array(z.object({ user_id: z.string().uuid() }))
+
+/**
+ * Profils inscrits avec ce code promo. Une seule lecture ciblée (RPC admin_promo_registrant_user_ids) :
+ * pas de scan de l'annuaire Auth. Les inscriptions sans user_id sont rapprochées par email dans la base.
+ */
 export const getUserIdsFromPromoRegistrations = async (admin: AdminClient, promotionalCodeId: string) => {
-  const { data: registrationRows, error } = await admin
-    .from('registrations')
-    .select('user_id, email')
-    .eq('promotional_code_id', promotionalCodeId)
+  const { data, error } = await admin.rpc('admin_promo_registrant_user_ids', {
+    p_promotional_code_id: promotionalCodeId,
+  })
 
   if (error) {
     throw error
   }
 
-  const directIds = new Set<string>()
-  const missingEmails = new Set<string>()
-
-  for (const row of registrationRows ?? []) {
-    if (row.user_id) {
-      directIds.add(row.user_id)
-      continue
-    }
-    if (row.email && row.email.trim().length > 0) {
-      missingEmails.add(row.email.trim().toLowerCase())
-    }
+  const parsed = registrantRowsSchema.safeParse(data ?? [])
+  if (!parsed.success) {
+    throw new Error('admin_promo_registrant_user_ids: réponse inattendue')
   }
 
-  if (missingEmails.size > 0) {
-    const pendingEmails = new Set(missingEmails)
-    for (let page = 1; pendingEmails.size > 0; page += 1) {
-      const { data, error: listError } = await admin.auth.admin.listUsers({ page, perPage: PAGE_SIZE })
-      if (listError) throw listError
-
-      const users = data.users ?? []
-      for (const authUser of users) {
-        const email = authUser.email?.trim().toLowerCase()
-        if (email && pendingEmails.has(email)) {
-          directIds.add(authUser.id)
-          pendingEmails.delete(email)
-        }
-      }
-
-      if (users.length < PAGE_SIZE || page * PAGE_SIZE >= MAX_USERS) {
-        break
-      }
-    }
-  }
-
-  return Array.from(directIds)
+  return Array.from(new Set(parsed.data.map((row) => row.user_id)))
 }

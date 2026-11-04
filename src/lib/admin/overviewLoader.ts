@@ -27,9 +27,13 @@ const chunk = <T,>(values: T[], size: number): T[][] => {
 
 const unique = (values: Array<string | null>) => [...new Set(values.filter((value): value is string => Boolean(value)))]
 
-async function loadRegistrations(admin: Admin, eventIds: string[]): Promise<OverviewRegistration[]> {
+/**
+ * Reads every registration of the given events, page by page.
+ * Refuses to answer past MAX_REGISTRATIONS: a truncated read would yield wrong totals with no signal.
+ */
+export async function loadRegistrations(admin: Admin, eventIds: string[]): Promise<OverviewRegistration[]> {
   const rows: OverviewRegistration[] = []
-  for (let from = 0; from < MAX_REGISTRATIONS; from += PAGE) {
+  for (let from = 0; ; from += PAGE) {
     const { data, error } = await admin
       .from('registrations')
       .select('id, event_id, order_id, ticket_id, created_at, checked_in, cancelled_at, wave_index')
@@ -40,9 +44,11 @@ async function loadRegistrations(admin: Admin, eventIds: string[]): Promise<Over
     if (error) throw error
     const page = (data ?? []) as OverviewRegistration[]
     rows.push(...page)
-    if (page.length < PAGE) break
+    if (page.length < PAGE) return rows
+    if (rows.length >= MAX_REGISTRATIONS) {
+      throw new Error(`admin overview: plus de ${MAX_REGISTRATIONS} inscriptions, agrégation refusée (tronquée serait fausse)`)
+    }
   }
-  return rows
 }
 
 const countRows = async (query: PromiseLike<{ count: number | null; error: unknown }>) => {

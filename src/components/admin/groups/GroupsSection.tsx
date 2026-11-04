@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  useAdminUsers,
+  useAdminUserSearch,
   type AdminUser,
 } from '@/app/api/admin/users/usersQueries'
 import { useAdminEvents, useAdminEventWaves } from '@/app/api/admin/events/eventsQueries'
@@ -71,21 +71,14 @@ const formatAnchorSource = (group: AdminGroup) => {
   return 'Ancre définie manuellement (admin)'
 }
 
-const getUserLabel = (user: AdminUser) => user.full_name || user.email || `Utilisateur #${user.id.slice(0, 8)}`
+type UserOption = Pick<AdminUser, 'id' | 'full_name' | 'email'>
+const getUserLabel = (user: UserOption) => user.full_name || user.email || `Utilisateur #${user.id.slice(0, 8)}`
 const getMemberLabel = (member: AdminGroupMember) =>
   member.full_name || member.email || `Utilisateur #${member.profile_id.slice(0, 8)}`
 
-const searchUsers = (users: AdminUser[], term: string) => {
-  const normalized = term.trim().toLowerCase()
-  if (!normalized) return users.slice(0, 8)
-  return users
-    .filter((user) =>
-      [user.full_name, user.email, user.phone]
-        .filter(Boolean)
-        .some((value) => value?.toLowerCase().includes(normalized))
-    )
-    .slice(0, 8)
-}
+// Un utilisateur déjà membre d'un groupe porte group_id (premier groupe rejoint) : on ne le propose pas.
+const MAX_USER_OPTIONS = 8
+const onlyUngrouped = (users: AdminUser[]) => users.filter((user) => !user.group_id).slice(0, MAX_USER_OPTIONS)
 
 export function GroupsSection() {
   // `?search=` deep link: the users list sends the invite code of a member's group here.
@@ -99,7 +92,6 @@ export function GroupsSection() {
     limit: 50,
     query: deferredSearch || undefined,
   })
-  const { data: usersData } = useAdminUsers()
   const { data: events = [] } = useAdminEvents()
   const { data: tickets = [] } = useAdminTickets()
   const { data: promoCodesData } = useAdminGroupsPromoCodes()
@@ -131,39 +123,28 @@ export function GroupsSection() {
 
   const groups = data?.groups ?? []
 
-  const membersInAnyGroup = useMemo(
-    () => new Set(data?.memberProfileIds ?? []),
-    [data?.memberProfileIds]
-  )
-
   useEffect(() => {
     setCursor(null)
     setPreviousCursors([])
   }, [deferredSearch])
 
-  const users = usersData?.users ?? []
+  const createCaptainSearchTerm = createCaptainSearch.trim()
+  const { data: createCaptainResults = [] } = useAdminUserSearch(createCaptainSearchTerm, createDialogOpen)
+  const createCaptainCandidates = useMemo(() => onlyUngrouped(createCaptainResults), [createCaptainResults])
 
-  const availableCaptainsForCreate = useMemo(
-    () => users.filter((user) => !membersInAnyGroup.has(user.id)),
-    [users, membersInAnyGroup]
+  // Capitaine possible au montage : seulement les membres du groupe en cours d'édition.
+  const editableCaptainCandidates = useMemo<UserOption[]>(
+    () => (editingGroup?.members ?? []).map((member) => ({
+      id: member.profile_id,
+      full_name: member.full_name,
+      email: member.email,
+    })),
+    [editingGroup]
   )
 
-  const createCaptainCandidates = useMemo(
-    () => searchUsers(availableCaptainsForCreate, createCaptainSearch),
-    [availableCaptainsForCreate, createCaptainSearch]
-  )
-
-  const editableCaptainCandidates = useMemo(() => {
-    if (!editingGroup) return []
-    const memberIds = new Set(editingGroup.members.map((member) => member.profile_id))
-    return users.filter((user) => memberIds.has(user.id))
-  }, [users, editingGroup])
-
-  const addMemberCandidates = useMemo(() => {
-    if (!editingGroup) return []
-    const available = users.filter((user) => !membersInAnyGroup.has(user.id))
-    return searchUsers(available, newMemberSearch)
-  }, [users, membersInAnyGroup, editingGroup, newMemberSearch])
+  const newMemberSearchTerm = newMemberSearch.trim()
+  const { data: newMemberResults = [] } = useAdminUserSearch(newMemberSearchTerm, Boolean(editingGroup))
+  const addMemberCandidates = useMemo(() => onlyUngrouped(newMemberResults), [newMemberResults])
 
 
   const anchorTickets = useMemo(

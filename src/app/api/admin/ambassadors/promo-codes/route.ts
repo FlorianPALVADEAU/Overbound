@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
       { data: ambassadors, error: ambassadorsError },
       { data: junctionRows, error: junctionError },
     ] = await Promise.all([
-      admin.from('ambassadors').select('id, profile_id'),
+      // promotional_code_id : ancien lien à un seul code, lu en plus de la table de jonction.
+      admin.from('ambassadors').select('id, profile_id, promotional_code_id'),
       admin.from('ambassador_promotional_codes').select('ambassador_id, promotional_code_id'),
     ])
 
@@ -46,12 +47,18 @@ export async function GET(request: NextRequest) {
       ambassadorProfileMap.set(row.id, row.profile_id)
     })
 
-    // Build a map: promotional_code_id → profile_id (from junction table as source of truth)
+    // Code → profile, from the junction table (all codes) and the legacy single link.
+    // Un code est assigné s'il figure dans l'une ou l'autre source (même règle que isAmbassadorPromoRow).
     const assignedMap = new Map<string, string>()
     junctionRows?.forEach((row: any) => {
       const profileId = ambassadorProfileMap.get(row.ambassador_id)
       if (profileId) {
         assignedMap.set(row.promotional_code_id, profileId)
+      }
+    })
+    ambassadors?.forEach((row: any) => {
+      if (row.promotional_code_id && !assignedMap.has(row.promotional_code_id)) {
+        assignedMap.set(row.promotional_code_id, row.profile_id)
       }
     })
 

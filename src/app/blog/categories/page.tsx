@@ -3,9 +3,9 @@ import { ogImageUrl } from '@/lib/seo/ogImage'
 import { client } from '@/sanity/lib/client'
 import { categoriesWithCountsQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Metadata } from 'next'
 import { containerClass } from '@/components/ds'
+import { PageHero } from '@/components/hero/PageHero'
 import { cn } from '@/lib/utils'
 
 export const revalidate = 300
@@ -50,36 +50,20 @@ export default async function BlogCategoriesIndex() {
   const categories = await client.fetch(categoriesWithCountsQuery)
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Hero header */}
-      <section className="relative isolate overflow-hidden py-14 sm:py-16">
-        <div className="absolute inset-0">
-          <Image
-            src={COVER.pages.blog}
-            alt="Catégories du blog OverBound"
-            fill
-            sizes="100vw"
-            className="object-cover object-center"
-            priority
-          />
-          <div className="absolute inset-0 bg-background/40" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
-        </div>
-        <div className={cn(containerClass(), 'relative z-10')}>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Catégories</h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl">
-            Explore nos thématiques pour trouver plus vite les conseils et les actus qui t’intéressent.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={{ src: COVER.pages.blog, alt: 'Catégories du blog OverBound', position: '50% 30%' }}
+        title="Catégories"
+        description="Explore nos thématiques pour trouver plus vite les conseils et les actus qui t'intéressent."
+      />
 
-      <div className={containerClass()}>
+      <div className={cn(containerClass(), 'py-16')}>
         <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((c: any, index: number) => (
             <li
               key={index}
-              className="border rounded-xl flex items-center justify-between h-auto"
+              className="border rounded-2xl flex items-center justify-between h-auto"
             >
-              <Link href={`/blog/categorie/${c.slug}`} className="font-semibold w-full h-full hover:bg-primary/30 hover:border-primary p-4 rounded-xl">
+              <Link href={`/blog/categorie/${c.slug}`} className="font-semibold w-full h-full hover:bg-primary/10 hover:border-primary p-4 rounded-2xl">
                 <div className="w-full flex items-center justify-between gap-2">
                   {c.title.charAt(0).toUpperCase() + c.title.slice(1)}
                   <span className="text-xs opacity-60">{c.count}</span>

@@ -16,7 +16,7 @@ vi.mock('@/lib/logging/adminRequestLogger', () => ({
 }))
 vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
 
-import { DELETE, GET, POST } from './route'
+import { DELETE, GET, PATCH, POST } from './route'
 
 const TICKET_ID = '4d0272d2-647c-4b7b-8c68-3c9a3ecb99d9'
 const withTicket = (url: string) => `${url}${url.includes('?') ? '&' : '?'}ticket_id=${TICKET_ID}`
@@ -79,9 +79,10 @@ function createAdmin({ wavesError = null }: { wavesError?: { message: string } |
   }
 }
 
-function createProvisioningAdmin(initialWaveIndexes: number[] = []) {
+function createProvisioningAdmin(initialWaveIndexes: number[] = [], insertError: { code: string; message: string } | null = null) {
   const waveIndexes = [...initialWaveIndexes]
   const insert = vi.fn(async (rows: Array<{ wave_index: number }>) => {
+    if (insertError) return { error: insertError }
     for (const row of rows) {
       if (!waveIndexes.includes(row.wave_index)) {
         waveIndexes.push(row.wave_index)
@@ -286,6 +287,21 @@ describe('POST /api/admin/events/[id]/waves', () => {
     ])
   })
 
+  it('answers 409 when a concurrent provisioning already took the same wave index', async () => {
+    const { admin } = createProvisioningAdmin([1], { code: '23505', message: 'duplicate key value' })
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await POST(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'POST',
+        body: JSON.stringify({ mode: 'single', start_time: '2027-02-07T11:00:00.000Z', capacity: 30 }),
+      }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(409)
+  })
+
   it('rejects an invalid series without writing', async () => {
     const { admin, insert } = createProvisioningAdmin()
     supabaseAdminMock.mockReturnValue(admin)
@@ -338,6 +354,117 @@ describe('POST /api/admin/events/[id]/waves', () => {
 
     expect(response.status).toBe(403)
     await expect(response.json()).resolves.toEqual({ error: 'Accès refusé' })
+  })
+})
+
+function createPatchAdmin() {
+  const update = vi.fn()
+  const admin = {
+    from(table: string) {
+      if (table === 'events') {
+        return {
+          select() {
+            const builder: any = {
+              eq() { return builder },
+              single: async () => ({ data: { id: 'event-1' }, error: null }),
+            }
+            return builder
+          },
+        }
+      }
+      if (table === 'tickets') {
+        const builder: any = {
+          select() { return builder },
+          eq() { return builder },
+          maybeSingle: async () => ({ data: { id: TICKET_ID, operations_config: { departure_mode: 'wave' } }, error: null }),
+        }
+        return builder
+      }
+      if (table === 'event_waves') {
+        return {
+          update(payload: unknown) {
+            update(payload)
+            const builder: any = {
+              eq() { return builder },
+              then: (resolve: (value: unknown) => unknown) => resolve({ error: null }),
+            }
+            return builder
+          },
+        }
+      }
+      throw new Error(`Unexpected table: ${table}`)
+    },
+  }
+  return { admin, update }
+}
+
+describe('PATCH /api/admin/events/[id]/waves', () => {
+  beforeEach(() => {
+    requireAdminOrganizationMock.mockResolvedValue({ ok: true, user: { id: 'admin-1' }, organizationId: 'org-1', role: 'owner' })
+  })
+
+  it('applies a global capacity to every wave of the ticket', async () => {
+    const { admin, update } = createPatchAdmin()
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await PATCH(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'PATCH',
+        body: JSON.stringify({ capacity_all: 40 }),
+      }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(200)
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ capacity: 40 }))
+  })
+
+  it('updates one wave with a closing flag and a valid start time', async () => {
+    const { admin, update } = createPatchAdmin()
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await PATCH(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'PATCH',
+        body: JSON.stringify({ wave_index: 2, is_closed: true, start_time: '2027-02-07T11:10:00.000Z' }),
+      }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(200)
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ is_closed: true, start_time: '2027-02-07T11:10:00.000Z' }))
+  })
+
+  it('rejects a negative capacity without writing', async () => {
+    const { admin, update } = createPatchAdmin()
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await PATCH(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'PATCH',
+        body: JSON.stringify({ capacity_all: -1 }),
+      }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(400)
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('rejects a single-wave update without wave_index', async () => {
+    const { admin, update } = createPatchAdmin()
+    supabaseAdminMock.mockReturnValue(admin)
+
+    const response = await PATCH(
+      new Request(withTicket('http://localhost/api/admin/events/event-1/waves'), {
+        method: 'PATCH',
+        body: JSON.stringify({ is_closed: true }),
+      }),
+      { params: Promise.resolve({ id: 'event-1' }) },
+    )
+
+    expect(response.status).toBe(400)
+    expect(update).not.toHaveBeenCalled()
   })
 })
 

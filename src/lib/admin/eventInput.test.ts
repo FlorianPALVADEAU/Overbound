@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { eventUpdateSchema } from './eventInput'
+import { eventCreateSchema, eventUpdateSchema } from './eventInput'
 
 const validBody = {
   slug: 'ultra-arena-2027',
@@ -55,5 +55,37 @@ describe('eventUpdateSchema', () => {
 
   it('refuses an unreadable date', () => {
     expect(eventUpdateSchema.safeParse({ ...validBody, date: 'not a date' }).success).toBe(false)
+  })
+})
+
+describe('eventCreateSchema', () => {
+  it('defaults a missing status to draft and a missing capacity to 0', () => {
+    const { status: _status, capacity: _capacity, ...withoutDefaults } = validBody
+    const parsed = eventCreateSchema.safeParse(withoutDefaults)
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+    expect(parsed.data.status).toBe('draft')
+    expect(parsed.data.capacity).toBe(0)
+  })
+
+  it('keeps an explicit status', () => {
+    const parsed = eventCreateSchema.safeParse({ ...validBody, status: 'on_sale' })
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+    expect(parsed.data.status).toBe('on_sale')
+  })
+
+  it('refuses an unknown status instead of silently drafting it', () => {
+    const parsed = eventCreateSchema.safeParse({ ...validBody, status: 'publie' })
+
+    expect(parsed.success).toBe(false)
+  })
+
+  it('refuses a slug with uppercase or spaces', () => {
+    const parsed = eventCreateSchema.safeParse({ ...validBody, slug: 'Ultra Arena' })
+
+    expect(parsed.success).toBe(false)
   })
 })

@@ -21,7 +21,7 @@ async function handlePost(request: NextRequest) {
       return auth.response
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const validated = createEventPriceTierSchema.parse(body)
 
     // Utiliser supabaseAdmin pour insérer
