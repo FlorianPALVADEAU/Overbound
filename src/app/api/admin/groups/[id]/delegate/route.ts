@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { groupDelegateSchema } from '@/lib/admin/groupInput'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,11 +11,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const { id } = await params
-    const { new_captain_id } = await request.json() as { new_captain_id?: string }
-
-    if (!new_captain_id) {
-      return NextResponse.json({ error: 'Nouveau capitaine requis' }, { status: 400 })
+    const parsed = groupDelegateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }
+    const { new_captain_id } = parsed.data
 
     const admin = supabaseAdmin()
 

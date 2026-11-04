@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { groupMemberAddSchema } from '@/lib/admin/groupInput'
 import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
@@ -12,11 +13,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const { id } = await params
-    const { profile_id } = await request.json() as { profile_id?: string }
-
-    if (!profile_id) {
-      return NextResponse.json({ error: 'Profil membre requis' }, { status: 400 })
+    const parsed = groupMemberAddSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }
+    const { profile_id } = parsed.data
 
     const admin = supabaseAdmin()
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { groupFromPromocodeSchema } from '@/lib/admin/groupInput'
 import { getUserIdsFromPromoRegistrations, resolvePromoCode } from '@/app/api/admin/groups/promoGroupUtils'
 import { resolveGroupAnchorFromProfile } from '@/lib/groups/resolveGroupAnchor'
 
@@ -11,23 +12,11 @@ export async function POST(request: Request) {
       return auth.response
     }
 
-    const { name, promotional_code, captain_profile_id } = await request.json() as {
-      name?: string
-      promotional_code?: string
-      captain_profile_id?: string
+    const parsed = groupFromPromocodeSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }
-
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ error: 'Nom de groupe requis' }, { status: 400 })
-    }
-
-    if (!promotional_code || typeof promotional_code !== 'string' || promotional_code.trim().length === 0) {
-      return NextResponse.json({ error: 'Code promo requis' }, { status: 400 })
-    }
-
-    if (!captain_profile_id || typeof captain_profile_id !== 'string') {
-      return NextResponse.json({ error: 'Capitaine requis' }, { status: 400 })
-    }
+    const { name, promotional_code, captain_profile_id } = parsed.data
 
     const admin = supabaseAdmin()
 

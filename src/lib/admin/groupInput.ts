@@ -14,3 +14,20 @@ export const groupUpdateSchema = z.object({
 })
 
 export type GroupUpdateInput = z.infer<typeof groupUpdateSchema>
+
+/** Body of POST /api/admin/groups/[id]/delegate: the member who becomes captain. */
+export const groupDelegateSchema = z.object({
+  new_captain_id: z.string().uuid('Nouveau capitaine requis'),
+})
+
+/** Body of POST /api/admin/groups/[id]/members: the profile to add. */
+export const groupMemberAddSchema = z.object({
+  profile_id: z.string().uuid('Profil membre requis'),
+})
+
+/** Body of POST /api/admin/groups/from-promocode. */
+export const groupFromPromocodeSchema = z.object({
+  name: z.string().trim().min(1, 'Nom de groupe requis').max(120, 'Nom trop long'),
+  promotional_code: z.string().trim().min(1, 'Code promo requis').max(64, 'Code promo trop long'),
+  captain_profile_id: z.string().uuid('Capitaine requis'),
+})
