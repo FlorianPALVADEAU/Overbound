@@ -84,6 +84,9 @@ function createPatchAdmin() {
   return { admin, state }
 }
 
+const EVENT_UUID = '3f2a9c10-7d4e-4b8a-9c1d-2e5f6a7b8c9d'
+const TICKET_UUID = '5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e'
+
 describe('PATCH /api/admin/groups/[id]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -117,8 +120,8 @@ describe('PATCH /api/admin/groups/[id]', () => {
       method: 'PATCH',
       body: JSON.stringify({
         name: 'Team Updated',
-        anchor_event_id: 'event-1',
-        anchor_ticket_id: 'ticket-wave-1',
+        anchor_event_id: EVENT_UUID,
+        anchor_ticket_id: TICKET_UUID,
         anchor_wave_index: 4,
       }),
     })
@@ -129,7 +132,7 @@ describe('PATCH /api/admin/groups/[id]', () => {
     expect(response.status).toBe(200)
     expect(state.groupsUpdatePayload).toMatchObject({
       name: 'Team Updated',
-      anchor_event_id: 'event-1',
+      anchor_event_id: EVENT_UUID,
       anchor_wave_index: 4,
       anchor_start_time: '2026-06-01T08:40:00.000Z',
       anchor_initialized_by: 'admin_manual',
@@ -137,7 +140,7 @@ describe('PATCH /api/admin/groups/[id]', () => {
     })
     expect(syncOpenRegistrationsToWaveMock).toHaveBeenCalledWith(expect.objectContaining({
       admin,
-      eventId: 'event-1',
+      eventId: EVENT_UUID,
       waveIndex: 4,
       profileIds: ['m1', 'm2'],
     }))

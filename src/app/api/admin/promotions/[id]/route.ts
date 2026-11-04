@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { promotionUpdateSchema } from '@/lib/admin/promotionInput'
 
 function sanitizePayload(body: any) {
   const linkText = typeof body.link_text === 'string' && body.link_text.trim().length > 0
@@ -44,25 +45,16 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { id } = await params
-    const payload = await request.json()
-
-    const trimmedLinkText = typeof payload.link_text === 'string' ? payload.link_text.trim() : ''
-    if (!payload.title || !payload.description || !payload.link_url || !trimmedLinkText || !payload.starts_at || !payload.ends_at) {
-      return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 })
-    }
-
-    const startsAt = new Date(payload.starts_at)
-    const endsAt = new Date(payload.ends_at)
-    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
-      return NextResponse.json({ error: 'Dates invalides' }, { status: 400 })
-    }
-
-    if (endsAt <= startsAt) {
-      return NextResponse.json({ error: 'La date de fin doit être postérieure à la date de début' }, { status: 400 })
+    const parsed = promotionUpdateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Données invalides', issues: parsed.error.issues },
+        { status: 400 },
+      )
     }
 
     const admin = supabaseAdmin()
-    const updatePayload = sanitizePayload(payload)
+    const updatePayload = parsed.data
 
     const { data: promotion, error: updateError } = await admin
       .from('site_promotions')

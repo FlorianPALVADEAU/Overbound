@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { getUserIdsFromPromoRegistrations, resolvePromoCode } from '@/app/api/admin/groups/promoGroupUtils'
 import { syncOpenRegistrationsToWave } from '@/lib/groups/syncOpenGroupWave'
+import { groupUpdateSchema } from '@/lib/admin/groupInput'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,14 +13,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const { id } = await params
-    const body = await request.json() as {
-      name?: string
-      captain_id?: string
-      anchor_event_id?: string | null
-      anchor_ticket_id?: string | null
-      anchor_wave_index?: number | null
-      promotional_code?: string
+    const parsed = groupUpdateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Données invalides', issues: parsed.error.issues },
+        { status: 400 },
+      )
     }
+    const body = parsed.data
 
     const admin = supabaseAdmin()
 
