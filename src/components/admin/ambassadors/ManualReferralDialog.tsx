@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAddManualReferralWithPoints, type AdminAmbassadorPointsRow } from '@/app/api/admin/ambassadors/ambassadorsQueries'
+import { useAddManualReferral } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -18,9 +18,16 @@ const FORMATS: ReadonlyArray<{ value: ReferralFormat; label: string }> = [
 ]
 const isFormat = (value: string): value is ReferralFormat => FORMATS.some((format) => format.value === value)
 
+export interface ManualReferralDialogProps {
+  ambassadorId: string
+  ambassadorName: string
+  ambassadorCode: string | null
+  onClose: () => void
+}
+
 /** Credits an offline referral: the referred person's registration is linked and the points are added once. */
-export function ManualReferralDialog({ ambassador, onClose }: { ambassador: AdminAmbassadorPointsRow; onClose: () => void }) {
-  const addReferral = useAddManualReferralWithPoints()
+export function ManualReferralDialog({ ambassadorId, ambassadorName, ambassadorCode, onClose }: ManualReferralDialogProps) {
+  const addReferral = useAddManualReferral()
   const [email, setEmail] = useState('')
   const [points, setPoints] = useState('1')
   const [format, setFormat] = useState<ReferralFormat>('auto')
@@ -31,7 +38,12 @@ export function ManualReferralDialog({ ambassador, onClose }: { ambassador: Admi
   const submit = async () => {
     setResult(null)
     try {
-      const response = await addReferral.mutateAsync({ ambassador_id: ambassador.ambassador_id, referral_email: email.trim(), points: parsedPoints, race_format: format })
+      const response = await addReferral.mutateAsync({
+        ambassadorId,
+        referral_email: email.trim(),
+        points: parsedPoints,
+        race_format: format,
+      })
       setResult({
         tone: 'success',
         text: response.already_credited
@@ -52,8 +64,8 @@ export function ManualReferralDialog({ ambassador, onClose }: { ambassador: Admi
         </DialogHeader>
         <div className="grid gap-4">
           <div className="rounded-xl border px-3 py-2 text-sm">
-            <p className="font-semibold">{ambassador.ambassador_name}</p>
-            <p className="font-mono text-xs text-muted-foreground">{ambassador.ambassador_code ?? '—'}</p>
+            <p className="font-semibold">{ambassadorName}</p>
+            <p className="font-mono text-xs text-muted-foreground">{ambassadorCode ?? '—'}</p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="referral-email">E-mail du filleul</Label>

@@ -9,6 +9,8 @@ const PAGES = [
   ['/dashboard/orders', 'orders'],
   ['/dashboard/logs', 'logs'],
   ['/dashboard/ambassadors', 'ambassadors'],
+  ['/dashboard/ambassadors/dddddddd-0000-4000-8000-000000000001', 'ambassador-sheet'],
+  ['/dashboard/users', 'users'],
 ] as const
 const WIDTHS = [320, 375, 768, 1024, 1280, 1920]
 

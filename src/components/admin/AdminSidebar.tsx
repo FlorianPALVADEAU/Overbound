@@ -2,25 +2,21 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { BarChart3, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DISPLAY_TITLE } from '@/components/ds'
-import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS, hrefForNavItem, resolveActiveNavValue } from './adminNavItems'
+import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS, resolveActiveNavValue } from './adminNavItems'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface AdminSidebarProps {
   profileRole: 'admin' | 'volunteer'
   fullName?: string | null
-  /** Event selected in the top bar (from the URL), carried to the pages that work on one event. */
-  eventId?: string | null
 }
 
-export function AdminSidebar({ profileRole, fullName, eventId: contextEventId }: AdminSidebarProps) {
+export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const eventId = contextEventId ?? searchParams.get('event')
   const activeTab = resolveActiveNavValue(pathname)
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
@@ -45,7 +41,7 @@ export function AdminSidebar({ profileRole, fullName, eventId: contextEventId }:
           value={activeTab ?? 'overview'}
           onValueChange={(value) => {
             const item = ADMIN_NAV_ITEMS.find((candidate) => candidate.value === value)
-            if (item) router.push(hrefForNavItem(item, eventId))
+            if (item) router.push(item.href)
           }}
         >
           <SelectTrigger id="admin-mobile-navigation" className="min-w-0 flex-1 text-sm font-medium">
@@ -126,7 +122,7 @@ export function AdminSidebar({ profileRole, fullName, eventId: contextEventId }:
                       {group.items.map((item) => (
                         <Link
                           key={item.value}
-                          href={hrefForNavItem(item, eventId)}
+                          href={item.href}
                           tabIndex={isOpen ? undefined : -1}
                           aria-current={activeTab === item.value ? 'page' : undefined}
                           className={cn(

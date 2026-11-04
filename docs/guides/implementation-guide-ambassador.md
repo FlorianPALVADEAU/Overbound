@@ -121,7 +121,19 @@ Le bouton "Partager" envoie `https://…/?ref=CODE` ([referral.ts](../../src/lib
 
 ## Admin
 
-`src/app/api/admin/ambassadors/` : liste, détail, `points` (correction avec motif et clé d'idempotence, saison en cours par défaut), `manual-referrals`, `promo-codes`. Les corrections passent par `admin_adjust_ambassador_points`, jamais par un `UPDATE` direct.
+Back-office : une liste, une fiche par ambassadeur (`/dashboard/ambassadors` et `/dashboard/ambassadors/[id]`). La liste lit une ligne par ambassadeur (`GET /api/admin/ambassadors?year=`). La fiche charge la saison, l'échelle avec chaque récompense et les dossards bonus (`GET /api/admin/ambassadors/[id]?year=`) ; les filleuls, les codes et l'historique ne se chargent qu'à l'ouverture de leur onglet.
+
+| Route | Rôle |
+|---|---|
+| `GET /api/admin/ambassadors` | Liste de la saison : totaux, code actif, récompenses à réclamer et à remettre |
+| `GET /api/admin/ambassadors/[id]` | Fiche : totaux, paliers, dossards bonus, code actif |
+| `GET, POST /api/admin/ambassadors/[id]/referrals` | Filleuls de la saison en cours ; crédit d'un filleul manuel |
+| `GET /api/admin/ambassadors/[id]/history` | Corrections de points et décisions sur les récompenses |
+| `PATCH /api/admin/ambassadors/[id]/points` | Correction des totaux (motif et clé d'idempotence obligatoires) |
+| `/api/admin/ambassadors/[id]/promo-codes…` | Codes d'un ambassadeur |
+| `PATCH /api/admin/ambassador-rewards/[id]` | Statut d'une récompense, ou annulation et réouverture avec motif |
+
+Logique pure et testée : `src/lib/admin/ambassadors/` (`sheetLadder`, `rewardCounts`, `currentCode`). Contrat partagé route et navigateur : `types.ts` du même dossier. Les corrections passent par `admin_adjust_ambassador_points`, jamais par un `UPDATE` direct.
 
 ---
 

@@ -3,6 +3,7 @@
 import { UserAvatar } from '@/components/account/UserAvatar'
 import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Crown, Clock, Trash2, RefreshCw, Plus, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
@@ -87,7 +88,9 @@ const searchUsers = (users: AdminUser[], term: string) => {
 }
 
 export function GroupsSection() {
-  const [searchTerm, setSearchTerm] = useState('')
+  // `?search=` deep link: the users list sends the invite code of a member's group here.
+  const searchParams = useSearchParams()
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search')?.trim() ?? '')
   const deferredSearch = useDeferredValue(searchTerm.trim())
   const [cursor, setCursor] = useState<string | null>(null)
   const [previousCursors, setPreviousCursors] = useState<string[]>([])

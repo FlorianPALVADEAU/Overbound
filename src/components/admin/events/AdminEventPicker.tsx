@@ -7,17 +7,18 @@ import { CalendarDays, ChevronRight, MapPin } from 'lucide-react'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatEventDate } from '@/components/admin/events/AdminEventContextSelector'
+import { formatEventDate } from '@/components/admin/events/eventDate'
 
 interface AdminEventPickerProps {
+  eyebrow?: string
   title: string
   description: string
   /** Where an event leads, e.g. its participants. */
   hrefFor: (eventId: string) => string
 }
 
-/** Pages that work on one event: pick it here when the top bar has none selected. A single event is opened directly. */
-export function AdminEventPicker({ title, description, hrefFor }: AdminEventPickerProps) {
+/** Pages that work on one event: the admin picks it here first. A single event is opened directly. */
+export function AdminEventPicker({ eyebrow = 'Billetterie', title, description, hrefFor }: AdminEventPickerProps) {
   const router = useRouter()
   const { data: events = [], isLoading, error } = useAdminEvents()
   const onlyEventId = events.length === 1 ? events[0].id : null
@@ -30,7 +31,7 @@ export function AdminEventPicker({ title, description, hrefFor }: AdminEventPick
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader eyebrow="Billetterie" title={title} description={description} />
+      <AdminPageHeader eyebrow={eyebrow} title={title} description={description} />
       {isLoading || onlyEventId ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : error ? (

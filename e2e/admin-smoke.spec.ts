@@ -9,6 +9,7 @@ const PAGES = [
   ['orders', '/dashboard/orders'],
   ['logs', '/dashboard/logs'],
   ['ambassadors', '/dashboard/ambassadors'],
+  ['ambassador-sheet', '/dashboard/ambassadors/dddddddd-0000-4000-8000-000000000001'],
 ] as const
 const WINDOWS = [
   ['desktop', { width: 1280, height: 800 }],

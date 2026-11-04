@@ -1,6 +1,6 @@
 'use client'
 
-import { redirect, useParams, useSearchParams } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
@@ -15,8 +15,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [hasMounted, setHasMounted] = useState(false)
   const [profileRetryCount, setProfileRetryCount] = useState(0)
   const { data: session, isLoading, isFetching, refetch } = useSession()
-  const searchParams = useSearchParams()
-  const params = useParams<{ eventId?: string }>()
 
   useEffect(() => {
     setHasMounted(true)
@@ -46,9 +44,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }
   if (session.profile?.role !== 'admin') redirect('/account')
 
-  const eventId = typeof params.eventId === 'string' ? params.eventId : searchParams.get('event')
   return (
-    <AdminShell fullName={session.profile.full_name || session.user.email} eventId={eventId}>
+    <AdminShell fullName={session.profile.full_name || session.user.email}>
       {children}
     </AdminShell>
   )

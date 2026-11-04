@@ -5,7 +5,17 @@ import { z } from 'zod'
 import { deleteResendContactByEmail } from '@/lib/email/resendAudiences'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
-import { profileBelongsToOrganization } from '@/lib/auth/organizationScope'
+
+/**
+ * Accounts that the admin list shows: every Auth profile. The list is not filtered by organization (one
+ * organization today, profiles carry no organization column), so the write scope must match it. Using
+ * profileBelongsToOrganization here answered 404 for the 541 accounts with no registration, group or membership.
+ */
+async function profileIsListed(admin: ReturnType<typeof supabaseAdmin>, profileId: string): Promise<boolean> {
+  const { data, error } = await admin.from('profiles').select('id').eq('id', profileId).maybeSingle()
+  if (error) throw error
+  return Boolean(data)
+}
 
 const updateUserSchema = z
   .object({
@@ -35,7 +45,7 @@ async function handlePatch(
     const validated = updateUserSchema.parse(payload)
 
     const admin = supabaseAdmin()
-    if (!(await profileBelongsToOrganization(admin, auth.organizationId, id))) {
+    if (!(await profileIsListed(admin, id))) {
       return NextResponse.json({ error: 'Utilisateur inaccessible' }, { status: 404 })
     }
     const { data: currentProfile } = await admin
@@ -109,6 +119,18 @@ async function handlePatch(
 
     if (error) {
       throw error
+    }
+
+    // Back to ambassador with the code it already had: the row was only deactivated when the role left.
+    if (targetRole === 'ambassador' && !validated.ambassador_promotional_code_id && currentAmbassador) {
+      const { error: reactivateError } = await admin
+        .from('ambassadors')
+        .update({ is_active: true, updated_at: new Date().toISOString() })
+        .eq('profile_id', id)
+      if (reactivateError) {
+        console.error('[admin users] ambassador reactivation error', reactivateError)
+        return NextResponse.json({ error: 'Impossible de réactiver le compte ambassadeur.' }, { status: 500 })
+      }
     }
 
     if (targetRole === 'ambassador' && validated.ambassador_promotional_code_id) {
@@ -204,7 +226,7 @@ async function handleDelete(
     const { id } = await params
 
     const admin = supabaseAdmin()
-    if (!(await profileBelongsToOrganization(admin, auth.organizationId, id))) {
+    if (!(await profileIsListed(admin, id))) {
       return NextResponse.json({ error: 'Utilisateur inaccessible' }, { status: 404 })
     }
 

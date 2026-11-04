@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useUpdateAmbassadorPoints, type AdminAmbassadorPointsRow } from '@/app/api/admin/ambassadors/ambassadorsQueries'
+import { useUpdateAmbassadorPoints } from '@/app/api/admin/ambassadors/ambassadorsQueries'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -9,8 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { mutationMessage } from './rewardStatus'
 
-interface AmbassadorPointsDialogProps {
-  ambassador: AdminAmbassadorPointsRow
+export interface AmbassadorPointsDialogProps {
+  ambassadorId: string
+  ambassadorName: string
+  ambassadorCode: string | null
+  totals: { total_points: number; recruits_open: number; recruits_ranked: number }
   /** Season the totals belong to; the correction is written to this one. */
   programYear: number
   onClose: () => void
@@ -19,11 +22,11 @@ interface AmbassadorPointsDialogProps {
 const toCount = (value: string) => Math.max(0, Math.trunc(Number(value) || 0))
 
 /** Manual correction of an ambassador's season totals. The reason is mandatory and audited. */
-export function AmbassadorPointsDialog({ ambassador, programYear, onClose }: AmbassadorPointsDialogProps) {
+export function AmbassadorPointsDialog({ ambassadorId, ambassadorName, ambassadorCode, totals, programYear, onClose }: AmbassadorPointsDialogProps) {
   const updatePoints = useUpdateAmbassadorPoints()
-  const [total, setTotal] = useState(String(ambassador.total_points))
-  const [open, setOpen] = useState(String(ambassador.recruits_open))
-  const [ranked, setRanked] = useState(String(ambassador.recruits_ranked))
+  const [total, setTotal] = useState(String(totals.total_points))
+  const [open, setOpen] = useState(String(totals.recruits_open))
+  const [ranked, setRanked] = useState(String(totals.recruits_ranked))
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -31,7 +34,7 @@ export function AmbassadorPointsDialog({ ambassador, programYear, onClose }: Amb
     setError(null)
     try {
       await updatePoints.mutateAsync({
-        ambassador_id: ambassador.ambassador_id,
+        ambassadorId,
         total_points: toCount(total),
         recruits_open: toCount(open),
         recruits_ranked: toCount(ranked),
@@ -54,8 +57,8 @@ export function AmbassadorPointsDialog({ ambassador, programYear, onClose }: Amb
         </DialogHeader>
         <div className="grid gap-4">
           <div className="rounded-xl border px-3 py-2 text-sm">
-            <p className="font-semibold">{ambassador.ambassador_name}</p>
-            <p className="font-mono text-xs text-muted-foreground">{ambassador.ambassador_code ?? '—'}</p>
+            <p className="font-semibold">{ambassadorName}</p>
+            <p className="font-mono text-xs text-muted-foreground">{ambassadorCode ?? '—'}</p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="points-total">Total des points</Label>

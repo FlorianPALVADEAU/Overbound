@@ -1,11 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { AmbassadorDashboardData, AmbassadorReward } from '@/types/Ambassador'
+import type { AmbassadorDashboardData, AmbassadorRecruitRow, AmbassadorReward } from '@/types/Ambassador'
 import { resolveRewardStatus } from '@/lib/ambassadors/dashboardHelpers'
 import { getNextReward, getRewardKind } from '@/lib/ambassadors/program'
 import { loadProgramRules } from '@/lib/ambassadors/programRules'
 import type { AmbassadorSeason } from '@/lib/ambassadors/season'
 import { buildPreviousEdition, getPreviousSeason, type ArchivedReward, type ArchivedTotal } from '@/lib/ambassadors/dashboard/previousEdition'
 import { buildLeaderboard } from '@/lib/ambassadors/dashboard/leaderboard'
+import { listAmbassadorCodeIds, pickCurrentCodeId } from '@/lib/admin/ambassadors/currentCode'
 import {
   buildRecruitRows,
   type RecruitPointEvent,
@@ -29,13 +30,13 @@ function ensure<T>(step: string, result: { data: T | null; error: { message: str
   return result.data ?? []
 }
 
-interface AmbassadorCodes {
+export interface AmbassadorCodes {
   currentCode: string | null
   allCodeIds: string[]
   allCodes: string[]
 }
 
-async function loadAmbassadorCodes(admin: Admin, ambassador: DashboardAmbassador): Promise<AmbassadorCodes> {
+export async function loadAmbassadorCodes(admin: Admin, ambassador: DashboardAmbassador): Promise<AmbassadorCodes> {
   const links = ensure(
     'codes',
     await admin
@@ -44,11 +45,8 @@ async function loadAmbassadorCodes(admin: Admin, ambassador: DashboardAmbassador
       .eq('ambassador_id', ambassador.id),
   ) as Array<{ promotional_code_id: string; is_current: boolean }>
 
-  const allCodeIds = links.length > 0 ? links.map((link) => link.promotional_code_id) : ambassador.promotional_code_id ? [ambassador.promotional_code_id] : []
-  const currentCodeId =
-    links.length > 0
-      ? (links.find((link) => link.is_current) ?? links[0]).promotional_code_id
-      : ambassador.promotional_code_id
+  const allCodeIds = listAmbassadorCodeIds(links, ambassador.promotional_code_id)
+  const currentCodeId = pickCurrentCodeId(links, ambassador.promotional_code_id)
 
   if (allCodeIds.length === 0) return { currentCode: null, allCodeIds, allCodes: [] }
 
@@ -94,6 +92,42 @@ async function loadRecruitRegistrations(
     ...(byManual ? (ensure('manual registrations', byManual) as RecruitRegistration[]) : []),
   ]
   return Array.from(new Map(rows.map((row) => [row.id, row])).values())
+}
+
+/** Referral rows of the running season: who came through a code, a token or a manual credit, with their points. */
+export async function loadAmbassadorRecruits(
+  admin: Admin,
+  ambassador: DashboardAmbassador,
+  codes: AmbassadorCodes,
+  seasonStartedAt: string,
+): Promise<AmbassadorRecruitRow[]> {
+  const registrations = await loadRecruitRegistrations(admin, ambassador.id, codes)
+  const orderIds = Array.from(new Set(registrations.map((row) => row.order_id).filter((id): id is string => Boolean(id))))
+  const profileIds = Array.from(new Set(registrations.map((row) => row.user_id).filter((id): id is string => Boolean(id))))
+
+  const [orders, profiles, events] = await Promise.all([
+    orderIds.length > 0 ? admin.from('orders').select('id, status').in('id', orderIds) : null,
+    profileIds.length > 0 ? admin.from('profiles').select('id, full_name').in('id', profileIds) : null,
+    registrations.length > 0
+      ? admin
+          .from('ambassador_points_events')
+          .select('registration_id, points, race_format, revoked_at')
+          .eq('ambassador_id', ambassador.id)
+          .in('registration_id', registrations.map((row) => row.id))
+      : null,
+  ])
+
+  return buildRecruitRows({
+    registrations,
+    orderStatuses: new Map(
+      (orders ? (ensure('orders', orders) as Array<{ id: string; status: string | null }>) : []).map((row) => [row.id, row.status]),
+    ),
+    profileNames: new Map(
+      (profiles ? (ensure('profiles', profiles) as Array<{ id: string; full_name: string | null }>) : []).map((row) => [row.id, row.full_name]),
+    ),
+    pointEvents: events ? (ensure('point events', events) as RecruitPointEvent[]) : [],
+    seasonStartedAt,
+  })
 }
 
 async function loadLeaderboardEntries(admin: Admin, programYear: number) {
@@ -157,7 +191,7 @@ export async function loadAmbassadorDashboard(
 ): Promise<AmbassadorDashboardData> {
   const [program, codes] = await Promise.all([loadProgramRules(admin, season), loadAmbassadorCodes(admin, ambassador)])
 
-  const [pointsYear, rewardRows, registrations, leaderboardEntries, previousEdition] = await Promise.all([
+  const [pointsYear, rewardRows, recruits, leaderboardEntries, previousEdition] = await Promise.all([
     admin
       .from('ambassador_points_years')
       .select('total_points, recruits_open, recruits_ranked')
@@ -171,37 +205,10 @@ export async function loadAmbassadorDashboard(
       .eq('program_year', season)
       .neq('status', 'cancelled')
       .order('reward_level', { ascending: true }),
-    loadRecruitRegistrations(admin, ambassador.id, codes),
+    loadAmbassadorRecruits(admin, ambassador, codes, startedAt),
     loadLeaderboardEntries(admin, season),
     loadPreviousEdition(admin, ambassador.id, season),
   ])
-
-  const orderIds = Array.from(new Set(registrations.map((row) => row.order_id).filter((id): id is string => Boolean(id))))
-  const profileIds = Array.from(new Set(registrations.map((row) => row.user_id).filter((id): id is string => Boolean(id))))
-
-  const [orders, profiles, events] = await Promise.all([
-    orderIds.length > 0 ? admin.from('orders').select('id, status').in('id', orderIds) : null,
-    profileIds.length > 0 ? admin.from('profiles').select('id, full_name').in('id', profileIds) : null,
-    registrations.length > 0
-      ? admin
-          .from('ambassador_points_events')
-          .select('registration_id, points, race_format, revoked_at')
-          .eq('ambassador_id', ambassador.id)
-          .in('registration_id', registrations.map((row) => row.id))
-      : null,
-  ])
-
-  const recruits = buildRecruitRows({
-    registrations,
-    orderStatuses: new Map(
-      (orders ? (ensure('orders', orders) as Array<{ id: string; status: string | null }>) : []).map((row) => [row.id, row.status]),
-    ),
-    profileNames: new Map(
-      (profiles ? (ensure('profiles', profiles) as Array<{ id: string; full_name: string | null }>) : []).map((row) => [row.id, row.full_name]),
-    ),
-    pointEvents: events ? (ensure('point events', events) as RecruitPointEvent[]) : [],
-    seasonStartedAt: startedAt,
-  })
 
   const points = ensure('points', pointsYear) as { total_points?: number; recruits_open?: number; recruits_ranked?: number }
   const totalPoints = points.total_points ?? 0

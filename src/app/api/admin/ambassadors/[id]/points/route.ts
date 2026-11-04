@@ -16,18 +16,19 @@ const payloadSchema = z.object({
   idempotency_key: z.string().uuid(),
 })
 
-async function handlePatch(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+/** Manual correction of one ambassador's season totals. Recorded with its reason; never a direct update. */
+async function handlePatch(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdmin(request)
-    if (!auth.ok) {
-      return auth.response
-    }
+    if (!auth.ok) return auth.response
 
     const { id } = await params
-    const payload = payloadSchema.parse(await request.json())
+    const parsed = payloadSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Données invalides', details: parsed.error.issues }, { status: 400 })
+    }
+
+    const payload = parsed.data
     const admin = supabaseAdmin()
     const programYear = payload.program_year ?? (await loadCurrentSeason(admin)).season
 
@@ -60,9 +61,6 @@ async function handlePatch(
 
     return NextResponse.json({ points: updated, program_year: programYear })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 })
-    }
     console.error('[admin ambassadors points] unexpected error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }

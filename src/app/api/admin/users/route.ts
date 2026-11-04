@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
@@ -32,12 +33,82 @@ const roleLabels: Record<string, string> = {
   ambassador: 'Ambassadeur',
 }
 
-const chunkArray = <T,>(items: T[], size: number) => {
-  const chunks: T[][] = []
-  for (let i = 0; i < items.length; i += size) {
-    chunks.push(items.slice(i, i + size))
+// Sorting compares French strings on every request: one collator, not one per comparison.
+const frenchCollator = new Intl.Collator('fr', { numeric: true })
+
+interface AuthUserRow {
+  id: string
+  email: string | null
+  created_at: string
+  last_sign_in_at: string | null
+}
+
+interface PromoRow { code: string | null; is_active: boolean | null }
+
+interface AmbassadorEmbed {
+  promotional_code_id: string | null
+  promo: PromoRow | PromoRow[] | null
+}
+
+interface GroupRow { id: string; name: string | null; invite_code: string | null }
+
+/** One profile with its ambassador row and group memberships, read in a single embedded query. */
+interface ProfileScanRow {
+  id: string
+  full_name: string | null
+  role: string | null
+  phone: string | null
+  created_at: string
+  date_of_birth: string | null
+  marketing_opt_in: boolean | null
+  ambassadors: AmbassadorEmbed | AmbassadorEmbed[] | null
+  group_members: Array<{ group: GroupRow | GroupRow[] | null }> | null
+}
+
+const firstOf = <T,>(value: T | T[] | null | undefined): T | null => (Array.isArray(value) ? (value[0] ?? null) : (value ?? null))
+
+/** Every Auth account, paged. The list shows all of them, so the write endpoints accept all of them too. */
+async function scanAuthUsers(admin: SupabaseClient): Promise<AuthUserRow[]> {
+  const users: AuthUserRow[] = []
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: PAGE_SIZE })
+    if (error) {
+      throw error
+    }
+    const batch = data.users || []
+    for (const authUser of batch) {
+      users.push({
+        id: authUser.id,
+        email: authUser.email ?? null,
+        created_at: authUser.created_at,
+        last_sign_in_at: authUser.last_sign_in_at ?? null,
+      })
+    }
+    if (batch.length < PAGE_SIZE || users.length >= MAX_USERS) {
+      return users
+    }
   }
-  return chunks
+}
+
+/**
+ * Every profile in one scan of ordered pages, with its ambassador code and group embedded. The earlier version
+ * sent one `in` query per 100 ids, sequentially: about 30 round trips per keystroke in the search box.
+ */
+async function scanProfiles(admin: SupabaseClient): Promise<ProfileScanRow[]> {
+  const rows: ProfileScanRow[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await admin
+      .from('profiles')
+      .select('id, full_name, role, phone, created_at, date_of_birth, marketing_opt_in, ambassadors(promotional_code_id, promo:promotional_codes(code, is_active)), group_members(group:groups(id, name, invite_code))')
+      .order('id')
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) {
+      throw new Error(`Lecture des comptes admin échouée : ${error.message}`)
+    }
+    const batch = (data ?? []) as unknown as ProfileScanRow[]
+    rows.push(...batch)
+    if (batch.length < PAGE_SIZE) return rows
+  }
 }
 
 export async function GET(request: Request) {
@@ -60,146 +131,40 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: error instanceof Error ? error.message : 'Cursor de pagination invalide' }, { status: 400 })
       }
     }
-    const allUsers: Array<{
-      id: string
-      email: string | null
-      created_at: string
-      last_sign_in_at: string | null
-    }> = []
 
-    for (let page = 1; ; page += 1) {
-      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: PAGE_SIZE })
-      if (error) {
-        throw error
+    const [authUsers, profileRows] = await Promise.all([scanAuthUsers(admin), scanProfiles(admin)])
+    const profilesById = new Map(profileRows.map((row) => [row.id, row]))
+
+    const usersWithProfiles = authUsers.map((authUser) => {
+      const profile = profilesById.get(authUser.id)
+      const ambassador = firstOf(profile?.ambassadors)
+      const promo = firstOf(ambassador?.promo)
+      const group = profile?.group_members?.map((membership) => firstOf(membership.group)).find((candidate) => candidate !== null) ?? null
+      return {
+        id: authUser.id,
+        email: authUser.email,
+        created_at: authUser.created_at,
+        last_sign_in_at: authUser.last_sign_in_at,
+        full_name: profile?.full_name ?? null,
+        role: profile?.role ?? 'user',
+        phone: profile?.phone ?? null,
+        profile_created_at: profile?.created_at ?? null,
+        date_of_birth: profile?.date_of_birth ?? null,
+        marketing_opt_in: profile?.marketing_opt_in ?? null,
+        ambassador_promotional_code_id: ambassador?.promotional_code_id ?? null,
+        ambassador_code: promo?.code ?? null,
+        ambassador_code_is_active: promo?.is_active ?? null,
+        group_id: group?.id ?? null,
+        group_name: group?.name ?? null,
+        group_invite_code: group?.invite_code ?? null,
       }
-
-      const users = data.users || []
-      for (const authUser of users) {
-        allUsers.push({
-          id: authUser.id,
-          email: authUser.email ?? null,
-          created_at: authUser.created_at,
-          last_sign_in_at: authUser.last_sign_in_at ?? null,
-        })
-      }
-
-      if (users.length < PAGE_SIZE || allUsers.length >= MAX_USERS) {
-        break
-      }
-    }
-
-    const scopedUsers = allUsers
-    const userIds = scopedUsers.map((u) => u.id)
-    const profilesMap = new Map<
-      string,
-      {
-        full_name: string | null
-        role: string | null
-        phone: string | null
-        created_at: string
-        date_of_birth: string | null
-        marketing_opt_in: boolean | null
-      }
-    >()
-    const ambassadorsMap = new Map<
-      string,
-      {
-        promotional_code_id: string | null
-        code: string | null
-        code_is_active: boolean | null
-      }
-    >()
-    const groupsMap = new Map<
-      string,
-      {
-        group_id: string
-        group_name: string | null
-        invite_code: string | null
-      }
-    >()
-
-    if (userIds.length > 0) {
-      const chunks = chunkArray(userIds, 1000)
-      for (const chunk of chunks) {
-        const { data: profiles } = await admin
-          .from('profiles')
-          .select('id, full_name, role, phone, created_at, date_of_birth, marketing_opt_in')
-          .in('id', chunk)
-        profiles?.forEach((row) => {
-          profilesMap.set(row.id, {
-            full_name: row.full_name ?? null,
-            role: row.role ?? null,
-            phone: row.phone ?? null,
-            created_at: row.created_at,
-            date_of_birth: row.date_of_birth ?? null,
-            marketing_opt_in: row.marketing_opt_in ?? null,
-          })
-        })
-      }
-
-      const { data: ambassadors } = await admin
-        .from('ambassadors')
-        .select('profile_id, promotional_code_id, promo:promotional_codes(code, is_active)')
-        .in('profile_id', userIds)
-
-      ambassadors?.forEach((row: any) => {
-        const promo = Array.isArray(row.promo) ? row.promo?.[0] : row.promo
-        ambassadorsMap.set(row.profile_id, {
-          promotional_code_id: row.promotional_code_id ?? null,
-          code: promo?.code ?? null,
-          code_is_active: promo?.is_active ?? null,
-        })
-      })
-
-      const { data: membershipRows } = await admin
-        .from('group_members')
-        .select('profile_id, group:groups(id, name, invite_code)')
-        .in('profile_id', userIds)
-
-      membershipRows?.forEach((row: any) => {
-        const group = Array.isArray(row.group) ? row.group[0] : row.group
-        if (!group?.id) return
-        groupsMap.set(row.profile_id, {
-          group_id: group.id,
-          group_name: group.name ?? null,
-          invite_code: group.invite_code ?? null,
-        })
-      })
-    }
-
-    const usersWithProfiles = scopedUsers.map((authUser) => {
-        const profileData = profilesMap.get(authUser.id)
-        const ambassadorData = ambassadorsMap.get(authUser.id)
-        const groupData = groupsMap.get(authUser.id)
-        return {
-          id: authUser.id,
-          email: authUser.email,
-          created_at: authUser.created_at,
-          last_sign_in_at: authUser.last_sign_in_at,
-          full_name: profileData?.full_name ?? null,
-          role: profileData?.role ?? 'user',
-          phone: profileData?.phone ?? null,
-          profile_created_at: profileData?.created_at ?? null,
-          date_of_birth: profileData?.date_of_birth ?? null,
-          marketing_opt_in: profileData?.marketing_opt_in ?? null,
-          ambassador_promotional_code_id: ambassadorData?.promotional_code_id ?? null,
-          ambassador_code: ambassadorData?.code ?? null,
-          ambassador_code_is_active: ambassadorData?.code_is_active ?? null,
-          group_id: groupData?.group_id ?? null,
-          group_name: groupData?.group_name ?? null,
-          group_invite_code: groupData?.invite_code ?? null,
-        }
-      })
+    })
 
     if (!isPaginated) {
       return NextResponse.json({ users: usersWithProfiles, total: usersWithProfiles.length })
     }
 
-    // Auth users are exposed through Supabase Auth's paged admin API, while
-    // profile/group/ambassador data is joined separately. A bounded Auth scan
-    // is still required before this server applies filters and emits the
-    // requested page; the browser never receives the complete dataset in
-    // paginated mode.
+    // The filters, the sort and the cursor run here on the full set, then only the requested page is sent.
     const search = params.query ? sanitizeAdminUserSearch(params.query) : ''
     let pageUsers = usersWithProfiles.filter((user) => {
       if (params.role !== 'all' && user.role !== params.role) return false
@@ -213,7 +178,7 @@ export async function GET(request: Request) {
       return value == null ? '' : String(value).toLowerCase()
     }
     pageUsers.sort((left, right) => {
-      const valueCompare = getSortValue(left).localeCompare(getSortValue(right), 'fr', { numeric: true })
+      const valueCompare = frenchCollator.compare(getSortValue(left), getSortValue(right))
       if (valueCompare !== 0) return params.direction === 'asc' ? valueCompare : -valueCompare
       return params.direction === 'asc' ? left.id.localeCompare(right.id) : right.id.localeCompare(left.id)
     })

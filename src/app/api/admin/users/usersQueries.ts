@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import axiosClient from '../../axiosClient'
 
 export interface AdminUser {
@@ -75,6 +75,8 @@ export const useAdminUsersPage = (params: AdminUsersPageParams = {}) =>
   useQuery<AdminUsersPage, Error>({
     queryKey: [...ADMIN_USERS_QUERY_KEY, 'page', params],
     queryFn: () => fetchAdminUsersPage(params),
+    // Keep the previous rows on screen while the next search answers: no blank table between keystrokes.
+    placeholderData: keepPreviousData,
   })
 
 export const updateAdminUser = async (

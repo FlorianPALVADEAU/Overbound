@@ -1,5 +1,10 @@
+import { Suspense } from 'react'
 import { GroupsSection } from '@/components/admin/groups/GroupsSection'
 
 export default function GroupsPage() {
-  return <GroupsSection />
+  return (
+    <Suspense fallback={null}>
+      <GroupsSection />
+    </Suspense>
+  )
 }

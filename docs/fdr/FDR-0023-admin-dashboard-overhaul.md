@@ -33,7 +33,7 @@ de tableau inaccessibles, et un ancien système d'onglets (`?tab=`) qui coexista
 | Contact bénévole | Plus de numéro codé en dur : `COMPANY_INFO`. |
 | Devis B2B | Suppression ajoutée (route, test, action dans la liste). |
 | Journal (logs) | Sur `OperationsList`. L'API est validée par Zod et passe en pagination par curseur (`created_at`, `id`), le curseur étant partagé avec les commandes (`keysetCursor.ts`). Filtres méthode, statut, recherche (résumé, chemin, e-mail, action, erreur) et dates (jours de Paris). Le compte reste celui du résultat filtré, curseur exclu. |
-| Ambassadeurs | Classement de la saison et récompenses sont deux `OperationsList` (pagination côté client via `useClientPagination`, l'API renvoie tout). Une ligne ouvre la fiche. Changement de statut, annulation et réouverture partagent `useRewardActions` ; le motif se saisit dans un dialogue (plus de `window.prompt`) et les échecs s'affichent au lieu de rejeter sans bruit. Le fichier de 890 lignes est découpé en cinq composants. |
+| Ambassadeurs | Une liste (une ligne par ambassadeur de la saison : points, Open et Ranked, code actif, récompenses à réclamer et à remettre, filtres « à remettre », « à réclamer », « inactifs ») et une fiche par ambassadeur (`/dashboard/ambassadors/[id]`) : totaux et paliers de la saison, chaque récompense avec ses actions, filleuls, codes, historique des corrections. Les filleuls, codes et historique ne se chargent qu'à l'ouverture de leur onglet. « Voir son espace » ouvre le tableau de bord ambassadeur en vue admin. Les modifications (points, filleul manuel, statut, annulation, réouverture) gardent leur dialogue ou leur motif. Les routes ont été renommées : `[id]` désigne toujours un ambassadeur, la récompense passe par `/api/admin/ambassador-rewards/[id]`. |
 | Lucky Wheel | Les listes utilisaient déjà `OperationsList`, mais les écritures mettaient à jour une clé de cache que les tableaux paginés ne lisent pas : une campagne créée, supprimée ou mise en pause n'apparaissait qu'après rechargement. Les écritures invalident désormais toute la famille de requêtes. |
 | Validation Zod | `PUT /api/admin/promotional-codes/[id]` (partage le schéma de la création, 409 sur code en double, 404 si absent, plus de `any`) ; `POST /api/admin/tickets` et `PUT /api/admin/tickets/[id]` (un prix non numérique renvoie 400 au lieu d'écrire `NaN`). |
 
@@ -57,8 +57,10 @@ refusé par la contrainte. La vue d'ensemble, les participants, les commandes et
 - `/api/admin/registrations` (GET, CSV historique) reste en place mais plus aucun écran ne l'appelle.
 - 30 routes sous `src/app/api/admin` n'ont toujours pas de schéma Zod (groupes, événements, courses, obstacles,
   promotions, paliers de prix, bénévoles, e-mails, inscriptions...). Seules les routes citées plus haut sont couvertes.
-- L'API des points ambassadeurs renvoie tous les ambassadeurs et garde des `any` historiques ; la pagination de
-  ses deux listes est faite dans le navigateur.
+- La liste des ambassadeurs est chargée en entier (une ligne par ambassadeur) et paginée dans le navigateur. Suffisant
+  pour quelques centaines d'ambassadeurs ; au-delà, pagination et recherche côté serveur.
+- Les filleuls de la fiche suivent la règle du tableau de bord ambassadeur (saison en cours, plus les inscriptions déjà
+  créditées). Pour une saison close, l'onglet le signale au lieu de prétendre filtrer par saison.
 - Les écrans ont été vérifiés dans un vrai navigateur, mais avec l'API simulée : cela prouve le comportement du
   front, pas celui de Supabase ni de Stripe. Le remboursement Stripe réel et les triggers de points ambassadeur ne
   se vérifient qu'avec la migration appliquée, sur la base de dev.

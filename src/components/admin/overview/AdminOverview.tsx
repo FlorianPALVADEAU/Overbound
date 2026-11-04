@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, Info, MapPin, Re
 import { useAdminOverview } from '@/app/api/admin/overview/overviewQueries'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { ExternalToolLinks } from '@/components/admin/overview/ExternalToolLinks'
+import { OverviewEventContext } from '@/components/admin/overview/OverviewEventContext'
 import { SalesChart } from '@/components/admin/overview/SalesChart'
 import { Disclosure, StatRow } from '@/components/ds'
 import { Button } from '@/components/ui/button'
@@ -131,8 +132,8 @@ export function AdminOverview({ eventId }: { eventId: string | null }) {
   const { data, error, isLoading, isFetching, refetch } = useAdminOverview(eventId)
 
   const description = data?.scope
-    ? `Chiffres de ${data.scope.title}. Choisis « Aucun événement » dans la barre du haut pour tout voir.`
-    : 'Tous les événements. Choisis un événement dans la barre du haut pour le détailler.'
+    ? `Chiffres de ${data.scope.title} seulement.`
+    : 'Chiffres de tous les événements.'
 
   return (
     <div className="space-y-6">
@@ -147,6 +148,8 @@ export function AdminOverview({ eventId }: { eventId: string | null }) {
           </Button>
         }
       />
+
+      <OverviewEventContext eventId={eventId} />
 
       {error && !data ? (
         <Card variant="info">

@@ -17,6 +17,8 @@ function queryFor(data: unknown) {
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
     in: vi.fn(() => query),
+    order: vi.fn(() => query),
+    range: vi.fn(() => query),
     not: vi.fn(() => query),
     then: (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data, error: null })),
   }
@@ -34,7 +36,7 @@ function createAdminMock() {
           : queryFor([{ profile_id: USER_ID }]))
         return { select }
       }
-      if (table === 'profiles') return queryFor([{ id: USER_ID, full_name: 'Test User', role: 'user', phone: null, created_at: '2026-01-01T00:00:00.000Z', date_of_birth: null, marketing_opt_in: true }])
+      if (table === 'profiles') return queryFor([{ id: USER_ID, full_name: 'Test User', role: 'user', phone: null, created_at: '2026-01-01T00:00:00.000Z', date_of_birth: null, marketing_opt_in: true, ambassadors: null, group_members: [{ group: { id: 'group-1', name: 'Team', invite_code: 'TEAM' } }] }])
       if (table === 'ambassadors') return queryFor([])
       throw new Error(`Unexpected table: ${table}`)
     }),
@@ -58,7 +60,7 @@ describe('GET /api/admin/users paginated listing', () => {
 
     expect(response.status).toBe(200)
     expect(body.users).toHaveLength(1)
-    expect(body.users[0]).toMatchObject({ id: USER_ID, full_name: 'Test User' })
+    expect(body.users[0]).toMatchObject({ id: USER_ID, full_name: 'Test User', group_name: 'Team', group_invite_code: 'TEAM' })
     expect(body.page).toMatchObject({ limit: 25, totalCount: 1, nextCursor: null })
   })
 

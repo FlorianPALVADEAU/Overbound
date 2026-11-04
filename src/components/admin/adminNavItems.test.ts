@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS, hrefForNavItem, pageUsesEventContext, resolveActiveNavValue } from './adminNavItems'
+import { ADMIN_NAV_GROUPS, ADMIN_NAV_ITEMS, resolveActiveNavValue } from './adminNavItems'
 
 const EVENT = '0d0272d2-647c-4b7b-8c68-3c9a3ecb99d9'
 const item = (value: string) => ADMIN_NAV_ITEMS.find((candidate) => candidate.value === value)!
@@ -14,19 +14,12 @@ describe('admin navigation', () => {
 
   it('replaces the old global members page with event participants', () => {
     expect(ADMIN_NAV_ITEMS.find((entry) => entry.value === 'members')).toBeUndefined()
-    expect(item('participants')).toMatchObject({ href: '/dashboard/participants', requiresEventContext: true })
+    expect(item('participants')).toMatchObject({ href: '/dashboard/participants' })
   })
 
   it('keeps groups and bootcamps as separate admin domains', () => {
     expect(item('groups')).toMatchObject({ label: 'Groupes', href: '/dashboard/groups' })
     expect(item('bootcamps')).toMatchObject({ label: 'Bootcamps', href: '/dashboard/bootcamps' })
-  })
-
-  it('links event pages to the selected event', () => {
-    expect(hrefForNavItem(item('participants'), EVENT)).toBe(`/dashboard/events/${EVENT}/participants`)
-    expect(hrefForNavItem(item('tickets'), EVENT)).toBe(`/dashboard/events/${EVENT}/tickets`)
-    expect(hrefForNavItem(item('checkin'), EVENT)).toBe(`/dashboard/checkin?event=${EVENT}`)
-    expect(hrefForNavItem(item('checkin'), null)).toBe('/dashboard/checkin')
   })
 
   describe('resolveActiveNavValue', () => {
@@ -44,16 +37,6 @@ describe('admin navigation', () => {
 
     it('highlights nothing for an unknown page', () => {
       expect(resolveActiveNavValue('/dashboard/nope')).toBeUndefined()
-    })
-  })
-
-  describe('pageUsesEventContext', () => {
-    it.each(['/dashboard', '/dashboard/orders', '/dashboard/checkin', `/dashboard/events/${EVENT}/participants`, `/dashboard/events/${EVENT}`])('%s uses the event selected in the top bar', (pathname) => {
-      expect(pageUsesEventContext(pathname)).toBe(true)
-    })
-
-    it.each(['/dashboard/events', '/dashboard/logs', '/dashboard/promocodes', '/dashboard/users', '/dashboard/maintenance'])('%s does not', (pathname) => {
-      expect(pageUsesEventContext(pathname)).toBe(false)
     })
   })
 })

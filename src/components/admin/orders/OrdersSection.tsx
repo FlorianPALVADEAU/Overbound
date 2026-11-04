@@ -5,6 +5,7 @@ import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ExternalLink, RefreshCw } from 'lucide-react'
 import { useAdminOrders, useResendReceipt } from '@/app/api/admin/orders/ordersQueries'
+import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { OperationsList, type OperationsListAction, type OperationsListColumn, type OperationsListFilter } from '@/components/admin/operations'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -64,12 +65,22 @@ export function OrdersSection() {
   }, [deferredSearch, eventId])
 
   const { data, error, isLoading, isFetching, refetch } = useAdminOrders({ cursor, limit, status, query: deferredSearch || undefined, eventId })
+  const { data: events = [] } = useAdminEvents()
   const orders = data?.orders ?? []
   const selected = orders.find((order) => order.id === selectedId) ?? null
 
   const resetPagination = () => {
     setCursor(null)
     setPreviousCursors([])
+  }
+
+  // The event filter lives in the list itself: the admin shell no longer carries an event across pages.
+  const setEventFilter = (nextEventId: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (nextEventId) params.set('event', nextEventId)
+    else params.delete('event')
+    const query = params.toString()
+    router.replace(query ? `/dashboard/orders?${query}` : '/dashboard/orders', { scroll: false })
   }
 
   const sendReceipt = (order: OrderListItem) => {
@@ -89,6 +100,13 @@ export function OrdersSection() {
   }
 
   const filters: OperationsListFilter[] = [
+    {
+      id: 'event',
+      label: 'Événement',
+      value: eventId ?? '',
+      allLabel: 'Tous les événements',
+      options: events.map((event) => ({ value: event.id, label: event.title })),
+    },
     {
       id: 'status',
       label: 'Statut',
@@ -142,7 +160,7 @@ export function OrdersSection() {
       <AdminPageHeader
         eyebrow="Billetterie"
         title="Commandes"
-        description={eventId ? 'Paiements de l’événement sélectionné. Annule une inscription depuis la page Participants pour la rembourser.' : 'Tous les paiements. Annule une inscription depuis la page Participants pour la rembourser.'}
+        description={eventId ? 'Paiements de l’événement choisi dans le filtre. Annule une inscription depuis la page Participants pour la rembourser.' : 'Tous les paiements. Annule une inscription depuis la page Participants pour la rembourser.'}
       />
       {notice ? (
         <Alert variant={notice.tone === 'error' ? 'destructive' : 'default'} role="status">
@@ -163,6 +181,7 @@ export function OrdersSection() {
         filters={filters}
         onFilterChange={(filterId, value) => {
           resetPagination()
+          if (filterId === 'event') setEventFilter(value)
           if (filterId === 'status') setStatus(isStatus(value) ? value : null)
           if (filterId === 'limit') setLimit(Number(value))
         }}

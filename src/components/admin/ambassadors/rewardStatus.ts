@@ -1,4 +1,4 @@
-import type { AmbassadorRewardStatus } from '@/types/Ambassador'
+import type { AmbassadorPaymentStatus, AmbassadorPointsStatus, AmbassadorRaceFormat, AmbassadorRewardStatus } from '@/types/Ambassador'
 
 export const REWARD_STATUS_LABELS: Record<AmbassadorRewardStatus, string> = {
   earned: 'Débloquée',
@@ -17,8 +17,28 @@ export const REWARD_STATUS_STYLES: Record<AmbassadorRewardStatus, string> = {
 /** Statuses an admin sets by hand. Cancelling and reopening go through a reason, never through this list. */
 export const SETTABLE_REWARD_STATUSES = ['earned', 'claimed', 'fulfilled'] as const satisfies readonly AmbassadorRewardStatus[]
 
+export const PAYMENT_STATUS_LABELS: Record<AmbassadorPaymentStatus, string> = {
+  paid: 'Payée',
+  pending: 'En attente',
+  refunded: 'Remboursée',
+  cancelled: 'Annulée',
+}
+
+export const POINTS_STATUS_LABELS: Record<AmbassadorPointsStatus, string> = {
+  counted: 'Crédités',
+  revoked: 'Retirés',
+  none: 'Aucun',
+}
+
+export const RACE_FORMAT_LABELS: Record<AmbassadorRaceFormat, string> = {
+  open: 'Open',
+  ranked: 'Ranked',
+}
+
 export const formatDateTime = (value: string | null) =>
   value ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Paris' }).format(new Date(value)) : '—'
+
+export const formatPoints = (value: number) => `${value} pt${value > 1 ? 's' : ''}`
 
 /** Message of a failed mutation: the API's `error` when it sent one. */
 export function mutationMessage(error: unknown, fallback: string): string {

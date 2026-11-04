@@ -1,40 +1,31 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { Eyebrow } from '@/components/ds'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { AdminEventContextSelector } from '@/components/admin/events/AdminEventContextSelector'
-import { pageUsesEventContext } from '@/components/admin/adminNavItems'
 
 interface AdminShellProps {
   fullName?: string | null
-  /** Event currently selected in the context selector (URL driven). */
-  eventId?: string | null
   children: ReactNode
 }
 
-/** Frame of every back-office page: sidebar, top bar with the event context, content area. */
-export function AdminShell({ fullName, eventId, children }: AdminShellProps) {
-  const pathname = usePathname()
+/** Frame of every back-office page: sidebar, top bar, content area. Event context lives on the overview only. */
+export function AdminShell({ fullName, children }: AdminShellProps) {
   return (
     <div className="min-h-screen bg-background md:flex">
-      <AdminSidebar profileRole="admin" fullName={fullName} eventId={eventId} />
+      <AdminSidebar profileRole="admin" fullName={fullName} />
       <div className="min-w-0 flex-1">
-        <header className="space-y-3 border-b border-border bg-surface-deep px-4 py-3 md:space-y-4 md:px-6 md:py-4 lg:px-8">
-          <div className="flex items-center justify-between gap-3">
-            <Eyebrow>Administration</Eyebrow>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="hidden sm:inline-flex">Administrateur</Badge>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/account">Mon compte</Link>
-              </Button>
-            </div>
+        <header className="flex items-center justify-between gap-3 border-b border-border bg-surface-deep px-4 py-3 md:px-6 md:py-4 lg:px-8">
+          <Eyebrow>Administration</Eyebrow>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="hidden sm:inline-flex">Administrateur</Badge>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/account">Mon compte</Link>
+            </Button>
           </div>
-          {pageUsesEventContext(pathname) ? <AdminEventContextSelector eventId={eventId} /> : null}
         </header>
         <main className="mx-auto w-full max-w-screen-2xl min-w-0 space-y-6 px-4 py-4 md:space-y-8 md:px-6 md:py-8 lg:px-8">
           {children}

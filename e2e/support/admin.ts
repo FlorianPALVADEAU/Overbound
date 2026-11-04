@@ -160,23 +160,62 @@ const rankingRow = (index: number) => ({
   recruits_ranked: 10,
 })
 
-const reward = (index: number, status: string) => ({
-  id: `ffffffff-0000-4000-8000-${String(index).padStart(12, '0')}`,
-  ambassador_id: rankingRow(index).ambassador_id,
-  ambassador_name: `Ambassadeur ${index}`,
-  ambassador_code: `AMB${index}`,
-  profile_id: null,
-  reward_level: 1 + (index % 4),
-  reward_name: 'T-shirt Overbound',
+/** Ambassador number from its id: the mock keeps the number in the last twelve digits. */
+const ambassadorIndexOf = (ambassadorId: string) => Number(ambassadorId.slice(-12))
+
+const LEVEL_NAMES = ['Badge', 'Code -50 %', 'T-shirt', 'Dossard Open'] as const
+
+const reward = (ambassadorIndex: number, level: number, status: string) => ({
+  id: `ffffffff-0000-4000-8000-${String(ambassadorIndex * 10 + level).padStart(12, '0')}`,
+  ambassador_id: rankingRow(ambassadorIndex).ambassador_id,
+  reward_level: level,
+  reward_name: LEVEL_NAMES[level - 1],
+  points_required: level * 2,
   status,
   program_year: 2027,
   earned_at: '2026-11-01T10:00:00.000Z',
   expires_at: '2027-12-31T22:59:59.000Z',
-  claimed_at: status === 'claimed' ? '2026-11-02T10:00:00.000Z' : null,
-  fulfilled_at: null,
+  is_expired: false,
+  claimed_at: status === 'claimed' || status === 'fulfilled' ? '2026-11-02T10:00:00.000Z' : null,
+  fulfilled_at: status === 'fulfilled' ? '2026-11-03T10:00:00.000Z' : null,
   cancelled_at: status === 'cancelled' ? '2026-11-02T10:00:00.000Z' : null,
   cancellation_reason: status === 'cancelled' ? 'Inscription remboursée' : null,
 })
+
+/** The list rows, with the rewards waiting on the ambassador and on the team counted from the same state the writes change. */
+const ambassadorRows = (state: AdminStubState) =>
+  Array.from({ length: 30 }, (_, index) => {
+    const id = rankingRow(index + 1).ambassador_id
+    const own = state.rewards.filter((item) => item.ambassador_id === id)
+    return {
+      ...rankingRow(index + 1),
+      rewards_to_claim: own.filter((item) => item.status === 'earned').length,
+      rewards_to_fulfil: own.filter((item) => item.status === 'claimed').length,
+    }
+  })
+
+const sheetFor = (state: AdminStubState, ambassadorId: string) => {
+  const index = ambassadorIndexOf(ambassadorId)
+  const own = state.rewards.filter((item) => item.ambassador_id === ambassadorId)
+  return {
+    ambassador: { id: ambassadorId, profile_id: rankingRow(index).profile_id, name: `Ambassadeur ${index}`, code: `AMB${index}`, is_active: true },
+    program_year: 2027,
+    current_season: 2027,
+    available_program_years: [2027],
+    season: { total_points: 39, recruits_open: 19, recruits_ranked: 10 },
+    next_reward: null,
+    ladder: [1, 2, 3, 4].map((level) => ({
+      level,
+      name: LEVEL_NAMES[level - 1],
+      kind: 'perk',
+      points_required: level * 2,
+      state: 'reached',
+      reward: own.find((item) => item.reward_level === level) ?? null,
+    })),
+    bonus: null,
+    bonus_rewards: [],
+  }
+}
 
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, json: body })
 
@@ -185,7 +224,7 @@ export const stubAdminApis = async (page: Page): Promise<AdminStubState> => {
   const state: AdminStubState = {
     participants: Array.from({ length: 60 }, (_, index) => participant(index + 1)),
     logs,
-    rewards: [reward(1, 'earned'), reward(2, 'claimed'), reward(3, 'cancelled'), reward(4, 'earned')],
+    rewards: [reward(1, 1, 'earned'), reward(1, 2, 'claimed'), reward(1, 3, 'cancelled'), reward(1, 4, 'earned')],
     writes: [],
     unstubbed: [],
     participantQueries: [],
@@ -283,24 +322,24 @@ export const stubAdminApis = async (page: Page): Promise<AdminStubState> => {
       })
     }
 
-    if (method === 'GET' && path === '/ambassadors/points') {
-      return json(route, { ambassadors: Array.from({ length: 30 }, (_, index) => rankingRow(index + 1)), program_year: 2027, available_program_years: [2027] })
+    if (method === 'GET' && path === '/ambassadors') {
+      return json(route, { ambassadors: ambassadorRows(state), program_year: 2027, available_program_years: [2027] })
     }
-    if (method === 'GET' && path === '/ambassadors') return json(route, { rewards: state.rewards })
-    if (method === 'PATCH' && /^\/ambassadors\/[^/]+$/.test(path)) {
+    if (method === 'GET' && path === '/ambassadors/promo-codes') return json(route, { codes: [] })
+    if (method === 'GET' && /^\/ambassadors\/[^/]+$/.test(path)) {
+      return json(route, sheetFor(state, path.split('/')[2]))
+    }
+    if (method === 'GET' && /^\/ambassadors\/[^/]+\/referrals$/.test(path)) return json(route, { referrals: [] })
+    if (method === 'GET' && /^\/ambassadors\/[^/]+\/history$/.test(path)) {
+      return json(route, { point_adjustments: [], reward_decisions: [] })
+    }
+    if (method === 'GET' && /^\/ambassadors\/[^/]+\/promo-codes$/.test(path)) return json(route, { codes: [] })
+    if (method === 'PATCH' && /^\/ambassador-rewards\/[^/]+$/.test(path)) {
       const id = path.split('/')[2]
       const body = request.postDataJSON() as { status?: string; action?: string }
       const target = state.rewards.find((item) => item.id === id)
       if (target) target.status = body.action === 'cancelled' ? 'cancelled' : body.action === 'reopened' ? 'earned' : body.status
       return json(route, { reward: target })
-    }
-    if (method === 'GET' && /^\/ambassadors\/[^/]+\/detail$/.test(path)) {
-      return json(route, {
-        ambassador: { id: path.split('/')[2], name: 'Ambassadeur 1', code: 'AMB1', is_active: true },
-        yearly_points: [{ program_year: 2027, total_points: 39, recruits_open: 19, recruits_ranked: 10, current_reward_level: 3 }],
-        audit_events: [],
-        rewards: state.rewards,
-      })
     }
 
     state.unstubbed.push(`${method} ${path}`)

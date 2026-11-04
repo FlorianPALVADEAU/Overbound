@@ -165,7 +165,7 @@ Corrige à la main les points d'un ambassadeur **pour la saison en cours**, avec
 ### When to Use
 
 - Corriger une erreur de saisie ou d'attribution
-- Créditer un parrainage hors ligne (téléphone, en personne) : préférer `POST /api/admin/ambassadors/manual-referrals`, qui rattache le crédit à une inscription réelle
+- Créditer un parrainage hors ligne (téléphone, en personne) : préférer `POST /api/admin/ambassadors/[id]/referrals`, qui rattache le crédit à une inscription réelle
 - Appliquer un geste commercial exceptionnel
 
 ### Prerequisites
@@ -177,7 +177,7 @@ Corrige à la main les points d'un ambassadeur **pour la saison en cours**, avec
 ### API Endpoint
 
 ```
-PATCH /api/admin/ambassadors/points/[ambassador_id]
+PATCH /api/admin/ambassadors/[ambassador_id]/points
 
 Body:
 {

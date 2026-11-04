@@ -1,6 +1,7 @@
 'use client'
 
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Mail, UserCog, RefreshCw, Clock, Pencil, Trash2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -61,7 +62,12 @@ export function UsersSection() {
   const searchParams = useSearchParams()
   const initialUrl = useMemo(() => parseOperationsListUrlState(searchParams, { filterIds: ['role'] }), [searchParams])
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search')?.trim() ?? '')
-  const deferredSearch = useDeferredValue(searchTerm.trim())
+  // One request per pause in typing, not per keystroke: each lookup scans every account on the server.
+  const [deferredSearch, setDeferredSearch] = useState(() => searchParams.get('search')?.trim() ?? '')
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDeferredSearch(searchTerm.trim()), 300)
+    return () => window.clearTimeout(timer)
+  }, [searchTerm])
   const [roleFilter, setRoleFilter] = useState<AdminUser['role'] | 'all'>((initialUrl.filters.role as AdminUser['role'] | undefined) ?? 'all')
   const [limit, setLimit] = useState(initialUrl.limit)
   const [cursor, setCursor] = useState<string | null>(initialUrl.cursor)
@@ -148,14 +154,14 @@ export function UsersSection() {
     }
   }
 
-  const openEditDialog = (user: AdminUser) => {
+  const openEditDialog = (user: AdminUser, role: AdminUser['role'] = user.role) => {
     setEditUser(user)
     setEditValues({
       full_name: user.full_name ?? '',
       phone: user.phone ?? '',
       date_of_birth: user.date_of_birth ?? '',
       marketing_opt_in: Boolean(user.marketing_opt_in),
-      role: user.role,
+      role,
       ambassador_promotional_code_id: user.ambassador_promotional_code_id ?? null,
     })
   }
@@ -258,8 +264,22 @@ export function UsersSection() {
           getItemId={(user) => user.id}
           columns={[
             { id: 'user', header: 'Utilisateur', cell: (user) => <><p className="truncate font-medium">{user.full_name || user.email || 'Utilisateur'}</p><p className="truncate text-xs text-muted-foreground">{user.email || '—'}</p>{user.phone ? <p className="truncate text-xs text-muted-foreground">{user.phone}</p> : null}</> },
-            { id: 'role', header: 'Rôle', cell: (user) => <Select value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as AdminUser['role'])} disabled={updatingId === user.id}><SelectTrigger className="h-8 w-full sm:w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user">{roleLabels.user}</SelectItem><SelectItem value="volunteer">{roleLabels.volunteer}</SelectItem><SelectItem value="admin">{roleLabels.admin}</SelectItem><SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem></SelectContent></Select> },
-            { id: 'group', header: 'Groupe', cell: (user) => <><p className="truncate">{user.group_name || 'Aucun groupe'}</p>{user.group_invite_code ? <p className="font-mono text-xs text-muted-foreground">{user.group_invite_code}</p> : null}</> },
+            { id: 'role', header: 'Rôle', cell: (user) => <Select value={user.role} onValueChange={(value) => {
+              // An ambassador needs an active promo code: pick it in the dialog instead of sending a bare role.
+              if (value === 'ambassador' && !user.ambassador_promotional_code_id) openEditDialog(user, 'ambassador')
+              else void handleRoleChange(user.id, value as AdminUser['role'])
+            }} disabled={updatingId === user.id}><SelectTrigger className="h-8 w-full sm:w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user">{roleLabels.user}</SelectItem><SelectItem value="volunteer">{roleLabels.volunteer}</SelectItem><SelectItem value="admin">{roleLabels.admin}</SelectItem><SelectItem value="ambassador">{roleLabels.ambassador}</SelectItem></SelectContent></Select> },
+            { id: 'group', header: 'Groupe', cell: (user) => user.group_invite_code ? (
+              // The invite code is unique: the groups list opens on exactly this group.
+              <Link
+                href={`/dashboard/groups?search=${encodeURIComponent(user.group_invite_code)}`}
+                onClick={(event) => event.stopPropagation()}
+                className="block min-w-0 rounded-md focus-visible:ring-2 focus-visible:ring-ring hover:text-primary"
+              >
+                <p className="truncate font-medium">{user.group_name || 'Groupe sans nom'}</p>
+                <p className="font-mono text-xs text-muted-foreground">{user.group_invite_code}</p>
+              </Link>
+            ) : <p className="text-muted-foreground">Aucun groupe</p> },
             { id: 'created', header: 'Créé le', cell: (user) => formatDate(user.created_at), hiddenByDefault: true },
             { id: 'last-sign-in', header: 'Dernière connexion', cell: (user) => formatDate(user.last_sign_in_at), hiddenByDefault: true },
           ] satisfies OperationsListColumn<AdminUser>[]}

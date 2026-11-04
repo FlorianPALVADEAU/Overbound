@@ -182,21 +182,35 @@ test.describe('Logs', () => {
 })
 
 test.describe('Ambassadors', () => {
-  test('lists the ranking and the rewards, and a row opens the sheet', async ({ page }) => {
+  const AMBASSADOR_1 = 'dddddddd-0000-4000-8000-000000000001'
+  const reward = (page: Page, level: number) =>
+    page.getByRole('listitem').filter({ hasText: `Palier ${level} ·` }).filter({ visible: true }).first()
+
+  test('lists every ambassador with the rewards waiting, and a row opens the sheet', async ({ page }) => {
     const state = await open(page, '/dashboard/ambassadors')
-    await expect(page.getByRole('heading', { name: 'Classement' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Récompenses' })).toBeVisible()
-    await expect(shown(page, 'Ambassadeur 1')).toBeVisible()
-    await page.getByRole('row').filter({ hasText: 'AMB2' }).filter({ visible: true }).first().click()
-    await expect(page.getByRole('dialog').getByText('Code : AMB1')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Ambassadeurs' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Classement' })).toHaveCount(0)
+    await expect(shown(page, '1 à remettre')).toBeVisible()
+    await expect(shown(page, '2 à réclamer')).toBeVisible()
+
+    await page.getByRole('row').filter({ hasText: 'Ambassadeur 1' }).filter({ visible: true }).first().click()
+    await expect(page).toHaveURL(new RegExp(`/dashboard/ambassadors/${AMBASSADOR_1}$`))
+    await expect(page.getByRole('heading', { name: 'Ambassadeur 1' })).toBeVisible()
+    expect(state.unstubbed).toEqual([])
+  })
+
+  test('the sheet shows the ladder with each reward and its next action', async ({ page }) => {
+    const state = await open(page, `/dashboard/ambassadors/${AMBASSADOR_1}`)
+    await expect(page.getByRole('link', { name: /Retour aux ambassadeurs/ })).toBeVisible()
+    await expect(reward(page, 1).getByRole('button', { name: 'Marquer réclamée' })).toBeVisible()
+    await expect(reward(page, 2).getByRole('button', { name: 'Marquer envoyée' })).toBeVisible()
+    await expect(reward(page, 3).getByRole('button', { name: 'Rouvrir' })).toBeVisible()
     expect(state.unstubbed).toEqual([])
   })
 
   test('cancelling a reward asks for a reason and sends it', async ({ page }) => {
-    const state = await open(page, '/dashboard/ambassadors')
-    const rewards = page.getByRole('region', { name: 'Liste récompense' })
-    await rewards.getByRole('row').filter({ hasText: 'Ambassadeur 1' }).filter({ visible: true }).first().getByRole('button', { name: /Actions pour/ }).click()
-    await page.getByRole('menuitem', { name: 'Annuler la récompense' }).click()
+    const state = await open(page, `/dashboard/ambassadors/${AMBASSADOR_1}`)
+    await reward(page, 1).getByRole('button', { name: 'Annuler', exact: true }).click()
 
     const dialog = page.getByRole('dialog')
     const confirm = dialog.getByRole('button', { name: 'Annuler la récompense' })
@@ -205,17 +219,30 @@ test.describe('Ambassadors', () => {
     await confirm.click()
 
     await expect(page.getByText('Récompense annulée.')).toBeVisible()
-    const write = state.writes.find((item) => item.route.startsWith('PATCH /ambassadors/'))
+    const write = state.writes.find((item) => item.route.startsWith('PATCH /ambassador-rewards/'))
     expect(write?.body).toMatchObject({ action: 'cancelled', reason: 'Inscription remboursée' })
   })
 
   test('marking a reward as sent calls the API without any prompt', async ({ page }) => {
-    const state = await open(page, '/dashboard/ambassadors')
-    const rewards = page.getByRole('region', { name: 'Liste récompense' })
-    await rewards.getByRole('row').filter({ hasText: 'Ambassadeur 1' }).filter({ visible: true }).first().getByRole('button', { name: /Actions pour/ }).click()
-    await page.getByRole('menuitem', { name: /Marquer « envoyée »/ }).click()
+    const state = await open(page, `/dashboard/ambassadors/${AMBASSADOR_1}`)
+    await reward(page, 2).getByRole('button', { name: 'Marquer envoyée' }).click()
     await expect(page.getByText(/marquée « envoyée »/)).toBeVisible()
-    expect(state.writes.find((item) => item.route.startsWith('PATCH /ambassadors/'))?.body).toEqual({ status: 'fulfilled' })
+    expect(state.writes.find((item) => item.route.startsWith('PATCH /ambassador-rewards/'))?.body).toEqual({ status: 'fulfilled' })
+  })
+
+  test('referrals load when their tab opens, not with the sheet', async ({ page }) => {
+    const requested: string[] = []
+    page.on('request', (request) => {
+      if (request.url().includes('/referrals')) requested.push(request.url())
+    })
+    const state = await open(page, `/dashboard/ambassadors/${AMBASSADOR_1}`)
+    await expect(reward(page, 1).getByRole('button', { name: 'Marquer réclamée' })).toBeVisible()
+    expect(requested).toEqual([])
+
+    await page.getByRole('tab', { name: 'Filleuls' }).click()
+    await expect(page.getByText('Aucun filleul pour la saison en cours.')).toBeVisible()
+    expect(requested.length).toBeGreaterThan(0)
+    expect(state.unstubbed).toEqual([])
   })
 })
 
@@ -228,10 +255,19 @@ test.describe('Navigation', () => {
     await expect(sidebar.getByRole('link', { name: 'Commandes' })).toBeVisible()
   })
 
-  test('the event selector appears only on pages that use it', async ({ page }) => {
+  test('the event context lives on the overview: a banner while set, removed in one click', async ({ page }) => {
+    await open(page, `/dashboard?event=${EVENT_ID}`)
+    await expect(page.getByRole('status', { name: 'Contexte événement actif' })).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Contexte événement' })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Retirer le contexte' }).click()
+    await expect(page).toHaveURL(/\/dashboard$/)
+    await expect(page.getByRole('combobox', { name: 'Contexte événement' })).toBeVisible()
+  })
+
+  test('other pages carry no global event context', async ({ page }) => {
     await open(page, '/dashboard/logs')
-    await expect(page.getByText('Contexte événement')).toHaveCount(0)
-    await page.goto('/dashboard/orders')
-    await expect(page.getByText('Contexte événement').first()).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Contexte événement' })).toHaveCount(0)
+    await expect(page.getByRole('status', { name: 'Contexte événement actif' })).toHaveCount(0)
   })
 })
