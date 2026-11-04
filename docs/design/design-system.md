@@ -85,6 +85,7 @@ Familles :
 | `text-xs` | 12 px | mentions, aides de formulaire |
 | `text-eyebrow` | 12 px, tracking 0.24em | eyebrow, uppercase |
 | `text-label` | 11 px, tracking 0.2em | label de chiffre ou de tag, uppercase. Seule taille sous 12 px |
+| `text-article` | 17 → 20 px, interligne 1,7 | corps des articles et pages légales (`.prose-overbound`) |
 
 Règles :
 - Les classes display s'utilisent via `DISPLAY_TITLE` (`font-display font-bold uppercase
@@ -141,10 +142,14 @@ Trois largeurs, toutes avec les mêmes marges `px-4 sm:px-6 lg:px-8` :
 | `Container size` | Largeur | Pour |
 |---|---|---|
 | `page` (défaut) | `max-w-7xl` | toute section marketing |
-| `prose` | `max-w-3xl` | blog, pages légales, texte long |
+| `prose` | `max-w-3xl` | pages légales, texte long hors article |
 | `form` | `max-w-xl` | auth, compte, tunnel d'inscription |
 
 Dans une section `page`, un bloc de texte se limite à `max-w-2xl` (en-tête) ou `max-w-3xl`.
+
+Colonne de lecture d'un article de blog : `max-w-article` (44 rem, token `--container-article`), centrée dans la
+largeur `page`. Le sommaire occupe la dernière colonne à droite à partir de `xl` (`w-52`), le bloc du
+haut reste replié sous `xl`. Le corps d'article utilise `text-article` (token, 17 à 20 px) via `.prose-overbound`.
 
 ## Formes, ombres, mouvement
 

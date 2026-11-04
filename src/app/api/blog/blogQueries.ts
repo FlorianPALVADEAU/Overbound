@@ -85,9 +85,10 @@ export const fetchBlogPosts = async (params: PostsQueryParams) => {
   return result;
 };
 
-export const fetchBlogCategories = async () => {
+// Categories without a published article would only lead to an empty listing.
+export const fetchBlogCategories = async (): Promise<Category[]> => {
   const categories = await client.fetch<Category[]>(categoriesWithCountsQuery);
-  return categories;
+  return categories.filter((category) => category.count > 0);
 };
 
 export const useGetPosts = () => {

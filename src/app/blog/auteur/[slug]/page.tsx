@@ -5,9 +5,11 @@ import { postsByAuthorSlugQuery } from '@/sanity/lib/queries'
 import Link from 'next/link'
 import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import BlogPagination from '@/components/blog/BlogPagination'
 import { urlFor } from '@/sanity/lib/image'
 import type { Metadata } from 'next'
-import { containerClass } from '@/components/ds'
+import { containerClass, DISPLAY_TITLE } from '@/components/ds'
+import { PageHero } from '@/components/hero/PageHero'
 import { cn } from '@/lib/utils'
 
 export const revalidate = 60
@@ -82,45 +84,52 @@ export default async function BlogAuthorPage({ params, searchParams }: { params:
   const pageCount = Math.max(1, Math.ceil((total || 0) / pageSize))
 
   if (!author) {
-    return <div className="max-w-5xl mx-auto p-6">Auteur introuvable.</div>
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <div className={cn(containerClass(), 'py-24 text-center')}>
+          <p className={cn(DISPLAY_TITLE, 'text-display-md')}>Auteur introuvable</p>
+          <Link href="/blog/auteurs" className="mt-4 inline-block text-sm text-primary hover:underline">
+            Voir tous les auteurs
+          </Link>
+        </div>
+      </main>
+    )
   }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="relative isolate overflow-hidden py-14">
-        <div className="absolute inset-0">
-          <Image src={COVER.pages.blog} alt="Auteur OverBound" fill sizes="100vw" className="object-cover object-center" />
-          <div className="absolute inset-0 bg-background/45" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background" />
-        </div>
-        <div className={cn(containerClass(), 'relative z-10')}>
-          <h1 className="text-3xl font-bold mb-2">Auteur: {author.name}</h1>
-          {author.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={urlFor(author.avatar).width(120).height(120).url()} alt="" className="rounded-full w-24 h-24 mt-2" />
-          ) : null}
-        </div>
-      </section>
+      <PageHero
+        image={{ src: COVER.pages.blog, alt: 'Auteur OverBound', position: '50% 30%' }}
+        title={author.name}
+        aside={
+          author.avatar ? (
+            <div className="relative mx-auto aspect-square w-32 overflow-hidden rounded-full border border-border lg:mx-0">
+              <Image
+                src={urlFor(author.avatar).width(240).height(240).url()}
+                alt=""
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
+            </div>
+          ) : undefined
+        }
+      />
 
-      <div className={containerClass()}>
+      <div className={cn(containerClass(), 'py-16')}>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {items?.map((p: any) => (
           <BlogArticleItem key={p._id} post={p} />
         ))}
       </div>
 
-      {pageCount > 1 && (
-        <nav className="flex items-center justify-center gap-3 mt-8">
-          {current > 1 && (
-            <Link href={`/blog/auteur/${slug}?page=${current - 1}`} className="px-3 py-1 border rounded-full">Précédent</Link>
-          )}
-          <span className="text-sm opacity-70">Page {current} / {pageCount}</span>
-          {current < pageCount && (
-            <Link href={`/blog/auteur/${slug}?page=${current + 1}`} className="px-3 py-1 border rounded-full">Suivant</Link>
-          )}
-        </nav>
-      )}
+      <BlogPagination
+        current={current}
+        pageCount={pageCount}
+        hrefFor={(page) => `/blog/auteur/${slug}?page=${page}`}
+      />
       </div>
     </main>
-  )}
+  )
+}
