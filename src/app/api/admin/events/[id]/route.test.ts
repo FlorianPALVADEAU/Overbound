@@ -115,4 +115,33 @@ describe('PUT /api/admin/events/[id]', () => {
     expect(await response.json()).toMatchObject({ error: expect.any(String) })
     expect(supabaseAdminMock).not.toHaveBeenCalled()
   })
+
+  it('answers 409 when the slug is already used by another event (unique violation)', async () => {
+    supabaseAdminMock.mockReturnValue({
+      rpc: rpcMock,
+      from: vi.fn(() => chain({ data: null, error: { code: '23505', message: 'duplicate key value' } })),
+    })
+
+    const response = await PUT(
+      putRequest({ slug: 'ultra-arena', title: 'Ultra', date: '2027-04-24T10:00:00Z', location: 'SQY', capacity: 10, status: 'draft' }),
+      params,
+    )
+
+    expect(response.status).toBe(409)
+    expect(await response.json()).toEqual({ error: 'Un événement avec ce slug existe déjà' })
+  })
+
+  it('keeps other database errors as server errors', async () => {
+    supabaseAdminMock.mockReturnValue({
+      rpc: rpcMock,
+      from: vi.fn(() => chain({ data: null, error: { code: '08006', message: 'connection failure' } })),
+    })
+
+    const response = await PUT(
+      putRequest({ slug: 'ultra-arena', title: 'Ultra', date: '2027-04-24T10:00:00Z', location: 'SQY', capacity: 10, status: 'draft' }),
+      params,
+    )
+
+    expect(response.status).toBe(500)
+  })
 })
