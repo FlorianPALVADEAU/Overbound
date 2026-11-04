@@ -21,7 +21,7 @@ async function handlePut(request: NextRequest, { params }: { params: Promise<{ i
     }
     const { id } = await params
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const validated = updateEventPriceTierSchema.parse(body)
 
     // Utiliser supabaseAdmin pour modifier

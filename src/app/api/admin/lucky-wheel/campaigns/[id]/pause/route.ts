@@ -17,7 +17,7 @@ const handlePost = async (request: NextRequest, { params }: { params: Promise<{ 
     if (!auth.ok) return auth.response
 
     const { id } = await params
-    const parsed = pauseSchema.safeParse(await request.json())
+    const parsed = pauseSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }

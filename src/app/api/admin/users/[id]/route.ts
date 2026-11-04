@@ -41,7 +41,7 @@ async function handlePatch(
     }
     const { id } = await params
 
-    const payload = await request.json()
+    const payload = await request.json().catch(() => null)
     const validated = updateUserSchema.parse(payload)
 
     const admin = supabaseAdmin()

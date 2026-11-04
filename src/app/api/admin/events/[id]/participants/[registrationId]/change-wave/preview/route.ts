@@ -52,7 +52,7 @@ export async function POST(
 
   let body: unknown
   try {
-    body = await request.json()
+    body = await request.json().catch(() => null)
   } catch {
     return errorResponse('Corps JSON invalide', 400)
   }

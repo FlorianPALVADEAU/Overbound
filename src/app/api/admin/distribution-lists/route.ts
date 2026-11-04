@@ -232,7 +232,7 @@ async function handlePost(request: NextRequest) {
     const supabase = await createClient()
 
     // Parse and validate request body
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const validatedData = distributionListSchema.parse(body)
 
     // Check if slug already exists

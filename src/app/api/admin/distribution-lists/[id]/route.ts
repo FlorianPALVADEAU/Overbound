@@ -88,7 +88,7 @@ async function handlePatch(
     const { id } = await params
 
     // Parse and validate request body
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const validatedData = updateDistributionListSchema.parse(body)
 
     if (Object.keys(validatedData).length === 0) {

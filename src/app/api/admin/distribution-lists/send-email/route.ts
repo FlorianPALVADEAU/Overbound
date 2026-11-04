@@ -39,7 +39,7 @@ async function handlePost(request: NextRequest) {
     const user = auth.user
 
     // Parse and validate request body
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const validatedData = sendEmailSchema.parse(body)
 
     if (!isMarketingTransportConfigured()) {

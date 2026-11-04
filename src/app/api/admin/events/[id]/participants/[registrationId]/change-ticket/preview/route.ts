@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsedParams.success) return NextResponse.json({ error: 'Identifiants événement ou inscription invalides' }, { status: 400 })
 
   let body: unknown
-  try { body = await request.json() } catch { return NextResponse.json({ error: 'Corps JSON invalide' }, { status: 400 }) }
+  try { body = await request.json().catch(() => null) } catch { return NextResponse.json({ error: 'Corps JSON invalide' }, { status: 400 }) }
   const parsedBody = bodySchema.safeParse(body)
   if (!parsedBody.success) return NextResponse.json({ error: 'Billet cible invalide' }, { status: 400 })
 

@@ -120,7 +120,7 @@ const handlePost = async (request: NextRequest) => {
     const auth = await requireAdmin(request)
     if (!auth.ok) return auth.response
 
-    const parsed = rewardSchema.safeParse(await request.json())
+    const parsed = rewardSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' }, { status: 400 })
     }

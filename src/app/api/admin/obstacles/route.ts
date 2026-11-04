@@ -79,7 +79,7 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const {
       name,
       description,

@@ -205,7 +205,7 @@ async function handleDelete(
     const { id: listId } = await params
 
     // Parse request body to get subscription_id
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const { subscription_id }: { subscription_id: string } = body
 
     if (!subscription_id) {
@@ -281,7 +281,7 @@ async function handlePost(
 
     const { id } = await params
 
-    const parsedBody = addSubscribersSchema.safeParse(await request.json())
+    const parsedBody = addSubscribersSchema.safeParse(await request.json().catch(() => null))
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: 'user_ids array is required', details: parsedBody.error.flatten() },

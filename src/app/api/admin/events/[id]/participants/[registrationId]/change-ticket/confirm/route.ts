@@ -21,7 +21,7 @@ export async function POST(
 
   let body: unknown
   try {
-    body = await request.json()
+    body = await request.json().catch(() => null)
   } catch {
     return NextResponse.json({ error: 'Corps JSON invalide' }, { status: 400 })
   }
