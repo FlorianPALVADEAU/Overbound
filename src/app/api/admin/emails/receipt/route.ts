@@ -4,6 +4,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { sendReceiptEmail } from '@/lib/email'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { receiptResendSchema } from '@/lib/admin/receiptInput'
 
 export const runtime = 'nodejs'
 
@@ -26,12 +27,11 @@ async function handlePost(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const payload = await request.json().catch(() => ({}))
-    const paymentIntentId = typeof payload?.paymentIntentId === 'string' ? payload.paymentIntentId : ''
-
-    if (!paymentIntentId) {
-      return NextResponse.json({ error: 'paymentIntentId manquant.' }, { status: 400 })
+    const parsed = receiptResendSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'paymentIntentId manquant.' }, { status: 400 })
     }
+    const paymentIntentId = parsed.data.paymentIntentId
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
       expand: ['latest_charge'],
