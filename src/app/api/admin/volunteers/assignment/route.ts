@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { sendVolunteerAssignment } from '@/lib/email/volunteers'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { volunteerAssignmentSchema } from '@/lib/admin/volunteerInput'
 
 const handlePost = async (request: NextRequest) => {
   try {
@@ -14,42 +15,12 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const body = await request.json()
-    const {
-      volunteerId,
-      email,
-      fullName,
-      eventId,
-      eventTitle,
-      eventDate,
-      eventLocation,
-      shiftStart,
-      shiftEnd,
-      arrivalInstructions,
-      contactEmail,
-      contactPhone,
-      checkinUrl,
-    } = body as Record<string, string | null>
-
-    if (!volunteerId || !email || !eventId || !eventTitle || !eventDate || !eventLocation || !shiftStart || !shiftEnd) {
-      return NextResponse.json({ error: 'Paramètres manquants pour l’affectation.' }, { status: 400 })
+    const parsed = volunteerAssignmentSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Paramètres manquants pour l’affectation.' }, { status: 400 })
     }
 
-    await sendVolunteerAssignment({
-      volunteerId,
-      email,
-      fullName: fullName ?? null,
-      eventId,
-      eventTitle,
-      eventDate,
-      eventLocation,
-      shiftStart,
-      shiftEnd,
-      arrivalInstructions: arrivalInstructions ?? null,
-      contactEmail: contactEmail ?? null,
-      contactPhone: contactPhone ?? null,
-      checkinUrl: checkinUrl ?? null,
-    })
+    await sendVolunteerAssignment(parsed.data)
 
     return NextResponse.json({ success: true })
   } catch (error) {
