@@ -3,24 +3,8 @@
 import { useState } from 'react'
 import { useDistributionLists } from '@/hooks/useDistributionLists'
 import type { DistributionListWithStats } from '@/types/DistributionList'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,16 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  MoreHorizontal,
-  Users,
-  Edit,
-  Trash2,
-  Power,
-  PowerOff,
-} from 'lucide-react'
+import { Users } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { EVENT_OPENING_FIRST_LIST_ID } from '@/lib/subscriptions/constants'
+import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 
 interface DistributionListsTableProps {
   lists: DistributionListWithStats[]
@@ -48,6 +26,20 @@ interface DistributionListsTableProps {
   onViewSubscribers: (list: DistributionListWithStats) => void
   onRefresh: () => void
 }
+
+const getTypeColor = (type: string) => {
+  const colors: Record<string, string> = {
+    marketing: 'bg-info/15 text-info',
+    events: 'bg-success/15 text-success',
+    news: 'bg-primary/15 text-primary',
+    volunteers: 'bg-warning/15 text-warning',
+    partners: 'bg-secondary-foreground/15 text-secondary-foreground',
+    transactional: 'bg-muted text-muted-foreground',
+  }
+  return colors[type] || colors.marketing
+}
+
+const isLocked = (list: DistributionListWithStats) => list.id === EVENT_OPENING_FIRST_LIST_ID
 
 export function DistributionListsTable({
   lists,
@@ -83,152 +75,80 @@ export function DistributionListsTable({
     }
   }
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      marketing: 'bg-info/15 text-info',
-      events: 'bg-success/15 text-success',
-      news: 'bg-primary/15 text-primary',
-      volunteers: 'bg-warning/15 text-warning',
-      partners: 'bg-secondary-foreground/15 text-secondary-foreground',
-      transactional: 'bg-muted text-muted-foreground',
-    }
-    return colors[type] || colors.marketing
-  }
+  const columns: OperationsListColumn<DistributionListWithStats>[] = [
+    {
+      id: 'name',
+      header: 'Nom',
+      cell: (list) => (
+        <div>
+          <div className="font-medium">{list.name}</div>
+          {list.description ? <div className="line-clamp-1 text-sm text-muted-foreground">{list.description}</div> : null}
+        </div>
+      ),
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      mobile: 'summary',
+      cell: (list) => <Badge className={getTypeColor(list.type)}>{list.type}</Badge>,
+    },
+    {
+      id: 'subscribers',
+      header: 'Abonnés',
+      mobile: 'summary',
+      cell: (list) => (
+        <Button variant="ghost" size="sm" onClick={() => onViewSubscribers(list)} className="gap-1">
+          <Users className="h-4 w-4" />
+          {list.subscriber_count || 0}
+        </Button>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      mobile: 'summary',
+      cell: (list) => (
+        <Switch
+          aria-label={list.active ? `Désactiver ${list.name}` : `Activer ${list.name}`}
+          checked={list.active}
+          onCheckedChange={() => handleToggleActive(list)}
+          disabled={isLocked(list)}
+        />
+      ),
+    },
+    {
+      id: 'slug',
+      header: 'Slug',
+      mobile: 'detail',
+      cell: (list) => <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{list.slug}</code>,
+    },
+  ]
+
+  const rowActions: OperationsListAction<DistributionListWithStats>[] = [
+    { id: 'subscribers', label: 'Voir les abonnés', onSelect: onViewSubscribers },
+    { id: 'edit', label: 'Modifier', onSelect: onEdit, disabled: isLocked },
+    {
+      id: 'toggle',
+      label: 'Activer / désactiver',
+      onSelect: (list) => void handleToggleActive(list),
+      disabled: isLocked,
+    },
+    { id: 'delete', label: 'Supprimer', onSelect: setListToDelete, disabled: isLocked, destructive: true },
+  ]
 
   return (
     <>
-      <div className="hidden overflow-hidden rounded-xl border md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead className="text-center">Abonnés</TableHead>
-              <TableHead className="text-center">Statut</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lists.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Aucune liste de distribution
-                </TableCell>
-              </TableRow>
-            ) : (
-              lists.map((list) => (
-                <TableRow key={list.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{list.name}</div>
-                      {list.description && (
-                        <div className="text-sm text-muted-foreground line-clamp-1">
-                          {list.description}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getTypeColor(list.type)}>{list.type}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                      {list.slug}
-                    </code>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onViewSubscribers(list)}
-                      className="gap-1"
-                    >
-                      <Users className="w-4 h-4" />
-                      {list.subscriber_count || 0}
-                    </Button>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Switch
-                      checked={list.active}
-                      onCheckedChange={() => handleToggleActive(list)}
-                      disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => onViewSubscribers(list)}>
-                          <Users className="w-4 h-4 mr-2" />
-                          Voir les abonnés ({list.subscriber_count})
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => onEdit(list)}
-                          disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          {list.id === EVENT_OPENING_FIRST_LIST_ID
-                            ? 'Modifier (indisponible)'
-                            : 'Modifier'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleToggleActive(list)}
-                          disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
-                        >
-                          {list.active ? (
-                            <>
-                              <PowerOff className="w-4 h-4 mr-2" />
-                              {list.id === EVENT_OPENING_FIRST_LIST_ID
-                                ? 'Désactiver (indisponible)'
-                                : 'Désactiver'}
-                            </>
-                          ) : (
-                            <>
-                              <Power className="w-4 h-4 mr-2" />
-                              {list.id === EVENT_OPENING_FIRST_LIST_ID
-                                ? 'Activer (indisponible)'
-                                : 'Activer'}
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setListToDelete(list)}
-                          className="text-destructive"
-                          disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          {list.id === EVENT_OPENING_FIRST_LIST_ID
-                            ? 'Supprimer (indisponible)'
-                            : 'Supprimer'}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="space-y-3 md:hidden">
-        {lists.length === 0 ? <div className="rounded-xl border py-8 text-center text-sm text-muted-foreground">Aucune liste de distribution</div> : lists.map((list) => (
-          <article key={list.id} className="min-w-0 rounded-xl border bg-card p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-medium">{list.name}</p>{list.description ? <p className="line-clamp-2 text-sm text-muted-foreground">{list.description}</p> : null}</div><Badge className={`shrink-0 ${getTypeColor(list.type)}`}>{list.type}</Badge></div>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm"><code className="max-w-full truncate rounded bg-muted px-1.5 py-0.5 text-xs">{list.slug}</code><Button variant="ghost" size="sm" onClick={() => onViewSubscribers(list)} className="ml-auto gap-1"><Users className="h-4 w-4" />{list.subscriber_count || 0}</Button><Switch checked={list.active} onCheckedChange={() => handleToggleActive(list)} disabled={list.id === EVENT_OPENING_FIRST_LIST_ID} /></div>
-            <div className="mt-3 flex justify-end border-t pt-3"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm"><MoreHorizontal className="mr-2 h-4 w-4" />Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Actions</DropdownMenuLabel><DropdownMenuItem onClick={() => onViewSubscribers(list)}><Users className="mr-2 h-4 w-4" />Voir les abonnés ({list.subscriber_count})</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => onEdit(list)} disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}><Edit className="mr-2 h-4 w-4" />Modifier</DropdownMenuItem><DropdownMenuItem onClick={() => handleToggleActive(list)} disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}>{list.active ? <><PowerOff className="mr-2 h-4 w-4" />Désactiver</> : <><Power className="mr-2 h-4 w-4" />Activer</>}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setListToDelete(list)} className="text-destructive" disabled={list.id === EVENT_OPENING_FIRST_LIST_ID}><Trash2 className="mr-2 h-4 w-4" />Supprimer</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>
-          </article>
-        ))}
-      </div>
+      <OperationsList
+        data={{ items: lists, nextCursor: null, total: lists.length }}
+        getItemId={(list) => list.id}
+        columns={columns}
+        rowActions={rowActions}
+        pagination={{ cursor: null, previousCursors: [], nextCursor: null, total: lists.length }}
+        onPaginationChange={() => undefined}
+        itemLabel="liste"
+        emptyState={<div className="px-3 py-12 text-center text-sm text-muted-foreground">Aucune liste de distribution</div>}
+      />
 
-      {/* Delete confirmation dialog */}
       <AlertDialog
         open={!!listToDelete}
         onOpenChange={(open) => !open && setListToDelete(null)}
