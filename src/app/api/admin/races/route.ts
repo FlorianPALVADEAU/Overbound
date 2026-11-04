@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { raceInputSchema } from '@/lib/admin/catalogInput'
 
 const racesQuerySchema = z.object({ paginated: z.enum(['true', '1']).optional(), cursor: z.string().min(1).optional(), limit: z.coerce.number().int().min(25).max(100).default(50), query: z.string().trim().max(160).optional(), type: z.string().trim().max(40).optional(), sort: z.enum(['created_at', 'name', 'difficulty', 'distance_km']).default('created_at'), direction: z.enum(['asc', 'desc']).default('desc') })
 const decodeOffset = (cursor?: string) => { if (!cursor) return 0; const value = Number(Buffer.from(cursor, 'base64url').toString('utf8')); if (!Number.isInteger(value) || value < 0) throw new Error('Cursor de pagination invalide'); return value }
@@ -60,7 +61,10 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const body = await request.json()
+    const parsed = raceInputSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Champs obligatoires manquants' }, { status: 400 })
+    }
     const {
       name,
       logo_url,
@@ -71,15 +75,7 @@ const handlePost = async (request: NextRequest) => {
       description,
       is_universal,
       obstacle_ids
-    } = body
-
-    // Validation
-    if (!name || !type || !target_public || distance_km === undefined) {
-      return NextResponse.json(
-        { error: 'Champs obligatoires manquants' },
-        { status: 400 }
-      )
-    }
+    } = parsed.data
 
     // Utiliser supabaseAdmin pour insérer
     const admin = supabaseAdmin()
@@ -91,9 +87,9 @@ const handlePost = async (request: NextRequest) => {
         name,
         logo_url: logo_url || null,
         type,
-        difficulty: parseInt(difficulty) || 5,
+        difficulty,
         target_public,
-        distance_km: parseFloat(distance_km),
+        distance_km,
         description: description || null,
         is_universal: is_universal ?? false
       })

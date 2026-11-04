@@ -3,6 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { promotionUpdateSchema } from '@/lib/admin/promotionInput'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { z } from 'zod'
@@ -93,25 +94,13 @@ const handlePost = async (request: NextRequest) => {
       return auth.response
     }
 
-    const payload = await request.json()
-
-    const trimmedLinkText = typeof payload.link_text === 'string' ? payload.link_text.trim() : ''
-    if (!payload.title || !payload.description || !payload.link_url || !trimmedLinkText || !payload.starts_at || !payload.ends_at) {
-      return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 })
-    }
-
-    const startsAt = new Date(payload.starts_at)
-    const endsAt = new Date(payload.ends_at)
-    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
-      return NextResponse.json({ error: 'Dates invalides' }, { status: 400 })
-    }
-
-    if (endsAt <= startsAt) {
-      return NextResponse.json({ error: 'La date de fin doit être postérieure à la date de début' }, { status: 400 })
+    const parsed = promotionUpdateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Champs obligatoires manquants' }, { status: 400 })
     }
 
     const admin = supabaseAdmin()
-    const insertPayload = sanitizePayload(payload)
+    const insertPayload = sanitizePayload(parsed.data)
 
     const { data: promotion, error: insertError } = await admin
       .from('site_promotions')

@@ -57,3 +57,11 @@ export const eventUpdateSchema = z.object({
 })
 
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>
+
+/** Body of POST /api/admin/events: same rules, but a missing status is a draft and a missing capacity is 0. */
+export const eventCreateSchema = eventUpdateSchema.extend({
+  status: z.enum(EVENT_STATUSES, { message: 'Statut inconnu' }).default('draft'),
+  capacity: eventUpdateSchema.shape.capacity.default(0),
+})
+
+export type EventCreateInput = z.infer<typeof eventCreateSchema>
