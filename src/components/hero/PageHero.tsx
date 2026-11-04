@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react'
 import { Container, DISPLAY_TITLE, Eyebrow, type EyebrowVariant } from '@/components/ds'
 import { cn } from '@/lib/utils'
-import { HeroFrame } from './HeroFrame'
+import { HeroFrame, type HeroVariant } from './HeroFrame'
 
 interface Props {
   image: Parameters<typeof HeroFrame>[0]['image']
+  /** `compact` shortens the banner so the page content starts above the fold. */
+  variant?: HeroVariant
   eyebrow?: string
   /** `pill-soft` keeps the eyebrow readable on a light photo. */
   eyebrowVariant?: EyebrowVariant
+  /** `lg` (default) for article-length titles, `xl` for a short index title that deserves the largest banner. */
+  titleSize?: 'lg' | 'xl'
   title: ReactNode
   description?: ReactNode
   /** Buttons or links under the description. */
@@ -17,10 +21,12 @@ interface Props {
   id?: string
 }
 
+const TITLE_SIZE = { lg: 'text-display-lg', xl: 'text-display-xl' } as const
+
 /** Standard page banner: eyebrow, title, short text, actions. Same height on every page. */
-export function PageHero({ image, eyebrow, eyebrowVariant, title, description, actions, aside, id }: Props) {
+export function PageHero({ image, variant, eyebrow, eyebrowVariant, titleSize = 'lg', title, description, actions, aside, id }: Props) {
   return (
-    <HeroFrame image={image} id={id}>
+    <HeroFrame image={image} variant={variant} id={id}>
       <Container className={cn('grid min-w-0 items-center gap-10 py-10 sm:py-16', aside && 'lg:grid-cols-[1.3fr_0.7fr]')}>
         <div className="min-w-0 max-w-3xl space-y-4 text-center lg:text-left">
           {eyebrow ? (
@@ -28,7 +34,7 @@ export function PageHero({ image, eyebrow, eyebrowVariant, title, description, a
               {eyebrow}
             </Eyebrow>
           ) : null}
-          <h1 className={cn(DISPLAY_TITLE, 'text-display-lg')}>{title}</h1>
+          <h1 className={cn(DISPLAY_TITLE, TITLE_SIZE[titleSize])}>{title}</h1>
           {description ? (
             <div className="space-y-3 text-lead text-foreground/80">{description}</div>
           ) : null}

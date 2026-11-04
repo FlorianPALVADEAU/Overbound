@@ -6,13 +6,17 @@ import { useParallax } from '@/hooks/useParallax'
 import { cn } from '@/lib/utils'
 
 /**
- * Single source of truth for every hero banner on the site: same height, same
- * parallax. Only the events page uses `tall`.
+ * Single source of truth for every hero banner on the site: same parallax, one height per
+ * variant. `tall` is for the events page. `compact` is for index pages whose filters must
+ * sit above the fold (blog).
  */
 export const HERO_HEIGHT = {
   standard: 'h-[clamp(32rem,68svh,40rem)]',
+  compact: 'min-h-[clamp(20rem,40svh,26rem)]',
   tall: 'min-h-[88svh]',
 } as const
+
+export type HeroVariant = keyof typeof HERO_HEIGHT
 
 // Vertical overscan (-inset-y-40 = 160px) exceeds scroll + mouse travel (110 + 15),
 // so the photo edge never shows.
@@ -30,7 +34,7 @@ interface HeroImage {
 
 interface Props {
   image: HeroImage
-  variant?: keyof typeof HERO_HEIGHT
+  variant?: HeroVariant
   id?: string
   className?: string
   children: ReactNode

@@ -2,6 +2,7 @@ import { COVER } from '@/constants/coverImages'
 import Link from "next/link";
 import BlogArticleItem from "@/components/blog/BlogArticleItem";
 import BlogFilters from "@/components/blog/BlogFilters";
+import BlogPagination from "@/components/blog/BlogPagination";
 import { fetchBlogCategories, fetchBlogPosts, type BlogPost, type Category } from "@/app/api/blog/blogQueries";
 import { PageHero } from '@/components/hero/PageHero'
 import { containerClass } from '@/components/ds'
@@ -52,42 +53,21 @@ export default async function BlogIndex({ searchParams }: { searchParams: BlogSe
 
       <div className={cn(containerClass(), 'py-16')}>
         <BlogFilters categories={categories} />
+        <CategoryPillars categories={categories} active={category} />
 
         {posts.length > 0 ? (
           <>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               {posts.map((p) => (
                 <BlogArticleItem key={p._id} post={p} />
               ))}
             </div>
 
-            {pageCount > 1 && (
-              <nav aria-label="Pagination" className="mt-16 flex items-center justify-center gap-4">
-                {current > 1 && (
-                  <Link
-                    href={buildUrl(current - 1)}
-                    className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
-                  >
-                    Précédent
-                  </Link>
-                )}
-                <span className="rounded-full bg-muted px-4 py-2.5 text-sm font-medium">
-                  Page {current} / {pageCount}
-                </span>
-                {current < pageCount && (
-                  <Link
-                    href={buildUrl(current + 1)}
-                    className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
-                  >
-                    Suivant
-                  </Link>
-                )}
-              </nav>
-            )}
+            <BlogPagination current={current} pageCount={pageCount} hrefFor={buildUrl} />
           </>
         ) : (
           <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-            <p className="text-lg font-medium text-muted-foreground">
+            <p className="text-title font-semibold text-muted-foreground">
               {postsData ? 'Aucun article trouvé' : 'Les articles ne peuvent pas être chargés pour le moment.'}
             </p>
             {q && (
@@ -108,20 +88,44 @@ export default async function BlogIndex({ searchParams }: { searchParams: BlogSe
 function BlogHero() {
   return (
     <PageHero
+      variant="compact"
+      titleSize="xl"
       image={{ src: COVER.pages.blog, alt: 'OverBound Blog', position: '50% 30%' }}
       eyebrow="La tribu OverBound"
-      title="Conseils, actus et coulisses"
-      description="Entraînement, nutrition, préparation et histoires de la tribu."
-      actions={
-        <>
-          <Link href="/blog/categories" className="inline-flex min-h-11 items-center rounded-full border px-4 text-sm hover:bg-background/50">
-            Voir les catégories
-          </Link>
-          <Link href="/blog/auteurs" className="inline-flex min-h-11 items-center rounded-full border px-4 text-sm hover:bg-background/50">
-            Nos auteurs
-          </Link>
-        </>
-      }
+      title="Préparer la boucle"
+      description="Entraînement, récupération et préparation pour la boucle d'environ 2 km, en format OPEN ou RANKED. Conseils et histoires de la tribu Overbound."
     />
+  );
+}
+
+// Five most-used categories as one-tap filters; the long tail stays in the select.
+function CategoryPillars({ categories, active }: { categories: Category[]; active?: string }) {
+  const pillars = [...categories].sort((a, b) => b.count - a.count).slice(0, 5);
+
+  return (
+    <nav aria-label="Catégories populaires" className="mb-12 flex flex-wrap items-center gap-2">
+      {pillars.map((cat) => {
+        const isActive = cat.slug === active;
+        return (
+          <Link
+            key={cat.slug}
+            href={`/blog?category=${cat.slug}`}
+            aria-current={isActive ? 'true' : undefined}
+            className={cn(
+              'inline-flex min-h-11 items-center rounded-full border px-4 text-sm transition-colors',
+              isActive ? 'border-primary text-primary' : 'border-border hover:bg-muted',
+            )}
+          >
+            {cat.title}
+          </Link>
+        );
+      })}
+      <Link href="/blog/categories" className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:text-foreground hover:underline">
+        Toutes les catégories
+      </Link>
+      <Link href="/blog/auteurs" className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:text-foreground hover:underline">
+        Nos auteurs
+      </Link>
+    </nav>
   );
 }
