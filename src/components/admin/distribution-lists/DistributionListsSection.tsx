@@ -122,7 +122,7 @@ export function DistributionListsSection() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
+            <TabsList className="h-auto w-full max-w-full flex-wrap justify-start">
               <TabsTrigger value="all">
                 Toutes ({lists.length})
               </TabsTrigger>
