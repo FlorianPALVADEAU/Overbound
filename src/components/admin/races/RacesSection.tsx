@@ -26,7 +26,6 @@ import {
   updateAdminRace,
   useAdminRacesPage,
   type AdminRacePayload,
-  type DeleteRaceConflict,
 } from '@/app/api/admin/races/racesQueries'
 import { useAdminObstacles } from '@/app/api/admin/obstacles/obstaclesQueries'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
@@ -100,7 +99,6 @@ export function RacesSection() {
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [raceToDelete, setRaceToDelete] = useState<Race | null>(null)
-  const [deleteConflict, setDeleteConflict] = useState<DeleteRaceConflict | null>(null)
 
   const combinedLoading = racesLoading || obstaclesLoading
   const combinedError = racesError || obstaclesError
@@ -123,7 +121,6 @@ export function RacesSection() {
 
   const handleDeleteClick = (race: Race) => {
     setRaceToDelete(race)
-    setDeleteConflict(null)
     setDeleteDialogOpen(true)
   }
 
@@ -132,34 +129,22 @@ export function RacesSection() {
 
     setDeleteLoadingId(raceToDelete.id)
     try {
-      await deleteAdminRace(raceToDelete.id, deleteConflict !== null)
+      // The server refuses to delete a race still used by tickets, events or registrations (409).
+      await deleteAdminRace(raceToDelete.id)
       queryClient.setQueryData<Race[]>(adminRacesQueryKey, (previous) => {
         if (!previous) return []
         return previous.filter((item) => item.id !== raceToDelete.id)
       })
       setMessage({ type: 'success', text: 'Course supprimée avec succès' })
-      setDeleteDialogOpen(false)
-      setRaceToDelete(null)
-      setDeleteConflict(null)
     } catch (error) {
-      const err = error as Error & DeleteRaceConflict
-      if (err.requiresConfirmation && !deleteConflict) {
-        setDeleteConflict({
-          ticketsCount: err.ticketsCount,
-          eventsCount: err.eventsCount,
-          requiresConfirmation: true,
-        })
-      } else {
-        const text = axios.isAxiosError(error)
-          ? error.response?.data?.error || error.message
-          : (error as Error).message || 'Erreur lors de la suppression'
-        setMessage({ type: 'error', text })
-        setDeleteDialogOpen(false)
-        setRaceToDelete(null)
-        setDeleteConflict(null)
-      }
+      const text = axios.isAxiosError(error)
+        ? error.response?.data?.error || error.message
+        : (error as Error).message || 'Erreur lors de la suppression'
+      setMessage({ type: 'error', text })
     } finally {
       setDeleteLoadingId(null)
+      setDeleteDialogOpen(false)
+      setRaceToDelete(null)
     }
   }
 
@@ -378,29 +363,11 @@ export function RacesSection() {
           setDeleteDialogOpen(open)
           if (!open) {
             setRaceToDelete(null)
-            setDeleteConflict(null)
           }
         }}
         title="Supprimer la course"
         entityName={raceToDelete?.name ?? ''}
         entityType="la course"
-        warningMessage={
-          deleteConflict
-            ? `Attention : cette course est utilisée par d'autres éléments.`
-            : undefined
-        }
-        consequences={
-          deleteConflict
-            ? [
-                deleteConflict.ticketsCount > 0
-                  ? `${deleteConflict.ticketsCount} ticket(s) (et leurs inscriptions)`
-                  : null,
-                deleteConflict.eventsCount > 0
-                  ? `${deleteConflict.eventsCount} association(s) événement-course`
-                  : null,
-              ].filter(Boolean) as string[]
-            : undefined
-        }
         onConfirm={handleDelete}
         loading={deleteLoadingId === raceToDelete?.id}
       />

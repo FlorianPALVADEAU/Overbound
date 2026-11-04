@@ -11,7 +11,8 @@ export default defineConfig({
     // e2e/ holds Playwright specs (FDR-0015 §10), a different test
     // runner with its own test/expect globals -- vitest's default glob
     // would otherwise pick them up and fail on @playwright/test imports.
-    exclude: ['**/node_modules/**', '**/.next/**', 'e2e/**'],
+    // .claude/worktrees holds other checkouts of this repo: their tests are not ours to run.
+    exclude: ['**/node_modules/**', '**/.next/**', '**/.claude/**', 'e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

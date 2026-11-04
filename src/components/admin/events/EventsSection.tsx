@@ -21,7 +21,6 @@ import {
   useAdminEventsPage,
   type AdminEventPayload,
   type AdminEventSummary,
-  type DeleteEventConflict,
 } from '@/app/api/admin/events/eventsQueries'
 import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmationDialog'
 import axiosClient from '@/app/api/axiosClient'
@@ -198,7 +197,6 @@ export function EventsSection() {
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [eventToDelete, setEventToDelete] = useState<AdminEventSummary | null>(null)
-  const [deleteConflict, setDeleteConflict] = useState<DeleteEventConflict | null>(null)
 
   const resetPagination = () => {
     setCursor(null)
@@ -283,7 +281,6 @@ export function EventsSection() {
 
   const handleDeleteClick = (event: AdminEventSummary) => {
     setEventToDelete(event)
-    setDeleteConflict(null)
     setDeleteDialogOpen(true)
   }
 
@@ -292,38 +289,23 @@ export function EventsSection() {
 
     setDeleteLoadingId(eventToDelete.id)
     try {
-      // First attempt without force to check for conflicts
-      await deleteAdminEvent(eventToDelete.id, deleteConflict !== null)
+      // The server refuses to delete an event with records (409): nothing is forced from here.
+      await deleteAdminEvent(eventToDelete.id)
       queryClient.setQueryData<AdminEventSummary[]>(adminEventsQueryKey, (previous) => {
         if (!previous) return []
         return previous.filter((item) => item.id !== eventToDelete.id)
       })
       await queryClient.invalidateQueries({ queryKey: adminEventsQueryKey })
       setMessage({ type: 'success', text: 'Événement supprimé avec succès' })
-      setDeleteDialogOpen(false)
-      setEventToDelete(null)
-      setDeleteConflict(null)
     } catch (error) {
-      const err = error as Error & DeleteEventConflict
-      if (err.requiresConfirmation && !deleteConflict) {
-        // Show conflict info but keep dialog open
-        setDeleteConflict({
-          registrationsCount: err.registrationsCount,
-          volunteersCount: err.volunteersCount,
-          ticketsCount: err.ticketsCount,
-          requiresConfirmation: true,
-        })
-      } else {
-        const text = axios.isAxiosError(error)
-          ? error.response?.data?.error || error.message
-          : (error as Error).message || 'Erreur lors de la suppression'
-        setMessage({ type: 'error', text })
-        setDeleteDialogOpen(false)
-        setEventToDelete(null)
-        setDeleteConflict(null)
-      }
+      const text = axios.isAxiosError(error)
+        ? error.response?.data?.error || error.message
+        : (error as Error).message || 'Erreur lors de la suppression'
+      setMessage({ type: 'error', text })
     } finally {
       setDeleteLoadingId(null)
+      setDeleteDialogOpen(false)
+      setEventToDelete(null)
     }
   }
 
@@ -529,32 +511,11 @@ export function EventsSection() {
           setDeleteDialogOpen(open)
           if (!open) {
             setEventToDelete(null)
-            setDeleteConflict(null)
           }
         }}
         title="Supprimer l'événement"
         entityName={eventToDelete?.title ?? ''}
         entityType="l'événement"
-        warningMessage={
-          deleteConflict
-            ? `Attention : cet événement contient des données associées.`
-            : undefined
-        }
-        consequences={
-          deleteConflict
-            ? [
-                deleteConflict.registrationsCount > 0
-                  ? `${deleteConflict.registrationsCount} inscription(s)`
-                  : null,
-                deleteConflict.volunteersCount > 0
-                  ? `${deleteConflict.volunteersCount} candidature(s) bénévole(s)`
-                  : null,
-                deleteConflict.ticketsCount > 0
-                  ? `${deleteConflict.ticketsCount} ticket(s)`
-                  : null,
-              ].filter(Boolean) as string[]
-            : undefined
-        }
         onConfirm={handleDelete}
         loading={deleteLoadingId === eventToDelete?.id}
       />

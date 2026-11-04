@@ -2,6 +2,7 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { obstacleInputSchema } from '@/lib/admin/catalogInput'
 
 const handlePut = async (
   request: NextRequest,
@@ -14,7 +15,13 @@ const handlePut = async (
     }
     const { id } = await params
 
-    const body = await request.json()
+    const parsed = obstacleInputSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Données invalides', issues: parsed.error.issues },
+        { status: 400 },
+      )
+    }
     const {
       name,
       description,
@@ -27,25 +34,9 @@ const handlePut = async (
       weight_male,
       weight_female,
       penalty
-    } = body
+    } = parsed.data
 
     // Validation
-    if (!name || !type || difficulty === undefined) {
-      return NextResponse.json(
-        { error: 'Champs obligatoires manquants' },
-        { status: 400 }
-      )
-    }
-
-    // Valider la difficulté
-    const difficultyNum = parseInt(difficulty)
-    if (difficultyNum < 1 || difficultyNum > 10) {
-      return NextResponse.json(
-        { error: 'La difficulté doit être entre 1 et 10' },
-        { status: 400 }
-      )
-    }
-
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
     const { data: obstacle, error } = await admin
@@ -55,7 +46,7 @@ const handlePut = async (
         description: description || null,
         image_url: image_url || null,
         video_url: video_url || null,
-        difficulty: difficultyNum,
+        difficulty,
         type,
         metric_label: metric_label || null,
         metric_value: metric_value || null,

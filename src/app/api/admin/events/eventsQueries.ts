@@ -367,24 +367,25 @@ export const updateAdminEvent = async (
   }
 }
 
-export interface DeleteEventConflict {
+/** A deletion the server refused: the event holds records and must be cancelled instead. */
+export interface DeleteEventBlocked extends Error {
   registrationsCount: number
   volunteersCount: number
-  ticketsCount: number
-  requiresConfirmation: boolean
+  luckyWheelEntriesCount: number
+  requiresCancellation: true
 }
 
-export const deleteAdminEvent = async (id: string, force = false): Promise<void> => {
+export const deleteAdminEvent = async (id: string): Promise<void> => {
   try {
-    await axiosClient.delete(`/admin/events/${id}${force ? '?force=true' : ''}`)
+    await axiosClient.delete(`/admin/events/${id}`)
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.data?.requiresConfirmation) {
-      const conflictError = new Error(error.response.data.error) as Error & DeleteEventConflict
-      conflictError.registrationsCount = error.response.data.registrationsCount ?? 0
-      conflictError.volunteersCount = error.response.data.volunteersCount ?? 0
-      conflictError.ticketsCount = error.response.data.ticketsCount ?? 0
-      conflictError.requiresConfirmation = true
-      throw conflictError
+    if (axios.isAxiosError(error) && error.response?.data?.requiresCancellation) {
+      const blocked = new Error(error.response.data.error) as DeleteEventBlocked
+      blocked.registrationsCount = error.response.data.registrationsCount ?? 0
+      blocked.volunteersCount = error.response.data.volunteersCount ?? 0
+      blocked.luckyWheelEntriesCount = error.response.data.luckyWheelEntriesCount ?? 0
+      blocked.requiresCancellation = true
+      throw blocked
     }
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.error || 'Erreur lors de la suppression')

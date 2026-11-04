@@ -9,6 +9,8 @@ import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
 import { parseBibCapacity, validateBibConfigChange } from '@/lib/events/bibCapacity'
 import { parseMinimumAge, validateMinimumAgeChange } from '@/lib/events/minimumAge'
 import { parseTshirtQuota } from '@/lib/tshirtOffer'
+import { interpretEventDeletionError } from '@/lib/admin/eventDeletion'
+import { eventUpdateSchema } from '@/lib/admin/eventInput'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
@@ -155,7 +157,13 @@ const handlePut = async (
       .eq('organization_id', auth.organizationId)
       .single()
 
-    const body = await request.json()
+    const parsed = eventUpdateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Données invalides', issues: parsed.error.issues },
+        { status: 400 },
+      )
+    }
     const {
       slug,
       title,
@@ -173,7 +181,7 @@ const handlePut = async (
       external_provider,
       external_event_id,
       external_url
-    } = body
+    } = parsed.data
 
     // Utiliser supabaseAdmin pour modifier
     const admin = supabaseAdmin()
@@ -207,7 +215,7 @@ const handlePut = async (
       .neq('claim_status', 'cancelled')
     const bibs = (bibRows ?? []) as Array<{ bib_number: number; race_format: string | null }>
     const bibError = validateBibConfigChange({
-      next: { capacity: parseInt(capacity) || 0, ranked: nextRanked },
+      next: { capacity, ranked: nextRanked },
       current: {
         capacity: existingEvent?.capacity ?? 0,
         ranked: existingEvent?.ranked_bib_capacity ?? null,
@@ -233,11 +241,11 @@ const handlePut = async (
         date: new Date(date).toISOString(),
         sales_start: sales_start ? new Date(sales_start).toISOString() : null,
         location,
-        capacity: parseInt(capacity) || 0,
+        capacity,
         ranked_bib_capacity: parseBibCapacity(ranked_bib_capacity),
         minimum_age: nextMinimumAge,
         tshirt_offer_quota: parseTshirtQuota(tshirt_offer_quota),
-        status: status || 'draft',
+        status,
         external_provider: external_provider || null,
         external_event_id: external_event_id || null,
         external_url: external_url || null,
@@ -290,7 +298,7 @@ const handlePut = async (
 
 const handleDelete = async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> => {
   try {
     const auth = await requireAdminOrganization(request)
@@ -298,108 +306,19 @@ const handleDelete = async (
       return auth.response
     }
     const { id } = await params
-    const url = new URL(request.url)
-    const forceDelete = url.searchParams.get('force') === 'true'
 
-    const supabase = await createSupabaseServer()
+    // The check and the delete run in one transaction (migration 20261104120000). An event with
+    // registrations, volunteer applications or wheel entries is never deleted: it is cancelled instead.
     const admin = supabaseAdmin()
-
-    // Vérifier s'il y a des inscriptions
-    const { count: registrationsCount } = await supabase
-      .from('registrations')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', id)
-      .eq('organization_id', auth.organizationId)
-
-    // Vérifier s'il y a des candidatures bénévoles
-    const { count: volunteersCount } = await supabase
-      .from('volunteer_applications')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', id)
-
-    // Vérifier s'il y a des tickets
-    const { count: ticketsCount } = await supabase
-      .from('tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', id)
-
-    const hasRelatedData = (registrationsCount && registrationsCount > 0) ||
-      (volunteersCount && volunteersCount > 0) ||
-      (ticketsCount && ticketsCount > 0)
-
-    if (hasRelatedData && !forceDelete) {
-      return NextResponse.json(
-        {
-          error: 'Cet événement a des données associées',
-          registrationsCount: registrationsCount ?? 0,
-          volunteersCount: volunteersCount ?? 0,
-          ticketsCount: ticketsCount ?? 0,
-          requiresConfirmation: true,
-        },
-        { status: 409 }
-      )
-    }
-
-    // Si force delete, supprimer les données associées
-    if (forceDelete && hasRelatedData) {
-      // Supprimer les inscriptions
-      if (registrationsCount && registrationsCount > 0) {
-        const { error: regError } = await admin
-          .from('registrations')
-          .delete()
-          .eq('event_id', id)
-        if (regError) {
-          console.error('Erreur suppression registrations:', regError)
-          throw regError
-        }
-      }
-
-      // Supprimer les candidatures bénévoles
-      if (volunteersCount && volunteersCount > 0) {
-        const { error: volError } = await admin
-          .from('volunteer_applications')
-          .delete()
-          .eq('event_id', id)
-        if (volError) {
-          console.error('Erreur suppression volunteer_applications:', volError)
-          throw volError
-        }
-      }
-
-      // Supprimer les tickets (et leurs inscriptions en cascade si nécessaire)
-      if (ticketsCount && ticketsCount > 0) {
-        const { error: ticketError } = await admin
-          .from('tickets')
-          .delete()
-          .eq('event_id', id)
-        if (ticketError) {
-          console.error('Erreur suppression tickets:', ticketError)
-          throw ticketError
-        }
-      }
-
-      // Supprimer les price tiers
-      const { error: priceTierError } = await admin
-        .from('event_price_tiers')
-        .delete()
-        .eq('event_id', id)
-      if (priceTierError) {
-        console.error('Erreur suppression event_price_tiers:', priceTierError)
-      }
-    }
-
-    // Supprimer l'événement
-    const { error } = await admin
-      .from('events')
-      .delete()
-      .eq('id', id)
-
+    const { data, error } = await admin.rpc('admin_delete_event_without_records', {
+      p_event_id: id,
+      p_organization_id: auth.organizationId,
+    })
     if (error) {
-      throw error
+      const failure = interpretEventDeletionError(error)
+      return NextResponse.json(failure.body, { status: failure.status })
     }
-
-    return NextResponse.json({ success: true })
-
+    return NextResponse.json(data)
   } catch (error) {
     console.error('Erreur DELETE event:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

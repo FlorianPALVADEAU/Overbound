@@ -163,7 +163,6 @@ export function TicketsSection() {
   // Delete confirmation dialog state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null)
-  const [registrationCount, setRegistrationCount] = useState<number>(0)
   const [waveTicket, setWaveTicket] = useState<Ticket | null>(null)
 
   const activeEventFilter = scopedEventId ?? (eventFilter || undefined)
@@ -243,7 +242,6 @@ export function TicketsSection() {
 
   const handleDeleteClick = (ticket: Ticket) => {
     setTicketToDelete(ticket)
-    setRegistrationCount(0)
     setDeleteConfirmOpen(true)
   }
 
@@ -252,38 +250,23 @@ export function TicketsSection() {
 
     setDeleteLoadingId(ticketToDelete.id)
     try {
-      // Use force=true if we already know there are registrations
-      await deleteAdminTicket(ticketToDelete.id, registrationCount > 0)
+      // The server refuses a ticket that still has registrations (409): nothing is forced from here.
+      await deleteAdminTicket(ticketToDelete.id)
       queryClient.setQueryData<Ticket[]>(adminTicketsQueryKey, (previous) => {
         if (!previous) return []
         return previous.filter((item) => item.id !== ticketToDelete.id)
       })
-      setMessage({
-        type: 'success',
-        text: registrationCount > 0
-          ? `Ticket et ${registrationCount} inscription(s) supprimés avec succès`
-          : 'Ticket supprimé avec succès'
-      })
-      setDeleteConfirmOpen(false)
-      setTicketToDelete(null)
-      setRegistrationCount(0)
+      setMessage({ type: 'success', text: 'Ticket supprimé avec succès' })
       await queryClient.invalidateQueries({ queryKey: adminTicketsQueryKey })
     } catch (error) {
-      const err = error as Error & { registrationCount?: number; requiresConfirmation?: boolean }
-      if (err.requiresConfirmation && err.registrationCount && registrationCount === 0) {
-        // Show the count and keep the dialog open for force confirmation
-        setRegistrationCount(err.registrationCount)
-      } else {
-        const text = axios.isAxiosError(error)
-          ? error.response?.data?.error || error.message
-          : err.message || 'Erreur lors de la suppression'
-        setMessage({ type: 'error', text })
-        setDeleteConfirmOpen(false)
-        setTicketToDelete(null)
-        setRegistrationCount(0)
-      }
+      const text = axios.isAxiosError(error)
+        ? error.response?.data?.error || error.message
+        : (error as Error).message || 'Erreur lors de la suppression'
+      setMessage({ type: 'error', text })
     } finally {
       setDeleteLoadingId(null)
+      setDeleteConfirmOpen(false)
+      setTicketToDelete(null)
     }
   }
 
@@ -532,22 +515,11 @@ export function TicketsSection() {
           setDeleteConfirmOpen(open)
           if (!open) {
             setTicketToDelete(null)
-            setRegistrationCount(0)
           }
         }}
         title="Supprimer le ticket"
         entityName={ticketToDelete?.name ?? ''}
         entityType="le ticket"
-        warningMessage={
-          registrationCount > 0
-            ? `Attention : ce ticket a ${registrationCount} inscription(s) active(s).`
-            : undefined
-        }
-        consequences={
-          registrationCount > 0
-            ? [`${registrationCount} inscription(s) seront supprimées`]
-            : undefined
-        }
         onConfirm={handleDelete}
         loading={deleteLoadingId === ticketToDelete?.id}
       />

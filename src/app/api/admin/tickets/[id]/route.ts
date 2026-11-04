@@ -84,10 +84,6 @@ const handleDelete = async (
     }
     const { id } = await params
 
-    // Vérifier le paramètre force dans l'URL
-    const url = new URL(request.url)
-    const forceDelete = url.searchParams.get('force') === 'true'
-
     // Un billet OPEN vendu comme option d'un billet RANKED ne se supprime pas : l'option casserait au paiement.
     const admin = supabaseAdmin()
     const owners = await findTicketsUsingAsCompanion(admin, auth.organizationId, id)
@@ -98,39 +94,23 @@ const handleDelete = async (
       )
     }
 
-    // Vérifier s'il y a des inscriptions utilisant ce ticket
+    // A ticket with registrations is never deleted: the former force branch deleted those (paid) registrations
+    // first, outside any transaction. Cancel them, then delete the ticket.
     const { count } = await admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('ticket_id', id)
       .eq('organization_id', auth.organizationId)
 
-    if (count && count > 0 && !forceDelete) {
+    if (count && count > 0) {
       return NextResponse.json(
         {
-          error: 'Ce ticket a des inscriptions existantes',
+          error: `Ce billet a ${count} inscription(s) : il ne peut pas être supprimé. Annule d’abord ces inscriptions.`,
           registrationCount: count,
-          requiresConfirmation: true
+          requiresDetach: true,
         },
-        { status: 409 }
+        { status: 409 },
       )
-    }
-
-    // Si force delete et il y a des inscriptions, les supprimer d'abord
-    if (count && count > 0 && forceDelete) {
-      const { error: regError } = await admin
-        .from('registrations')
-        .delete()
-        .eq('ticket_id', id)
-        .eq('organization_id', auth.organizationId)
-
-      if (regError) {
-        console.error('Erreur suppression inscriptions:', regError)
-        return NextResponse.json(
-          { error: 'Erreur lors de la suppression des inscriptions associées' },
-          { status: 500 }
-        )
-      }
     }
 
     // Supprimer le ticket
@@ -144,7 +124,7 @@ const handleDelete = async (
       throw error
     }
 
-    return NextResponse.json({ success: true, deletedRegistrations: forceDelete ? count : 0 })
+    return NextResponse.json({ success: true, deletedRegistrations: 0 })
 
   } catch (error) {
     console.error('Erreur DELETE ticket:', error)
