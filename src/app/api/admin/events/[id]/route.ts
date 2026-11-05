@@ -257,6 +257,9 @@ const handlePut = async (
       .single()
 
     if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'Un événement avec ce slug existe déjà' }, { status: 409 })
+      }
       throw error
     }
 

@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { OperationsList, type OperationsListColumn } from '@/components/admin/operations'
 import { Eye, RefreshCw, Save, Download, Plus, Trash2 } from 'lucide-react'
 import { formatClockTimeParis } from '@/lib/dateTime'
 
@@ -70,6 +70,16 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     isLoading: participantsLoading,
     error: participantsError,
   } = useAdminWaveParticipants(eventId, ticketId, selectedWaveIndex)
+  const waveParticipantRows = selectedWaveParticipants.map((participant, index) => ({
+    ...participant,
+    position: participant.wave_position ?? index + 1,
+  }))
+  const waveParticipantColumns: OperationsListColumn<(typeof waveParticipantRows)[number]>[] = [
+    { id: 'participant', header: 'Participant', cell: (row) => <span className="font-medium">{row.full_name}</span> },
+    { id: 'position', header: 'Position', mobile: 'summary', cell: (row) => row.position },
+    { id: 'start', header: 'Départ', mobile: 'summary', cell: (row) => formatClockTime(row.start_time) },
+    { id: 'email', header: 'Email', mobile: 'detail', cell: (row) => <span className="text-muted-foreground">{row.email}</span> },
+  ]
 
   useEffect(() => {
     if (!data) return
@@ -385,26 +395,14 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
             <p className="text-sm text-muted-foreground">Aucun participant affecté à ce SAS.</p>
           ) : (
             <div className="max-h-[60vh] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Participant</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Départ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedWaveParticipants.map((participant, index) => (
-                    <TableRow key={participant.id}>
-                      <TableCell>{participant.wave_position ?? index + 1}</TableCell>
-                      <TableCell className="font-medium">{participant.full_name}</TableCell>
-                      <TableCell className="text-muted-foreground">{participant.email}</TableCell>
-                      <TableCell>{formatClockTime(participant.start_time)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <OperationsList
+                data={{ items: waveParticipantRows, nextCursor: null, total: waveParticipantRows.length }}
+                getItemId={(row) => row.id}
+                columns={waveParticipantColumns}
+                pagination={{ cursor: null, previousCursors: [], nextCursor: null, total: waveParticipantRows.length }}
+                onPaginationChange={() => undefined}
+                itemLabel="participant"
+              />
             </div>
           )}
         </DialogContent>
