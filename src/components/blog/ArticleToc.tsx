@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Disclosure } from '@/components/ds'
-import type { ArticleHeading } from '@/lib/blog/articleToc'
+import type { BlogHeading } from '@/lib/blog/renderMarkdown'
 import { cn } from '@/lib/utils'
 
 /** Heading whose anchor is in the reading band (upper part of the viewport) is the current one. */
@@ -36,7 +36,7 @@ function useActiveHeading(ids: string[]): string | undefined {
   return activeId
 }
 
-export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
+export function ArticleTocList({ items }: { items: BlogHeading[] }) {
   const activeId = useActiveHeading(items.map((item) => item.id))
 
   return (
@@ -56,7 +56,7 @@ export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
                     : 'border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground',
                 )}
               >
-                {item.title}
+                {item.text}
               </a>
             </li>
           )
@@ -67,7 +67,7 @@ export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
 }
 
 /** Sommaire folded above the article on screens below `xl`. */
-export function ArticleTocMobile({ items }: { items: ArticleHeading[] }) {
+export function ArticleTocMobile({ items }: { items: BlogHeading[] }) {
   if (items.length === 0) return null
 
   return (
@@ -80,7 +80,7 @@ export function ArticleTocMobile({ items }: { items: ArticleHeading[] }) {
 }
 
 /** Sticky column at the right edge of the page, from `xl`. Placed in the grid's last column. */
-export function ArticleTocAside({ items }: { items: ArticleHeading[] }) {
+export function ArticleTocAside({ items }: { items: BlogHeading[] }) {
   if (items.length === 0) return null
 
   return (

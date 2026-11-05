@@ -1,24 +1,18 @@
-import { fetchSinglePost } from '@/app/api/blog/blogQueries'
-import RichText from '@/components/RichText'
-import { markdownToHtml } from '@/lib/markdown'
+import { loadAllPosts, loadPostBySlug, listRelatedPosts } from '@/lib/blog/loadPosts'
+import { getCategoryBySlug } from '@/lib/blog/categories'
+import { extractHeadings, renderBlogMarkdown } from '@/lib/blog/renderMarkdown'
+import { SITE_SETTINGS } from '@/constants/siteSettings'
 import { safeJsonStringify } from '@/lib/safeJson'
-import { client } from '@/sanity/lib/client'
-import { urlFor } from '@/sanity/lib/image'
-import { relatedPostsQuery, settingsQuery, sitemapPostsQuery } from '@/sanity/lib/queries'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { estimateReadingTime } from '@/lib/readingTime'
-import { buildArticleToc } from '@/lib/blog/articleToc'
 import Image from 'next/image'
 import { containerClass, DISPLAY_TITLE, Pill } from '@/components/ds'
 import { cn } from '@/lib/utils'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
-import { ArticleSections } from '@/components/blog/ArticleSections'
 import { ArticleTocAside, ArticleTocMobile } from '@/components/blog/ArticleToc'
 
-// Articles are pre-rendered at build time and regenerated at most every minute.
-export const revalidate = 60
+// Articles are MDX files compiled at build time: static pages, no revalidation window.
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',
@@ -28,47 +22,23 @@ const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
 })
 
 export async function generateStaticParams() {
-  try {
-    const posts = await client.fetch<Array<{ slug: string }>>(sitemapPostsQuery)
-    return posts.filter((post) => post.slug).map((post) => ({ slug: post.slug }))
-  } catch {
-    // Sanity unreachable at build time: articles render on first visit instead.
-    return []
-  }
-}
-
-async function loadPost(slug: string) {
-  try {
-    return await fetchSinglePost(slug)
-  } catch {
-    return null
-  }
-}
-
-async function loadSettings() {
-  try {
-    return await client.fetch(settingsQuery)
-  } catch {
-    return null
-  }
+  return loadAllPosts().map((post) => ({ slug: post.slug }))
 }
 
 export async function generateMetadata(
   props: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await props.params
-  const [post, settings] = await Promise.all([loadPost(slug), loadSettings()])
+  const post = loadPostBySlug(slug)
 
   if (!post) {
     return { title: 'Article introuvable' }
   }
 
-  const siteTitle = settings?.siteTitle || 'OverBound'
-  const title = `${post.title} — ${siteTitle}`
-  const description = post.excerpt || settings?.description
-  const ogImage = post.ogImage || settings?.ogImage
+  const title = `${post.title} | ${SITE_SETTINGS.siteTitle}`
+  const description = post.excerpt || SITE_SETTINGS.description
   const generatedOg = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'}/api/og/post/${post.slug}`
-  const ogImageUrl = ogImage ? urlFor(ogImage).width(1200).height(630).url() : generatedOg
+  const ogImageUrl = post.ogImage || generatedOg
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const canonical = `${siteUrl}/blog/post/${post.slug}`
 
@@ -99,37 +69,18 @@ export default async function BlogPostPage(
   props: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await props.params
-  const post = await loadPost(slug)
+  const post = loadPostBySlug(slug)
 
   if (!post) {
     notFound()
   }
-  const categorySlugs = (post.categories || []).map((c: any) => (typeof c.slug === 'string' ? c.slug : c.slug?.current)).filter(Boolean)
-  const related = await client.fetch(relatedPostsQuery, { slug: post.slug, categorySlugs })
-  const bodyText = Array.isArray(post.body)
-    ? post.body.map((b: any) => (b.children ? b.children.map((c: any) => c.text).join('\n') : '')).join('\n')
-    : ''
-  const sectionsText = Array.isArray(post.sections)
-    ? post.sections
-        .map((s: any) =>
-          Array.isArray(s.body)
-            ? s.body.map((b: any) => (b.children ? b.children.map((c: any) => c.text).join('\n') : '')).join('\n')
-            : ''
-        )
-        .join('\n')
-    : ''
-  const normalizedBody = bodyText.replace(/\\n/g, '\n')
-  const readingSource = [bodyText, sectionsText].filter(Boolean).join('\n') || bodyText
-  const rt = estimateReadingTime(readingSource)
+
+  const category = getCategoryBySlug(post.category)
+  const related = listRelatedPosts(post.slug, post.category)
+  const toc = extractHeadings(post.content)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const canonical = `${siteUrl}/blog/post/${post.slug}`
-
-  const hasSections = Array.isArray(post.sections) && post.sections.length > 0
-  // Legacy bodies stored as markdown text: rendered as HTML, which carries no heading anchors, so no sommaire.
-  const usesMarkdown = !hasSections && /(^|\n)#{1,3}\s|\n\n|\[(.*?)\]\((.*?)\)/.test(normalizedBody)
-  const toc = buildArticleToc({ sections: post.sections, body: usesMarkdown ? null : post.body })
-  const authorSlug = typeof post.author?.slug === 'string' ? post.author.slug : post.author?.slug?.current
-  const publishedLabel = post.publishedAt ? dateFormatter.format(new Date(post.publishedAt)) : null
+  const publishedLabel = dateFormatter.format(new Date(post.publishedAt))
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -144,15 +95,15 @@ export default async function BlogPostPage(
             '@context': 'https://schema.org',
             '@type': 'BlogPosting',
             headline: post.title,
-            datePublished: post.publishedAt || undefined,
-            dateModified: post._updatedAt || post.publishedAt || undefined,
-            author: post.author?.name ? { '@type': 'Person', name: post.author.name } : undefined,
+            datePublished: post.publishedAt,
+            dateModified: post.updatedAt || post.publishedAt,
+            author: { '@type': 'Person', name: post.author.name },
             publisher: {
               '@type': 'Organization',
               name: 'Overbound Race',
               logo: { '@type': 'ImageObject', url: `${siteUrl}/images/brand/LOGO_FULL.png` },
             },
-            image: post.mainImage ? urlFor(post.mainImage).width(1200).height(630).url() : undefined,
+            image: `${siteUrl}${post.mainImage}`,
             mainEntityOfPage: canonical,
           }),
         }}
@@ -167,8 +118,8 @@ export default async function BlogPostPage(
             itemListElement: [
               { name: 'Accueil', item: `${siteUrl}/` },
               { name: 'Blog', item: `${siteUrl}/blog` },
-              post.categories?.[0]?.title
-                ? { name: post.categories[0].title, item: `${siteUrl}/blog/categorie/${post.categories[0].slug}` }
+              category
+                ? { name: category.title, item: `${siteUrl}/blog/categorie/${category.slug}` }
                 : null,
               { name: post.title, item: canonical },
             ]
@@ -186,30 +137,21 @@ export default async function BlogPostPage(
             <Link href="/" className="hover:text-foreground">Accueil</Link>
             <span aria-hidden>/</span>
             <Link href="/blog" className="hover:text-foreground">Blog</Link>
-            {post.categories?.[0]?.slug ? (
+            {category ? (
               <>
                 <span aria-hidden>/</span>
-                <Link
-                  href={`/blog/categorie/${typeof post.categories[0].slug === 'string' ? post.categories[0].slug : post.categories[0].slug?.current}`}
-                  className="hover:text-foreground"
-                >
-                  {post.categories[0].title}
+                <Link href={`/blog/categorie/${category.slug}`} className="hover:text-foreground">
+                  {category.title}
                 </Link>
               </>
             ) : null}
           </nav>
 
-          {post.categories?.length ? (
+          {category ? (
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {post.categories.map((c: any) => {
-                const slug = typeof c.slug === 'string' ? c.slug : c.slug?.current
-                if (!slug) return null
-                return (
-                  <Link key={slug} href={`/blog/categorie/${slug}`} className="rounded-full">
-                    <Pill variant="tag">{c.title}</Pill>
-                  </Link>
-                )
-              })}
+              <Link href={`/blog/categorie/${category.slug}`} className="rounded-full">
+                <Pill variant="tag">{category.title}</Pill>
+              </Link>
             </div>
           ) : null}
 
@@ -220,24 +162,11 @@ export default async function BlogPostPage(
           ) : null}
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
-            {publishedLabel ? <time dateTime={post.publishedAt}>{publishedLabel}</time> : null}
-            {post.author?.name ? (
-              <>
-                {publishedLabel ? <span aria-hidden>•</span> : null}
-                <span>
-                  par{' '}
-                  <Link href={`/blog/auteur/${authorSlug}`} className="font-medium text-foreground underline-offset-4 hover:underline">
-                    {post.author.name}
-                  </Link>
-                </span>
-              </>
-            ) : null}
-            {rt.minutes ? (
-              <>
-                <span aria-hidden>•</span>
-                <span>{rt.minutes} min de lecture</span>
-              </>
-            ) : null}
+            <time dateTime={post.publishedAt}>{publishedLabel}</time>
+            <span aria-hidden>•</span>
+            <span>par {post.author.name}</span>
+            <span aria-hidden>•</span>
+            <span>{post.readingTime} min de lecture</span>
           </div>
 
           <span aria-hidden className="mx-auto mt-10 block h-0.5 w-12 rounded-full bg-primary" />
@@ -245,20 +174,18 @@ export default async function BlogPostPage(
       </div>
 
       {/* Cover, wider than the reading column */}
-      {post.mainImage ? (
-        <div className={cn(containerClass(), 'mt-12 sm:mt-16')}>
-          <div className="relative aspect-16/10 overflow-hidden rounded-2xl bg-muted sm:aspect-21/9">
-            <Image
-              src={urlFor(post.mainImage).width(1600).height(900).url()}
-              alt={post.mainImage.alt || ''}
-              fill
-              sizes="(min-width: 1280px) 1216px, 100vw"
-              priority
-              className="object-cover"
-            />
-          </div>
+      <div className={cn(containerClass(), 'mt-12 sm:mt-16')}>
+        <div className="relative aspect-16/10 overflow-hidden rounded-2xl bg-muted sm:aspect-21/9">
+          <Image
+            src={post.mainImage}
+            alt={post.mainImageAlt}
+            fill
+            sizes="(min-width: 1280px) 1216px, 100vw"
+            priority
+            className="object-cover"
+          />
         </div>
-      ) : null}
+      </div>
 
       {/* Body: centred column, sommaire on the right edge from xl (the empty left cell keeps the column centred) */}
       <div
@@ -271,25 +198,14 @@ export default async function BlogPostPage(
 
         <article className="mx-auto w-full min-w-0 max-w-article">
           <ArticleTocMobile items={toc} />
-
-          {hasSections ? (
-            <ArticleSections sections={post.sections} />
-          ) : usesMarkdown ? (
-            <div className="prose-overbound">
-              <div dangerouslySetInnerHTML={{ __html: markdownToHtml(normalizedBody) }} />
-            </div>
-          ) : (
-            <div className="prose-overbound">
-              <RichText value={post.body} variant="article" />
-            </div>
-          )}
+          <div className="prose-overbound">{renderBlogMarkdown(post.content)}</div>
         </article>
 
         <ArticleTocAside items={toc} />
       </div>
 
-      {/* Related posts */}
-      {related?.length ? (
+      {/* Related posts (same category) */}
+      {related.length > 0 ? (
         <section className={cn(containerClass(), 'border-t border-border pt-12 pb-16 md:pt-16')}>
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4 md:mb-10">
             <div>
@@ -301,8 +217,8 @@ export default async function BlogPostPage(
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-            {related.map((r: any) => (
-              <BlogArticleItem key={r._id} post={r} showExcerpt={false} />
+            {related.map((r) => (
+              <BlogArticleItem key={r.slug} post={r} showExcerpt={false} />
             ))}
           </div>
         </section>
