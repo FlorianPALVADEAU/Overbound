@@ -3,12 +3,14 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
+interface BlogFilterCategory {
+  slug: string
+  title: string
+  count: number
+}
+
 interface BlogFiltersProps {
-  categories: Array<{
-    slug: string
-    title: string
-    count: number
-  }>
+  categories: BlogFilterCategory[]
 }
 
 export default function BlogFilters({ categories }: BlogFiltersProps) {

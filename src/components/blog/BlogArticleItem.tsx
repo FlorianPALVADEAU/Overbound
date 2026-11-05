@@ -1,83 +1,57 @@
-"use client"
 import Link from 'next/link'
-import { urlFor } from '@/sanity/lib/image'
-import { Clock, ArrowRight } from 'lucide-react'
-
-type PostLike = {
-  _id: string
-  title: string
-  slug: string
-  excerpt?: string | null
-  publishedAt?: string | null
-  mainImage?: any
-  categories?: Array<{ title: string; slug: string }> | null
-  readingTime?: number | null
-}
+import Image from 'next/image'
+import { Clock } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+import type { BlogPostSummary } from '@/lib/blog/types'
 
 interface Props {
-  post: PostLike
+  post: BlogPostSummary
   className?: string
   showExcerpt?: boolean
 }
 
 export default function BlogArticleItem({ post, className, showExcerpt = true }: Props) {
-  const imgUrl = post.mainImage ? urlFor(post.mainImage).width(800).height(500).url() : null
-
   return (
-    <article
-      className={`group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${className || ''}`}
+    <Card
+      variant="feature"
+      className={cn('group gap-0 overflow-hidden p-0', className)}
     >
-      <Link href={`/blog/post/${post.slug}`} className="flex flex-col h-full">
-        {/* Image */}
-        <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-          {imgUrl ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imgUrl}
-                alt={post.title}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </>
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-              <span className="text-6xl font-bold text-primary/20">{post.title[0]}</span>
-            </div>
-          )}
+      <Link href={`/blog/post/${post.slug}`} className="flex h-full flex-col">
+        {post.mainImage ? (
+          <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+            <Image
+              src={post.mainImage}
+              alt={post.mainImageAlt || post.title}
+              fill
+              sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+              className="object-cover transition-transform duration-300 ease-standard group-hover:scale-105"
+            />
+          </div>
+        ) : null}
 
-        </div>
-
-        {/* Content */}
-        <div className="flex flex-1 flex-col p-5">
-          {/* Reading time */}
-          {post.readingTime && (
-            <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5" />
-              <span>{post.readingTime} min de lecture</span>
-            </div>
-          )}
-
-          {/* Title */}
-          <h2 className="mb-2 text-lg font-bold leading-tight tracking-tight group-hover:text-primary transition-colors line-clamp-2">
+        <div className="flex flex-1 flex-col gap-3 p-5">
+          <h2 className={cn('text-title font-display font-bold uppercase leading-tight transition-colors group-hover:text-primary', 'line-clamp-2')}>
             {post.title}
           </h2>
 
-          {/* Excerpt */}
           {showExcerpt && post.excerpt && (
-            <p className="mb-4 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-3">
+            <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
               {post.excerpt}
             </p>
           )}
 
-          {/* Read more link */}
-          <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
-            <span>Lire l'article</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>par {post.author.name}</span>
+            {post.readingTime ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="size-3.5" />
+                {post.readingTime} min
+              </span>
+            ) : null}
           </div>
         </div>
       </Link>
-    </article>
+    </Card>
   )
 }
-

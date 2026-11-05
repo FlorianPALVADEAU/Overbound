@@ -1,14 +1,14 @@
 import { COVER } from '@/constants/coverImages'
 import { ogImageUrl } from '@/lib/seo/ogImage'
-import { client } from '@/sanity/lib/client'
-import { categoriesWithCountsQuery } from '@/sanity/lib/queries'
+import { listCategoriesWithCounts } from '@/lib/blog/loadPosts'
+import { BLOG_CATEGORIES } from '@/lib/blog/categories'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import { containerClass } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
-export const revalidate = 300
+// Categories are filesystem content: no revalidation window needed.
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
 const heroImage = `${siteUrl}${ogImageUrl({ title: 'Les catégories', kicker: 'Blog Overbound', photo: 'group' })}`
@@ -47,7 +47,8 @@ export const metadata: Metadata = {
 }
 
 export default async function BlogCategoriesIndex() {
-  const categories = await client.fetch(categoriesWithCountsQuery)
+  const counts = listCategoriesWithCounts()
+  const categories = BLOG_CATEGORIES.map((c) => ({ ...c, count: counts.get(c.slug) ?? 0 }))
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Hero header */}
@@ -74,14 +75,14 @@ export default async function BlogCategoriesIndex() {
 
       <div className={containerClass()}>
         <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((c: any, index: number) => (
+          {categories.map((c) => (
             <li
-              key={index}
+              key={c.slug}
               className="border rounded-xl flex items-center justify-between h-auto"
             >
               <Link href={`/blog/categorie/${c.slug}`} className="font-semibold w-full h-full hover:bg-primary/30 hover:border-primary p-4 rounded-xl">
                 <div className="w-full flex items-center justify-between gap-2">
-                  {c.title.charAt(0).toUpperCase() + c.title.slice(1)}
+                  {c.title}
                   <span className="text-xs opacity-60">{c.count}</span>
                 </div>
               </Link>

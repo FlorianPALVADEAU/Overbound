@@ -1,63 +1,37 @@
-import { fetchSinglePost } from '@/app/api/blog/blogQueries'
-import RichText from '@/components/RichText'
-import { markdownToHtml } from '@/lib/markdown'
+import { loadAllPosts, loadPostBySlug, listRelatedPosts } from '@/lib/blog/loadPosts'
+import { getCategoryBySlug } from '@/lib/blog/categories'
+import { renderBlogMarkdown, extractHeadings } from '@/lib/blog/renderMarkdown'
+import { SITE_SETTINGS } from '@/constants/siteSettings'
 import { safeJsonStringify } from '@/lib/safeJson'
-import { client } from '@/sanity/lib/client'
-import { urlFor } from '@/sanity/lib/image'
-import { relatedPostsQuery, settingsQuery, sitemapPostsQuery } from '@/sanity/lib/queries'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { estimateReadingTime } from '@/lib/readingTime'
 import Image from 'next/image'
-import { containerClass } from '@/components/ds'
-import { cn } from '@/lib/utils'
+import { Container, Section, Pill } from '@/components/ds'
+import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import ArticleToc from '@/components/blog/ArticleToc'
 
-// Articles are pre-rendered at build time and regenerated at most every minute.
-export const revalidate = 60
+// Posts are filesystem content (MDX), compiled at build time: no
+// revalidation window needed, unlike the old Sanity-backed revalidate = 60.
 
 export async function generateStaticParams() {
-  try {
-    const posts = await client.fetch<Array<{ slug: string }>>(sitemapPostsQuery)
-    return posts.filter((post) => post.slug).map((post) => ({ slug: post.slug }))
-  } catch {
-    // Sanity unreachable at build time: articles render on first visit instead.
-    return []
-  }
-}
-
-async function loadPost(slug: string) {
-  try {
-    return await fetchSinglePost(slug)
-  } catch {
-    return null
-  }
-}
-
-async function loadSettings() {
-  try {
-    return await client.fetch(settingsQuery)
-  } catch {
-    return null
-  }
+  return loadAllPosts().map((post) => ({ slug: post.slug }))
 }
 
 export async function generateMetadata(
   props: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await props.params
-  const [post, settings] = await Promise.all([loadPost(slug), loadSettings()])
+  const post = loadPostBySlug(slug)
 
   if (!post) {
     return { title: 'Article introuvable' }
   }
 
-  const siteTitle = settings?.siteTitle || 'OverBound'
-  const title = `${post.title} — ${siteTitle}`
-  const description = post.excerpt || settings?.description
-  const ogImage = post.ogImage || settings?.ogImage
+  const title = `${post.title} | ${SITE_SETTINGS.siteTitle}`
+  const description = post.excerpt || SITE_SETTINGS.description
   const generatedOg = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'}/api/og/post/${post.slug}`
-  const ogImageUrl = ogImage ? urlFor(ogImage).width(1200).height(630).url() : generatedOg
+  const ogImageUrl = post.ogImage || generatedOg
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const canonical = `${siteUrl}/blog/post/${post.slug}`
 
@@ -88,34 +62,22 @@ export default async function BlogPostPage(
   props: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await props.params
-  const post = await loadPost(slug)
+  const post = loadPostBySlug(slug)
 
   if (!post) {
     notFound()
   }
-  const categorySlugs = (post.categories || []).map((c: any) => (typeof c.slug === 'string' ? c.slug : c.slug?.current)).filter(Boolean)
-  const related = await client.fetch(relatedPostsQuery, { slug: post.slug, categorySlugs })
-  const bodyText = Array.isArray(post.body)
-    ? post.body.map((b: any) => (b.children ? b.children.map((c: any) => c.text).join('\n') : '')).join('\n')
-    : ''
-  const sectionsText = Array.isArray(post.sections)
-    ? post.sections
-        .map((s: any) =>
-          Array.isArray(s.body)
-            ? s.body.map((b: any) => (b.children ? b.children.map((c: any) => c.text).join('\n') : '')).join('\n')
-            : ''
-        )
-        .join('\n')
-    : ''
-  const normalizedBody = bodyText.replace(/\\n/g, '\n')
-  const readingSource = [bodyText, sectionsText].filter(Boolean).join('\n') || bodyText
-  const rt = estimateReadingTime(readingSource)
+
+  const category = getCategoryBySlug(post.category)
+  const related = listRelatedPosts(post.slug, post.category)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
   const canonical = `${siteUrl}/blog/post/${post.slug}`
+  const body = renderBlogMarkdown(post.content)
+  const headings = extractHeadings(post.content)
 
   return (
-    <main className="min-h-screen bg-background">
-      <article className={cn(containerClass(), "relative pb-16")}>
+    <main className="bg-background">
+      <article>
         {/* JSON-LD Article structured data for SEO */}
         <script
           type="application/ld+json"
@@ -124,15 +86,15 @@ export default async function BlogPostPage(
               '@context': 'https://schema.org',
               '@type': 'BlogPosting',
               headline: post.title,
-              datePublished: post.publishedAt || undefined,
-              dateModified: post._updatedAt || post.publishedAt || undefined,
-              author: post.author?.name ? { '@type': 'Person', name: post.author.name } : undefined,
+              datePublished: post.publishedAt,
+              dateModified: post.updatedAt || post.publishedAt,
+              author: { '@type': 'Person', name: post.author.name },
               publisher: {
                 '@type': 'Organization',
                 name: 'Overbound Race',
                 logo: { '@type': 'ImageObject', url: `${siteUrl}/images/brand/LOGO_FULL.png` },
               },
-              image: post.mainImage ? urlFor(post.mainImage).width(1200).height(630).url() : undefined,
+              image: post.mainImage ? `${siteUrl}${post.mainImage}` : undefined,
               mainEntityOfPage: canonical,
             }),
           }}
@@ -147,8 +109,8 @@ export default async function BlogPostPage(
               itemListElement: [
                 { name: 'Accueil', item: `${siteUrl}/` },
                 { name: 'Blog', item: `${siteUrl}/blog` },
-                post.categories?.[0]?.title
-                  ? { name: post.categories[0].title, item: `${siteUrl}/blog/categorie/${post.categories[0].slug}` }
+                category
+                  ? { name: category.title, item: `${siteUrl}/blog/categorie/${category.slug}` }
                   : null,
                 { name: post.title, item: canonical },
               ]
@@ -160,283 +122,109 @@ export default async function BlogPostPage(
         />
 
         {/* Hero */}
-        <header className="relative pt-10 sm:pt-14 pb-10">
-          <div className="w-full">
-            <nav className="text-xs sm:text-sm text-muted-foreground mb-4">
+        <Section spacing="compact">
+          <Container size="prose">
+            <nav className="mb-4 text-sm text-muted-foreground">
               <Link href="/" className="hover:text-foreground transition-colors">Accueil</Link>
-              <span className="mx-1.5">•</span>
+              <span className="mx-1.5">/</span>
               <Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link>
-              {post.categories?.[0]?.slug ? (
+              {category ? (
                 <>
-                  <span className="mx-1.5">•</span>
+                  <span className="mx-1.5">/</span>
                   <Link
-                    href={`/blog/categorie/${typeof post.categories[0].slug === 'string' ? post.categories[0].slug : post.categories[0].slug?.current}`}
+                    href={`/blog/categorie/${category.slug}`}
                     className="hover:text-foreground transition-colors"
                   >
-                    {post.categories[0].title}
+                    {category.title}
                   </Link>
                 </>
               ) : null}
             </nav>
 
-            <div className="inline-flex flex-wrap gap-2 mb-4">
-              {post.categories?.map((c: any) => {
-                const slug = typeof c.slug === 'string' ? c.slug : c.slug?.current
-                if (!slug) return null
-                return (
-                  <Link
-                    key={slug}
-                    href={`/blog/categorie/${slug}`}
-                    className="px-3 py-1 rounded-full text-xs font-medium bg-primary/15 text-primary"
-                  >
-                    {c.title}
-                  </Link>
-                )
-              })}
-            </div>
+            {category ? (
+              <div className="mb-4">
+                <Link href={`/blog/categorie/${category.slug}`}>
+                  <Pill variant="tag">{category.title}</Pill>
+                </Link>
+              </div>
+            ) : null}
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight">
+            <h1 className="text-display-md font-display font-bold uppercase leading-tight text-balance">
               {post.title}
             </h1>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {post.publishedAt && (
                 <span>{new Date(post.publishedAt).toLocaleDateString('fr-FR')}</span>
               )}
-              {post.author?.name && (
+              <span>·</span>
+              <span>par {post.author.name}</span>
+              {post.readingTime ? (
                 <>
-                  <span>•</span>
-                  <span>
-                    par{' '}
-                    <Link
-                      href={`/blog/auteur/${typeof post.author.slug === 'string' ? post.author.slug : post.author.slug?.current}`}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {post.author.name}
-                    </Link>
-                  </span>
-                </>
-              )}
-              {rt.minutes ? (
-                <>
-                  <span>•</span>
-                  <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium bg-background/70 backdrop-blur">
-                    {rt.minutes} min de lecture
-                  </span>
+                  <span>·</span>
+                  <span>{post.readingTime} min de lecture</span>
                 </>
               ) : null}
             </div>
-          </div>
 
-          {post.mainImage && (
-            <div className="mt-8 relative h-56 sm:h-64 md:h-80 lg:h-96 rounded-3xl overflow-hidden border bg-muted">
-              <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/0 z-10" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={urlFor(post.mainImage).width(1600).height(900).url()}
-                alt={post.mainImage.alt || ''}
-                width={1600}
-                height={900}
-                fetchPriority="high"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          )}
-        </header>
+            {post.mainImage && (
+              <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-2xl bg-muted">
+                <Image
+                  src={post.mainImage}
+                  alt={post.mainImageAlt}
+                  fill
+                  sizes="(min-width: 1024px) 768px, 100vw"
+                  priority
+                  className="object-cover"
+                />
+              </div>
+            )}
+          </Container>
+        </Section>
 
         {/* Article body */}
-        <section className="relative">
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/0 via-background to-background" />
-          <div className="w-full mx-auto px-5 sm:px-7 md:px-10 py-8 md:py-10">
-            {post.excerpt && (
-              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 border-l-4 border-emerald-500/70 pl-4">
-                {post.excerpt}
-              </p>
-            )}
+        <Section spacing="none" className="pb-8 md:pb-10">
+          <Container size="page">
+            <div className="mx-auto grid max-w-[64rem] grid-cols-1 gap-12 lg:grid-cols-[1fr_16rem]">
+              <div className="mx-auto w-full max-w-3xl lg:mx-0 lg:max-w-none">
+                {post.excerpt && (
+                  <p className="text-lead text-muted-foreground">
+                    {post.excerpt}
+                  </p>
+                )}
 
-            {Array.isArray(post.sections) && post.sections.length > 0 ? (
-              <div className="mx-auto max-w-3xl space-y-10 md:space-y-12">
-                {post.sections.map((section: any) => {
-                  const layout = section.layout || 'text'
-                  const accent = section.accent || 'emerald'
-                  const hasImage = !!section.image
-                  const accentBorder =
-                    accent === 'orange'
-                      ? 'border-amber-500/80'
-                      : accent === 'neutral'
-                        ? 'border-border'
-                        : 'border-emerald-500/80'
-                  const accentBg =
-                    accent === 'orange'
-                      ? 'bg-amber-500/10'
-                      : accent === 'neutral'
-                        ? 'bg-muted'
-                        : 'bg-primary/10'
-
-                  if (layout === 'highlight') {
-                    return (
-                      <section
-                        key={section._key}
-                        className={`rounded-2xl border ${accentBorder} ${accentBg} px-5 sm:px-6 md:px-7 py-6 md:py-7`}
-                      >
-                        {section.title && (
-                          <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">
-                            {section.title}
-                          </h2>
-                        )}
-                        <div className="prose-overbound">
-                          <RichText value={section.body || []} />
-                        </div>
-                      </section>
-                    )
-                  }
-
-                  if (layout === 'quote') {
-                    return (
-                      <section
-                        key={section._key}
-                        className="rounded-2xl border border-primary/50 bg-primary/10 px-5 sm:px-6 md:px-7 py-6 md:py-7"
-                      >
-                        <div className="flex gap-3 md:gap-4">
-                          <span className="text-4xl md:text-5xl leading-none text-primary">“</span>
-                          <div>
-                            <div className="prose-overbound italic">
-                              <RichText value={section.body || []} />
-                            </div>
-                            {section.title && (
-                              <p className="mt-3 text-sm md:text-base font-semibold text-foreground">
-                                {section.title}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </section>
-                    )
-                  }
-
-                  if ((layout === 'imageLeft' || layout === 'imageRight') && hasImage) {
-                    const imageFirst = layout === 'imageLeft'
-                    return (
-                      <section
-                        key={section._key}
-                        className="grid md:grid-cols-2 gap-6 md:gap-8 items-center"
-                      >
-                        {imageFirst && (
-                          <figure className="rounded-2xl overflow-hidden border bg-muted">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={urlFor(section.image).width(1200).height(900).fit('crop').url()}
-                              alt={section.image?.alt || ''}
-                              className="w-full h-full object-cover"
-                            />
-                            {section.image?.caption && (
-                              <figcaption className="px-4 py-3 text-xs text-muted-foreground bg-background/80">
-                                {section.image.caption}
-                              </figcaption>
-                            )}
-                          </figure>
-                        )}
-
-                        <div>
-                          {section.title && (
-                            <h2 className="text-xl md:text-2xl font-semibold mb-3 md:mb-4">
-                              {section.title}
-                            </h2>
-                          )}
-                          <div className="prose-overbound">
-                            <RichText value={section.body || []} />
-                          </div>
-                        </div>
-
-                        {!imageFirst && (
-                          <figure className="rounded-2xl overflow-hidden border bg-muted">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={urlFor(section.image).width(1200).height(900).fit('crop').url()}
-                              alt={section.image?.alt || ''}
-                              className="w-full h-full object-cover"
-                            />
-                            {section.image?.caption && (
-                              <figcaption className="px-4 py-3 text-xs text-muted-foreground bg-background/80">
-                                {section.image.caption}
-                              </figcaption>
-                            )}
-                          </figure>
-                        )}
-                      </section>
-                    )
-                  }
-
-                  // Default text section
-                  return (
-                    <section key={section._key}>
-                      {section.title && (
-                        <h2 className="text-xl md:text-2xl font-semibold mb-3 md:mb-4">
-                          {section.title}
-                        </h2>
-                      )}
-                      <div className="prose-overbound">
-                        <RichText value={section.body || []} />
-                      </div>
-                    </section>
-                  )
-                })}
+                <div className="prose-overbound mt-6">
+                  {body}
+                </div>
               </div>
-            ) : (
-              <div className="prose-overbound mx-auto max-w-3xl">
-                {/(^|\n)#{1,3}\s|\n\n|\[(.*?)\]\((.*?)\)/.test(normalizedBody)
-                  ? (
-                    <div dangerouslySetInnerHTML={{ __html: markdownToHtml(normalizedBody) }} />
-                  ) : (
-                    <RichText value={post.body} />
-                  )}
-              </div>
-            )}
-          </div>
-        </section>
 
-        {/* Related posts */}
-        {related?.length ? (
-          <section className="mt-12 md:mt-16 border-t pt-8 md:pt-10">
-            <div className="flex items-center justify-between gap-4 mb-4 md:mb-6">
-              <div>
-                <h2 className="text-xl md:text-2xl font-semibold">Articles associés</h2>
-                <p className="text-sm text-muted-foreground">
-                  Poursuis ta lecture sur des thèmes proches.
-                </p>
-              </div>
-              <Link href="/blog" className="text-xs sm:text-sm font-medium text-primary hover:underline">
-                Retour au blog
-              </Link>
+              <ArticleToc headings={headings} />
             </div>
-            <div className="grid sm:grid-cols-2 gap-5 md:gap-6">
-              {related.map((r: any) => (
-                <article
-                  key={r._id}
-                  className="group border rounded-2xl overflow-hidden bg-background hover:border-emerald-500/60 hover:shadow-md transition-all duration-200"
-                >
-                  {r.mainImage && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={urlFor(r.mainImage).width(800).height(450).url()}
-                      alt=""
-                      className="w-full h-40 object-cover group-hover:scale-[1.02] transition-transform duration-200"
-                    />
-                  )}
-                  <div className="p-4 sm:p-5">
-                    <h3 className="font-semibold text-base sm:text-lg leading-snug group-hover:text-primary transition-colors">
-                      <Link href={`/blog/post/${r.slug}`}>{r.title}</Link>
-                    </h3>
-                    {r.publishedAt && (
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {new Date(r.publishedAt).toLocaleDateString('fr-FR')}
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+          </Container>
+        </Section>
+
+        {/* Related posts (same category, when there are other articles there) */}
+        {related.length > 0 ? (
+          <Section tone="light" spacing="compact">
+            <Container size="prose">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-title font-display font-bold uppercase">Articles associés</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Poursuis ta lecture sur {category?.title.toLowerCase() ?? 'le même thème'}.
+                  </p>
+                </div>
+                <Link href="/blog" className="text-sm font-medium text-primary hover:underline">
+                  Retour au blog
+                </Link>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+                {related.map((r) => (
+                  <BlogArticleItem key={r.slug} post={r} showExcerpt={false} />
+                ))}
+              </div>
+            </Container>
+          </Section>
         ) : null}
       </article>
     </main>

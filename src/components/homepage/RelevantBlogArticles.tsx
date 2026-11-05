@@ -1,17 +1,11 @@
-'use client'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { client } from '@/sanity/lib/client'
-import { recentPostsQuery } from '@/sanity/lib/queries'
+import { loadPostSummaries } from '@/lib/blog/loadPosts'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
 import { Container, Section, SectionHeader } from '@/components/ds'
 import { Button } from '../ui/button'
 
 export default function RelevantBlogArticles() {
-  const [posts, setPosts] = useState<any[]>([])
-  useEffect(() => {
-    client.fetch(recentPostsQuery).then(setPosts).catch(() => setPosts([]))
-  }, [])
+  const posts = loadPostSummaries().slice(0, 6)
   if (!posts.length) return null
   return (
     <Section>
@@ -24,7 +18,7 @@ export default function RelevantBlogArticles() {
         </div>
         <div className="grid h-auto w-full gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((p) => (
-          <BlogArticleItem key={p._id} post={p} showExcerpt={false} />
+          <BlogArticleItem key={p.slug} post={p} showExcerpt={false} />
         ))}
         </div>
       </Container>

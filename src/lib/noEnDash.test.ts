@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 // The en dash is a visible AI tell: never ship it in site copy or e-mails.
 const EN_DASH = String.fromCharCode(0x2013)
-const ROOTS = ['src', 'emails', 'sanity/blogSeed']
+const ROOTS = ['src', 'emails']
 const EXTENSIONS = /\.(tsx?|html|json|mdx?)$/
 
 const walk = (dir: string): string[] =>

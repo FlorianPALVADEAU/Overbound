@@ -1,7 +1,7 @@
 import { COVER } from '@/constants/coverImages'
 import { ogImageUrl } from '@/lib/seo/ogImage'
-import { client } from '@/sanity/lib/client'
-import { postsByCategorySlugQuery } from '@/sanity/lib/queries'
+import { listPosts } from '@/lib/blog/loadPosts'
+import { BLOG_CATEGORIES, getCategoryBySlug } from '@/lib/blog/categories'
 import Link from 'next/link'
 import Image from 'next/image'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
@@ -9,10 +9,14 @@ import type { Metadata } from 'next'
 import { containerClass } from '@/components/ds'
 import { cn } from '@/lib/utils'
 
-export const revalidate = 60
+// Categories are filesystem content: no revalidation window needed.
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
 const heroImage = `${siteUrl}${ogImageUrl({ title: 'Blog Overbound', kicker: 'Catégorie', photo: 'group' })}`
+
+export async function generateStaticParams() {
+  return BLOG_CATEGORIES.map((category) => ({ slug: category.slug }))
+}
 
 export async function generateMetadata({
   params,
@@ -26,7 +30,7 @@ export async function generateMetadata({
   const current = Math.max(1, parseInt(page || '1', 10) || 1)
   const isPaged = current > 1
 
-  const { category } = await client.fetch(postsByCategorySlugQuery, { slug, offset: 0, end: 1 })
+  const category = getCategoryBySlug(slug)
 
   if (!category) {
     return {
@@ -75,9 +79,9 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
   const pageSize = 12
   const current = Math.max(1, parseInt(page || '1', 10) || 1)
   const offset = (current - 1) * pageSize
-  const end = offset + pageSize
 
-  const { category, items, total } = await client.fetch(postsByCategorySlugQuery, { slug, offset, end })
+  const category = getCategoryBySlug(slug)
+  const { items, total } = listPosts({ offset, limit: pageSize, category: slug })
   const pageCount = Math.max(1, Math.ceil((total || 0) / pageSize))
 
   if (!category) {
@@ -98,8 +102,8 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
       </section>
       <div className={cn(containerClass(), 'py-20')}>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items?.map((p: any) => (
-          <BlogArticleItem key={p._id} post={p} />
+        {items.map((p) => (
+          <BlogArticleItem key={p.slug} post={p} />
         ))}
       </div>
 
