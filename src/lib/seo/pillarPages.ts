@@ -35,7 +35,7 @@ export interface PillarContent {
 
 const commonFacts = (next: NextEditionFacts): PillarFact[] => [
   { label: 'Format', value: `Boucle de ${FORMAT_FACTS.loopKm} km, 10+ obstacles, tours répétés` },
-  { label: 'Deux modes', value: 'OPEN (sans classement) et RANKED (élimination)' },
+  { label: 'Deux modes', value: 'OPEN (sans élimination) et RANKED (élimination)' },
   { label: 'Âge minimum', value: AGE_RULE_SHORT },
   { label: 'Dernière édition', value: `${PREVIOUS_EDITION.dateLabel}, ${PREVIOUS_EDITION.venue}` },
   { label: 'Participants', value: PREVIOUS_EDITION.participants },
@@ -92,7 +92,7 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
       {
         question: 'Faut-il être sportif pour participer ?',
         answer:
-          "Le format OPEN est pensé pour courir à son rythme, sans classement et sans temps limite par tour. Tu peux t'arrêter quand tu veux. Le format RANKED demande une bonne condition physique.",
+          "Le format OPEN est pensé pour courir à son rythme, sans élimination et sans temps limite par tour. Tu peux t'arrêter quand tu veux. Le format RANKED demande une bonne condition physique.",
       },
       {
         question: 'Quel âge faut-il avoir ?',
@@ -110,12 +110,12 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
     eyebrow: 'Le format',
     heading: 'La course à obstacles en boucles, inspirée du backyard ultra',
     answer:
-      "Un backyard ultra est une course où l'on répète la même boucle, tour après tour, jusqu'à ce qu'il ne reste qu'un coureur. Overbound applique cette idée à une course à obstacles : une boucle d'environ 2 km avec plus de 10 obstacles, répétée. Le format RANKED suit l'élimination, le format OPEN laisse courir sans classement.",
+      "Un backyard ultra est une course où l'on répète la même boucle, tour après tour, jusqu'à ce qu'il ne reste qu'un coureur. Overbound applique cette idée à une course à obstacles : une boucle d'environ 2 km avec plus de 10 obstacles, répétée. Le format RANKED suit l'élimination, le format OPEN laisse courir sans élimination.",
     facts: [
       { label: 'Principe', value: 'Une boucle répétée, tour après tour' },
       { label: 'Boucle', value: `${FORMAT_FACTS.loopKm} km, 10+ obstacles` },
       { label: 'RANKED', value: `Départ unique à ${FORMAT_FACTS.ranked.departure}, élimination` },
-      { label: 'OPEN', value: 'Sans classement, départs par vagues' },
+      { label: 'OPEN', value: 'Sans élimination, départs par vagues' },
       { label: 'Dernière édition', value: `${PREVIOUS_EDITION.dateLabel}, ${PREVIOUS_EDITION.venue}` },
       { label: 'Prochaine édition', value: next.shortLabel },
     ],
@@ -132,7 +132,7 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
         paragraphs: [
           `La boucle fait environ ${FORMAT_FACTS.loopKm} km et comporte plus de 10 obstacles. Franchir les obstacles fait partie du tour.`,
           `En RANKED, le temps limite par tour diminue au fil de la course : ${FORMAT_FACTS.ranked.lapLimits}.`,
-          "En OPEN, il n'y a pas de classement : tu enchaînes les tours à ton rythme, avec un départ en vague choisi à l'avance.",
+          "En OPEN, il n'y a ni élimination ni temps limite par tour : tu enchaînes les tours à ton rythme, avec un départ en vague choisi à l'avance.",
         ],
       },
       {
@@ -170,7 +170,7 @@ export const buildPillarPages = (next: NextEditionFacts = FALLBACK_NEXT_EDITION)
     eyebrow: 'Les faits',
     heading: 'Overbound en bref',
     answer:
-      `Overbound est une course à obstacles en boucles d'environ 2 km, organisée en Île-de-France. Elle propose deux formats, OPEN sans classement et RANKED par élimination. La première édition a réuni plus de 300 participants le 12 septembre 2026 à Saint-Quentin-en-Yvelines. La prochaine est prévue ${next.window}.`,
+      `Overbound est une course à obstacles en boucles d'environ 2 km, organisée en Île-de-France. Elle propose deux formats, OPEN sans élimination et RANKED par élimination. La première édition a réuni plus de 330 participants le 12 septembre 2026 à Saint-Quentin-en-Yvelines. La prochaine est prévue ${next.window}.`,
     facts: [
       { label: 'Nom', value: `${BRAND.name} (${BRAND.tagline})` },
       { label: 'Zone', value: BRAND.area },

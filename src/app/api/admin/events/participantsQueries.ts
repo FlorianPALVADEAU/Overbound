@@ -4,6 +4,7 @@ import axiosClient from '../../axiosClient'
 export type EventParticipantSort = 'created_at' | 'email'
 export type EventParticipantCheckInFilter = 'all' | 'checked_in' | 'not_checked_in'
 export type EventParticipantStatusFilter = 'all' | 'active' | 'cancelled'
+export type EventParticipantSexFilter = 'all' | 'homme' | 'femme' | 'none'
 
 export interface EventParticipantRow {
   id: string
@@ -21,6 +22,8 @@ export interface EventParticipantRow {
     cancellationReason?: string | null
     bibNumber?: number | null
     paidTicketCents?: number | null
+    /** Null for bibs created before the sex was asked. */
+    sex?: 'homme' | 'femme' | null
     createdAt: string
   }
   ticket: {
@@ -55,6 +58,7 @@ export interface EventParticipantsParams {
   ticketId?: string | null
   /** A SAS number as text, or `none`. */
   wave?: string | null
+  sex?: EventParticipantSexFilter
   sort?: EventParticipantSort
 }
 
@@ -80,6 +84,7 @@ const queryKey = (params: EventParticipantsParams) => [
   params.status ?? 'all',
   params.ticketId ?? '',
   params.wave ?? '',
+  params.sex ?? 'all',
   params.sort ?? 'created_at',
 ] as const
 
@@ -88,6 +93,7 @@ export function participantFilterSearch(params: EventParticipantsParams): URLSea
   const search = new URLSearchParams({ check_in: params.checkIn ?? 'all', status: params.status ?? 'all' })
   if (params.ticketId) search.set('ticket_id', params.ticketId)
   if (params.wave) search.set('wave', params.wave)
+  if (params.sex && params.sex !== 'all') search.set('sex', params.sex)
   if (params.query?.trim()) search.set('query', params.query.trim())
   return search
 }

@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
-import { client } from '@/sanity/lib/client'
-import { sitemapPostsQuery, categoriesWithCountsQuery, authorsWithCountsQuery } from '@/sanity/lib/queries'
+import { loadPostSummaries } from '@/lib/blog/loadPosts'
+import { BLOG_CATEGORIES } from '@/lib/blog/categories'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
 const getBuildDate = () => {
@@ -12,8 +12,6 @@ const getBuildDate = () => {
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed
 }
-
-type SitemapPost = { slug: string; publishedAt: string | null; _updatedAt: string | null }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Normaliser l'URL en enlevant le trailing slash pour éviter les doubles slashes
@@ -29,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/about/faq',
     '/about/partners',
     '/about/credits',
+    '/ambassadors',
     '/bootcamps',
     '/events/formats',
     '/course-a-obstacles-paris',
@@ -37,7 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/obstacles',
     '/blog',
     '/blog/categories',
-    '/blog/auteurs',
     '/volunteers',
     '/entreprises',
     '/contact',
@@ -90,50 +88,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error fetching events for sitemap:', error)
   }
 
-  // Articles de blog dynamiques
-  let blogEntries: MetadataRoute.Sitemap = []
-  try {
-    const posts = await client.fetch<SitemapPost[]>(sitemapPostsQuery)
-    blogEntries = posts.map((post) => ({
-      url: `${siteUrl}/blog/post/${post.slug}`,
-      lastModified: new Date(post._updatedAt || post.publishedAt || buildDate),
-      changeFrequency: 'monthly' as const,
-      priority: 0.6,
-    }))
-  } catch (error) {
-    console.error('Error fetching blog posts for sitemap:', error)
-  }
+  // Articles de blog (MDX, filesystem)
+  const blogEntries: MetadataRoute.Sitemap = loadPostSummaries().map((post) => ({
+    url: `${siteUrl}/blog/post/${post.slug}`,
+    lastModified: new Date(post.updatedAt || post.publishedAt || buildDate),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }))
 
-  // Catégories & auteurs du blog
-  let blogTaxonomyEntries: MetadataRoute.Sitemap = []
-  try {
-    const [categories, authors] = await Promise.all([
-      client.fetch(categoriesWithCountsQuery),
-      client.fetch(authorsWithCountsQuery),
-    ])
-
-    const categoryEntries = (categories || [])
-      .filter((category: any) => category.slug)
-      .map((category: any) => ({
-        url: `${siteUrl}/blog/categorie/${category.slug}`,
-        lastModified: buildDate,
-        changeFrequency: 'weekly' as const,
-        priority: 0.5,
-      }))
-
-    const authorEntries = (authors || [])
-      .filter((author: any) => author.slug)
-      .map((author: any) => ({
-        url: `${siteUrl}/blog/auteur/${author.slug}`,
-        lastModified: buildDate,
-        changeFrequency: 'weekly' as const,
-        priority: 0.4,
-      }))
-
-    blogTaxonomyEntries = [...categoryEntries, ...authorEntries]
-  } catch (error) {
-    console.error('Error fetching blog taxonomy for sitemap:', error)
-  }
+  // Catégories du blog
+  const blogTaxonomyEntries: MetadataRoute.Sitemap = BLOG_CATEGORIES.map((category) => ({
+    url: `${siteUrl}/blog/categorie/${category.slug}`,
+    lastModified: buildDate,
+    changeFrequency: 'weekly' as const,
+    priority: 0.5,
+  }))
 
   return [...staticEntries, ...eventEntries, ...blogEntries, ...blogTaxonomyEntries]
 }

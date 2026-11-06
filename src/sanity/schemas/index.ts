@@ -1,7 +1,6 @@
-import post from './post'
-import author from './author'
-import category from './category'
-import blockContent from './blockContent'
-import settings from './settings'
+import question from './question'
 
-export const schemaTypes = [settings, author, category, post, blockContent]
+// Dead export (only referenced by a commented-out config block in
+// sanity.config.ts), kept for that commented reference. Blog schemas moved
+// to MDX; only the FAQ "question" schema remains.
+export const schemaTypes = [question]

@@ -7,11 +7,13 @@ import { Card, CardContent } from '@/components/ui/card'
 interface AmbassadorShareCardProps {
   code: string | null
   copied: boolean
+  /** The browser refused clipboard access: say how to copy by hand. */
+  copyFailed: boolean
   onCopy: () => void
   onShare: () => void
 }
 
-export function AmbassadorShareCard({ code, copied, onCopy, onShare }: AmbassadorShareCardProps) {
+export function AmbassadorShareCard({ code, copied, copyFailed, onCopy, onShare }: AmbassadorShareCardProps) {
   return (
     <Card variant="info" className="gap-0 py-0">
       <CardContent className="space-y-4 p-4 sm:p-6">
@@ -34,6 +36,11 @@ export function AmbassadorShareCard({ code, copied, onCopy, onShare }: Ambassado
             Partager
           </Button>
         </div>
+        {copyFailed ? (
+          <p role="alert" className="text-sm text-destructive">
+            Copie impossible sur cet appareil. Sélectionne le code ci-dessus et copie-le à la main.
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   )

@@ -207,3 +207,14 @@ export const useRemoveAmbassadorCode = () => {
     onSuccess: invalidate,
   })
 }
+
+/** Moderation of the public ambassador page: hide or restore an ambassador, remove their photo, erase their description or hide their group. */
+export const useSetPublicProfile = (ambassadorId: string) => {
+  const invalidate = useInvalidateAmbassadors()
+  return useMutation({
+    mutationFn: async (payload: { blocked: boolean } | { remove_photo: true } | { clear_bio: true } | { hide_group: true }) => {
+      await axiosClient.patch(`/admin/ambassadors/${ambassadorId}/public-profile`, payload)
+    },
+    onSuccess: invalidate,
+  })
+}

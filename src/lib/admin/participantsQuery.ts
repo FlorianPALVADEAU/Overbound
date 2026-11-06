@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
+import { PARTICIPANT_SEXES, type ParticipantSex } from '@/lib/checkout/participantSex'
 
 type Admin = Pick<SupabaseClient, 'from'>
 
@@ -12,12 +13,14 @@ export const participantFiltersSchema = z.object({
   ticket_id: z.string().uuid().optional(),
   /** A SAS number, or `none` for bibs without one. */
   wave: z.union([z.literal('none'), z.coerce.number().int().min(1).max(99)]).optional(),
+  /** A sex, or `none` for bibs whose sex was never recorded. */
+  sex: z.enum([...PARTICIPANT_SEXES, 'none']).optional(),
 })
 
 export type ParticipantFilters = z.infer<typeof participantFiltersSchema>
 
 export const PARTICIPANT_COLUMNS =
-  'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index, cancelled_at, cancellation_reason, bib_number, paid_ticket_cents'
+  'id, user_id, ticket_id, order_id, email, checked_in, claim_status, approval_status, created_at, start_time, wave_index, cancelled_at, cancellation_reason, bib_number, paid_ticket_cents, sex'
 
 export interface ParticipantRegistrationRow {
   id: string
@@ -35,6 +38,7 @@ export interface ParticipantRegistrationRow {
   cancellation_reason: string | null
   bib_number: number | null
   paid_ticket_cents: number | null
+  sex: ParticipantSex | null
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -68,6 +72,8 @@ export function applyParticipantFilters<Query>(
   if (filters.ticket_id) next = next.eq('ticket_id', filters.ticket_id)
   if (filters.wave === 'none') next = next.is('wave_index', null)
   else if (typeof filters.wave === 'number') next = next.eq('wave_index', filters.wave)
+  if (filters.sex === 'none') next = next.is('sex', null)
+  else if (filters.sex) next = next.eq('sex', filters.sex)
 
   const term = filters.query ? sanitizeSearchTerm(filters.query) : ''
   if (term) {
@@ -104,6 +110,8 @@ export interface ParticipantRecord {
     bibNumber: number | null
     /** What the ticket itself cost; the most an admin refund can give back. */
     paidTicketCents: number | null
+    /** Null for bibs created before the sex was asked. */
+    sex: ParticipantSex | null
   }
   ticket: {
     id: string | null
@@ -197,6 +205,7 @@ export async function enrichParticipants(admin: Admin, registrations: Participan
         cancellationReason: registration.cancellation_reason,
         bibNumber: registration.bib_number,
         paidTicketCents: registration.paid_ticket_cents,
+        sex: registration.sex,
       },
       ticket: {
         id: registration.ticket_id,

@@ -52,6 +52,8 @@ export async function sendTicketEmail(params: {
   qrUrl: string
   manageUrl: string
   isMinor?: boolean
+  /** Representative of a minor, who gets a copy of the ticket. */
+  cc?: string
 }) {
   const html = await renderEmail(TicketEmail(params))
   const attachments = params.isMinor ? [await parentalAuthorizationAttachment()] : undefined
@@ -60,6 +62,7 @@ export async function sendTicketEmail(params: {
     from: UNFORMAL_FROM,
     replyTo: SUPPORT_REPLY_TO,
     to: params.to,
+    ...(params.cc ? { cc: params.cc } : {}),
     subject: `Ton billet — ${params.eventTitle}`,
     html,
     attachments,

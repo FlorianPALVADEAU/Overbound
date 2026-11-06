@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { EVENT_SLUG, fillFirstParticipant, signWaiver, stubCheckoutApis } from './support/checkout'
+import { EVENT_SLUG, chooseSex, fillFirstParticipant, signWaiver, stubCheckoutApis } from './support/checkout'
 
 const REGISTER_URL = `/events/${EVENT_SLUG}/register`
 
@@ -26,21 +26,50 @@ test.describe('Checkout', () => {
     const capture = await stubCheckoutApis(page, { signedIn: true })
     await page.goto(REGISTER_URL)
 
-    await fillFirstParticipant(page)
+    await fillFirstParticipant(page, 'femme')
     await signWaiver(page)
     await payButton(page).click()
 
     await expect.poll(capture.registrationBody).not.toBeNull()
     expect(capture.paymentIntentBody()).toMatchObject({
       groupId: 'group-1',
-      participants: [{ birthDate: '1990-05-04', selectedWaveIndex: 1 }],
+      participants: [{ birthDate: '1990-05-04', sex: 'femme', selectedWaveIndex: 1 }],
     })
     expect(capture.registrationBody()).toMatchObject({
       paymentIntentId: 'free_e2e',
       groupId: 'group-1',
-      participants: [{ firstName: 'Camille', selectedWaveIndex: 1 }],
+      participants: [{ firstName: 'Camille', sex: 'femme', selectedWaveIndex: 1 }],
     })
     await page.waitForURL(`**/events/${EVENT_SLUG}/success?registration_id=reg-e2e`)
+  })
+
+  test('a bib without sex is refused before any payment, and the sex choice takes the focus', async ({ page }) => {
+    const capture = await stubCheckoutApis(page, { signedIn: true })
+    await page.goto(REGISTER_URL)
+
+    await fillFirstParticipant(page, null)
+    await signWaiver(page)
+    await payButton(page).click()
+
+    await expect(page.locator('#participant-1-sex')).toBeFocused()
+    await expect(page.getByText('Ce champ est obligatoire.').first()).toBeVisible()
+    expect(capture.paymentIntentBody()).toBeNull()
+    expect(capture.registrationBody()).toBeNull()
+  })
+
+  test('the sex of the buyer profile prefills the first bib, and the visitor can change it', async ({ page }) => {
+    const capture = await stubCheckoutApis(page, { signedIn: true, profileSex: 'homme' })
+    await page.goto(REGISTER_URL)
+
+    await expect(page.locator('input[name="participant-1-sex"][value="homme"]')).toBeChecked()
+
+    await fillFirstParticipant(page, null)
+    await chooseSex(page, 1, 'femme')
+    await signWaiver(page)
+    await payButton(page).click()
+
+    await expect.poll(capture.registrationBody).not.toBeNull()
+    expect(capture.registrationBody()).toMatchObject({ participants: [{ sex: 'femme' }] })
   })
 
   test('a participant under 18 is refused before any payment', async ({ page }) => {

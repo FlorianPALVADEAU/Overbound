@@ -8,10 +8,6 @@ const { supabaseAdminMock, requireAdminOrganizationMock } = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/server', () => ({ supabaseAdmin: supabaseAdminMock }))
 vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
 vi.mock('@/lib/logging/adminRequestLogger', () => ({ withRequestLogging: (handler: unknown) => handler }))
-vi.mock('@/lib/email/marketing', () => ({
-  dispatchNewEventAnnouncement: vi.fn(),
-  getMarketingOptInRecipients: vi.fn(),
-}))
 
 import { GET } from './route'
 

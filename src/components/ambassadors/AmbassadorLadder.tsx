@@ -9,9 +9,13 @@ import { cn } from '@/lib/utils'
 interface AmbassadorLadderProps {
   steps: LadderStep[]
   bonus: BonusSummary | null
+  /** Open from the start on phones (a reward is within reach). From lg the list is always shown. */
+  defaultOpen?: boolean
 }
 
-export function AmbassadorLadder({ steps, bonus }: AmbassadorLadderProps) {
+const STATE_LABELS = { reached: 'Atteint', next: 'Prochain palier', locked: 'Verrouillé' } as const
+
+export function AmbassadorLadder({ steps, bonus, defaultOpen = false }: AmbassadorLadderProps) {
   const reached = steps.filter((step) => step.state === 'reached').length
 
   return (
@@ -19,7 +23,7 @@ export function AmbassadorLadder({ steps, bonus }: AmbassadorLadderProps) {
       title="Les récompenses"
       badge={<Badge variant="outline">{reached} / {steps.length}</Badge>}
       summary="Tous les paliers et ce que tu gagnes"
-      defaultOpen
+      defaultOpen={defaultOpen}
     >
       <ol className="space-y-1">
         {steps.map((step) => {
@@ -33,6 +37,7 @@ export function AmbassadorLadder({ steps, bonus }: AmbassadorLadderProps) {
                 step.state === 'locked' && 'text-muted-foreground',
               )}
             >
+              <span className="sr-only">{STATE_LABELS[step.state]} : </span>
               <span aria-hidden className="mt-0.5 shrink-0">
                 {step.state === 'reached' ? <Check className="size-5 text-success" /> : step.state === 'next' ? <Icon className="size-5 text-primary" /> : <Lock className="size-5" />}
               </span>

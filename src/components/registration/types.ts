@@ -5,6 +5,7 @@ import type { Upsell, UpsellOptions } from '@/types/Upsell'
 import type { PromotionalCode } from '@/types/PromotionalCode'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import type { TshirtOffer } from '@/lib/tshirtOffer'
+import type { ParticipantSex } from '@/lib/checkout/participantSex'
 
 export interface EventTicket extends Ticket {
   current_registrations?: number
@@ -26,6 +27,7 @@ export type EventUser = {
   email: string
   fullName?: string | null
   date_of_birth?: string | null
+  sex?: ParticipantSex | null
 }
 
 export type EventUpsell = Upsell & {
@@ -41,11 +43,15 @@ export type Participant = {
   lastName: string
   email: string
   birthDate: string
+  /** For the rankings: asked on every bib, prefilled from the buyer's profile. */
+  sex?: ParticipantSex
   emergencyContactName: string
   emergencyContactPhone: string
   /** Under 18 only: legal representative who signs the parental authorization. */
   guardianName?: string
   guardianPhone?: string
+  /** Under 18 only: receives the minor's ticket, as a copy. */
+  guardianEmail?: string
   /** Under 18 only: adult on site, reachable for the whole participation. May be the representative. */
   referentName?: string
   referentPhone?: string

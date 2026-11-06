@@ -1,7 +1,10 @@
 import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
+import type { ParticipantSex } from '@/lib/checkout/participantSex'
 
 export interface OverviewRegistration {
   id: string
+  /** Null for bibs created before the sex was asked. */
+  sex: ParticipantSex | null
   event_id: string | null
   order_id: string | null
   ticket_id: string | null
@@ -56,6 +59,15 @@ export interface OverviewInputs {
   counts: { stalePendingOrders: number; failedRefunds: number; newQuotes: number }
 }
 
+/** Active bibs by sex. Shares are over the bibs whose sex is known, so they add up to 100 %. */
+export interface SexBreakdown {
+  homme: number
+  femme: number
+  unknown: number
+  hommeShare: number | null
+  femmeShare: number | null
+}
+
 export type OverviewTodoTone = 'danger' | 'warning' | 'info'
 export interface OverviewTodo {
   id: string
@@ -79,6 +91,7 @@ export interface AdminOverviewData {
     checkInRate: number | null
   }
   trend: { last7Days: number; previous7Days: number }
+  sex: SexBreakdown
   salesByDay: Array<{ date: string; registrations: number; revenueCents: number }>
   tickets: Array<{ id: string; name: string; count: number }>
   nextEvent: { id: string; title: string; date: string; location: string | null; registrations: number; capacity: number | null } | null
@@ -95,6 +108,20 @@ const parisDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', ye
 export const parisDayKey = (value: Date | string) => parisDay.format(typeof value === 'string' ? new Date(value) : value)
 
 const plural = (count: number, singular: string, pluralForm: string) => (count > 1 ? pluralForm : singular)
+
+/** Active bibs by sex. A share is null when no bib has a known sex, rather than a misleading 0 %. */
+export function buildSexBreakdown(activeBibs: Array<{ sex: ParticipantSex | null }>): SexBreakdown {
+  const homme = activeBibs.filter((bib) => bib.sex === 'homme').length
+  const femme = activeBibs.filter((bib) => bib.sex === 'femme').length
+  const known = homme + femme
+  return {
+    homme,
+    femme,
+    unknown: activeBibs.length - known,
+    hommeShare: known > 0 ? homme / known : null,
+    femmeShare: known > 0 ? femme / known : null,
+  }
+}
 
 export function buildAdminOverview(input: OverviewInputs): AdminOverviewData {
   const { now, scopeEventId } = input
@@ -222,6 +249,7 @@ export function buildAdminOverview(input: OverviewInputs): AdminOverviewData {
       checkInRate: active.length > 0 ? checkedIn / active.length : null,
     },
     trend: { last7Days, previous7Days },
+    sex: buildSexBreakdown(active),
     salesByDay: [...days.entries()].map(([date, value]) => ({ date, ...value })),
     tickets: [...byTicket.entries()]
       .map(([id, count]) => ({ id, name: ticketNames.get(id) ?? 'Billet', count }))

@@ -7,9 +7,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useUpdateProfile, type ProfileUpdatePayload } from '@/hooks/account/useUpdateProfile'
 import type { ProfileField } from '@/lib/account/profile'
+import { PARTICIPANT_SEXES, type ParticipantSex } from '@/lib/checkout/participantSex'
 import { cn } from '@/lib/utils'
 
-type FormValues = Record<ProfileField, string>
+type FormValues = Record<ProfileField | 'sex', string>
+
+const SEX_LABELS: Record<ParticipantSex, string> = { homme: 'Homme', femme: 'Femme' }
+
+const FORM_KEYS = ['full_name', 'phone', 'date_of_birth', 'sex'] as const satisfies ReadonlyArray<keyof FormValues>
 
 const FIELDS: Array<{
   field: ProfileField
@@ -28,6 +33,7 @@ const toValues = (profile: SessionProfile | null): FormValues => ({
   full_name: profile?.full_name ?? '',
   phone: profile?.phone ?? '',
   date_of_birth: profile?.date_of_birth ?? '',
+  sex: profile?.sex ?? '',
 })
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -38,14 +44,12 @@ export function ProfileForm({ profile, email }: { profile: SessionProfile | null
   const [values, setValues] = useState<FormValues>(saved)
   const [justSaved, setJustSaved] = useState(false)
 
-  const changed = FIELDS.filter(({ field }) => values[field].trim() !== saved[field].trim())
+  const changed = FORM_KEYS.filter((key) => values[key].trim() !== saved[key].trim())
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (changed.length === 0) return
-    const payload: ProfileUpdatePayload = Object.fromEntries(
-      changed.map(({ field }) => [field, values[field].trim() || null]),
-    )
+    const payload: ProfileUpdatePayload = Object.fromEntries(changed.map((key) => [key, values[key].trim() || null]))
     update.mutate(payload, {
       onSuccess: () => {
         setSaved(values)
@@ -84,6 +88,35 @@ export function ProfileForm({ profile, email }: { profile: SessionProfile | null
           </div>
         )
       })}
+
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-semibold">Sexe</legend>
+        <p className="text-xs text-muted-foreground">Pour les classements. Pré-rempli sur ton billet, modifiable à chaque inscription.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {PARTICIPANT_SEXES.map((sex) => (
+            <label
+              key={sex}
+              className={cn(
+                'flex h-12 cursor-pointer items-center justify-center rounded-xl border text-base font-medium',
+                values.sex === sex ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground',
+              )}
+            >
+              <input
+                type="radio"
+                name="sex"
+                value={sex}
+                checked={values.sex === sex}
+                onChange={() => {
+                  setJustSaved(false)
+                  setValues((previous) => ({ ...previous, sex }))
+                }}
+                className="sr-only"
+              />
+              {SEX_LABELS[sex]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <div className="space-y-2">
         <Label htmlFor="profile-email" className="text-sm font-semibold">

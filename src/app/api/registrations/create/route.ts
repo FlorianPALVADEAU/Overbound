@@ -4,7 +4,7 @@ import { AMBASSADOR_LINK_SELECT, isAmbassadorPromoRow } from '@/lib/orderPricing
 import { NextRequest, NextResponse } from 'next/server'
 import { createRegistrationRequestSchema } from '@/lib/checkout/registrationRequestSchema'
 import { admitParticipant } from '@/lib/checkout/orderEligibility'
-import { MINOR_CONTACT_FIELDS } from '@/lib/checkout/minorContacts'
+import { guardianTicketCopyRecipient, MINOR_CONTACT_FIELDS, minorGuardianColumns } from '@/lib/checkout/minorContacts'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sendReceiptEmail, sendTicketEmail } from '@/lib/email'
@@ -474,6 +474,7 @@ export async function POST(request: NextRequest) {
     const companionRegistrations: Array<{
       registration: CreatedRegistrationRecord
       ticket: (typeof tickets)[number]
+      participant: (typeof participants)[number]
       participantName: string | null
     }> = []
 
@@ -565,6 +566,8 @@ export async function POST(request: NextRequest) {
           distance_min_km: 1,
           flexible_refund: flexibleParticipantIndices.has(index),
           is_minor: participantIsMinor[index] === true,
+          ...minorGuardianColumns(participantIsMinor[index] === true, participant),
+          sex: participant.sex,
           paid_ticket_cents: isFreeOrder ? 0 : (paidTicketPrices[index] ?? null),
           // Only a stored choice: whether the offer covers this registration is derived from creation order.
           ...(isTshirtSize(participant.tshirtSize) ? { tshirt_size: participant.tshirtSize } : {}),
@@ -732,6 +735,10 @@ export async function POST(request: NextRequest) {
             promotional_code_id: null,
             distance_ideal_km: 1,
             distance_min_km: 1,
+            // The same person runs the companion bib: same sex for the rankings, same minor status and contacts.
+            sex: participant.sex,
+            is_minor: participantIsMinor[index] === true,
+            ...minorGuardianColumns(participantIsMinor[index] === true, participant),
             flexible_refund: false,
             paid_ticket_cents: paidCompanion.priceCents,
             companion_of: registration.id,
@@ -783,7 +790,7 @@ export async function POST(request: NextRequest) {
           throw assignmentError
         }
 
-        companionRegistrations.push({ registration: companion, ticket: companionTicket, participantName })
+        companionRegistrations.push({ registration: companion, ticket: companionTicket, participant, participantName })
         await recordSignature(companion.id, participant)
       }
     }
@@ -874,7 +881,7 @@ export async function POST(request: NextRequest) {
       amountLabel,
     ].filter(Boolean).join(' • ')
 
-    const ticketEmailTasks = [...createdRegistrations, ...companionRegistrations].map(async ({ registration, ticket, participantName }) => {
+    const ticketEmailTasks = [...createdRegistrations, ...companionRegistrations].map(async ({ registration, ticket, participant, participantName }) => {
       try {
         const qrUrl = await resolveQrImageUrl(registration.qr_code_token, siteUrl)
         const eventDateLabel = new Date(eventRow.date).toLocaleDateString('fr-FR', {
@@ -882,7 +889,8 @@ export async function POST(request: NextRequest) {
           timeZone: 'Europe/Paris',
         })
 
-        await sendTicketEmail({
+        // Resend reports a refused send in `error` without throwing: turn it into an exception so it is reported.
+        const sent = await sendTicketEmail({
           to: registration.email ?? '',
           participantName: participantName || registration.email || '',
           eventTitle: eventRow.title,
@@ -895,7 +903,13 @@ export async function POST(request: NextRequest) {
           qrUrl,
           manageUrl: `${siteUrl}/account/tickets?ticket=${registration.id}`,
           isMinor: registration.is_minor === true,
+          cc: guardianTicketCopyRecipient({
+            isMinor: registration.is_minor === true,
+            participantEmail: registration.email,
+            guardianEmail: participant.guardianEmail,
+          }),
         })
+        if (sent.error) throw new Error(sent.error.message)
       } catch (emailError) {
         console.error('Erreur envoi email:', emailError)
         captureException(emailError as Error, {

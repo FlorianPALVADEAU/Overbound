@@ -11,7 +11,9 @@ const {
   sendMetaCapiEventMock,
   markResendContactAsRegisteredMock,
   qrCodeToDataURLMock,
+  captureExceptionMock,
 } = vi.hoisted(() => ({
+  captureExceptionMock: vi.fn(),
   createSupabaseServerMock: vi.fn(),
   supabaseAdminMock: vi.fn(),
   paymentIntentsRetrieveMock: vi.fn(),
@@ -60,6 +62,10 @@ vi.mock('qrcode', () => ({
   toDataURL: qrCodeToDataURLMock,
 }))
 
+vi.mock('@/lib/sentry', () => ({
+  captureException: captureExceptionMock,
+}))
+
 process.env.STRIPE_SECRET_KEY = 'sk_test_xxx'
 
 import { POST } from './route'
@@ -105,7 +111,7 @@ function baseBody(overrides: Record<string, unknown> = {}) {
         firstName: 'Alice',
         lastName: 'Runner',
         email: 'alice@example.com',
-        birthDate: '1990-05-04',
+        birthDate: '1990-05-04', sex: 'femme',
       },
     ],
     upsells: [],
@@ -301,6 +307,7 @@ function createAdmin(
 describe('POST /api/registrations/create', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    sendTicketEmailMock.mockResolvedValue({ data: { id: 'email_1' }, error: null })
     qrCodeToDataURLMock.mockResolvedValue('data:image/png;base64,qr')
     sendMetaCapiEventMock.mockResolvedValue(undefined)
     sendAdminPushNotificationMock.mockResolvedValue(undefined)
@@ -472,8 +479,8 @@ describe('POST /api/registrations/create', () => {
   describe('options chosen per participant', () => {
     const TSHIRT = { id: 'tshirt-1', name: 'T-shirt', type: 'tshirt', price_cents: 1200, currency: 'eur' }
     const twoParticipants = [
-      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com', birthDate: '1990-05-04' },
-      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com', birthDate: '1992-01-15' },
+      { ticketId: 'ticket-1', firstName: 'Alice', lastName: 'Runner', email: 'alice@example.com', birthDate: '1990-05-04', sex: 'femme' },
+      { ticketId: 'ticket-1', firstName: 'Bob', lastName: 'Runner', email: 'bob@example.com', birthDate: '1992-01-15', sex: 'femme' },
     ]
     const paidIntent = {
       id: 'pi_1',
@@ -579,7 +586,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
-              birthDate: '1990-05-04',
+              birthDate: '1990-05-04', sex: 'femme',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               selectedWaveIndex: 5,
@@ -600,9 +607,10 @@ describe('POST /api/registrations/create', () => {
       firstName: 'Léa',
       lastName: 'Runner',
       email: 'lea@example.com',
-      birthDate: '2009-09-13',
+      birthDate: '2009-09-13', sex: 'femme',
       guardianName: 'Anne Runner',
       guardianPhone: '0612345678',
+      guardianEmail: 'anne.runner@example.com',
       referentName: 'Anne Runner',
       referentPhone: '0612345678',
       selectedWaveIndex: 5,
@@ -626,10 +634,48 @@ describe('POST /api/registrations/create', () => {
       const response = await POST(jsonRequest(freeOrder(MINOR)))
 
       expect(response.status).toBe(200)
-      expect(registrationInserts[0]).toMatchObject({ is_minor: true })
+      expect(registrationInserts[0]).toMatchObject({
+        is_minor: true,
+        guardian_name: 'Anne Runner',
+        guardian_email: 'anne.runner@example.com',
+        referent_phone: '0612345678',
+      })
       const signed = JSON.parse(signatureInserts[0].signature_data as string)
       expect(signed.participant).toMatchObject({ guardianName: 'Anne Runner', referentPhone: '0612345678' })
       expect(signed.disclaimer).toMatchObject({ minorAttestation: true })
+    })
+
+    it('sends the minor ticket with a copy to the representative', async () => {
+      mockAuthedUser('user-1')
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 } }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(200)
+      expect(sendTicketEmailMock).toHaveBeenCalledTimes(1)
+      expect(sendTicketEmailMock.mock.calls[0][0]).toMatchObject({
+        isMinor: true,
+        to: 'lea@example.com',
+        cc: 'anne.runner@example.com',
+      })
+    })
+
+    it('reports to Sentry when Resend refuses the minor ticket, instead of losing it silently', async () => {
+      mockAuthedUser('user-1')
+      sendTicketEmailMock.mockResolvedValueOnce({ data: null, error: { name: 'validation_error', message: 'Invalid to address' } })
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 } }),
+      )
+
+      const response = await POST(jsonRequest(freeOrder(MINOR)))
+
+      expect(response.status).toBe(200)
+      expect(captureExceptionMock).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Invalid to address' }),
+        expect.objectContaining({ context: 'ticket_email_send' }),
+      )
     })
 
     it('refuses a minor when the signer did not attest being the legal representative, and creates nothing', async () => {
@@ -654,10 +700,12 @@ describe('POST /api/registrations/create', () => {
         createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts, signatureInserts }),
       )
 
-      const response = await POST(jsonRequest(freeOrder({ ...MINOR, birthDate: '1990-05-04', guardianName: undefined, guardianPhone: undefined, referentName: undefined, referentPhone: undefined })))
+      const response = await POST(jsonRequest(freeOrder({ ...MINOR, birthDate: '1990-05-04', sex: 'femme', guardianName: undefined, guardianPhone: undefined, referentName: undefined, referentPhone: undefined })))
 
       expect(response.status).toBe(200)
       expect(registrationInserts[0]).toMatchObject({ is_minor: false })
+      expect(registrationInserts[0]).not.toHaveProperty('guardian_email')
+      expect(sendTicketEmailMock.mock.calls[0][0].cc).toBeUndefined()
       expect(JSON.parse(signatureInserts[0].signature_data as string).participant).not.toHaveProperty('guardianName')
     })
 
@@ -708,13 +756,13 @@ describe('POST /api/registrations/create', () => {
     })
 
     describe('orders with several participants', () => {
-      const SECOND_MINOR = { ...MINOR, firstName: 'Noé', email: 'noe@example.com', birthDate: '2010-01-20', selectedWaveIndex: 6 }
+      const SECOND_MINOR = { ...MINOR, firstName: 'Noé', email: 'noe@example.com', birthDate: '2010-01-20', sex: 'femme', selectedWaveIndex: 6 }
       const ADULT = {
         ticketId: 'ticket-1',
         firstName: 'Anne',
         lastName: 'Runner',
         email: 'anne@example.com',
-        birthDate: '1980-02-10',
+        birthDate: '1980-02-10', sex: 'femme',
         selectedWaveIndex: 5,
       }
       const groupOrder = (participants: Array<Record<string, unknown>>, minorAttestation?: boolean) =>
@@ -784,6 +832,18 @@ describe('POST /api/registrations/create', () => {
         expect(response.status).toBe(200)
       })
 
+      it('refuses the whole order when a participant has no sex, and creates nothing', async () => {
+        mockAuthedUser('user-1')
+        const registrationInserts: Array<Record<string, unknown>> = []
+        supabaseAdminMock.mockReturnValue(createAdmin({ ticketRows: [OPEN_TICKET_ROW], registrationInserts }))
+
+        const response = await POST(jsonRequest(groupOrder([{ ...ADULT, sex: undefined }])))
+
+        expect(response.status).toBe(422)
+        expect((await response.json()).error).toBe('Participant 1 : indique le sexe du participant, pour les classements.')
+        expect(registrationInserts).toHaveLength(0)
+      })
+
       it('refuses the whole order when one of the minors is under 16, and creates nothing', async () => {
         mockAuthedUser('user-1')
         const registrationInserts: Array<Record<string, unknown>> = []
@@ -791,7 +851,7 @@ describe('POST /api/registrations/create', () => {
           createAdmin({ ticketRows: [OPEN_TICKET_ROW], eventOverrides: { minimum_age: 16 }, registrationInserts }),
         )
 
-        const response = await POST(jsonRequest(groupOrder([MINOR, { ...SECOND_MINOR, birthDate: '2012-03-01' }], true)))
+        const response = await POST(jsonRequest(groupOrder([MINOR, { ...SECOND_MINOR, birthDate: '2012-03-01', sex: 'femme' }], true)))
 
         expect(response.status).toBe(422)
         expect((await response.json()).error).toContain('Participant 2')
@@ -829,7 +889,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
-              birthDate: '1990-05-04',
+              birthDate: '1990-05-04', sex: 'femme',
               distanceIdealKm: '20',
               distanceMinKm: '10',
             },
@@ -868,7 +928,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
-              birthDate: '1990-05-04',
+              birthDate: '1990-05-04', sex: 'femme',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               selectedWaveIndex: 5,
@@ -914,7 +974,7 @@ describe('POST /api/registrations/create', () => {
               firstName: 'Alice',
               lastName: 'Runner',
               email: 'alice@example.com',
-              birthDate: '1990-05-04',
+              birthDate: '1990-05-04', sex: 'femme',
               distanceIdealKm: '20',
               distanceMinKm: '10',
               // Deliberately different from the anchor (3) — must be ignored server-side.
@@ -1038,6 +1098,64 @@ describe('POST /api/registrations/create', () => {
 
       expect(response.status).toBe(200)
       expect(waveCalls).toEqual([])
+    })
+
+    it("gives a minor's companion bib the minor flag and the guardian contacts, with a ticket copy to the representative", async () => {
+      mockAuthedUser('user-1')
+      paymentIntentsRetrieveMock.mockResolvedValue(companionIntent(PAID_COMPANION))
+      const registrationInserts: Array<Record<string, unknown>> = []
+      const OPEN_WITH_COMPANION_ROW = {
+        ...OPEN_TICKET_ROW,
+        operations_config: {
+          open_companion: { ticket_id: 'open-1', price_cents: 2900, ranked_max_duration_minutes: 230, min_gap_minutes: 20 },
+        },
+      }
+      supabaseAdminMock.mockReturnValue(
+        createAdmin({
+          ticketRows: [OPEN_WITH_COMPANION_ROW, COMPANION_OPEN_ROW],
+          eventOverrides: { minimum_age: 16 },
+          registrationInserts,
+        }),
+      )
+
+      const response = await POST(
+        jsonRequest(
+          baseBody({
+            paymentIntentId: 'pi_1',
+            disclaimer: { read: true, accepted: true, rulebookAccepted: true, minorAttestation: true },
+            participants: [
+              {
+                ticketId: 'ticket-1',
+                firstName: 'Léa',
+                lastName: 'Runner',
+                email: 'lea@example.com',
+                birthDate: '2009-09-13',
+                sex: 'femme',
+                guardianName: 'Anne Runner',
+                guardianPhone: '0612345678',
+                guardianEmail: 'anne.runner@example.com',
+                referentName: 'Anne Runner',
+                referentPhone: '0612345678',
+                selectedWaveIndex: 5,
+                companionWaveIndex: 7,
+              },
+            ],
+          }),
+        ),
+      )
+
+      expect(response.status).toBe(200)
+      expect(registrationInserts).toHaveLength(2)
+      expect(registrationInserts[0]).toMatchObject({ is_minor: true, guardian_email: 'anne.runner@example.com' })
+      expect(registrationInserts[1]).toMatchObject({
+        companion_of: 'reg-1',
+        is_minor: true,
+        guardian_name: 'Anne Runner',
+        guardian_email: 'anne.runner@example.com',
+        referent_phone: '0612345678',
+      })
+      const companionMail = sendTicketEmailMock.mock.calls.find(([mail]) => mail.ticketName === 'Primal OPEN')?.[0]
+      expect(companionMail).toMatchObject({ isMinor: true, cc: 'anne.runner@example.com' })
     })
 
     it('creates no companion when the payment did not include one, whatever the request says', async () => {

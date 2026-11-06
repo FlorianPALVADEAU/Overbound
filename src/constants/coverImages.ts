@@ -66,6 +66,7 @@ export const COVER = {
     volunteers: photo('benevoles-5.webp'),
     bootcamps: obstacle('tire-drag2.webp'),
     ourStory: photo('P1090801.webp'),
+    ambassadors: obstacle('log-carry2.webp'),
     faq: photo('P1102314.webp'),
     partners: photo('P1091180.webp'),
     credits: photo('P1091511.webp'),

@@ -4,10 +4,10 @@ import { EVENT_SLUG, fillParticipant, signWaiver, stubCheckoutApis, type StubPar
 const REGISTER_URL = `/events/${EVENT_SLUG}/register`
 
 // Event on 2030-09-12: born 2013-03-02 is 17, born 2014-05-01 is 16, born 2016-01-01 is 13.
-const GUARDIAN = { name: 'Anne Martin', phone: '0612345678' }
-const ADULT: StubParticipant = { firstName: 'Anne', lastName: 'Martin', email: 'anne@example.com', birthDate: '1985-02-10' }
-const LEA: StubParticipant = { firstName: 'Léa', lastName: 'Martin', email: 'lea@example.com', birthDate: '2013-03-02', guardian: GUARDIAN }
-const NOE: StubParticipant = { firstName: 'Noé', lastName: 'Martin', email: 'noe@example.com', birthDate: '2014-05-01', guardian: GUARDIAN }
+const GUARDIAN = { name: 'Anne Martin', phone: '0612345678', email: 'anne.martin@example.com' }
+const ADULT: StubParticipant = { firstName: 'Anne', lastName: 'Martin', email: 'anne@example.com', birthDate: '1985-02-10', sex: 'femme' }
+const LEA: StubParticipant = { firstName: 'Léa', lastName: 'Martin', email: 'lea@example.com', birthDate: '2013-03-02', sex: 'femme', guardian: GUARDIAN }
+const NOE: StubParticipant = { firstName: 'Noé', lastName: 'Martin', email: 'noe@example.com', birthDate: '2014-05-01', sex: 'homme', guardian: GUARDIAN }
 
 const payButton = (page: Page) => page.getByRole('button', { name: 'Payer en sécurité' }).filter({ visible: true }).first()
 
@@ -52,7 +52,7 @@ test.describe('Checkout — participants aged 16 and 17', () => {
     await expect.poll(capture.registrationBody).not.toBeNull()
     expect(capture.registrationBody()).toMatchObject({
       disclaimer: { minorAttestation: true },
-      participants: [{ firstName: 'Léa', birthDate: '2013-03-02', guardianName: 'Anne Martin', referentPhone: '0612345678' }],
+      participants: [{ firstName: 'Léa', birthDate: '2013-03-02', sex: 'femme', guardianName: 'Anne Martin', guardianEmail: 'anne.martin@example.com', referentPhone: '0612345678' }],
     })
     await page.waitForURL(`**/events/${EVENT_SLUG}/success?registration_id=reg-e2e`)
   })
@@ -136,6 +136,19 @@ test.describe('Checkout — participants aged 16 and 17', () => {
     await payButton(page).click()
 
     await expect(page.locator('#participant-1-guardian')).toBeFocused()
+    expect(capture.paymentIntentBody()).toBeNull()
+  })
+
+  test('a minor whose representative gives no valid email is stopped on that field before any payment', async ({ page }) => {
+    const capture = await openCheckout(page)
+
+    await fillParticipant(page, 1, { ...LEA, guardian: { ...GUARDIAN, email: 'anne.martin@' } })
+    await signWaiver(page)
+    await attest(page, ['minor-attestation'])
+    await payButton(page).click()
+
+    await expect(page.locator('#participant-1-guardianEmail')).toBeFocused()
+    await expect(page.getByText('Adresse email invalide.')).toBeVisible()
     expect(capture.paymentIntentBody()).toBeNull()
   })
 

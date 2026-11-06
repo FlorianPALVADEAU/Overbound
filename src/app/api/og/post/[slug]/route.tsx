@@ -1,23 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from 'next/og'
+import { loadPostBySlug } from '@/lib/blog/loadPosts'
 
-export const runtime = 'edge'
+// Blog posts are now filesystem content (MDX), read with Node's fs module:
+// the edge runtime cannot access the filesystem, so this route runs on Node.
 
 export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params
 
-  // Direct Sanity fetch without SDK to reduce bundle size
-  let title = 'OverBound'
-  try {
-    const query = encodeURIComponent(`*[_type == "post" && slug.current == $slug][0]{ title }`)
-    const url = `https://${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${process.env.NEXT_PUBLIC_SANITY_DATASET}?query=${query}&$slug="${slug}"`
-
-    const res = await fetch(url)
-    const data = await res.json()
-    title = data?.result?.title || 'OverBound'
-  } catch (e) {
-    // Fallback to default title
-  }
+  const post = loadPostBySlug(slug)
+  const title = post?.title || 'OverBound'
 
   const logo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'}/images/brand/totem_logo.png`
 

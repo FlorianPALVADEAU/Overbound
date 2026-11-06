@@ -6,6 +6,7 @@ import { loadProgramRules } from '@/lib/ambassadors/programRules'
 import type { AmbassadorSeason } from '@/lib/ambassadors/season'
 import { buildPreviousEdition, getPreviousSeason, type ArchivedReward, type ArchivedTotal } from '@/lib/ambassadors/dashboard/previousEdition'
 import { buildLeaderboard } from '@/lib/ambassadors/dashboard/leaderboard'
+import { loadOpenEventSlug } from '@/lib/events/loadOpenEventSlug'
 import { listAmbassadorCodeIds, pickCurrentCodeId } from '@/lib/admin/ambassadors/currentCode'
 import {
   buildRecruitRows,
@@ -230,6 +231,7 @@ export async function loadAmbassadorDashboard(
   return {
     program,
     season_ends_at: endsAt,
+    open_event_slug: await loadOpenEventSlug(admin),
     code: codes.currentCode,
     total_points: totalPoints,
     points_breakdown: { open_count: points.recruits_open ?? 0, ranked_count: points.recruits_ranked ?? 0 },
@@ -247,6 +249,7 @@ export async function loadEmptyAmbassadorDashboard(admin: Admin, { season, endsA
   return {
     program,
     season_ends_at: endsAt,
+    open_event_slug: null,
     code: null,
     total_points: 0,
     points_breakdown: { open_count: 0, ranked_count: 0 },

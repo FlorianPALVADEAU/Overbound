@@ -7,6 +7,7 @@ import {
   Timestamp,
   UUID,
 } from './base.type'
+import type { ParticipantSex } from '@/lib/checkout/participantSex'
 import type { NotificationPreference } from './NotificationPreference'
 import type { Order } from './Order'
 import type { Ticket } from './Ticket'
@@ -51,6 +52,8 @@ export interface Registration {
   assignment_constraint_breached?: boolean | null
   bib_number?: number | null
   race_format?: 'open' | 'ranked' | null
+  /** Sex for the rankings, set at registration; null on registrations made before it was asked. */
+  sex?: ParticipantSex | null
   /** Set when the bib was cancelled and refunded (billet flexible). */
   cancelled_at?: Timestamp | null
 }

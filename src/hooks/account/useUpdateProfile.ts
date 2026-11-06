@@ -7,8 +7,11 @@ import {
 } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { SESSION_QUERY_KEY, type SessionProfile, type SessionResponse } from '@/app/api/session/sessionQueries'
 import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
+import type { ParticipantSex } from '@/lib/checkout/participantSex'
 
-export type ProfileUpdatePayload = Partial<Record<'full_name' | 'phone' | 'date_of_birth', string | null>>
+export type ProfileUpdatePayload = Partial<Record<'full_name' | 'phone' | 'date_of_birth', string | null>> & {
+  sex?: ParticipantSex | null
+}
 
 interface UpdateProfileResponse {
   success: boolean

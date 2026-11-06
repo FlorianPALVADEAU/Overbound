@@ -1,14 +1,12 @@
 import { COVER } from '@/constants/coverImages'
 import { ogImageUrl } from '@/lib/seo/ogImage'
-import { client } from '@/sanity/lib/client'
-import { categoriesWithCountsQuery } from '@/sanity/lib/queries'
+import { listCategoriesWithCounts } from '@/lib/blog/loadPosts'
+import { BLOG_CATEGORIES } from '@/lib/blog/categories'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { containerClass } from '@/components/ds'
 import { PageHero } from '@/components/hero/PageHero'
 import { cn } from '@/lib/utils'
-
-export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
 const heroImage = `${siteUrl}${ogImageUrl({ title: 'Les catégories', kicker: 'Blog Overbound', photo: 'group' })}`
@@ -47,7 +45,8 @@ export const metadata: Metadata = {
 }
 
 export default async function BlogCategoriesIndex() {
-  const categories = await client.fetch(categoriesWithCountsQuery)
+  const counts = listCategoriesWithCounts()
+  const categories = BLOG_CATEGORIES.map((c) => ({ ...c, count: counts.get(c.slug) ?? 0 }))
   return (
     <main className="min-h-screen bg-background text-foreground">
       <PageHero
@@ -58,7 +57,7 @@ export default async function BlogCategoriesIndex() {
 
       <div className={cn(containerClass(), 'py-16')}>
         <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((c: any, index: number) => (
+          {categories.map((c, index) => (
             <li
               key={index}
               className="border rounded-2xl flex items-center justify-between h-auto"

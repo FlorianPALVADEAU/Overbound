@@ -21,6 +21,7 @@ interface Participant {
     cancellationReason: string | null
     bibNumber: number | null
     paidTicketCents: number | null
+    sex: 'homme' | 'femme' | null
     createdAt: string
   }
   ticket: { id: string; name: string; operations: { status: 'configured'; departureMode: 'wave' | 'fixed' } }
@@ -42,6 +43,8 @@ const participant = (index: number, overrides: Partial<Participant> = {}): Parti
       cancellationReason: null,
       bibNumber: 100 + index,
       paidTicketCents: open ? 4500 : 7500,
+      // Every fourth bib predates the question: no sex recorded.
+      sex: index % 4 === 0 ? null : index % 2 === 0 ? 'femme' : 'homme',
       createdAt: `2026-10-${String((index % 28) + 1).padStart(2, '0')}T10:00:00.000Z`,
     },
     ticket: open
@@ -132,6 +135,7 @@ const overview = {
     checkInRate: 0,
   },
   trend: { last7Days: 24, previous7Days: 18 },
+  sex: { homme: 45, femme: 30, unknown: 12, hommeShare: 0.6, femmeShare: 0.4 },
   salesByDay: Array.from({ length: 30 }, (_, index) => ({
     date: new Date(Date.UTC(2026, 9, 5 + index)).toISOString().slice(0, 10),
     registrations: (index * 7) % 9,
@@ -275,11 +279,14 @@ export const stubAdminApis = async (page: Page): Promise<AdminStubState> => {
       state.participantQueries.push(url.search)
       const query = (url.searchParams.get('query') ?? '').toLowerCase()
       const status = url.searchParams.get('status') ?? 'all'
+      const sex = url.searchParams.get('sex') ?? 'all'
       const limit = Number(url.searchParams.get('limit') ?? 50)
       const offset = Number(url.searchParams.get('cursor') ?? 0)
       const rows = state.participants.filter((row) => {
         if (status === 'active' && row.registration.cancelledAt) return false
         if (status === 'cancelled' && !row.registration.cancelledAt) return false
+        if (sex === 'none' && row.registration.sex !== null) return false
+        if ((sex === 'homme' || sex === 'femme') && row.registration.sex !== sex) return false
         if (!query) return true
         return `${row.participant.email} ${row.participant.name ?? ''}`.toLowerCase().includes(query)
       })

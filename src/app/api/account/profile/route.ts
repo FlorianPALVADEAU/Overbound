@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodTypeAny } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { resolveRequestUser } from '@/lib/auth/resolveRequestUser'
+import { participantSexSchema } from '@/lib/checkout/participantSex'
 
 export const runtime = 'nodejs'
 
@@ -41,6 +42,8 @@ const updateProfileSchema = z.object({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Le format de la date doit être YYYY-MM-DD.' }),
   ),
+  /** Optional on the profile, prefilled on the bib. A blank value clears it. */
+  sex: z.preprocess((value) => (value === '' ? null : value), participantSexSchema.nullable().optional()),
   marketing_opt_in: z
     .union([z.boolean(), z.string()])
     .optional()
@@ -132,7 +135,7 @@ export async function PATCH(request: NextRequest) {
         },
         { onConflict: 'id' },
       )
-      .select('full_name, phone, date_of_birth, marketing_opt_in, role')
+      .select('full_name, phone, date_of_birth, sex, marketing_opt_in, role')
       .single()
 
     if (updateError) {

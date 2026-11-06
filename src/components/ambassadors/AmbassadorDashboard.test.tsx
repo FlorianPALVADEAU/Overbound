@@ -14,6 +14,7 @@ const level = (reward_level: number, points_required: number, reward_name: strin
 
 const baseData: AmbassadorDashboardData = {
   season_ends_at: '2027-12-31T22:59:59Z',
+  open_event_slug: 'ultra-arena-2027',
   program: {
     levels: [level(1, 1, 'Badge Ambassadeur', 'recognition'), level(2, 3, '-20 % sur ton dossard', 'discount'), level(3, 12, 'Dossard Open offert')],
     bonus: { base_points: 12, interval_points: 5, reward_name: 'Dossard offert' },

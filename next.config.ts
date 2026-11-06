@@ -30,6 +30,42 @@ const nextConfig: NextConfig = {
       // Training pages were replaced by bootcamps.
       { source: '/trainings', destination: '/bootcamps', permanent: true },
       { source: '/trainings/:path*', destination: '/bootcamps', permanent: true },
+      // Blog articles merged into a single canonical one.
+      {
+        source: '/blog/post/pourquoi-penalites-differentes-open-ranked',
+        destination: '/blog/post/open-vs-ranked-choisir-son-format',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/overbound-face-spartan-tough-mudder-course-a-obstacles',
+        destination: '/blog/post/spartan-race-vs-overbound-quelle-course-a-obstacles-choisir',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/course-a-obstacles-sans-montre',
+        destination: '/blog/post/open-vs-ranked-choisir-son-format',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/comment-se-construit-une-course-a-obstacles',
+        destination: '/overbound-en-bref',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/overbound-vision-moyen-terme',
+        destination: '/about/our-story',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/overbound-dans-les-yvelines-ce-que-ca-apporte',
+        destination: '/blog/post/bilan-premiere-edition-ultra-arena-2026',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/courses-a-obstacles-les-plus-hardcore-qui-doit-y-aller',
+        destination: '/blog/post/spartan-race-vs-overbound-quelle-course-a-obstacles-choisir',
+        permanent: true,
+      },
     ]
   },
 }

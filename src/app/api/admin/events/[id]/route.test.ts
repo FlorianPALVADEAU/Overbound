@@ -13,11 +13,12 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 vi.mock('@/lib/logging/adminRequestLogger', () => ({ withRequestLogging: <T,>(handler: T) => handler }))
 vi.mock('@/lib/auth/requireAdminOrganization', () => ({ requireAdminOrganization: requireAdminOrganizationMock }))
-vi.mock('@/lib/email/marketing', () => ({ dispatchNewEventAnnouncement: vi.fn(), getMarketingOptInRecipients: vi.fn() }))
-vi.mock('@/lib/email/eventUpdates', () => ({ notifyEventUpdate: vi.fn() }))
+vi.mock('@/lib/email/marketing', () => ({ getMarketingOptInRecipients: vi.fn() }))
 vi.mock('@/lib/email/eventOpenings', () => ({ notifyEventOpening: vi.fn() }))
 
 import { DELETE, PUT } from './route'
+import { getMarketingOptInRecipients } from '@/lib/email/marketing'
+import { notifyEventOpening } from '@/lib/email/eventOpenings'
 
 const EVENT_ID = '0f0c2a7e-6b1d-4c1e-9a55-1d2f3e4a5b6c'
 const ORG_ID = 'org-1'
@@ -129,6 +130,29 @@ describe('PUT /api/admin/events/[id]', () => {
 
     expect(response.status).toBe(409)
     expect(await response.json()).toEqual({ error: 'Un événement avec ce slug existe déjà' })
+  })
+
+  it('sends no automatic email when an admin edit puts the event on sale', async () => {
+    const onSaleEvent = {
+      id: EVENT_ID, status: 'on_sale', title: 'Ultra', slug: 'ultra', date: '2027-04-24T10:00:00.000Z',
+      location: 'SQY', subtitle: null,
+    }
+    supabaseAdminMock.mockReturnValue({
+      rpc: rpcMock,
+      from: vi.fn((table: string) =>
+        table === 'events' ? chain({ data: onSaleEvent, error: null }) : chain({ data: [], error: null }),
+      ),
+    })
+    vi.mocked(getMarketingOptInRecipients).mockResolvedValue([{ email: 'a@example.com' }] as never)
+
+    const response = await PUT(
+      putRequest({ slug: 'ultra', title: 'Ultra', date: '2027-04-24T10:00:00Z', location: 'SQY', capacity: 10, status: 'on_sale' }),
+      params,
+    )
+
+    expect(response.status).toBe(200)
+    expect(getMarketingOptInRecipients).not.toHaveBeenCalled()
+    expect(notifyEventOpening).not.toHaveBeenCalled()
   })
 
   it('keeps other database errors as server errors', async () => {

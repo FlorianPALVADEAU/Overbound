@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { Disclosure } from '@/components/ds'
-import type { ArticleHeading } from '@/lib/blog/articleToc'
+import type { BlogHeading } from '@/lib/blog/renderMarkdown'
 import { cn } from '@/lib/utils'
 
-/** Heading whose anchor is in the reading band (upper part of the viewport) is the current one. */
-function useActiveHeading(ids: string[]): string | undefined {
+/**
+ * Heading whose anchor is in the reading band (upper part of the viewport) is the current one.
+ * A hash jump lands the heading at the top of the viewport, outside that band, so the click
+ * handler sets the active id directly instead of waiting for the observer.
+ */
+function useActiveHeading(ids: string[]) {
   const [activeId, setActiveId] = useState<string | undefined>(ids[0])
   const idsKey = ids.join('|')
 
@@ -33,11 +37,11 @@ function useActiveHeading(ids: string[]): string | undefined {
     return () => observer.disconnect()
   }, [idsKey])
 
-  return activeId
+  return [activeId, setActiveId] as const
 }
 
-export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
-  const activeId = useActiveHeading(items.map((item) => item.id))
+export function ArticleTocList({ items }: { items: BlogHeading[] }) {
+  const [activeId, setActiveId] = useActiveHeading(items.map((item) => item.id))
 
   return (
     <nav aria-label="Sommaire de l'article">
@@ -48,6 +52,7 @@ export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
+                onClick={() => setActiveId(item.id)}
                 aria-current={isActive ? 'location' : undefined}
                 className={cn(
                   'flex min-h-11 items-center border-l-2 py-2 pl-3 text-sm leading-snug transition-colors duration-200 ease-standard',
@@ -56,7 +61,7 @@ export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
                     : 'border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground',
                 )}
               >
-                {item.title}
+                {item.text}
               </a>
             </li>
           )
@@ -67,7 +72,7 @@ export function ArticleTocList({ items }: { items: ArticleHeading[] }) {
 }
 
 /** Sommaire folded above the article on screens below `xl`. */
-export function ArticleTocMobile({ items }: { items: ArticleHeading[] }) {
+export function ArticleTocMobile({ items }: { items: BlogHeading[] }) {
   if (items.length === 0) return null
 
   return (
@@ -80,7 +85,7 @@ export function ArticleTocMobile({ items }: { items: ArticleHeading[] }) {
 }
 
 /** Sticky column at the right edge of the page, from `xl`. Placed in the grid's last column. */
-export function ArticleTocAside({ items }: { items: ArticleHeading[] }) {
+export function ArticleTocAside({ items }: { items: BlogHeading[] }) {
   if (items.length === 0) return null
 
   return (

@@ -12,6 +12,7 @@ const emptyParticipant = (position: number, ticketId: string, buyer: EventUser |
     lastName: name.lastName,
     email: buyer?.email ?? '',
     birthDate: buyer?.date_of_birth ?? '',
+    sex: buyer?.sex ?? undefined,
     emergencyContactName: '',
     emergencyContactPhone: '',
     medicalInfo: '',
@@ -72,8 +73,9 @@ export function useParticipants(
         lastName: first.lastName || name.lastName,
         email: first.email || user.email || '',
         birthDate: first.birthDate || user.date_of_birth || '',
+        sex: first.sex ?? user.sex ?? undefined,
       }
-      const unchanged = (['firstName', 'lastName', 'email', 'birthDate'] as const).every((key) => filled[key] === first[key])
+      const unchanged = (['firstName', 'lastName', 'email', 'birthDate', 'sex'] as const).every((key) => filled[key] === first[key])
       return unchanged ? previous : [filled, ...previous.slice(1)]
     })
   }, [user])

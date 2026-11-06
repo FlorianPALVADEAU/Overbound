@@ -20,6 +20,7 @@ describe('participant URL state', () => {
       status: 'all',
       ticketId: null,
       wave: null,
+      sex: 'all',
       cursor: 'abc',
       limit: 100,
       selectedId: 'registration-1',
@@ -43,6 +44,7 @@ describe('participant URL state', () => {
         status: 'all',
         ticketId: null,
         wave: null,
+        sex: 'all',
         cursor: 'next-page',
         limit: 100,
         selectedId: 'registration-1',
@@ -68,5 +70,15 @@ describe('participant URL state', () => {
 
   it('omits defaults to keep copied URLs short and stable', () => {
     expect(writeParticipantUrlState(new URLSearchParams(), DEFAULT_PARTICIPANT_URL_STATE)).toBe('')
+  })
+
+  it('keeps the sex filter in the URL, and leaves it out when it is not set', () => {
+    expect(parseParticipantUrlState(new URLSearchParams('sex=femme'))).toMatchObject({ sex: 'femme' })
+    expect(parseParticipantUrlState(new URLSearchParams('sex=none'))).toMatchObject({ sex: 'none' })
+    expect(parseParticipantUrlState(new URLSearchParams('sex=autre'))).toMatchObject({ sex: 'all' })
+
+    const withSex = writeParticipantUrlState(new URLSearchParams(), { ...DEFAULT_PARTICIPANT_URL_STATE, sex: 'homme' })
+    expect(withSex).toBe('sex=homme')
+    expect(writeParticipantUrlState(new URLSearchParams('sex=homme'), { ...DEFAULT_PARTICIPANT_URL_STATE, sex: 'all' })).toBe('')
   })
 })

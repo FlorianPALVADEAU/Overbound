@@ -28,7 +28,9 @@ export function AmbassadorClaimable({ rewards, claimingLevel, error, success, on
                 return (
                   <li key={reward.id} className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <Icon aria-hidden className="mt-0.5 size-5 shrink-0 text-primary" />
+                      <span aria-hidden className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15">
+                        <Icon className="size-6 text-primary" />
+                      </span>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold">{reward.reward_name}</p>
                         {reward.expires_at ? (
@@ -37,7 +39,7 @@ export function AmbassadorClaimable({ rewards, claimingLevel, error, success, on
                       </div>
                     </div>
                     <Button size="cta" className="w-full shrink-0 px-6 sm:w-auto" disabled={claimingLevel !== null} onClick={() => onClaim(reward.reward_level)}>
-                      {claimingLevel === reward.reward_level ? 'Envoi...' : 'Réclamer'}
+                      {claimingLevel === reward.reward_level ? 'Envoi en cours…' : 'Réclamer'}
                     </Button>
                   </li>
                 )
@@ -45,8 +47,11 @@ export function AmbassadorClaimable({ rewards, claimingLevel, error, success, on
             </ul>
           </>
         ) : null}
-        {success ? <p className="text-sm font-medium text-success">{success}</p> : null}
-        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+        {rewards.length > 0 ? (
+          <p className="text-xs text-muted-foreground">Après ta demande, l’équipe Overbound te contacte par email pour la remise.</p>
+        ) : null}
+        {success ? <p role="status" className="text-sm font-medium text-success">{success}</p> : null}
+        {error ? <p role="alert" className="text-sm font-medium text-destructive">{error}</p> : null}
       </CardContent>
     </Card>
   )

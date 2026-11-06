@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { resolveRewardStatus } from '@/lib/ambassadors/dashboardHelpers'
 import { loadAmbassadorCodes } from '@/lib/ambassadors/dashboard/loadAmbassadorDashboard'
 import { getNextReward } from '@/lib/ambassadors/program'
+import { publicPhotoUrl } from '@/lib/ambassadors/publicProfile'
 import { loadProgramRules } from '@/lib/ambassadors/programRules'
 import { loadCurrentSeason } from '@/lib/ambassadors/season'
 import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
@@ -28,9 +29,9 @@ export async function loadAmbassadorSheet(
   ambassadorId: string,
   requestedSeason: number | null,
 ): Promise<AdminAmbassadorSheetResponse | null> {
-  const ambassador = ensure<{ id: string; profile_id: string; is_active: boolean; promotional_code_id: string | null }>(
+  const ambassador = ensure<{ id: string; profile_id: string; is_active: boolean; promotional_code_id: string | null; public_opt_in: boolean; public_blocked: boolean; public_bio: string | null; public_show_group: boolean }>(
     'ambassador',
-    await admin.from('ambassadors').select('id, profile_id, is_active, promotional_code_id').eq('id', ambassadorId).maybeSingle(),
+    await admin.from('ambassadors').select('id, profile_id, is_active, promotional_code_id, public_opt_in, public_blocked, public_bio, public_show_group').eq('id', ambassadorId).maybeSingle(),
   )
   if (!ambassador) return null
 
@@ -38,14 +39,14 @@ export async function loadAmbassadorSheet(
   const season = requestedSeason ?? currentSeason.season
 
   const [profileResult, pointRows, rewardRows, codes, program] = await Promise.all([
-    admin.from('profiles').select('full_name').eq('id', ambassador.profile_id).maybeSingle(),
+    admin.from('profiles').select('full_name, avatar_url').eq('id', ambassador.profile_id).maybeSingle(),
     admin.from('ambassador_points_years').select('program_year, total_points, recruits_open, recruits_ranked').eq('ambassador_id', ambassadorId),
     admin.from('ambassador_rewards').select(REWARD_COLUMNS).eq('ambassador_id', ambassadorId).eq('program_year', season).order('reward_level', { ascending: true }),
     loadAmbassadorCodes(admin, { id: ambassador.id, promotional_code_id: ambassador.promotional_code_id }),
     loadProgramRules(admin, season),
   ])
 
-  const profile = ensure<{ full_name: string | null }>('profile', profileResult)
+  const profile = ensure<{ full_name: string | null; avatar_url: string | null }>('profile', profileResult)
   const allPoints = ensure<Array<{ program_year: number; total_points: number; recruits_open: number; recruits_ranked: number }>>('points', pointRows) ?? []
   const seasonPoints = allPoints.find((row) => Number(row.program_year) === season)
   const totalPoints = seasonPoints?.total_points ?? 0
@@ -75,6 +76,11 @@ export async function loadAmbassadorSheet(
       name: profile?.full_name ?? 'Ambassadeur',
       code: codes.currentCode,
       is_active: ambassador.is_active,
+      public_opt_in: ambassador.public_opt_in,
+      public_blocked: ambassador.public_blocked,
+      public_bio: ambassador.public_bio,
+      public_show_group: ambassador.public_show_group,
+      has_public_photo: publicPhotoUrl(profile?.avatar_url) !== null,
     },
     program_year: season,
     current_season: currentSeason.season,

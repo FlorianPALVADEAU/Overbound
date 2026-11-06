@@ -12,6 +12,7 @@ import { ManualReferralDialog } from './ManualReferralDialog'
 import { AmbassadorCodesPanel } from './sheet/AmbassadorCodesPanel'
 import { AmbassadorSheetHeader } from './sheet/AmbassadorSheetHeader'
 import { AmbassadorHistoryPanel } from './sheet/AmbassadorHistoryPanel'
+import { AmbassadorPublicPanel } from './sheet/AmbassadorPublicPanel'
 import { AmbassadorReferralsPanel } from './sheet/AmbassadorReferralsPanel'
 import { AmbassadorRewardsPanel } from './sheet/AmbassadorRewardsPanel'
 import { AmbassadorSeasonStats } from './sheet/AmbassadorSeasonStats'
@@ -78,6 +79,7 @@ export function AmbassadorSheetPage({ ambassadorId }: { ambassadorId: string }) 
           ) : null}
 
           <AmbassadorSeasonStats sheet={sheet} />
+          <AmbassadorPublicPanel ambassador={sheet.ambassador} />
 
           <Tabs value={tab} onValueChange={(value) => setTab(value as SheetTab)} className="gap-6">
             <TabsList className="grid h-auto w-full grid-cols-2 sm:inline-flex sm:h-9 sm:w-fit">

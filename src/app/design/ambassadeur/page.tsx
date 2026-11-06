@@ -34,6 +34,7 @@ const FIXTURE: AmbassadorDashboardData = {
     bonus: { base_points: 30, interval_points: 5, reward_name: 'Dossard offert' },
   },
   season_ends_at: '2027-12-31T22:59:59Z',
+  open_event_slug: 'ultra-arena-2027',
   code: 'ADA20',
   total_points: 6,
   points_breakdown: { open_count: 4, ranked_count: 1 },

@@ -25,6 +25,8 @@ interface ParticipantsStepProps {
   groupBanner?: ReactNode
   groupAnchor: { waveIndex: number; startTime: string } | null
   eventDate: string
+  /** Age refusals per participant id, known as soon as the birth date is typed. */
+  birthDateRefusals: Record<string, string>
   currency: string
   onCompanionToggle: (participantId: string, enabled: boolean) => void
   onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
@@ -43,11 +45,15 @@ export default function ParticipantsStep({
   groupBanner,
   groupAnchor,
   eventDate,
+  birthDateRefusals,
   currency,
   onCompanionToggle,
   onCompanionWaveSelect,
   tshirtOffer = null,
 }: ParticipantsStepProps) {
+  // A participant stays locked until a valid birth date: no other field, SAS or option until then.
+  const isLocked = (participant: Participant) => !participant.birthDate.trim() || Boolean(birthDateRefusals[participant.id])
+  const lockedCount = participants.filter(isLocked).length
   // One shortcut at a time: under the first participant others could follow.
   const leader = groupAnchor ? undefined : participants.find((participant) => participantsToAlign(participants, participant.id).length > 0)
   const ids = participants.map((participant) => participant.id)
@@ -68,6 +74,12 @@ export default function ParticipantsStep({
 
   return (
     <div className="space-y-5">
+      {lockedCount > 0 ? (
+        <p role="status" className="rounded-xl border border-primary/40 bg-card p-3 text-sm font-medium text-foreground">
+          Date de naissance d&apos;abord : tant que la date de naissance de chaque participant n&apos;est pas valide, le reste de
+          l&apos;inscription est bloqué. {lockedCount > 1 ? `${lockedCount} participants restent à compléter.` : null}
+        </p>
+      ) : null}
       {groupBanner}
       <TshirtOfferNote
         offer={tshirtOffer}
@@ -96,7 +108,10 @@ export default function ParticipantsStep({
       ) : null}
       {participants.map((participant, index) => {
         const followers = participant.id === leader?.id ? participantsToAlign(participants, participant.id) : []
-        const errors = errorsByParticipant[participant.id] ?? {}
+        const ageRefusal = birthDateRefusals[participant.id]
+        const errors = ageRefusal
+          ? { ...errorsByParticipant[participant.id], birthDate: ageRefusal }
+          : (errorsByParticipant[participant.id] ?? {})
         const next = nextIncompleteParticipantId(ids, completeById, participant.id)
         return (
           <div key={participant.id} className="space-y-2">
@@ -113,6 +128,7 @@ export default function ParticipantsStep({
               currency={currency}
               tshirtOffered={isParticipantOffered(tshirtOffer, index)}
               isMinor={isMinorOnEventDate(participant.birthDate, eventDate)}
+              locked={isLocked(participant)}
               onCompanionToggle={onCompanionToggle}
               onCompanionWaveSelect={onCompanionWaveSelect}
               collapsible={collapsible}

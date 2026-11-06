@@ -50,4 +50,10 @@ describe('buildReferralUrl', () => {
   it('points at the site root with the encoded code', () => {
     expect(buildReferralUrl('https://www.overbound-race.com', 'ADA 20')).toBe('https://www.overbound-race.com/?ref=ADA%2020')
   })
+
+  it('lands on the registration page of the open event when there is one', () => {
+    expect(buildReferralUrl('https://www.overbound-race.com', 'ADA20', 'ultra-arena-2027')).toBe(
+      'https://www.overbound-race.com/events/ultra-arena-2027/register?ref=ADA20',
+    )
+  })
 })

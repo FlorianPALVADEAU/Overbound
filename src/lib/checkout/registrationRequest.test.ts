@@ -59,6 +59,7 @@ describe('buildPaymentIntentRequest', () => {
       ticketId: 'open',
       flexible: false,
       birthDate: '1990-05-04',
+      sex: 'femme',
       selectedWaveIndex: 3,
       companionWaveIndex: null,
     })

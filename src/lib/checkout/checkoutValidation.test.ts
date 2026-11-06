@@ -37,6 +37,13 @@ describe('validateCheckout', () => {
     expect(result.participantErrors['participant-2']).toEqual({ lastName: 'Ce champ est obligatoire.', email: 'Ce champ est obligatoire.' })
   })
 
+  it('asks every participant for a sex, for the rankings', () => {
+    const result = validateCheckout(input({ participants: [participant({ sex: undefined })] }))
+    expect(result.participantErrors['participant-1']).toEqual({ sex: 'Ce champ est obligatoire.' })
+    expect(result.firstInvalidId).toBe('participant-1-sex')
+    expect(result.isValid).toBe(false)
+  })
+
   it('refuses a participant under 18 on the event day', () => {
     const result = validateCheckout(input({ participants: [participant({ birthDate: '2010-01-01' })] }))
     expect(result.participantErrors['participant-1']?.birthDate).toContain('18 ans')
@@ -44,7 +51,13 @@ describe('validateCheckout', () => {
 
   describe('minors, edition open from 16', () => {
     const minor = (overrides = {}) => participant({ birthDate: '2009-09-13', ...overrides })
-    const guardians = { guardianName: 'Anne Martin', guardianPhone: '0612345678', referentName: 'Anne Martin', referentPhone: '0612345678' }
+    const guardians = {
+      guardianName: 'Anne Martin',
+      guardianPhone: '0612345678',
+      guardianEmail: 'anne.martin@example.com',
+      referentName: 'Anne Martin',
+      referentPhone: '0612345678',
+    }
     const edition16 = (overrides: Partial<CheckoutValidationInput> = {}) => input({ minimumAge: 16, ...overrides })
 
     it('accepts a 17 year old on OPEN with the representative and the adult on site', () => {
@@ -58,6 +71,14 @@ describe('validateCheckout', () => {
         referentName: 'Ce champ est obligatoire.',
       })
       expect(result.firstInvalidId).toBe('participant-1-guardianPhone')
+    })
+
+    it('asks a minor for the representative email, and checks its format', () => {
+      const blank = validateCheckout(edition16({ participants: [minor({ ...guardians, guardianEmail: '' })] }))
+      expect(blank.participantErrors['participant-1']?.guardianEmail).toBe('Ce champ est obligatoire.')
+      const malformed = validateCheckout(edition16({ participants: [minor({ ...guardians, guardianEmail: 'anne@' })] }))
+      expect(malformed.participantErrors['participant-1']?.guardianEmail).toBe('Adresse email invalide.')
+      expect(malformed.isValid).toBe(false)
     })
 
     it('does not ask an adult for them', () => {

@@ -80,6 +80,8 @@ export interface AmbassadorLeaderboard {
   /** Only ambassadors with at least one point are ranked. */
   total_ranked: number
   current_user_rank: number | null
+  /** The viewer's own points when ranked, otherwise null. Shown on the "Toi" row outside the top. */
+  current_points?: number | null
   top: AmbassadorLeaderboardEntry[]
   chase: AmbassadorChaseTarget | null
 }
@@ -95,6 +97,8 @@ export interface AmbassadorDashboardData {
   program: AmbassadorProgramRules
   /** When the rewards of the running season expire. Null: not set. */
   season_ends_at: Timestamp | null
+  /** Event open for sales: the shared link lands on its page. Null: the link points at the home page. */
+  open_event_slug: string | null
   code: string | null
   total_points: number
   points_breakdown: {

@@ -6,7 +6,7 @@ const link = (path: string, label: string, note: string) => `- [${label}](${SITE
 
 const summary = (next: NextEditionFacts) =>
   `Overbound est une course à obstacles en boucles d'environ ${FORMAT_FACTS.loopKm} km (plus de 10 obstacles), organisée en Île-de-France. ` +
-  `Deux formats : OPEN (sans classement) et RANKED (élimination). ` +
+  `Deux formats : OPEN (sans élimination) et RANKED (élimination). ` +
   `Dernière édition : ${PREVIOUS_EDITION.dateLabel}, ${PREVIOUS_EDITION.venue}, ${PREVIOUS_EDITION.participants}. ` +
   `Prochaine édition : ${next.window}. ${next.detailsStatus}`
 

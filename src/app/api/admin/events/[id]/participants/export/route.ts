@@ -64,6 +64,7 @@ const handleGet = async (request: NextRequest, { params }: { params: Promise<{ i
         name: participant.participant.name,
         email: participant.participant.email,
         ticketName: participant.ticket.name,
+        sex: participant.registration.sex,
         waveIndex: participant.departure.waveIndex,
         startTime: participant.departure.startTime,
         group: participant.group,

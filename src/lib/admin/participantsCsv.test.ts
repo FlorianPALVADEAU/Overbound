@@ -6,6 +6,7 @@ const row = (patch: Partial<ParticipantCsvRow> = {}): ParticipantCsvRow => ({
   name: 'Ana Martin',
   email: 'ana@example.com',
   ticketName: 'Ranked',
+  sex: 'femme',
   waveIndex: 3,
   startTime: '2027-09-12T08:00:00Z',
   group: 'Acme',
@@ -22,8 +23,15 @@ describe('toParticipantsCsv', () => {
   it('writes a header and one line per registration', () => {
     const lines = toParticipantsCsv([row(), row({ id: 'reg-2' })]).split('\n')
     expect(lines).toHaveLength(3)
-    expect(lines[0]).toBe('inscription,nom,email,billet,sas,depart,groupe,check_in,statut,paiement,montant,devise,inscrit_le')
+    expect(lines[0]).toBe('inscription,nom,email,billet,sexe,sas,depart,groupe,check_in,statut,paiement,montant,devise,inscrit_le')
     expect(lines[1]).toContain('"55.00","EUR"')
+  })
+
+  it('writes the sex of the bib, and an empty cell when it was never recorded', () => {
+    const [, known] = toParticipantsCsv([row({ sex: 'homme' })]).split('\n')
+    expect(known).toContain('"Ranked","homme","3"')
+    const [, unknown] = toParticipantsCsv([row({ sex: null })]).split('\n')
+    expect(unknown).toContain('"Ranked","","3"')
   })
 
   it('marks cancelled and checked-in bibs', () => {

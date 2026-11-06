@@ -10,6 +10,7 @@ export const participant = (overrides: Partial<Participant> = {}): Participant =
   lastName: 'Martin',
   email: 'camille@example.com',
   birthDate: '1990-05-04',
+  sex: 'femme',
   emergencyContactName: 'Léo Martin',
   emergencyContactPhone: '0612345678',
   medicalInfo: '',
