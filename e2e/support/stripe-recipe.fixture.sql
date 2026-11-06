@@ -29,10 +29,7 @@ insert into event_bib_counters (event_id, race_format, next_number, max_number) 
   ('e2e00000-0000-4000-8000-000000000001', 'open', 1, 50),
   ('e2e00000-0000-4000-8000-000000000001', 'ranked', 1, 50);
 
--- Tier that fills up mid-order (scenario 6): Early -20 % for 2 bibs, then Late at full price.
-insert into event_price_tiers (id, event_id, name, discount_percentage, available_from, available_until, display_order, max_registrations) values
-  ('e2e00000-0000-4000-8000-0000000000f1', 'e2e00000-0000-4000-8000-000000000001', 'Early E2E', 20, '2026-01-01', '2028-01-01', 1, 2),
-  ('e2e00000-0000-4000-8000-0000000000f2', 'e2e00000-0000-4000-8000-000000000001', 'Late E2E', 0, '2026-01-01', '2028-01-01', 2, null);
+-- No price tier on purpose: every scenario is priced at the ticket's full price.
 
 insert into promotional_codes (id, code, name, discount_percent, currency, valid_from, valid_until, usage_limit, is_active, target_upsell_id) values
   ('e2e00000-0000-4000-8000-0000000000c1', 'E2EFREEOPENTICKET', 'e2e', 100, 'eur', '2026-01-01', '2028-01-01', null, true, null),
