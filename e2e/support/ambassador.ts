@@ -45,6 +45,7 @@ export const dashboardData = (overrides: Partial<AmbassadorDashboardData> = {}):
     bonus: { base_points: 30, interval_points: 5, reward_name: 'Dossard offert' },
   },
   season_ends_at: SEASON_ENDS_AT,
+  open_event_slug: 'ultra-arena-2027',
   code: CODE,
   total_points: 4,
   points_breakdown: { open_count: 3, ranked_count: 0 },

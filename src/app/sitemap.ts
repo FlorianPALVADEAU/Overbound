@@ -27,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/about/faq',
     '/about/partners',
     '/about/credits',
+    '/ambassadors',
     '/bootcamps',
     '/events/formats',
     '/course-a-obstacles-paris',

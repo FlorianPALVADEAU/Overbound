@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clearReferralCode, readReferralCode } from '@/lib/attribution/referral'
+import { captureReferralCode, clearReferralCode, readReferralCode } from '@/lib/attribution/referral'
 import type { AppliedPromo } from '@/components/registration/types'
 import { MAX_PROMO_CODES_PER_ORDER } from '@/lib/orderPricing'
 
@@ -32,6 +32,9 @@ export function usePromoCode(eventId: string) {
   useEffect(() => {
     if (referralTried.current) return
     referralTried.current = true
+    // Arriving by an in-app link (no full page load) means the root layout never saw the ?ref= of
+    // this URL: capture it here so the code does not wait for a refresh.
+    captureReferralCode()
     const referral = readReferralCode()
     if (!referral) return
     clearReferralCode()

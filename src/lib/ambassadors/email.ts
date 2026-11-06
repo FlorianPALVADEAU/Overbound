@@ -2,6 +2,8 @@ import { Resend } from 'resend'
 import { wrapHtmlWithLayout } from '@/lib/email/wrapWithLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 import { buildReferralUrl } from '@/lib/attribution/referral'
+import { loadOpenEventSlug } from '@/lib/events/loadOpenEventSlug'
+import { supabaseAdmin } from '@/lib/supabase/server'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 const EMAIL_FROM = process.env.SEND_FROM_EMAIL || 'no-reply@overbound-race.com'
@@ -99,7 +101,8 @@ export async function sendAmbassadorPointsNudgeEmail(params: {
   const { to, fullName, ambassadorCode, goalName, pointsRemaining } = params
   const siteUrl = getEmailAssetsBaseUrl()
   const points = `${pointsRemaining} point${pointsRemaining > 1 ? 's' : ''}`
-  const shareLink = ambassadorCode ? buildReferralUrl(siteUrl, ambassadorCode) : null
+  const eventSlug = ambassadorCode ? await loadOpenEventSlug(supabaseAdmin()) : null
+  const shareLink = ambassadorCode ? buildReferralUrl(siteUrl, ambassadorCode, eventSlug) : null
 
   const html = wrapHtmlWithLayout({
     preview: `Plus que ${points} avant ta prochaine récompense`,

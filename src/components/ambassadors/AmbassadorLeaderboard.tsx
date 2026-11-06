@@ -5,12 +5,15 @@ import { cn } from '@/lib/utils'
 
 interface AmbassadorLeaderboardProps {
   leaderboard: Leaderboard
+  /** Open from the start on phones (a rival is within reach). From lg the list is always shown. */
+  defaultOpen?: boolean
 }
 
+/** Non-breaking space: the unit never wraps alone on a line. */
 const plural = (count: number) => (count > 1 ? 'points' : 'point')
 
-export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProps) {
-  const { top, current_user_rank: rank, chase, total_ranked: total } = leaderboard
+export function AmbassadorLeaderboard({ leaderboard, defaultOpen = false }: AmbassadorLeaderboardProps) {
+  const { top, current_user_rank: rank, current_points: ownPoints, chase, total_ranked: total } = leaderboard
   const viewerOutsideTop = rank !== null && rank > top.length
 
   return (
@@ -18,7 +21,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
       icon={<Trophy className="size-4" />}
       title="Classement"
       summary={rank ? `Tu es ${rank}e sur ${total}` : 'Marque ton premier point pour entrer au classement'}
-      defaultOpen
+      defaultOpen={defaultOpen}
     >
       {top.length === 0 ? (
         <p className="text-sm text-muted-foreground">Personne n&apos;a encore de point. Le premier parrainage te met en tête.</p>
@@ -26,7 +29,7 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
         <div className="space-y-4">
           {chase ? (
             <p className="rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-medium">
-              Pour passer devant {chase.name} : encore {chase.points_to_pass} {plural(chase.points_to_pass)}
+              Pour passer devant {chase.name} : encore {chase.points_to_pass}{'\u00a0'}{plural(chase.points_to_pass)}
             </p>
           ) : rank === 1 ? (
             <p className="rounded-xl border border-success/40 bg-success/10 px-3 py-2 text-sm font-medium text-success">Tu es en tête du classement.</p>
@@ -46,6 +49,9 @@ export function AmbassadorLeaderboard({ leaderboard }: AmbassadorLeaderboardProp
               <li className="flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-2 font-semibold">
                 <span className="w-6 shrink-0 font-display text-title font-bold">{rank}</span>
                 <span className="min-w-0 flex-1 truncate">Toi</span>
+                {ownPoints !== null && ownPoints !== undefined ? (
+                  <span className="shrink-0 text-sm font-semibold tabular-nums">{ownPoints}{'\u00a0'}{plural(ownPoints)}</span>
+                ) : null}
               </li>
             ) : null}
           </ol>

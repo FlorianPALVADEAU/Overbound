@@ -78,6 +78,7 @@ test.describe('Ambassador dashboard', () => {
 
     const shared = await page.evaluate(() => (window as unknown as { __shared: Array<{ url: string; text: string }> }).__shared)
     expect(shared).toHaveLength(1)
+    expect(new URL(shared[0].url).pathname).toBe('/events/ultra-arena-2027/register')
     expect(new URL(shared[0].url).search).toBe(`?ref=${CODE}`)
     expect(shared[0].text).toContain(CODE)
   })

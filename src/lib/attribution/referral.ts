@@ -12,8 +12,14 @@ const isExpired = (capturedAt: string): boolean => {
   return Number.isNaN(capturedAtMs) || Date.now() - capturedAtMs > REFERRAL_MAX_AGE_MS
 }
 
-/** Link an ambassador shares: the site root with their code, applied at registration. */
-export const buildReferralUrl = (origin: string, code: string): string => `${origin}/?${REFERRAL_PARAM}=${encodeURIComponent(code)}`
+/**
+ * Link an ambassador shares. It lands on the registration page of the event open for sales (`eventSlug`),
+ * where the code is applied. Without an open event it falls back to the site root.
+ */
+export const buildReferralUrl = (origin: string, code: string, eventSlug?: string | null): string => {
+  const path = eventSlug ? `/events/${encodeURIComponent(eventSlug)}/register` : '/'
+  return `${origin}${path}?${REFERRAL_PARAM}=${encodeURIComponent(code)}`
+}
 
 /**
  * Keeps the `?ref=` code of the landing URL for 30 days, so a friend who comes back later still gets

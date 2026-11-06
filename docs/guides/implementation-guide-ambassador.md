@@ -10,7 +10,7 @@ Dernière mise à jour : 2026-11-03. Ce guide décrit le code tel qu'il est. L'a
 ## Vue d'ensemble
 
 1. Un ambassadeur a un ou plusieurs codes promo (`ambassador_promotional_codes`).
-2. Un ami s'inscrit avec le code, tapé à la main ou appliqué par le lien `/?ref=CODE`.
+2. Un ami s'inscrit avec le code, tapé à la main ou appliqué par le lien `/events/{slug}/register?ref=CODE`.
 3. La commande payée déclenche `award_ambassador_points_for_order` (triggers SQL, plus un appel redondant du webhook Stripe et de `registrations/create`). Le ledger reçoit une ligne par inscription.
 4. `ambassador_sync_points` recalcule l'agrégat de la saison, `ambassador_reconcile_rewards` crée les récompenses de chaque palier atteint.
 5. L'ambassadeur voit l'avancement sur `/ambassadors/dashboard`, réclame ses récompenses, l'équipe les remet à la main (statut `fulfilled`).
@@ -105,7 +105,7 @@ Page de référence avec données fixes : `/design/ambassadeur` (404 en producti
 
 ## Lien de parrainage
 
-Le bouton "Partager" envoie `https://…/?ref=CODE` ([referral.ts](../../src/lib/attribution/referral.ts)).
+Le bouton "Partager" envoie `https://…/events/{slug}/register?ref=CODE`, ou `/?ref=CODE` sans événement ouvert ([referral.ts](../../src/lib/attribution/referral.ts)).
 
 - `UtmCapture` (layout racine) garde le code 30 jours dans `localStorage` (`overbound-referral`), en majuscules. Dernier lien gagnant. Un code mal formé est ignoré.
 - `usePromoCode` lit ce code à l'ouverture du tunnel, le valide par `/api/promotions/validate` et l'applique s'il répond `is_ambassador: true`. Le code est effacé après la tentative. Un code invalide ou non ambassadeur est écarté sans message, le champ reste libre.

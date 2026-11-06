@@ -13,7 +13,8 @@ interface AmbassadorGoalCardProps {
   seasonEndsAt: string | null
 }
 
-const plural = (count: number, one: string, many: string) => `${count} ${count > 1 ? many : one}`
+/** Non-breaking space: the unit never wraps alone on a line. */
+const plural = (count: number, one: string, many: string) => `${count}\u00a0${count > 1 ? many : one}`
 
 export function AmbassadorGoalCard({ goal, totalPoints, openCount, rankedCount, pointsSinceLastVisit, seasonEndsAt }: AmbassadorGoalCardProps) {
   return (

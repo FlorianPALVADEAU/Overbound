@@ -61,6 +61,21 @@ Migration : `supabase/migrations/20261103120000_ambassador_nudges.sql` (table `a
 | Détection d'un code ambassadeur | Un code est ambassadeur s'il est lié par `ambassadors.promotional_code_id` **ou** par `ambassador_promotional_codes`. Avant cet amendement, la validation, le prix serveur (règle "un seul code ambassadeur"), le webhook et `registrations/create` ne lisaient que l'ancien lien : 34 des 59 liens de la base de dev n'étaient pas reconnus. Désormais un seul helper (`AMBASSADOR_LINK_SELECT`, `isAmbassadorPromoRow`). Effet de bord assumé : la règle "un seul code ambassadeur par commande" s'applique aussi aux ambassadeurs à codes multiples. |
 | Page de référence | `/design/ambassadeur` (données fixes, 404 en production) sert aux tests de mise en page. |
 
+## Amendement 2026-11-05 : page publique des ambassadeurs
+
+Migration : `supabase/migrations/20261112100000_ambassador_public_profile.sql` (colonnes `ambassadors.public_opt_in` et `public_blocked`). À appliquer avant le déploiement du code.
+
+| Sujet | Décision |
+|---|---|
+| Consentement | Opt-in explicite, désactivé par défaut, depuis le dashboard (`AmbassadorPublicCard`). Pas de liste sans accord. |
+| Contenu public | Prénom + initiale du nom, photo, nombre d'amis recrutés dans la saison (masqué à 0), lien `/?ref=CODE`. Jamais de points, de palier ni de classement : décision produit, une échelle publique démotive les petits scores. |
+| Photo | La photo du compte (`profiles.avatar_url`), envoyée depuis le dashboard avec `AvatarUploader`. Seule une photo envoyée par l'ambassadeur est publique (`publicPhotoUrl`) : la photo Google n'a pas été choisie pour l'affichage, les initiales prennent le relais. |
+| Modération | Fiche admin : `public_blocked` masque l'ambassadeur (prime sur l'opt-in, il ne peut pas l'annuler) et "Retirer sa photo" supprime l'upload. Route `PATCH /api/admin/ambassadors/[id]/public-profile`. |
+| Description et groupe | Colonnes `public_bio` (120 caractères, tronquée à 4 lignes sur la carte) et `public_show_group` (opt-in séparé, désactivé par défaut). Seul le capitaine peut proposer son groupe : un membre ne publie pas le code d'un autre. Afficher le code d'invitation le rend public, d'où l'opt-in dédié. Le bouton "Rejoindre" mène à `/events/{slug}/register?invite=CODE&ref=CODE_AMBASSADEUR`. L'admin voit la description et l'état du groupe, peut effacer l'une et masquer l'autre. Toute modification invalide le cache de `/ambassadors`. |
+| Liens de parrainage | Tous les liens `?ref=CODE` (page publique, bouton Partager, email de relance) pointent vers la page d'inscription de l'événement ouvert (`/events/{slug}/register?ref=CODE`, `loadOpenEventSlug`), pas vers l'accueil. Repli sur `/` s'il n'y a aucun événement. |
+| Photo | Recadrage (déplacement + zoom) avant envoi, dans `AvatarCropDialog`, pour tous les téléversements de photo de profil. |
+| Page | `/ambassadors` (ISR 1 h), chargée par `loadPublicAmbassadors`. Pas encore liée depuis la navigation : à faire quand des ambassadeurs sont inscrits. |
+
 Les sections "Decision", "Entities", "Rules" et "Consequences" ci-dessous sont l'état de mai 2026. Les paliers, l'expiration, les billets bonus et la révocation y sont **remplacés** par les amendements ci-dessus. Pour le code actuel : [implementation-guide-ambassador.md](../guides/implementation-guide-ambassador.md).
 
 ---

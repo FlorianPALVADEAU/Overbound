@@ -32,6 +32,7 @@ export function buildLeaderboard(entries: LeaderboardInput[], currentAmbassadorI
   return {
     total_ranked: ranked.length,
     current_user_rank: current?.rank ?? null,
+    current_points: current?.points ?? null,
     top: ranked.slice(0, TOP_SIZE).map(({ rank, name, points, is_current_user }) => ({ rank, name, points, is_current_user })),
     chase: current && above ? { name: above.name, points_to_pass: above.points - current.points + 1 } : null,
   }
