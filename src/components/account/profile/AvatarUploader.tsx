@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { CameraIcon } from 'lucide-react'
 import { UserAvatar } from '@/components/account/UserAvatar'
+import { AvatarCropDialog } from '@/components/account/profile/AvatarCropDialog'
 import { useUpdateAvatar } from '@/hooks/account/useUpdateAvatar'
 
 interface AvatarUploaderProps {
@@ -16,9 +17,10 @@ interface AvatarUploaderProps {
 export function AvatarUploader({ src, name, email, canRemove }: AvatarUploaderProps) {
   const input = useRef<HTMLInputElement>(null)
   const update = useUpdateAvatar()
+  const [picked, setPicked] = useState<File | null>(null)
 
   const choose = (file: File | undefined) => {
-    if (file) update.mutate({ kind: 'upload', file })
+    if (file) setPicked(file)
     if (input.current) input.current.value = '' // lets the same file be picked again after an error
   }
 
@@ -36,6 +38,14 @@ export function AvatarUploader({ src, name, email, canRemove }: AvatarUploaderPr
           <CameraIcon className="size-4" />
         </span>
       </button>
+      <AvatarCropDialog
+        file={picked}
+        onCancel={() => setPicked(null)}
+        onConfirm={(cropped) => {
+          setPicked(null)
+          update.mutate({ kind: 'upload', file: cropped })
+        }}
+      />
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => choose(event.target.files?.[0])} />
 
       <p className="text-xs text-muted-foreground">

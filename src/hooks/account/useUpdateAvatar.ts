@@ -6,14 +6,14 @@ import {
   type AccountRegistrationsResponse,
 } from '@/app/api/account/registrations/accountRegistrationsQueries'
 import { SESSION_QUERY_KEY, type SessionResponse } from '@/app/api/session/sessionQueries'
-import { cropAvatar } from '@/lib/account/cropAvatar'
 import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 
-type AvatarChange = { kind: 'upload'; file: File } | { kind: 'remove' }
+/** `file` is already cropped to a square by the crop dialog. */
+type AvatarChange = { kind: 'upload'; file: Blob } | { kind: 'remove' }
 
 const sendAvatar = async (change: AvatarChange): Promise<string | null> => {
   const body = change.kind === 'upload' ? new FormData() : undefined
-  if (body && change.kind === 'upload') body.append('file', await cropAvatar(change.file), 'avatar.webp')
+  if (body && change.kind === 'upload') body.append('file', change.file, 'avatar.webp')
 
   const send = async (forceRefresh: boolean) =>
     fetch('/api/account/avatar', {
