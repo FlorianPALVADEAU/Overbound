@@ -24,7 +24,9 @@ export function useSelectableOpenWaves(
 
   useEffect(() => {
     if (!enabled || !ticketId) {
+      // A request cancelled by this change never clears the loading flag: clear it here.
       setWaves([])
+      setIsLoading(false)
       return
     }
 

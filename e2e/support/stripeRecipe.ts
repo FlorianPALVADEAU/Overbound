@@ -40,7 +40,10 @@ export const signIn = async (page: Page, credentials: { email: string; password:
 }
 
 export const openCheckout = async (page: Page, ticketId: string) => {
+  // The group anchor decides whether the SAS picker exists: wait for it before the form is filled.
+  const myGroup = page.waitForResponse((response) => response.url().includes('/api/groups/my'), { timeout: 30_000 })
   await page.goto(`/events/${RECIPE_EVENT_SLUG}/register?ticket=${ticketId}`)
+  await myGroup
   await page.locator('#participant-1-firstName').waitFor({ timeout: 30_000 })
 }
 
@@ -54,11 +57,13 @@ export const fillParticipant = async (page: Page, n: number, { wave }: { wave: b
   await id('lastName').fill(`Nom${n}`)
   await id('email').fill(`participant${n}@example.com`)
   await id('birthDate').fill('1990-05-04')
+  await page.locator('label', { has: page.locator(`input[name="participant-${n}-sex"][value="femme"]`) }).click()
   await id('emergency').fill('Contact Urgence')
   await id('emergencyPhone').fill('0612345678')
-  if (wave) {
+  // A group anchor replaces the picker with its departure time: nothing to choose then.
+  if (wave && (await id('wave').count()) > 0) {
     await id('wave').click()
-    await page.getByRole('option').first().click()
+    await page.getByRole('listbox').getByRole('option').first().click()
   }
 }
 

@@ -14,6 +14,7 @@ import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/
 import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
 import { RANKED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import { participantFieldId, type ParticipantField } from '@/lib/checkout/fieldIds'
+import { PARTICIPANT_SEXES, type ParticipantSex } from '@/lib/checkout/participantSex'
 import type { ParticipantErrors } from '@/lib/checkout/checkoutValidation'
 import type { CompanionOffer } from '@/lib/tickets/openCompanion'
 import CompanionOption from './CompanionOption'
@@ -34,6 +35,8 @@ interface ParticipantFormProps {
   /** The free T-shirt offer still covers this participant. */
   tshirtOffered: boolean
   isMinor: boolean
+  /** No valid birth date yet: only the birth date stays editable, every other field is disabled. */
+  locked: boolean
   onCompanionToggle: (participantId: string, enabled: boolean) => void
   onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
 }
@@ -50,6 +53,7 @@ export default function ParticipantForm({
   currency,
   tshirtOffered,
   isMinor,
+  locked,
   onCompanionToggle,
   onCompanionWaveSelect,
 }: ParticipantFormProps) {
@@ -71,11 +75,11 @@ export default function ParticipantForm({
   }
   const usesWaveSelection = ticket ? ticketUsesWaveSelection(ticket) : false
   const isRankedFormat = isRankedFormatTicket(ticket?.name, ticket?.race?.name)
-  const { waves: selectableWaves, isLoading: wavesLoading, error: wavesError } = useSelectableOpenWaves(
-    eventId,
-    ticket?.id,
-    usesWaveSelection && !groupAnchor,
-  )
+  const {
+    waves: selectableWaves,
+    isLoading: wavesLoading,
+    error: wavesError,
+  } = useSelectableOpenWaves(eventId, ticket?.id, usesWaveSelection && !groupAnchor)
   const errorClass = 'border-destructive focus-visible:ring-destructive'
   const idOf = (field: ParticipantField) => participantFieldId(participant.id, field)
   const errorId = (field: ParticipantField) => `${idOf(field)}-error`
@@ -96,14 +100,23 @@ export default function ParticipantForm({
       | 'emergencyContactPhone'
       | 'guardianName'
       | 'guardianPhone'
+      | 'guardianEmail'
       | 'referentName'
       | 'referentPhone',
     label: string,
-    props: { type?: string; placeholder?: string; autoComplete?: string; inputMode?: 'tel' | 'email' } = {},
+    props: {
+      type?: string
+      placeholder?: string
+      autoComplete?: string
+      inputMode?: 'tel' | 'email'
+    } = {},
   ) => (
     <div className="space-y-2">
       <Label htmlFor={idOf(key)}>
-        {label} <span className="text-destructive" aria-hidden>*</span>
+        {label}{' '}
+        <span className="text-destructive" aria-hidden>
+          *
+        </span>
       </Label>
       <Input
         id={idOf(key)}
@@ -124,21 +137,85 @@ export default function ParticipantForm({
 
   return (
     <div className="space-y-8 p-5">
+      <div className="space-y-4">
+        <h3 className="text-eyebrow font-semibold uppercase text-subtle">Participant</h3>
+        <div className="sm:max-w-xs">
+          {field('birthDate', 'Date de naissance', {
+            type: 'date',
+            autoComplete: 'bday',
+          })}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Ta date de naissance d&apos;abord : tant qu&apos;elle n&apos;est pas valide, le reste du formulaire reste bloqué.
+        </p>
+      </div>
+
+      <fieldset disabled={locked} className="contents space-y-8">
         <div className="space-y-4">
-          <h3 className="text-eyebrow font-semibold uppercase text-subtle">Participant</h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            {field('firstName', 'Prénom', { placeholder: 'Camille', autoComplete: 'given-name' })}
-            {field('lastName', 'Nom', { placeholder: 'Martin', autoComplete: 'family-name' })}
-            {field('email', 'Email', { type: 'email', placeholder: 'camille.martin@email.com', autoComplete: 'email', inputMode: 'email' })}
-            {field('birthDate', 'Date de naissance', { type: 'date', autoComplete: 'bday' })}
+            {field('firstName', 'Prénom', {
+              placeholder: 'Camille',
+              autoComplete: 'given-name',
+            })}
+            {field('lastName', 'Nom', {
+              placeholder: 'Martin',
+              autoComplete: 'family-name',
+            })}
+            {field('email', 'Email', {
+              type: 'email',
+              placeholder: 'camille.martin@email.com',
+              autoComplete: 'email',
+              inputMode: 'email',
+            })}
           </div>
+          <fieldset className="space-y-2" aria-invalid={Boolean(errors.sex)} aria-describedby={errors.sex ? errorId('sex') : undefined}>
+            <legend className="text-sm font-medium">
+              Sexe{' '}
+              <span className="text-destructive" aria-hidden>
+                *
+              </span>
+            </legend>
+            <p className="text-xs text-muted-foreground">Pour les classements par genre.</p>
+            <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
+              {PARTICIPANT_SEXES.map((sex) => (
+                <label
+                  key={sex}
+                  className={cn(
+                    'flex min-h-11 cursor-pointer items-center justify-center rounded-xl border text-sm font-medium has-focus-visible:ring-2 has-focus-visible:ring-ring',
+                    participant.sex === sex ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground',
+                    errors.sex && !participant.sex && errorClass,
+                  )}
+                >
+                  <input
+                    // The first option carries the field id: the checkout focuses it when the sex is missing.
+                    id={sex === PARTICIPANT_SEXES[0] ? idOf('sex') : undefined}
+                    type="radio"
+                    name={idOf('sex')}
+                    value={sex}
+                    checked={participant.sex === sex}
+                    onChange={() => onFieldChange(participant.id, 'sex', sex)}
+                    className="sr-only"
+                  />
+                  {SEX_LABELS[sex]}
+                </label>
+              ))}
+            </div>
+            {errorText('sex')}
+          </fieldset>
         </div>
 
         <div className="space-y-4">
           <h3 className="text-eyebrow font-semibold uppercase text-subtle">En cas d&apos;urgence</h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            {field('emergencyContactName', 'Personne à prévenir', { placeholder: 'Nom et prénom' })}
-            {field('emergencyContactPhone', 'Son téléphone', { type: 'tel', placeholder: '06 12 34 56 78', autoComplete: 'tel', inputMode: 'tel' })}
+            {field('emergencyContactName', 'Personne à prévenir', {
+              placeholder: 'Nom et prénom',
+            })}
+            {field('emergencyContactPhone', 'Son téléphone', {
+              type: 'tel',
+              placeholder: '06 12 34 56 78',
+              autoComplete: 'tel',
+              inputMode: 'tel',
+            })}
           </div>
         </div>
 
@@ -150,8 +227,21 @@ export default function ParticipantForm({
               adulte reste joignable sur place pendant toute ta participation.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              {field('guardianName', 'Représentant légal', { placeholder: 'Nom et prénom' })}
-              {field('guardianPhone', 'Son téléphone', { type: 'tel', placeholder: '06 12 34 56 78', autoComplete: 'tel', inputMode: 'tel' })}
+              {field('guardianName', 'Représentant légal', {
+                placeholder: 'Nom et prénom',
+              })}
+              {field('guardianPhone', 'Son téléphone', {
+                type: 'tel',
+                placeholder: '06 12 34 56 78',
+                autoComplete: 'tel',
+                inputMode: 'tel',
+              })}
+              {field('guardianEmail', 'Son email', {
+                type: 'email',
+                placeholder: 'anne.martin@email.com',
+                autoComplete: 'email',
+                inputMode: 'email',
+              })}
             </div>
             <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
               <Checkbox checked={referentIsGuardian} onCheckedChange={(checked) => toggleReferentIsGuardian(checked === true)} />
@@ -159,8 +249,14 @@ export default function ParticipantForm({
             </label>
             {referentIsGuardian ? null : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {field('referentName', 'Adulte présent sur place', { placeholder: 'Nom et prénom' })}
-                {field('referentPhone', 'Son téléphone', { type: 'tel', placeholder: '06 12 34 56 78', inputMode: 'tel' })}
+                {field('referentName', 'Adulte présent sur place', {
+                  placeholder: 'Nom et prénom',
+                })}
+                {field('referentPhone', 'Son téléphone', {
+                  type: 'tel',
+                  placeholder: '06 12 34 56 78',
+                  inputMode: 'tel',
+                })}
               </div>
             )}
           </div>
@@ -176,7 +272,10 @@ export default function ParticipantForm({
             ) : (
               <div className="space-y-2">
                 <Label htmlFor={idOf('wave')}>
-                  SAS de départ <span className="text-destructive" aria-hidden>*</span>
+                  SAS de départ{' '}
+                  <span className="text-destructive" aria-hidden>
+                    *
+                  </span>
                 </Label>
                 <Select
                   value={participant.selectedWaveIndex ? String(participant.selectedWaveIndex) : ''}
@@ -203,7 +302,8 @@ export default function ParticipantForm({
                   <SelectContent>
                     {selectableWaves.map((wave) => (
                       <SelectItem key={wave.wave_index} value={String(wave.wave_index)}>
-                        {formatWaveStartTime(wave.start_time)} — {wave.remaining} place{wave.remaining > 1 ? 's' : ''} restante{wave.remaining > 1 ? 's' : ''}
+                        {formatWaveStartTime(wave.start_time)} — {wave.remaining} place{wave.remaining > 1 ? 's' : ''} restante
+                        {wave.remaining > 1 ? 's' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -235,7 +335,10 @@ export default function ParticipantForm({
             <div className="space-y-2">
               <Label htmlFor={idOf('tshirtSize')}>
                 <Shirt aria-hidden className="size-4 text-primary" />
-                Taille <span className="text-destructive" aria-hidden>*</span>
+                Taille{' '}
+                <span className="text-destructive" aria-hidden>
+                  *
+                </span>
               </Label>
               <Select value={participant.tshirtSize ?? ''} onValueChange={(value) => onFieldChange(participant.id, 'tshirtSize', value)}>
                 <SelectTrigger
@@ -292,7 +395,10 @@ export default function ParticipantForm({
               <span className="block">
                 {HEALTH_DATA_CONSENT_LABEL}{' '}
                 <span className="text-muted-foreground">Sans cet accord, ces informations ne sont pas enregistrées.</span>
-                <span className="text-destructive" aria-hidden> *</span>
+                <span className="text-destructive" aria-hidden>
+                  {' '}
+                  *
+                </span>
               </span>
             </Label>
           ) : null}
@@ -300,7 +406,10 @@ export default function ParticipantForm({
         </div>
 
         <div className="border-t border-border pt-6">
-          <Label htmlFor={`${participant.id}-flexible`} className="flex min-h-11 cursor-pointer items-start gap-3 font-normal leading-relaxed">
+          <Label
+            htmlFor={`${participant.id}-flexible`}
+            className="flex min-h-11 cursor-pointer items-start gap-3 font-normal leading-relaxed"
+          >
             <Checkbox
               id={`${participant.id}-flexible`}
               checked={participant.flexible === true}
@@ -308,18 +417,22 @@ export default function ParticipantForm({
               className="mt-0.5"
             />
             <span className="block space-y-1">
-              <span className="block text-sm font-semibold">
-                Billet flexible (+{formatFlexibleFee()}) : annulable sans justificatif
-              </span>
+              <span className="block text-sm font-semibold">Billet flexible (+{formatFlexibleFee()}) : annulable sans justificatif</span>
               <span className="block text-xs text-muted-foreground">
-                Remboursé jusqu&apos;à {FLEXIBLE_REFUND_DEADLINE_DAYS} jours avant l&apos;événement, depuis ton espace. Les
-                frais de l&apos;option ne sont pas remboursés, et elle est perdue si le billet est transféré.
+                Remboursé jusqu&apos;à {FLEXIBLE_REFUND_DEADLINE_DAYS} jours avant l&apos;événement, depuis ton espace. Les frais de
+                l&apos;option ne sont pas remboursés, et elle est perdue si le billet est transféré.
               </span>
             </span>
           </Label>
         </div>
+      </fieldset>
     </div>
   )
+}
+
+const SEX_LABELS: Record<ParticipantSex, string> = {
+  homme: 'Homme',
+  femme: 'Femme',
 }
 
 const formatFlexibleFee = () =>

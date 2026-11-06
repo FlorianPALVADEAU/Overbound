@@ -19,6 +19,7 @@ import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useUpsells } from '@/hooks/registration/useUpsells'
 import { minorParticipantNames } from '@/lib/checkout/minorParticipants'
 import { ADULT_AGE } from '@/lib/checkout/participantAge'
+import { birthDateRefusals } from '@/lib/checkout/ageRefusals'
 import type { GroupIntent } from '@/lib/groups/invite'
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { pricingErrorMessage, promoRejectionMessage } from '@/lib/orderPricing'
@@ -67,11 +68,7 @@ export default function MultiStepEventRegistration({
     handleWaveSelection,
     handleCompanionToggle,
     handleCompanionWaveSelection,
-  } = useParticipants(
-    selectedTicketSlots,
-    user,
-    suppressEmptyParticipantsSyncRef,
-  )
+  } = useParticipants(selectedTicketSlots, user, suppressEmptyParticipantsSyncRef)
   const upsellState = useUpsells(upsells, selectedTicketSlots, participants, currency)
   const promo = usePromoCode(event.id)
   const { consents, setConsent, setSignature } = useCheckoutConsents()
@@ -92,14 +89,23 @@ export default function MultiStepEventRegistration({
     },
     currency,
   )
-  const amountKey = JSON.stringify([ticketSelections, upsellState.selectedUpsells, promo.appliedPromos.map((p) => p.code), flexibleBySlot, participants.map((p) => p.companion === true ? (p.companionWaveIndex ?? 0) : null)])
+  const amountKey = JSON.stringify([
+    ticketSelections,
+    upsellState.selectedUpsells,
+    promo.appliedPromos.map((p) => p.code),
+    flexibleBySlot,
+    participants.map((p) => (p.companion === true ? (p.companionWaveIndex ?? 0) : null)),
+  ])
   const { payment, isCreating, preparePayment } = usePaymentIntent(event, amountKey)
   const summary = payment.pricing ?? checkout.summary
 
   const groupAnchor = useMemo(
     () =>
       myGroup && myGroup.anchor_event_id === event.id && myGroup.anchor_wave_index != null && myGroup.anchor_start_time
-        ? { waveIndex: myGroup.anchor_wave_index, startTime: myGroup.anchor_start_time }
+        ? {
+            waveIndex: myGroup.anchor_wave_index,
+            startTime: myGroup.anchor_start_time,
+          }
         : null,
     [myGroup, event.id],
   )
@@ -117,6 +123,21 @@ export default function MultiStepEventRegistration({
     [participants, event.date, event.minimum_age, ticketMap],
   )
   const needsMinorAttestation = minorNames.length > 0
+
+  // Known as soon as a birth date is typed: a refused participant locks the rest of the registration.
+  const ageRefusals = useMemo(
+    () =>
+      birthDateRefusals(participants, {
+        eventDate: event.date,
+        minimumAge: event.minimum_age ?? ADULT_AGE,
+        ticketIsOpenFormat: (ticketId) => {
+          const ticket = ticketMap[ticketId]
+          return ticket ? isOpenFormatTicket(ticket.name, ticket.race?.name) : false
+        },
+      }),
+    [participants, event.date, event.minimum_age, ticketMap],
+  )
+  const detailsLocked = participants.some((participant) => !participant.birthDate.trim() || Boolean(ageRefusals[participant.id]))
 
   const { validation, showErrors, revealErrors } = useCheckoutValidation({
     participants,
@@ -174,12 +195,22 @@ export default function MultiStepEventRegistration({
     requestSignIn: () => setAuthReason('payment'),
     preparedPayment:
       payment.clientSecret && payment.paymentIntentId && payment.pricing
-        ? { kind: 'stripe', clientSecret: payment.clientSecret, paymentIntentId: payment.paymentIntentId, pricing: payment.pricing }
+        ? {
+            kind: 'stripe',
+            clientSecret: payment.clientSecret,
+            paymentIntentId: payment.paymentIntentId,
+            pricing: payment.pricing,
+          }
         : null,
     preparePayment,
   })
 
-  const lines = useCheckoutOrderLines(summary, upsellState.upsellSummaryItems, { tickets, tiers: eventPriceTiers, upsells, participants })
+  const lines = useCheckoutOrderLines(summary, upsellState.upsellSummaryItems, {
+    tickets,
+    tiers: eventPriceTiers,
+    upsells,
+    participants,
+  })
   const pricingNotices = [
     ...(checkout.error ? [pricingErrorMessage(checkout.error)] : []),
     ...(checkout.pricing?.rejections ?? []).map(promoRejectionMessage),
@@ -189,7 +220,13 @@ export default function MultiStepEventRegistration({
   const hasFlexible = flexibleBySlot.some(Boolean)
   const isBusy = isCreating || submission.isSubmitting || authReason !== null
 
-  useAddToCartTracking({ event, ticketSelections, participantCount: totalParticipants, totalCents: summary.totalDue, currency })
+  useAddToCartTracking({
+    event,
+    ticketSelections,
+    participantCount: totalParticipants,
+    totalCents: summary.totalDue,
+    currency,
+  })
 
   // Apply the SAS chosen on the event page once, to the participant holding that ticket.
   const initialWaveAppliedRef = useRef(false)
@@ -206,7 +243,10 @@ export default function MultiStepEventRegistration({
   useEffect(() => {
     if (hasScrolledRef.current || totalParticipants === 0) return
     hasScrolledRef.current = true
-    participantsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    participantsSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
   }, [totalParticipants])
 
   // Signed in from the dialog: close it; the submission resumes on its own when it was for paying.
@@ -273,6 +313,7 @@ export default function MultiStepEventRegistration({
                   completeById={completeById}
                   groupAnchor={groupAnchor}
                   eventDate={event.date}
+                  birthDateRefusals={ageRefusals}
                   currency={currency}
                   onCompanionToggle={handleCompanionToggle}
                   onCompanionWaveSelect={handleCompanionWaveSelection}
@@ -283,37 +324,41 @@ export default function MultiStepEventRegistration({
 
             {totalParticipants > 0 && hasUpsells ? (
               <RegistrationSection index={3} title="Options" optional>
-                <OptionsStep
-                  upsells={upsells}
-                  selectedUpsells={upsellState.selectedUpsells}
-                  participants={participants}
-                  defaultCurrency={currency}
-                  onSetForParticipant={upsellState.setUpsellForParticipant}
-                  onSetForAll={upsellState.setUpsellForAll}
-                  onClear={upsellState.clearUpsell}
-                  onSizeForAll={upsellState.setUpsellSizeForAll}
-                />
+                <fieldset disabled={detailsLocked} className="contents">
+                  <OptionsStep
+                    upsells={upsells}
+                    selectedUpsells={upsellState.selectedUpsells}
+                    participants={participants}
+                    defaultCurrency={currency}
+                    onSetForParticipant={upsellState.setUpsellForParticipant}
+                    onSetForAll={upsellState.setUpsellForAll}
+                    onClear={upsellState.clearUpsell}
+                    onSizeForAll={upsellState.setUpsellSizeForAll}
+                  />
+                </fieldset>
               </RegistrationSection>
             ) : null}
 
             {totalParticipants > 0 ? (
               <RegistrationSection index={hasUpsells ? 4 : 3} title="Décharge et signature" isComplete={validation.sections.confirmation}>
-                <ConfirmationStep
-                  disclaimerRead={consents.disclaimerRead}
-                  disclaimerAccepted={consents.disclaimerAccepted}
-                  rulebookAccepted={consents.rulebookAccepted}
-                  signatureImage={consents.signatureImage}
-                  showErrors={showErrors}
-                  onDisclaimerReadChange={setConsent('disclaimerRead')}
-                  onDisclaimerAcceptedChange={setConsent('disclaimerAccepted')}
-                  onRulebookAcceptedChange={setConsent('rulebookAccepted')}
-                  onSignatureChange={setSignature}
-                  groupAttestation={needsGroupAttestation ? consents.groupAttestation : undefined}
-                  onGroupAttestationChange={setConsent('groupAttestation')}
-                  minorAttestation={needsMinorAttestation ? consents.minorAttestation : undefined}
-                  minorNames={minorNames}
-                  onMinorAttestationChange={setConsent('minorAttestation')}
-                />
+                <fieldset disabled={detailsLocked} className="contents">
+                  <ConfirmationStep
+                    disclaimerRead={consents.disclaimerRead}
+                    disclaimerAccepted={consents.disclaimerAccepted}
+                    rulebookAccepted={consents.rulebookAccepted}
+                    signatureImage={consents.signatureImage}
+                    showErrors={showErrors}
+                    onDisclaimerReadChange={setConsent('disclaimerRead')}
+                    onDisclaimerAcceptedChange={setConsent('disclaimerAccepted')}
+                    onRulebookAcceptedChange={setConsent('rulebookAccepted')}
+                    onSignatureChange={setSignature}
+                    groupAttestation={needsGroupAttestation ? consents.groupAttestation : undefined}
+                    onGroupAttestationChange={setConsent('groupAttestation')}
+                    minorAttestation={needsMinorAttestation ? consents.minorAttestation : undefined}
+                    minorNames={minorNames}
+                    onMinorAttestationChange={setConsent('minorAttestation')}
+                  />
+                </fieldset>
               </RegistrationSection>
             ) : null}
           </div>
@@ -321,24 +366,27 @@ export default function MultiStepEventRegistration({
 
         {/* Always in view while the form scrolls; scrolls on its own if taller than the screen. */}
         <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto">
-          <OrderSummarySidebar
-            lines={lines}
-            totalCents={summary.totalDue}
-            currency={summary.currency}
-            hasFlexible={hasFlexible}
-            ticketCount={totalParticipants}
-            upsellCount={upsellCount}
-            groupDiscountPercent={summary.groupDiscount?.applied ? summary.groupDiscount.percent : null}
-            pricingNotices={pricingNotices}
-            appliedPromos={promo.appliedPromos}
-            promoInput={promo.promoInput}
-            promoError={promo.promoError}
-            onPromoInputChange={promo.setPromoInput}
-            onValidatePromo={promo.validatePromoCode}
-            onRemovePromo={promo.removePromo}
-            submissionMessage={submission.message}
-            payAction={payButton}
-          />
+          {/* Promo code and payment stay locked while a birth date is missing or refused. */}
+          <fieldset disabled={detailsLocked} className="contents">
+            <OrderSummarySidebar
+              lines={lines}
+              totalCents={summary.totalDue}
+              currency={summary.currency}
+              hasFlexible={hasFlexible}
+              ticketCount={totalParticipants}
+              upsellCount={upsellCount}
+              groupDiscountPercent={summary.groupDiscount?.applied ? summary.groupDiscount.percent : null}
+              pricingNotices={pricingNotices}
+              appliedPromos={promo.appliedPromos}
+              promoInput={promo.promoInput}
+              promoError={promo.promoError}
+              onPromoInputChange={promo.setPromoInput}
+              onValidatePromo={promo.validatePromoCode}
+              onRemovePromo={promo.removePromo}
+              submissionMessage={submission.message}
+              payAction={payButton}
+            />
+          </fieldset>
         </aside>
       </div>
 

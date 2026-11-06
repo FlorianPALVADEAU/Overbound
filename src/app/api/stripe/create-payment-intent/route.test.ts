@@ -137,6 +137,7 @@ const adult = (ticketId: string, selectedWaveIndex: number | null = null, flexib
   ticketId,
   flexible,
   birthDate: '1990-01-01',
+  sex: 'homme',
   selectedWaveIndex,
 })
 

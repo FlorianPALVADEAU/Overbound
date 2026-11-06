@@ -21,6 +21,8 @@ interface ParticipantPanelProps {
   tshirtOffered: boolean
   /** Under 18 on the event day: the form also asks for the legal representative and the adult on site. */
   isMinor: boolean
+  /** No valid birth date yet: the form keeps only the birth date editable. */
+  locked: boolean
   onCompanionToggle: (participantId: string, enabled: boolean) => void
   onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
   /** False for a lone participant: the form is simply shown. */

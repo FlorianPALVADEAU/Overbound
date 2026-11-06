@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { participantSexSchema } from './participantSex'
 
 /**
  * Contract of POST /api/registrations/create, shared by the route that
@@ -10,10 +11,13 @@ export const registrationParticipantSchema = z.object({
   lastName: z.string(),
   email: z.string(),
   birthDate: z.string().optional(),
+  /** Required for the rankings; a missing value is refused by admission rules, an invalid one by this schema. */
+  sex: participantSexSchema.optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
   guardianName: z.string().optional(),
   guardianPhone: z.string().optional(),
+  guardianEmail: z.string().optional(),
   referentName: z.string().optional(),
   referentPhone: z.string().optional(),
   medicalInfo: z.string().optional(),

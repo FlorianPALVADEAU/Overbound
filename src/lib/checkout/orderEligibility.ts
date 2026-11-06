@@ -1,11 +1,15 @@
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
-import { missingMinorContacts, type MinorContacts } from './minorContacts'
+import { isPlausibleEmail, missingMinorContacts, type MinorContacts } from './minorContacts'
+import { isParticipantSex, type ParticipantSex } from './participantSex'
 import { ageRefusalMessage, classifyParticipantAge } from './participantAge'
 
 interface EligibilityParticipant extends MinorContacts {
   ticketId: string
+  /** Empty means the buyer's account address is used for the ticket. */
+  email?: string
   birthDate?: string
+  sex?: ParticipantSex | null
   selectedWaveIndex?: number | null
 }
 
@@ -23,11 +27,11 @@ interface EligibilityContext {
 export type Admission = { admitted: true; isMinor: boolean } | { admitted: false; reason: string }
 
 /**
- * Age rules for one participant: old enough for the event, a minor only on the OPEN format, and a minor
- * always with a legal representative and an adult on site.
+ * Admission rules for one participant: old enough for the event, a minor only on the OPEN format, a minor
+ * always with a legal representative and an adult on site, and a sex for the rankings.
  */
 export const admitParticipant = (
-  participant: Pick<EligibilityParticipant, 'birthDate' | keyof MinorContacts>,
+  participant: Pick<EligibilityParticipant, 'birthDate' | 'sex' | 'email' | keyof MinorContacts>,
   ticket: { name?: string | null; race?: { name?: string | null } | null } | undefined,
   { eventDate, minimumAge }: Pick<EligibilityContext, 'eventDate' | 'minimumAge'>,
 ): Admission => {
@@ -40,6 +44,15 @@ export const admitParticipant = (
   if (age.status === 'refused') return { admitted: false, reason: ageRefusalMessage(age.reason, minimumAge) }
   if (age.status === 'minor' && missingMinorContacts(participant).length > 0) {
     return { admitted: false, reason: "le représentant légal et l'adulte référent sont obligatoires avant 18 ans." }
+  }
+  if (age.status === 'minor' && !isPlausibleEmail(participant.guardianEmail)) {
+    return { admitted: false, reason: "l'adresse email du représentant légal est invalide." }
+  }
+  if (participant.email?.trim() && !isPlausibleEmail(participant.email)) {
+    return { admitted: false, reason: "l'adresse email du participant est invalide." }
+  }
+  if (!isParticipantSex(participant.sex)) {
+    return { admitted: false, reason: 'indique le sexe du participant, pour les classements.' }
   }
   return { admitted: true, isMinor: age.status === 'minor' }
 }

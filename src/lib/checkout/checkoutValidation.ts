@@ -2,11 +2,11 @@ import type { Participant } from '@/components/registration/types'
 import { needsHealthDataConsent } from '@/lib/legal/healthData'
 import { CONSENT_FIELD_IDS, participantFieldId, TICKETS_SECTION_ID, type ConsentField, type ParticipantField } from './fieldIds'
 import { isParticipantOffered, isTshirtSize, type TshirtOffer } from '@/lib/tshirtOffer'
-import { MINOR_CONTACT_FIELDS } from './minorContacts'
+import { isPlausibleEmail, MINOR_CONTACT_FIELDS } from './minorContacts'
+import { isParticipantSex } from './participantSex'
 import { ageRefusalMessage, classifyParticipantAge } from './participantAge'
 
 export const REQUIRED_MESSAGE = 'Ce champ est obligatoire.'
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export interface CheckoutValidationInput {
   participants: Participant[]
@@ -49,7 +49,7 @@ const participantErrorsOf = (participant: Participant, input: CheckoutValidation
     const value = participant[field as keyof Participant]
     if (typeof value !== 'string' || !value.trim()) errors[field] = REQUIRED_MESSAGE
   }
-  if (!errors.email && !EMAIL_PATTERN.test(participant.email.trim())) errors.email = 'Adresse email invalide.'
+  if (!errors.email && !isPlausibleEmail(participant.email)) errors.email = 'Adresse email invalide.'
   if (!errors.birthDate) {
     const age = classifyParticipantAge({
       birthDate: participant.birthDate,
@@ -62,8 +62,12 @@ const participantErrorsOf = (participant: Participant, input: CheckoutValidation
       for (const field of MINOR_CONTACT_FIELDS) {
         if (!participant[field]?.trim()) errors[field] = REQUIRED_MESSAGE
       }
+      if (!errors.guardianEmail && !isPlausibleEmail(participant.guardianEmail)) {
+        errors.guardianEmail = 'Adresse email invalide.'
+      }
     }
   }
+  if (!isParticipantSex(participant.sex)) errors.sex = REQUIRED_MESSAGE
   if (input.ticketUsesWaveSelection(participant.ticketId) && !input.hasGroupAnchor && !participant.selectedWaveIndex) {
     errors.wave = 'Choisis ton SAS de départ.'
   }

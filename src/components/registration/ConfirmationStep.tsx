@@ -108,6 +108,8 @@ export default function ConfirmationStep({
         <div
           role="region"
           aria-label="Avant de signer : risques, assurance et tes engagements"
+          // Scroll container: focusable so keyboard users can read it (WCAG 2.1.1).
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
           tabIndex={0}
           className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-border bg-card p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
         >
@@ -150,6 +152,8 @@ export default function ConfirmationStep({
               id="waiver-full-text"
               role="region"
               aria-label={WAIVER_TITLE}
+              // Scroll container: focusable so keyboard users can read it (WCAG 2.1.1).
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
               tabIndex={0}
               className="mt-2 max-h-96 space-y-2 overflow-y-auto rounded-lg border border-border bg-background p-3 text-sm leading-snug text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
