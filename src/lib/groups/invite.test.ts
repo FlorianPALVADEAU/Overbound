@@ -4,18 +4,10 @@ import {
   buildInviteUrl,
   buildWhatsAppUrl,
   defaultGroupName,
-  parseGroupIntent,
   parseInviteCode,
 } from './invite'
 
 describe('group invite helpers', () => {
-  it('parses only known group intents', () => {
-    expect(parseGroupIntent('create')).toBe('create')
-    expect(parseGroupIntent('join')).toBe('join')
-    expect(parseGroupIntent('delete')).toBeNull()
-    expect(parseGroupIntent(null)).toBeNull()
-  })
-
   it('normalizes a valid invite code and rejects junk', () => {
     expect(parseInviteCode(' ab12cd34 ')).toBe('AB12CD34')
     expect(parseInviteCode('<script>')).toBeNull()

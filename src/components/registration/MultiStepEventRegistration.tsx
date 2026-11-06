@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { useAutoJoinInvite } from '@/hooks/registration/useAutoJoinInvite'
 import { useAddToCartTracking } from '@/hooks/registration/useAddToCartTracking'
 import { useCheckoutConsents } from '@/hooks/registration/useCheckoutConsents'
 import { useCheckoutDraft } from '@/hooks/registration/useCheckoutDraft'
@@ -20,12 +21,10 @@ import { useUpsells } from '@/hooks/registration/useUpsells'
 import { minorParticipantNames } from '@/lib/checkout/minorParticipants'
 import { ADULT_AGE } from '@/lib/checkout/participantAge'
 import { birthDateRefusals } from '@/lib/checkout/ageRefusals'
-import type { GroupIntent } from '@/lib/groups/invite'
 import { isOpenFormatTicket } from '@/lib/openSas'
 import { groupDiscountLabel } from '@/lib/orderPricing/groupDiscount'
 import { pricingErrorMessage, promoRejectionMessage } from '@/lib/orderPricing'
 import ConfirmationStep from './ConfirmationStep'
-import GroupPanel from './GroupPanel'
 import InlineAuthStep from './InlineAuthStep'
 import OptionsStep from './OptionsStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
@@ -49,15 +48,14 @@ export default function MultiStepEventRegistration({
   tshirtOffer = null,
   initialTicketId = null,
   initialWaveIndex = null,
-  groupIntent = null,
   inviteCode = null,
 }: MultiStepEventRegistrationProps) {
   const queryClient = useQueryClient()
   const { data: myGroup } = useMyGroup({ enabled: Boolean(user) })
   const suppressEmptyParticipantsSyncRef = useRef(false)
   const participantsSectionRef = useRef<HTMLElement>(null)
-  const [authReason, setAuthReason] = useState<'payment' | 'group' | null>(null)
-  const [pendingGroupIntent, setPendingGroupIntent] = useState<GroupIntent | null>(null)
+  const [authReason, setAuthReason] = useState<'payment' | null>(null)
+  useAutoJoinInvite(inviteCode, Boolean(user))
   const currency = (tickets.find((ticket) => ticket.currency)?.currency ?? 'eur').toLowerCase()
 
   const { ticketSelections, setTicketSelections, ticketMap, selectedTicketSlots, totalParticipants, handleTicketQuantityChange } =
@@ -271,18 +269,6 @@ export default function MultiStepEventRegistration({
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start xl:gap-12">
         <div className="min-w-0 space-y-6">
-          <GroupPanel
-            user={user}
-            event={event}
-            group={myGroup}
-            intent={groupIntent ?? pendingGroupIntent}
-            inviteCode={inviteCode}
-            onNeedAuth={(intent) => {
-              setPendingGroupIntent(intent)
-              setAuthReason('group')
-            }}
-          />
-
           <div className="divide-y divide-border">
             <RegistrationSection index={1} title="Tes billets" isComplete={validation.sections.tickets}>
               <TicketSelectionStep
