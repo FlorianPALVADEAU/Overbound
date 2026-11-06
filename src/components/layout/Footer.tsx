@@ -27,6 +27,7 @@ const LINK_GROUPS = [
       { label: 'Notre histoire', href: '/about/our-story' },
       { label: 'Blog', href: '/blog' },
       { label: 'Bootcamps', href: '/bootcamps' },
+      { label: 'Ambassadeurs', href: '/ambassadors' },
       { label: 'FAQ', href: '/about/faq' },
       { label: 'Contact', href: '/contact' },
     ],
