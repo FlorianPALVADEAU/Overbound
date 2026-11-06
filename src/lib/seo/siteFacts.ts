@@ -24,7 +24,7 @@ export const PREVIOUS_EDITION = {
   dateLabel: '12 septembre 2026',
   dateIso: '2026-09-12',
   venue: 'Île de Loisirs de Saint-Quentin-en-Yvelines',
-  participants: 'plus de 300 participants',
+  participants: 'plus de 330 participants',
 } as const
 
 export const NEXT_EDITION = {
@@ -38,7 +38,7 @@ export const FORMAT_FACTS = {
   minAge: SHARED_FORMAT_RULES.minAge,
   open: {
     name: 'OPEN',
-    summary: `Sans classement. Départs par vagues toutes les ${OPEN_FORMAT_RULES.sasIntervalMinutes} minutes, de ${OPEN_FORMAT_RULES.firstSasDeparture} à ${OPEN_FORMAT_RULES.lastSasDeparture}. Dernier tour lancé avant ${OPEN_FORMAT_RULES.lastLapStart}, fermeture du parcours à ${OPEN_FORMAT_RULES.courseClosing}.`,
+    summary: `Ni temps limite par tour ni élimination. Classement à partir de l'édition 2027 (il n'y en avait pas en 2026). Départs par vagues toutes les ${OPEN_FORMAT_RULES.sasIntervalMinutes} minutes, de ${OPEN_FORMAT_RULES.firstSasDeparture} à ${OPEN_FORMAT_RULES.lastSasDeparture}. Dernier tour lancé avant ${OPEN_FORMAT_RULES.lastLapStart}, fermeture du parcours à ${OPEN_FORMAT_RULES.courseClosing}.`,
   },
   ranked: {
     name: 'RANKED',

@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: { absolute: "Formats OPEN vs RANKED | Course à Obstacles Overbound Paris 2026" },
-  description: "Compare les deux formats Overbound : OPEN (vagues échelonnées, sans classement) et RANKED (départ unique, classement officiel). Trouve celui qui te correspond.",
+  description: "Compare les deux formats Overbound : OPEN (vagues échelonnées, sans élimination) et RANKED (départ unique, classement officiel). Trouve celui qui te correspond.",
   keywords: [
     "format course obstacles",
     "OPEN vs RANKED",
-    "course obstacles sans classement",
+    "course obstacles sans élimination",
     "course obstacles classée",
     "OCR paris 2026",
     "overbound formats",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Formats OPEN vs RANKED | Overbound Race",
-    description: "OPEN : vagues échelonnées, sans classement. RANKED : départ unique, classement officiel. Compare et choisis.",
+    description: "OPEN : vagues échelonnées, sans élimination. RANKED : départ unique, classement officiel. Compare et choisis.",
     url: 'https://overbound-race.com/events/formats',
     siteName: 'Overbound Race',
     images: [
