@@ -187,7 +187,7 @@ export default async function EnterprisesPage() {
           <SectionHeader
             eyebrow="Tarifs groupe"
             title="Plus vous êtes nombreux, moins le billet coûte"
-            lead="La remise s'applique à tous les billets d'une même commande, sans code à saisir. Les billets OPEN et RANKED comptent ensemble."
+            lead="La remise s'applique à tous les billets d'une même commande, sans code à saisir. Elle se compte par format : un billet OPEN et un billet RANKED ne se comptent pas ensemble."
           />
           <div className="overflow-x-auto rounded-2xl border border-border">
             <table className="w-full text-left text-xs min-[360px]:text-sm sm:text-base">

@@ -15,7 +15,7 @@ export const enterpriseDescription = () =>
 /** Answer-first paragraph (40 to 60 words), quotable as is. */
 export const enterpriseAnswer = (next: NextEditionFacts = FALLBACK_NEXT_EDITION) =>
   `Overbound propose aux entreprises une course à obstacles en Île-de-France pour souder une équipe : une boucle de ${FORMAT_FACTS.loopKm} km, plus de 10 obstacles, un créneau de départ commun pour l'équipe. ` +
-  `Une remise de groupe de 10 à 20 % s'applique dès 2 billets, tous formats. Prochaine édition ${next.window}.`
+  `Une remise de groupe de 10 à 20 % s'applique dès 2 billets d'un même format. Prochaine édition ${next.window}.`
 
 /** Venue conditions come from the last edition: say so until the next venue is announced, then point to it. */
 const nextVenueNote = (next: NextEditionFacts) =>
@@ -63,7 +63,7 @@ export const buildEnterpriseFaq = (next: NextEditionFacts = FALLBACK_NEXT_EDITIO
     },
     {
       question: 'Comment fonctionne la remise de groupe ?',
-      answer: `Elle s'applique à tous les billets d'une même commande, sans code à saisir : ${rates}. Les billets OPEN et RANKED comptent ensemble et reçoivent le même pourcentage. À titre d'exemple, un billet OPEN à ${formatEuros(B2B_REFERENCE_PRICES_CENTS.open)} passe à ${formatEuros(top.openUnitCents)} à partir de ${top.minTickets} billets, un billet RANKED à ${formatEuros(B2B_REFERENCE_PRICES_CENTS.ranked)} passe à ${formatEuros(top.rankedUnitCents)}. La remise ne se cumule pas avec un code promo : la réduction la plus avantageuse s'applique.`,
+      answer: `Elle s'applique à tous les billets d'une même commande, sans code à saisir : ${rates}. Le palier se compte par format : les billets OPEN entre eux, les billets RANKED entre eux. Un billet OPEN et un billet RANKED ne se comptent pas ensemble. À titre d'exemple, à partir de ${top.minTickets} billets OPEN, un billet OPEN à ${formatEuros(B2B_REFERENCE_PRICES_CENTS.open)} passe à ${formatEuros(top.openUnitCents)} ; à partir de ${top.minTickets} billets RANKED, un billet RANKED à ${formatEuros(B2B_REFERENCE_PRICES_CENTS.ranked)} passe à ${formatEuros(top.rankedUnitCents)}. La remise ne se cumule pas avec un code promo : la réduction la plus avantageuse s'applique.`,
     },
     {
       question: "Peut-on recevoir une facture au nom de l'entreprise, et payer par virement ?",

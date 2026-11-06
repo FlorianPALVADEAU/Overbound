@@ -156,10 +156,11 @@ export const chooseSex = async (page: Page, position: number, sex: StubSex) => {
 
 /** Fills participant 1 completely, SAS included. `sex: null` leaves the sex to the visitor. */
 export const fillFirstParticipant = async (page: Page, sex: StubSex | null = 'femme') => {
+  // The birth date unlocks the rest of the form: it comes first.
+  await page.locator('#participant-1-birthDate').fill('1990-05-04')
   await page.locator('#participant-1-firstName').fill('Camille')
   await page.locator('#participant-1-lastName').fill('Martin')
   await page.locator('#participant-1-email').fill('camille@example.com')
-  await page.locator('#participant-1-birthDate').fill('1990-05-04')
   if (sex) await chooseSex(page, 1, sex)
   await page.locator('#participant-1-emergency').fill('Léo Martin')
   await page.locator('#participant-1-emergencyPhone').fill('0612345678')
@@ -182,10 +183,10 @@ export interface StubParticipant {
 export const fillParticipant = async (page: Page, position: number, participant: StubParticipant) => {
   if (position > 1) await page.getByRole('button').filter({ hasText: 'À compléter' }).first().click()
   const field = (name: string) => page.locator(`#participant-${position}-${name}`)
+  await field('birthDate').fill(participant.birthDate)
   await field('firstName').fill(participant.firstName)
   await field('lastName').fill(participant.lastName)
   await field('email').fill(participant.email)
-  await field('birthDate').fill(participant.birthDate)
   await chooseSex(page, position, participant.sex)
   await field('emergency').fill('Anne Martin')
   await field('emergencyPhone').fill('0612345678')
@@ -203,7 +204,7 @@ export const fillParticipant = async (page: Page, position: number, participant:
 
 /** Accepts the waiver and rulebook, then draws a signature. */
 export const signWaiver = async (page: Page) => {
-  for (const id of ['disclaimer-read', 'rulebook-accepted', 'disclaimer-accepted']) await page.locator(`#${id}`).click()
+  for (const id of ['rulebook-accepted', 'disclaimer-accepted']) await page.locator(`#${id}`).click()
   const pad = page.locator('#signature-pad canvas')
   await pad.scrollIntoViewIfNeeded()
   const box = await pad.boundingBox()

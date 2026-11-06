@@ -1,7 +1,5 @@
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { CalendarDays, MapPin, Users } from 'lucide-react'
-import Link from 'next/link'
 import type { Event } from '@/types/Event'
 import { DISPLAY_TITLE, Eyebrow } from '@/components/ds'
 import { cn } from '@/lib/utils'
@@ -16,7 +14,7 @@ export default function RegistrationHeader({
   availableSpots,
 }: RegistrationHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-border pb-6 md:flex-row md:items-center md:justify-between">
+    <div className="border-b border-border pb-6">
       <div className="space-y-1">
         <Eyebrow>Inscription</Eyebrow>
         <h1 className={cn(DISPLAY_TITLE, 'text-display-md')}>{event.title}</h1>
@@ -43,9 +41,6 @@ export default function RegistrationHeader({
           </span>
         </div>
       </div>
-      <Button asChild variant="ghost" className="min-h-11">
-        <Link href={`/events/${event.slug}`}>Retour à l&apos;événement</Link>
-      </Button>
     </div>
   )
 }

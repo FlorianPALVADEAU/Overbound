@@ -15,12 +15,12 @@ export interface QuantityOption {
 interface QuantityOptionsInput {
   /** Price of one bib today, tier already applied. */
   unitCents: number
-  /** Bibs of the other tickets in the same order, any format: they count toward the group discount. */
-  otherTicketCount: number
+  /** Bibs of the other tickets of the same format in the order: only they count toward the group discount. */
+  otherSameFormatCount: number
 }
 
-export const quantityOption = ({ unitCents, otherTicketCount }: QuantityOptionsInput, quantity: number): QuantityOption => {
-  const percent = groupDiscountPercent(otherTicketCount + quantity)
+export const quantityOption = ({ unitCents, otherSameFormatCount }: QuantityOptionsInput, quantity: number): QuantityOption => {
+  const percent = groupDiscountPercent(otherSameFormatCount + quantity)
   const discounted = applyTierDiscount(unitCents, percent)
   return { quantity, unitCents: discounted, percent, totalCents: discounted * quantity }
 }

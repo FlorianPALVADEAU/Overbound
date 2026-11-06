@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import MultiStepEventRegistration from '@/components/registration'
-import { parseGroupIntent, parseInviteCode } from '@/lib/groups/invite'
+import { parseInviteCode } from '@/lib/groups/invite'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventRegisterData } from '@/app/api/events/[id]/register-data/registerDataQueries'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +17,6 @@ export default function EventRegisterPage() {
   const searchParams = useSearchParams()
   const ticketQueryParam = searchParams?.get('ticket') ?? null
   const waveParam = Number(searchParams?.get('wave'))
-  const groupIntent = parseGroupIntent(searchParams?.get('group'))
   const inviteCode = parseInviteCode(searchParams?.get('invite'))
   const waveQueryParam = Number.isInteger(waveParam) && waveParam > 0 ? waveParam : null
   const { data: session, isLoading: sessionLoading } = useSession()
@@ -153,7 +152,6 @@ export default function EventRegisterPage() {
           tshirtOffer={data.tshirtOffer}
           initialTicketId={ticketQueryParam}
           initialWaveIndex={waveQueryParam}
-          groupIntent={groupIntent}
           inviteCode={inviteCode}
           eventPriceTiers={data.event.price_tiers || []}
           tierRegistrationCounts={data.tierRegistrationCounts ?? {}}

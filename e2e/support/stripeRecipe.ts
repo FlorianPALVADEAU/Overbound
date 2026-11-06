@@ -11,10 +11,19 @@ export const RANKED_TICKET_ID = 'e2e00000-0000-4000-8000-0000000000a2'
 
 export const recipeEnabled = () => process.env.E2E_STRIPE_RECIPE === '1'
 
+/** Captain of the anchored group: used by the anchored-group scenario only. */
 export const recipeUser = () => {
   const email = process.env.E2E_USER_EMAIL
   const password = process.env.E2E_USER_PASSWORD
   if (!email || !password) throw new Error('E2E_USER_EMAIL and E2E_USER_PASSWORD are required')
+  return { email, password }
+}
+
+/** Account without group or anchor: every other scenario, so the SAS picker is open. */
+export const soloUser = () => {
+  const email = process.env.E2E_SOLO_EMAIL
+  const password = process.env.E2E_SOLO_PASSWORD
+  if (!email || !password) throw new Error('E2E_SOLO_EMAIL and E2E_SOLO_PASSWORD are required')
   return { email, password }
 }
 
@@ -47,16 +56,23 @@ export const openCheckout = async (page: Page, ticketId: string) => {
   await page.locator('#participant-1-firstName').waitFor({ timeout: 30_000 })
 }
 
-export const addTicket = async (page: Page, ticketName: string) => {
-  await page.getByRole('button', { name: 'Ajouter un' }).nth(ticketName.startsWith('OPEN') ? 0 : 1).click()
+/** Sets the bib count of a ticket through its quantity select ("Quantité pour OPEN - E2E"). */
+export const setTicketQuantity = async (page: Page, ticketName: 'OPEN' | 'RANKED', quantity: number) => {
+  await page.getByRole('combobox', { name: `Quantité pour ${ticketName} - E2E` }).click()
+  await page.getByRole('option', { name: new RegExp(`^${quantity} billet`) }).click()
 }
 
 export const fillParticipant = async (page: Page, n: number, { wave }: { wave: boolean }) => {
   const id = (field: string) => page.locator(`#participant-${n}-${field}`)
+  // With several participants, a folded panel renders no field: open its header first.
+  // Direct child only: the wave picker inside the panel is also a button with aria-expanded="false".
+  const folded = page.locator(`#participant-panel-participant-${n} > button[aria-expanded="false"]`)
+  if (await folded.count()) await folded.click()
+  // The birth date unlocks the rest of the participant form: it comes first.
+  await id('birthDate').fill('1990-05-04')
   await id('firstName').fill(`Prénom${n}`)
   await id('lastName').fill(`Nom${n}`)
   await id('email').fill(`participant${n}@example.com`)
-  await id('birthDate').fill('1990-05-04')
   await page.locator('label', { has: page.locator(`input[name="participant-${n}-sex"][value="femme"]`) }).click()
   await id('emergency').fill('Contact Urgence')
   await id('emergencyPhone').fill('0612345678')
@@ -86,7 +102,7 @@ export const applyPromo = async (page: Page, code: string) => {
 }
 
 export const signWaiver = async (page: Page) => {
-  for (const id of ['disclaimer-read', 'rulebook-accepted', 'disclaimer-accepted']) await page.locator(`#${id}`).click()
+  for (const id of ['rulebook-accepted', 'disclaimer-accepted']) await page.locator(`#${id}`).click()
   if (await page.locator('#group-attestation').count()) await page.locator('#group-attestation').click()
   const pad = page.locator('#signature-pad canvas')
   await pad.scrollIntoViewIfNeeded()
@@ -101,7 +117,8 @@ export const signWaiver = async (page: Page) => {
 
 /** Total shown in the checkout summary, in cents. */
 export const summaryTotalCents = async (page: Page): Promise<number> => {
-  const text = await page.locator('aside').getByText(/^\s*[\d\s  ]+,\d{2}\s*€\s*$/).last().innerText()
+  // The "Total" row's amount: the last price in the aside is a line of the collapsed detail, not the total.
+  const text = await page.locator('aside').getByText('Total', { exact: true }).locator('xpath=following-sibling::*[1]').innerText()
   return Math.round(Number(text.replace(/[^\d,]/g, '').replace(',', '.')) * 100)
 }
 

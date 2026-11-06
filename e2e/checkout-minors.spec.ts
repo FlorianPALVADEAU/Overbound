@@ -155,11 +155,10 @@ test.describe('Checkout — participants aged 16 and 17', () => {
   test('a 15 year old is refused even when the event admits minors', async ({ page }) => {
     const capture = await openCheckout(page)
 
-    await fillParticipant(page, 1, { ...LEA, birthDate: '2015-01-01', guardian: undefined })
-    await signWaiver(page)
-    await payButton(page).click()
+    await page.locator('#participant-1-birthDate').fill('2015-01-01')
 
     await expect(page.getByText("Il faut avoir 16 ans le jour de l'événement.")).toBeVisible()
+    await expect(page.locator('#participant-1-firstName')).toBeDisabled()
     expect(capture.paymentIntentBody()).toBeNull()
   })
 
@@ -167,21 +166,18 @@ test.describe('Checkout — participants aged 16 and 17', () => {
     const capture = await openCheckout(page, 2)
 
     await fillParticipant(page, 1, LEA)
-    await fillParticipant(page, 2, { ...NOE, birthDate: '2016-01-01', guardian: undefined })
-    await signWaiver(page)
-    await attest(page, ['group-attestation', 'minor-attestation'])
-    await payButton(page).click()
+    await page.getByRole('button').filter({ hasText: 'À compléter' }).first().click()
+    await page.locator('#participant-2-birthDate').fill('2016-01-01')
 
     await expect(page.getByText("Il faut avoir 16 ans le jour de l'événement.")).toBeVisible()
+    await expect(page.locator('#participant-2-firstName')).toBeDisabled()
     expect(capture.paymentIntentBody()).toBeNull()
   })
 
   test('an event limited to adults refuses a 17 year old', async ({ page }) => {
     const capture = await openCheckout(page, 1, 18)
 
-    await fillParticipant(page, 1, { ...LEA, guardian: undefined })
-    await signWaiver(page)
-    await payButton(page).click()
+    await page.locator('#participant-1-birthDate').fill(LEA.birthDate)
 
     await expect(page.getByText("Il faut avoir 18 ans le jour de l'événement.")).toBeVisible()
     await expect(page.locator('#minor-attestation')).toHaveCount(0)

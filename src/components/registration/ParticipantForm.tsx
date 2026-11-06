@@ -1,6 +1,8 @@
+import type { EmergencyContactSuggestion } from '@/lib/checkout/emergencyContact'
 import { useState } from 'react'
-import { Shirt } from 'lucide-react'
+import { Shirt, Users } from 'lucide-react'
 import { TSHIRT_SIZES } from '@/lib/tshirtOffer'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,7 +12,6 @@ import { cn } from '@/lib/utils'
 import { isRankedFormatTicket, formatWaveStartTime } from '@/lib/openSas'
 import { ticketUsesWaveSelection } from '@/lib/tickets/operationsProfile'
 import { HEALTH_DATA_CONSENT_LABEL, needsHealthDataConsent } from '@/lib/legal/healthData'
-import { FLEXIBLE_REFUND_DEADLINE_DAYS, FLEXIBLE_TICKET_FEE_CENTS } from '@/lib/tickets/flexibleTicket'
 import { useSelectableOpenWaves } from '@/hooks/registration/useSelectableOpenWaves'
 import { RANKED_FORMAT_RULES } from '@/constants/raceFormatRules'
 import { participantFieldId, type ParticipantField } from '@/lib/checkout/fieldIds'
@@ -29,6 +30,8 @@ interface ParticipantFormProps {
   /** Shown only once the visitor has tried to pay. */
   errors: ParticipantErrors
   groupAnchor: { waveIndex: number; startTime: string } | null
+  /** Emergency contact of another participant, offered while this one has none. */
+  emergencyContactSuggestion: EmergencyContactSuggestion | null
   /** The OPEN option of this participant's ticket; null when the ticket has none. */
   companionOffer: CompanionOffer | null
   currency: string
@@ -49,6 +52,7 @@ export default function ParticipantForm({
   onWaveSelect,
   errors,
   groupAnchor,
+  emergencyContactSuggestion,
   companionOffer,
   currency,
   tshirtOffered,
@@ -145,9 +149,6 @@ export default function ParticipantForm({
             autoComplete: 'bday',
           })}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Ta date de naissance d&apos;abord : tant qu&apos;elle n&apos;est pas valide, le reste du formulaire reste bloqué.
-        </p>
       </div>
 
       <fieldset disabled={locked} className="contents space-y-8">
@@ -206,6 +207,20 @@ export default function ParticipantForm({
 
         <div className="space-y-4">
           <h3 className="text-eyebrow font-semibold uppercase text-subtle">En cas d&apos;urgence</h3>
+          {emergencyContactSuggestion ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full sm:w-auto"
+              onClick={() => {
+                onFieldChange(participant.id, 'emergencyContactName', emergencyContactSuggestion.name)
+                onFieldChange(participant.id, 'emergencyContactPhone', emergencyContactSuggestion.phone)
+              }}
+            >
+              <Users className="mr-2 h-4 w-4" aria-hidden />
+              Même personne à prévenir : {emergencyContactSuggestion.name}
+            </Button>
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             {field('emergencyContactName', 'Personne à prévenir', {
               placeholder: 'Nom et prénom',
@@ -404,27 +419,6 @@ export default function ParticipantForm({
           ) : null}
           {errorText('healthDataConsent')}
         </div>
-
-        <div className="border-t border-border pt-6">
-          <Label
-            htmlFor={`${participant.id}-flexible`}
-            className="flex min-h-11 cursor-pointer items-start gap-3 font-normal leading-relaxed"
-          >
-            <Checkbox
-              id={`${participant.id}-flexible`}
-              checked={participant.flexible === true}
-              onCheckedChange={(checked) => onFieldChange(participant.id, 'flexible', checked === true)}
-              className="mt-0.5"
-            />
-            <span className="block space-y-1">
-              <span className="block text-sm font-semibold">Billet flexible (+{formatFlexibleFee()}) : annulable sans justificatif</span>
-              <span className="block text-xs text-muted-foreground">
-                Remboursé jusqu&apos;à {FLEXIBLE_REFUND_DEADLINE_DAYS} jours avant l&apos;événement, depuis ton espace. Les frais de
-                l&apos;option ne sont pas remboursés, et elle est perdue si le billet est transféré.
-              </span>
-            </span>
-          </Label>
-        </div>
       </fieldset>
     </div>
   )
@@ -434,6 +428,3 @@ const SEX_LABELS: Record<ParticipantSex, string> = {
   homme: 'Homme',
   femme: 'Femme',
 }
-
-const formatFlexibleFee = () =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(FLEXIBLE_TICKET_FEE_CENTS / 100)

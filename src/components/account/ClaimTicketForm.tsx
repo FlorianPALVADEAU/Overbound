@@ -38,7 +38,6 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
   const [firstName, setFirstName] = useState(defaultFirstName)
   const [lastName, setLastName] = useState(defaultLastName)
   const [identity, setIdentity] = useState(emptyIdentity)
-  const [disclaimerRead, setDisclaimerRead] = useState(false)
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
   const [rulebookAccepted, setRulebookAccepted] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
@@ -59,7 +58,6 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
     identity.emergencyContactName.trim() &&
     identity.emergencyContactPhone.trim() &&
     (!needsHealthDataConsent(identity.medicalInfo) || healthDataConsent) &&
-    disclaimerRead &&
     disclaimerAccepted &&
     rulebookAccepted &&
     signatureImage
@@ -81,7 +79,7 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
             participant: { firstName, lastName, ...identity, healthDataConsent },
             signatureImage,
             signatureMetadata: { regulationVersion: REGULATION_VERSION, signedAt: new Date().toISOString() },
-            disclaimer: { read: disclaimerRead, accepted: disclaimerAccepted, rulebookAccepted },
+            disclaimer: { read: disclaimerAccepted, accepted: disclaimerAccepted, rulebookAccepted },
           }),
         })
         if (!response.ok) {
@@ -180,12 +178,10 @@ export function ClaimTicketForm({ token, defaultFirstName = '', defaultLastName 
       </section>
 
       <ConfirmationStep
-        disclaimerRead={disclaimerRead}
         disclaimerAccepted={disclaimerAccepted}
         rulebookAccepted={rulebookAccepted}
         signatureImage={signatureImage}
         showErrors={showErrors}
-        onDisclaimerReadChange={setDisclaimerRead}
         onDisclaimerAcceptedChange={setDisclaimerAccepted}
         onRulebookAcceptedChange={setRulebookAccepted}
         onSignatureChange={setSignatureImage}

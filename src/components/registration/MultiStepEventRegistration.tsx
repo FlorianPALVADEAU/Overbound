@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMyGroup } from '@/app/api/groups/groupQueries'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { useAutoJoinInvite } from '@/hooks/registration/useAutoJoinInvite'
 import { useAddToCartTracking } from '@/hooks/registration/useAddToCartTracking'
 import { useCheckoutConsents } from '@/hooks/registration/useCheckoutConsents'
 import { useCheckoutDraft } from '@/hooks/registration/useCheckoutDraft'
@@ -20,11 +21,11 @@ import { useUpsells } from '@/hooks/registration/useUpsells'
 import { minorParticipantNames } from '@/lib/checkout/minorParticipants'
 import { ADULT_AGE } from '@/lib/checkout/participantAge'
 import { birthDateRefusals } from '@/lib/checkout/ageRefusals'
-import type { GroupIntent } from '@/lib/groups/invite'
 import { isOpenFormatTicket } from '@/lib/openSas'
+import { groupDiscountLabel } from '@/lib/orderPricing/groupDiscount'
 import { pricingErrorMessage, promoRejectionMessage } from '@/lib/orderPricing'
 import ConfirmationStep from './ConfirmationStep'
-import GroupPanel from './GroupPanel'
+import FlexibleTicketOption from './FlexibleTicketOption'
 import InlineAuthStep from './InlineAuthStep'
 import OptionsStep from './OptionsStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
@@ -48,15 +49,14 @@ export default function MultiStepEventRegistration({
   tshirtOffer = null,
   initialTicketId = null,
   initialWaveIndex = null,
-  groupIntent = null,
   inviteCode = null,
 }: MultiStepEventRegistrationProps) {
   const queryClient = useQueryClient()
   const { data: myGroup } = useMyGroup({ enabled: Boolean(user) })
   const suppressEmptyParticipantsSyncRef = useRef(false)
   const participantsSectionRef = useRef<HTMLElement>(null)
-  const [authReason, setAuthReason] = useState<'payment' | 'group' | null>(null)
-  const [pendingGroupIntent, setPendingGroupIntent] = useState<GroupIntent | null>(null)
+  const [authReason, setAuthReason] = useState<'payment' | null>(null)
+  useAutoJoinInvite(inviteCode, Boolean(user))
   const currency = (tickets.find((ticket) => ticket.currency)?.currency ?? 'eur').toLowerCase()
 
   const { ticketSelections, setTicketSelections, ticketMap, selectedTicketSlots, totalParticipants, handleTicketQuantityChange } =
@@ -270,18 +270,6 @@ export default function MultiStepEventRegistration({
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start xl:gap-12">
         <div className="min-w-0 space-y-6">
-          <GroupPanel
-            user={user}
-            event={event}
-            group={myGroup}
-            intent={groupIntent ?? pendingGroupIntent}
-            inviteCode={inviteCode}
-            onNeedAuth={(intent) => {
-              setPendingGroupIntent(intent)
-              setAuthReason('group')
-            }}
-          />
-
           <div className="divide-y divide-border">
             <RegistrationSection index={1} title="Tes billets" isComplete={validation.sections.tickets}>
               <TicketSelectionStep
@@ -322,34 +310,44 @@ export default function MultiStepEventRegistration({
               </RegistrationSection>
             ) : null}
 
-            {totalParticipants > 0 && hasUpsells ? (
+            {totalParticipants > 0 ? (
               <RegistrationSection index={3} title="Options" optional>
                 <fieldset disabled={detailsLocked} className="contents">
-                  <OptionsStep
-                    upsells={upsells}
-                    selectedUpsells={upsellState.selectedUpsells}
-                    participants={participants}
-                    defaultCurrency={currency}
-                    onSetForParticipant={upsellState.setUpsellForParticipant}
-                    onSetForAll={upsellState.setUpsellForAll}
-                    onClear={upsellState.clearUpsell}
-                    onSizeForAll={upsellState.setUpsellSizeForAll}
-                  />
+                  <div className="space-y-3">
+                    <FlexibleTicketOption
+                      participants={participants}
+                      onChange={(participantId, flexible) => handleParticipantChange(participantId, 'flexible', flexible)}
+                    />
+                    {hasUpsells ? (
+                      <OptionsStep
+                        upsells={upsells}
+                        selectedUpsells={upsellState.selectedUpsells}
+                        participants={participants}
+                        defaultCurrency={currency}
+                        onSetForParticipant={upsellState.setUpsellForParticipant}
+                        onSetForAll={upsellState.setUpsellForAll}
+                        onClear={upsellState.clearUpsell}
+                        onSizeForAll={upsellState.setUpsellSizeForAll}
+                      />
+                    ) : null}
+                  </div>
                 </fieldset>
               </RegistrationSection>
             ) : null}
 
             {totalParticipants > 0 ? (
-              <RegistrationSection index={hasUpsells ? 4 : 3} title="Décharge et signature" isComplete={validation.sections.confirmation}>
+              <RegistrationSection index={4} title="Décharge et signature" isComplete={validation.sections.confirmation}>
                 <fieldset disabled={detailsLocked} className="contents">
                   <ConfirmationStep
-                    disclaimerRead={consents.disclaimerRead}
                     disclaimerAccepted={consents.disclaimerAccepted}
                     rulebookAccepted={consents.rulebookAccepted}
                     signatureImage={consents.signatureImage}
                     showErrors={showErrors}
-                    onDisclaimerReadChange={setConsent('disclaimerRead')}
-                    onDisclaimerAcceptedChange={setConsent('disclaimerAccepted')}
+                    onDisclaimerAcceptedChange={(checked) => {
+                      // One checkbox records both proofs the API stores: waiver read, waiver accepted.
+                      setConsent('disclaimerRead')(checked)
+                      setConsent('disclaimerAccepted')(checked)
+                    }}
                     onRulebookAcceptedChange={setConsent('rulebookAccepted')}
                     onSignatureChange={setSignature}
                     groupAttestation={needsGroupAttestation ? consents.groupAttestation : undefined}
@@ -365,28 +363,27 @@ export default function MultiStepEventRegistration({
         </div>
 
         {/* Always in view while the form scrolls; scrolls on its own if taller than the screen. */}
-        <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto">
-          {/* Promo code and payment stay locked while a birth date is missing or refused. */}
-          <fieldset disabled={detailsLocked} className="contents">
-            <OrderSummarySidebar
-              lines={lines}
-              totalCents={summary.totalDue}
-              currency={summary.currency}
-              hasFlexible={hasFlexible}
-              ticketCount={totalParticipants}
-              upsellCount={upsellCount}
-              groupDiscountPercent={summary.groupDiscount?.applied ? summary.groupDiscount.percent : null}
-              pricingNotices={pricingNotices}
-              appliedPromos={promo.appliedPromos}
-              promoInput={promo.promoInput}
-              promoError={promo.promoError}
-              onPromoInputChange={promo.setPromoInput}
-              onValidatePromo={promo.validatePromoCode}
-              onRemovePromo={promo.removePromo}
-              submissionMessage={submission.message}
-              payAction={payButton}
-            />
-          </fieldset>
+        <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto">
+          {/* Promo code and payment stay locked while a birth date is missing or refused; the detail stays open. */}
+          <OrderSummarySidebar
+            lines={lines}
+            totalCents={summary.totalDue}
+            currency={summary.currency}
+            hasFlexible={hasFlexible}
+            ticketCount={totalParticipants}
+            upsellCount={upsellCount}
+            groupDiscountLabels={summary.groupDiscount?.applied ? summary.groupDiscount.lines.map(groupDiscountLabel) : []}
+            pricingNotices={pricingNotices}
+            appliedPromos={promo.appliedPromos}
+            promoInput={promo.promoInput}
+            promoError={promo.promoError}
+            onPromoInputChange={promo.setPromoInput}
+            onValidatePromo={promo.validatePromoCode}
+            onRemovePromo={promo.removePromo}
+            submissionMessage={submission.message}
+            payAction={payButton}
+            locked={detailsLocked}
+          />
         </aside>
       </div>
 

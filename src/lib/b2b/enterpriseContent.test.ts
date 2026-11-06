@@ -24,7 +24,7 @@ describe('enterprise page content', () => {
     const faq = buildEnterpriseFaq().map((item) => item.answer).join(' ')
     expect(faq).toMatch(/10 % à partir de 2 billets, 15 % à partir de 3 billets, 20 % à partir de 6 billets/)
     expect(faq).toMatch(/6,99\s€ TTC/)
-    expect(faq).toMatch(/OPEN et RANKED comptent ensemble/)
+    expect(faq).toMatch(/Un billet OPEN et un billet RANKED ne se comptent pas ensemble/)
   })
 
   it('tells a buyer about the health proof, the public nature of the event and the payment methods', () => {

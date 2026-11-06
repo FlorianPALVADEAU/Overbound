@@ -14,8 +14,8 @@ interface OrderSummarySidebarProps {
   hasFlexible: boolean
   ticketCount: number
   upsellCount: number
-  /** Percentage of the group discount when it applies to the order. */
-  groupDiscountPercent: number | null
+  /** One label per format that got the group discount, empty when none applies. */
+  groupDiscountLabels: string[]
   /** Why the order cannot be priced or a code was left out, in the visitor's words. */
   pricingNotices: string[]
   appliedPromos: AppliedPromo[]
@@ -27,6 +27,8 @@ interface OrderSummarySidebarProps {
   submissionMessage: { type: 'error' | 'success'; text: string } | null
   /** Payment button, rendered under the total so it stays in view while the page scrolls. */
   payAction?: ReactNode
+  /** Locks the promo code and the payment button only. The order detail stays readable. */
+  locked?: boolean
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`
@@ -38,7 +40,7 @@ export default function OrderSummarySidebar({
   hasFlexible,
   ticketCount,
   upsellCount,
-  groupDiscountPercent,
+  groupDiscountLabels,
   pricingNotices,
   appliedPromos,
   promoInput,
@@ -48,6 +50,7 @@ export default function OrderSummarySidebar({
   onRemovePromo,
   submissionMessage,
   payAction,
+  locked = false,
 }: OrderSummarySidebarProps) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
@@ -61,9 +64,11 @@ export default function OrderSummarySidebar({
             {plural(ticketCount, 'billet')}
             {upsellCount > 0 ? ` · ${plural(upsellCount, 'option')}` : ''}
           </p>
-          {groupDiscountPercent ? (
-            <p className="text-sm font-medium text-primary">Remise groupe −{groupDiscountPercent} % appliquée</p>
-          ) : null}
+          {groupDiscountLabels.map((label) => (
+            <p key={label} className="text-sm font-medium text-primary">
+              {label} appliquée
+            </p>
+          ))}
         </div>
       )}
 
@@ -82,14 +87,17 @@ export default function OrderSummarySidebar({
       ) : null}
 
       <Separator className="my-4" />
-      <PromoCodeInput
-        appliedPromos={appliedPromos}
-        promoInput={promoInput}
-        error={promoError}
-        onInputChange={onPromoInputChange}
-        onValidate={onValidatePromo}
-        onRemove={onRemovePromo}
-      />
+      {/* A fieldset, not a prop per control: a disabled fieldset disables every control inside it. */}
+      <fieldset disabled={locked} className="contents">
+        <PromoCodeInput
+          appliedPromos={appliedPromos}
+          promoInput={promoInput}
+          error={promoError}
+          onInputChange={onPromoInputChange}
+          onValidate={onValidatePromo}
+          onRemove={onRemovePromo}
+        />
+      </fieldset>
       <Separator className="my-4" />
 
       <OrderTotal totalCents={totalCents} currency={currency} />
@@ -102,10 +110,10 @@ export default function OrderSummarySidebar({
       ) : null}
 
       {payAction ? (
-        <div className="mt-4 hidden space-y-2 lg:block">
+        <fieldset disabled={locked} className="mt-4 hidden space-y-2 lg:block">
           {payAction}
           <RefundNotice hasFlexible={hasFlexible} className="text-center" />
-        </div>
+        </fieldset>
       ) : null}
     </div>
   )

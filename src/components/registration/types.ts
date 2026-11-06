@@ -1,4 +1,3 @@
-import type { GroupIntent } from '@/lib/groups/invite'
 import type { Event } from '@/types/Event'
 import type { Ticket } from '@/types/Ticket'
 import type { Upsell, UpsellOptions } from '@/types/Upsell'
@@ -99,9 +98,7 @@ export interface MultiStepEventRegistrationProps {
   initialTicketId?: string | null
   /** Slot preselected from the event page; applied once to the first matching participant. */
   initialWaveIndex?: number | null
-  /** Open a group action on arrival (?group=create|join). */
-  groupIntent?: GroupIntent | null
-  /** Group the visitor was invited to (?invite=CODE). */
+  /** Group the visitor was invited to (?invite=CODE): joined silently once signed in. */
   inviteCode?: string | null
   eventPriceTiers?: EventPriceTier[]
   /** Active registrations per tier, so the checkout seats the order like the payment API. */

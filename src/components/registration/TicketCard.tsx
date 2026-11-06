@@ -12,8 +12,8 @@ interface TicketCardProps {
   onQuantityChange: (ticketId: string, quantity: number) => void
   defaultCurrency: string
   sellingTier: EventPriceTier | null
-  /** Bibs chosen on the other tickets, any format: they count toward the group discount. */
-  otherTicketCount: number
+  /** Bibs chosen on the other tickets of the same format: they count toward the group discount. */
+  otherSameFormatCount: number
 }
 
 export default function TicketCard({
@@ -22,7 +22,7 @@ export default function TicketCard({
   onQuantityChange,
   defaultCurrency,
   sellingTier,
-  otherTicketCount,
+  otherSameFormatCount,
 }: TicketCardProps) {
   const isSelected = quantity > 0
   const currency = (ticket.currency || defaultCurrency).toLowerCase()
@@ -89,7 +89,7 @@ export default function TicketCard({
             quantity={quantity}
             onChange={(next) => onQuantityChange(ticket.id, next)}
             unitCents={currentPrice ?? null}
-            otherTicketCount={otherTicketCount}
+            otherSameFormatCount={otherSameFormatCount}
             disabled={isSoldOut}
           />
         </div>

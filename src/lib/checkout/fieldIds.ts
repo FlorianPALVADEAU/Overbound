@@ -41,8 +41,9 @@ export const participantFieldId = (participantId: string, field: ParticipantFiel
   `${participantId}-${PARTICIPANT_FIELD_SUFFIX[field]}`
 
 export const CONSENT_FIELD_IDS = {
-  disclaimerRead: 'disclaimer-read',
   rulebookAccepted: 'rulebook-accepted',
+  // Read and accepted are one checkbox: both point at it.
+  disclaimerRead: 'disclaimer-accepted',
   disclaimerAccepted: 'disclaimer-accepted',
   groupAttestation: 'group-attestation',
   minorAttestation: 'minor-attestation',

@@ -151,6 +151,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
         { name: 'Formats', href: '/events/formats' },
         { name: 'Obstacles', href: '/obstacles' },
         { name: 'Bootcamps', href: '/bootcamps' },
+        { name: 'Ambassadeurs', href: '/ambassadors' },
         ...(featuredEvent?.photos_url
           ? [{ name: 'Photos de l\u2019édition', href: featuredEvent.photos_url, external: true }]
           : []),

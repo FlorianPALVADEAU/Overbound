@@ -44,7 +44,7 @@ export interface CheckoutValidation {
 
 const participantErrorsOf = (participant: Participant, input: CheckoutValidationInput, index: number): ParticipantErrors => {
   const errors: ParticipantErrors = {}
-  const required: ParticipantField[] = ['firstName', 'lastName', 'email', 'birthDate', 'emergencyContactName', 'emergencyContactPhone']
+  const required: ParticipantField[] = ['birthDate', 'firstName', 'lastName', 'email', 'emergencyContactName', 'emergencyContactPhone']
   for (const field of required) {
     const value = participant[field as keyof Participant]
     if (typeof value !== 'string' || !value.trim()) errors[field] = REQUIRED_MESSAGE

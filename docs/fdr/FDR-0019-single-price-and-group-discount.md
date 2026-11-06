@@ -5,10 +5,18 @@
 - **Owner produit** : Florian Palvadeau
 - **Références** : [FDR-0018](./FDR-0018-order-pricing-engine-and-promo-stacking.md), RETEX de la 1re édition (12 septembre 2026)
 
+## Amendement 2026-11-06 (Florian) : remise par format, plus de mélange
+
+Le palier se compte **par format**, plus sur l'ensemble de la commande. Deux billets OPEN → -10 % sur chacun ; deux billets RANKED → -10 % sur chacun ; un billet OPEN et un billet RANKED → aucune remise. Une commande 2 OPEN + 1 RANKED remise les deux OPEN seulement, le RANKED reste au plein tarif. Chaque format a son propre palier (3 OPEN + 6 RANKED → -15 % sur les OPEN, -20 % sur les RANKED).
+
+Ce qui change : `computeGroupDiscount` renvoie une ligne par format remisé (`lines`), `GroupDiscountResult` n'a plus de `percent` unique, le menu de quantité ne compte que les billets du même format, les textes publics (`/entreprises`, FAQ, devis, blog) disent « par format ». Le principe « la meilleure réduction gagne » ne change pas. Aucun prix en base ne change, pas de migration.
+
+Pas de changement de CGV : le texte ne décrit pas le palier.
+
 ## Décision
 
 1. **Prix unique, sans paliers de date.** Open 59,99 €, Ranked 69,99 €. Les paliers (`event_price_tiers`) ne sont plus créés pour les prochaines éditions. Le code des paliers reste en place et sans effet quand aucun palier n'existe.
-2. **Remise de groupe automatique, tous formats** : 2 billets dans la commande → -10 %, 3 à 5 → -15 %, 6 et plus → -20 %. Les billets Open et Ranked comptent ensemble pour le palier et reçoivent le même pourcentage. *Amendement 2026-10-29 (Florian) : la version initiale excluait Ranked, jugé injuste ; une équipe mélange les formats, donc le palier se calcule sur l'ensemble de la commande, pas format par format.*
+2. **Remise de groupe automatique, par format** : 2 billets du même format → -10 %, 3 à 5 → -15 %, 6 et plus → -20 %. Les billets Open et Ranked ne se comptent pas ensemble. *Amendements : 2026-10-29 (Florian) la version initiale excluait Ranked ; 2026-11-06 (Florian) le palier mélangé est remplacé par un palier par format, voir ci-dessus.*
 3. **Une commande = un paiement.** On compte les billets d'une même commande. Les membres d'un groupe créé par code d'invitation qui paient chacun de leur côté n'ouvrent pas la remise (elle serait rétroactive, donc des remboursements).
 4. **Prix figé au paiement.** Si un participant se désiste ensuite, personne n'est remboursé et le palier n'est pas recalculé (politique sans remboursement). Le billet peut être transféré.
 5. **Pas de cumul : la meilleure réduction gagne.** Remise de groupe et code promo sur les billets ne s'additionnent pas. Le plus avantageux s'applique, l'égalité va à la remise de groupe.
@@ -32,4 +40,4 @@ Prix effectifs Open à 59,99 € : duo 53,99 €, 3 à 5 → 50,99 €, 6 et plu
 
 ## Tests
 
-`groupDiscount.test.ts` (seuils, arrondi, Ranked compté et remisé, formats mélangés, option flexible non remisée, meilleure réduction, égalité, code upsell), invariants aléatoires du moteur, `orderLines.test.ts`.
+`groupDiscount.test.ts` (seuils, arrondi, Ranked remisé entre Ranked, formats mélangés sans remise, option flexible non remisée, meilleure réduction, égalité, code upsell), invariants aléatoires du moteur, `orderLines.test.ts`.

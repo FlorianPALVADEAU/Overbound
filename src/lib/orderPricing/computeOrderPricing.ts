@@ -1,6 +1,6 @@
 import { allocatePaidTicketPrices } from '@/lib/tickets/flexibleTicket'
 import { createBalance } from './balance'
-import { computeGroupDiscount } from './groupDiscount'
+import { computeGroupDiscount, participantFormat } from './groupDiscount'
 import { applyTierDiscount, priceParticipants } from './participantPricing'
 import { applyDiscounts } from './promo/applyDiscounts'
 import { checkPromoQuota } from './promo/quota'
@@ -51,9 +51,11 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
   const flexibleTotal = participants.filter((participant) => participant.flexible).length * input.flexibleFeeCents
   // Never discounted either: a fixed-price second bib, outside promo codes and the group discount.
   const companionTotal = sum(participants.map((participant) => participant.companionPriceCents ?? 0))
-  // The group discount is the same percentage on every bib; a code is spread over every bib by amount.
+  // The group discount is the same percentage on every bib of a format; a code is spread over every bib by amount.
   const paidPrices = groupApplies
-    ? participants.map((participant) => applyTierDiscount(participant.unitPriceCents, group.percent))
+    ? participants.map((participant) =>
+        applyTierDiscount(participant.unitPriceCents, group.percentByFormat[participantFormat(participant)]),
+      )
     : allocatePaidTicketPrices(
         participants.map((participant) => participant.unitPriceCents),
         ticketDiscountAmount,
@@ -69,7 +71,7 @@ export const computeOrderPricing = (input: OrderPricingInput): Result<OrderPrici
     baseTicketSubtotal,
     ticketSubtotal,
     tierDiscountAmount,
-    groupDiscount: { percent: group.percent, amountCents: group.amountCents, applied: groupApplies },
+    groupDiscount: { lines: group.lines, amountCents: group.amountCents, applied: groupApplies },
     upsellSubtotal,
     upsellSubtotalsById,
     flexibleTotal,

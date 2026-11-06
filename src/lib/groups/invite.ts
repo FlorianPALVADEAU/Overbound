@@ -1,9 +1,3 @@
-export type GroupIntent = 'create' | 'join'
-
-/** `?group=create|join` on the registration page opens the matching group action. */
-export const parseGroupIntent = (value: string | null | undefined): GroupIntent | null =>
-  value === 'create' || value === 'join' ? value : null
-
 /** `?invite=CODE` on the registration page: the visitor was invited to a group. */
 export const parseInviteCode = (value: string | null | undefined): string | null => {
   const code = (value ?? '').trim().toUpperCase()

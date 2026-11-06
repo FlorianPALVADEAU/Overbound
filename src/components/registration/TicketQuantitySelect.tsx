@@ -17,7 +17,7 @@ interface TicketQuantitySelectProps {
   quantity: number
   onChange: (quantity: number) => void
   unitCents: number | null
-  otherTicketCount: number
+  otherSameFormatCount: number
   disabled?: boolean
 }
 
@@ -29,14 +29,14 @@ export default function TicketQuantitySelect({
   quantity,
   onChange,
   unitCents,
-  otherTicketCount,
+  otherSameFormatCount,
   disabled = false,
 }: TicketQuantitySelectProps) {
   const inputId = useId()
   const [forceInput, setForceInput] = useState(false)
   const [draft, setDraft] = useState<string | null>(null)
   const showInput = forceInput || quantity > QUANTITY_DROPDOWN_MAX
-  const pricing = { unitCents: unitCents ?? 0, otherTicketCount }
+  const pricing = { unitCents: unitCents ?? 0, otherSameFormatCount }
   const options = buildQuantityOptions(pricing)
 
   const handleSelect = (value: string) => {

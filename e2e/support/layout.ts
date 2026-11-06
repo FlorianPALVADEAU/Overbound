@@ -21,7 +21,10 @@ export const assertNoElementOverflowsParent = async (page: Page) => {
     const elements = document.querySelectorAll<HTMLElement>('body *')
 
     elements.forEach((el) => {
-      const parent = el.parentElement
+      // A `display: contents` parent (a fieldset used only to disable its
+      // children) has no box: compare against the first ancestor that has one.
+      let parent = el.parentElement
+      while (parent && window.getComputedStyle(parent).display === 'contents') parent = parent.parentElement
       if (!parent) return
       const style = window.getComputedStyle(el)
       // Elements taken out of normal flow are expected to be sized/placed
