@@ -1,4 +1,4 @@
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { EVENT_SLUG, stubCheckoutApis } from './support/checkout'
 import { assertNoElementOverflowsParent, assertNoHorizontalScroll, assertTapTargetsAreLargeEnough } from './support/layout'
 
@@ -29,5 +29,17 @@ test.describe('Checkout layout', () => {
     await page.getByRole('button', { name: 'Payer en sécurité' }).filter({ visible: true }).first().click()
     await page.getByText('Ce champ est obligatoire.').first().waitFor()
     await assertLayout(page)
+  })
+
+  test('the checkout is a closed tunnel: no site navigation, footer or way out', async ({ page }) => {
+    await stubCheckoutApis(page, { signedIn: true })
+    await page.goto(`/events/${EVENT_SLUG}/register`)
+    await page.locator('#participant-1-firstName').waitFor()
+
+    await expect(page.getByRole('navigation')).toHaveCount(0)
+    await expect(page.getByRole('contentinfo').filter({ hasText: 'Overbound' })).toHaveCount(0)
+    await expect(page.getByText('Inscription et paiement sécurisés')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Quitter|Retour/ })).toHaveCount(0)
+    await expect(page.locator('header a')).toHaveCount(0)
   })
 })

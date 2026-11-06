@@ -15,6 +15,8 @@ import { CookieConsentBanner } from '@/components/consent/CookieConsentBanner'
 import type { Session } from '@supabase/supabase-js'
 import { PopupArbiterProvider } from '@/components/popups/PopupArbiterProvider'
 import { GlobalLuckyWheelWidget } from '@/components/lucky-wheel/GlobalLuckyWheelWidget'
+import { CheckoutHeader } from './CheckoutHeader'
+import { isCheckoutPath } from '@/lib/checkout/checkoutRoute'
 
 interface LayoutProps {
   children: ReactNode
@@ -29,7 +31,10 @@ export function Layout({ children }: LayoutProps) {
   const { data, isLoading } = useSession()
   const queryClient = useQueryClient()
   // The account area has its own fixed bottom navigation; the site footer would sit underneath it on mobile.
-  const isAccountArea = usePathname()?.startsWith('/account') ?? false
+  const pathname = usePathname()
+  const isAccountArea = pathname?.startsWith('/account') ?? false
+  // Purchase tunnel: focused screen, no site navigation, footer or marketing popups.
+  const isCheckout = isCheckoutPath(pathname)
   // Segment (not URL): the maintenance screen is served by a rewrite, so the URL is the visitor's original one.
   const isMaintenanceScreen = useSelectedLayoutSegment() === 'maintenance'
   const supabase = createSupabaseBrowser()
@@ -128,21 +133,29 @@ export function Layout({ children }: LayoutProps) {
           Aller au contenu principal
         </a>
         <MaintenanceBanner isAdmin={data?.profile?.role === 'admin'} />
-        <Header
-          user={data?.user ?? null}
-          profile={data?.profile ?? null}
-          alerts={data?.alerts ?? null}
-          isLoading={isLoading}
-        />
-        <PromotionsBanner />
-        <TshirtOfferBar />
+        {isCheckout ? (
+          <CheckoutHeader />
+        ) : (
+          <>
+            <Header
+              user={data?.user ?? null}
+              profile={data?.profile ?? null}
+              alerts={data?.alerts ?? null}
+              isLoading={isLoading}
+            />
+            <PromotionsBanner />
+            <TshirtOfferBar />
+          </>
+        )}
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">{children}</main>
-        <div className={isAccountArea ? 'hidden md:block' : undefined}>
-          <Footer />
-        </div>
+        {!isCheckout && (
+          <div className={isAccountArea ? 'hidden md:block' : undefined}>
+            <Footer />
+          </div>
+        )}
         <CookieConsentBanner />
-        {/* Popup promotion for non-authenticated users */}
-        <PopupPromotion isAuthenticated={!!data?.user} />
+        {/* Popup promotion for non-authenticated users; never inside the purchase tunnel */}
+        {!isCheckout && <PopupPromotion isAuthenticated={!!data?.user} />}
         {/* FDR-0015 §7.1: Lucky Wheel is site-wide, not just on event pages
             -- it resolves its own event from context (the current event
             page, or the featured event elsewhere). */}
