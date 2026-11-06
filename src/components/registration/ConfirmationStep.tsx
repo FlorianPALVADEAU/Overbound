@@ -11,12 +11,11 @@ import { WAIVER_CLAUSES, WAIVER_INTRO, WAIVER_SUMMARY, WAIVER_TITLE } from '@/co
 import { CONSENT_FIELD_IDS } from '@/lib/checkout/fieldIds'
 
 interface ConfirmationStepProps {
-  disclaimerRead: boolean
+  /** One checkbox: the waiver is read and accepted together. */
   disclaimerAccepted: boolean
   rulebookAccepted: boolean
   signatureImage: string | null
   showErrors: boolean
-  onDisclaimerReadChange: (checked: boolean) => void
   onDisclaimerAcceptedChange: (checked: boolean) => void
   onRulebookAcceptedChange: (checked: boolean) => void
   onSignatureChange: (image: string | null) => void
@@ -30,12 +29,10 @@ interface ConfirmationStepProps {
 }
 
 export default function ConfirmationStep({
-  disclaimerRead,
   disclaimerAccepted,
   rulebookAccepted,
   signatureImage,
   showErrors,
-  onDisclaimerReadChange,
   onDisclaimerAcceptedChange,
   onRulebookAcceptedChange,
   onSignatureChange,
@@ -50,19 +47,11 @@ export default function ConfirmationStep({
   const showMinorAttestation = minorAttestation !== undefined
   const showMinorAttestationError = showErrors && showMinorAttestation && !minorAttestation
   const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false)
-  const showDisclaimerReadError = showErrors && !disclaimerRead
   const showDisclaimerAcceptedError = showErrors && !disclaimerAccepted
   const showRulebookAcceptedError = showErrors && !rulebookAccepted
   const showSignatureError = showErrors && !signatureImage
 
   const consents = [
-    {
-      id: CONSENT_FIELD_IDS.disclaimerRead,
-      checked: disclaimerRead,
-      error: showDisclaimerReadError,
-      onChange: onDisclaimerReadChange,
-      label: "J'ai lu et compris la décharge de responsabilité.",
-    },
     {
       id: CONSENT_FIELD_IDS.rulebookAccepted,
       checked: rulebookAccepted,
@@ -75,7 +64,7 @@ export default function ConfirmationStep({
       checked: disclaimerAccepted,
       error: showDisclaimerAcceptedError,
       onChange: onDisclaimerAcceptedChange,
-      label: "J'accepte la décharge ci-dessus.",
+      label: "J'ai lu et j'accepte la décharge de responsabilité ci-dessus.",
     },
     ...(showGroupAttestation
       ? [

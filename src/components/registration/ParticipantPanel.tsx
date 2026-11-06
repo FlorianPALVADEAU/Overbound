@@ -1,3 +1,4 @@
+import type { EmergencyContactSuggestion } from '@/lib/checkout/emergencyContact'
 import { useId } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { joinName } from '@/lib/registration'
@@ -16,6 +17,8 @@ interface ParticipantPanelProps {
   onWaveSelect: (participantId: string, waveIndex: number | null) => void
   errors: ParticipantErrors
   groupAnchor: { waveIndex: number; startTime: string } | null
+  /** Emergency contact of another participant, offered while this one has none. */
+  emergencyContactSuggestion: EmergencyContactSuggestion | null
   companionOffer: CompanionOffer | null
   currency: string
   tshirtOffered: boolean

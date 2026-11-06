@@ -1,3 +1,4 @@
+import { emergencyContactToReuse } from '@/lib/checkout/emergencyContact'
 import { useState, type ReactNode } from 'react'
 import { Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -124,6 +125,7 @@ export default function ParticipantsStep({
               onWaveSelect={onWaveSelect}
               errors={errors}
               groupAnchor={groupAnchor}
+              emergencyContactSuggestion={emergencyContactToReuse(participants, participant.id)}
               companionOffer={resolveCompanionOffer(ticketMap[participant.ticketId] ?? {}, Object.values(ticketMap), eventDate)}
               currency={currency}
               tshirtOffered={isParticipantOffered(tshirtOffer, index)}

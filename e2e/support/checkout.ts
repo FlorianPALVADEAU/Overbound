@@ -203,7 +203,7 @@ export const fillParticipant = async (page: Page, position: number, participant:
 
 /** Accepts the waiver and rulebook, then draws a signature. */
 export const signWaiver = async (page: Page) => {
-  for (const id of ['disclaimer-read', 'rulebook-accepted', 'disclaimer-accepted']) await page.locator(`#${id}`).click()
+  for (const id of ['rulebook-accepted', 'disclaimer-accepted']) await page.locator(`#${id}`).click()
   const pad = page.locator('#signature-pad canvas')
   await pad.scrollIntoViewIfNeeded()
   const box = await pad.boundingBox()
