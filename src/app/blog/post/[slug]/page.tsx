@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { containerClass, DISPLAY_TITLE, Pill } from '@/components/ds'
 import { cn } from '@/lib/utils'
 import BlogArticleItem from '@/components/blog/BlogArticleItem'
+import BlogViewTracker from '@/components/blog/BlogViewTracker'
 import { ArticleTocAside, ArticleTocMobile } from '@/components/blog/ArticleToc'
 
 // Articles are MDX files compiled at build time: static pages, no revalidation window.
@@ -97,7 +98,7 @@ export default async function BlogPostPage(
             headline: post.title,
             datePublished: post.publishedAt,
             dateModified: post.updatedAt || post.publishedAt,
-            author: { '@type': 'Person', name: post.author.name },
+            author: { '@type': 'Organization', name: 'Overbound Race' },
             publisher: {
               '@type': 'Organization',
               name: 'Overbound Race',
@@ -197,6 +198,7 @@ export default async function BlogPostPage(
         <div aria-hidden className="hidden xl:block" />
 
         <article className="mx-auto w-full min-w-0 max-w-article">
+          <BlogViewTracker slug={post.slug} />
           <ArticleTocMobile items={toc} />
           <div className="prose-overbound">{renderBlogMarkdown(post.content)}</div>
         </article>
