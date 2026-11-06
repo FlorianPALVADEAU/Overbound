@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
+import type { ParticipantSex } from '@/lib/checkout/participantSex'
 
 export interface SessionProfile {
   full_name?: string | null
   avatar_url?: string | null
   phone?: string | null
   date_of_birth?: string | null
+  sex?: ParticipantSex | null
   marketing_opt_in?: boolean | null
   role?: string | null
 }

@@ -1,10 +1,12 @@
 import { UUID, UserRole, Timestamp, RaceType } from "./base.type";
+import type { ParticipantSex } from "@/lib/checkout/participantSex";
 
 export interface Profile {
   id: UUID; // ref to auth.users.id
   full_name: string | null;
   phone: string | null;
   date_of_birth: string | null;
+  sex?: ParticipantSex | null;
   marketing_opt_in?: boolean | null;
   role: UserRole;
   created_at: Timestamp;
