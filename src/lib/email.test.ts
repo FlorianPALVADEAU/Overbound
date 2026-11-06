@@ -60,6 +60,18 @@ describe('sendTicketEmail', () => {
     expect(Buffer.from(payload.attachments[0].content, 'base64').subarray(0, 4).toString()).toBe('%PDF')
   })
 
+  it('copies the minor ticket to the representative when a copy address is given', async () => {
+    await sendTicketEmail({ ...baseParams, isMinor: true, cc: 'anne.martin@example.com' })
+
+    expect(sendMock.mock.calls[0][0]).toMatchObject({ to: baseParams.to, cc: 'anne.martin@example.com' })
+  })
+
+  it('sends no cc field when no copy address is given', async () => {
+    await sendTicketEmail(baseParams)
+
+    expect(sendMock.mock.calls[0][0]).not.toHaveProperty('cc')
+  })
+
   it('attaches nothing to an adult ticket', async () => {
     await sendTicketEmail(baseParams)
 

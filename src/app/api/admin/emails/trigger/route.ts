@@ -132,7 +132,7 @@ const handlePost = async (request: NextRequest) => {
         return 'Email de remerciement envoyé.'
       },
       ticket_confirmation: async () => {
-        await sendTicketEmail({
+        const sent = await sendTicketEmail({
           to: user.email!,
           participantName: fullName ?? 'Athlète',
           eventTitle: 'Ultra Arena',
@@ -142,6 +142,8 @@ const handlePost = async (request: NextRequest) => {
           qrUrl: SAMPLE_QR,
           manageUrl: `${ACCOUNT_URL}/tickets`,
         })
+        // Resend reports a rejected send in `error` without throwing: a test send must not claim success.
+        if (sent.error) throw new Error(sent.error.message)
         return 'Billet de démonstration envoyé.'
       },
       b2b_quote_confirmation: async () => {

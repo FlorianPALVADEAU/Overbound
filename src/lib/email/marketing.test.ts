@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
-  sendNewEventAnnouncementEmailMock,
   sendPriceChangeReminderEmailMock,
   sendPromoCampaignEmailMock,
   ledgerMock,
@@ -10,7 +9,6 @@ const {
   getListRecipientsMock,
   getMultipleListsRecipientsMock,
 } = vi.hoisted(() => ({
-  sendNewEventAnnouncementEmailMock: vi.fn(),
   sendPriceChangeReminderEmailMock: vi.fn(),
   sendPromoCampaignEmailMock: vi.fn(),
   ledgerMock: { loadFinished: vi.fn(), record: vi.fn() },
@@ -21,7 +19,6 @@ const {
 }))
 
 vi.mock('@/lib/email', () => ({
-  sendNewEventAnnouncementEmail: sendNewEventAnnouncementEmailMock,
   sendPriceChangeReminderEmail: sendPriceChangeReminderEmailMock,
   sendPromoCampaignEmail: sendPromoCampaignEmailMock,
 }))
@@ -39,12 +36,10 @@ vi.mock('@/lib/subscriptions/lists', () => ({
 }))
 
 import {
-  dispatchNewEventAnnouncement,
   dispatchPriceChangeReminder,
   dispatchPromoCampaign,
   getRecipientsFromList,
   getRecipientsFromLists,
-  getEventAnnouncementRecipients,
   getPriceAlertRecipients,
   getMarketingOptInRecipients,
 } from './marketing'
@@ -58,12 +53,6 @@ const noPreferencesAdmin = () => ({
 })
 
 const sentOk = { ok: true, messageId: 'm-1' }
-const event = {
-  eventTitle: 'Ultra Arena',
-  eventDate: '12 septembre 2026',
-  eventLocation: 'SQY',
-  eventUrl: 'https://overbound-race.com/events/ultra-arena',
-}
 
 describe('email/marketing', () => {
   const originalResendKey = process.env.RESEND_API_KEY
@@ -75,82 +64,12 @@ describe('email/marketing', () => {
     ledgerMock.record.mockResolvedValue({ ok: true })
     filterSuppressedMock.mockImplementation(async (recipients: unknown[]) => recipients)
     supabaseAdminMock.mockReturnValue(noPreferencesAdmin())
-    sendNewEventAnnouncementEmailMock.mockResolvedValue(sentOk)
     sendPriceChangeReminderEmailMock.mockResolvedValue(sentOk)
     sendPromoCampaignEmailMock.mockResolvedValue(sentOk)
   })
 
   afterEach(() => {
     process.env.RESEND_API_KEY = originalResendKey
-  })
-
-  describe('dispatchNewEventAnnouncement', () => {
-    it('sends the announcement to every recipient and records it in the campaign ledger', async () => {
-      const report = await dispatchNewEventAnnouncement({
-        recipients: [{ userId: 'u1', email: 'a@example.com', fullName: 'Alice' }],
-        ...event,
-      })
-
-      expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledWith(
-        expect.objectContaining({ to: 'a@example.com', eventTitle: 'Ultra Arena' }),
-      )
-      expect(ledgerMock.record).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'a@example.com', status: 'sent', userId: 'u1' }),
-      )
-      expect(report).toMatchObject({ sent: 1, failed: 0 })
-    })
-
-    it('mails a subscriber without an account, which the old email_logs key could not record', async () => {
-      await dispatchNewEventAnnouncement({ recipients: [{ email: 'guest@example.com' }], ...event })
-
-      expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledWith(
-        expect.objectContaining({ to: 'guest@example.com' }),
-      )
-      expect(ledgerMock.record).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'guest@example.com', userId: null, status: 'sent' }),
-      )
-    })
-
-    it('records a provider rejection as failed instead of sent', async () => {
-      sendNewEventAnnouncementEmailMock.mockResolvedValue({
-        ok: false,
-        error: { kind: 'permanent', code: 'validation_error', message: 'bad address' },
-      })
-
-      const report = await dispatchNewEventAnnouncement({ recipients: [{ email: 'a@example.com' }], ...event })
-
-      expect(report).toMatchObject({ sent: 0, failed: 1 })
-      expect(ledgerMock.record).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed_permanent' }))
-    })
-
-    it('does not mail an address that was already sent this campaign', async () => {
-      ledgerMock.loadFinished.mockResolvedValue(new Set(['a@example.com']))
-
-      await dispatchNewEventAnnouncement({ recipients: [{ email: 'a@example.com' }], ...event })
-
-      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
-    })
-
-    it('does not mail a suppressed address', async () => {
-      filterSuppressedMock.mockResolvedValue([])
-
-      await dispatchNewEventAnnouncement({ recipients: [{ email: 'bounced@example.com' }], ...event })
-
-      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
-    })
-
-    it('sends nothing when the selected provider is not configured', async () => {
-      delete process.env.RESEND_API_KEY
-
-      const report = await dispatchNewEventAnnouncement({
-        recipients: [{ userId: 'u1', email: 'a@example.com' }],
-        ...event,
-      })
-
-      expect(report).toBeNull()
-      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
-      expect(ledgerMock.record).not.toHaveBeenCalled()
-    })
   })
 
   describe('dispatchPriceChangeReminder', () => {
@@ -214,6 +133,13 @@ describe('email/marketing', () => {
   })
 
   describe('digest frequency filtering', () => {
+    const promo = {
+      title: 'Promo spéciale',
+      message: 'Profite de -20%',
+      ctaLabel: "S'inscrire",
+      ctaUrl: 'https://overbound-race.com/events/ultra-arena',
+    }
+
     it('filters out recipients whose digest_frequency preference is not "immediate"', async () => {
       supabaseAdminMock.mockReturnValue({
         from: () => ({
@@ -229,16 +155,16 @@ describe('email/marketing', () => {
         }),
       })
 
-      await dispatchNewEventAnnouncement({
+      await dispatchPromoCampaign({
+        ...promo,
         recipients: [
           { userId: 'u1', email: 'daily@example.com' },
           { userId: 'u2', email: 'immediate@example.com' },
         ],
-        ...event,
       })
 
-      expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledTimes(1)
-      expect(sendNewEventAnnouncementEmailMock).toHaveBeenCalledWith(
+      expect(sendPromoCampaignEmailMock).toHaveBeenCalledTimes(1)
+      expect(sendPromoCampaignEmailMock).toHaveBeenCalledWith(
         expect.objectContaining({ to: 'immediate@example.com' }),
       )
     })
@@ -253,10 +179,10 @@ describe('email/marketing', () => {
       })
 
       await expect(
-        dispatchNewEventAnnouncement({ recipients: [{ userId: 'u1', email: 'a@example.com' }], ...event }),
+        dispatchPromoCampaign({ ...promo, recipients: [{ userId: 'u1', email: 'a@example.com' }] }),
       ).rejects.toThrow('preference read failed')
 
-      expect(sendNewEventAnnouncementEmailMock).not.toHaveBeenCalled()
+      expect(sendPromoCampaignEmailMock).not.toHaveBeenCalled()
     })
   })
 
@@ -277,12 +203,6 @@ describe('email/marketing', () => {
 
       expect(getMultipleListsRecipientsMock).toHaveBeenCalledWith(['events-announcements', 'price-alerts'])
       expect(result).toEqual([{ email: 'b@example.com' }])
-    })
-
-    it('getEventAnnouncementRecipients uses the events-announcements list', async () => {
-      getListRecipientsMock.mockResolvedValue([])
-      await getEventAnnouncementRecipients()
-      expect(getListRecipientsMock).toHaveBeenCalledWith('events-announcements')
     })
 
     it('getPriceAlertRecipients uses the price-alerts list', async () => {

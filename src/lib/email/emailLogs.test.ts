@@ -123,7 +123,7 @@ describe('emailLogs', () => {
 
       await getLastEmailLog({
         userId: 'user-1',
-        emailType: 'event_updated',
+        emailType: 'admin_digest',
         contextFilters: { event_id: 'event-1' },
       })
 

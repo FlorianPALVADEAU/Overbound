@@ -1,5 +1,4 @@
 import {
-  sendNewEventAnnouncementEmail,
   sendPriceChangeReminderEmail,
   sendPromoCampaignEmail,
 } from '@/lib/email'
@@ -16,37 +15,12 @@ import {
   getMultipleListsRecipients,
 } from '@/lib/subscriptions/lists'
 
-type MarketingEmailType = 'marketing_new_event' | 'marketing_price_change' | 'marketing_promo'
+type MarketingEmailType = 'marketing_price_change' | 'marketing_promo'
 
 export interface MarketingRecipient {
   userId?: string | null
   email: string
   fullName?: string | null
-}
-
-export async function dispatchNewEventAnnouncement(params: {
-  recipients: MarketingRecipient[]
-  eventTitle: string
-  eventDate: string
-  eventLocation: string
-  eventUrl: string
-  highlight?: string | null
-}) {
-  return dispatchMarketingEmails('marketing_new_event', params.recipients, async (recipient) => {
-    return sendNewEventAnnouncementEmail({
-      to: recipient.email,
-      fullName: recipient.fullName,
-      userId: recipient.userId || undefined,
-      eventTitle: params.eventTitle,
-      eventDate: params.eventDate,
-      eventLocation: params.eventLocation,
-      eventUrl: params.eventUrl,
-      highlight: params.highlight,
-    })
-  }, {
-    event_title: params.eventTitle,
-    event_url: params.eventUrl,
-  })
 }
 
 export async function dispatchPriceChangeReminder(params: {
@@ -205,15 +179,6 @@ export async function getRecipientsFromLists(
 }
 
 /**
- * Get recipients for event announcements
- * Uses the 'events-announcements' distribution list
- * @returns Array of recipients subscribed to event announcements
- */
-export async function getEventAnnouncementRecipients(): Promise<MarketingRecipient[]> {
-  return await getListRecipients('events-announcements')
-}
-
-/**
  * Get recipients for price alerts
  * Uses the 'price-alerts' distribution list
  * @returns Array of recipients subscribed to price alerts
@@ -227,7 +192,7 @@ export async function getPriceAlertRecipients(): Promise<MarketingRecipient[]> {
  * Kept for backward compatibility - returns recipients with marketing_opt_in = true
  *
  * Migration guide:
- * - For event announcements: use getEventAnnouncementRecipients()
+ * - For event announcements: use getRecipientsFromList('events-announcements')
  * - For price changes: use getPriceAlertRecipients()
  * - For general marketing: use getRecipientsFromLists(['events-announcements', 'price-alerts', 'news-blog'])
  */
