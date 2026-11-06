@@ -110,12 +110,23 @@ export interface TierAllocation {
   quantity: number
 }
 
+export type ProductFormat = 'open' | 'ranked'
+
+/** One format's group discount: its bibs are counted together, never with the other format (FDR-0019). */
+export interface GroupDiscountLine {
+  format: ProductFormat
+  ticketCount: number
+  percent: number
+  /** Worth of this line on the order, applied or not. */
+  amountCents: number
+}
+
 /** The group discount of an order (FDR-0019). It never adds to a code: the better of the two applies. */
 export interface GroupDiscountResult {
-  percent: number
-  /** Worth of the discount on the order, applied or not. */
+  lines: GroupDiscountLine[]
+  /** Worth of all lines on the order, applied or not. */
   amountCents: number
-  /** False when a code gave more, or when the order has no group discount. */
+  /** False when a code gave more, or when no format reaches a threshold. */
   applied: boolean
 }
 

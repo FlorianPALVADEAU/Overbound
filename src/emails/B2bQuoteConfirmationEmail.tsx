@@ -95,7 +95,7 @@ export function B2bQuoteConfirmationEmail({
         </tbody>
       </table>
       <SmallPrint>
-        Prix par billet, toutes taxes comprises. Les billets OPEN et RANKED d’une même commande comptent ensemble.
+        Prix par billet, toutes taxes comprises. La remise se compte par format : un billet OPEN et un billet RANKED d’une même commande ne se comptent pas ensemble.
       </SmallPrint>
 
       <Callout title="À prévoir côté équipe">

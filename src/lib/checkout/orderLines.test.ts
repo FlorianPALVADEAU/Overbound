@@ -70,7 +70,7 @@ describe('buildOrderLines', () => {
       promos: [percentCode('AMB10', 10, { isAmbassador: true })],
     })
     expect(lines.filter((line) => line.kind === 'discount')).toEqual([
-      { key: 'group-discount', kind: 'discount', label: 'Remise groupe −20 %', details: [], amountCents: -6000 },
+      { key: 'group-discount-open', kind: 'discount', label: 'Remise groupe OPEN −20 %', details: [], amountCents: -6000 },
       {
         key: 'discount-AMB10',
         kind: 'discount',
@@ -136,7 +136,6 @@ describe('buildOrderLines — options under their ticket', () => {
       ['upsell', true],
       ['ticket', false],
       ['upsell', true],
-      ['discount', false], // two bibs: the 10 % group discount line
     ])
     expect(lines[1].details).toEqual(['Camille (M)'])
     expect(lines.reduce((total, line) => total + line.amountCents, 0)).toBe(summary.totalDue)

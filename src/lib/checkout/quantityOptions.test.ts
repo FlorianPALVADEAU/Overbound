@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildQuantityOptions, groupTierHints, QUANTITY_DROPDOWN_MAX, quantityOption } from './quantityOptions'
 
-const open = { unitCents: 5999, otherTicketCount: 0 }
+const open = { unitCents: 5999, otherSameFormatCount: 0 }
 
 describe('buildQuantityOptions', () => {
   it('lists 1 to the dropdown maximum', () => {
@@ -18,14 +18,14 @@ describe('buildQuantityOptions', () => {
   })
 
   it('discounts a RANKED price with the same tiers', () => {
-    const [one, two, , , , six] = buildQuantityOptions({ unitCents: 6999, otherTicketCount: 0 })
+    const [one, two, , , , six] = buildQuantityOptions({ unitCents: 6999, otherSameFormatCount: 0 })
     expect([one.percent, two.percent, six.percent]).toEqual([0, 10, 20])
     expect(two.unitCents).toBe(6299)
   })
 
   it('counts the bibs of the other tickets in the order, whatever their format', () => {
-    expect(quantityOption({ ...open, otherTicketCount: 1 }, 1).percent).toBe(10)
-    expect(quantityOption({ unitCents: 6999, otherTicketCount: 5 }, 1).percent).toBe(20)
+    expect(quantityOption({ ...open, otherSameFormatCount: 1 }, 1).percent).toBe(10)
+    expect(quantityOption({ unitCents: 6999, otherSameFormatCount: 5 }, 1).percent).toBe(20)
   })
 })
 

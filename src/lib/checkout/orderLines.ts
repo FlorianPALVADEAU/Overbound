@@ -1,4 +1,5 @@
 import type { PricingSummary, PricingSummaryDiscount } from '@/lib/orderPricing'
+import { groupDiscountLabel } from '@/lib/orderPricing/groupDiscount'
 import type { UpsellSummaryItem } from '@/lib/upsells/summary'
 
 /** One line of an order summary, ready to render. Amounts in cents. */
@@ -116,16 +117,21 @@ const discountLines = (summary: PricingSummary, names: OrderLineNames): OrderLin
     return [{ key: 'discount', kind: 'discount', label: 'Réduction', details: [], amountCents: -summary.discountAmount }]
   }
   const group = summary.groupDiscount
-  const groupLine: OrderLine[] =
-    group?.applied
-      ? [{ key: 'group-discount', kind: 'discount', label: `Remise groupe −${group.percent} %`, details: [], amountCents: -group.amountCents }]
-      : []
+  const groupLines: OrderLine[] = group?.applied
+    ? group.lines.map((line) => ({
+        key: `group-discount-${line.format}`,
+        kind: 'discount' as const,
+        label: groupDiscountLabel(line),
+        details: [],
+        amountCents: -line.amountCents,
+      }))
+    : []
   const codeNote = (discount: PricingSummaryDiscount) => {
     if (discount.upsellId || !group || group.amountCents === 0) return []
     return [group.applied ? GROUP_BEATS_CODE : CODE_BEATS_GROUP]
   }
   return [
-    ...groupLine,
+    ...groupLines,
     ...discounts.map((discount) => ({
       key: `discount-${discount.code}`,
       kind: 'discount' as const,

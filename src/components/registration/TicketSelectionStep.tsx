@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { TICKETS_SECTION_ID } from '@/lib/checkout/fieldIds'
 import { ageRuleSentence } from '@/lib/events/minimumAge'
+import { isOpenFormatTicket } from '@/lib/openSas'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import TicketCard from './TicketCard'
 import type { EventTicket } from './types'
@@ -30,8 +31,14 @@ export default function TicketSelectionStep({
   minimumAge,
   groupBanner,
 }: TicketSelectionStepProps) {
-  const ticketCountExcluding = (ticketId: string) =>
-    tickets.reduce((total, other) => (other.id !== ticketId ? total + (ticketSelections[other.id] ?? 0) : total), 0)
+  // The group discount counts each format apart: OPEN bibs never add to RANKED bibs, and the reverse.
+  const formatOf = (ticket: EventTicket) => isOpenFormatTicket(ticket.name, ticket.race?.name)
+  const sameFormatCountExcluding = (ticket: EventTicket) =>
+    tickets.reduce(
+      (total, other) =>
+        other.id !== ticket.id && formatOf(other) === formatOf(ticket) ? total + (ticketSelections[other.id] ?? 0) : total,
+      0,
+    )
   const nothingSelected = Object.values(ticketSelections).every((quantity) => !quantity)
 
   return (
@@ -47,7 +54,7 @@ export default function TicketSelectionStep({
           onQuantityChange={onTicketQuantityChange}
           defaultCurrency={defaultCurrency}
           sellingTier={sellingTier}
-          otherTicketCount={ticketCountExcluding(ticket.id)}
+          otherSameFormatCount={sameFormatCountExcluding(ticket)}
         />
       ))}
 

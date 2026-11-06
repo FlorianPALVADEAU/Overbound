@@ -14,8 +14,8 @@ interface OrderSummarySidebarProps {
   hasFlexible: boolean
   ticketCount: number
   upsellCount: number
-  /** Percentage of the group discount when it applies to the order. */
-  groupDiscountPercent: number | null
+  /** One label per format that got the group discount, empty when none applies. */
+  groupDiscountLabels: string[]
   /** Why the order cannot be priced or a code was left out, in the visitor's words. */
   pricingNotices: string[]
   appliedPromos: AppliedPromo[]
@@ -38,7 +38,7 @@ export default function OrderSummarySidebar({
   hasFlexible,
   ticketCount,
   upsellCount,
-  groupDiscountPercent,
+  groupDiscountLabels,
   pricingNotices,
   appliedPromos,
   promoInput,
@@ -61,9 +61,11 @@ export default function OrderSummarySidebar({
             {plural(ticketCount, 'billet')}
             {upsellCount > 0 ? ` · ${plural(upsellCount, 'option')}` : ''}
           </p>
-          {groupDiscountPercent ? (
-            <p className="text-sm font-medium text-primary">Remise groupe −{groupDiscountPercent} % appliquée</p>
-          ) : null}
+          {groupDiscountLabels.map((label) => (
+            <p key={label} className="text-sm font-medium text-primary">
+              {label} appliquée
+            </p>
+          ))}
         </div>
       )}
 

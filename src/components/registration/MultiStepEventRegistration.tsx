@@ -22,6 +22,7 @@ import { ADULT_AGE } from '@/lib/checkout/participantAge'
 import { birthDateRefusals } from '@/lib/checkout/ageRefusals'
 import type { GroupIntent } from '@/lib/groups/invite'
 import { isOpenFormatTicket } from '@/lib/openSas'
+import { groupDiscountLabel } from '@/lib/orderPricing/groupDiscount'
 import { pricingErrorMessage, promoRejectionMessage } from '@/lib/orderPricing'
 import ConfirmationStep from './ConfirmationStep'
 import GroupPanel from './GroupPanel'
@@ -375,7 +376,7 @@ export default function MultiStepEventRegistration({
               hasFlexible={hasFlexible}
               ticketCount={totalParticipants}
               upsellCount={upsellCount}
-              groupDiscountPercent={summary.groupDiscount?.applied ? summary.groupDiscount.percent : null}
+              groupDiscountLabels={summary.groupDiscount?.applied ? summary.groupDiscount.lines.map(groupDiscountLabel) : []}
               pricingNotices={pricingNotices}
               appliedPromos={promo.appliedPromos}
               promoInput={promo.promoInput}
