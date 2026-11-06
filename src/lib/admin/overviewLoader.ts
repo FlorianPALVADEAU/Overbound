@@ -36,7 +36,7 @@ export async function loadRegistrations(admin: Admin, eventIds: string[]): Promi
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await admin
       .from('registrations')
-      .select('id, event_id, order_id, ticket_id, created_at, checked_in, cancelled_at, wave_index')
+      .select('id, event_id, order_id, ticket_id, created_at, checked_in, cancelled_at, wave_index, sex')
       .in('event_id', eventIds)
       .order('created_at', { ascending: true })
       .order('id', { ascending: true })

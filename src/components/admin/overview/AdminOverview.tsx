@@ -7,6 +7,7 @@ import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { ExternalToolLinks } from '@/components/admin/overview/ExternalToolLinks'
 import { OverviewEventContext } from '@/components/admin/overview/OverviewEventContext'
 import { SalesChart } from '@/components/admin/overview/SalesChart'
+import { SexBreakdownCard } from '@/components/admin/overview/SexBreakdownCard'
 import { Disclosure, StatRow } from '@/components/ds'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -185,7 +186,10 @@ export function AdminOverview({ eventId }: { eventId: string | null }) {
             {data.nextEvent ? <NextEventCard event={data.nextEvent} /> : null}
           </div>
 
-          <TicketBreakdown tickets={data.tickets} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <SexBreakdownCard sex={data.sex} />
+            <TicketBreakdown tickets={data.tickets} />
+          </div>
         </>
       )}
 

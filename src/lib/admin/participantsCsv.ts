@@ -3,6 +3,8 @@ export interface ParticipantCsvRow {
   name: string | null
   email: string
   ticketName: string | null
+  /** Null when the sex was never recorded. */
+  sex: string | null
   waveIndex: number | null
   startTime: string | null
   group: string | null
@@ -19,6 +21,7 @@ const HEADER = [
   'nom',
   'email',
   'billet',
+  'sexe',
   'sas',
   'depart',
   'groupe',
@@ -51,6 +54,7 @@ export const toParticipantsCsv = (rows: ParticipantCsvRow[]): string =>
         row.name,
         row.email,
         row.ticketName,
+        row.sex,
         row.waveIndex,
         row.startTime,
         row.group,

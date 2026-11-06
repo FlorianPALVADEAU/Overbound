@@ -10,6 +10,7 @@ import {
   type EventParticipantCheckInFilter,
   type EventParticipantRow,
   type EventParticipantSort,
+  type EventParticipantSexFilter,
   type EventParticipantStatusFilter,
 } from '@/app/api/admin/events/participantsQueries'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
@@ -25,6 +26,11 @@ import {
   parseParticipantUrlState,
   writeParticipantUrlState,
 } from './participantUrlState'
+import {
+  PARTICIPANT_SEX_BADGE_CLASS,
+  PARTICIPANT_SEX_LABELS,
+  PARTICIPANT_SEX_UNKNOWN_LABEL,
+} from '@/lib/shared/presentation/participantSex'
 import { Badge } from '@/components/ui/badge'
 import { orderStatusLabel } from '@/lib/admin/ordersList'
 import { RefundedBadge } from '@/components/admin/ui/RefundedBadge'
@@ -67,6 +73,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   const [status, setStatus] = useState<EventParticipantStatusFilter>(initialUrlState.status)
   const [ticketId, setTicketId] = useState<string | null>(initialUrlState.ticketId)
   const [wave, setWave] = useState<string | null>(initialUrlState.wave)
+  const [sex, setSex] = useState<EventParticipantSexFilter>(initialUrlState.sex)
   const [sort, setSort] = useState<EventParticipantSort>(initialUrlState.sort)
   const [direction, setDirection] = useState<'asc' | 'desc'>(initialUrlState.direction)
   const [limit, setLimit] = useState(initialUrlState.limit)
@@ -115,6 +122,11 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     setWave(value || null)
   }
 
+  const changeSex = (value: string) => {
+    resetPagination()
+    setSex(value as EventParticipantSexFilter)
+  }
+
   const changeSort = (value: string) => {
     resetPagination()
     setSort(value as EventParticipantSort)
@@ -133,6 +145,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
     setStatus((current) => current === next.status ? current : next.status)
     setTicketId((current) => current === next.ticketId ? current : next.ticketId)
     setWave((current) => current === next.wave ? current : next.wave)
+    setSex((current) => current === next.sex ? current : next.sex)
     setSort((current) => current === next.sort ? current : next.sort)
     setDirection((current) => current === next.direction ? current : next.direction)
     setLimit((current) => current === next.limit ? current : next.limit)
@@ -142,15 +155,15 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
   }, [eventId, searchParams])
 
   useEffect(() => {
-    const next = writeParticipantUrlState(searchParams, { checkIn, status, ticketId, wave, sort, direction, cursor, limit, selectedId: selectedParticipantId })
+    const next = writeParticipantUrlState(searchParams, { checkIn, status, ticketId, wave, sex, sort, direction, cursor, limit, selectedId: selectedParticipantId })
     const current = searchParams.toString()
     if (next === current) return
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
-  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, selectedParticipantId, sort, status, ticketId, wave])
+  }, [checkIn, cursor, direction, limit, pathname, router, searchParams, selectedParticipantId, sex, sort, status, ticketId, wave])
 
   const params = useMemo(
-    () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, status, ticketId, wave, sort }),
-    [checkIn, cursor, deferredSearch, direction, eventId, limit, sort, status, ticketId, wave],
+    () => ({ eventId, cursor, direction, limit, query: deferredSearch || undefined, checkIn, status, ticketId, wave, sex, sort }),
+    [checkIn, cursor, deferredSearch, direction, eventId, limit, sex, sort, status, ticketId, wave],
   )
   const { data, error, isLoading, isFetching, refetch } = useEventParticipants(params)
   const { data: options } = useEventParticipantOptions(eventId)
@@ -217,6 +230,17 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
       ],
     },
     {
+      id: 'sex',
+      label: 'Sexe',
+      value: sex === 'all' ? '' : sex,
+      allLabel: 'Tous les sexes',
+      options: [
+        { value: 'homme', label: PARTICIPANT_SEX_LABELS.homme },
+        { value: 'femme', label: PARTICIPANT_SEX_LABELS.femme },
+        { value: 'none', label: PARTICIPANT_SEX_UNKNOWN_LABEL },
+      ],
+    },
+    {
       id: 'sort',
       label: 'Trier par',
       value: sort,
@@ -261,6 +285,14 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
       cell: (participant) => <><p>{participant.ticket.name ?? '—'}</p><p className="text-xs text-muted-foreground">{participant.ticket.operations.status === 'unconfigured' ? 'Règles à configurer' : participant.ticket.operations.departureMode === 'wave' ? 'Départ par SAS' : participant.ticket.operations.departureMode === 'fixed' ? 'Départ fixe' : 'Aucun départ géré'}</p></>,
     },
     { id: 'bib', mobile: 'detail', header: 'Dossard', cell: (participant) => participant.registration.bibNumber ?? '—' },
+    {
+      id: 'sex',
+      mobile: 'detail',
+      header: 'Sexe',
+      cell: (participant) => participant.registration.sex
+        ? <Badge variant="outline" className={PARTICIPANT_SEX_BADGE_CLASS[participant.registration.sex]}>{PARTICIPANT_SEX_LABELS[participant.registration.sex]}</Badge>
+        : <span className="text-xs text-muted-foreground">{PARTICIPANT_SEX_UNKNOWN_LABEL}</span>,
+    },
     {
       id: 'departure',
       mobile: 'detail',
@@ -353,6 +385,7 @@ export function EventParticipantsList({ eventId }: EventParticipantsListProps) {
           if (filterId === 'status') changeStatus(value || 'all')
           if (filterId === 'ticket') changeTicket(value)
           if (filterId === 'wave') changeWave(value)
+          if (filterId === 'sex') changeSex(value || 'all')
           if (filterId === 'sort') changeSort(value as EventParticipantSort)
           if (filterId === 'direction') {
             resetPagination()

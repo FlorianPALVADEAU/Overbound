@@ -2,6 +2,7 @@ export type ParticipantSort = 'created_at' | 'email'
 export type ParticipantCheckIn = 'all' | 'checked_in' | 'not_checked_in'
 export type ParticipantDirection = 'asc' | 'desc'
 export type ParticipantStatus = 'all' | 'active' | 'cancelled'
+export type ParticipantSexFilter = 'all' | 'homme' | 'femme' | 'none'
 
 export interface ParticipantUrlState {
   eventId?: string
@@ -12,6 +13,7 @@ export interface ParticipantUrlState {
   ticketId: string | null
   /** A SAS number as text, or `none`. */
   wave: string | null
+  sex: ParticipantSexFilter
   cursor: string | null
   limit: number
   selectedId: string | null
@@ -29,6 +31,7 @@ export const DEFAULT_PARTICIPANT_URL_STATE: Omit<ParticipantUrlState, 'eventId'>
   status: 'all',
   ticketId: null,
   wave: null,
+  sex: 'all',
   cursor: null,
   limit: 50,
   selectedId: null,
@@ -53,6 +56,7 @@ export function parseParticipantUrlState(
   const status = searchParams.get('status')
   const ticketId = searchParams.get('ticket')
   const wave = searchParams.get('wave')
+  const sex = searchParams.get('sex')
 
   return {
     eventId,
@@ -64,6 +68,7 @@ export function parseParticipantUrlState(
     status: status === 'active' || status === 'cancelled' ? status : DEFAULT_PARTICIPANT_URL_STATE.status,
     ticketId: ticketId && UUID.test(ticketId) ? ticketId : null,
     wave: wave && WAVE.test(wave) ? wave : null,
+    sex: sex === 'homme' || sex === 'femme' || sex === 'none' ? sex : DEFAULT_PARTICIPANT_URL_STATE.sex,
     cursor: searchParams.get('cursor') || null,
     limit: LIMITS.has(limit) ? limit : DEFAULT_PARTICIPANT_URL_STATE.limit,
     selectedId: searchParams.get('selected') || null,
@@ -72,7 +77,7 @@ export function parseParticipantUrlState(
 
 export function writeParticipantUrlState(
   searchParams: SearchParamsLike,
-  state: Pick<ParticipantUrlState, 'sort' | 'direction' | 'checkIn' | 'status' | 'ticketId' | 'wave' | 'cursor' | 'limit' | 'selectedId'>,
+  state: Pick<ParticipantUrlState, 'sort' | 'direction' | 'checkIn' | 'status' | 'ticketId' | 'wave' | 'sex' | 'cursor' | 'limit' | 'selectedId'>,
 ): string {
   const next = new URLSearchParams(searchParams.toString())
 
@@ -93,6 +98,9 @@ export function writeParticipantUrlState(
 
   if (state.wave) next.set('wave', state.wave)
   else next.delete('wave')
+
+  if (state.sex === DEFAULT_PARTICIPANT_URL_STATE.sex) next.delete('sex')
+  else next.set('sex', state.sex)
 
   if (state.cursor) next.set('cursor', state.cursor)
   else next.delete('cursor')

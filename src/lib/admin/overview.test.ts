@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAdminOverview, parisDayKey, type OverviewInputs, type OverviewRegistration } from './overview'
+import { buildAdminOverview, buildSexBreakdown, parisDayKey, type OverviewInputs, type OverviewRegistration } from './overview'
 
 const NOW = new Date('2027-06-15T10:00:00Z')
 const EVENT_A = 'event-a'
@@ -16,6 +16,7 @@ const registration = (patch: Partial<OverviewRegistration> = {}): OverviewRegist
   checked_in: false,
   cancelled_at: null,
   wave_index: null,
+  sex: null,
   ...patch,
 })
 
@@ -38,7 +39,34 @@ const base = (patch: Partial<OverviewInputs> = {}): OverviewInputs => ({
   ...patch,
 })
 
+describe('buildSexBreakdown', () => {
+  it('shares the known sexes between men and women, unknown bibs apart', () => {
+    const breakdown = buildSexBreakdown([{ sex: 'homme' }, { sex: 'homme' }, { sex: 'homme' }, { sex: 'femme' }, { sex: null }])
+    expect(breakdown).toEqual({ homme: 3, femme: 1, unknown: 1, hommeShare: 0.75, femmeShare: 0.25 })
+  })
+
+  it('gives no share when no bib has a known sex, instead of 0 %', () => {
+    const breakdown = buildSexBreakdown([{ sex: null }, { sex: null }])
+    expect(breakdown).toEqual({ homme: 0, femme: 0, unknown: 2, hommeShare: null, femmeShare: null })
+  })
+})
+
 describe('buildAdminOverview', () => {
+  it('counts only active bibs in the sex breakdown', () => {
+    const result = buildAdminOverview(
+      base({
+        registrations: [
+          registration({ id: 'r1', sex: 'femme' }),
+          registration({ id: 'r2', sex: 'homme' }),
+          registration({ id: 'r3', sex: 'homme', cancelled_at: '2027-06-14T12:00:00Z' }),
+          registration({ id: 'r4', sex: null }),
+        ],
+      }),
+    )
+    expect(result.sex).toEqual({ homme: 1, femme: 1, unknown: 1, hommeShare: 0.5, femmeShare: 0.5 })
+  })
+
+
   it('counts a multi-bib order once in the revenue', () => {
     const result = buildAdminOverview(
       base({
