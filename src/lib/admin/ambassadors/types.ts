@@ -67,6 +67,16 @@ export interface AdminAmbassadorSheetResponse {
     name: string
     code: string | null
     is_active: boolean
+    /** The ambassador agreed to appear on the public page. */
+    public_opt_in: boolean
+    /** The team hid them from the public page. */
+    public_blocked: boolean
+    /** Description written by the ambassador, shown on the public card. */
+    public_bio: string | null
+    /** The ambassador agreed to show their group (name and invite code) publicly. */
+    public_show_group: boolean
+    /** They uploaded a photo themselves: it is the one shown publicly. */
+    has_public_photo: boolean
   }
   /** Season shown. */
   program_year: number
