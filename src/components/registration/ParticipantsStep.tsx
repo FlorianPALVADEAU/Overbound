@@ -54,7 +54,6 @@ export default function ParticipantsStep({
 }: ParticipantsStepProps) {
   // A participant stays locked until a valid birth date: no other field, SAS or option until then.
   const isLocked = (participant: Participant) => !participant.birthDate.trim() || Boolean(birthDateRefusals[participant.id])
-  const lockedCount = participants.filter(isLocked).length
   // One shortcut at a time: under the first participant others could follow.
   const leader = groupAnchor ? undefined : participants.find((participant) => participantsToAlign(participants, participant.id).length > 0)
   const ids = participants.map((participant) => participant.id)
@@ -75,12 +74,6 @@ export default function ParticipantsStep({
 
   return (
     <div className="space-y-5">
-      {lockedCount > 0 ? (
-        <p role="status" className="rounded-xl border border-primary/40 bg-card p-3 text-sm font-medium text-foreground">
-          Date de naissance d&apos;abord : tant que la date de naissance de chaque participant n&apos;est pas valide, le reste de
-          l&apos;inscription est bloqué. {lockedCount > 1 ? `${lockedCount} participants restent à compléter.` : null}
-        </p>
-      ) : null}
       {groupBanner}
       <TshirtOfferNote
         offer={tshirtOffer}

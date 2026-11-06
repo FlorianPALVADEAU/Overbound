@@ -18,7 +18,7 @@ test.describe('Checkout', () => {
     await expect(pay).toBeEnabled()
     await pay.click()
 
-    await expect(page.locator('#participant-1-firstName')).toBeFocused()
+    await expect(page.locator('#participant-1-birthDate')).toBeFocused()
     await expect(page.getByText('Ce champ est obligatoire.').first()).toBeVisible()
   })
 
@@ -72,17 +72,15 @@ test.describe('Checkout', () => {
     expect(capture.registrationBody()).toMatchObject({ participants: [{ sex: 'femme' }] })
   })
 
-  test('a participant under 18 is refused before any payment', async ({ page }) => {
+  test('a participant under 18 is refused on the birth date, which keeps the rest of the form locked', async ({ page }) => {
     const capture = await stubCheckoutApis(page, { signedIn: true })
     await page.goto(REGISTER_URL)
 
     await fillFirstParticipant(page)
     await page.locator('#participant-1-birthDate').fill('2020-01-01')
-    await signWaiver(page)
-    await payButton(page).click()
 
-    await expect(page.locator('#participant-1-birthDate')).toBeFocused()
     await expect(page.getByText("Il faut avoir 18 ans le jour de l'événement.")).toBeVisible()
+    await expect(page.locator('#participant-1-firstName')).toBeDisabled()
     expect(capture.paymentIntentBody()).toBeNull()
   })
 })
