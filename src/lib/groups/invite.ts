@@ -13,7 +13,7 @@ export const buildInviteMessage = (eventTitle: string, inviteUrl: string) =>
 export const buildWhatsAppUrl = (message: string) => `https://wa.me/?text=${encodeURIComponent(message)}`
 
 /** Group name proposed without asking: "Groupe de Camille", else a neutral fallback. */
-export const defaultGroupName = (fullName: string | null | undefined) => {
-  const firstName = (fullName ?? '').trim().split(/\s+/)[0]
-  return firstName ? `Groupe de ${firstName}` : 'Mon groupe'
+export const defaultGroupName = (firstName: string | null | undefined) => {
+  const name = (firstName ?? '').trim()
+  return name ? `Groupe de ${name}` : 'Mon groupe'
 }

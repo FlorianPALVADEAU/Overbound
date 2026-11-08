@@ -136,7 +136,7 @@ describe('sendReceiptEmail', () => {
 
   const baseParams = {
     to: 'runner@example.com',
-    fullName: 'Alex Runner',
+    firstName: 'Alex',
     invoiceNumber: 'INV-2026-0001',
     invoiceDate: '12 mars 2026',
     eventName: 'Ultra Arena 2026',

@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises'
 import { ImageResponse } from 'next/og'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { formatClockTimeParis } from '@/lib/dateTime'
-import { getFirstName } from '@/lib/share/purchaseShare'
 import { summarizeOrderRegistrations, type OrderSummary } from '@/lib/share/orderSummary'
 
 export const runtime = 'nodejs'
@@ -22,7 +21,7 @@ export async function GET(request: Request) {
 
   let event: { title: string; date: string; location: string } | null
   let team: OrderSummary
-  let fullName: string | null
+  let holderFirstName: string | null
 
   if (isPreview) {
     event = { title: 'Ultra Arena 2026', date: '2026-09-12T08:00:00+02:00', location: 'Île de loisirs de Saint-Quentin-en-Yvelines' }
@@ -30,7 +29,7 @@ export async function GET(request: Request) {
     team = summarizeOrderRegistrations(
       Array.from({ length: previewTeam }, () => ({ race_format: 'open', start_time: '2026-09-12T13:20:00+02:00' })),
     )
-    fullName = 'Alex Martin'
+    holderFirstName = 'Alex'
   } else {
     if (!UUID.test(registrationId)) return new Response('Bad request', { status: 400 })
 
@@ -59,14 +58,14 @@ export async function GET(request: Request) {
 
     const [{ data: foundEvent }, { data: profile }] = await Promise.all([
       admin.from('events').select('title, date, location').eq('id', found.event_id).maybeSingle(),
-      admin.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
+      admin.from('profiles').select('first_name').eq('id', user.id).maybeSingle(),
     ])
     event = foundEvent
-    fullName = profile?.full_name ?? null
+    holderFirstName = profile?.first_name ?? null
   }
   if (!event) return new Response('Not found', { status: 404 })
 
-  const firstName = showName ? getFirstName(fullName) : null
+  const firstName = showName ? holderFirstName : null
   const eventDate = new Date(event.date)
   const dateLabel = eventDate
     .toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' })

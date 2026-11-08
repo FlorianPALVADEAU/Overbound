@@ -97,7 +97,7 @@ function AmbassadorDashboardContent() {
         </div>
       ) : null}
       <AmbassadorDashboard
-        fullName={isAdmin && viewAs ? undefined : (session.profile?.full_name ?? undefined)}
+        profile={isAdmin && viewAs ? undefined : session.profile}
         email={isAdmin && viewAs ? undefined : (session.user?.email ?? undefined)}
         avatarUrl={isAdmin && viewAs ? undefined : (session.profile?.avatar_url ?? undefined)}
         data={data}

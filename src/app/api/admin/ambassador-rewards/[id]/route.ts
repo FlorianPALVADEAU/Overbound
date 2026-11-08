@@ -31,7 +31,7 @@ async function notifyAmbassador(admin: ReturnType<typeof supabaseAdmin>, reward:
     .maybeSingle()
   if (!ambassadorRow?.profile_id) return
 
-  const { data: profile } = await admin.from('profiles').select('full_name').eq('id', ambassadorRow.profile_id).maybeSingle()
+  const { data: profile } = await admin.from('profiles').select('first_name').eq('id', ambassadorRow.profile_id).maybeSingle()
   const { data: authUser } = await admin.auth.admin.getUserById(ambassadorRow.profile_id)
   const email = authUser?.user?.email
   if (!email) return
@@ -41,7 +41,7 @@ async function notifyAmbassador(admin: ReturnType<typeof supabaseAdmin>, reward:
 
   await sendAmbassadorRewardStatusEmail({
     to: email,
-    fullName: profile?.full_name ?? null,
+    firstName: profile?.first_name ?? null,
     ambassadorCode: (promo as { code?: string | null } | null)?.code ?? null,
     reward: { reward_level: reward.reward_level, reward_name: reward.reward_name },
     statusLabel,

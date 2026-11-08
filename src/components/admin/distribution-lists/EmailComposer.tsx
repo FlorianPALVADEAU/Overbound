@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
+import {
+  AUDIENCE_SEGMENTS,
+  EVENT_SCOPED_SEGMENTS,
+  SEGMENT_LABELS,
+  type AudienceSegment,
+} from '@/lib/email/segments'
 import {
   Mail,
   Send,
@@ -32,7 +40,12 @@ interface EmailFormData {
   bodyHtml: string
   bodyText: string
   listIds: string[]
+  segment: AudienceSegment
+  /** Empty means every event. */
+  eventId: string
 }
+
+const ALL_EVENTS = 'all-events'
 
 type SendStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -43,7 +56,12 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
     bodyHtml: '',
     bodyText: '',
     listIds: [],
+    segment: 'all',
+    eventId: '',
   })
+  const { data: events = [] } = useAdminEvents()
+  const [audienceCount, setAudienceCount] = useState<number | null>(null)
+  const [audienceLoading, setAudienceLoading] = useState(false)
 
   const [sendStatus, setSendStatus] = useState<SendStatus>('idle')
   const [testSendStatus, setTestSendStatus] = useState<SendStatus>('idle')
@@ -60,7 +78,56 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
   }
 
   const selectedLists = lists.filter((list) => formData.listIds.includes(list.id))
-  const totalRecipients = selectedLists.reduce((sum, list) => sum + (list.subscriber_count || 0), 0)
+  const scopedToEvent = EVENT_SCOPED_SEGMENTS.includes(formData.segment)
+  const audienceEventId = scopedToEvent ? formData.eventId : ''
+
+  // The real count: same rules as the send (traced consent, segment, digest, suppressions).
+  useEffect(() => {
+    if (formData.listIds.length === 0) {
+      setAudienceCount(null)
+      return
+    }
+    const controller = new AbortController()
+    setAudienceLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/admin/distribution-lists/audience', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            listIds: formData.listIds,
+            segment: formData.segment,
+            ...(audienceEventId ? { eventId: audienceEventId } : {}),
+          }),
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || 'Audience illisible')
+        setAudienceCount(result.count as number)
+        setAudienceLoading(false)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        setAudienceCount(null)
+        setAudienceLoading(false)
+      }
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [formData.listIds, formData.segment, audienceEventId])
+
+  const totalRecipients = audienceCount ?? 0
+
+  const requestBody = () => ({
+    subject: formData.subject,
+    preheader: formData.preheader,
+    bodyHtml: formData.bodyHtml,
+    bodyText: formData.bodyText,
+    listIds: formData.listIds,
+    segment: formData.segment,
+    ...(audienceEventId ? { eventId: audienceEventId } : {}),
+  })
 
   const handleTestSend = async () => {
     if (!formData.subject || !formData.bodyHtml) {
@@ -77,7 +144,7 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          ...requestBody(),
           testMode: true,
         }),
       })
@@ -121,7 +188,7 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          ...requestBody(),
           testMode: false,
         }),
       })
@@ -152,6 +219,8 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
           bodyHtml: '',
           bodyText: '',
           listIds: [],
+          segment: 'all',
+          eventId: '',
         })
         setSendStatus('idle')
         setSuccessMessage('')
@@ -178,6 +247,108 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Audience */}
+          <div className="space-y-4">
+            <p className="text-label font-semibold uppercase text-subtle">1. Audience</p>
+
+            <div className="space-y-3">
+              <Label>Listes de distribution *</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {activeLists.map((list) => (
+                  <label
+                    key={list.id}
+                    className={`flex items-start space-x-3 rounded-xl border p-3 cursor-pointer transition-colors ${
+                      formData.listIds.includes(list.id)
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.listIds.includes(list.id)}
+                      onChange={() => handleListToggle(list.id)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{list.name}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          <Users className="w-3 h-3 mr-1" />
+                          {list.subscriber_count || 0}
+                        </Badge>
+                      </div>
+                      {list.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {list.description}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Le nombre sur chaque liste compte aussi les abonnements non confirmés, qui ne reçoivent rien.
+                Le total réel est affiché plus bas.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="segment">Public</Label>
+                <Select
+                  value={formData.segment}
+                  onValueChange={(value) => setFormData({ ...formData, segment: value as AudienceSegment })}
+                >
+                  <SelectTrigger id="segment" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AUDIENCE_SEGMENTS.map((segment) => (
+                      <SelectItem key={segment} value={segment}>
+                        {SEGMENT_LABELS[segment]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {scopedToEvent && (
+                <div className="space-y-2">
+                  <Label htmlFor="segment-event">Événement</Label>
+                  <Select
+                    value={formData.eventId || ALL_EVENTS}
+                    onValueChange={(value) => setFormData({ ...formData, eventId: value === ALL_EVENTS ? '' : value })}
+                  >
+                    <SelectTrigger id="segment-event" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_EVENTS}>Tous les événements</SelectItem>
+                      {events.map((event) => (
+                        <SelectItem key={event.id} value={event.id}>
+                          {event.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {formData.listIds.length > 0 && (
+              <Alert>
+                <Users className="h-4 w-4" />
+                <AlertDescription>
+                  {audienceLoading || audienceCount === null
+                    ? 'Calcul de l\'audience...'
+                    : `${audienceCount} destinataire${audienceCount > 1 ? 's' : ''} recevront cet email (${selectedLists.length} liste${selectedLists.length > 1 ? 's' : ''}, adresses uniques, consentement confirmé).`}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <p className="text-label font-semibold uppercase text-subtle">2. Contenu</p>
+
           {/* Email Details */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -240,54 +411,6 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
             </Tabs>
           </div>
 
-          {/* Distribution Lists Selection */}
-          <div className="space-y-3">
-            <Label>Listes de distribution *</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {activeLists.map((list) => (
-                <label
-                  key={list.id}
-                  className={`flex items-start space-x-3 rounded-xl border p-3 cursor-pointer transition-colors ${
-                    formData.listIds.includes(list.id)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.listIds.includes(list.id)}
-                    onChange={() => handleListToggle(list.id)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{list.name}</p>
-                      <Badge variant="secondary" className="text-xs">
-                        <Users className="w-3 h-3 mr-1" />
-                        {list.subscriber_count || 0}
-                      </Badge>
-                    </div>
-                    {list.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-1">
-                        {list.description}
-                      </p>
-                    )}
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            {formData.listIds.length > 0 && (
-              <Alert>
-                <Users className="h-4 w-4" />
-                <AlertDescription>
-                  {totalRecipients} destinataire{totalRecipients > 1 ? 's' : ''} sélectionné{totalRecipients > 1 ? 's' : ''}
-                  ({selectedLists.length} liste{selectedLists.length > 1 ? 's' : ''})
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
           {/* Status Messages */}
           {errorMessage && (
             <Alert variant="destructive">
@@ -332,14 +455,20 @@ export function EmailComposer({ lists, onClose }: EmailComposerProps) {
               )}
               <Button
                 onClick={handleSend}
-                disabled={sendStatus === 'loading' || testSendStatus === 'loading'}
+                disabled={
+                  sendStatus === 'loading' ||
+                  testSendStatus === 'loading' ||
+                  audienceLoading ||
+                  audienceCount === null ||
+                  audienceCount === 0
+                }
               >
                 {sendStatus === 'loading' ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Send className="w-4 h-4 mr-2" />
                 )}
-                Envoyer à {totalRecipients} destinataires
+                Envoyer à {totalRecipients} destinataire{totalRecipients > 1 ? 's' : ''}
               </Button>
             </div>
           </div>

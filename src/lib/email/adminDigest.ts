@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 import { sendAdminDigestEmail } from '@/lib/email'
+import { firstNameFromUserMetadata } from '@/lib/account/profile'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 const ADMIN_LOGS_URL = `${SITE_URL}/dashboard/logs`
@@ -8,7 +9,7 @@ const ADMIN_LOGS_URL = `${SITE_URL}/dashboard/logs`
 interface AdminRecipient {
   userId: string
   email: string
-  fullName?: string | null
+  firstName?: string | null
 }
 
 interface AdminDigestOptions {
@@ -99,7 +100,7 @@ export async function sendAdminDigest({ lookbackMinutes = 60 }: AdminDigestOptio
 const getAdminRecipients = async (admin = supabaseAdmin()): Promise<AdminRecipient[]> => {
   const { data: profiles, error } = await admin
     .from('profiles')
-    .select('id, full_name, role')
+    .select('id, first_name, role')
     .in('role', ['admin', 'super_admin'])
 
   if (error || !profiles || profiles.length === 0) {
@@ -119,7 +120,7 @@ const getAdminRecipients = async (admin = supabaseAdmin()): Promise<AdminRecipie
       return {
         userId: profile.id,
         email: authUser.email,
-        fullName: (profile as Record<string, any>)?.full_name ?? authUser.user_metadata?.full_name ?? null,
+        firstName: profile.first_name ?? firstNameFromUserMetadata(authUser.user_metadata),
       }
     })
     .filter(Boolean) as AdminRecipient[]

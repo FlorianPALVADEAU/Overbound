@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface InactiveUserEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   lastEventTitle?: string | null
   eventsUrl: string
   highlightEventTitle?: string | null
@@ -13,14 +13,14 @@ interface InactiveUserEmailProps {
 }
 
 export function InactiveUserEmail({
-  fullName,
+  firstName,
   lastEventTitle,
   eventsUrl,
   highlightEventTitle,
   highlightEventUrl,
   unsubscribeUrl,
 }: InactiveUserEmailProps) {
-  const preview = 'Tu nous manques sur OverBound !'
+  const preview = 'Tu nous manques sur Overbound !'
 
   return (
     <EmailLayout preview={preview} unsubscribeUrl={unsubscribeUrl}>
@@ -35,12 +35,12 @@ export function InactiveUserEmail({
       <Section style={styles.section}>
         {/* Main Heading */}
         <Text style={styles.heading}>
-          {fullName ? `${fullName}, on reprend la ligne de départ ?` : 'On reprend la ligne de départ ?'}
+          {firstName ? `${firstName}, on reprend la ligne de départ ?` : 'On reprend la ligne de départ ?'}
         </Text>
 
         {/* Intro */}
         <Text style={styles.paragraph}>
-          Ça fait un moment qu'on ne t'a pas vu sur OverBound.{' '}
+          Ça fait un moment qu'on ne t'a pas vu sur Overbound.{' '}
           {lastEventTitle ? `Ton dernier challenge : ${lastEventTitle}.` : 'Viens te mesurer à nos nouveaux formats !'}
         </Text>
 
@@ -91,7 +91,7 @@ export function InactiveUserEmail({
 
         {/* Community Stats
         <Section style={styles.statsCard}>
-          <Text style={styles.statsTitle}>La communauté OverBound en chiffres</Text>
+          <Text style={styles.statsTitle}>La communauté Overbound en chiffres</Text>
           <table style={styles.statsTable}>
             <tbody>
               <tr>

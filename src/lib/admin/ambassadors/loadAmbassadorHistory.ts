@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AdminAmbassadorHistoryResponse, AdminPointsAdjustmentEvent, AdminRewardDecisionEvent } from './types'
+import { formatProfileName } from '@/lib/account/profile'
 
 type Admin = Pick<SupabaseClient, 'from'>
 
@@ -41,9 +42,9 @@ export async function loadAmbassadorHistory(admin: Admin, ambassadorId: string):
     ...decisionRows.map((row) => row.actor_profile_id as string),
   ].filter(Boolean)))
   const actors = actorIds.length > 0
-    ? ensure<{ id: string; full_name: string | null }>('actors', await admin.from('profiles').select('id, full_name').in('id', actorIds))
+    ? ensure<{ id: string; first_name: string | null; last_name: string | null }>('actors', await admin.from('profiles').select('id, first_name, last_name').in('id', actorIds))
     : []
-  const actorName = new Map(actors.map((row) => [row.id, row.full_name]))
+  const actorName = new Map(actors.map((row) => [row.id, formatProfileName(row)]))
   const rewardById = new Map(rewardRows.map((row) => [row.id, row]))
 
   const point_adjustments: AdminPointsAdjustmentEvent[] = adjustmentRows.map((row) => ({

@@ -56,11 +56,11 @@ describe('processAccountEngagementEmails', () => {
     await processAccountEngagementEmails({
       userId: 'user-1',
       email: 'user@example.com',
-      fullName: 'Alice Martin',
+      firstName: 'Alice',
     })
 
     expect(sendOnboardingEmailMock).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'user@example.com', fullName: 'Alice Martin' }),
+      expect.objectContaining({ to: 'user@example.com', firstName: 'Alice' }),
     )
     expect(recordEmailLogMock).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1', email: 'user@example.com', emailType: 'onboarding' }),
@@ -87,17 +87,17 @@ describe('processAccountEngagementEmails', () => {
     await processAccountEngagementEmails({
       userId: 'user-1',
       email: 'user@example.com',
-      profile: { full_name: null, phone: '0600000000', date_of_birth: null },
+      profile: { first_name: null, phone: '0600000000', date_of_birth: null },
     })
 
     expect(sendProfileCompletionReminderEmailMock).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'user@example.com',
-        missingFields: ['Nom complet', 'Date de naissance'],
+        missingFields: ['Prénom', 'Nom', 'Date de naissance'],
       }),
     )
     expect(recordEmailLogMock).toHaveBeenCalledWith(
-      expect.objectContaining({ emailType: 'profile_nudge', context: { missing_fields: ['Nom complet', 'Date de naissance'] } }),
+      expect.objectContaining({ emailType: 'profile_nudge', context: { missing_fields: ['Prénom', 'Nom', 'Date de naissance'] } }),
     )
   })
 
@@ -105,7 +105,7 @@ describe('processAccountEngagementEmails', () => {
     await processAccountEngagementEmails({
       userId: 'user-1',
       email: 'user@example.com',
-      profile: { full_name: 'Alice', phone: '0600000000', date_of_birth: '1990-01-01' },
+      profile: { first_name: 'Alice', last_name: 'Martin', phone: '0600000000', date_of_birth: '1990-01-01' },
     })
 
     expect(sendProfileCompletionReminderEmailMock).not.toHaveBeenCalled()
@@ -122,7 +122,7 @@ describe('processAccountEngagementEmails', () => {
     await processAccountEngagementEmails({
       userId: 'user-1',
       email: 'user@example.com',
-      profile: { full_name: null, phone: null, date_of_birth: null },
+      profile: { first_name: null, phone: null, date_of_birth: null },
     })
 
     expect(sendProfileCompletionReminderEmailMock).not.toHaveBeenCalled()
@@ -135,7 +135,7 @@ describe('processAccountEngagementEmails', () => {
       processAccountEngagementEmails({
         userId: 'user-1',
         email: 'user@example.com',
-        profile: { full_name: null, phone: null, date_of_birth: null },
+        profile: { first_name: null, phone: null, date_of_birth: null },
       }),
     ).resolves.toBeUndefined()
 

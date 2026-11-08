@@ -38,7 +38,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
 
   // Form state
   const [email, setEmail] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFullName] = useState('')
 
   // Get active popup promotion
   const activePopup = useMemo(() => {
@@ -109,14 +109,14 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
       return
     }
 
-    const validationError = getPopupSubscribeValidationError({ fullName, email })
+    const validationError = getPopupSubscribeValidationError({ firstName, email })
     if (validationError) {
       setError(validationError)
       return
     }
 
     const normalizedEmail = normalizePopupSubscribeValue(email)
-    const normalizedFullName = normalizePopupSubscribeValue(fullName)
+    const normalizedFirstName = normalizePopupSubscribeValue(firstName)
 
     setIsSubmitting(true)
     setError(null)
@@ -129,7 +129,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
         },
         body: JSON.stringify({
           email: normalizedEmail,
-          full_name: normalizedFullName,
+          first_name: normalizedFirstName,
           promotion_id: activePopup.id,
           website: website.trim(),
           elapsed_ms: elapsedMs,
@@ -186,7 +186,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
   if (isLoading || !activePopup) return null
 
   const config = activePopup.popup_config!
-  const validationError = getPopupSubscribeValidationError({ fullName, email })
+  const validationError = getPopupSubscribeValidationError({ firstName, email })
   const canSubmit = !isSubmitting && !validationError
 
   const errorId = error ? 'popup-error' : undefined
@@ -251,7 +251,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
                   id="popup-name"
                   type="text"
                   placeholder={config.name_placeholder || 'Ton prénom'}
-                  value={fullName}
+                  value={firstName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
                   aria-invalid={Boolean(error) || undefined}
@@ -313,7 +313,7 @@ export function PopupPromotion({ isAuthenticated }: PopupPromotionProps) {
               </Button>
 
               <p className="text-xs text-muted-foreground text-center">
-                En t'inscrivant, tu acceptes de recevoir nos emails marketing.
+                En t'inscrivant, tu acceptes de recevoir par email nos annonces d'événements, alertes de prix et actualités.
                 Tu peux te désinscrire à tout moment et demander la suppression de tes données (voir notre{' '}
                 <a href="/privacy-policies#droits" className="underline underline-offset-2">politique de confidentialité</a>).
               </p>

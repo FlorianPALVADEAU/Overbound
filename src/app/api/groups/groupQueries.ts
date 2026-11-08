@@ -30,7 +30,8 @@ export interface GroupInvitePreview {
   invite_code: string
   captain: {
     id: string
-    full_name: string | null
+    first_name: string | null
+    last_name: string | null
     email: string | null
   }
   members_count: number

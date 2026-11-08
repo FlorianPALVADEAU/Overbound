@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { formatProfileName } from '@/lib/account/profile'
 
 // Validation schema for preferences
 const preferencesSchema = z.object({
@@ -41,7 +42,7 @@ export async function PATCH(request: NextRequest) {
     // Get user's email for logging
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, full_name')
+      .select('id, first_name, last_name')
       .eq('id', user.id)
       .single()
 
@@ -89,7 +90,7 @@ export async function PATCH(request: NextRequest) {
         preferences: validatedData,
         user: {
           id: profile?.id,
-          name: profile?.full_name,
+          name: formatProfileName(profile),
         },
       },
       { status: 200 }
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
     // Get user preferences
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, full_name, marketing_opt_in')
+      .select('id, first_name, last_name, marketing_opt_in')
       .eq('id', user.id)
       .single()
 
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
         },
         user: {
           id: profile.id,
-          name: profile.full_name,
+          name: formatProfileName(profile),
         },
       },
       { status: 200 }

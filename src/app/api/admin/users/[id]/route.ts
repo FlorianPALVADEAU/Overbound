@@ -20,7 +20,8 @@ async function profileIsListed(admin: ReturnType<typeof supabaseAdmin>, profileI
 const updateUserSchema = z
   .object({
     role: z.enum(['user', 'volunteer', 'admin', 'ambassador']).optional(),
-    full_name: z.string().trim().min(2).max(120).nullable().optional(),
+    first_name: z.string().trim().min(2).max(75).nullable().optional(),
+    last_name: z.string().trim().min(2).max(75).nullable().optional(),
     phone: z.string().trim().min(6).max(32).nullable().optional(),
     date_of_birth: z.string().nullable().optional(),
     marketing_opt_in: z.boolean().nullable().optional(),
@@ -108,13 +109,14 @@ async function handlePatch(
       .from('profiles')
       .update({
         ...(validated.role !== undefined ? { role: validated.role } : {}),
-        ...(validated.full_name !== undefined ? { full_name: validated.full_name } : {}),
+        ...(validated.first_name !== undefined ? { first_name: validated.first_name } : {}),
+        ...(validated.last_name !== undefined ? { last_name: validated.last_name } : {}),
         ...(validated.phone !== undefined ? { phone: validated.phone } : {}),
         ...(validated.date_of_birth !== undefined ? { date_of_birth: validated.date_of_birth } : {}),
         ...(validated.marketing_opt_in !== undefined ? { marketing_opt_in: validated.marketing_opt_in } : {}),
       })
       .eq('id', id)
-      .select('id, full_name, role, phone, created_at, date_of_birth, marketing_opt_in')
+      .select('id, first_name, last_name, role, phone, created_at, date_of_birth, marketing_opt_in')
       .single()
 
     if (error) {
@@ -166,14 +168,14 @@ async function handlePatch(
       const { data: authUser } = await admin.auth.admin.getUserById(id)
       const recipientEmail = authUser?.user?.email
       if (recipientEmail) {
-        const fullName = updatedProfile.full_name ?? null
+        const firstName = updatedProfile.first_name ?? null
         const promoValue = Array.isArray((ambassadorRow as any)?.promo)
           ? (ambassadorRow as any)?.promo?.[0]
           : (ambassadorRow as any)?.promo
         const newPromoId = ambassadorRow?.promotional_code_id ?? null
 
         if (previousRole !== 'ambassador' && targetRole === 'ambassador') {
-          await sendAmbassadorWelcomeEmail({ to: recipientEmail, fullName })
+          await sendAmbassadorWelcomeEmail({ to: recipientEmail, firstName })
         }
 
         if (
@@ -184,7 +186,7 @@ async function handlePatch(
         ) {
           await sendAmbassadorCodeAssignedEmail({
             to: recipientEmail,
-            fullName,
+            firstName,
             ambassadorCode: promoValue.code,
           })
         }

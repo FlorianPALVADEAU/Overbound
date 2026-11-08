@@ -71,5 +71,5 @@ const FIXTURE: AmbassadorDashboardData = {
 
 export default function AmbassadorDashboardDesignPage() {
   if (process.env.VERCEL_ENV === 'production') notFound()
-  return <AmbassadorDashboard fullName="Ada Lovelace" data={FIXTURE} adminView />
+  return <AmbassadorDashboard profile={{ first_name: 'Ada', last_name: 'Lovelace' }} data={FIXTURE} adminView />
 }

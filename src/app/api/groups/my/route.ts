@@ -1,3 +1,4 @@
+import { formatProfileName } from '@/lib/account/profile'
 import { NextResponse } from 'next/server'
 import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import type { Group, GroupMember } from '@/types/Group'
@@ -54,13 +55,13 @@ export async function GET() {
 
     const profileIds = (membersRows || []).map((m: any) => m.profile_id as string)
     const { data: profilesRows } = profileIds.length > 0
-      ? await admin.from('profiles').select('id, full_name, avatar_url').in('id', profileIds)
+      ? await admin.from('profiles').select('id, first_name, last_name, avatar_url').in('id', profileIds)
       : { data: [] }
 
-    const profileMap = new Map<string, string | null>()
+    const profileMap = new Map<string, { first_name: string | null; last_name: string | null }>()
     const avatarMap = new Map<string, string | null>()
-    for (const p of (profilesRows || []) as Array<{ id: string; full_name: string | null; avatar_url: string | null }>) {
-      profileMap.set(p.id, p.full_name)
+    for (const p of (profilesRows || []) as Array<{ id: string; first_name: string | null; last_name: string | null; avatar_url: string | null }>) {
+      profileMap.set(p.id, { first_name: p.first_name, last_name: p.last_name })
       avatarMap.set(p.id, p.avatar_url)
     }
 
@@ -68,7 +69,7 @@ export async function GET() {
     // one avoids listing every user of the platform (and its 50-user default page, which
     // silently dropped members of larger groups).
     const emailMap = new Map<string, string | null>()
-    const unnamedIds = profileIds.filter((profileId) => !profileMap.get(profileId))
+    const unnamedIds = profileIds.filter((profileId) => !formatProfileName(profileMap.get(profileId)))
     await Promise.all(
       unnamedIds.map(async (profileId) => {
         const { data } = await admin.auth.admin.getUserById(profileId)
@@ -81,7 +82,8 @@ export async function GET() {
       profile_id: m.profile_id,
       role: m.role,
       joined_at: m.joined_at,
-      full_name: profileMap.get(m.profile_id) ?? null,
+      first_name: profileMap.get(m.profile_id)?.first_name ?? null,
+      last_name: profileMap.get(m.profile_id)?.last_name ?? null,
       email: emailMap.get(m.profile_id) ?? null,
       avatar_url: avatarMap.get(m.profile_id) ?? null,
     }))

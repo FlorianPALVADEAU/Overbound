@@ -31,6 +31,7 @@ import { SessionProfile, SessionResponse, SessionUser, SESSION_QUERY_KEY } from 
 import { useQueryClient } from '@tanstack/react-query'
 import { hasAmbassadorAccess } from '@/lib/ambassadors/access'
 import { useFeaturedEvent } from '@/app/api/events/featured/featuredEventQueries'
+import { formatProfileName, getProfileCompletion } from '@/lib/account/profile'
 
 interface HeaderProps {
   user?: SessionUser | null
@@ -202,7 +203,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     email: user?.email ?? null,
   })
   const needsProfileCompletion = Boolean(
-    user && (!profile?.full_name || !profile?.phone || !profile?.date_of_birth),
+    user && !getProfileCompletion(profile).isComplete,
   )
   const attentionNeeded = needsProfileCompletion
 
@@ -363,11 +364,11 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                       <Avatar className="h-8 w-8">
                         <AvatarImage
                           src={profile?.avatar_url || user.user_metadata?.avatar_url}
-                          alt={profile?.full_name || user.email || 'User'}
+                          alt={formatProfileName(profile) || user.email || 'User'}
                         />
                         <AvatarFallback>
-                          {profile?.full_name
-                            ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                          {formatProfileName(profile)
+                            ? [profile?.first_name, profile?.last_name].map(part => part?.trim()[0]).filter(Boolean).join('').toUpperCase()
                             : user.email?.[0].toUpperCase() || 'U'
                           }
                         </AvatarFallback>
@@ -383,7 +384,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
                         <p className="font-medium">
-                          {profile?.full_name || 'Utilisateur'}
+                          {formatProfileName(profile) || 'Utilisateur'}
                         </p>
                         <p className="w-[200px] truncate text-sm text-muted-foreground">
                           {user.email}

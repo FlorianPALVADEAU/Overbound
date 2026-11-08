@@ -49,13 +49,13 @@ export async function loadPublicAmbassadors(admin: Admin): Promise<PublicAmbassa
 
   const { season } = await loadCurrentSeason(admin)
   const [profiles, points, codes, groups] = await Promise.all([
-    admin.from('profiles').select('id, full_name, avatar_url').in('id', ambassadors.map((row) => row.profile_id)),
+    admin.from('profiles').select('id, first_name, last_name, avatar_url').in('id', ambassadors.map((row) => row.profile_id)),
     admin.from('ambassador_points_years').select('ambassador_id, recruits_open, recruits_ranked').eq('program_year', season).in('ambassador_id', ambassadors.map((row) => row.id)),
     Promise.all(ambassadors.map((row) => loadAmbassadorCodes(admin, { id: row.id, promotional_code_id: row.promotional_code_id }))),
     loadGroupsByProfile(admin, ambassadors.filter((row) => row.public_show_group).map((row) => row.profile_id)),
   ])
 
-  const profileById = new Map(ensure<{ id: string; full_name: string | null; avatar_url: string | null }>('profiles', profiles).map((row) => [row.id, row]))
+  const profileById = new Map(ensure<{ id: string; first_name: string | null; last_name: string | null; avatar_url: string | null }>('profiles', profiles).map((row) => [row.id, row]))
   const recruitsById = new Map(
     ensure<{ ambassador_id: string; recruits_open: number; recruits_ranked: number }>('points', points).map((row) => [
       row.ambassador_id,
@@ -68,7 +68,7 @@ export async function loadPublicAmbassadors(admin: Admin): Promise<PublicAmbassa
       const profile = profileById.get(row.profile_id)
       return {
         id: row.id,
-        name: toPublicName(profile?.full_name),
+        name: toPublicName(profile),
         photo_url: publicPhotoUrl(profile?.avatar_url),
         recruits: recruitsById.get(row.id) ?? 0,
         code: codes[index].currentCode,

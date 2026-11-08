@@ -7,10 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { FAKE_MY_GROUP } from '@/lib/groups/fakeData'
 import { GroupDetails } from './GroupDetails'
 import { GroupEmpty } from './GroupEmpty'
+import { getProfileFirstName } from '@/lib/account/profile'
 
 const USE_FAKE = process.env.NEXT_PUBLIC_FAKE_GROUPS === 'true'
 
-function GroupContent({ userId, fullName }: { userId: string; fullName: string | null | undefined }) {
+function GroupContent({ userId, firstName }: { userId: string; firstName: string | null | undefined }) {
   const { data: group, isLoading } = useMyGroup()
 
   if (isLoading) {
@@ -30,7 +31,7 @@ function GroupContent({ userId, fullName }: { userId: string; fullName: string |
       {group ? (
         <GroupDetails group={group} currentUserId={USE_FAKE ? FAKE_MY_GROUP.captain_id : userId} />
       ) : (
-        <GroupEmpty fullName={fullName} />
+        <GroupEmpty firstName={firstName} />
       )}
     </AccountScreen>
   )
@@ -39,7 +40,7 @@ function GroupContent({ userId, fullName }: { userId: string; fullName: string |
 export function GroupScreen() {
   return (
     <AccountDataBoundary>
-      {({ user, profile }) => <GroupContent userId={user.id} fullName={profile?.full_name} />}
+      {({ user, profile }) => <GroupContent userId={user.id} firstName={getProfileFirstName(profile)} />}
     </AccountDataBoundary>
   )
 }

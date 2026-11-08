@@ -51,7 +51,7 @@ function createAdmin({ totalPoints, alreadySent = false, email = 'ada@example.co
     from(table: string) {
       if (table === 'ambassadors') return chain({ id: 'amb-1', profile_id: 'profile-1' })
       if (table === 'ambassador_points_years') return chain({ total_points: totalPoints })
-      if (table === 'profiles') return chain({ full_name: 'Ada Lovelace' })
+      if (table === 'profiles') return chain({ first_name: 'Ada' })
       if (table === 'ambassador_promotional_codes') return chain({ promotional_code: { code: 'ADA20' } })
       return {
         upsert: (row: unknown) => {
@@ -87,7 +87,7 @@ describe('nudgeAmbassadorNearGoal', () => {
     expect(upserts).toEqual([{ ambassador_id: 'amb-1', season: 2027, points_required: 8 }])
     expect(sendNudgeMock).toHaveBeenCalledWith({
       to: 'ada@example.com',
-      fullName: 'Ada Lovelace',
+      firstName: 'Ada',
       ambassadorCode: 'ADA20',
       goalName: 'Dossard Open offert',
       pointsRemaining: 2,

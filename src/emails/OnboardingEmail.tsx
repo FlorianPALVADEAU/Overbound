@@ -1,17 +1,15 @@
 import * as React from 'react'
 import EmailLayout from './EmailLayout'
 import { CtaButton, Eyebrow, Paragraph, SectionTitle, Steps, Title } from './blocks'
-import { getFirstName } from '@/lib/email/participantName'
 
 interface OnboardingEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   accountUrl: string
   eventsUrl: string
   blogUrl: string
 }
 
-export function OnboardingEmail({ fullName, accountUrl, eventsUrl, blogUrl }: OnboardingEmailProps) {
-  const firstName = getFirstName(fullName)
+export function OnboardingEmail({ firstName, accountUrl, eventsUrl, blogUrl }: OnboardingEmailProps) {
   return (
     <EmailLayout
       preview="Ton compte Overbound est créé. Voici par où commencer."

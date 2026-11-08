@@ -134,7 +134,7 @@ export function useAuthFlow({
   }, [email, password, supabase, syncSessionAfterAuth, onAuthenticated])
 
   const signup = useCallback(
-    async (fullName?: string) => {
+    async (name?: { firstName: string; lastName: string }) => {
       const validationError = validateRegisterInput({ email, password, confirmPassword })
       if (validationError) {
         setMessage({ type: 'error', text: registerValidationErrorMessage(validationError) })
@@ -156,7 +156,7 @@ export function useAuthFlow({
           email,
           password,
           options: {
-            data: { full_name: fullName || null },
+            data: { first_name: name?.firstName || null, last_name: name?.lastName || null },
             emailRedirectTo,
           },
         })

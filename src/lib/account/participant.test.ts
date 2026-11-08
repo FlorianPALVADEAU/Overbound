@@ -40,19 +40,19 @@ describe('computeAge', () => {
 
 describe('resolveParticipantIdentity', () => {
   it('prefers the participant of the bib', () => {
-    const identity = resolveParticipantIdentity({ first_name: 'Camille', last_name: 'Dupont', birth_date: '1995-03-14' }, { fullName: 'Autre', birthDate: null }, NOW)
+    const identity = resolveParticipantIdentity({ first_name: 'Camille', last_name: 'Dupont', birth_date: '1995-03-14' }, { holder: { first_name: 'Autre', last_name: null }, birthDate: null }, NOW)
     expect(identity).toEqual({ name: 'Camille DUPONT', age: 31, avatarUrl: null })
     expect(formatParticipantName({ first_name: 'A', last_name: 'b' })).toBe('A B')
   })
 
   it('falls back to the holder profile, then to nothing', () => {
-    expect(resolveParticipantIdentity(null, { fullName: 'Flo P', birthDate: '2000-01-01' }, NOW)).toEqual({ name: 'Flo P', age: 26, avatarUrl: null })
+    expect(resolveParticipantIdentity(null, { holder: { first_name: 'Flo', last_name: 'P' }, birthDate: '2000-01-01' }, NOW)).toEqual({ name: 'Flo P', age: 26, avatarUrl: null })
     expect(resolveParticipantIdentity(null, null, NOW)).toEqual({ name: null, age: null, avatarUrl: null })
   })
 
   it('carries the holder photo, also when the bib has a participant identity', () => {
     const participant = { first_name: 'Camille', last_name: 'Dupont', birth_date: null }
-    expect(resolveParticipantIdentity(participant, { fullName: 'x', birthDate: null, avatarUrl: 'https://p.test/a.webp' }, NOW).avatarUrl).toBe('https://p.test/a.webp')
-    expect(resolveParticipantIdentity(null, { fullName: null, birthDate: null, avatarUrl: 'https://p.test/a.webp' }, NOW).avatarUrl).toBe('https://p.test/a.webp')
+    expect(resolveParticipantIdentity(participant, { holder: { first_name: 'x', last_name: null }, birthDate: null, avatarUrl: 'https://p.test/a.webp' }, NOW).avatarUrl).toBe('https://p.test/a.webp')
+    expect(resolveParticipantIdentity(null, { holder: null, birthDate: null, avatarUrl: 'https://p.test/a.webp' }, NOW).avatarUrl).toBe('https://p.test/a.webp')
   })
 })

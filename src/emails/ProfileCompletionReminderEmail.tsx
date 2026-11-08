@@ -3,21 +3,21 @@ import { Preview, Section, Text, Link, Hr } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 
 interface ProfileCompletionReminderEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   accountUrl: string
   missingFields: string[]
 }
 
 export function ProfileCompletionReminderEmail({
-  fullName,
+  firstName,
   accountUrl,
   missingFields,
 }: ProfileCompletionReminderEmailProps) {
   return (
-    <EmailLayout preview="Complète ton profil OverBound">
+    <EmailLayout preview="Complète ton profil Overbound">
       <Section style={styles.section}>
         <Text style={styles.heading}>
-          {fullName ? `Hey ${fullName},` : 'Salut,'}
+          {firstName ? `Hey ${firstName},` : 'Salut,'}
         </Text>
 
         <Text style={styles.paragraph}>

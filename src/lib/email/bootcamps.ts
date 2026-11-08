@@ -7,7 +7,7 @@ const FROM = "Florian d'Overbound <no-reply@overbound-race.com>"
 
 export async function sendBootcampRegistrationEmail(params: {
   to: string
-  fullName: string | null
+  firstName: string | null
   bootcampTitle: string
   startsAt: string
   locationName: string
@@ -15,7 +15,7 @@ export async function sendBootcampRegistrationEmail(params: {
 }) {
   const html = await renderEmail(
     BootcampRegistrationEmail({
-      fullName: params.fullName,
+      firstName: params.firstName,
       bootcampTitle: params.bootcampTitle,
       startsAt: params.startsAt,
       locationName: params.locationName,

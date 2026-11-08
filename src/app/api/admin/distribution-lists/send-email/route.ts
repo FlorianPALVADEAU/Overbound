@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import { resolveAudience } from '@/lib/email/audience'
+import { resolveSegmentedAudience } from '@/lib/email/segmentedAudience'
+import { AUDIENCE_SEGMENTS } from '@/lib/email/segments'
 import { runCampaign, type CampaignRecipient } from '@/lib/email/campaign'
 import {
   deliverMarketingMail,
@@ -23,6 +24,8 @@ const sendEmailSchema = z.object({
   bodyHtml: z.string().min(1, 'HTML body is required'),
   bodyText: z.string().optional(),
   listIds: z.array(z.string()).min(1, 'At least one list is required'),
+  segment: z.enum(AUDIENCE_SEGMENTS).default('all'),
+  eventId: z.string().uuid().optional(),
   testMode: z.boolean().default(false),
 })
 
@@ -95,12 +98,17 @@ async function handlePost(request: NextRequest) {
     // Production mode: the audience comes from Supabase (subscribed, not suppressed, digest-compatible)
     let audience: CampaignRecipient[]
     try {
-      audience = await resolveAudience({ listIds: validatedData.listIds })
+      audience = await resolveSegmentedAudience({
+        listIds: validatedData.listIds,
+        segment: validatedData.segment,
+        eventId: validatedData.eventId,
+      })
     } catch (error) {
       console.error('Error resolving audience:', error)
       captureException(error as Error, {
         context: 'audience_resolution',
         listIds: validatedData.listIds,
+        segment: validatedData.segment,
       })
       return NextResponse.json(
         { error: 'Failed to resolve distribution list audience' },
@@ -110,7 +118,7 @@ async function handlePost(request: NextRequest) {
 
     if (audience.length === 0) {
       return NextResponse.json(
-        { error: 'No subscribers found for the selected lists' },
+        { error: 'No subscribers found for the selected lists and segment' },
         { status: 400 },
       )
     }
@@ -120,6 +128,8 @@ async function handlePost(request: NextRequest) {
       .update(
         JSON.stringify([
           [...validatedData.listIds].sort(),
+          validatedData.segment,
+          validatedData.eventId ?? '',
           validatedData.subject,
           validatedData.preheader ?? '',
           validatedData.bodyHtml,

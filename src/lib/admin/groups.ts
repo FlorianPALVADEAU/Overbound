@@ -1,3 +1,4 @@
+import { formatProfileName } from '@/lib/account/profile'
 export interface AdminGroupRow {
   id: string
   name: string
@@ -30,7 +31,8 @@ export interface HydratedAdminGroup extends AdminGroupRow {
   anchor_initialized_from_profile_name: string | null
   members: Array<
     AdminGroupMemberRow & {
-      full_name: string | null
+      first_name: string | null
+      last_name: string | null
       email: string | null
       avatar_url: string | null
       refunded_at: string | null
@@ -64,11 +66,11 @@ export function memberRefundedAt(
 export function hydrateAdminGroups(
   groupsRows: readonly AdminGroupRow[] = [],
   membersRows: readonly AdminGroupMemberRow[] = [],
-  profilesRows: ReadonlyArray<{ id: string; full_name: string | null; avatar_url?: string | null }> = [],
+  profilesRows: ReadonlyArray<{ id: string; first_name: string | null; last_name: string | null; avatar_url?: string | null }> = [],
   authUsers: readonly AdminAuthUserLike[] = [],
   registrationsRows: readonly MemberRegistrationRow[] = [],
 ): { groups: HydratedAdminGroup[]; memberProfileIds: string[] } {
-  const profileMap = new Map(profilesRows.map((profile) => [profile.id, profile.full_name ?? null]))
+  const profileMap = new Map(profilesRows.map((profile) => [profile.id, { first_name: profile.first_name, last_name: profile.last_name }]))
   const avatarMap = new Map(profilesRows.map((profile) => [profile.id, profile.avatar_url ?? null]))
   const emailMap = new Map(authUsers.map((user) => [user.id, user.email ?? null]))
   const anchorEventByGroup = new Map(groupsRows.map((group) => [group.id, group.anchor_event_id]))
@@ -78,7 +80,8 @@ export function hydrateAdminGroups(
     const groupMembers = membersByGroup.get(member.group_id) ?? []
     groupMembers.push({
       ...member,
-      full_name: profileMap.get(member.profile_id) ?? null,
+      first_name: profileMap.get(member.profile_id)?.first_name ?? null,
+      last_name: profileMap.get(member.profile_id)?.last_name ?? null,
       email: emailMap.get(member.profile_id) ?? null,
       avatar_url: avatarMap.get(member.profile_id) ?? null,
       refunded_at: memberRefundedAt(registrationsRows, member.profile_id, anchorEventByGroup.get(member.group_id) ?? null),
@@ -90,7 +93,7 @@ export function hydrateAdminGroups(
   const groups = groupsRows.map((group) => ({
     ...group,
     anchor_initialized_from_profile_name: group.anchor_initialized_from_profile_id
-      ? profileMap.get(group.anchor_initialized_from_profile_id) ?? null
+      ? formatProfileName(profileMap.get(group.anchor_initialized_from_profile_id)) ?? null
       : null,
     members: membersByGroup.get(group.id) ?? [],
   }))

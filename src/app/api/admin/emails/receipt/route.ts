@@ -5,6 +5,7 @@ import { sendReceiptEmail } from '@/lib/email'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { receiptResendSchema } from '@/lib/admin/receiptInput'
+import { firstNameFromUserMetadata } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 
@@ -23,7 +24,7 @@ async function handlePost(request: NextRequest) {
     const supabase = await createSupabaseServer()
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name')
+      .select('first_name')
       .eq('id', user.id)
       .single()
 
@@ -112,7 +113,7 @@ async function handlePost(request: NextRequest) {
 
     await sendReceiptEmail({
       to: resolvedEmail,
-      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
+      firstName: profile?.first_name ?? firstNameFromUserMetadata(user.user_metadata),
       invoiceNumber: order?.id ?? paymentIntentId,
       invoiceDate: new Date(order?.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
       eventName,

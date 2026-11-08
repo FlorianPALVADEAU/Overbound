@@ -26,7 +26,8 @@ interface AdminUserRow {
   email: string | null
   created_at: string
   last_sign_in_at: string | null
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
   role: string
   phone: string | null
   profile_created_at: string | null

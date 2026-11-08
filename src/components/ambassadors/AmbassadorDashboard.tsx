@@ -20,9 +20,10 @@ import { AmbassadorLeaderboard } from '@/components/ambassadors/AmbassadorLeader
 import { AmbassadorActivity } from '@/components/ambassadors/AmbassadorActivity'
 import { AmbassadorPreviousEdition } from '@/components/ambassadors/AmbassadorPreviousEdition'
 import { AmbassadorRules } from '@/components/ambassadors/AmbassadorRules'
+import type { ProfileName } from '@/lib/account/profile'
 
 interface AmbassadorDashboardProps {
-  fullName?: string | null
+  profile?: ProfileName | null
   email?: string | null
   avatarUrl?: string | null
   data: AmbassadorDashboardData
@@ -33,10 +34,10 @@ interface AmbassadorDashboardProps {
 
 const NEAR_POINTS = 2
 
-const firstNameOf = (fullName?: string | null, email?: string | null) =>
-  fullName?.trim().split(/\s+/)[0] || email?.split('@')[0] || 'Ambassadeur'
+const firstNameOf = (profile?: ProfileName | null, email?: string | null) =>
+  profile?.first_name?.trim() || email?.split('@')[0] || 'Ambassadeur'
 
-export function AmbassadorDashboard({ fullName, email, avatarUrl, data, adminView = false, onRewardClaimed }: AmbassadorDashboardProps) {
+export function AmbassadorDashboard({ profile, email, avatarUrl, data, adminView = false, onRewardClaimed }: AmbassadorDashboardProps) {
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
   const { claimingLevel, actionError, actionSuccess, handleClaimReward } = useClaimAmbassadorReward(onRewardClaimed)
@@ -86,7 +87,7 @@ export function AmbassadorDashboard({ fullName, email, avatarUrl, data, adminVie
         <header className="space-y-3">
           <div className="min-w-0">
             <Eyebrow>Espace ambassadeur</Eyebrow>
-            <h1 className={cn(DISPLAY_TITLE, 'mt-2 text-display-md')}>Salut {firstNameOf(fullName, email)}</h1>
+            <h1 className={cn(DISPLAY_TITLE, 'mt-2 text-display-md')}>Salut {firstNameOf(profile, email)}</h1>
           </div>
           <div className="flex items-center justify-between gap-3">
             {rank ? <Pill variant="tag">{rank}e au classement</Pill> : <span />}
@@ -122,7 +123,7 @@ export function AmbassadorDashboard({ fullName, email, avatarUrl, data, adminVie
         </div>
 
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 lg:items-start">
-          {adminView ? null : <AmbassadorPublicCard fullName={fullName} email={email} avatarUrl={avatarUrl} />}
+          {adminView ? null : <AmbassadorPublicCard accountName={profile} email={email} avatarUrl={avatarUrl} />}
           <AmbassadorLadder steps={steps} bonus={bonus} defaultOpen={rewardIsClose} />
           <AmbassadorLeaderboard leaderboard={data.leaderboard} defaultOpen={rivalIsClose} />
           <AmbassadorActivity recruits={data.recruits_table} onShare={handleShare} />

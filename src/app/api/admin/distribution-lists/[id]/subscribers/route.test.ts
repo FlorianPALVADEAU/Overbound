@@ -26,7 +26,7 @@ const subscriber = (overrides: Record<string, unknown> = {}) => ({
   listId: LIST_ID,
   userId: null,
   email: 'bob@example.com',
-  fullName: 'Bob',
+  firstName: 'Bob',
   subscribed: true,
   source: 'popup-1',
   subscribedAt: '2026-10-01T00:00:00Z',
@@ -63,8 +63,8 @@ describe('admin distribution list subscribers', () => {
         from: () => chain({ data: { id: LIST_ID }, error: null }),
       })
       listSubscribersMock.mockResolvedValue([
-        subscriber({ id: 'sub-2', email: 'zed@example.com', fullName: 'Zed' }),
-        subscriber({ id: 'sub-1', userId: USER_A, email: 'alice@example.com', fullName: 'Alice' }),
+        subscriber({ id: 'sub-2', email: 'zed@example.com', firstName: 'Zed' }),
+        subscriber({ id: 'sub-1', userId: USER_A, email: 'alice@example.com', firstName: 'Alice' }),
       ])
     })
 

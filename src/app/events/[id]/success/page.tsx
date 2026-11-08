@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useSession } from '@/app/api/session/sessionQueries'
 import { useEventSuccess } from '@/app/api/events/[id]/success/successQueries'
 import { EventSuccessView } from '@/components/events/success/EventSuccessView'
-import { getFirstName } from '@/lib/share/purchaseShare'
+import { getProfileFirstName } from '@/lib/account/profile'
 
 export default function EventSuccessPage() {
   const params = useParams<{ id: string }>()
@@ -122,7 +122,7 @@ export default function EventSuccessPage() {
       registrations={data.registrations}
       tshirtWinners={data.tshirtWinners ?? 0}
       eventSlug={params.id}
-      hasFirstName={Boolean(getFirstName(session?.profile?.full_name))}
+      hasFirstName={Boolean(getProfileFirstName(session?.profile))}
     />
   )
 }

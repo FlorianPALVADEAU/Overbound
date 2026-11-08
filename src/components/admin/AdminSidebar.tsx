@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 
 interface AdminSidebarProps {
   profileRole: 'admin' | 'volunteer'
-  fullName?: string | null
+  displayName?: string | null
 }
 
-export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
+export function AdminSidebar({ profileRole, displayName }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const activeTab = resolveActiveNavValue(pathname)
@@ -69,7 +69,7 @@ export function AdminSidebar({ profileRole, fullName }: AdminSidebarProps) {
           <p className="text-label font-semibold uppercase text-subtle">
             {profileRole === 'admin' ? 'Administrateur' : 'Bénévole'}
           </p>
-          <p className={cn(DISPLAY_TITLE, 'mt-2 truncate text-title')}>{fullName || 'Administrateur'}</p>
+          <p className={cn(DISPLAY_TITLE, 'mt-2 truncate text-title')}>{displayName || 'Administrateur'}</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-2" aria-label="Administration">

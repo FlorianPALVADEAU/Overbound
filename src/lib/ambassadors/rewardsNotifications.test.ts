@@ -44,7 +44,7 @@ function createAdmin(fixture: Fixture) {
     from(table: string) {
       if (table === 'ambassador_points_events') return { select: () => query(table, () => fixture.events ?? []) }
       if (table === 'ambassadors') return { select: () => query(table, (eq) => fixture.ambassadors?.[eq.get('id') as string] ?? null) }
-      if (table === 'profiles') return { select: () => query(table, () => ({ full_name: 'Ada Lovelace' })) }
+      if (table === 'profiles') return { select: () => query(table, () => ({ first_name: 'Ada' })) }
       if (table === 'ambassador_promotional_codes') {
         return { select: () => query(table, () => ({ promotional_code: { code: 'ADA20' } })) }
       }
@@ -93,7 +93,7 @@ describe('notifyAmbassadorRewardsForOrder', () => {
     expect(sendAmbassadorRewardEarnedEmailMock).toHaveBeenCalledTimes(1)
     expect(sendAmbassadorRewardEarnedEmailMock).toHaveBeenCalledWith({
       to: 'ada@example.com',
-      fullName: 'Ada Lovelace',
+      firstName: 'Ada',
       ambassadorCode: 'ADA20',
       rewards: [{ reward_level: 4, reward_name: 'Dossard Open offert' }],
     })

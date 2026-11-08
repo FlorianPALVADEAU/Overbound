@@ -55,16 +55,16 @@ const emails: Record<string, () => ReactElement> = {
   transferHandedOver: () =>
     TransferHandedOverEmail({ holderName: 'Sam Roche', eventTitle: 'Overbound Race', eventDate: '24 avril 2027', claimedAt: '1 novembre 2026' }),
   bootcamp: () =>
-    BootcampRegistrationEmail({ fullName: 'Alex Runner', bootcampTitle: 'Bootcamp 1', startsAt: '2026-11-15T09:00:00Z', locationName: 'Parc', locationAddress: '1 rue du Parc' }),
+    BootcampRegistrationEmail({ firstName: 'Alex', bootcampTitle: 'Bootcamp 1', startsAt: '2026-11-15T09:00:00Z', locationName: 'Parc', locationAddress: '1 rue du Parc' }),
   volunteerConfirmation: () =>
     VolunteerApplicationConfirmationEmail({ applicantName: 'Alex Runner', preferredMission: 'Accueil', submittedAt: '1 novembre 2026' }),
   volunteerRecruitment: () =>
     VolunteerRecruitmentEmail({
-      fullName: 'Alex Runner',
+      firstName: 'Alex',
       headlineEvent: { id: 'e1', title: 'Overbound Race', date: '2027-04-24T08:00:00Z', location: 'Trappes', checkinWindow: '7h à 8h' },
       callToActionUrl: 'https://overbound-race.com/volunteers',
     }),
-  volunteerAssignment: () => VolunteerAssignmentEmail({ fullName: 'Alex Runner', eventTitle: 'Overbound Race', role: 'Accueil', shiftStart: '7h', shiftEnd: '12h' }),
+  volunteerAssignment: () => VolunteerAssignmentEmail({ firstName: 'Alex', eventTitle: 'Overbound Race', role: 'Accueil', shiftStart: '7h', shiftEnd: '12h' }),
   supportConfirmation: () =>
     SupportContactConfirmationEmail({ fullName: 'Alex Runner', reason: 'Billet', message: 'Bonjour', submittedAt: '1 novembre 2026' }),
   b2b: () => B2bQuoteConfirmationEmail({ contactName: 'Claire Martin', companyName: 'Acme', teamSizeLabel: '10-19', projectTypeLabel: 'Billets' }),

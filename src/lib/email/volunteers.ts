@@ -1,13 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { sendVolunteerRecruitmentEmail, sendVolunteerAssignmentEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
+import { firstNameFromUserMetadata } from '@/lib/account/profile'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
 
 interface VolunteerRecipient {
   id: string
   email: string
-  fullName?: string | null
+  firstName?: string | null
 }
 
 interface VolunteerEventRecord {
@@ -68,7 +69,7 @@ export async function sendVolunteerRecruitmentDigest(options: { lookaheadDays?: 
 
       await sendVolunteerRecruitmentEmail({
         to: volunteer.email,
-        fullName: volunteer.fullName ?? null,
+        firstName: volunteer.firstName ?? null,
         headlineEvent: {
           id: headline.id,
           title: headline.title,
@@ -101,7 +102,7 @@ export async function sendVolunteerRecruitmentDigest(options: { lookaheadDays?: 
 export async function sendVolunteerAssignment(params: {
   volunteerId: string
   email: string
-  fullName?: string | null
+  firstName?: string | null
   eventId: string
   eventTitle: string
   eventDate: string
@@ -121,7 +122,7 @@ export async function sendVolunteerAssignment(params: {
 
   await sendVolunteerAssignmentEmail({
     to: params.email,
-    fullName: params.fullName ?? null,
+    firstName: params.firstName ?? null,
     eventTitle: params.eventTitle,
     eventDate: params.eventDate,
     eventLocation: params.eventLocation,
@@ -148,7 +149,7 @@ export async function sendVolunteerAssignment(params: {
 const getVolunteerRecipients = async (admin = supabaseAdmin()): Promise<VolunteerRecipient[]> => {
   const { data: profiles, error } = await admin
     .from('profiles')
-    .select('id, full_name, role')
+    .select('id, first_name, role')
     .in('role', ['volunteer', 'admin'])
 
   if (error || !profiles || profiles.length === 0) {
@@ -165,7 +166,7 @@ const getVolunteerRecipients = async (admin = supabaseAdmin()): Promise<Voluntee
       return {
         id: profile.id,
         email: authUser.email,
-        fullName: (profile as Record<string, any>)?.full_name ?? authUser.user_metadata?.full_name ?? null,
+        firstName: profile.first_name ?? firstNameFromUserMetadata(authUser.user_metadata),
       }
     })
     .filter(Boolean) as VolunteerRecipient[]

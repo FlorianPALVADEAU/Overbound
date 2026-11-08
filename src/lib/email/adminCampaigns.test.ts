@@ -9,8 +9,8 @@ import { buildUnifiedCampaignAudience, mergeAudienceEntries } from './adminCampa
 describe('adminCampaigns.mergeAudienceEntries', () => {
   it('deduplicates recipients across auth and list subscriptions', () => {
     const { recipients, stats } = mergeAudienceEntries([
-      { email: 'Alice@Example.com', userId: 'u1', fullName: 'Alice', source: 'auth' },
-      { email: 'alice@example.com', userId: 'u1', fullName: null, source: 'list_subscriptions' },
+      { email: 'Alice@Example.com', userId: 'u1', firstName: 'Alice', source: 'auth' },
+      { email: 'alice@example.com', userId: 'u1', firstName: null, source: 'list_subscriptions' },
       { email: 'bob@example.com', source: 'list_subscriptions' },
     ])
 
@@ -40,8 +40,8 @@ describe('adminCampaigns.buildUnifiedCampaignAudience', () => {
 
   it('builds the campaign audience from the Supabase audience only', async () => {
     resolveAudienceMock.mockResolvedValue([
-      { userId: 'u1', email: 'alice@example.com', fullName: 'Alice' },
-      { userId: null, email: 'bob@example.com', fullName: null },
+      { userId: 'u1', email: 'alice@example.com', firstName: 'Alice' },
+      { userId: null, email: 'bob@example.com', firstName: null },
     ])
 
     const { recipients, stats } = await buildUnifiedCampaignAudience()

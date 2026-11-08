@@ -31,7 +31,8 @@ export interface NotificationPreferences {
 
 export interface NotificationPreferencesWithUser extends NotificationPreferences {
   email: string
-  full_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
 }
 
 export interface UpdateNotificationPreferencesData {
@@ -60,7 +61,7 @@ export const NOTIFICATION_PREFERENCE_TOGGLES: NotificationPreferenceToggle[] = [
   {
     key: 'events_announcements',
     label: 'Annonces d\'événements',
-    description: 'Recevez des emails sur les nouveaux événements OverBound',
+    description: 'Recevez des emails sur les nouveaux événements Overbound',
   },
   {
     key: 'price_alerts',

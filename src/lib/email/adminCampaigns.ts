@@ -5,14 +5,14 @@ export type AudienceSource = 'auth' | 'list_subscriptions'
 export interface AudienceEntry {
   email?: string | null
   userId?: string | null
-  fullName?: string | null
+  firstName?: string | null
   source: AudienceSource
 }
 
 export interface CampaignAudienceRecipient {
   email: string
   userId?: string
-  fullName?: string | null
+  firstName?: string | null
   sources: AudienceSource[]
 }
 
@@ -62,8 +62,8 @@ export function mergeAudienceEntries(entries: AudienceEntry[]): {
       if (!existing.userId && entry.userId) {
         existing.userId = entry.userId
       }
-      if (!existing.fullName && entry.fullName) {
-        existing.fullName = entry.fullName
+      if (!existing.firstName && entry.firstName) {
+        existing.firstName = entry.firstName
       }
       continue
     }
@@ -71,7 +71,7 @@ export function mergeAudienceEntries(entries: AudienceEntry[]): {
     recipientsMap.set(email, {
       email,
       userId: entry.userId ?? undefined,
-      fullName: entry.fullName ?? null,
+      firstName: entry.firstName ?? null,
       sources: [entry.source],
     })
   }
@@ -99,7 +99,7 @@ export async function buildUnifiedCampaignAudience() {
     audience.map((recipient) => ({
       email: recipient.email,
       userId: recipient.userId,
-      fullName: recipient.fullName,
+      firstName: recipient.firstName,
       source: 'list_subscriptions' as const,
     })),
   )

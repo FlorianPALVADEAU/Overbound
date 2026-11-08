@@ -6,6 +6,7 @@ import { AdminShell } from '@/components/admin/AdminShell'
 import { VolunteerAccessControl } from '@/components/admin/VolunteerAccessControl'
 import { VolunteerHelpContact } from '@/components/admin/VolunteerHelpContact'
 import { useSession } from '@/app/api/session/sessionQueries'
+import { formatProfileName } from '@/lib/account/profile'
 
 const Loading = () => (
   <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Chargement…</main>
@@ -45,7 +46,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   if (session.profile?.role !== 'admin') redirect('/account')
 
   return (
-    <AdminShell fullName={session.profile.full_name || session.user.email}>
+    <AdminShell displayName={formatProfileName(session.profile) || session.user.email}>
       {children}
     </AdminShell>
   )

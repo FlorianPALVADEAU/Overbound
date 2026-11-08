@@ -1,6 +1,7 @@
 import { sendInactiveUserEmail, sendAbandonedCheckoutEmail } from '@/lib/email'
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { firstNameFromUserMetadata } from '@/lib/account/profile'
 import { getMarketingOptInRecipients, type MarketingRecipient } from '@/lib/email/marketing'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound.com'
@@ -62,7 +63,7 @@ export async function sendInactiveUserWinback() {
 
         await sendInactiveUserEmail({
           to: recipient.email,
-          fullName: recipient.fullName,
+          firstName: recipient.firstName,
           userId: recipient.userId,
           lastEventTitle: lastRegistration?.event?.title ?? null,
           eventsUrl: `${SITE_URL}/events`,
@@ -153,7 +154,7 @@ export async function sendAbandonedCheckoutReminders() {
 
       await sendAbandonedCheckoutEmail({
         to: email,
-        fullName: authUsers.get(order.user_id)?.user_metadata?.full_name ?? null,
+        firstName: firstNameFromUserMetadata(authUsers.get(order.user_id)?.user_metadata),
         eventTitle: event?.title ?? 'ton prochain challenge',
         ticketName: registration?.ticket
           ? Array.isArray(registration.ticket)

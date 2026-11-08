@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     const { data: captainProfile } = await admin
       .from('profiles')
-      .select('id, full_name')
+      .select('id, first_name, last_name')
       .eq('id', group.captain_id)
       .maybeSingle()
 
@@ -48,7 +48,8 @@ export async function GET(request: Request) {
       invite_code: group.invite_code,
       captain: {
         id: group.captain_id,
-        full_name: captainProfile?.full_name ?? null,
+        first_name: captainProfile?.first_name ?? null,
+        last_name: captainProfile?.last_name ?? null,
         email: captainUser?.user?.email ?? null,
       },
       members_count: membersCount ?? 0,

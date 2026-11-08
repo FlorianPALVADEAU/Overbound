@@ -52,11 +52,11 @@ export async function sendAmbassadorRewardClaimRequestEmail(params: {
 
 export async function sendAmbassadorRewardEarnedEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   ambassadorCode?: string | null
   rewards: Array<{ reward_level: number; reward_name: string }>
 }) {
-  const { to, fullName, ambassadorCode, rewards } = params
+  const { to, firstName, ambassadorCode, rewards } = params
   const siteUrl = getEmailAssetsBaseUrl()
 
   const rewardsList = rewards
@@ -70,7 +70,7 @@ export async function sendAmbassadorRewardEarnedEmail(params: {
     preview: 'Nouveau palier ambassadeur débloqué',
     htmlContent: `
       <h2 style="margin: 0 0 12px; font-size: 20px;">Nouveau palier débloqué</h2>
-      <p style="margin: 0 0 12px;">Bravo ${fullName || 'ambassadeur'} ! Tu as atteint un nouveau palier.</p>
+      <p style="margin: 0 0 12px;">Bravo ${firstName || 'ambassadeur'} ! Tu as atteint un nouveau palier.</p>
       ${ambassadorCode ? `<p style="margin: 0 0 12px;">Code ambassadeur: <strong>${ambassadorCode}</strong></p>` : ''}
       <ul style="margin: 0 0 12px; padding-left: 18px;">
         ${rewardsList}
@@ -93,12 +93,12 @@ export async function sendAmbassadorRewardEarnedEmail(params: {
 /** One email when an ambassador is a few points away from their next goal. Names are escaped. */
 export async function sendAmbassadorPointsNudgeEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   ambassadorCode?: string | null
   goalName: string
   pointsRemaining: number
 }) {
-  const { to, fullName, ambassadorCode, goalName, pointsRemaining } = params
+  const { to, firstName, ambassadorCode, goalName, pointsRemaining } = params
   const siteUrl = getEmailAssetsBaseUrl()
   const points = `${pointsRemaining} point${pointsRemaining > 1 ? 's' : ''}`
   const eventSlug = ambassadorCode ? await loadOpenEventSlug(supabaseAdmin()) : null
@@ -108,7 +108,7 @@ export async function sendAmbassadorPointsNudgeEmail(params: {
     preview: `Plus que ${points} avant ta prochaine récompense`,
     htmlContent: `
       <h2 style="margin: 0 0 12px; font-size: 20px;">Plus que ${points}</h2>
-      <p style="margin: 0 0 12px;">Salut ${escapeHtml(fullName?.trim().split(/\s+/)[0] || 'ambassadeur')}, il te reste ${points} pour débloquer <strong>${escapeHtml(goalName)}</strong>.</p>
+      <p style="margin: 0 0 12px;">Salut ${escapeHtml(firstName?.trim() || 'ambassadeur')}, il te reste ${points} pour débloquer <strong>${escapeHtml(goalName)}</strong>.</p>
       ${shareLink ? `<p style="margin: 0 0 12px;">Ton lien à partager, le code ${escapeHtml(ambassadorCode ?? '')} s'applique tout seul : <a href="${shareLink}" style="color: #2563eb; text-decoration: none;">${shareLink}</a></p>` : ''}
       <p style="margin: 12px 0 0;">
         Suis ta progression sur ton
@@ -128,19 +128,19 @@ export async function sendAmbassadorPointsNudgeEmail(params: {
 
 export async function sendAmbassadorRewardStatusEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   ambassadorCode?: string | null
   reward: { reward_level: number; reward_name: string }
   statusLabel: string
 }) {
-  const { to, fullName, ambassadorCode, reward, statusLabel } = params
+  const { to, firstName, ambassadorCode, reward, statusLabel } = params
   const siteUrl = getEmailAssetsBaseUrl()
 
   const html = wrapHtmlWithLayout({
     preview: 'Mise à jour de ta récompense ambassadeur',
     htmlContent: `
       <h2 style="margin: 0 0 12px; font-size: 20px;">Récompense mise à jour</h2>
-      <p style="margin: 0 0 12px;">Bonjour ${fullName || 'ambassadeur'},</p>
+      <p style="margin: 0 0 12px;">Bonjour ${firstName || 'ambassadeur'},</p>
       <p style="margin: 0 0 12px;">Le statut de ta récompense a été mis à jour.</p>
       ${ambassadorCode ? `<p style="margin: 0 0 12px;">Code ambassadeur: <strong>${ambassadorCode}</strong></p>` : ''}
       <p style="margin: 0 0 12px;">Récompense: <strong>Palier ${reward.reward_level} — ${reward.reward_name}</strong></p>
@@ -162,16 +162,16 @@ export async function sendAmbassadorRewardStatusEmail(params: {
 
 export async function sendAmbassadorWelcomeEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
 }) {
-  const { to, fullName } = params
+  const { to, firstName } = params
   const siteUrl = getEmailAssetsBaseUrl()
 
   const html = wrapHtmlWithLayout({
     preview: 'Bienvenue dans l’équipe ambassadeur',
     htmlContent: `
       <h2 style="margin: 0 0 12px; font-size: 20px;">Bienvenue dans l’équipe ambassadeur Overbound</h2>
-      <p style="margin: 0 0 12px;">Hello ${fullName || 'ambassadeur'} 👋</p>
+      <p style="margin: 0 0 12px;">Hello ${firstName || 'ambassadeur'} 👋</p>
       <p style="margin: 0 0 12px;">
         Tu viens d’entrer dans l’équipe qui fait bouger la communauté Overbound. Ton rôle : inspirer,
         motiver et donner envie de se dépasser.
@@ -200,17 +200,17 @@ export async function sendAmbassadorWelcomeEmail(params: {
 
 export async function sendAmbassadorCodeAssignedEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   ambassadorCode: string
 }) {
-  const { to, fullName, ambassadorCode } = params
+  const { to, firstName, ambassadorCode } = params
   const siteUrl = getEmailAssetsBaseUrl()
 
   const html = wrapHtmlWithLayout({
     preview: 'Ton code ambassadeur est prêt',
     htmlContent: `
       <h2 style="margin: 0 0 12px; font-size: 20px;">Ton code ambassadeur est prêt</h2>
-      <p style="margin: 0 0 12px;">Hello ${fullName || 'ambassadeur'} 👋</p>
+      <p style="margin: 0 0 12px;">Hello ${firstName || 'ambassadeur'} 👋</p>
       <p style="margin: 0 0 12px;">
         Voici ton code unique à partager pour faire entrer de nouveaux athlètes dans l’aventure :
       </p>

@@ -110,7 +110,7 @@ export const stubAmbassadorApis = async (page: Page, { role = 'ambassador', emai
   })
   await page.route('**/api/session', (route) =>
     route.fulfill({
-      json: { user: { id: 'amb-user', email }, profile: { full_name: 'Ada Lovelace', role }, alerts: null },
+      json: { user: { id: 'amb-user', email }, profile: { first_name: 'Ada', last_name: 'Lovelace', role }, alerts: null },
     }),
   )
   await page.route('**/api/ambassadors/dashboard', (route) => route.fulfill({ json: current }))

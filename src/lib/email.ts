@@ -81,7 +81,7 @@ async function parentalAuthorizationAttachment() {
 
 export async function sendReceiptEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   invoiceNumber: string
   invoiceDate: string
   eventName: string
@@ -114,7 +114,7 @@ export async function sendReceiptEmail(params: {
 
 export async function sendOnboardingEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   accountUrl: string
   eventsUrl: string
   blogUrl: string
@@ -132,7 +132,7 @@ export async function sendOnboardingEmail(params: {
 
 export async function sendProfileCompletionReminderEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   accountUrl: string
   missingFields: string[]
 }) {
@@ -306,7 +306,7 @@ export async function sendSupportContactConfirmationEmail(params: {
 
 export async function sendNewEventAnnouncementEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   eventTitle: string
   eventDate: string
@@ -327,7 +327,7 @@ export async function sendNewEventAnnouncementEmail(params: {
 
 export async function sendEventOpeningEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   eventTitle: string
   eventDate: string
@@ -361,7 +361,7 @@ export async function sendEventOpeningEmail(params: {
 
 export async function sendPriceChangeReminderEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   eventTitle: string
   eventDate: string
@@ -383,7 +383,7 @@ export async function sendPriceChangeReminderEmail(params: {
 
 export async function sendPromoCampaignEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   title: string
   message: string
@@ -405,7 +405,7 @@ export async function sendPromoCampaignEmail(params: {
 
 export async function sendInactiveUserEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   lastEventTitle?: string | null
   eventsUrl: string
@@ -436,7 +436,7 @@ export async function sendInactiveUserEmail(params: {
 
 export async function sendAbandonedCheckoutEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   ticketName?: string | null
   resumeUrl: string
@@ -504,7 +504,7 @@ export async function sendAdminDigestEmail(params: {
 
 export async function sendVolunteerRecruitmentEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   headlineEvent: {
     id: string
     title: string
@@ -534,7 +534,7 @@ export async function sendVolunteerRecruitmentEmail(params: {
 
 export async function sendVolunteerAssignmentEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   eventDate: string
   eventLocation: string
@@ -609,7 +609,7 @@ export async function sendVolunteerApplicationConfirmationEmail(params: {
 
 export async function sendPopupSubscribeConfirmationEmail(params: {
   to: string
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   eventsUrl: string
   blogUrl: string

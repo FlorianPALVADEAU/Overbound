@@ -7,7 +7,8 @@ export interface AdminGroupMember {
   profile_id: string
   role: 'captain' | 'member'
   joined_at: string
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
   email: string | null
   avatar_url?: string | null
   /** Latest refund date when every bib of the member was cancelled and refunded. */

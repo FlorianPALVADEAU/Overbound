@@ -3,14 +3,14 @@ import { Section, Text, Link, Button, Hr } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 
 interface FeedbackRequestEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventName: string
   feedbackUrl: string
   eventDate?: string
 }
 
 export function FeedbackRequestEmail({
-  fullName,
+  firstName,
   eventName,
   feedbackUrl,
   eventDate,

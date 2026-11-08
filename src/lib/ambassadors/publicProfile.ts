@@ -10,12 +10,11 @@ export interface PublicListingState {
 export const isPubliclyListed = (state: PublicListingState): boolean =>
   state.is_active && state.public_opt_in && !state.public_blocked
 
-/** "Marie Dupont" becomes "Marie D.": a first name and an initial, never the full name. */
-export const toPublicName = (fullName: string | null | undefined): string => {
-  const parts = (fullName ?? '').trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return 'Ambassadeur'
-  const [first, ...rest] = parts
-  const last = rest[rest.length - 1]
+/** Prénom Nom becomes "Marie D.": a first name and an initial, never the full name. */
+export const toPublicName = (name: { first_name?: string | null; last_name?: string | null } | null | undefined): string => {
+  const first = name?.first_name?.trim() ?? ''
+  const last = name?.last_name?.trim() ?? ''
+  if (!first) return 'Ambassadeur'
   return last ? `${first} ${last.charAt(0).toUpperCase()}.` : first
 }
 

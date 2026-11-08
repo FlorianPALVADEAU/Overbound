@@ -142,7 +142,8 @@ export default function EventRegisterPage() {
               ? {
                   id: data.user.id,
                   email: data.user.email,
-                  fullName: data.user.fullName,
+                  firstName: accountRegistrations?.profile?.first_name ?? null,
+                  lastName: accountRegistrations?.profile?.last_name ?? null,
                   date_of_birth: accountRegistrations?.profile?.date_of_birth || null,
                   sex: accountRegistrations?.profile?.sex ?? null,
                 }

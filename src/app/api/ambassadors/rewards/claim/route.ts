@@ -8,6 +8,7 @@ import { getRewardKind } from '@/lib/ambassadors/program'
 import { claimAmbassadorReward, releaseAmbassadorRewardClaim, type ClaimFailure } from '@/lib/ambassadors/rewardClaims'
 import { loadCurrentSeason } from '@/lib/ambassadors/season'
 import type { AmbassadorReward } from '@/types/Ambassador'
+import { formatProfileName } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, role, full_name')
+      .select('id, role, first_name, last_name')
       .eq('id', user.id)
       .maybeSingle()
     if (profileError) {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await sendAmbassadorRewardClaimRequestEmail({
-        ambassadorName: profile?.full_name?.trim() || user.user_metadata?.full_name || user.email || user.id,
+        ambassadorName: formatProfileName(profile) || user.email || user.id,
         ambassadorEmail: user.email ?? 'email_inconnu',
         userId: user.id,
         ambassadorCode: promotionalCode?.code ?? null,

@@ -1,3 +1,4 @@
+import { formatProfileName } from '@/lib/account/profile'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { validateUnsubscribeToken } from '@/lib/email/unsubscribe'
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     if (payload.userId) {
       const { data, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, first_name, last_name')
         .eq('id', payload.userId)
         .single()
 
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
         ...(profile && {
           user: {
             id: profile.id,
-            name: profile.full_name,
+            name: formatProfileName(profile),
           },
         }),
       },

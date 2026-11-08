@@ -26,7 +26,7 @@ const EMAIL_GROUPS: Array<{
     title: 'Cycle de vie & transactionnel',
     description: 'Emails envoyés pendant la vie du compte utilisateur (onboarding, billets, événements…).',
     items: [
-      { type: 'onboarding', label: 'Onboarding', description: 'Bienvenue sur OverBound.' },
+      { type: 'onboarding', label: 'Onboarding', description: 'Bienvenue sur Overbound.' },
       { type: 'profile_nudge', label: 'Profil incomplet', description: 'Rappel pour compléter les informations.' },
       { type: 'event_prep', label: 'Préparation événement', description: 'Checklist pré-course à J-7.' },
       { type: 'post_event', label: 'Merci post-événement', description: 'Remerciements + feedback après la course.' },
@@ -76,7 +76,7 @@ type TriggerStatus = 'idle' | 'loading' | 'success' | 'error'
 
 interface OpeningAudienceRecipient {
   email: string
-  fullName?: string | null
+  firstName?: string | null
   sources: string[]
 }
 

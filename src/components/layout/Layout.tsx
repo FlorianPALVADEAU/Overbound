@@ -17,6 +17,7 @@ import { PopupArbiterProvider } from '@/components/popups/PopupArbiterProvider'
 import { GlobalLuckyWheelWidget } from '@/components/lucky-wheel/GlobalLuckyWheelWidget'
 import { CheckoutHeader } from './CheckoutHeader'
 import { isCheckoutPath } from '@/lib/checkout/checkoutRoute'
+import { profileNameFromUserMetadata } from '@/lib/account/profile'
 
 interface LayoutProps {
   children: ReactNode
@@ -55,11 +56,7 @@ export function Layout({ children }: LayoutProps) {
           ? previous.profile
           : user
             ? {
-                full_name:
-                  (user.user_metadata as Record<string, unknown> | undefined)?.full_name as
-                    | string
-                    | null
-                    | undefined,
+                ...profileNameFromUserMetadata(user.user_metadata as Record<string, unknown> | undefined),
                 avatar_url:
                   (user.user_metadata as Record<string, unknown> | undefined)?.avatar_url as
                     | string

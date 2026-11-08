@@ -8,11 +8,11 @@ export function isValidPopupSubscribeEmail(value: string) {
   return EMAIL_REGEX.test(normalizePopupSubscribeValue(value))
 }
 
-export function getPopupSubscribeValidationError(input: { fullName: string; email: string }) {
-  const fullName = normalizePopupSubscribeValue(input.fullName)
+export function getPopupSubscribeValidationError(input: { firstName: string; email: string }) {
+  const firstName = normalizePopupSubscribeValue(input.firstName)
   const email = normalizePopupSubscribeValue(input.email)
 
-  if (!fullName) {
+  if (!firstName) {
     return 'Le prénom est requis.'
   }
 

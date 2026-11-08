@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useSession } from '@/app/api/session/sessionQueries'
+import { formatProfileName } from '@/lib/account/profile'
 
 export const CONTACT_SUBJECTS = [
   'Inscription ou billet',
@@ -53,7 +54,7 @@ export function useContactForm() {
     setValues((prev) => ({
       ...prev,
       fullName:
-        prev.fullName || session.profile?.full_name || session.user?.user_metadata?.full_name || '',
+        prev.fullName || formatProfileName(session.profile) || session.user?.user_metadata?.full_name || '',
       email: prev.email || session.user?.email || '',
     }))
   }, [session])

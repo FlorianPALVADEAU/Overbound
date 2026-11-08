@@ -1,3 +1,4 @@
+import { formatProfileName } from '@/lib/account/profile'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AmbassadorDashboardData, AmbassadorRecruitRow, AmbassadorReward } from '@/types/Ambassador'
 import { resolveRewardStatus } from '@/lib/ambassadors/dashboardHelpers'
@@ -108,7 +109,7 @@ export async function loadAmbassadorRecruits(
 
   const [orders, profiles, events] = await Promise.all([
     orderIds.length > 0 ? admin.from('orders').select('id, status').in('id', orderIds) : null,
-    profileIds.length > 0 ? admin.from('profiles').select('id, full_name').in('id', profileIds) : null,
+    profileIds.length > 0 ? admin.from('profiles').select('id, first_name, last_name').in('id', profileIds) : null,
     registrations.length > 0
       ? admin
           .from('ambassador_points_events')
@@ -124,7 +125,7 @@ export async function loadAmbassadorRecruits(
       (orders ? (ensure('orders', orders) as Array<{ id: string; status: string | null }>) : []).map((row) => [row.id, row.status]),
     ),
     profileNames: new Map(
-      (profiles ? (ensure('profiles', profiles) as Array<{ id: string; full_name: string | null }>) : []).map((row) => [row.id, row.full_name]),
+      (profiles ? (ensure('profiles', profiles) as Array<{ id: string; first_name: string | null; last_name: string | null }>) : []).map((row) => [row.id, formatProfileName(row)]),
     ),
     pointEvents: events ? (ensure('point events', events) as RecruitPointEvent[]) : [],
     seasonStartedAt,
@@ -144,7 +145,7 @@ async function loadLeaderboardEntries(admin: Admin, programYear: number) {
       .select('ambassador_id, total_points')
       .eq('program_year', programYear)
       .in('ambassador_id', ambassadors.map((row) => row.id)),
-    admin.from('profiles').select('id, full_name').in('id', ambassadors.map((row) => row.profile_id)),
+    admin.from('profiles').select('id, first_name, last_name').in('id', ambassadors.map((row) => row.profile_id)),
   ])
 
   const pointsByAmbassador = new Map(
@@ -154,13 +155,14 @@ async function loadLeaderboardEntries(admin: Admin, programYear: number) {
     ]),
   )
   const nameByProfile = new Map(
-    (ensure('leaderboard profiles', profiles) as Array<{ id: string; full_name: string | null }>).map((row) => [row.id, row.full_name]),
+    (ensure('leaderboard profiles', profiles) as Array<{ id: string; first_name: string | null; last_name: string | null }>).map((row) => [row.id, row]),
   )
 
   return ambassadors.map((row) => ({
     ambassador_id: row.id,
     profile_id: row.profile_id,
-    full_name: nameByProfile.get(row.profile_id) ?? null,
+    first_name: nameByProfile.get(row.profile_id)?.first_name ?? null,
+    last_name: nameByProfile.get(row.profile_id)?.last_name ?? null,
     points: pointsByAmbassador.get(row.id) ?? 0,
   }))
 }

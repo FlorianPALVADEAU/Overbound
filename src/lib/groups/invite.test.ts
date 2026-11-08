@@ -28,7 +28,7 @@ describe('group invite helpers', () => {
   })
 
   it('names a group after the first name, with a fallback', () => {
-    expect(defaultGroupName('Camille Durand')).toBe('Groupe de Camille')
+    expect(defaultGroupName('Camille')).toBe('Groupe de Camille')
     expect(defaultGroupName(null)).toBe('Mon groupe')
     expect(defaultGroupName('   ')).toBe('Mon groupe')
   })

@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useParticipants } from './useParticipants'
 
-const buyer = { id: 'user-1', email: 'camille@example.com', fullName: 'Camille Martin', date_of_birth: '1990-05-04' }
+const buyer = { id: 'user-1', email: 'camille@example.com', firstName: 'Camille', lastName: 'Martin', date_of_birth: '1990-05-04' }
 
 describe('useParticipants', () => {
   it('prefills only the first bib with the buyer account', () => {

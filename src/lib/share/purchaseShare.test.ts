@@ -1,15 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShareText, buildShareUrl, buildSocialShareLinks, getFirstName } from './purchaseShare'
-
-describe('getFirstName', () => {
-  it('returns the first word', () => {
-    expect(getFirstName('  Jeanne  Dupont ')).toBe('Jeanne')
-  })
-  it('returns null when empty or missing', () => {
-    expect(getFirstName('   ')).toBeNull()
-    expect(getFirstName(null)).toBeNull()
-  })
-})
+import { buildShareText, buildShareUrl, buildSocialShareLinks } from './purchaseShare'
 
 describe('buildShareUrl', () => {
   it('targets the public event page with share UTM and no trailing slash issue', () => {

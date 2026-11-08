@@ -18,14 +18,14 @@ describe('popupSubscribeValidation', () => {
   it('rejects missing name and email', () => {
     expect(
       getPopupSubscribeValidationError({
-        fullName: '   ',
+        firstName: '   ',
         email: 'runner@overbound.com',
       }),
     ).toBe('Le prénom est requis.')
 
     expect(
       getPopupSubscribeValidationError({
-        fullName: 'Thomas',
+        firstName: 'Thomas',
         email: '   ',
       }),
     ).toBe("L'adresse email est requise.")
@@ -34,14 +34,14 @@ describe('popupSubscribeValidation', () => {
   it('rejects invalid email and accepts valid payload', () => {
     expect(
       getPopupSubscribeValidationError({
-        fullName: 'Thomas',
+        firstName: 'Thomas',
         email: 'not-an-email',
       }),
     ).toBe('Adresse email invalide.')
 
     expect(
       getPopupSubscribeValidationError({
-        fullName: 'Thomas',
+        firstName: 'Thomas',
         email: 'thomas@overbound.com',
       }),
     ).toBeNull()

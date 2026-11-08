@@ -12,7 +12,7 @@ const row = (patch: Record<string, unknown> = {}) => ({
   bib_number: 42,
   event: { title: 'Overbound', date: '2027-09-12T08:00:00Z', location: 'Saint-Quentin' },
   ticket: { name: 'Ranked' },
-  profile: { full_name: 'Ana Martin' },
+  profile: { first_name: 'Ana', last_name: 'Martin' },
   ...patch,
 })
 

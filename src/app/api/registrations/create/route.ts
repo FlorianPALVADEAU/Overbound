@@ -38,6 +38,7 @@ import { validateUpsellQuantities } from '@/lib/upsells/quantity'
 import { buildReceiptBreakdown } from '@/lib/email/receiptBreakdown'
 import { readRequestAssignments, validateUpsellAssignments } from '@/lib/upsells/assignments'
 import { CGV_VERSION } from '@/constants/legalVersions'
+import { firstNameFromUserMetadata, splitFullName } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 
@@ -968,8 +969,7 @@ export async function POST(request: NextRequest) {
 
         await sendReceiptEmail({
           to: user.email,
-          fullName:
-            typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null,
+          firstName: firstNameFromUserMetadata(user.user_metadata),
           invoiceNumber: order.id,
           invoiceDate: new Date(order.created_at ?? Date.now()).toLocaleDateString('fr-FR', { dateStyle: 'full' }),
           eventName: eventRow.title,
@@ -1091,9 +1091,11 @@ export async function POST(request: NextRequest) {
             if (!email || seenEmails.has(email)) return
             seenEmails.add(email)
 
+            const participantNames = splitFullName(participantName)
             await markResendContactAsRegistered({
               email,
-              fullName: participantName ?? null,
+              firstName: participantNames.firstName,
+              lastName: participantNames.lastName,
               properties: {
                 source: 'registration-create',
                 event_id: eventId,

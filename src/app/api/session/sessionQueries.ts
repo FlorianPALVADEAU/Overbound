@@ -2,9 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { getClientAuthHeaders } from '@/lib/auth/getClientAuthHeaders'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import type { ParticipantSex } from '@/lib/checkout/participantSex'
+import { profileNameFromUserMetadata } from '@/lib/account/profile'
 
 export interface SessionProfile {
-  full_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
   avatar_url?: string | null
   phone?: string | null
   date_of_birth?: string | null
@@ -19,6 +21,8 @@ export interface SessionUser {
   created_at?: string | null
   user_metadata?: {
     full_name?: string
+    first_name?: string
+    last_name?: string
     avatar_url?: string
   }
 }
@@ -46,6 +50,8 @@ const mapSessionUser = (sessionUser: {
   created_at: sessionUser.created_at ?? null,
   user_metadata: {
     full_name: sessionUser.user_metadata?.full_name,
+    first_name: sessionUser.user_metadata?.first_name,
+    last_name: sessionUser.user_metadata?.last_name,
     avatar_url: sessionUser.user_metadata?.avatar_url,
   },
 })
@@ -55,7 +61,7 @@ const buildFallbackFromLocalSession = (session: { user: any } | null): SessionRe
   return {
     user: mapSessionUser(session.user),
     profile: {
-      full_name: session.user.user_metadata?.full_name ?? null,
+      ...profileNameFromUserMetadata(session.user.user_metadata),
       avatar_url: session.user.user_metadata?.avatar_url ?? null,
       phone: null,
       date_of_birth: null,

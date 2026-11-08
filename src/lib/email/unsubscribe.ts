@@ -7,6 +7,8 @@ export interface UnsubscribeTokenPayload {
   userId?: string // Optional: for authenticated users only
   email: string // Always present
   listId?: string // Optional: specific list to unsubscribe from
+  /** Set on re-consent links so an unsubscribe token can never confirm a subscription. */
+  purpose?: 'reconsent'
   timestamp: number
 }
 
@@ -132,4 +134,29 @@ export function generateMarketingUnsubscribeUrl(params: {
 export function generatePreferencesUrl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   return `${baseUrl}/preferences`
+}
+
+/**
+ * Link of the re-consent mail: opens the page where the person picks the lists they accept.
+ */
+export function generateReconsentUrl(params: {
+  email: string
+  userId?: string | null
+}): string {
+  const token = generateUnsubscribeToken({
+    email: params.email.trim().toLowerCase(),
+    ...(params.userId ? { userId: params.userId } : {}),
+    purpose: 'reconsent',
+  })
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return `${baseUrl}/consent/${token}`
+}
+
+/** Validates a re-consent token; an unsubscribe token is refused. */
+export function validateReconsentToken(token: string): UnsubscribeTokenPayload {
+  const payload = validateUnsubscribeToken(token)
+  if (payload.purpose !== 'reconsent') {
+    throw new Error('Invalid token purpose')
+  }
+  return payload
 }

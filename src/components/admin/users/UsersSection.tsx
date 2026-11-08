@@ -40,6 +40,7 @@ import {
 } from '@/app/api/admin/users/usersQueries'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
+import { formatProfileName } from '@/lib/account/profile'
 
 const roleLabels: Record<AdminUser['role'], string> = {
   user: 'Utilisateur',
@@ -75,7 +76,8 @@ export function UsersSection() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [editUser, setEditUser] = useState<AdminUser | null>(null)
   const [editValues, setEditValues] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     phone: '',
     date_of_birth: '',
     marketing_opt_in: false,
@@ -157,7 +159,8 @@ export function UsersSection() {
   const openEditDialog = (user: AdminUser, role: AdminUser['role'] = user.role) => {
     setEditUser(user)
     setEditValues({
-      full_name: user.full_name ?? '',
+      first_name: user.first_name ?? '',
+      last_name: user.last_name ?? '',
       phone: user.phone ?? '',
       date_of_birth: user.date_of_birth ?? '',
       marketing_opt_in: Boolean(user.marketing_opt_in),
@@ -171,7 +174,8 @@ export function UsersSection() {
     setUpdatingId(editUser.id)
     try {
       const payload = {
-        full_name: editValues.full_name.trim() || null,
+        first_name: editValues.first_name.trim() || null,
+        last_name: editValues.last_name.trim() || null,
         phone: editValues.phone.trim() || null,
         date_of_birth: editValues.date_of_birth || null,
         marketing_opt_in: editValues.marketing_opt_in,
@@ -199,7 +203,7 @@ export function UsersSection() {
   }
 
   const handleDelete = async (user: AdminUser) => {
-    if (!confirm(`Supprimer l’utilisateur "${user.full_name || user.email || user.id}" ?`)) {
+    if (!confirm(`Supprimer l’utilisateur "${formatProfileName(user) || user.email || user.id}" ?`)) {
       return
     }
     setDeleteLoadingId(user.id)
@@ -263,7 +267,7 @@ export function UsersSection() {
           onRetry={() => void refetch()}
           getItemId={(user) => user.id}
           columns={[
-            { id: 'user', header: 'Utilisateur', cell: (user) => <><p className="truncate font-medium">{user.full_name || user.email || 'Utilisateur'}</p><p className="truncate text-xs text-muted-foreground">{user.email || '—'}</p>{user.phone ? <p className="truncate text-xs text-muted-foreground">{user.phone}</p> : null}</> },
+            { id: 'user', header: 'Utilisateur', cell: (user) => <><p className="truncate font-medium">{formatProfileName(user) || user.email || 'Utilisateur'}</p><p className="truncate text-xs text-muted-foreground">{user.email || '—'}</p>{user.phone ? <p className="truncate text-xs text-muted-foreground">{user.phone}</p> : null}</> },
             { id: 'role', header: 'Rôle', cell: (user) => <Select value={user.role} onValueChange={(value) => {
               // An ambassador needs an active promo code: pick it in the dialog instead of sending a bare role.
               if (value === 'ambassador' && !user.ambassador_promotional_code_id) openEditDialog(user, 'ambassador')
@@ -326,12 +330,21 @@ export function UsersSection() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
-            <div className="space-y-1">
-              <Label>Nom complet</Label>
-              <Input
-                value={editValues.full_name}
-                onChange={(event) => setEditValues((prev) => ({ ...prev, full_name: event.target.value }))}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Prénom</Label>
+                <Input
+                  value={editValues.first_name}
+                  onChange={(event) => setEditValues((prev) => ({ ...prev, first_name: event.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Nom</Label>
+                <Input
+                  value={editValues.last_name}
+                  onChange={(event) => setEditValues((prev) => ({ ...prev, last_name: event.target.value }))}
+                />
+              </div>
             </div>
             <div className="space-y-1">
               <Label>Téléphone</Label>

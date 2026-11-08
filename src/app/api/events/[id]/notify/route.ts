@@ -3,12 +3,14 @@ import { createSupabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { isEventOpenForRegistration } from '@/lib/events/registrationStatus'
+import { splitFullName } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 
 const notifySchema = z.object({
   email: z.string().email('Email invalide').optional(),
-  full_name: z.string().optional(),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
 })
 
 export async function POST(
@@ -54,10 +56,11 @@ export async function POST(
       return NextResponse.json({ error: 'Inscriptions déjà ouvertes' }, { status: 400 })
     }
 
-    const fullName =
-      parsed.full_name?.trim() ||
-      (user?.user_metadata as { full_name?: string } | undefined)?.full_name ||
-      null
+    const metadataName = splitFullName(
+      (user?.user_metadata as { full_name?: string } | undefined)?.full_name,
+    )
+    const firstName = parsed.first_name?.trim() || metadataName.firstName
+    const lastName = parsed.last_name?.trim() || metadataName.lastName
 
     const { error: insertError } = await admin
       .from('event_opening_notifications')
@@ -66,7 +69,8 @@ export async function POST(
           event_id: event.id,
           user_id: user?.id ?? null,
           email,
-          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
           source: 'event-page',
         },
         {

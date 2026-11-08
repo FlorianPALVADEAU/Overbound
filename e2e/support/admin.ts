@@ -243,7 +243,7 @@ export const stubAdminApis = async (page: Page): Promise<AdminStubState> => {
     window.localStorage.setItem('overbound-consent', JSON.stringify({ analytics: false, marketing: false, updatedAt: new Date().toISOString() }))
   })
   await page.route('**/api/session', (route) =>
-    json(route, { user: { id: 'admin-1', email: 'admin@example.com' }, profile: { full_name: 'Admin Test', role: 'admin' }, alerts: null }),
+    json(route, { user: { id: 'admin-1', email: 'admin@example.com' }, profile: { first_name: 'Admin', last_name: 'Test', role: 'admin' }, alerts: null }),
   )
 
   await page.route('**/api/admin/**', async (route) => {

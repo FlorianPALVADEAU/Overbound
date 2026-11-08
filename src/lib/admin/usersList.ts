@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const adminUserSortSchema = z.enum(['created_at', 'last_sign_in_at', 'full_name', 'email', 'role'])
+export const adminUserSortSchema = z.enum(['created_at', 'last_sign_in_at', 'name', 'email', 'role'])
 export const adminUserDirectionSchema = z.enum(['asc', 'desc'])
 export type AdminUserSort = z.infer<typeof adminUserSortSchema>
 export type AdminUserDirection = z.infer<typeof adminUserDirectionSchema>

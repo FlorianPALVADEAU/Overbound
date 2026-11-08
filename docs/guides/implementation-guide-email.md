@@ -34,6 +34,14 @@
 
 ---
 
+## Consentement et segments (2026-11-08)
+
+- Une ligne `list_subscriptions` abonnée doit avoir une `source`. Sans source ou en `legacy-unproven*`, elle ne reçoit **aucun** mail marketing (`hasProvenConsent`).
+- Nouveau compte : abonné à rien. Ne jamais remettre un défaut à `true` dans `create_notification_preferences_for_new_user`.
+- Écrire un abonnement : toujours avec une `source`. Pour les comptes, passer par `notification_preferences` (le trigger recopie) ou écrire les deux tables.
+- Re-consentement : `POST /api/admin/emails/reconsent` en `dry_run`, puis `self` (test à soi), puis `all`. Relancer la campagne ne touche que ceux qui n'ont pas répondu.
+- Segment d'envoi : `resolveSegmentedAudience({ listIds, segment, eventId })`. `registered` et `not_registered` lisent `registrations` (non annulées), `volunteers` lit `volunteer_applications`.
+
 ## Envoi marketing (SES + Supabase)
 
 ### Chemin d'un envoi

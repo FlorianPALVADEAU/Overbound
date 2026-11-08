@@ -71,7 +71,7 @@ describe('PATCH /api/admin/users/[id]', () => {
     const { admin } = setup({
       profiles: {
         maybe: { data: { id: USER_ID, role: 'user' } },
-        single: { data: { id: USER_ID, full_name: 'Nouveau', role: 'admin', phone: null, created_at: '2026-01-01', date_of_birth: null, marketing_opt_in: null } },
+        single: { data: { id: USER_ID, first_name: 'Nouveau', last_name: 'Nom', role: 'admin', phone: null, created_at: '2026-01-01', date_of_birth: null, marketing_opt_in: null } },
       },
     })
     supabaseAdminMock.mockReturnValue(admin)
@@ -95,7 +95,7 @@ describe('PATCH /api/admin/users/[id]', () => {
     const { admin, calls } = setup({
       profiles: {
         maybe: { data: { id: USER_ID, role: 'user' } },
-        single: { data: { id: USER_ID, full_name: 'Ex', role: 'ambassador', phone: null, created_at: '2026-01-01', date_of_birth: null, marketing_opt_in: null } },
+        single: { data: { id: USER_ID, first_name: 'Ex', last_name: 'Nom', role: 'ambassador', phone: null, created_at: '2026-01-01', date_of_birth: null, marketing_opt_in: null } },
       },
       ambassadors: { maybe: { data: { promotional_code_id: CODE_ID } } },
     })

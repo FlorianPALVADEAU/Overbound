@@ -2,17 +2,15 @@ import * as React from 'react'
 import { Link } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 import { Checklist, CtaButton, EMAIL_COLORS, Eyebrow, Highlight, Paragraph, SectionTitle, SmallPrint, Title } from './blocks'
-import { getFirstName } from '@/lib/email/participantName'
 
 interface PopupSubscribeConfirmationEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   userId?: string
   eventsUrl: string
   blogUrl: string
 }
 
-export function PopupSubscribeConfirmationEmail({ fullName, eventsUrl, blogUrl }: PopupSubscribeConfirmationEmailProps) {
-  const firstName = getFirstName(fullName)
+export function PopupSubscribeConfirmationEmail({ firstName, eventsUrl, blogUrl }: PopupSubscribeConfirmationEmailProps) {
   return (
     <EmailLayout
       preview="Bienvenue chez Overbound : ton code cumulable WELCOME05 est dans cet email."

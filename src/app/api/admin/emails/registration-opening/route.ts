@@ -18,6 +18,7 @@ import {
 } from '@/lib/email/transport'
 import { generateMarketingUnsubscribeUrl } from '@/lib/email/unsubscribe'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
+import { firstNameFromUserMetadata } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 // Paced sending stops on its time budget; running the campaign again resumes it.
@@ -56,7 +57,7 @@ const ensureAdmin = async (request?: NextRequest) => {
   const supabase = await createSupabaseServer()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('first_name')
     .eq('id', user.id)
     .single()
 
@@ -64,7 +65,7 @@ const ensureAdmin = async (request?: NextRequest) => {
     user: {
       id: user.id,
       email: user.email,
-      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
+      firstName: profile?.first_name ?? firstNameFromUserMetadata(user.user_metadata),
     },
   }
 }
@@ -76,7 +77,7 @@ const buildOpeningMessage = async (recipient: CampaignAudienceRecipient) => {
   })
   const html = await renderEmail(
     EventOpeningEmail({
-      fullName: recipient.fullName,
+      firstName: recipient.firstName,
       eventTitle: CAMPAIGN_EVENT_TITLE,
       eventDate: CAMPAIGN_EVENT_DATE,
       eventLocation: CAMPAIGN_EVENT_LOCATION,
@@ -171,7 +172,7 @@ async function handlePost(request: NextRequest) {
       const selfRecipient: CampaignAudienceRecipient = {
         email: adminCheck.user.email,
         userId: adminCheck.user.id,
-        fullName: adminCheck.user.fullName,
+        firstName: adminCheck.user.firstName,
         sources: ['auth'],
       }
 

@@ -1,10 +1,9 @@
 import * as React from 'react'
 import EmailLayout from './EmailLayout'
 import { Checklist, CtaButton, Eyebrow, FactList, Paragraph, SectionTitle, Title } from './blocks'
-import { getFirstName } from '@/lib/email/participantName'
 
 export interface BootcampRegistrationEmailProps {
-  fullName: string | null
+  firstName: string | null
   bootcampTitle: string
   startsAt: string
   locationName: string
@@ -12,7 +11,7 @@ export interface BootcampRegistrationEmailProps {
 }
 
 export function BootcampRegistrationEmail({
-  fullName,
+  firstName,
   bootcampTitle,
   startsAt,
   locationName,
@@ -32,7 +31,6 @@ export function BootcampRegistrationEmail({
   const formattedTime = valid
     ? new Date(startsAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
     : null
-  const firstName = getFirstName(fullName)
 
   return (
     <EmailLayout

@@ -79,11 +79,11 @@ export async function GET(
         : ''
       let notificationsQuery = admin
         .from('event_opening_notifications')
-        .select('id, email, full_name, user_id, source, created_at')
+        .select('id, email, first_name, last_name, user_id, source, created_at')
         .eq('event_id', firstEvent.id)
       if (notificationSearch) {
         notificationsQuery = notificationsQuery.or(
-          `email.ilike.*${notificationSearch}*,full_name.ilike.*${notificationSearch}*`,
+          `email.ilike.*${notificationSearch}*,first_name.ilike.*${notificationSearch}*,last_name.ilike.*${notificationSearch}*`,
         )
       }
       const { data: notifications, error: notificationsError } = await notificationsQuery
@@ -108,7 +108,8 @@ export async function GET(
         user: {
           id: row.user_id ?? null,
           email: row.email || '',
-          full_name: row.full_name ?? null,
+          first_name: row.first_name ?? null,
+          last_name: row.last_name ?? null,
         },
       }))
 
@@ -118,7 +119,7 @@ export async function GET(
         .eq('event_id', firstEvent.id)
       if (notificationSearch) {
         notificationCountQuery = notificationCountQuery.or(
-          `email.ilike.*${notificationSearch}*,full_name.ilike.*${notificationSearch}*`,
+          `email.ilike.*${notificationSearch}*,first_name.ilike.*${notificationSearch}*,last_name.ilike.*${notificationSearch}*`,
         )
       }
       const { count } = await notificationCountQuery
@@ -149,7 +150,7 @@ export async function GET(
     const filteredSubscribers = subscribers
       .filter((subscriber) => {
         if (!normalizedSearch) return true
-        return [subscriber.email, subscriber.fullName ?? ''].some((value) =>
+        return [subscriber.email, subscriber.firstName ?? '', subscriber.lastName ?? ''].some((value) =>
           value.toLocaleLowerCase('fr-FR').includes(normalizedSearch),
         )
       })
@@ -165,7 +166,8 @@ export async function GET(
       user: {
         id: subscriber.userId,
         email: subscriber.email,
-        full_name: subscriber.fullName,
+        first_name: subscriber.firstName,
+        last_name: subscriber.lastName,
       },
     }))
 

@@ -45,7 +45,7 @@ export async function nudgeAmbassadorNearGoal(admin: NudgeClient, ambassadorId: 
 
   try {
     const [{ data: profile }, { data: authUser }, { data: codeRow }] = await Promise.all([
-      admin.from('profiles').select('full_name').eq('id', ambassador.profile_id).maybeSingle(),
+      admin.from('profiles').select('first_name').eq('id', ambassador.profile_id).maybeSingle(),
       admin.auth.admin.getUserById(ambassador.profile_id),
       admin.from('ambassador_promotional_codes').select('promotional_code:promotional_codes(code)').eq('ambassador_id', ambassadorId).eq('is_current', true).maybeSingle(),
     ])
@@ -58,7 +58,7 @@ export async function nudgeAmbassadorNearGoal(admin: NudgeClient, ambassadorId: 
 
     await sendAmbassadorPointsNudgeEmail({
       to: email,
-      fullName: profile?.full_name ?? null,
+      firstName: profile?.first_name ?? null,
       ambassadorCode: promotionalCode?.code ?? null,
       goalName: goal.name,
       pointsRemaining: goal.pointsRemaining,

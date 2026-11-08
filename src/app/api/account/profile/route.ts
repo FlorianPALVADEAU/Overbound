@@ -25,11 +25,17 @@ const preprocessOptionalString = <T extends ZodTypeAny>(schema: T) =>
   )
 
 const updateProfileSchema = z.object({
-  full_name: preprocessOptionalString(
+  first_name: preprocessOptionalString(
     z
       .string()
-      .min(1, { message: 'Le nom complet doit contenir au moins 1 caractère.' })
-      .max(150, { message: 'Le nom complet est trop long.' }),
+      .min(1, { message: 'Le prénom doit contenir au moins 1 caractère.' })
+      .max(75, { message: 'Le prénom est trop long.' }),
+  ),
+  last_name: preprocessOptionalString(
+    z
+      .string()
+      .min(1, { message: 'Le nom doit contenir au moins 1 caractère.' })
+      .max(75, { message: 'Le nom est trop long.' }),
   ),
   phone: preprocessOptionalString(
     z
@@ -135,7 +141,7 @@ export async function PATCH(request: NextRequest) {
         },
         { onConflict: 'id' },
       )
-      .select('full_name, phone, date_of_birth, sex, marketing_opt_in, role')
+      .select('first_name, last_name, phone, date_of_birth, sex, marketing_opt_in, role')
       .single()
 
     if (updateError) {

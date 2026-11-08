@@ -13,7 +13,7 @@ export interface TicketContext {
 
 export const createTicketContext = (
   user: { email?: string | null },
-  profile: Pick<SessionProfile, 'full_name' | 'date_of_birth' | 'avatar_url'> | null,
+  profile: Pick<SessionProfile, 'first_name' | 'last_name' | 'date_of_birth' | 'avatar_url'> | null,
   now: Date,
 ): TicketContext => ({
   userEmail: user.email,
@@ -23,7 +23,7 @@ export const createTicketContext = (
       ticket.participant,
       // The profile only describes the account holder, never a friend's bib.
       isOwnTicket(ticket, user.email)
-        ? { fullName: profile?.full_name, birthDate: profile?.date_of_birth, avatarUrl: profile?.avatar_url }
+        ? { holder: profile, birthDate: profile?.date_of_birth, avatarUrl: profile?.avatar_url }
         : null,
       now,
     ),
