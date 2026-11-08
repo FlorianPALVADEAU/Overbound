@@ -89,4 +89,26 @@ describe('POST /api/promotions/popup-subscribe', () => {
     expect(response.status).toBe(201)
     expect(insertHandle.insert).toHaveBeenCalledTimes(1)
   })
+
+  it('subscribes only to the lists the popup promises, never partners or volunteers', async () => {
+    mocks.createClient.mockResolvedValue({
+      from: (table: string) =>
+        table === 'site_promotions'
+          ? chain({ data: { id: PROMOTION_ID, type: 'popup', is_active: true }, error: null })
+          : chain({
+              data: [
+                { id: 'list-events', slug: 'events-announcements' },
+                { id: 'list-partners', slug: 'partners-offers' },
+                { id: 'list-volunteers', slug: 'volunteers-recruitment' },
+              ],
+              error: null,
+            }),
+    })
+
+    const response = await POST(request())
+
+    expect(response.status).toBe(201)
+    const rows = (insertHandle.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as Array<{ list_id: string }>
+    expect(rows.map((row) => row.list_id)).toEqual(['list-events'])
+  })
 })

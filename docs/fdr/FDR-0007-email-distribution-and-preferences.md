@@ -36,6 +36,25 @@ La décision « Supabase est le référentiel, Resend une projection » est main
 
 Le trigger `sync_notification_prefs_to_lists` reste la seule passerelle entre `notification_preferences` et `list_subscriptions` : le code applicatif n'écrit pas l'un sans l'autre.
 
+## Amendement 2026-11-08 : consentement prouvé, re-consentement, segments d'envoi
+
+Migration : `supabase/migrations/20261115100000_marketing_consent_provenance.sql` (écrite, **à appliquer manuellement après relecture et après `20261114100000_profile_split_name.sql`**, qu'elle reprend pour la fonction de fusion ; testée dans une transaction annulée sur la base de dev). Le code échoue fermé, l'ordre migration / déploiement est libre.
+
+Constat (base live, 2026-11-08) : un compte était abonné aux annonces et aux alertes de prix dès sa création, sans case à cocher (797 comptes sur 804). Le popup abonnait l'adresse à toutes les listes sur la seule phrase « emails marketing ». 2110 abonnements actifs n'avaient aucune `source`. `distribution_lists.default_subscribed` n'était lu par rien.
+
+| Sujet | Décision |
+|---|---|
+| Défaut à la création | Opt-in. `create_notification_preferences_for_new_user` met tout à `false`. Une case pré-cochée ou un défaut à `true` n'est pas un consentement (RGPD art. 4 et 7). `default_subscribed` reste sans effet et ne doit plus être présenté comme un réglage. |
+| Preuve | Toute ligne abonnée porte une `source` (`signup`, `preferences`, `preferences_page`, `popup-*`, `admin`, `reconsent`). `hasProvenConsent` (`src/lib/email/consent.ts`) refuse une source vide ou `legacy-unproven*`. `resolveAudience` n'envoie qu'à des consentements tracés. |
+| Rétrogradation | Les lignes abonnées sans source passent à `legacy-unproven`. Les abonnements « offres partenaires » et « recrutement bénévoles » issus du popup passent à `legacy-unproven:popup-*` : finalité distincte, non couverte par « emails marketing ». |
+| Popup | N'abonne qu'à `events-announcements`, `price-alerts`, `news-blog` (`selectPopupConsentLists`), phrase mise à jour. Partenaires et bénévoles demandent leur propre opt-in. |
+| Re-consentement | `resolveReconsentAudience` cible les adresses encore abonnées sur une ligne non tracée. Le mail `ReconsentEmail` mène à `/consent/[token]` (jeton signé, `purpose: 'reconsent'`, un jeton de désinscription est refusé). Rien n'est pré-coché sauf un consentement tracé. La réponse réécrit les lignes (`source = reconsent`) et `notification_preferences`. Envoi : `POST /api/admin/emails/reconsent` (`dry_run`, `self`, `all` avec jeton de dry-run). Sans réponse, la personne ne reçoit plus rien. |
+| Désinscription par préférences | Le trigger `sync_notification_prefs_to_lists` fait un UPDATE puis un INSERT. L'ancien `INSERT ... ON CONFLICT` passait par le trigger de fusion, qui fait un OU des drapeaux `subscribed` et ne pouvait donc jamais désabonner une ligne existante. |
+| Segments | `resolveSegmentedAudience` : les listes décident qui a consenti, un segment restreint (`all`, `registered`, `not_registered`, `volunteers`), éventuellement à un événement. Inscrits = participants d'inscriptions non annulées. Bénévoles = candidatures `volunteer_applications`. Un segment ne crée jamais un droit d'envoi. |
+| Admin | Le composer place l'audience en premier et affiche le total réel (`POST /api/admin/distribution-lists/audience`), pas la somme des listes. |
+
+Limites assumées : un acheteur sans consentement tracé n'est pas contacté en marketing (l'exception « client » du CPCE L.34-5 n'est pas implémentée ; elle demande l'information et l'opposition au checkout). Les infos opérationnelles à un inscrit restent du transactionnel (Resend). Après la date limite choisie pour le re-consentement, désabonner les lignes `legacy-unproven` restantes. Validation juridique requise (`docs/guides/legal.md`).
+
 ## Decision
 
 ### Décisions de reprise — 2026-09-21

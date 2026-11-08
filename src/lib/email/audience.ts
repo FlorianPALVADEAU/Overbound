@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
 import type { MarketingRecipient } from '@/lib/email/marketing'
 import { filterSuppressed } from '@/lib/email/suppression'
+import { hasProvenConsent } from '@/lib/email/consent'
 
 /**
  * Marketing audience, read from Supabase only (FDR-0007: Supabase is the source of truth,
@@ -193,12 +194,27 @@ async function dropNonImmediateDigest(recipients: MarketingRecipient[]): Promise
 
 /**
  * Who may receive a marketing mail for the selected lists (all active lists when none is given):
- * subscribed accounts and email-only subscribers, one entry per address, minus digest opt-outs
- * and minus addresses suppressed after a bounce or complaint. Throws rather than widening the audience.
+ * subscribed accounts and email-only subscribers whose consent can be traced to a source,
+ * one entry per address, minus digest opt-outs and minus addresses suppressed after a bounce or
+ * complaint. Throws rather than widening the audience.
  */
 export async function resolveAudience(selector: AudienceSelector = {}): Promise<MarketingRecipient[]> {
   const listIds = await resolveActiveListIds(selector)
   const subscribers = await listSubscribers(listIds, { subscribedOnly: true })
-  const withDigestPreference = await dropNonImmediateDigest(dedupeByEmail(subscribers))
+  const proven = subscribers.filter((subscriber) => hasProvenConsent(subscriber.source))
+  const withDigestPreference = await dropNonImmediateDigest(dedupeByEmail(proven))
+  return filterSuppressed(withDigestPreference)
+}
+
+/**
+ * Addresses still subscribed on a row we cannot trace to a consent: the audience of the
+ * re-consent mail. Once a person answers, their rows are either confirmed (traced source) or
+ * unsubscribed, so a second run only reaches those who did not answer.
+ */
+export async function resolveReconsentAudience(): Promise<MarketingRecipient[]> {
+  const listIds = await resolveActiveListIds({})
+  const subscribers = await listSubscribers(listIds, { subscribedOnly: true })
+  const unproven = subscribers.filter((subscriber) => !hasProvenConsent(subscriber.source))
+  const withDigestPreference = await dropNonImmediateDigest(dedupeByEmail(unproven))
   return filterSuppressed(withDigestPreference)
 }

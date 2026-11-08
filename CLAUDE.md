@@ -86,6 +86,13 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 - Jamais updater une table sans l'autre
 - RLS strict : SELECT = auth.uid() OR is_admin()
 
+### Consentement marketing
+⚠️ Un abonnement sans `source` tracée (`legacy-unproven*` compris) ne reçoit aucun mail marketing : `resolveAudience` le filtre via `hasProvenConsent`.
+- Nouveau compte = abonné à rien. Popup : seulement les listes promises (`selectPopupConsentLists`).
+- Écrire `list_subscriptions` et `notification_preferences` ensemble, toujours avec une `source`.
+- Segments d'envoi (inscrits, non-inscrits, bénévoles) : `resolveSegmentedAudience`. Un segment restreint, il ne crée pas de droit d'envoi.
+- Voir FDR-0007, amendement 2026-11-08.
+
 ### CGV : versionnage obligatoire
 ⚠️ **TOUTE modification de fond de `src/app/cgv/page.tsx` EXIGE de changer `CGV_VERSION` dans `src/constants/legalVersions.ts` (date ISO du jour), dans le même commit.**
 - Cette version est figée dans les métadonnées du PaymentIntent puis copiée dans `orders.cgv_version` : c'est la **seule preuve** de la version des CGV acceptée par chaque acheteur. Oublier de la changer = commandes rattachées à tort à l'ancien texte.

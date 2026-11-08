@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getClientIp, rateLimit } from '@/lib/rateLimit'
 import { createClient, supabaseAdmin } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { selectPopupConsentLists } from '@/lib/subscriptions/popupConsent'
 import { sendPopupSubscribeConfirmationEmail } from '@/lib/email'
 import {
   markResendContactAsUnregistered,
@@ -119,12 +120,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Récupérer toutes les listes marketing
-    const { data: marketingLists, error: listsError } = await supabase
+    // Seules les listes promises par le popup (consentement spécifique par finalité)
+    const { data: allLists, error: listsError } = await supabase
       .from('distribution_lists')
       .select('id, slug')
+      .eq('active', true)
+    const marketingLists = selectPopupConsentLists(allLists ?? [])
 
-    if (listsError || !marketingLists || marketingLists.length === 0) {
+    if (listsError || marketingLists.length === 0) {
       console.error('Error fetching marketing lists:', listsError)
       return NextResponse.json(
         { error: 'Erreur lors de la récupération des listes' },

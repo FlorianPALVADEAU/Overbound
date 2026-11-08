@@ -8,7 +8,7 @@ const { supabaseAdminMock, filterSuppressedMock } = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/server', () => ({ supabaseAdmin: supabaseAdminMock }))
 vi.mock('@/lib/email/suppression', () => ({ filterSuppressed: filterSuppressedMock }))
 
-import { listSubscribers, resolveAudience } from './audience'
+import { listSubscribers, resolveAudience, resolveReconsentAudience } from './audience'
 
 type Result = { data: unknown; error: { message: string } | null }
 
@@ -66,7 +66,7 @@ const accountRow = (id: string, userId: string, fullName: string | null = null) 
   email: null,
   full_name: null,
   subscribed: true,
-  source: null,
+  source: 'preferences',
   subscribed_at: null,
   profiles: { full_name: fullName },
 })
@@ -201,6 +201,94 @@ describe('resolveAudience', () => {
     givenDatabase({ subscriptions: { data: null, error: { message: 'down' } } })
 
     await expect(resolveAudience()).rejects.toThrow('subscription read failed: down')
+  })
+})
+
+describe('consent provenance', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    filterSuppressedMock.mockImplementation(async (recipients: unknown[]) => recipients)
+  })
+
+  const withSource = (row: ReturnType<typeof emailOnly>, source: string | null) => ({ ...row, source })
+
+  it('leaves out subscriptions whose consent cannot be traced', async () => {
+    givenDatabase({
+      subscriptions: {
+        data: [
+          withSource(emailOnly('s1', 'traced@x.fr'), 'popup-1'),
+          withSource(emailOnly('s2', 'legacy@x.fr'), 'legacy-unproven'),
+          withSource(emailOnly('s3', 'legacy-popup@x.fr'), 'legacy-unproven:popup-1'),
+          withSource(emailOnly('s4', 'blank@x.fr'), null),
+        ],
+        error: null,
+      },
+    })
+
+    const audience = await resolveAudience()
+
+    expect(audience.map((r) => r.email)).toEqual(['traced@x.fr'])
+  })
+
+  it('keeps an address that has one traced list even if another list is untraced', async () => {
+    givenDatabase({
+      subscriptions: {
+        data: [
+          withSource(emailOnly('s1', 'mixed@x.fr'), 'legacy-unproven'),
+          { ...withSource(emailOnly('s2', 'mixed@x.fr'), 'preferences'), list_id: 'list-2' },
+        ],
+        error: null,
+      },
+    })
+
+    const audience = await resolveAudience()
+
+    expect(audience.map((r) => r.email)).toEqual(['mixed@x.fr'])
+  })
+})
+
+describe('resolveReconsentAudience', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    filterSuppressedMock.mockImplementation(async (recipients: unknown[]) => recipients)
+  })
+
+  it('targets only addresses subscribed on an untraced row, once each', async () => {
+    givenDatabase({
+      subscriptions: {
+        data: [
+          { ...emailOnly('s1', 'legacy@x.fr'), source: 'legacy-unproven' },
+          { ...emailOnly('s2', 'legacy@x.fr'), source: null },
+          { ...emailOnly('s3', 'traced@x.fr'), source: 'popup-1' },
+          { ...emailOnly('s4', 'popup-legacy@x.fr'), source: 'legacy-unproven:popup-1' },
+        ],
+        error: null,
+      },
+    })
+
+    const audience = await resolveReconsentAudience()
+
+    expect(audience.map((r) => r.email)).toEqual(['legacy@x.fr', 'popup-legacy@x.fr'])
+  })
+
+  it('returns nobody when every subscription is traced', async () => {
+    givenDatabase({
+      subscriptions: { data: [emailOnly('s1', 'a@x.fr')], error: null },
+    })
+
+    expect(await resolveReconsentAudience()).toEqual([])
+  })
+
+  it('does not write to suppressed addresses', async () => {
+    givenDatabase({
+      subscriptions: {
+        data: [{ ...emailOnly('s1', 'gone@x.fr'), source: 'legacy-unproven' }],
+        error: null,
+      },
+    })
+    filterSuppressedMock.mockImplementation(async () => [])
+
+    expect(await resolveReconsentAudience()).toEqual([])
   })
 })
 
