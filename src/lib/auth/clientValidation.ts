@@ -1,4 +1,6 @@
 export type RegisterValidationInput = {
+  firstName: string
+  lastName: string
   email: string
   password: string
   confirmPassword: string
@@ -40,7 +42,13 @@ export function buildAuthCallbackUrl(baseUrl: string, nextPath: string) {
 }
 
 export function validateRegisterInput(input: RegisterValidationInput): RegisterValidationError | null {
-  if (!input.email || !input.password || !input.confirmPassword) {
+  if (
+    !input.firstName.trim() ||
+    !input.lastName.trim() ||
+    !input.email ||
+    !input.password ||
+    !input.confirmPassword
+  ) {
     return 'missing_required_fields'
   }
 

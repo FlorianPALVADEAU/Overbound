@@ -67,18 +67,27 @@ describe('resolveAuthBaseUrl and buildAuthCallbackUrl', () => {
 })
 
 describe('validateRegisterInput', () => {
+  const valid = {
+    firstName: 'Jean',
+    lastName: 'Dupont',
+    email: 'runner@overbound.com',
+    password: '123456',
+    confirmPassword: '123456',
+  }
+
   it('validates required fields and format', () => {
     expect(
-      validateRegisterInput({ email: '', password: '123456', confirmPassword: '123456' }),
+      validateRegisterInput({ ...valid, email: '' }),
     ).toBe('missing_required_fields')
     expect(
-      validateRegisterInput({ email: 'bad', password: '123456', confirmPassword: '123456' }),
+      validateRegisterInput({ ...valid, email: 'bad' }),
     ).toBe('invalid_email')
     expect(
-      validateRegisterInput({ email: 'a@b.com', password: '123', confirmPassword: '123' }),
+      validateRegisterInput({ ...valid, email: 'a@b.com', password: '123', confirmPassword: '123' }),
     ).toBe('password_too_short')
     expect(
       validateRegisterInput({
+        ...valid,
         email: 'a@b.com',
         password: '123456',
         confirmPassword: '654321',
@@ -86,14 +95,18 @@ describe('validateRegisterInput', () => {
     ).toBe('password_mismatch')
   })
 
+  it('requires first name and last name', () => {
+    expect(validateRegisterInput({ ...valid, firstName: '' })).toBe('missing_required_fields')
+    expect(validateRegisterInput({ ...valid, lastName: '' })).toBe('missing_required_fields')
+  })
+
+  it('treats blank-only names as missing', () => {
+    expect(validateRegisterInput({ ...valid, firstName: '   ' })).toBe('missing_required_fields')
+    expect(validateRegisterInput({ ...valid, lastName: '  ' })).toBe('missing_required_fields')
+  })
+
   it('returns null when input is valid', () => {
-    expect(
-      validateRegisterInput({
-        email: 'runner@overbound.com',
-        password: '123456',
-        confirmPassword: '123456',
-      }),
-    ).toBeNull()
+    expect(validateRegisterInput(valid)).toBeNull()
   })
 
   it('maps validation errors to user-friendly messages', () => {

@@ -70,7 +70,11 @@ function RegisterInner() {
   const isVerificationStep = Boolean(pendingVerificationEmail)
   const verificationCode = verificationDigits.join('')
   const canSubmitRegister =
-    email.trim().length > 0 && password.trim().length > 0 && confirmPassword.trim().length > 0
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    email.trim().length > 0 &&
+    password.trim().length > 0 &&
+    confirmPassword.trim().length > 0
 
   useEffect(() => {
     const popupNotice = searchParams.get('popup_notice')
@@ -224,26 +228,28 @@ function RegisterInner() {
                 <form onSubmit={handleRegister} className="space-y-5">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <label htmlFor="firstName" className="text-sm text-muted-foreground">Prénom (optionnel)</label>
+                      <label htmlFor="firstName" className="text-sm text-muted-foreground">Prénom</label>
                       <Input
                         id="firstName"
                         type="text"
                         value={firstName}
                         onChange={(event) => setFirstName(event.target.value)}
                         disabled={loading}
+                        required
                         autoComplete="given-name"
                         placeholder="Jean"
                         className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label htmlFor="lastName" className="text-sm text-muted-foreground">Nom (optionnel)</label>
+                      <label htmlFor="lastName" className="text-sm text-muted-foreground">Nom</label>
                       <Input
                         id="lastName"
                         type="text"
                         value={lastName}
                         onChange={(event) => setLastName(event.target.value)}
                         disabled={loading}
+                        required
                         autoComplete="family-name"
                         placeholder="Dupont"
                         className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"

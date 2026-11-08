@@ -20,6 +20,8 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
   const [mode, setMode] = useState<Mode>('login')
   const [showPassword, setShowPassword] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
 
   const nextPath = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/'
 
@@ -54,7 +56,7 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (mode === 'login') void login()
-    else void signup()
+    else void signup({ firstName: firstName.trim(), lastName: lastName.trim() })
   }
 
   const handleVerify = async () => {
@@ -139,6 +141,28 @@ export default function InlineAuthStep({ onAuthenticated }: InlineAuthStepProps)
       ) : (
         <>
           <form onSubmit={handleSubmit} className="space-y-3">
+            {mode === 'signup' && (
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  aria-label="Prénom"
+                  placeholder="Prénom"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  disabled={loading}
+                  required
+                  autoComplete="given-name"
+                />
+                <Input
+                  aria-label="Nom"
+                  placeholder="Nom"
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  disabled={loading}
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
+            )}
             <Input
               type="email"
               aria-label="Adresse email"
