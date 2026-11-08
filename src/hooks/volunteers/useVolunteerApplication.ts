@@ -12,7 +12,6 @@ import {
 } from '@/lib/volunteers/apply/formValues'
 import { VolunteerApplicationValidator } from '@/lib/volunteers/apply/VolunteerApplicationValidator'
 import { VolunteerEventCatalog } from '@/lib/volunteers/apply/VolunteerEventCatalog'
-import { PersonName } from '@/lib/volunteers/shared/PersonName'
 
 const DRAFT_KEY = 'overbound:volunteer-draft:v1'
 
@@ -145,9 +144,8 @@ export function useVolunteerApplication() {
   useEffect(() => {
     if (!session?.user) return
     setValues((previous) => {
-      const known = PersonName.split(session.profile?.full_name || session.user?.user_metadata?.full_name || '')
-      const firstName = previous.firstName || known.firstName
-      const lastName = previous.lastName || known.lastName
+      const firstName = previous.firstName || session.profile?.first_name?.trim() || ''
+      const lastName = previous.lastName || session.profile?.last_name?.trim() || ''
       const email = previous.email || session.user?.email || ''
       const phone = previous.phone || session.profile?.phone || ''
       if (

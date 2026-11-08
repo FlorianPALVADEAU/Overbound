@@ -39,14 +39,14 @@ export async function POST(_req: Request, { params }: RouteContext) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('first_name')
     .eq('id', user.id)
     .single()
 
   if (user.email) {
     await sendBootcampRegistrationEmail({
       to: user.email,
-      fullName: profile?.full_name ?? null,
+      firstName: profile?.first_name ?? null,
       bootcampTitle: bootcamp.title,
       startsAt: bootcamp.starts_at,
       locationName: bootcamp.location_name,

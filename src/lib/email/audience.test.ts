@@ -47,28 +47,28 @@ function givenDatabase(fixture: Fixture) {
   return { tables, listUsers }
 }
 
-const emailOnly = (id: string, email: string, fullName: string | null = null) => ({
+const emailOnly = (id: string, email: string, firstName: string | null = null) => ({
   id,
   list_id: 'list-1',
   user_id: null,
   email,
-  full_name: fullName,
+  first_name: firstName,
   subscribed: true,
   source: 'popup-1',
   subscribed_at: null,
   profiles: null,
 })
 
-const accountRow = (id: string, userId: string, fullName: string | null = null) => ({
+const accountRow = (id: string, userId: string, firstName: string | null = null) => ({
   id,
   list_id: 'list-1',
   user_id: userId,
   email: null,
-  full_name: null,
+  first_name: null,
   subscribed: true,
   source: 'preferences',
   subscribed_at: null,
-  profiles: { full_name: fullName },
+  profiles: { first_name: firstName },
 })
 
 describe('resolveAudience', () => {
@@ -93,8 +93,8 @@ describe('resolveAudience', () => {
     const audience = await resolveAudience({ listSlugs: ['events-announcements'] })
 
     expect(audience).toEqual([
-      { userId: 'u1', email: 'alice@example.com', fullName: 'Alice' },
-      { userId: null, email: 'bob@example.com', fullName: 'Bob' },
+      { userId: 'u1', email: 'alice@example.com', firstName: 'Alice' },
+      { userId: null, email: 'bob@example.com', firstName: 'Bob' },
     ])
   })
 
@@ -109,7 +109,7 @@ describe('resolveAudience', () => {
 
     const audience = await resolveAudience()
 
-    expect(audience).toEqual([{ userId: 'u1', email: 'alice@example.com', fullName: 'Alice' }])
+    expect(audience).toEqual([{ userId: 'u1', email: 'alice@example.com', firstName: 'Alice' }])
   })
 
   it('drops accounts whose digest preference is not immediate', async () => {

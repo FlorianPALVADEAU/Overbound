@@ -135,7 +135,6 @@ export async function GET(
         ? {
             id: user.id,
             email: user.email ?? '',
-            fullName: user.user_metadata?.full_name || null,
           }
         : null,
     })

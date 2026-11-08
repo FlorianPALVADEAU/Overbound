@@ -27,7 +27,7 @@ describe('ambassadors/email', () => {
     it('sends the email with rewards list and ambassador code included', async () => {
       await sendAmbassadorRewardEarnedEmail({
         to: 'amb@example.com',
-        fullName: 'Alice Martin',
+        firstName: 'Alice',
         ambassadorCode: 'ALICE10',
         rewards: [
           { reward_level: 3, reward_name: 'Réduction 50%' },
@@ -39,7 +39,7 @@ describe('ambassadors/email', () => {
       const call = sendMock.mock.calls[0][0]
       expect(call.to).toBe('amb@example.com')
       expect(call.subject).toBe('Nouveau palier ambassadeur débloqué')
-      expect(call.html).toContain('Alice Martin')
+      expect(call.html).toContain('Alice')
       expect(call.html).toContain('ALICE10')
       expect(call.html).toContain('Palier 3')
       expect(call.html).toContain('Palier 4')
@@ -52,7 +52,7 @@ describe('ambassadors/email', () => {
       await expect(
         sendAmbassadorRewardEarnedEmail({
           to: 'amb@example.com',
-          fullName: null,
+          firstName: null,
           ambassadorCode: null,
           rewards: [{ reward_level: 1, reward_name: 'Badge ambassadeur' }],
         }),
@@ -64,7 +64,7 @@ describe('ambassadors/email', () => {
     it('sends the status update email with reward and status label', async () => {
       await sendAmbassadorRewardStatusEmail({
         to: 'amb@example.com',
-        fullName: 'Bob Dupont',
+        firstName: 'Bob',
         ambassadorCode: 'BOB20',
         reward: { reward_level: 2, reward_name: 'Récompense starter' },
         statusLabel: 'Réclamée',
@@ -73,7 +73,7 @@ describe('ambassadors/email', () => {
       expect(sendMock).toHaveBeenCalledTimes(1)
       const call = sendMock.mock.calls[0][0]
       expect(call.subject).toBe('Mise à jour de ta récompense')
-      expect(call.html).toContain('Bob Dupont')
+      expect(call.html).toContain('Bob')
       expect(call.html).toContain('BOB20')
       expect(call.html).toContain('Palier 2')
       expect(call.html).toContain('Réclamée')
@@ -85,7 +85,7 @@ describe('ambassadors/email', () => {
       await expect(
         sendAmbassadorRewardStatusEmail({
           to: 'amb@example.com',
-          fullName: null,
+          firstName: null,
           ambassadorCode: null,
           reward: { reward_level: 1, reward_name: 'Badge ambassadeur' },
           statusLabel: 'Fulfilled',
@@ -96,20 +96,20 @@ describe('ambassadors/email', () => {
 
   describe('sendAmbassadorWelcomeEmail', () => {
     it('sends the welcome email with the ambassador full name', async () => {
-      await sendAmbassadorWelcomeEmail({ to: 'new@example.com', fullName: 'Claire Durand' })
+      await sendAmbassadorWelcomeEmail({ to: 'new@example.com', firstName: 'Claire' })
 
       expect(sendMock).toHaveBeenCalledTimes(1)
       const call = sendMock.mock.calls[0][0]
       expect(call.to).toBe('new@example.com')
       expect(call.subject).toBe('Bienvenue dans l’équipe ambassadeur')
-      expect(call.html).toContain('Claire Durand')
+      expect(call.html).toContain('Claire')
     })
 
-    it('falls back to a generic greeting when fullName is missing, and propagates send errors', async () => {
+    it('falls back to a generic greeting when firstName is missing, and propagates send errors', async () => {
       sendMock.mockRejectedValueOnce(new Error('send failed'))
 
       await expect(
-        sendAmbassadorWelcomeEmail({ to: 'new@example.com', fullName: null }),
+        sendAmbassadorWelcomeEmail({ to: 'new@example.com', firstName: null }),
       ).rejects.toThrow('send failed')
     })
   })
@@ -118,7 +118,7 @@ describe('ambassadors/email', () => {
     it('sends the email containing the assigned ambassador code', async () => {
       await sendAmbassadorCodeAssignedEmail({
         to: 'coded@example.com',
-        fullName: 'Damien',
+        firstName: 'Damien',
         ambassadorCode: 'DAMIEN99',
       })
 
@@ -135,7 +135,7 @@ describe('ambassadors/email', () => {
       await expect(
         sendAmbassadorCodeAssignedEmail({
           to: 'coded@example.com',
-          fullName: null,
+          firstName: null,
           ambassadorCode: 'CODE1',
         }),
       ).rejects.toThrow('boom')

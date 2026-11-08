@@ -14,7 +14,7 @@ interface EventSnapshot {
 interface NotificationRow {
   id: string
   email: string
-  full_name?: string | null
+  first_name?: string | null
   user_id?: string | null
 }
 
@@ -38,7 +38,7 @@ export async function notifyEventOpening(eventId: string) {
 
   const { data: rows, error: rowsError } = await admin
     .from('event_opening_notifications')
-    .select('id, email, full_name, user_id')
+    .select('id, email, first_name, user_id')
     .eq('event_id', eventId)
     .is('notified_at', null)
 
@@ -61,7 +61,7 @@ export async function notifyEventOpening(eventId: string) {
       try {
         await sendEventOpeningEmail({
           to: recipient.email,
-          fullName: recipient.full_name ?? null,
+          firstName: recipient.first_name ?? null,
           eventTitle: event.title ?? 'Événement Overbound',
           eventDate: formattedDate,
           eventLocation,

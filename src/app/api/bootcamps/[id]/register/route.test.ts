@@ -9,7 +9,7 @@ interface FakeState {
   user: { id: string; email: string } | null
   bootcamp: Record<string, unknown> | null
   insertError: { code?: string; message: string } | null
-  profile: { full_name: string | null } | null
+  profile: { first_name: string | null } | null
   deleteError: { message: string } | null
 }
 
@@ -176,7 +176,7 @@ describe('POST /api/bootcamps/[id]/register', () => {
         user: { id: 'u-1', email: 'u@test.com' },
         bootcamp: BOOTCAMP,
         insertError: null,
-        profile: { full_name: 'Alice Dupont' },
+        profile: { first_name: 'Alice' },
         deleteError: null,
       }) as never,
     )
@@ -189,7 +189,7 @@ describe('POST /api/bootcamps/[id]/register', () => {
     expect(mockSendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'u@test.com',
-        fullName: 'Alice Dupont',
+        firstName: 'Alice',
         bootcampTitle: 'Bootcamp Airtime',
       }),
     )
@@ -201,7 +201,7 @@ describe('POST /api/bootcamps/[id]/register', () => {
         user: { id: 'u-1', email: '' },
         bootcamp: BOOTCAMP,
         insertError: null,
-        profile: { full_name: null },
+        profile: { first_name: null },
         deleteError: null,
       }) as never,
     )

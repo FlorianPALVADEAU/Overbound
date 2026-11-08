@@ -1,7 +1,8 @@
+import { formatProfileName } from '@/lib/account/profile'
 import type { GroupMember } from '@/types/Group'
 
 export const memberDisplayName = (member: GroupMember) =>
-  member.full_name || member.email?.split('@')[0] || 'Membre'
+  formatProfileName(member) || member.email?.split('@')[0] || 'Membre'
 
 const normalize = (value: string) =>
   value

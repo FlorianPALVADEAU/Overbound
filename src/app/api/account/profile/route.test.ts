@@ -33,7 +33,7 @@ describe('PATCH /api/account/profile: sex', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resolveRequestUser.mockResolvedValue({ id: 'user-1' })
-    single.mockResolvedValue({ data: { full_name: 'Camille', sex: 'femme' }, error: null })
+    single.mockResolvedValue({ data: { first_name: 'Camille', sex: 'femme' }, error: null })
   })
 
   it('saves a sex on the profile of the signed-in user', async () => {

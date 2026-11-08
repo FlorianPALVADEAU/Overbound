@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface PriceChangeReminderEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   eventDate: string
   deadlineLabel: string
@@ -15,7 +15,7 @@ interface PriceChangeReminderEmailProps {
 }
 
 export function PriceChangeReminderEmail({
-  fullName,
+  firstName,
   eventTitle,
   eventDate,
   deadlineLabel,
@@ -62,7 +62,7 @@ export function PriceChangeReminderEmail({
 
         {/* Main Heading */}
         <Text style={styles.heading}>
-          {fullName ? `${fullName}, dernière chance !` : 'Dernière chance !'}
+          {firstName ? `${firstName}, dernière chance !` : 'Dernière chance !'}
         </Text>
 
         {/* Intro */}

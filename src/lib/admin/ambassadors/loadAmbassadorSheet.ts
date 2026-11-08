@@ -8,6 +8,7 @@ import { loadCurrentSeason } from '@/lib/ambassadors/season'
 import { isAmbassadorRewardExpired } from '@/lib/ambassadors/rewardLifecycle'
 import { buildAdminLadder, buildBonusSummary } from './sheetLadder'
 import type { AdminAmbassadorSheetResponse, AdminSheetReward } from './types'
+import { formatProfileName } from '@/lib/account/profile'
 
 type Admin = Pick<SupabaseClient, 'from'>
 
@@ -39,14 +40,14 @@ export async function loadAmbassadorSheet(
   const season = requestedSeason ?? currentSeason.season
 
   const [profileResult, pointRows, rewardRows, codes, program] = await Promise.all([
-    admin.from('profiles').select('full_name, avatar_url').eq('id', ambassador.profile_id).maybeSingle(),
+    admin.from('profiles').select('first_name, last_name, avatar_url').eq('id', ambassador.profile_id).maybeSingle(),
     admin.from('ambassador_points_years').select('program_year, total_points, recruits_open, recruits_ranked').eq('ambassador_id', ambassadorId),
     admin.from('ambassador_rewards').select(REWARD_COLUMNS).eq('ambassador_id', ambassadorId).eq('program_year', season).order('reward_level', { ascending: true }),
     loadAmbassadorCodes(admin, { id: ambassador.id, promotional_code_id: ambassador.promotional_code_id }),
     loadProgramRules(admin, season),
   ])
 
-  const profile = ensure<{ full_name: string | null; avatar_url: string | null }>('profile', profileResult)
+  const profile = ensure<{ first_name: string | null; last_name: string | null; avatar_url: string | null }>('profile', profileResult)
   const allPoints = ensure<Array<{ program_year: number; total_points: number; recruits_open: number; recruits_ranked: number }>>('points', pointRows) ?? []
   const seasonPoints = allPoints.find((row) => Number(row.program_year) === season)
   const totalPoints = seasonPoints?.total_points ?? 0
@@ -73,7 +74,7 @@ export async function loadAmbassadorSheet(
     ambassador: {
       id: ambassador.id,
       profile_id: ambassador.profile_id,
-      name: profile?.full_name ?? 'Ambassadeur',
+      name: formatProfileName(profile) ?? 'Ambassadeur',
       code: codes.currentCode,
       is_active: ambassador.is_active,
       public_opt_in: ambassador.public_opt_in,

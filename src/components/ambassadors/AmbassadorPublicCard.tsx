@@ -12,9 +12,10 @@ import { storagePathFromPublicUrl } from '@/lib/account/avatar'
 import { getInitials } from '@/lib/account/profile'
 import { normalizeBio, PUBLIC_BIO_MAX, toPublicName } from '@/lib/ambassadors/publicProfile'
 import { useAmbassadorPublicProfile } from '@/hooks/ambassadors/useAmbassadorPublicProfile'
+import { formatProfileName, type ProfileName } from '@/lib/account/profile'
 
 interface AmbassadorPublicCardProps {
-  fullName?: string | null
+  accountName?: ProfileName | null
   email?: string | null
   avatarUrl?: string | null
 }
@@ -23,7 +24,7 @@ interface AmbassadorPublicCardProps {
  * Opt-in to the public ambassador page. The master switch comes first, then what will be published,
  * then a preview of the card. Off by default: nothing is shown until the ambassador turns it on.
  */
-export function AmbassadorPublicCard({ fullName, email, avatarUrl }: AmbassadorPublicCardProps) {
+export function AmbassadorPublicCard({ accountName, email, avatarUrl }: AmbassadorPublicCardProps) {
   const { query, mutation } = useAmbassadorPublicProfile(true)
   const profile = query.data
   const hasUploadedPhoto = storagePathFromPublicUrl(avatarUrl) !== null
@@ -34,7 +35,7 @@ export function AmbassadorPublicCard({ fullName, email, avatarUrl }: AmbassadorP
 
   const bio = draft ?? profile.public_bio ?? ''
   const bioChanged = (normalizeBio(bio) ?? '') !== (profile.public_bio ?? '')
-  const publicName = toPublicName(fullName)
+  const publicName = toPublicName(accountName)
   const statusLabel = profile.is_listed ? 'Visible' : profile.public_opt_in ? 'Masquée par l’équipe' : 'Désactivée'
 
   return (
@@ -89,7 +90,7 @@ export function AmbassadorPublicCard({ fullName, email, avatarUrl }: AmbassadorP
         </div>
 
         <div className="flex items-start gap-4">
-          <AvatarUploader src={avatarUrl} name={fullName} email={email} canRemove={hasUploadedPhoto} />
+          <AvatarUploader src={avatarUrl} name={formatProfileName(accountName)} email={email} canRemove={hasUploadedPhoto} />
           <p className="pt-2 text-sm text-muted-foreground">
             {hasUploadedPhoto ? 'Ta photo est celle qui sera publiée.' : 'Sans photo envoyée ici, tes initiales s’affichent.'}
           </p>

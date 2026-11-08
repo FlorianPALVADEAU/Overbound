@@ -19,28 +19,26 @@ export const deriveNameFromEmail = (email: string): string => {
 
 export const formatRecruitName = (
   isSharedOrder: boolean,
-  fullName: string | null | undefined,
+  displayName: string | null | undefined,
   email: string | null | undefined,
 ): string => {
   if (isSharedOrder) {
     if (email) return deriveNameFromEmail(email)
-    return fullName?.trim() || 'Utilisateur'
+    return displayName?.trim() || 'Utilisateur'
   }
-  return fullName?.trim() || (email ? deriveNameFromEmail(email) : 'Utilisateur')
+  return displayName?.trim() || (email ? deriveNameFromEmail(email) : 'Utilisateur')
 }
 
 export const formatLeaderboardName = (
-  fullName: string | null | undefined,
+  name: { first_name?: string | null; last_name?: string | null } | null | undefined,
   profileId: string,
 ): string => {
-  const rawName = (fullName || '').trim()
-  if (!rawName) {
+  const first = name?.first_name?.trim() ?? ''
+  const last = name?.last_name?.trim() ?? ''
+  if (!first) {
     return `Ambassadeur ${profileId.slice(0, 4).toUpperCase()}`
   }
-  const parts = rawName.split(/\s+/).filter(Boolean)
-  const first = parts[0] ?? 'Ambassadeur'
-  const lastInitial =
-    parts.length > 1 ? `${parts[parts.length - 1][0]?.toUpperCase() ?? ''}.` : ''
+  const lastInitial = last ? `${last.charAt(0).toUpperCase()}.` : ''
   return [first, lastInitial].filter(Boolean).join(' ').trim()
 }
 

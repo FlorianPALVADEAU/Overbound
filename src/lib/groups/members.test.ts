@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest'
 import type { GroupMember } from '@/types/Group'
 import { filterMembers, memberDisplayName, sortMembers } from './members'
 
-const member = (id: string, full_name: string | null, role: 'captain' | 'member' = 'member', email: string | null = null): GroupMember => ({
+const splitTestName = (name: string | null) => {
+  const [first = null, ...rest] = name?.split(' ') ?? []
+  return { first_name: first, last_name: rest.length ? rest.join(' ') : null }
+}
+
+const member = (id: string, fullName: string | null, role: 'captain' | 'member' = 'member', email: string | null = null): GroupMember => ({
   id,
   profile_id: `p-${id}`,
   role,
   joined_at: '2026-01-01T00:00:00Z',
-  full_name,
+  ...splitTestName(fullName),
   email,
 })
 

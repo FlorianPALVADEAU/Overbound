@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { buildLeaderboard } from './leaderboard'
 
-const entry = (id: string, name: string | null, points: number) => ({
-  ambassador_id: id,
-  profile_id: `profile-${id}`,
-  full_name: name,
-  points,
-})
+const entry = (id: string, name: string | null, points: number) => {
+  const [first_name = null, ...rest] = name?.split(' ') ?? []
+  return {
+    ambassador_id: id,
+    profile_id: `profile-${id}`,
+    first_name,
+    last_name: rest.length > 0 ? rest.join(' ') : null,
+    points,
+  }
+}
 
 describe('buildLeaderboard', () => {
   it('ranks by points and finds the current ambassador', () => {

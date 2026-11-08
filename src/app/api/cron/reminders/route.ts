@@ -5,6 +5,7 @@ import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 import { sendInactiveUserWinback, sendAbandonedCheckoutReminders } from '@/lib/email/reactivation'
 import { sendAdminDigest } from '@/lib/email/adminDigest'
 import { sendVolunteerRecruitmentDigest } from '@/lib/email/volunteers'
+import { formatProfileName } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 
@@ -278,7 +279,7 @@ function getPrepChecklist(weeksRemaining: number) {
       ]
     default:
       return [
-        'Prépare ton équipement et vérifie ton billet OverBound.',
+        'Prépare ton équipement et vérifie ton billet Overbound.',
         'Consulte les informations de course dans ton espace perso.',
       ]
   }
@@ -302,7 +303,7 @@ async function getProfileNames(
 
   const { data, error } = await admin
     .from('profiles')
-    .select('id, full_name')
+    .select('id, first_name, last_name')
     .in('id', userIds)
 
   if (error) {
@@ -311,6 +312,6 @@ async function getProfileNames(
   }
 
   return new Map(
-    (data ?? []).map((profile: any) => [profile.id as string, (profile.full_name as string | null) ?? null]),
+    (data ?? []).map((profile: any) => [profile.id as string, formatProfileName(profile)]),
   )
 }

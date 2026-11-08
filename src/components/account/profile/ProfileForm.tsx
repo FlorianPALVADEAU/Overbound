@@ -14,7 +14,7 @@ type FormValues = Record<ProfileField | 'sex', string>
 
 const SEX_LABELS: Record<ParticipantSex, string> = { homme: 'Homme', femme: 'Femme' }
 
-const FORM_KEYS = ['full_name', 'phone', 'date_of_birth', 'sex'] as const satisfies ReadonlyArray<keyof FormValues>
+const FORM_KEYS = ['first_name', 'last_name', 'phone', 'date_of_birth', 'sex'] as const satisfies ReadonlyArray<keyof FormValues>
 
 const FIELDS: Array<{
   field: ProfileField
@@ -24,13 +24,15 @@ const FIELDS: Array<{
   placeholder?: string
   inputMode?: 'tel'
 }> = [
-  { field: 'full_name', label: 'Nom complet', type: 'text', autoComplete: 'name', placeholder: 'Prénom Nom' },
+  { field: 'first_name', label: 'Prénom', type: 'text', autoComplete: 'given-name', placeholder: 'Camille' },
+  { field: 'last_name', label: 'Nom', type: 'text', autoComplete: 'family-name', placeholder: 'Martin' },
   { field: 'phone', label: 'Téléphone', type: 'tel', autoComplete: 'tel', placeholder: '06 12 34 56 78', inputMode: 'tel' },
   { field: 'date_of_birth', label: 'Date de naissance', type: 'date', autoComplete: 'bday' },
 ]
 
 const toValues = (profile: SessionProfile | null): FormValues => ({
-  full_name: profile?.full_name ?? '',
+  first_name: profile?.first_name ?? '',
+  last_name: profile?.last_name ?? '',
   phone: profile?.phone ?? '',
   date_of_birth: profile?.date_of_birth ?? '',
   sex: profile?.sex ?? '',

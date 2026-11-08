@@ -10,7 +10,7 @@ interface VolunteerAssignmentEmailProps {
   role?: string
 
   // lib/email.sendVolunteerAssignmentEmail provides these fields
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   eventDate?: string
   eventLocation?: string
@@ -25,7 +25,7 @@ interface VolunteerAssignmentEmailProps {
 export default function VolunteerAssignmentEmail({
   volunteerName,
   role,
-  fullName,
+  firstName,
   eventTitle,
   eventDate,
   eventLocation,
@@ -36,7 +36,7 @@ export default function VolunteerAssignmentEmail({
   contactPhone,
   checkinUrl,
 }: VolunteerAssignmentEmailProps) {
-  const firstName = getFirstName(volunteerName ?? fullName)
+  const greetingName = getFirstName(volunteerName ?? firstName)
 
   return (
     <EmailLayout
@@ -44,7 +44,7 @@ export default function VolunteerAssignmentEmail({
       hero={{ photo: 'P1102314', alt: 'L’équipe Overbound réunie après une édition' }}
     >
       <Eyebrow>Mission confirmée</Eyebrow>
-      <Title>{firstName ? `${firstName}, on compte sur toi` : 'On compte sur toi'}</Title>
+      <Title>{greetingName ? `${greetingName}, on compte sur toi` : 'On compte sur toi'}</Title>
       <Paragraph>
         Ta mission pour <strong>{eventTitle}</strong> est confirmée.
         {role ? (

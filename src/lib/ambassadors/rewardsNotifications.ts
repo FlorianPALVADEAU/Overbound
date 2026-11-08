@@ -25,7 +25,7 @@ async function notifyAmbassador(admin: NotificationClient, ambassadorId: string)
   if (!rewards || rewards.length === 0) return false
 
   const [{ data: profile }, { data: authUser }, { data: codeRow }] = await Promise.all([
-    admin.from('profiles').select('full_name').eq('id', ambassador.profile_id).maybeSingle(),
+    admin.from('profiles').select('first_name').eq('id', ambassador.profile_id).maybeSingle(),
     admin.auth.admin.getUserById(ambassador.profile_id),
     admin
       .from('ambassador_promotional_codes')
@@ -41,7 +41,7 @@ async function notifyAmbassador(admin: NotificationClient, ambassadorId: string)
 
   await sendAmbassadorRewardEarnedEmail({
     to: email,
-    fullName: profile?.full_name ?? null,
+    firstName: profile?.first_name ?? null,
     ambassadorCode: promotionalCode?.code ?? null,
     rewards: rewards.map(({ reward_level, reward_name }) => ({ reward_level, reward_name })),
   })

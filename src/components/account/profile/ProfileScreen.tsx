@@ -11,6 +11,7 @@ import { DeleteAccountSection } from '@/components/account/profile/DeleteAccount
 import PreferencesForm from '@/components/preferences/PreferencesForm'
 import { AvatarUploader } from '@/components/account/profile/AvatarUploader'
 import { storagePathFromPublicUrl } from '@/lib/account/avatar'
+import { formatProfileName } from '@/lib/account/profile'
 import { getAccountSpaces, normalizeRoles, resolveAccountAccess } from '@/lib/account/spaces'
 import { cn } from '@/lib/utils'
 
@@ -49,13 +50,13 @@ function ProfileContent({ user, profile }: AuthenticatedAccountData) {
       <header className="mb-8 flex items-center gap-5">
         <AvatarUploader
           src={profile?.avatar_url ?? user.user_metadata?.avatar_url}
-          name={profile?.full_name}
+          name={formatProfileName(profile)}
           email={user.email}
           canRemove={storagePathFromPublicUrl(profile?.avatar_url) !== null}
         />
         <div className="min-w-0">
           <Eyebrow>Mon compte</Eyebrow>
-          <h1 className="truncate text-2xl font-display font-bold uppercase leading-tight tracking-tight">{profile?.full_name || 'Athlète'}</h1>
+          <h1 className="truncate text-2xl font-display font-bold uppercase leading-tight tracking-tight">{formatProfileName(profile) ?? 'Athlète'}</h1>
           <p className="truncate text-sm text-muted-foreground">{user.email}</p>
         </div>
       </header>

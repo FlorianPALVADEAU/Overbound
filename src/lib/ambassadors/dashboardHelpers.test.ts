@@ -61,7 +61,7 @@ describe('formatRecruitName', () => {
       expect(formatRecruitName(false, 'Julien Damiani', 'julien@test.com')).toBe('Julien Damiani')
     })
 
-    it('falls back to email-derived name when fullName is absent', () => {
+    it('falls back to email-derived name when the display name is absent', () => {
       expect(formatRecruitName(false, null, 'julien.damiani@test.com')).toBe('Julien Damiani')
       expect(formatRecruitName(false, '', 'julien.damiani@test.com')).toBe('Julien Damiani')
     })
@@ -77,7 +77,7 @@ describe('formatRecruitName', () => {
       expect(formatRecruitName(true, 'Miloudi Payer', 'participant.reel@test.com')).toBe('Participant Reel')
     })
 
-    it('falls back to fullName when email is absent', () => {
+    it('falls back to the display name when email is absent', () => {
       expect(formatRecruitName(true, 'Miloudi Payer', null)).toBe('Miloudi Payer')
     })
 
@@ -96,18 +96,18 @@ describe('formatRecruitName', () => {
 
 describe('formatLeaderboardName', () => {
   it('returns "Prénom I." for a full name', () => {
-    expect(formatLeaderboardName('Julien Damiani', 'uuid-1')).toBe('Julien D.')
-    expect(formatLeaderboardName('Anne Sophie Martin', 'uuid-2')).toBe('Anne M.')
+    expect(formatLeaderboardName({ first_name: 'Julien', last_name: 'Damiani' }, 'uuid-1')).toBe('Julien D.')
+    expect(formatLeaderboardName({ first_name: 'Anne', last_name: 'Sophie Martin' }, 'uuid-2')).toBe('Anne S.')
   })
 
   it('returns first name only if there is no last name', () => {
-    expect(formatLeaderboardName('Julien', 'uuid-3')).toBe('Julien')
+    expect(formatLeaderboardName({ first_name: 'Julien', last_name: null }, 'uuid-3')).toBe('Julien')
   })
 
   it('falls back to "Ambassadeur XXXX" using profile ID prefix when name is absent', () => {
     expect(formatLeaderboardName(null, 'abcd1234')).toBe('Ambassadeur ABCD')
-    expect(formatLeaderboardName('', 'abcd1234')).toBe('Ambassadeur ABCD')
-    expect(formatLeaderboardName('  ', 'abcd1234')).toBe('Ambassadeur ABCD')
+    expect(formatLeaderboardName({ first_name: '', last_name: 'Martin' }, 'abcd1234')).toBe('Ambassadeur ABCD')
+    expect(formatLeaderboardName({ first_name: '  ', last_name: null }, 'abcd1234')).toBe('Ambassadeur ABCD')
   })
 })
 

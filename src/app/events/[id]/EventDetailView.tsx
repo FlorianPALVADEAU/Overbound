@@ -131,7 +131,8 @@ export function EventDetailView({ eventId }: { eventId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: notifyEmail,
-          full_name: session?.profile?.full_name ?? null,
+          first_name: session?.profile?.first_name ?? null,
+          last_name: session?.profile?.last_name ?? null,
         }),
       })
 

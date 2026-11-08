@@ -23,7 +23,7 @@ vi.mock('@/lib/email', () => ({
 import { sendAdminDigest } from './adminDigest'
 
 interface FakeOptions {
-  profiles?: Array<{ id: string; full_name: string | null; role: string }>
+  profiles?: Array<{ id: string; first_name: string | null; role: string }>
   profilesError?: unknown
   authUsers?: Array<{ id: string; email: string; user_metadata?: any }>
   logs?: Array<Record<string, unknown>>
@@ -79,7 +79,7 @@ describe('sendAdminDigest', () => {
   it('sends the digest to every admin recipient with aggregated action/error counts', async () => {
     supabaseAdminMock.mockReturnValue(
       createFakeAdmin({
-        profiles: [{ id: 'admin-1', full_name: 'Admin One', role: 'admin' }],
+        profiles: [{ id: 'admin-1', first_name: 'Admin', role: 'admin' }],
         authUsers: [{ id: 'admin-1', email: 'admin@example.com' }],
         logs: [
           { created_at: '2026-01-01T10:00:00.000Z', summary: 'ok', status_code: 200, user_email: 'x@example.com', action_type: 'update', path: '/api/x', duration_ms: 10 },
@@ -124,7 +124,7 @@ describe('sendAdminDigest', () => {
   it('returns 0 and logs an error when the log fetch query fails', async () => {
     supabaseAdminMock.mockReturnValue(
       createFakeAdmin({
-        profiles: [{ id: 'admin-1', full_name: 'Admin One', role: 'admin' }],
+        profiles: [{ id: 'admin-1', first_name: 'Admin', role: 'admin' }],
         authUsers: [{ id: 'admin-1', email: 'admin@example.com' }],
         logsError: new Error('db down'),
       }),
@@ -139,7 +139,7 @@ describe('sendAdminDigest', () => {
   it('skips an admin recipient with no resolvable auth email', async () => {
     supabaseAdminMock.mockReturnValue(
       createFakeAdmin({
-        profiles: [{ id: 'admin-1', full_name: 'Admin One', role: 'admin' }],
+        profiles: [{ id: 'admin-1', first_name: 'Admin', role: 'admin' }],
         authUsers: [],
         logs: [],
       }),
@@ -155,7 +155,7 @@ describe('sendAdminDigest', () => {
     getLastEmailLogMock.mockResolvedValue({ id: 'log-1', sent_at: new Date().toISOString() })
     supabaseAdminMock.mockReturnValue(
       createFakeAdmin({
-        profiles: [{ id: 'admin-1', full_name: 'Admin One', role: 'admin' }],
+        profiles: [{ id: 'admin-1', first_name: 'Admin', role: 'admin' }],
         authUsers: [{ id: 'admin-1', email: 'admin@example.com' }],
         logs: [],
       }),

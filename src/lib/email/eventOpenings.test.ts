@@ -18,7 +18,7 @@ import { notifyEventOpening } from './eventOpenings'
 interface FakeOptions {
   event?: { id: string; title: string; date: string; location: string; slug: string } | null
   eventError?: unknown
-  notifications?: Array<{ id: string; email: string; full_name?: string | null; user_id?: string | null }>
+  notifications?: Array<{ id: string; email: string; first_name?: string | null; user_id?: string | null }>
   notificationsError?: unknown
 }
 
@@ -93,8 +93,8 @@ describe('notifyEventOpening', () => {
     const { admin, state } = createFakeAdmin({
       event: { id: 'event-1', title: 'Ultra Arena', date: '2026-09-12T08:00:00.000Z', location: 'Saint-Quentin-en-Yvelines', slug: 'ultra-arena' },
       notifications: [
-        { id: 'notif-1', email: 'a@example.com', full_name: 'Alice' },
-        { id: 'notif-2', email: 'b@example.com', full_name: null },
+        { id: 'notif-1', email: 'a@example.com', first_name: 'Alice' },
+        { id: 'notif-2', email: 'b@example.com', first_name: null },
       ],
     })
     supabaseAdminMock.mockReturnValue(admin)
@@ -103,7 +103,7 @@ describe('notifyEventOpening', () => {
 
     expect(sendEventOpeningEmailMock).toHaveBeenCalledTimes(2)
     expect(sendEventOpeningEmailMock).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'a@example.com', fullName: 'Alice', eventTitle: 'Ultra Arena' }),
+      expect.objectContaining({ to: 'a@example.com', firstName: 'Alice', eventTitle: 'Ultra Arena' }),
     )
     expect(state.updatedIds.sort()).toEqual(['notif-1', 'notif-2'])
   })
@@ -141,7 +141,7 @@ describe('notifyEventOpening', () => {
   it('does not mark a recipient as notified when the email send fails for them', async () => {
     const { admin, state } = createFakeAdmin({
       event: { id: 'event-1', title: 'Ultra Arena', date: '2026-09-12T08:00:00.000Z', location: 'SQY', slug: 'ultra-arena' },
-      notifications: [{ id: 'notif-1', email: 'fail@example.com', full_name: null }],
+      notifications: [{ id: 'notif-1', email: 'fail@example.com', first_name: null }],
     })
     supabaseAdminMock.mockReturnValue(admin)
     sendEventOpeningEmailMock.mockRejectedValueOnce(new Error('resend down'))

@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface PromoCampaignEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   title: string
   message: string
   ctaLabel: string
@@ -15,7 +15,7 @@ interface PromoCampaignEmailProps {
 }
 
 export function PromoCampaignEmail({
-  fullName,
+  firstName,
   title,
   message,
   ctaLabel,

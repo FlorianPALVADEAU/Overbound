@@ -4,7 +4,8 @@ import { formatLeaderboardName } from '@/lib/ambassadors/dashboardHelpers'
 export interface LeaderboardInput {
   ambassador_id: string
   profile_id: string
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
   points: number
 }
 
@@ -21,7 +22,7 @@ export function buildLeaderboard(entries: LeaderboardInput[], currentAmbassadorI
     .map((entry) => ({
       ambassador_id: entry.ambassador_id,
       points: entry.points,
-      name: formatLeaderboardName(entry.full_name, entry.profile_id),
+      name: formatLeaderboardName(entry, entry.profile_id),
     }))
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, 'fr'))
     .map((entry, index) => ({ ...entry, rank: index + 1, is_current_user: entry.ambassador_id === currentAmbassadorId }))

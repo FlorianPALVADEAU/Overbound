@@ -44,7 +44,7 @@ function request() {
     method: 'POST',
     body: JSON.stringify({
       email: 'New@Example.com',
-      full_name: 'New Runner',
+      first_name: 'New Runner',
       promotion_id: PROMOTION_ID,
     }),
   })

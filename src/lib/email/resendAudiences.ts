@@ -29,7 +29,8 @@ type MarketingPreferenceKey = keyof Pick<
 
 export type ResendContactInput = {
   email: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   unsubscribed?: boolean
   audienceId: string // Can be a Resend segment id when using segment-based setup.
   properties?: Record<string, string | number | null>
@@ -83,18 +84,8 @@ async function callResendWithRetry<T>(
   }
 }
 
-const splitName = (fullName?: string | null) => {
-  if (!fullName) return { firstName: undefined, lastName: undefined }
+const cleanName = (value?: string | null) => value?.trim() || undefined
 
-  const trimmed = fullName.trim()
-  if (!trimmed) return { firstName: undefined, lastName: undefined }
-
-  const [firstName, ...rest] = trimmed.split(/\s+/)
-  return {
-    firstName: firstName || undefined,
-    lastName: rest.length > 0 ? rest.join(' ') : undefined,
-  }
-}
 
 const getResend = () => {
   if (!RESEND_API_KEY) {
@@ -254,7 +245,8 @@ export async function upsertResendContactInAudience(input: ResendContactInput) {
 
   const resend = getResend()
   const email = normalizeEmail(input.email)
-  const { firstName, lastName } = splitName(input.fullName)
+  const firstName = cleanName(input.firstName)
+  const lastName = cleanName(input.lastName)
 
   const existing = await callResendWithRetry(() =>
     resend.contacts.get({
@@ -357,14 +349,16 @@ export async function upsertResendContactInAudience(input: ResendContactInput) {
 
 export async function syncResendContactTopics(params: {
   email: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   preferences: Partial<Record<MarketingPreferenceKey, boolean>>
 }) {
   if (!isContactsSyncEnabled()) return
 
   const resend = getResend()
   const email = normalizeEmail(params.email)
-  const { firstName, lastName } = splitName(params.fullName)
+  const firstName = cleanName(params.firstName)
+  const lastName = cleanName(params.lastName)
 
   const existing = await callResendWithRetry(() =>
     resend.contacts.get({
@@ -420,14 +414,16 @@ export async function syncResendContactTopics(params: {
 
 export async function subscribeResendContactToAudiences(params: {
   email: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   audienceIds: string[]
   properties?: Record<string, string | number | null>
 }) {
   for (const audienceId of params.audienceIds) {
     await upsertResendContactInAudience({
       email: params.email,
-      fullName: params.fullName,
+      firstName: params.firstName,
+      lastName: params.lastName,
       audienceId,
       unsubscribed: false,
       properties: params.properties,
@@ -573,12 +569,14 @@ export async function deleteResendContactByEmail(email: string) {
 export async function addResendContactToSegment(params: {
   email: string
   segmentId: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   properties?: Record<string, string | number | null>
 }) {
   await upsertResendContactInAudience({
     email: params.email,
-    fullName: params.fullName,
+    firstName: params.firstName,
+    lastName: params.lastName,
     audienceId: params.segmentId,
     unsubscribed: false,
     properties: params.properties,
@@ -608,14 +606,16 @@ export async function removeResendContactFromSegment(params: {
 
 export async function markResendContactAsUnregistered(params: {
   email: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   properties?: Record<string, string | number | null>
 }) {
   const generalSegmentId = getResendGeneralSegmentId()
   if (generalSegmentId) {
     await addResendContactToSegment({
       email: params.email,
-      fullName: params.fullName,
+      firstName: params.firstName,
+      lastName: params.lastName,
       segmentId: generalSegmentId,
       properties: params.properties,
     })
@@ -625,7 +625,8 @@ export async function markResendContactAsUnregistered(params: {
   if (unregisteredSegmentId) {
     await addResendContactToSegment({
       email: params.email,
-      fullName: params.fullName,
+      firstName: params.firstName,
+      lastName: params.lastName,
       segmentId: unregisteredSegmentId,
       properties: params.properties,
     })
@@ -634,14 +635,16 @@ export async function markResendContactAsUnregistered(params: {
 
 export async function markResendContactAsRegistered(params: {
   email: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   properties?: Record<string, string | number | null>
 }) {
   const generalSegmentId = getResendGeneralSegmentId()
   if (generalSegmentId) {
     await addResendContactToSegment({
       email: params.email,
-      fullName: params.fullName,
+      firstName: params.firstName,
+      lastName: params.lastName,
       segmentId: generalSegmentId,
       properties: params.properties,
     })

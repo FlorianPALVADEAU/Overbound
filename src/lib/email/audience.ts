@@ -23,20 +23,22 @@ export interface ListSubscriber {
   listId: string
   userId: string | null
   email: string
-  fullName: string | null
+  firstName: string | null
+  lastName: string | null
   subscribed: boolean
   source: string | null
   subscribedAt: string | null
 }
 
-type ProfileName = { full_name: string | null }
+type ProfileName = { first_name: string | null; last_name: string | null }
 
 interface SubscriptionRow {
   id: string
   list_id: string
   user_id: string | null
   email: string | null
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
   subscribed: boolean | null
   source: string | null
   subscribed_at: string | null
@@ -44,12 +46,13 @@ interface SubscriptionRow {
 }
 
 const SUBSCRIPTION_COLUMNS =
-  'id, list_id, user_id, email, full_name, subscribed, source, subscribed_at, profiles:user_id(full_name)'
+  'id, list_id, user_id, email, first_name, last_name, subscribed, source, subscribed_at, profiles:user_id(first_name, last_name)'
 
 const normalizeEmail = (value: string | null | undefined) => value?.trim().toLowerCase() ?? ''
 
-const profileName = (profiles: SubscriptionRow['profiles']) =>
-  (Array.isArray(profiles) ? profiles[0]?.full_name : profiles?.full_name) ?? null
+// Le compte gagne sur la ligne d'abonnement anonyme, champ par champ.
+const profileOf = (profiles: SubscriptionRow['profiles']): ProfileName | null =>
+  (Array.isArray(profiles) ? profiles[0] : profiles) ?? null
 
 function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = []
@@ -138,7 +141,8 @@ export async function listSubscribers(
       listId: row.list_id,
       userId: row.user_id,
       email,
-      fullName: profileName(row.profiles) ?? row.full_name ?? null,
+      firstName: profileOf(row.profiles)?.first_name ?? row.first_name ?? null,
+      lastName: profileOf(row.profiles)?.last_name ?? row.last_name ?? null,
       subscribed: Boolean(row.subscribed),
       source: row.source,
       subscribedAt: row.subscribed_at,
@@ -159,12 +163,12 @@ function dedupeByEmail(subscribers: ListSubscriber[]): MarketingRecipient[] {
       byEmail.set(subscriber.email, {
         userId: subscriber.userId,
         email: subscriber.email,
-        fullName: subscriber.fullName,
+        firstName: subscriber.firstName,
       })
       continue
     }
     existing.userId = existing.userId ?? subscriber.userId
-    existing.fullName = existing.fullName ?? subscriber.fullName
+    existing.firstName = existing.firstName ?? subscriber.firstName
   }
   return Array.from(byEmail.values())
 }

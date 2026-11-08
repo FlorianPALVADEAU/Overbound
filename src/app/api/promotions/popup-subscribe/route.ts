@@ -12,7 +12,7 @@ import {
 
 const subscribeSchema = z.object({
   email: z.string().trim().min(1, "L'adresse email est requise").email('Email invalide'),
-  full_name: z.string().trim().min(1, 'Le prénom est requis'),
+  first_name: z.string().trim().min(1, 'Le prénom est requis'),
   promotion_id: z.string().uuid('ID de promotion invalide'),
   website: z.string().optional(),
   elapsed_ms: z.number().int().nonnegative().nullable().optional(),
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Normaliser l'email
     const email = validatedData.email.toLowerCase().trim()
-    const fullName = validatedData.full_name.trim()
+    const firstName = validatedData.first_name.trim()
 
     // Si un compte existe déjà avec cet email, ne rien enregistrer et inviter à se connecter.
     const admin = supabaseAdmin()
@@ -152,7 +152,8 @@ export async function POST(request: NextRequest) {
         list_id: list.id,
         user_id: null,
         email,
-        full_name: fullName,
+        first_name: firstName,
+        last_name: null,
         subscribed: true,
         subscribed_at: new Date().toISOString(),
         source: `popup-${validatedData.promotion_id}`,
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
 
       await subscribeResendContactToAudiences({
         email,
-        fullName,
+        firstName,
         audienceIds,
         properties: {
           source: `popup-${validatedData.promotion_id}`,
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
 
       await markResendContactAsUnregistered({
         email,
-        fullName,
+        firstName,
         properties: {
           source: `popup-${validatedData.promotion_id}`,
         },
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
       const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'
       await sendPopupSubscribeConfirmationEmail({
         to: email,
-        fullName: fullName,
+        firstName: firstName,
         eventsUrl: `${baseUrl}/events`,
         blogUrl: `${baseUrl}/blog`,
       })

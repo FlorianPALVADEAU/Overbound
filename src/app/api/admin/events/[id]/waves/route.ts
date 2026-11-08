@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdminOrganization } from '@/lib/auth/requireAdminOrganization'
+import { formatProfileName } from '@/lib/account/profile'
 
 interface WaveCsvRow {
   wave_index: number
@@ -134,7 +135,7 @@ export async function GET(
     const { data: profiles, error: profilesError } = profileIds.length
       ? await admin
           .from('profiles')
-          .select('id, full_name')
+          .select('id, first_name, last_name')
           .in('id', profileIds)
       : { data: [], error: null }
 
@@ -142,7 +143,7 @@ export async function GET(
       console.error('[admin waves] profiles fetch error', profilesError)
     }
 
-    const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name ?? null]))
+    const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, formatProfileName(profile)]))
     const participants = (rows ?? []).map((row) => {
       const profileName = row.user_id ? profileMap.get(row.user_id) ?? null : null
       const fallbackName = row.email.split('@')[0] || 'Nom non renseigné'
@@ -150,7 +151,7 @@ export async function GET(
       return {
         id: row.id,
         email: row.email,
-        full_name: profileName || fallbackName,
+        display_name: profileName || fallbackName,
         start_time: row.start_time,
         wave_position: row.wave_position,
       }

@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface AbandonedCheckoutEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   ticketName?: string | null
   resumeUrl: string
@@ -12,7 +12,7 @@ interface AbandonedCheckoutEmailProps {
 }
 
 export function AbandonedCheckoutEmail({
-  fullName,
+  firstName,
   eventTitle,
   ticketName,
   resumeUrl,
@@ -55,7 +55,7 @@ export function AbandonedCheckoutEmail({
 
         {/* Main Heading */}
         <Text style={styles.heading}>
-          {fullName ? `${fullName}, tout est prêt pour ton inscription` : 'Ton inscription est presque finalisée'}
+          {firstName ? `${firstName}, tout est prêt pour ton inscription` : 'Ton inscription est presque finalisée'}
         </Text>
 
         {/* Intro */}

@@ -10,12 +10,12 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminCommandPalette } from '@/components/admin/AdminCommandPalette'
 
 interface AdminShellProps {
-  fullName?: string | null
+  displayName?: string | null
   children: ReactNode
 }
 
 /** Frame of every back-office page: sidebar, top bar, content area. Event context lives on the overview only. */
-export function AdminShell({ fullName, children }: AdminShellProps) {
+export function AdminShell({ displayName, children }: AdminShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function AdminShell({ fullName, children }: AdminShellProps) {
 
   return (
     <div className="min-h-screen bg-background md:flex">
-      <AdminSidebar profileRole="admin" fullName={fullName} />
+      <AdminSidebar profileRole="admin" displayName={displayName} />
       <AdminCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <div className="min-w-0 flex-1">
         <header className="flex items-center justify-between gap-3 border-b border-border bg-surface-deep px-4 py-3 md:px-6 md:py-4 lg:px-8">

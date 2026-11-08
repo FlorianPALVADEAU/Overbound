@@ -86,11 +86,11 @@ export async function GET(req: Request) {
   )
   const uniqueUserIds = [...new Set(allUserIds)]
 
-  const profileMap: Record<string, { full_name: string | null; email: string | null }> = {}
+  const profileMap: Record<string, { first_name: string | null; last_name: string | null; email: string | null }> = {}
 
   if (uniqueUserIds.length > 0) {
     const [{ data: profiles }, { data: authUsers }] = await Promise.all([
-      admin.from('profiles').select('id, full_name').in('id', uniqueUserIds),
+      admin.from('profiles').select('id, first_name, last_name').in('id', uniqueUserIds),
       admin.auth.admin.listUsers({ perPage: 1000 }),
     ])
 
@@ -100,7 +100,7 @@ export async function GET(req: Request) {
     }
 
     for (const p of profiles ?? []) {
-      profileMap[p.id] = { full_name: p.full_name, email: emailMap[p.id] ?? null }
+      profileMap[p.id] = { first_name: p.first_name, last_name: p.last_name, email: emailMap[p.id] ?? null }
     }
   }
 

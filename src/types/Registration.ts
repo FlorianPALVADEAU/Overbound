@@ -108,7 +108,8 @@ export type RegistrationApprovalStatus = ApprovalStatus
 
 export interface RegistrationProfileSummary {
   id: UUID
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
 }
 
 export interface AdminRegistrationPromoCode {

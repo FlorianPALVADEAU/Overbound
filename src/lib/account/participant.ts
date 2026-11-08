@@ -1,4 +1,5 @@
 import type { AccountParticipant } from '@/types/AccountRegistration'
+import { formatProfileName, type ProfileName } from '@/lib/account/profile'
 
 const asTrimmedString = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
 
@@ -52,14 +53,15 @@ export interface ParticipantIdentity {
 /** Identity shown on a bib: the participant, else the holder's own profile for their own bib, else nothing. */
 export const resolveParticipantIdentity = (
   participant: AccountParticipant | null | undefined,
-  fallback: { fullName: string | null | undefined; birthDate: string | null | undefined; avatarUrl?: string | null } | null,
+  fallback: { holder: ProfileName | null | undefined; birthDate: string | null | undefined; avatarUrl?: string | null } | null,
   now: Date,
 ): ParticipantIdentity => {
   if (participant) {
     return { name: formatParticipantName(participant), age: computeAge(participant.birth_date, now), avatarUrl: fallback?.avatarUrl ?? null }
   }
-  if (fallback?.fullName?.trim()) {
-    return { name: fallback.fullName.trim(), age: computeAge(fallback.birthDate, now), avatarUrl: fallback.avatarUrl ?? null }
+  const holderName = formatProfileName(fallback?.holder)
+  if (holderName) {
+    return { name: holderName, age: computeAge(fallback?.birthDate, now), avatarUrl: fallback?.avatarUrl ?? null }
   }
   return { name: null, age: null, avatarUrl: fallback?.avatarUrl ?? null }
 }

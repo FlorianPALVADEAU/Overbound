@@ -25,7 +25,8 @@ function RegisterInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [verificationDigits, setVerificationDigits] = useState<string[]>(
     () => Array.from({ length: VERIFICATION_CODE_LENGTH }, () => ''),
@@ -107,10 +108,11 @@ function RegisterInner() {
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const wentToVerification = await signup(fullName)
+    const wentToVerification = await signup({ firstName: firstName.trim(), lastName: lastName.trim() })
     if (!wentToVerification) {
       setVerificationDigits(Array.from({ length: VERIFICATION_CODE_LENGTH }, () => ''))
-      setFullName('')
+      setFirstName('')
+      setLastName('')
     }
   }
 
@@ -220,18 +222,33 @@ function RegisterInner() {
             {!isVerificationStep ? (
               <>
                 <form onSubmit={handleRegister} className="space-y-5">
-                  <div className="space-y-2">
-                    <label htmlFor="fullName" className="text-sm text-muted-foreground">Nom complet (optionnel)</label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      disabled={loading}
-                      autoComplete="name"
-                      placeholder="Jean Dupont"
-                      className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label htmlFor="firstName" className="text-sm text-muted-foreground">Prénom (optionnel)</label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        value={firstName}
+                        onChange={(event) => setFirstName(event.target.value)}
+                        disabled={loading}
+                        autoComplete="given-name"
+                        placeholder="Jean"
+                        className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="lastName" className="text-sm text-muted-foreground">Nom (optionnel)</label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        value={lastName}
+                        onChange={(event) => setLastName(event.target.value)}
+                        disabled={loading}
+                        autoComplete="family-name"
+                        placeholder="Dupont"
+                        className="h-11 border-border bg-card/60 text-white placeholder:text-subtle"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">

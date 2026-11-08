@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface NewEventAnnouncementEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   eventDate: string
   eventLocation: string
@@ -13,9 +13,9 @@ interface NewEventAnnouncementEmailProps {
   unsubscribeUrl?: string
 }
 
-export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eventLocation, eventUrl, highlight, unsubscribeUrl }: NewEventAnnouncementEmailProps) {
+export function NewEventAnnouncementEmail({ firstName, eventTitle, eventDate, eventLocation, eventUrl, highlight, unsubscribeUrl }: NewEventAnnouncementEmailProps) {
   return (
-    <EmailLayout preview={`Nouvel événement OverBound — ${eventTitle}`} unsubscribeUrl={unsubscribeUrl}>
+    <EmailLayout preview={`Nouvel événement Overbound — ${eventTitle}`} unsubscribeUrl={unsubscribeUrl}>
       {/* Hero Image */}
       <Img
         src={`${getEmailAssetsBaseUrl()}/images/email/a-group-of-friend-celebrating-after-a-race.jpg`}
@@ -54,7 +54,7 @@ export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eve
 
         {/* Main Heading */}
         <Text style={styles.heading}>
-          {fullName ? `${fullName}, ` : ''}Nouveau défi disponible !
+          {firstName ? `${firstName}, ` : ''}Nouveau défi disponible !
         </Text>
 
         {/* Intro */}
@@ -114,7 +114,7 @@ export function NewEventAnnouncementEmail({ fullName, eventTitle, eventDate, eve
         <Section style={styles.urgencyCard}>
           <Text style={styles.urgencyTitle}>⏰ Places limitées</Text>
           <Text style={styles.urgencyText}>
-            Les événements OverBound affichent régulièrement complet. Plus tu réserves tôt, plus tu bénéficies du meilleur tarif.
+            Les événements Overbound affichent régulièrement complet. Plus tu réserves tôt, plus tu bénéficies du meilleur tarif.
           </Text>
         </Section>
 

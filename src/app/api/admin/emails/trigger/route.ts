@@ -1,3 +1,4 @@
+import { formatProfileName, firstNameFromUserMetadata } from '@/lib/account/profile'
 import type { SendResult } from '@/lib/email/transport'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -65,7 +66,7 @@ const handlePost = async (request: NextRequest) => {
     const supabase = await createSupabaseServer()
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, full_name, phone, date_of_birth, marketing_opt_in')
+      .select('role, first_name, last_name, phone, date_of_birth, marketing_opt_in')
       .eq('id', user.id)
       .single()
 
@@ -79,13 +80,14 @@ const handlePost = async (request: NextRequest) => {
     }
     const type = parsedPayload.data.type
 
-    const fullName = profile.full_name ?? user.user_metadata?.full_name ?? user.email
+    const firstName = profile.first_name ?? firstNameFromUserMetadata(user.user_metadata)
+    const displayName = formatProfileName(profile) ?? user.email
 
     const handlers: Record<string, () => Promise<string>> = {
       onboarding: async () => {
         await sendOnboardingEmail({
           to: user.email!,
-          fullName,
+          firstName,
           accountUrl: ACCOUNT_URL,
           eventsUrl: EVENTS_URL,
           blogUrl: BLOG_URL,
@@ -95,7 +97,7 @@ const handlePost = async (request: NextRequest) => {
       profile_nudge: async () => {
         await sendProfileCompletionReminderEmail({
           to: user.email!,
-          fullName,
+          firstName,
           accountUrl: ACCOUNT_URL,
           missingFields: ['Téléphone', 'Date de naissance'],
         })
@@ -104,7 +106,7 @@ const handlePost = async (request: NextRequest) => {
       event_prep: async () => {
         await sendEventPrepEmail({
           to: user.email!,
-          participantName: fullName ?? 'Athlète',
+          participantName: displayName ?? 'Athlète',
           eventTitle: 'Ultra Arena',
           eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           eventLocation: 'Parc de Miribel-Jonage',
@@ -121,7 +123,7 @@ const handlePost = async (request: NextRequest) => {
       post_event: async () => {
         await sendPostEventThankYouEmail({
           to: user.email!,
-          participantName: fullName ?? 'Athlète',
+          participantName: displayName ?? 'Athlète',
           eventTitle: 'Horizon',
           eventId: 'ec2b4789-0081-4754-8539-1fcfd191092e',
           userId: user.id,
@@ -134,7 +136,7 @@ const handlePost = async (request: NextRequest) => {
       ticket_confirmation: async () => {
         const sent = await sendTicketEmail({
           to: user.email!,
-          participantName: fullName ?? 'Athlète',
+          participantName: displayName ?? 'Athlète',
           eventTitle: 'Ultra Arena',
           eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
           eventLocation: 'Lac de Vassivière',
@@ -150,7 +152,7 @@ const handlePost = async (request: NextRequest) => {
         const edition = await loadNextEdition()
         await sendB2bQuoteConfirmationEmail({
           to: user.email!,
-          contactName: fullName ?? 'Claire Martin',
+          contactName: displayName ?? 'Claire Martin',
           companyName: 'Entreprise de démonstration',
           teamSizeLabel: labelOf(TEAM_SIZES, '10-19'),
           projectTypeLabel: labelOf(PROJECT_TYPES, 'tickets'),
@@ -162,7 +164,7 @@ const handlePost = async (request: NextRequest) => {
       marketing_new_event: async () => {
         assertSent(await sendNewEventAnnouncementEmail({
           to: user.email!,
-          fullName,
+          firstName,
           userId: user.id,
           eventTitle: 'Night Run Paris',
           eventDate: 'Vendredi 12 septembre',
@@ -175,7 +177,7 @@ const handlePost = async (request: NextRequest) => {
       event_opening: async () => {
         await sendEventOpeningEmail({
           to: user.email!,
-          fullName,
+          firstName,
           userId: user.id,
           eventTitle: 'Ultra Arena 2026',
           eventDate: 'Samedi 12 septembre 2026',
@@ -190,9 +192,9 @@ const handlePost = async (request: NextRequest) => {
       marketing_price_change: async () => {
         assertSent(await sendPriceChangeReminderEmail({
           to: user.email!,
-          fullName,
+          firstName,
           userId: user.id,
-          eventTitle: 'OverBound Marseille',
+          eventTitle: 'Overbound Marseille',
           eventDate: 'Samedi 4 octobre',
           deadlineLabel: 'demain à 23h59',
           eventUrl: `${EVENTS_URL}/overbound-marseille`,
@@ -204,23 +206,23 @@ const handlePost = async (request: NextRequest) => {
       marketing_promo: async () => {
         assertSent(await sendPromoCampaignEmail({
           to: user.email!,
-          fullName,
+          firstName,
           userId: user.id,
-          title: 'Offre spéciale OverBound',
+          title: 'Offre spéciale Overbound',
           message: 'Bénéficie de -20% sur ta prochaine inscription avec le code ci-dessous.',
           ctaLabel: 'Voir les événements',
           ctaUrl: EVENTS_URL,
           promoCode: 'OB-WELCOME20',
-          promoDetails: "Valable jusqu'au 30 juin sur tous les formats OverBound.",
+          promoDetails: "Valable jusqu'au 30 juin sur tous les formats Overbound.",
         }))
         return 'Email promo envoyé.'
       },
       reactivation_inactive: async () => {
         await sendInactiveUserEmail({
           to: user.email!,
-          fullName,
+          firstName,
           userId: user.id,
-          lastEventTitle: 'OverBound Grenoble 2024',
+          lastEventTitle: 'Overbound Grenoble 2024',
           eventsUrl: EVENTS_URL,
           highlightEventTitle: 'Ultra Arena',
           highlightEventUrl: `${EVENTS_URL}/ultra-arena`,
@@ -230,7 +232,7 @@ const handlePost = async (request: NextRequest) => {
       reactivation_abandoned_checkout: async () => {
         await sendAbandonedCheckoutEmail({
           to: user.email!,
-          fullName,
+          firstName,
           eventTitle: 'Horizon',
           ticketName: 'Format Expérience 8 km',
           resumeUrl: `${EVENTS_URL}/horizon/register`,
@@ -241,8 +243,8 @@ const handlePost = async (request: NextRequest) => {
       event_update: async () => {
         await sendEventUpdateEmail({
           to: user.email!,
-          participantName: fullName ?? 'Athlète',
-          eventTitle: 'OverBound Alpes',
+          participantName: displayName ?? 'Athlète',
+          eventTitle: 'Overbound Alpes',
           previousDate: 'Samedi 18 octobre 2026, 09:00',
           newDate: 'Dimanche 19 octobre 2026, 09:00',
           previousLocation: 'Grenoble',
@@ -296,10 +298,10 @@ const handlePost = async (request: NextRequest) => {
         const baseDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
         await sendVolunteerRecruitmentEmail({
           to: user.email!,
-          fullName,
+          firstName,
           headlineEvent: {
             id: 'evt_headline',
-            title: 'OverBound Lyon',
+            title: 'Overbound Lyon',
             date: baseDate.toISOString(),
             location: 'Lyon — Parc de Gerland',
             checkinWindow: '07:00 → 09:30',
@@ -327,8 +329,8 @@ const handlePost = async (request: NextRequest) => {
       volunteer_assignment: async () => {
         await sendVolunteerAssignmentEmail({
           to: user.email!,
-          fullName,
-          eventTitle: 'OverBound Lyon',
+          firstName,
+          eventTitle: 'Overbound Lyon',
           eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
           eventLocation: 'Parc de Gerland',
           shiftStart: '07:00',
@@ -343,7 +345,7 @@ const handlePost = async (request: NextRequest) => {
       ambassador_reward_earned: async () => {
         await sendAmbassadorRewardEarnedEmail({
           to: user.email!,
-          fullName,
+          firstName,
           ambassadorCode: 'OB-AMBASSADOR',
           rewards: [
             { reward_level: 1, reward_name: 'Badge ambassadeur + accès classement' },
@@ -354,7 +356,7 @@ const handlePost = async (request: NextRequest) => {
       ambassador_reward_status: async () => {
         await sendAmbassadorRewardStatusEmail({
           to: user.email!,
-          fullName,
+          firstName,
           ambassadorCode: 'OB-AMBASSADOR',
           reward: { reward_level: 4, reward_name: 'Dossard Open offert' },
           statusLabel: 'Réclamée',

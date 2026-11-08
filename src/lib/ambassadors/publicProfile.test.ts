@@ -23,13 +23,13 @@ describe('isPubliclyListed', () => {
 
 describe('toPublicName', () => {
   it('keeps the first name and the initial of the last one', () => {
-    expect(toPublicName('Marie Dupont')).toBe('Marie D.')
-    expect(toPublicName('  jean   de la Tour ')).toBe('jean T.')
+    expect(toPublicName({ first_name: 'Marie', last_name: 'Dupont' })).toBe('Marie D.')
+    expect(toPublicName({ first_name: '  jean ', last_name: ' de la Tour ' })).toBe('jean D.')
   })
 
   it('shows a single name as is and falls back when empty', () => {
-    expect(toPublicName('Marie')).toBe('Marie')
-    expect(toPublicName('   ')).toBe('Ambassadeur')
+    expect(toPublicName({ first_name: 'Marie', last_name: null })).toBe('Marie')
+    expect(toPublicName({ first_name: '   ', last_name: 'Dupont' })).toBe('Ambassadeur')
     expect(toPublicName(null)).toBe('Ambassadeur')
   })
 })

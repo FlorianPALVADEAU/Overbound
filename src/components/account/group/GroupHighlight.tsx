@@ -10,6 +10,7 @@ import { useGroupInvite } from '@/hooks/account/useGroupInvite'
 import { UserAvatar } from '@/components/account/UserAvatar'
 import { formatClockTimeParis } from '@/lib/dateTime'
 import type { Group } from '@/types/Group'
+import { formatProfileName } from '@/lib/account/profile'
 
 const MAX_AVATARS = 5
 
@@ -20,8 +21,8 @@ function MemberAvatars({ group }: { group: Group }) {
   return (
     <ul className="flex -space-x-2" aria-label="Membres du groupe">
       {shown.map((member, index) => (
-        <li key={member.id} className="relative" style={{ zIndex: index }} title={member.full_name ?? member.email ?? undefined}>
-          <UserAvatar src={member.avatar_url} name={member.full_name} email={member.email} className="size-10 border-2 border-background" />
+        <li key={member.id} className="relative" style={{ zIndex: index }} title={formatProfileName(member) ?? member.email ?? undefined}>
+          <UserAvatar src={member.avatar_url} name={formatProfileName(member)} email={member.email} className="size-10 border-2 border-background" />
         </li>
       ))}
       {hidden > 0 ? (

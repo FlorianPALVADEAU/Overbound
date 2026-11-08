@@ -1,6 +1,7 @@
 import type { User } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { syncProviderAvatar } from '@/lib/account/avatarStorage'
+import { profileNameFromUserMetadata } from '@/lib/account/profile'
 import {
   DEFAULT_MARKETING_LIST_SLUGS,
   mapSlugsToAudienceIds,
@@ -9,7 +10,8 @@ import {
 
 type ProfileRow = {
   id: string
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
   marketing_opt_in: boolean | null
 }
 
@@ -18,7 +20,8 @@ type EmailSubscriptionRow = {
   list_id: string
   subscribed: boolean | null
   subscribed_at: string | null
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
 }
 
 type UserSubscriptionRow = {
@@ -50,11 +53,6 @@ const normalizeName = (value: string | null | undefined) => {
   return trimmed.length > 0 ? trimmed : null
 }
 
-const resolveUserName = (user: User) =>
-  normalizeName(
-    (user.user_metadata as Record<string, unknown> | undefined)?.full_name as string | undefined,
-  )
-
 const throwIfError = (error: { message?: string } | null) => {
   if (error) {
     throw error
@@ -63,11 +61,11 @@ const throwIfError = (error: { message?: string } | null) => {
 
 async function ensureProfile(user: User): Promise<ProfileRow | null> {
   const admin = supabaseAdmin()
-  const userName = resolveUserName(user)
+  const names = profileNameFromUserMetadata(user.user_metadata)
 
   const { data: existingProfile, error: fetchError } = await admin
     .from('profiles')
-    .select('id, full_name, marketing_opt_in')
+    .select('id, first_name, last_name, marketing_opt_in')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -78,14 +76,15 @@ async function ensureProfile(user: User): Promise<ProfileRow | null> {
   if (!existingProfile) {
     const insertPayload: Record<string, string | boolean | null> = {
       id: user.id,
-      full_name: userName,
+      first_name: names.first_name ?? null,
+      last_name: names.last_name ?? null,
       marketing_opt_in: false,
     }
 
     const { data: insertedProfile, error: insertError } = await admin
       .from('profiles')
       .insert(insertPayload)
-      .select('id, full_name, marketing_opt_in')
+      .select('id, first_name, last_name, marketing_opt_in')
       .single()
 
     if (insertError) {
@@ -95,12 +94,17 @@ async function ensureProfile(user: User): Promise<ProfileRow | null> {
     return insertedProfile as ProfileRow
   }
 
-  if (!existingProfile.full_name && userName) {
+  // Un champ vide du profil se complète avec celui de l'inscription, un champ déjà rempli n'est jamais écrasé.
+  const missingNames: Record<string, string> = {}
+  if (!existingProfile.first_name && names.first_name) missingNames.first_name = names.first_name
+  if (!existingProfile.last_name && names.last_name) missingNames.last_name = names.last_name
+
+  if (Object.keys(missingNames).length > 0) {
     const { data: updatedProfile, error: updateError } = await admin
       .from('profiles')
-      .update({ full_name: userName })
+      .update(missingNames)
       .eq('id', user.id)
-      .select('id, full_name, marketing_opt_in')
+      .select('id, first_name, last_name, marketing_opt_in')
       .single()
 
     if (updateError) {
@@ -123,7 +127,7 @@ async function linkEmailSubscriptionsToUser(user: User, profile: ProfileRow | nu
 
   const { data: emailSubscriptions, error: emailSubscriptionsError } = await admin
     .from('list_subscriptions')
-    .select('id, list_id, subscribed, subscribed_at, full_name')
+    .select('id, list_id, subscribed, subscribed_at, first_name, last_name')
     .is('user_id', null)
     .ilike('email', email)
 
@@ -136,13 +140,16 @@ async function linkEmailSubscriptionsToUser(user: User, profile: ProfileRow | nu
     return
   }
 
-  if (!profile?.full_name) {
-    const fallbackName = rows.map((row) => normalizeName(row.full_name)).find(Boolean) ?? null
-    if (fallbackName) {
-      const { error: updateNameError } = await admin
-        .from('profiles')
-        .update({ full_name: fallbackName })
-        .eq('id', user.id)
+  if (!profile?.first_name || !profile?.last_name) {
+    const fallback = {
+      first_name: rows.map((row) => normalizeName(row.first_name)).find(Boolean) ?? null,
+      last_name: rows.map((row) => normalizeName(row.last_name)).find(Boolean) ?? null,
+    }
+    const missing: Record<string, string> = {}
+    if (!profile?.first_name && fallback.first_name) missing.first_name = fallback.first_name
+    if (!profile?.last_name && fallback.last_name) missing.last_name = fallback.last_name
+    if (Object.keys(missing).length > 0) {
+      const { error: updateNameError } = await admin.from('profiles').update(missing).eq('id', user.id)
       throwIfError(updateNameError)
     }
   }
@@ -196,7 +203,8 @@ async function linkEmailSubscriptionsToUser(user: User, profile: ProfileRow | nu
       .update({
         user_id: user.id,
         email: null,
-        full_name: null,
+        first_name: null,
+        last_name: null,
       })
       .eq('id', row.id)
     throwIfError(attachError)
@@ -244,11 +252,12 @@ export async function runPostAuthSync(user: User) {
   if (user.email) {
     const { audienceIds } = mapSlugsToAudienceIds([...DEFAULT_MARKETING_LIST_SLUGS])
     if (audienceIds.length > 0) {
-      const fullName = profile?.full_name ?? resolveUserName(user) ?? null
+      const names = profile ?? profileNameFromUserMetadata(user.user_metadata)
       try {
         await subscribeResendContactToAudiences({
           email: user.email,
-          fullName,
+          firstName: names.first_name,
+          lastName: names.last_name,
           audienceIds,
           properties: {
             user_id: user.id,

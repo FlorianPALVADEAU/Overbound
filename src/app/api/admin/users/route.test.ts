@@ -20,7 +20,8 @@ function row(index: number, filteredCount: number) {
     email: `user${index}@example.com`,
     created_at: '2026-01-01T00:00:00.000Z',
     last_sign_in_at: null,
-    full_name: `Nom ${index}`,
+    first_name: `Prénom ${index}`,
+    last_name: `Nom ${index}`,
     role: 'user',
     phone: null,
     profile_created_at: '2026-01-01T00:00:00.000Z',
@@ -104,7 +105,7 @@ describe('GET /api/admin/users', () => {
     const body = await response.json()
 
     expect(rpcMock).toHaveBeenCalledWith('admin_list_users', expect.objectContaining({ p_limit: null, p_offset: 0 }))
-    expect(body).toEqual({ users: [expect.objectContaining({ full_name: 'Nom 1' }), expect.objectContaining({ full_name: 'Nom 2' })], total: 2 })
+    expect(body).toEqual({ users: [expect.objectContaining({ first_name: 'Prénom 1' }), expect.objectContaining({ first_name: 'Prénom 2' })], total: 2 })
   })
 
   it('rejects a cursor built for another sort before calling the database', async () => {

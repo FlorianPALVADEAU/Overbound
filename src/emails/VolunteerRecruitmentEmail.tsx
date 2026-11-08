@@ -1,7 +1,6 @@
 import * as React from 'react'
 import EmailLayout from './EmailLayout'
 import { Checklist, CtaButton, Eyebrow, FactList, Paragraph, SectionTitle, SmallPrint, Steps, Title } from './blocks'
-import { getFirstName } from '@/lib/email/participantName'
 
 interface VolunteerEventInfo {
   id: string
@@ -12,7 +11,7 @@ interface VolunteerEventInfo {
 }
 
 interface VolunteerRecruitmentEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   headlineEvent: VolunteerEventInfo
   otherEvents?: VolunteerEventInfo[]
   callToActionUrl: string
@@ -30,12 +29,11 @@ function formatEventDate(date: string): string | null {
 }
 
 export default function VolunteerRecruitmentEmail({
-  fullName,
+  firstName,
   headlineEvent,
   otherEvents = [],
   callToActionUrl,
 }: VolunteerRecruitmentEmailProps) {
-  const firstName = getFirstName(fullName)
   const eventDate = formatEventDate(headlineEvent.date)
 
   return (

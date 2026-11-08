@@ -5,7 +5,7 @@ import type { SendResult } from '@/lib/email/transport/types'
 export interface CampaignRecipient {
   email: string
   userId?: string | null
-  fullName?: string | null
+  firstName?: string | null
 }
 
 export interface CampaignFailure {

@@ -6,7 +6,8 @@ export interface AdminUser {
   email: string | null
   created_at: string
   last_sign_in_at: string | null
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
   role: 'user' | 'volunteer' | 'admin' | 'ambassador'
   phone: string | null
   profile_created_at: string | null
@@ -57,7 +58,7 @@ export interface AdminUsersPageParams {
   limit?: number
   query?: string
   role?: AdminUser['role'] | 'all'
-  sort?: 'created_at' | 'last_sign_in_at' | 'full_name' | 'email' | 'role'
+  sort?: 'created_at' | 'last_sign_in_at' | 'name' | 'email' | 'role'
   direction?: 'asc' | 'desc'
 }
 
@@ -83,14 +84,14 @@ export const useAdminUsersPage = (params: AdminUsersPageParams = {}) =>
 export const useAdminUserSearch = (term: string, enabled: boolean) =>
   useQuery<AdminUser[], Error>({
     queryKey: [...ADMIN_USERS_QUERY_KEY, 'search', term],
-    queryFn: async () => (await fetchAdminUsersPage({ query: term || undefined, limit: 100, sort: 'full_name', direction: 'asc' })).users,
+    queryFn: async () => (await fetchAdminUsersPage({ query: term || undefined, limit: 100, sort: 'name', direction: 'asc' })).users,
     enabled,
     placeholderData: keepPreviousData,
   })
 
 export const updateAdminUser = async (
   id: string,
-  payload: Partial<Pick<AdminUser, 'role' | 'full_name' | 'phone' | 'date_of_birth' | 'marketing_opt_in' | 'ambassador_promotional_code_id'>>,
+  payload: Partial<Pick<AdminUser, 'role' | 'first_name' | 'last_name' | 'phone' | 'date_of_birth' | 'marketing_opt_in' | 'ambassador_promotional_code_id'>>,
 ) => {
   const response = await axiosClient.patch<{ profile: AdminUser }>(`/admin/users/${id}`, payload)
   if (response.status !== 200) {

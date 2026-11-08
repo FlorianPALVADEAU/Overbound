@@ -10,6 +10,7 @@ import { getFlexibleRefundEligibility, type FlexibleRefundSubject } from '@/lib/
 import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
 import { isOpenFormatTicket, isRankedFormatTicket } from '@/lib/openSas'
 import type { AccountParticipant } from '@/types/AccountRegistration'
+import { firstNameFromUserMetadata } from '@/lib/account/profile'
 
 export const runtime = 'nodejs'
 
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
 
     const { data: profileData } = await admin
       .from('profiles')
-      .select('full_name, phone, date_of_birth, sex, marketing_opt_in, role, avatar_url')
+      .select('first_name, last_name, phone, date_of_birth, sex, marketing_opt_in, role, avatar_url')
       .eq('id', user.id)
       .single()
     const profile =
@@ -382,7 +383,7 @@ export async function GET(request: Request) {
     await processAccountEngagementEmails({
       userId: user.id,
       email: user.email ?? '',
-      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
+      firstName: profile?.first_name ?? firstNameFromUserMetadata(user.user_metadata),
       userCreatedAt: user.created_at ?? null,
       profile,
     })

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { formatProfileName } from '@/lib/account/profile'
 
 type Admin = Pick<SupabaseClient, 'from'>
 
@@ -51,7 +52,7 @@ export async function resendRegistrationTicket(params: {
   const { data: registration, error } = await admin
     .from('registrations')
     .select(
-      'id, email, user_id, qr_code_token, cancelled_at, start_time, wave_index, bib_number, event:events(title, date, location), ticket:tickets(name), profile:profiles(full_name)',
+      'id, email, user_id, qr_code_token, cancelled_at, start_time, wave_index, bib_number, event:events(title, date, location), ticket:tickets(name), profile:profiles(first_name, last_name)',
     )
     .eq('id', registrationId)
     .maybeSingle()
@@ -62,12 +63,12 @@ export async function resendRegistrationTicket(params: {
 
   const event = firstRelation<{ title: string | null; date: string | null; location: string | null }>(registration.event)
   const ticket = firstRelation<{ name: string | null }>(registration.ticket)
-  const profile = firstRelation<{ full_name: string | null }>(registration.profile)
+  const profile = firstRelation<{ first_name: string | null; last_name: string | null }>(registration.profile)
 
   const qrUrl = await params.resolveQrUrl(registration.qr_code_token as string, siteUrl)
   const result = await params.send({
     to: registration.email as string,
-    participantName: profile?.full_name ?? 'Athlète',
+    participantName: formatProfileName(profile) ?? 'Athlète',
     eventTitle: event?.title ?? 'Overbound',
     eventDate: event?.date
       ? new Date(event.date).toLocaleDateString('fr-FR', { dateStyle: 'full', timeZone: 'Europe/Paris' })

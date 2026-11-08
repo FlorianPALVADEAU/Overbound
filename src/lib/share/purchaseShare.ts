@@ -1,10 +1,5 @@
 export const SHARE_UTM = 'utm_source=share&utm_medium=social&utm_campaign=purchase_share'
 
-export const getFirstName = (fullName: string | null | undefined): string | null => {
-  const first = fullName?.trim().split(/\s+/)[0]
-  return first ? first : null
-}
-
 export const buildShareUrl = (origin: string, eventSlug: string): string =>
   `${origin.replace(/\/+$/, '')}/events/${encodeURIComponent(eventSlug)}?${SHARE_UTM}`
 

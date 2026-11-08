@@ -84,7 +84,7 @@ interface AdminEventWavesResponse {
 export interface AdminWaveParticipant {
   id: string
   email: string
-  full_name: string
+  display_name: string
   start_time: string | null
   wave_position: number | null
 }

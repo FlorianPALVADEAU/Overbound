@@ -3,7 +3,7 @@ import { Button, Hr, Img, Section, Text } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 
 interface EventOpeningEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventTitle: string
   eventDate: string
   eventLocation: string
@@ -15,7 +15,7 @@ interface EventOpeningEmailProps {
 }
 
 export function EventOpeningEmail({
-  fullName,
+  firstName,
   eventTitle,
   eventDate,
   eventLocation,
@@ -35,7 +35,7 @@ export function EventOpeningEmail({
         ) : null}
 
         <Text style={styles.heading}>
-          {fullName ? `${fullName}, ` : ''}les inscriptions sont ouvertes !
+          {firstName ? `${firstName}, ` : ''}les inscriptions sont ouvertes !
         </Text>
         <Text style={styles.paragraph}>
           Tu nous as demandé de te prévenir : c&apos;est le moment de réserver ta place pour <strong>{eventTitle}</strong>.

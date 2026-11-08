@@ -20,7 +20,7 @@ type MarketingEmailType = 'marketing_price_change' | 'marketing_promo'
 export interface MarketingRecipient {
   userId?: string | null
   email: string
-  fullName?: string | null
+  firstName?: string | null
 }
 
 export async function dispatchPriceChangeReminder(params: {
@@ -35,7 +35,7 @@ export async function dispatchPriceChangeReminder(params: {
   return dispatchMarketingEmails('marketing_price_change', params.recipients, async (recipient) => {
     return sendPriceChangeReminderEmail({
       to: recipient.email,
-      fullName: recipient.fullName,
+      firstName: recipient.firstName,
       userId: recipient.userId || undefined,
       eventTitle: params.eventTitle,
       eventDate: params.eventDate,
@@ -62,7 +62,7 @@ export async function dispatchPromoCampaign(params: {
   return dispatchMarketingEmails('marketing_promo', params.recipients, async (recipient) => {
     return sendPromoCampaignEmail({
       to: recipient.email,
-      fullName: recipient.fullName,
+      firstName: recipient.firstName,
       userId: recipient.userId || undefined,
       title: params.title,
       message: params.message,

@@ -3,11 +3,10 @@ import { Link } from '@react-email/components'
 import EmailLayout from './EmailLayout'
 import { CtaButton, EMAIL_COLORS, Eyebrow, FactList, Paragraph, SectionTitle, SmallPrint, Title } from './blocks'
 import { COMPANY_INFO } from '@/constants/companyInfo'
-import { getFirstName } from '@/lib/email/participantName'
 import { sumLines, type ReceiptLine, type ReceiptParticipant } from '@/lib/email/receiptBreakdown'
 
 interface ReceiptEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   invoiceNumber: string
   invoiceDate: string
   eventName: string
@@ -72,7 +71,7 @@ function LineGroup({
 }
 
 export function ReceiptEmail({
-  fullName,
+  firstName,
   invoiceNumber,
   invoiceDate,
   eventName,
@@ -90,7 +89,6 @@ export function ReceiptEmail({
   invoiceUrl,
 }: ReceiptEmailProps) {
   const formatPrice = (amount: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount)
-  const firstName = getFirstName(fullName)
 
   return (
     <EmailLayout preview={`Paiement reçu : ${formatPrice(total)} pour ${eventName}. Facture n°${invoiceNumber}.`}>

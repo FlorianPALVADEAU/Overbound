@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useListSubscribers } from '@/hooks/useDistributionLists'
+import { formatProfileName } from '@/lib/account/profile'
 import type { DistributionList, DistributionListSubscriber } from '@/types/DistributionList'
 import {
   Dialog,
@@ -123,7 +124,7 @@ export function SubscribersDialog({
       ...exportSubscribers.map((sub) =>
         [
           sub.user.email,
-          sub.user.full_name || '',
+          formatProfileName({ first_name: sub.user.first_name, last_name: sub.user.last_name }) ?? '',
           sub.subscribed_at ? new Date(sub.subscribed_at).toLocaleDateString('fr-FR') : '',
           sub.source || '',
         ].join(',')
@@ -204,9 +205,9 @@ export function SubscribersDialog({
                       <TableCell>
                         <div>
                           <div className="font-medium">{sub.user.email}</div>
-                          {sub.user.full_name && (
+                          {formatProfileName({ first_name: sub.user.first_name, last_name: sub.user.last_name }) && (
                             <div className="text-sm text-muted-foreground">
-                              {sub.user.full_name}
+                              {formatProfileName({ first_name: sub.user.first_name, last_name: sub.user.last_name })}
                             </div>
                           )}
                         </div>

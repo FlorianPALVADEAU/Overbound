@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth/requireAdmin', () => ({ requireAdmin: mocks.requireAdmin }))
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServer: async () => ({
-    from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { full_name: 'Admin' } }) }) }) }),
+    from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { first_name: 'Admin' } }) }) }) }),
   }),
 }))
 vi.mock('@/lib/email/adminCampaigns', () => ({ buildUnifiedCampaignAudience: mocks.buildAudience }))
@@ -45,8 +45,8 @@ const post = async (body: Record<string, unknown>) => {
 }
 
 const recipients = [
-  { email: 'a@x.fr', userId: 'u1', fullName: 'A', sources: ['list_subscriptions'] },
-  { email: 'b@x.fr', fullName: null, sources: ['list_subscriptions'] },
+  { email: 'a@x.fr', userId: 'u1', firstName: 'A', sources: ['list_subscriptions'] },
+  { email: 'b@x.fr', firstName: null, sources: ['list_subscriptions'] },
 ]
 
 const campaignReport = (overrides: Record<string, unknown> = {}) => ({

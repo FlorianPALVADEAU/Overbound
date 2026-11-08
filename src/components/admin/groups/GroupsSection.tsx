@@ -47,6 +47,7 @@ import {
   type AdminGroupMember,
 } from '@/app/api/admin/groups/groupsQueries'
 import { formatWaveStartTime } from '@/lib/openSas'
+import { formatProfileName } from '@/lib/account/profile'
 
 const formatDate = (value: string | null) =>
   value
@@ -71,10 +72,10 @@ const formatAnchorSource = (group: AdminGroup) => {
   return 'Ancre définie manuellement (admin)'
 }
 
-type UserOption = Pick<AdminUser, 'id' | 'full_name' | 'email'>
-const getUserLabel = (user: UserOption) => user.full_name || user.email || `Utilisateur #${user.id.slice(0, 8)}`
+type UserOption = Pick<AdminUser, 'id' | 'first_name' | 'last_name' | 'email'>
+const getUserLabel = (user: UserOption) => formatProfileName(user) || user.email || `Utilisateur #${user.id.slice(0, 8)}`
 const getMemberLabel = (member: AdminGroupMember) =>
-  member.full_name || member.email || `Utilisateur #${member.profile_id.slice(0, 8)}`
+  formatProfileName(member) || member.email || `Utilisateur #${member.profile_id.slice(0, 8)}`
 
 // Un utilisateur déjà membre d'un groupe porte group_id (premier groupe rejoint) : on ne le propose pas.
 const MAX_USER_OPTIONS = 8
@@ -136,7 +137,8 @@ export function GroupsSection() {
   const editableCaptainCandidates = useMemo<UserOption[]>(
     () => (editingGroup?.members ?? []).map((member) => ({
       id: member.profile_id,
-      full_name: member.full_name,
+      first_name: member.first_name,
+      last_name: member.last_name,
       email: member.email,
     })),
     [editingGroup]
@@ -492,7 +494,7 @@ export function GroupsSection() {
                 return (
                   <div key={member.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border p-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <UserAvatar src={member.avatar_url} name={member.full_name} email={member.email} className="size-9 shrink-0" />
+                      <UserAvatar src={member.avatar_url} name={formatProfileName(member)} email={member.email} className="size-9 shrink-0" />
                       <div className="min-w-0">
                         <p className="flex min-w-0 items-center gap-2 text-sm font-medium">
                           <span className="truncate">{getMemberLabel(member)}</span>

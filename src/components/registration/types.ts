@@ -24,7 +24,8 @@ export interface EventTicket extends Ticket {
 export type EventUser = {
   id: string
   email: string
-  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
   date_of_birth?: string | null
   sex?: ParticipantSex | null
 }

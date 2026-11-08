@@ -31,7 +31,7 @@ const baseData: AmbassadorDashboardData = {
 
 describe('AmbassadorDashboard', () => {
   it('guides a new ambassador to the first point', () => {
-    render(<AmbassadorDashboard fullName="Ada Lovelace" data={baseData} adminView />)
+    render(<AmbassadorDashboard profile={{ first_name: 'Ada', last_name: 'Lovelace' }} data={baseData} adminView />)
 
     expect(screen.getByRole('heading', { name: /salut ada/i })).toBeTruthy()
     expect(screen.getByText('Prochain palier')).toBeTruthy()
@@ -69,7 +69,7 @@ describe('AmbassadorDashboard', () => {
         chase: { name: 'Alan T.', points_to_pass: 7 },
       },
     }
-    render(<AmbassadorDashboard fullName="Ada Lovelace" data={data} adminView />)
+    render(<AmbassadorDashboard profile={{ first_name: 'Ada', last_name: 'Lovelace' }} data={data} adminView />)
 
     expect(screen.getByRole('button', { name: 'Réclamer' })).toBeTruthy()
     expect(screen.getByText(/pour passer devant alan t\. : encore 7 points/i)).toBeTruthy()

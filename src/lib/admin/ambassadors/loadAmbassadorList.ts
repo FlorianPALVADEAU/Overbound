@@ -3,6 +3,7 @@ import { loadCurrentSeason } from '@/lib/ambassadors/season'
 import { pickCurrentCodeId, type AmbassadorCodeLink } from './currentCode'
 import { countRewardsToHandle } from './rewardCounts'
 import type { AdminAmbassadorListResponse, AdminAmbassadorRow } from './types'
+import { formatProfileName } from '@/lib/account/profile'
 
 type Admin = Pick<SupabaseClient, 'from'>
 
@@ -46,13 +47,13 @@ export async function loadAmbassadorList(admin: Admin, requestedSeason: number |
   }
 
   const [profiles, links, points, rewards] = await Promise.all([
-    admin.from('profiles').select('id, full_name').in('id', profileIds),
+    admin.from('profiles').select('id, first_name, last_name').in('id', profileIds),
     admin.from('ambassador_promotional_codes').select('ambassador_id, promotional_code_id, is_current').in('ambassador_id', ambassadorIds),
     admin.from('ambassador_points_years').select('ambassador_id, program_year, total_points, recruits_open, recruits_ranked').in('ambassador_id', ambassadorIds),
     admin.from('ambassador_rewards').select('ambassador_id, status').in('ambassador_id', ambassadorIds).eq('program_year', season).in('status', ['earned', 'claimed']),
   ])
 
-  const profileRows = ensure<{ id: string; full_name: string | null }>('profiles', profiles)
+  const profileRows = ensure<{ id: string; first_name: string | null; last_name: string | null }>('profiles', profiles)
   const linkRows = ensure<AmbassadorCodeLink & { ambassador_id: string }>('codes', links)
   const pointRows = ensure<SeasonPointsRecord>('points', points)
   const rewardRows = ensure<{ ambassador_id: string; status: string }>('rewards', rewards)
@@ -65,7 +66,7 @@ export async function loadAmbassadorList(admin: Admin, requestedSeason: number |
     ? ensure<{ id: string; code: string | null }>('promo codes', await admin.from('promotional_codes').select('id, code').in('id', codeIds))
     : []
 
-  const nameByProfile = new Map(profileRows.map((row) => [row.id, row.full_name]))
+  const nameByProfile = new Map(profileRows.map((row) => [row.id, formatProfileName(row)]))
   const codeById = new Map(codeRows.map((row) => [row.id, row.code]))
   const linksByAmbassador = new Map<string, AmbassadorCodeLink[]>()
   for (const link of linkRows) {

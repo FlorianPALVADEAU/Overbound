@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { resolveTicketOperationsProfile } from '@/lib/tickets/operationsProfile'
 import { PARTICIPANT_SEXES, type ParticipantSex } from '@/lib/checkout/participantSex'
+import { formatProfileName } from '@/lib/account/profile'
 
 type Admin = Pick<SupabaseClient, 'from'>
 
@@ -89,7 +90,7 @@ export function applyParticipantFilters<Query>(
 export async function findUserIdsByName(admin: Admin, query: string | undefined): Promise<string[]> {
   const term = query ? sanitizeSearchTerm(query) : ''
   if (term.length < 2) return []
-  const { data, error } = await admin.from('profiles').select('id').ilike('full_name', `%${term}%`).limit(200)
+  const { data, error } = await admin.from('profiles').select('id').or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%`).limit(200)
   if (error) {
     console.error('[admin participants] name search failed', error)
     return []
@@ -130,7 +131,8 @@ interface TicketLookup {
 }
 interface ProfileLookup {
   id: string
-  full_name: string | null
+  first_name: string | null
+  last_name: string | null
 }
 interface MembershipLookup {
   profile_id: string
@@ -156,7 +158,7 @@ export async function enrichParticipants(admin: Admin, registrations: Participan
       ? admin.from('tickets').select('id, name, operations_config').in('id', ticketIds)
       : Promise.resolve({ data: [] as TicketLookup[], error: null }),
     profileIds.length
-      ? admin.from('profiles').select('id, full_name').in('id', profileIds)
+      ? admin.from('profiles').select('id, first_name, last_name').in('id', profileIds)
       : Promise.resolve({ data: [] as ProfileLookup[], error: null }),
     profileIds.length
       ? admin.from('group_members').select('profile_id, group:groups(name)').in('profile_id', profileIds)
@@ -176,7 +178,7 @@ export async function enrichParticipants(admin: Admin, registrations: Participan
   }
 
   const tickets = new Map((ticketsResult.data as TicketLookup[] | null ?? []).map((ticket) => [ticket.id, ticket]))
-  const profiles = new Map((profilesResult.data as ProfileLookup[] | null ?? []).map((profile) => [profile.id, profile.full_name]))
+  const profiles = new Map((profilesResult.data as ProfileLookup[] | null ?? []).map((profile) => [profile.id, formatProfileName(profile)]))
   const groups = new Map(
     (membershipsResult.data as MembershipLookup[] | null ?? []).map((membership) => {
       const group = Array.isArray(membership.group) ? membership.group[0] : membership.group

@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useState, type RefObject } from 'react'
 import type { EventUser, Participant } from '@/components/registration/types'
-import { splitFullName } from '@/lib/checkout/fullName'
 
 /** A blank bib; the first one is prefilled with the buyer's account details. */
 const emptyParticipant = (position: number, ticketId: string, buyer: EventUser | null): Participant => {
-  const name = splitFullName(buyer?.fullName)
   return {
     id: `participant-${position + 1}`,
     ticketId,
-    firstName: name.firstName,
-    lastName: name.lastName,
+    firstName: buyer?.firstName?.trim() ?? '',
+    lastName: buyer?.lastName?.trim() ?? '',
     email: buyer?.email ?? '',
     birthDate: buyer?.date_of_birth ?? '',
     sex: buyer?.sex ?? undefined,
@@ -57,7 +55,7 @@ export function useParticipants(
     })
     // suppressEmptySyncRef is a ref read for its current value, not a reactive dependency
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTicketSlots, user?.email, user?.date_of_birth, user?.fullName])
+  }, [selectedTicketSlots, user?.email, user?.date_of_birth, user?.firstName, user?.lastName])
 
   // Backfill slot 0 once a guest authenticates mid-flow, without overwriting user edits
   useEffect(() => {
@@ -66,11 +64,10 @@ export function useParticipants(
     setParticipants((previous) => {
       if (previous.length === 0) return previous
       const first = previous[0]
-      const name = splitFullName(user.fullName)
       const filled = {
         ...first,
-        firstName: first.firstName || name.firstName,
-        lastName: first.lastName || name.lastName,
+        firstName: first.firstName || user.firstName?.trim() || '',
+        lastName: first.lastName || user.lastName?.trim() || '',
         email: first.email || user.email || '',
         birthDate: first.birthDate || user.date_of_birth || '',
         sex: first.sex ?? user.sex ?? undefined,

@@ -63,7 +63,7 @@ describe('sendInactiveUserWinback', () => {
 
   it('sends a winback email to a recruit with no recent registration', async () => {
     getMarketingOptInRecipientsMock.mockResolvedValue([
-      { userId: 'user-1', email: 'inactive@example.com', fullName: 'Alice' },
+      { userId: 'user-1', email: 'inactive@example.com', firstName: 'Alice' },
     ])
     supabaseAdminMock.mockReturnValue(createAdmin([]))
 
@@ -80,7 +80,7 @@ describe('sendInactiveUserWinback', () => {
 
   it('skips a recipient whose last registration is within the 90-day window', async () => {
     getMarketingOptInRecipientsMock.mockResolvedValue([
-      { userId: 'user-1', email: 'recent@example.com', fullName: 'Bob' },
+      { userId: 'user-1', email: 'recent@example.com', firstName: 'Bob' },
     ])
     supabaseAdminMock.mockReturnValue(
       createAdmin([{ user_id: 'user-1', created_at: new Date().toISOString() }]),
@@ -170,7 +170,7 @@ describe('sendAbandonedCheckoutReminders', () => {
           },
         ],
         registrations: [{ order_id: 'order-1', event: { title: 'Ultra Arena', slug: 'ultra-arena' }, ticket: { name: 'OPEN' } }],
-        authUsers: [{ id: 'user-1', email: 'checkout@example.com', user_metadata: { full_name: 'Claire' } }],
+        authUsers: [{ id: 'user-1', email: 'checkout@example.com', user_metadata: { first_name: 'Claire' } }],
       }),
     )
 
@@ -180,7 +180,7 @@ describe('sendAbandonedCheckoutReminders', () => {
     expect(sendAbandonedCheckoutEmailMock).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'checkout@example.com',
-        fullName: 'Claire',
+        firstName: 'Claire',
         eventTitle: 'Ultra Arena',
         ticketName: 'OPEN',
       }),

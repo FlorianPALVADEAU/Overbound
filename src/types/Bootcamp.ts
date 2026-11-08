@@ -29,7 +29,8 @@ export interface BootcampWithRegistrants extends Bootcamp {
     user_id: string
     registered_at: string
     profile?: {
-      full_name: string | null
+      first_name: string | null
+      last_name: string | null
       email: string | null
     }
   }>

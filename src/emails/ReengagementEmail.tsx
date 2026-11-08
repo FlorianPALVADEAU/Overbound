@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface ReengagementEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventsUrl: string
   blogUrl: string
   accountUrl: string
@@ -12,7 +12,7 @@ interface ReengagementEmailProps {
 }
 
 export function ReengagementEmail({
-  fullName,
+  firstName,
   eventsUrl,
   blogUrl,
   accountUrl,
@@ -42,7 +42,7 @@ export function ReengagementEmail({
       <Section style={styles.section}>
         {/* Greeting */}
         <Text style={styles.greeting}>
-          Cher{fullName ? ` ${fullName}` : ''}
+          Cher{firstName ? ` ${firstName}` : ''}
         </Text>
 
         {/* Main Heading */}

@@ -2,7 +2,8 @@ import { sendOnboardingEmail, sendProfileCompletionReminderEmail } from '@/lib/e
 import { getLastEmailLog, recordEmailLog } from '@/lib/email/emailLogs'
 
 interface ProfileSnapshot {
-  full_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
   phone?: string | null
   date_of_birth?: string | null
 }
@@ -10,7 +11,7 @@ interface ProfileSnapshot {
 interface EngagementContext {
   userId: string
   email: string
-  fullName?: string | null
+  firstName?: string | null
   userCreatedAt?: string | null
   profile?: ProfileSnapshot | null
 }
@@ -18,7 +19,8 @@ interface EngagementContext {
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://overbound-race.com'
 
 const PROFILE_FIELD_LABELS: Record<keyof ProfileSnapshot, string> = {
-  full_name: 'Nom complet',
+  first_name: 'Prénom',
+  last_name: 'Nom',
   phone: 'Téléphone',
   date_of_birth: 'Date de naissance',
 }
@@ -63,7 +65,7 @@ async function ensureOnboardingEmail(context: EngagementContext) {
 
   await sendOnboardingEmail({
     to: context.email,
-    fullName: context.fullName,
+    firstName: context.firstName,
     accountUrl,
     eventsUrl,
     blogUrl,
@@ -105,7 +107,7 @@ async function ensureProfileReminderEmail(context: EngagementContext) {
 
   await sendProfileCompletionReminderEmail({
     to: context.email,
-    fullName: context.fullName,
+    firstName: context.firstName,
     accountUrl,
     missingFields,
   })

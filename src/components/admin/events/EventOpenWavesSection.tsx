@@ -75,7 +75,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     position: participant.wave_position ?? index + 1,
   }))
   const waveParticipantColumns: OperationsListColumn<(typeof waveParticipantRows)[number]>[] = [
-    { id: 'participant', header: 'Participant', cell: (row) => <span className="font-medium">{row.full_name}</span> },
+    { id: 'participant', header: 'Participant', cell: (row) => <span className="font-medium">{row.display_name}</span> },
     { id: 'position', header: 'Position', mobile: 'summary', cell: (row) => row.position },
     { id: 'start', header: 'Départ', mobile: 'summary', cell: (row) => formatClockTime(row.start_time) },
     { id: 'email', header: 'Email', mobile: 'detail', cell: (row) => <span className="text-muted-foreground">{row.email}</span> },

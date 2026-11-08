@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface BookingConfirmationEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventName: string
   eventDate: string
   eventTime: string
@@ -16,7 +16,7 @@ interface BookingConfirmationEmailProps {
 }
 
 export function BookingConfirmationEmail({
-  fullName,
+  firstName,
   eventName,
   eventDate,
   eventTime,

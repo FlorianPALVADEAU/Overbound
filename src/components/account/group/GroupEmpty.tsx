@@ -6,6 +6,7 @@ import { Eyebrow } from '@/components/account/AccountScreen'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { defaultGroupName, parseInviteCode } from '@/lib/groups/invite'
+import { formatProfileName } from '@/lib/account/profile'
 
 const INVITE_CODE_LENGTH = 8
 
@@ -13,7 +14,7 @@ const INVITE_CODE_LENGTH = 8
 const readInviteFromUrl = () =>
   typeof window === 'undefined' ? '' : (parseInviteCode(new URLSearchParams(window.location.search).get('join')) ?? '')
 
-export function GroupEmpty({ fullName }: { fullName: string | null | undefined }) {
+export function GroupEmpty({ firstName }: { firstName: string | null | undefined }) {
   const createGroup = useCreateGroup()
   const joinGroup = useJoinGroup()
   const [code, setCode] = useState(readInviteFromUrl)
@@ -37,7 +38,7 @@ export function GroupEmpty({ fullName }: { fullName: string | null | undefined }
   }
 
   const create = async () => {
-    const finalName = name.trim() || defaultGroupName(fullName)
+    const finalName = name.trim() || defaultGroupName(firstName)
     try {
       await createGroup.mutateAsync(finalName)
     } catch {
@@ -79,7 +80,7 @@ export function GroupEmpty({ fullName }: { fullName: string | null | undefined }
         {preview.data ? (
           <p className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{preview.data.name}</span> · capitaine{' '}
-            {preview.data.captain.full_name ?? preview.data.captain.email ?? 'inconnu'} · {preview.data.members_count} membre
+            {formatProfileName(preview.data.captain) ?? preview.data.captain.email ?? 'inconnu'} · {preview.data.members_count} membre
             {preview.data.members_count > 1 ? 's' : ''}
           </p>
         ) : null}
@@ -98,7 +99,7 @@ export function GroupEmpty({ fullName }: { fullName: string | null | undefined }
             value={name}
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && create()}
-            placeholder={defaultGroupName(fullName)}
+            placeholder={defaultGroupName(firstName)}
             disabled={busy}
             className="h-12 text-base"
           />

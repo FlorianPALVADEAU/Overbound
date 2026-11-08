@@ -62,7 +62,7 @@ export async function getIntersectionListsRecipients(
         list_id,
         profiles:user_id (
           id,
-          full_name
+          first_name
         )
       `
       )
@@ -81,7 +81,7 @@ export async function getIntersectionListsRecipients(
     for (const sub of subscriptions) {
       userListCounts.set(sub.user_id, (userListCounts.get(sub.user_id) || 0) + 1)
       if (!profileMap.has(sub.user_id)) {
-        profileMap.set(sub.user_id, (sub.profiles as any)?.full_name ?? null)
+        profileMap.set(sub.user_id, (sub.profiles as any)?.first_name ?? null)
       }
     }
 
@@ -109,7 +109,7 @@ export async function getIntersectionListsRecipients(
             recipients.push({
               userId: authUser.user.id,
               email: authUser.user.email,
-              fullName: profileMap.get(authUser.user.id) ?? null,
+              firstName: profileMap.get(authUser.user.id) ?? null,
             })
           }
         } catch (error) {

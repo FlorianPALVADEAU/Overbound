@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { filterMembers, memberDisplayName, sortMembers } from '@/lib/groups/members'
 import { UserAvatar } from '@/components/account/UserAvatar'
 import type { GroupMember } from '@/types/Group'
+import { formatProfileName } from '@/lib/account/profile'
 
 /** Short lists are shown whole; long ones get a search box and a "show more" step. */
 const SEARCH_THRESHOLD = 8
@@ -72,7 +73,7 @@ export function GroupMembers({ members, currentUserId, isCaptain, busy, onDelega
             <li key={member.id} className="flex min-h-14 items-center gap-3 border-t border-border py-2 first:border-t-0">
               <UserAvatar
                 src={member.avatar_url}
-                name={member.full_name}
+                name={formatProfileName(member)}
                 email={member.email}
                 tone={member.role === 'captain' ? 'brand' : 'neutral'}
                 className="size-10 shrink-0"

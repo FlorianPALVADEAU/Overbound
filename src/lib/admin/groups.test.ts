@@ -21,14 +21,14 @@ describe('hydrateAdminGroups', () => {
         created_at: '2026-09-01T00:00:00Z',
       }],
       [{ id: 'member-1', group_id: GROUP_ID, profile_id: PROFILE_ID, role: 'captain', joined_at: '2026-09-01T00:00:00Z' }],
-      [{ id: PROFILE_ID, full_name: 'Camille Martin' }],
+      [{ id: PROFILE_ID, first_name: 'Camille', last_name: 'Martin' }],
       [{ id: PROFILE_ID, email: 'camille@example.com' }],
     )
 
     expect(result.memberProfileIds).toEqual([PROFILE_ID])
     expect(result.groups[0]).toMatchObject({
       anchor_initialized_from_profile_name: 'Camille Martin',
-      members: [{ profile_id: PROFILE_ID, full_name: 'Camille Martin', email: 'camille@example.com' }],
+      members: [{ profile_id: PROFILE_ID, first_name: 'Camille', last_name: 'Martin', email: 'camille@example.com' }],
     })
   })
 

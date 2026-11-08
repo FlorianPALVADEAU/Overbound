@@ -100,7 +100,8 @@ export interface ListSubscriptionWithUser extends ListSubscription {
   user: {
     id: string
     email: string
-    full_name: string | null
+    first_name: string | null
+    last_name: string | null
   }
 }
 
@@ -115,7 +116,8 @@ export interface DistributionListSubscriber {
   user: {
     id: string | null
     email: string
-    full_name: string | null
+    first_name: string | null
+    last_name: string | null
   }
 }
 

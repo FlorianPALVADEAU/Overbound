@@ -54,7 +54,7 @@ function createAdminMock() {
         return lookup([{ id: registrations[0].ticket_id, name: 'Course 20 km', operations_config: { departure_mode: 'wave', departure_change_policy: 'reassign' } }])
       }
       if (table === 'profiles') {
-        return lookup([{ id: registrations[0].user_id, full_name: 'Camille Martin' }])
+        return lookup([{ id: registrations[0].user_id, first_name: 'Camille', last_name: 'Martin' }])
       }
       if (table === 'group_members') {
         return lookup([{ profile_id: registrations[0].user_id, group: { id: 'g1', name: 'Les loups' } }])

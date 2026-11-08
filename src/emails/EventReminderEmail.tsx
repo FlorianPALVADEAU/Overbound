@@ -4,7 +4,7 @@ import EmailLayout from './EmailLayout'
 import { getEmailAssetsBaseUrl } from '@/lib/email/config'
 
 interface EventReminderEmailProps {
-  fullName?: string | null
+  firstName?: string | null
   eventName: string
   eventDate: string
   eventTime: string
@@ -16,7 +16,7 @@ interface EventReminderEmailProps {
 }
 
 export function EventReminderEmail({
-  fullName,
+  firstName,
   eventName,
   eventDate,
   eventTime,
@@ -45,7 +45,7 @@ export function EventReminderEmail({
 
         {/* Greeting */}
         <Text style={styles.greeting}>
-          Cher{fullName ? ` ${fullName}` : ''}
+          Cher{firstName ? ` ${firstName}` : ''}
         </Text>
 
         {/* Main Heading */}
