@@ -9,7 +9,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
   const { slug } = await ctx.params
 
   const post = loadPostBySlug(slug)
-  const title = post?.title || 'OverBound'
+  const title = post?.title || 'Overbound'
 
   const logo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://overbound-race.com'}/images/brand/totem_logo.png`
 
@@ -25,7 +25,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
         background: 'linear-gradient(135deg,#0B1220,#1F2937)',
       }}
     >
-      <img src={logo} width={160} height={160} style={{ opacity: 0.9 }} alt="OverBound" />
+      <img src={logo} width={160} height={160} style={{ opacity: 0.9 }} alt="Overbound" />
       <div style={{ fontSize: 64, color: 'white', fontWeight: 800, lineHeight: 1.1 }}>
         {title}
       </div>

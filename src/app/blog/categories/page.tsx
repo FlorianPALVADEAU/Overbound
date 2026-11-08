@@ -50,7 +50,7 @@ export default async function BlogCategoriesIndex() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <PageHero
-        image={{ src: COVER.pages.blog, alt: 'Catégories du blog OverBound', position: '50% 30%' }}
+        image={{ src: COVER.pages.blog, alt: 'Catégories du blog Overbound', position: '50% 30%' }}
         title="Catégories"
         description="Explore nos thématiques pour trouver plus vite les conseils et les actus qui t'intéressent."
       />

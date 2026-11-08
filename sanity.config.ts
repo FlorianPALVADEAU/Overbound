@@ -33,7 +33,7 @@ export default defineConfig({
 //   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || process.env.SANITY_PROJECT_ID!,
 //   dataset: process.env.SANITY_DATASET!,
 //   apiVersion: process.env.SANITY_API_VERSION!,
-//   title: 'OverBound Studio',
+//   title: 'Overbound Studio',
 //   basePath: '/studio',
 //   plugins: [deskTool({ structure: deskStructure })],
 //   schema: { types: schemaTypes },

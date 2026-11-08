@@ -115,8 +115,8 @@ function BlogHero() {
     <PageHero
       variant="compact"
       titleSize="xl"
-      image={{ src: COVER.pages.blog, alt: 'OverBound Blog', position: '50% 30%' }}
-      eyebrow="La tribu OverBound"
+      image={{ src: COVER.pages.blog, alt: 'Overbound Blog', position: '50% 30%' }}
+      eyebrow="La tribu Overbound"
       title="Préparer la boucle"
       description="Entraînement, récupération et préparation pour la boucle d'environ 2 km, en format OPEN ou RANKED. Conseils et histoires de la tribu Overbound."
     />

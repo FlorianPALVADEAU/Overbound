@@ -100,7 +100,7 @@ export default async function BlogCategoryPage({ params, searchParams }: { param
   return (
     <main className="min-h-screen bg-background text-foreground">
       <PageHero
-        image={{ src: COVER.pages.blog, alt: 'Catégorie OverBound', position: '50% 30%' }}
+        image={{ src: COVER.pages.blog, alt: 'Catégorie Overbound', position: '50% 30%' }}
         title={<>Catégorie&nbsp;: {category.title}</>}
       />
       <div className={cn(containerClass(), 'py-16')}>

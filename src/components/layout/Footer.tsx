@@ -62,7 +62,7 @@ export function Footer() {
           Overbound
           {/* <Image
             src="/images/brand/LOGO_FULL.webp"
-            alt="OverBound Logo"
+            alt="Overbound Logo"
             width={1000}
             height={100}
             className="w-screen"
@@ -73,7 +73,7 @@ export function Footer() {
           <Link href="/" className="flex min-h-11 items-center justify-center sm:justify-start">
             <Image
               src="/images/brand/totem_logo_white.png"
-              alt="OverBound Logo"
+              alt="Overbound Logo"
               width={64}
               height={64}
               className="w-8 md:w-10 lg:w-12 h-auto"

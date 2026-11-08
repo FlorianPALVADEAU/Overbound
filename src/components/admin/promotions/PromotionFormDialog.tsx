@@ -41,7 +41,7 @@ interface PromotionFormDialogProps {
 }
 
 const DEFAULT_POPUP_CONFIG: PopupConfig = {
-  form_title: 'Rejoins la communauté OverBound !',
+  form_title: 'Rejoins la communauté Overbound !',
   form_description: 'Reçois en exclusivité nos nouveaux événements et promotions',
   email_placeholder: 'ton@email.com',
   name_placeholder: 'Ton prénom',

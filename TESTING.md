@@ -1,6 +1,6 @@
-# Tests - OverBound
+# Tests - Overbound
 
-Ce document explique comment utiliser et écrire des tests pour le projet OverBound.
+Ce document explique comment utiliser et écrire des tests pour le projet Overbound.
 
 ## Stack de test
 
