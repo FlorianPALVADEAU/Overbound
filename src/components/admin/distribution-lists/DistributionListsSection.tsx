@@ -9,7 +9,8 @@ import { SubscribersDialog } from './SubscribersDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, RefreshCw, Loader2, List, TrendingUp } from 'lucide-react'
+import { Plus, RefreshCw, Loader2, List, TrendingUp, Mail } from 'lucide-react'
+import { EmailComposer } from './EmailComposer'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import { StatRow } from '@/components/ds'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
@@ -21,6 +22,7 @@ export function DistributionListsSection() {
   const [listToEdit, setListToEdit] = useState<DistributionListWithStats | undefined>()
   const [subscribersDialogList, setSubscribersDialogList] = useState<DistributionList | null>(null)
   const [activeTab, setActiveTab] = useState('all')
+  const [composing, setComposing] = useState(false)
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search.trim())
   const [cursor, setCursor] = useState<string | null>(null)
@@ -95,6 +97,10 @@ export function DistributionListsSection() {
               )}
               Actualiser
             </Button>
+            <Button variant="outline" onClick={() => setComposing(true)} disabled={composing}>
+              <Mail className="w-4 h-4 mr-2" />
+              Composer un email
+            </Button>
             <Button onClick={handleCreateClick}>
               <Plus className="w-4 h-4 mr-2" />
               Nouvelle liste
@@ -103,6 +109,10 @@ export function DistributionListsSection() {
         }
       />
 
+      {composing ? (
+        <EmailComposer lists={lists} onClose={() => setComposing(false)} />
+      ) : (
+      <>
       <StatRow
         compact
         stats={[
@@ -166,6 +176,8 @@ export function DistributionListsSection() {
           </Tabs>
         </CardContent>
       </Card>
+      </>
+      )}
 
       {/* Dialogs */}
       <ListFormDialog
