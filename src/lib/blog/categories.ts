@@ -9,7 +9,6 @@ import type { BlogCategory, BlogCategorySlug } from './types'
 export const BLOG_CATEGORIES: BlogCategory[] = [
   { slug: 'bilan', title: 'Bilan' },
   { slug: 'formats', title: 'Formats de course' },
-  { slug: 'ambassadeurs', title: 'Programme ambassadeur' },
   { slug: 'obstacles', title: 'Obstacles' },
   { slug: 'entrainement', title: 'Entraînement' },
   { slug: 'guide', title: 'Guides pratiques' },

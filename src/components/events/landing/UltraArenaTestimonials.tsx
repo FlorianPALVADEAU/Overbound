@@ -17,6 +17,7 @@ import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { Container, SectionHeader, SECTION_SPACING } from '@/components/ds'
 import { cn } from '@/lib/utils'
+import { testimonialMeta } from '@/lib/testimonials/testimonialMeta'
 import { testimonialPosterUrl } from '@/lib/testimonials/testimonialPoster'
 
 const renderStars = (rating: number) =>
@@ -43,6 +44,7 @@ function VideoCard({
   const prefersReducedMotion = usePrefersReducedMotion()
   const posterUrl = testimonialPosterUrl(testimonial.mediaUrl)
   const id = testimonial.id.toString()
+  const meta = testimonialMeta(testimonial)
 
   useEffect(() => {
     const video = videoRef.current
@@ -144,10 +146,8 @@ function VideoCard({
         )}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-foreground">{testimonial.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {testimonial.age} ans • {testimonial.location}
-            </p>
+            {testimonial.name && <p className="text-xs font-semibold text-foreground">{testimonial.name}</p>}
+            {meta && <p className="text-xs text-muted-foreground">{meta}</p>}
           </div>
           <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
             ✓ Vérifié
@@ -190,7 +190,7 @@ export function UltraArenaTestimonials({ onVideoPlay, isOnSale = false, register
     return () => observer.disconnect()
   }, [])
 
-  // Only video testimonials (all 5 available)
+  // Only video testimonials (all with a media file)
   const videoTestimonials = testimonials.filter((t) => t.mediaUrl)
 
   return (

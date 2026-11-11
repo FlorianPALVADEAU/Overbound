@@ -61,6 +61,17 @@ const nextConfig: NextConfig = {
         destination: '/blog/post/bilan-premiere-edition-ultra-arena-2026',
         permanent: true,
       },
+      // Ambassador program article removed from the blog; the program lives on /ambassadors.
+      {
+        source: '/blog/post/programme-ambassadeur-overbound-explique',
+        destination: '/ambassadors',
+        permanent: true,
+      },
+      {
+        source: '/blog/post/majin-team-julien-damiani-ambassadeur-overbound',
+        destination: '/blog/post/majin-team-julien-damiani-premiere-edition',
+        permanent: true,
+      },
       {
         source: '/blog/post/courses-a-obstacles-les-plus-hardcore-qui-doit-y-aller',
         destination: '/blog/post/spartan-race-vs-overbound-quelle-course-a-obstacles-choisir',
