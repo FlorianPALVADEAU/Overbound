@@ -30,6 +30,7 @@ interface Fixture {
   lists?: Result
   subscriptions?: Result | ((range?: [number, number]) => Result)
   preferences?: Result
+  profiles?: Array<{ id: string; first_name: string | null; last_name: string | null }>
   users?: Array<{ id: string; email: string | null }>
 }
 
@@ -38,6 +39,7 @@ function givenDatabase(fixture: Fixture) {
     distribution_lists: query(fixture.lists ?? { data: [{ id: 'list-1' }], error: null }),
     list_subscriptions: query(fixture.subscriptions ?? { data: [], error: null }),
     notification_preferences: query(fixture.preferences ?? { data: [], error: null }),
+    profiles: query({ data: fixture.profiles ?? [], error: null }),
   }
   const listUsers = vi.fn().mockResolvedValue({ data: { users: fixture.users ?? [] }, error: null })
   supabaseAdminMock.mockReturnValue({
@@ -56,10 +58,9 @@ const emailOnly = (id: string, email: string, firstName: string | null = null) =
   subscribed: true,
   source: 'popup-1',
   subscribed_at: null,
-  profiles: null,
 })
 
-const accountRow = (id: string, userId: string, firstName: string | null = null) => ({
+const accountRow = (id: string, userId: string) => ({
   id,
   list_id: 'list-1',
   user_id: userId,
@@ -68,8 +69,9 @@ const accountRow = (id: string, userId: string, firstName: string | null = null)
   subscribed: true,
   source: 'preferences',
   subscribed_at: null,
-  profiles: { first_name: firstName },
 })
+
+const alice = { id: 'u1', first_name: 'Alice', last_name: null }
 
 describe('resolveAudience', () => {
   beforeEach(() => {
@@ -81,13 +83,14 @@ describe('resolveAudience', () => {
     givenDatabase({
       subscriptions: {
         data: [
-          accountRow('s1', 'u1', 'Alice'),
+          accountRow('s1', 'u1'),
           emailOnly('s2', 'Bob@Example.com', 'Bob'),
           emailOnly('s3', 'alice@example.com'),
         ],
         error: null,
       },
       users: [{ id: 'u1', email: 'alice@example.com' }],
+      profiles: [alice],
     })
 
     const audience = await resolveAudience({ listSlugs: ['events-announcements'] })
@@ -101,15 +104,39 @@ describe('resolveAudience', () => {
   it('keeps the account when the same address appears first as an email-only row', async () => {
     givenDatabase({
       subscriptions: {
-        data: [emailOnly('s1', 'alice@example.com'), accountRow('s2', 'u1', 'Alice')],
+        data: [emailOnly('s1', 'alice@example.com'), accountRow('s2', 'u1')],
         error: null,
       },
       users: [{ id: 'u1', email: 'alice@example.com' }],
+      profiles: [alice],
     })
 
     const audience = await resolveAudience()
 
     expect(audience).toEqual([{ userId: 'u1', email: 'alice@example.com', firstName: 'Alice' }])
+  })
+
+  it('never embeds profiles in the subscription query: user_id references auth.users', async () => {
+    const { tables } = givenDatabase({
+      subscriptions: { data: [accountRow('s1', 'u1')], error: null },
+      users: [{ id: 'u1', email: 'alice@example.com' }],
+      profiles: [alice],
+    })
+
+    await resolveAudience()
+
+    const select = (tables.list_subscriptions as { select: { mock: { calls: string[][] } } }).select
+    expect(select.mock.calls[0][0]).not.toContain('profiles')
+    expect((tables.profiles as { in: unknown }).in).toHaveBeenCalledWith('id', ['u1'])
+  })
+
+  it('keeps the recipient, without a name, when the account has no profile row', async () => {
+    givenDatabase({
+      subscriptions: { data: [accountRow('s1', 'u1')], error: null },
+      users: [{ id: 'u1', email: 'alice@example.com' }],
+    })
+
+    expect(await resolveAudience()).toEqual([{ userId: 'u1', email: 'alice@example.com', firstName: null }])
   })
 
   it('drops accounts whose digest preference is not immediate', async () => {

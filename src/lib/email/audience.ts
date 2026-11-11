@@ -42,17 +42,14 @@ interface SubscriptionRow {
   subscribed: boolean | null
   source: string | null
   subscribed_at: string | null
-  profiles: ProfileName | ProfileName[] | null
 }
 
+// No `profiles` embed: list_subscriptions.user_id references auth.users, not profiles, so PostgREST
+// finds no relationship to embed. Names are read from profiles separately (fetchProfileNames).
 const SUBSCRIPTION_COLUMNS =
-  'id, list_id, user_id, email, first_name, last_name, subscribed, source, subscribed_at, profiles:user_id(first_name, last_name)'
+  'id, list_id, user_id, email, first_name, last_name, subscribed, source, subscribed_at'
 
 const normalizeEmail = (value: string | null | undefined) => value?.trim().toLowerCase() ?? ''
-
-// Le compte gagne sur la ligne d'abonnement anonyme, champ par champ.
-const profileOf = (profiles: SubscriptionRow['profiles']): ProfileName | null =>
-  (Array.isArray(profiles) ? profiles[0] : profiles) ?? null
 
 function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = []
@@ -120,6 +117,22 @@ async function fetchAuthEmails(userIds: Set<string>): Promise<Map<string, string
   }
 }
 
+/** Names of the accounts; the account wins over the anonymous subscription row, field by field. */
+async function fetchProfileNames(userIds: Set<string>): Promise<Map<string, ProfileName>> {
+  const names = new Map<string, ProfileName>()
+
+  for (const ids of chunk(Array.from(userIds), LOOKUP_CHUNK_SIZE)) {
+    const { data, error } = await supabaseAdmin().from('profiles').select('id, first_name, last_name').in('id', ids)
+    if (error) {
+      throw new Error(`[audience] profile read failed: ${error.message}`)
+    }
+    for (const row of (data ?? []) as Array<ProfileName & { id: string }>) {
+      names.set(row.id, { first_name: row.first_name, last_name: row.last_name })
+    }
+  }
+  return names
+}
+
 /** Every subscription row of the given lists with its address resolved, rows without an address dropped. */
 export async function listSubscribers(
   listIds: string[],
@@ -130,19 +143,21 @@ export async function listSubscribers(
   const rows = await fetchSubscriptionRows(listIds, options.subscribedOnly)
   const userIds = new Set(rows.flatMap((row) => (row.user_id ? [row.user_id] : [])))
   const authEmails = await fetchAuthEmails(userIds)
+  const profileNames = await fetchProfileNames(userIds)
 
   const subscribers: ListSubscriber[] = []
   for (const row of rows) {
     const email = normalizeEmail((row.user_id ? authEmails.get(row.user_id) : null) ?? row.email)
     if (!email) continue
 
+    const profile = row.user_id ? profileNames.get(row.user_id) : undefined
     subscribers.push({
       id: row.id,
       listId: row.list_id,
       userId: row.user_id,
       email,
-      firstName: profileOf(row.profiles)?.first_name ?? row.first_name ?? null,
-      lastName: profileOf(row.profiles)?.last_name ?? row.last_name ?? null,
+      firstName: profile?.first_name ?? row.first_name ?? null,
+      lastName: profile?.last_name ?? row.last_name ?? null,
       subscribed: Boolean(row.subscribed),
       source: row.source,
       subscribedAt: row.subscribed_at,
