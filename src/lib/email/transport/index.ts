@@ -2,6 +2,9 @@ import { sendMarketingEmailViaResend } from './resend'
 import { sendMarketingEmail as sendMarketingEmailViaSes } from './ses'
 import type { MarketingEmailMessage, SendResult } from './types'
 
+/** Replies to marketing mail land in the mailbox the team reads: the sender address has none. */
+export const MARKETING_REPLY_TO = 'contact@overbound-race.com'
+
 export type MarketingTransportName = 'ses' | 'resend'
 
 /** MARKETING_TRANSPORT=ses routes marketing mail through Amazon SES; anything else keeps Resend. */
@@ -19,9 +22,10 @@ export function isMarketingTransportConfigured(): boolean {
 
 /** The only entry point for marketing mail. Transactional mail never goes through here. */
 export function deliverMarketingMail(message: MarketingEmailMessage): Promise<SendResult> {
+  const withReplyTo = { ...message, replyTo: message.replyTo ?? MARKETING_REPLY_TO }
   return getMarketingTransportName() === 'ses'
-    ? sendMarketingEmailViaSes(message)
-    : sendMarketingEmailViaResend(message)
+    ? sendMarketingEmailViaSes(withReplyTo)
+    : sendMarketingEmailViaResend(withReplyTo)
 }
 
 export type { MarketingEmailMessage, SendFailure, SendResult } from './types'
