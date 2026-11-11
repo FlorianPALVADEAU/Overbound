@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { RECONSENT_SOURCE } from '@/lib/email/consent'
 import {
   buildConsentView,
   LIST_SLUG_TO_PREFERENCE,
@@ -53,6 +54,32 @@ async function syncPreferences(userId: string, lists: ConsentList[], chosen: Set
     .from('notification_preferences')
     .upsert({ user_id: userId, ...flags }, { onConflict: 'user_id' })
   if (error) throw new Error(`[reconsent] preference write failed: ${error.message}`)
+}
+
+const CONFIRMED_PAGE_SIZE = 1000
+
+/** People who confirmed at least one list from the re-consent mail (accounts and form-only addresses). */
+export async function countConfirmedPeople(): Promise<number> {
+  const admin = supabaseAdmin()
+  const people = new Set<string>()
+
+  for (let from = 0; ; from += CONFIRMED_PAGE_SIZE) {
+    const { data, error } = await admin
+      .from('list_subscriptions')
+      .select('user_id, email')
+      .eq('source', RECONSENT_SOURCE)
+      .eq('subscribed', true)
+      .order('id')
+      .range(from, from + CONFIRMED_PAGE_SIZE - 1)
+    if (error) throw new Error(`[reconsent] confirmed count failed: ${error.message}`)
+
+    const rows = (data ?? []) as Array<{ user_id: string | null; email: string | null }>
+    for (const row of rows) {
+      const key = row.user_id ?? row.email?.trim().toLowerCase()
+      if (key) people.add(key)
+    }
+    if (rows.length < CONFIRMED_PAGE_SIZE) return people.size
+  }
 }
 
 export async function loadConsentChoices(identity: ConsentIdentity): Promise<ConsentChoice[]> {

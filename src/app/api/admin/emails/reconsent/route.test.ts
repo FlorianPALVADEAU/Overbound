@@ -8,10 +8,12 @@ const mocks = vi.hoisted(() => ({
   deliver: vi.fn(),
   configured: vi.fn(),
   renderEmail: vi.fn(),
+  countConfirmedPeople: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/requireAdmin', () => ({ requireAdmin: mocks.requireAdmin }))
 vi.mock('@/lib/email/audience', () => ({ resolveReconsentAudience: mocks.resolveReconsentAudience }))
+vi.mock('@/lib/email/reconsentStore', () => ({ countConfirmedPeople: mocks.countConfirmedPeople }))
 vi.mock('@/lib/email/campaign', () => ({ runCampaign: mocks.runCampaign }))
 vi.mock('@/lib/email/transport', () => ({
   deliverMarketingMail: mocks.deliver,
@@ -27,7 +29,7 @@ vi.mock('@/lib/logging/adminRequestLogger', () => ({
   withRequestLogging: <Handler,>(handler: Handler) => handler,
 }))
 
-import { POST } from './route'
+import { GET, POST } from './route'
 
 const post = async (body: Record<string, unknown>) => {
   const response = await POST(
@@ -64,6 +66,7 @@ describe('POST /api/admin/emails/reconsent', () => {
     mocks.renderEmail.mockResolvedValue('<html>mail</html>')
     mocks.deliver.mockResolvedValue({ ok: true, messageId: 'm1' })
     mocks.runCampaign.mockResolvedValue(report())
+    mocks.countConfirmedPeople.mockResolvedValue(7)
   })
 
   it('refuses anyone who is not an admin', async () => {
@@ -122,6 +125,13 @@ describe('POST /api/admin/emails/reconsent', () => {
     expect(json).toMatchObject({ success: true, sent: 1 })
     expect(mocks.deliver).toHaveBeenCalledTimes(1)
     expect(mocks.deliver).toHaveBeenCalledWith(expect.objectContaining({ to: 'admin@x.fr' }))
+    expect(mocks.runCampaign).not.toHaveBeenCalled()
+  })
+
+  it('previews how many people would be mailed and how many already confirmed, sending nothing', async () => {
+    const response = await GET(new NextRequest('http://localhost/api/admin/emails/reconsent'))
+
+    expect(await response.json()).toMatchObject({ success: true, total: 2, confirmed: 7 })
     expect(mocks.runCampaign).not.toHaveBeenCalled()
   })
 })

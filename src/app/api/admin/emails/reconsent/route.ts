@@ -6,6 +6,7 @@ import ReconsentEmail from '@/emails/ReconsentEmail'
 import { renderEmail } from '@/lib/email/render'
 import { resolveReconsentAudience } from '@/lib/email/audience'
 import { runCampaign } from '@/lib/email/campaign'
+import { countConfirmedPeople } from '@/lib/email/reconsentStore'
 import {
   deliverMarketingMail,
   getMarketingTransportName,
@@ -52,8 +53,8 @@ export async function GET(request: NextRequest) {
     const auth = await requireAdmin(request)
     if (!auth.ok) return auth.response
 
-    const recipients = await resolveReconsentAudience()
-    return NextResponse.json({ success: true, total: recipients.length, subject: SEND_SUBJECT })
+    const [recipients, confirmed] = await Promise.all([resolveReconsentAudience(), countConfirmedPeople()])
+    return NextResponse.json({ success: true, total: recipients.length, confirmed, subject: SEND_SUBJECT })
   } catch (error) {
     console.error('[admin reconsent] preview error', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

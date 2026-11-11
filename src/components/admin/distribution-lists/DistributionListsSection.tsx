@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, RefreshCw, Loader2, List, TrendingUp, Mail } from 'lucide-react'
 import { EmailComposer } from './EmailComposer'
+import { ReconsentPanel } from './ReconsentPanel'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import { StatRow } from '@/components/ds'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
@@ -121,6 +122,8 @@ export function DistributionListsSection() {
           { label: 'Taux moyen', value: lists.length > 0 ? Math.round(totalSubscribers / lists.length) : 0, unit: 'abonnés / liste' },
         ]}
       />
+
+      <ReconsentPanel />
 
       {/* Lists Table with Tabs */}
       <Card variant="info">
