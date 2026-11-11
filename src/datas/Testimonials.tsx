@@ -8,34 +8,66 @@ export enum TestimonialTypeEnum {
 
 export type TestimonialType = {
   id: UUID
-  name: string
-  age: number
+  name?: string
+  age?: number
   rating: number
   comment?: string
   mediaUrl: string
-  location: string
+  location?: string
   type: TestimonialTypeEnum
 }
 
+/**
+ * Display order is the array order: first-edition interviews first (newest),
+ * then the earlier feedbacks.
+ */
 export const testimonials: TestimonialType[] = [
   {
     id: randomUUID(),
-    name: "Thomas",
-    age: 22,
+    name: "Julien",
     rating: 5,
-    comment: "Une réelle ambiance d'entre-aide et de compétition, c'était très sympa... à refaire !",
-    mediaUrl: "/videos/feedbacks/feedback-thomas.webm",
-    location: "Neauphle-Le-Château",
+    mediaUrl: "/videos/feedbacks/feedback-julien.webm",
     type: TestimonialTypeEnum.VIDEO
   },
   {
     id: randomUUID(),
-    name: "Marie et Ines",
-    age: 22,
     rating: 5,
-    comment: "Épuisant, mais super sympa !",
-    mediaUrl: "/videos/feedbacks/feedback-marie-et-ines.webm",
-    location: "Neauphle-Le-Vieux",
+    mediaUrl: "/videos/feedbacks/feedback-participant-1.webm",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    rating: 5,
+    mediaUrl: "/videos/feedbacks/feedback-participant-3.webm",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    rating: 5,
+    mediaUrl: "/videos/feedbacks/feedback-participant-2.webm",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    rating: 5,
+    mediaUrl: "/videos/feedbacks/feedback-participant-4.webm",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Nathan",
+    rating: 5,
+    mediaUrl: "/videos/feedbacks/feedback-nathan.webm",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
+    name: "Sabrina",
+    age: 48,
+    rating: 5,
+    comment: "Je recommande à n'importe qui de venir sans problème, tout âge, n'importe quelle condition physique à condition d'avoir la guache et de le prendre avec le sourire et la bonne humeur.",
+    mediaUrl: "/videos/feedbacks/feedback-sabrina.webm",
+    location: "Élancourt",
     type: TestimonialTypeEnum.VIDEO
   },
   {
@@ -50,6 +82,16 @@ export const testimonials: TestimonialType[] = [
   },
   {
     id: randomUUID(),
+    name: "Thomas",
+    age: 22,
+    rating: 5,
+    comment: "Une réelle ambiance d'entre-aide et de compétition, c'était très sympa... à refaire !",
+    mediaUrl: "/videos/feedbacks/feedback-thomas.webm",
+    location: "Neauphle-Le-Château",
+    type: TestimonialTypeEnum.VIDEO
+  },
+  {
+    id: randomUUID(),
     name: "Hugues",
     age: 51,
     rating: 5,
@@ -60,12 +102,12 @@ export const testimonials: TestimonialType[] = [
   },
   {
     id: randomUUID(),
-    name: "Sabrina",
-    age: 48,
+    name: "Marie et Ines",
+    age: 22,
     rating: 5,
-    comment: "Je recommande à n'importe qui de venir sans problème, tout âge, n'importe quelle condition physique à condition d'avoir la guache et de le prendre avec le sourire et la bonne humeur.",
-    mediaUrl: "/videos/feedbacks/feedback-sabrina.webm",
-    location: "Élancourt",
+    comment: "Épuisant, mais super sympa !",
+    mediaUrl: "/videos/feedbacks/feedback-marie-et-ines.webm",
+    location: "Neauphle-Le-Vieux",
     type: TestimonialTypeEnum.VIDEO
   },
 ]

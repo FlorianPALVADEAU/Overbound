@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Fragment, type ReactNode } from 'react'
+import { testimonialPosterUrl } from '@/lib/testimonials/testimonialPoster'
 
 /**
  * A small, purpose-built Markdown renderer for blog content, instead of
@@ -18,6 +19,12 @@ import { Fragment, type ReactNode } from 'react'
  *
  *   :::callout type=info|warning|success
  *   Texte du callout.
+ *   :::
+ *
+ *   :::video
+ *   src: /videos/feedbacks/feedback-julien.webm   (l'équivalent .mp4 est ajouté en repli)
+ *   title: Description courte, lue par les lecteurs d'écran
+ *   caption: Légende optionnelle
  *   :::
  */
 
@@ -155,6 +162,46 @@ function ImageBlock({ image, keyPrefix }: { image: ParsedImage; keyPrefix: strin
   )
 }
 
+interface ParsedVideo {
+  src: string
+  title: string
+  caption?: string
+}
+
+function parseVideoFields(lines: string[]): ParsedVideo | null {
+  const fields = new Map<string, string>()
+  for (const line of lines) {
+    const separator = line.indexOf(':')
+    if (separator === -1) continue
+    fields.set(line.slice(0, separator).trim(), line.slice(separator + 1).trim())
+  }
+  const src = fields.get('src')
+  // Only local, self-hosted videos: the poster and the mp4 fallback derive from this path.
+  if (!src || !/^\/videos\/.+\.webm$/.test(src)) return null
+  return { src, title: fields.get('title') ?? '', caption: fields.get('caption') }
+}
+
+function VideoBlock({ video, keyPrefix }: { video: ParsedVideo; keyPrefix: string }) {
+  return (
+    <figure key={keyPrefix} className="my-8">
+      <video
+        className="mx-auto aspect-9/16 max-h-[36rem] w-full max-w-sm rounded-2xl border border-border bg-surface-deep object-cover"
+        controls
+        playsInline
+        preload="none"
+        poster={testimonialPosterUrl(video.src)}
+        aria-label={video.title || undefined}
+      >
+        <source src={video.src} type="video/webm" />
+        <source src={video.src.replace(/\.webm$/, '.mp4')} type="video/mp4" />
+      </video>
+      {video.caption ? (
+        <figcaption className="mx-auto mt-3 max-w-sm text-center text-xs text-subtle">{video.caption}</figcaption>
+      ) : null}
+    </figure>
+  )
+}
+
 function PullQuoteBlock({ lines, keyPrefix }: { lines: string[]; keyPrefix: string }) {
   const attributionIndex = lines.findIndex((line) => line.trim().startsWith('--'))
   const quoteLines = attributionIndex === -1 ? lines : lines.slice(0, attributionIndex)
@@ -221,7 +268,7 @@ export function renderBlogMarkdown(markdown: string): ReactNode[] {
     }
 
     // Fenced blocks: :::pullquote or :::callout type=info
-    const fenceMatch = trimmed.match(/^:::(pullquote|callout)(?:\s+type=(\w+))?$/)
+    const fenceMatch = trimmed.match(/^:::(pullquote|callout|video)(?:\s+type=(\w+))?$/)
     if (fenceMatch) {
       const [, kind, typeRaw] = fenceMatch
       const bodyLines: string[] = []
@@ -234,6 +281,9 @@ export function renderBlogMarkdown(markdown: string): ReactNode[] {
       const key = `block-${blockIndex++}`
       if (kind === 'pullquote') {
         nodes.push(<PullQuoteBlock key={key} lines={bodyLines} keyPrefix={key} />)
+      } else if (kind === 'video') {
+        const video = parseVideoFields(bodyLines)
+        if (video) nodes.push(<VideoBlock key={key} video={video} keyPrefix={key} />)
       } else {
         const calloutType: CalloutType = (['info', 'warning', 'success'] as CalloutType[]).includes(
           typeRaw as CalloutType,

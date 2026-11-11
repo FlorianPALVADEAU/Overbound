@@ -34,4 +34,26 @@ describe('renderBlogMarkdown', () => {
   it('falls back to an info callout for an unknown callout type instead of throwing', () => {
     expect(() => render(<>{renderBlogMarkdown(':::callout type=bogus\nTexte.\n:::')}</>)).not.toThrow()
   })
+
+  it('renders a video block with webm and mp4 sources and a caption', () => {
+    const { container } = render(
+      <>
+        {renderBlogMarkdown(
+          ':::video\nsrc: /videos/feedbacks/feedback-julien.webm\ntitle: Julien après la course\ncaption: Son retour\n:::',
+        )}
+      </>,
+    )
+    const sources = container.querySelectorAll('video source')
+    expect(sources[0].getAttribute('src')).toBe('/videos/feedbacks/feedback-julien.webm')
+    expect(sources[1].getAttribute('src')).toBe('/videos/feedbacks/feedback-julien.mp4')
+    expect(container.querySelector('video')?.hasAttribute('controls')).toBe(true)
+    expect(container.querySelector('figcaption')?.textContent).toBe('Son retour')
+  })
+
+  it('ignores a video block whose source is not a local webm', () => {
+    const { container } = render(
+      <>{renderBlogMarkdown(':::video\nsrc: https://evil.example/clip.webm\n:::')}</>,
+    )
+    expect(container.querySelector('video')).toBeNull()
+  })
 })

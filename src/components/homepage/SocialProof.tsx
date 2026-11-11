@@ -20,32 +20,12 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from '@/components/ui/carousel'
+import { testimonialMeta } from '@/lib/testimonials/testimonialMeta'
 import { testimonialPosterUrl } from '@/lib/testimonials/testimonialPoster'
 
 type Slide =
   | { id: string; type: 'video'; data: TestimonialType }
   | { id: string; type: 'comments'; data: TestimonialType[] }
-
-const createSeededRandom = (seed: number) => {
-  let value = seed % 2147483647
-  if (value <= 0) {
-    value += 2147483646
-  }
-  return () => {
-    value = (value * 16807) % 2147483647
-    return (value - 1) / 2147483646
-  }
-}
-
-const shuffleWithSeed = <T,>(array: T[], seed: number): T[] => {
-  const result = [...array]
-  const random = createSeededRandom(seed)
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(random() * (index + 1))
-    ;[result[index], result[randomIndex]] = [result[randomIndex], result[index]]
-  }
-  return result
-}
 
 interface SocialProofProps {
   title?: string
@@ -67,7 +47,7 @@ const SocialProof = ({
   const uniqueTestimonials = useMemo(() => {
     const seen = new Set<string>()
     return testimonials.filter((item) => {
-      const key = `${item.type}-${item.name}-${item.age}-${item.location}-${item.comment}`
+      const key = `${item.type}-${item.mediaUrl}-${item.name}-${item.comment}`
       if (seen.has(key)) {
         return false
       }
@@ -77,9 +57,6 @@ const SocialProof = ({
   }, [])
 
   const slides = useMemo<Slide[]>(() => {
-    const seedBase =
-      uniqueTestimonials.reduce((acc, item) => acc + (Number(item.id) || 0), 0) ||
-      uniqueTestimonials.length
     const videoEntries = uniqueTestimonials.filter(
       (item) => item.type === TestimonialTypeEnum.VIDEO,
     )
@@ -87,20 +64,17 @@ const SocialProof = ({
       (item) => item.type === TestimonialTypeEnum.COMMENT,
     )
 
-    const shuffledVideos = shuffleWithSeed(videoEntries, seedBase + 11)
-    const shuffledComments = shuffleWithSeed(commentEntries, seedBase + 27)
-
-    const videoSlides: Slide[] = shuffledVideos.map((item) => ({
+    const videoSlides: Slide[] = videoEntries.map((item) => ({
       id: `video-${item.id}`,
       type: 'video' as const,
       data: item,
     }))
 
     const commentSlides: Slide[] = []
-    for (let index = 0; index < shuffledComments.length; index += 2) {
-      const first = shuffledComments[index]
+    for (let index = 0; index < commentEntries.length; index += 2) {
+      const first = commentEntries[index]
       if (!first) continue
-      const second = shuffledComments[index + 1]
+      const second = commentEntries[index + 1]
       const group = [first]
       if (second) {
         group.push(second)
@@ -112,10 +86,8 @@ const SocialProof = ({
       })
     }
 
-    return shuffleWithSeed(
-      [...videoSlides, ...commentSlides],
-      seedBase + 73,
-    )
+    // Order is the one of the testimonials array: newest and most relevant first.
+    return [...videoSlides, ...commentSlides]
   }, [uniqueTestimonials])
 
   useEffect(() => {
@@ -275,17 +247,21 @@ const SocialProof = ({
               {testimonial.rating}/5
             </span>
           </div>
-          <p className="mb-3 line-clamp-6 text-sm leading-relaxed text-foreground sm:text-base">
-            "{testimonial.comment}"
-          </p>
+          {testimonial.comment && (
+            <p className="mb-3 line-clamp-6 text-sm leading-relaxed text-foreground sm:text-base">
+              "{testimonial.comment}"
+            </p>
+          )}
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
-                {testimonial.name}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {testimonial.age} ans • {testimonial.location}
-              </p>
+              {testimonial.name && (
+                <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
+                  {testimonial.name}
+                </h3>
+              )}
+              {testimonialMeta(testimonial) && (
+                <p className="text-xs text-muted-foreground">{testimonialMeta(testimonial)}</p>
+              )}
             </div>
             <div className="ml-2 shrink-0 rounded-full bg-primary/15 px-2 py-1 text-xs font-medium text-primary">
               ✓ Vérifié
@@ -315,12 +291,14 @@ const SocialProof = ({
       </blockquote>
       <div className="flex items-center justify-between">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">
-            {testimonial.name}
-          </h3>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            {testimonial.age} ans • {testimonial.location}
-          </p>
+          {testimonial.name && (
+            <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">
+              {testimonial.name}
+            </h3>
+          )}
+          {testimonialMeta(testimonial) && (
+            <p className="text-xs text-muted-foreground sm:text-sm">{testimonialMeta(testimonial)}</p>
+          )}
         </div>
         <div className="ml-2 shrink-0 rounded-full bg-primary/15 px-2 py-1 text-xs font-medium text-primary">
           ✓ Vérifié

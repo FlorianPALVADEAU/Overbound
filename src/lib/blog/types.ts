@@ -14,7 +14,6 @@ export interface BlogAuthor {
 export type BlogCategorySlug =
   | 'bilan'
   | 'formats'
-  | 'ambassadeurs'
   | 'obstacles'
   | 'entrainement'
   | 'guide'
