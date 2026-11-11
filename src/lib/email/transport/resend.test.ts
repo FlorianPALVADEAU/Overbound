@@ -68,6 +68,8 @@ describe('getMarketingTransportName', () => {
   afterEach(() => vi.unstubAllEnvs())
 
   it('defaults to resend and switches to ses only on an explicit setting', () => {
+    // Isolated from the developer's environment: a local MARKETING_TRANSPORT=ses must not leak in.
+    vi.stubEnv('MARKETING_TRANSPORT', '')
     expect(getMarketingTransportName()).toBe('resend')
     vi.stubEnv('MARKETING_TRANSPORT', ' SES ')
     expect(getMarketingTransportName()).toBe('ses')
