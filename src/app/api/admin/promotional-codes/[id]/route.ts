@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { withRequestLogging } from '@/lib/logging/adminRequestLogger'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
@@ -74,6 +75,41 @@ const handlePut = async (request: NextRequest, { params }: { params: Promise<{ i
   }
 }
 
+const activationSchema = z.object({ is_active: z.boolean() }).strict()
+
+const handlePatch = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  try {
+    const auth = await requireAdmin(request)
+    if (!auth.ok) {
+      return auth.response
+    }
+
+    const { id } = await params
+    const body: unknown = await request.json().catch(() => null)
+    const parsed = activationSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+    }
+
+    const admin = supabaseAdmin()
+    const { data, error } = await admin
+      .from('promotional_codes')
+      .update({ is_active: parsed.data.is_active, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('id')
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data) return NextResponse.json({ error: 'Code promo introuvable' }, { status: 404 })
+
+    const promotionalCode = await fetchPromotionalCode(id)
+    return NextResponse.json({ promotionalCode })
+  } catch (error) {
+    console.error('Erreur PATCH promotional code:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
 const handleDelete = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const auth = await requireAdmin(request)
@@ -102,6 +138,10 @@ export const PUT = withRequestLogging(handlePut, {
   actionType: 'Mise à jour code promo admin',
 })
 
-export const DELETE = withRequestLogging(handleDelete, {
+export const PATCH = withRequestLogging(handlePatch, {
+  actionType: 'Activation code promo admin',
+})
+
+export const DELETE =withRequestLogging(handleDelete, {
   actionType: 'Suppression code promo admin',
 })

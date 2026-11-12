@@ -76,7 +76,19 @@ export const updateAdminPromotionalCode = async (
   return response.data.promotionalCode
 }
 
-export const deleteAdminPromotionalCode = async (id: string): Promise<void> => {
+export const setAdminPromotionalCodeActive = async (id: string, isActive: boolean): Promise<PromotionalCode> => {
+  try {
+    const response = await axiosClient.patch<PromotionalCodeResponse>(`/admin/promotional-codes/${id}`, { is_active: isActive })
+    return response.data.promotionalCode
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Erreur lors de la mise à jour du statut')
+    }
+    throw error
+  }
+}
+
+export const deleteAdminPromotionalCode =async (id: string): Promise<void> => {
   try {
     await axiosClient.delete(`/admin/promotional-codes/${id}`)
   } catch (error) {

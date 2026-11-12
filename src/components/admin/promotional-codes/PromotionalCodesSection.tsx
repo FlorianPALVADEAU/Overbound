@@ -4,7 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -17,6 +17,7 @@ import {
   adminPromotionalCodesQueryKey,
   createAdminPromotionalCode,
   deleteAdminPromotionalCode,
+  setAdminPromotionalCodeActive,
   updateAdminPromotionalCode,
   useAdminPromotionalCodesPage,
   type AdminPromotionalCodePayload,
@@ -113,6 +114,7 @@ export function PromotionalCodesSection() {
   const [formValues, setFormValues] = useState<PromotionalCodeFormValues>(buildFormValues())
   const [submitting, setSubmitting] = useState(false)
   const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
+  const [toggleLoadingId, setToggleLoadingId] = useState<string | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
   const filteredCodes = promotionalCodes
   const resetPagination = () => { setCursor(null); setPreviousCursors([]) }
@@ -154,6 +156,19 @@ export function PromotionalCodesSection() {
       setMessage({ type: 'error', text })
     } finally {
       setDeleteLoadingId(null)
+    }
+  }
+
+  const handleToggleActive = async (code: PromotionalCode, isActive: boolean) => {
+    setToggleLoadingId(code.id)
+    setMessage(null)
+    try {
+      await setAdminPromotionalCodeActive(code.id, isActive)
+      await queryClient.invalidateQueries({ queryKey: adminPromotionalCodesQueryKey })
+    } catch (error) {
+      setMessage({ type: 'error', text: (error as Error).message || 'Erreur lors de la mise à jour du statut' })
+    } finally {
+      setToggleLoadingId(null)
     }
   }
 
@@ -293,13 +308,19 @@ export function PromotionalCodesSection() {
         id: 'status',
         header: 'Statut',
         cell: (code) => (
-          <Badge variant={code.is_active ? 'default' : 'secondary'}>
-            {code.is_active ? 'Actif' : 'Inactif'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={code.is_active}
+              disabled={toggleLoadingId === code.id}
+              onCheckedChange={(checked) => handleToggleActive(code, checked)}
+              aria-label={`${code.is_active ? 'Désactiver' : 'Activer'} le code ${code.code}`}
+            />
+            <span className="text-xs text-muted-foreground">{code.is_active ? 'Actif' : 'Inactif'}</span>
+          </div>
         ),
       },
     ]
-  }, [])
+  }, [toggleLoadingId])
 
   const rowActions = useMemo<OperationsListAction<PromotionalCode>[]>(() => [
     { id: 'edit', label: 'Modifier', onSelect: handleEdit },

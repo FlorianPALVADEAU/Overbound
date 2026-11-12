@@ -5,7 +5,7 @@ vi.mock('@/lib/supabase/server', () => ({ supabaseAdmin: supabaseAdminMock, crea
 vi.mock('@/lib/auth/requireAdmin', () => ({ requireAdmin: requireAdminMock }))
 vi.mock('@/lib/logging/adminRequestLogger', () => ({ withRequestLogging: (handler: unknown) => handler }))
 
-import { PUT } from './route'
+import { PATCH, PUT } from './route'
 
 const ID = '3f2b8c1e-5d4a-4f6b-9a7c-1e2d3c4b5a69'
 const EVENT = '7a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
@@ -57,6 +57,49 @@ describe('PUT /api/admin/promotional-codes/[id]', () => {
   it('refuses a non-admin', async () => {
     requireAdminMock.mockResolvedValue({ ok: false, response: new Response(null, { status: 403 }) })
     expect((await put(valid)).status).toBe(403)
+    expect(supabaseAdminMock).not.toHaveBeenCalled()
+  })
+})
+
+const patch = (body: unknown) =>
+  (PATCH as unknown as (request: Request, context: { params: Promise<{ id: string }> }) => Promise<Response>)(
+    new Request('http://localhost', { method: 'PATCH', body: JSON.stringify(body) }),
+    { params: Promise.resolve({ id: ID }) },
+  )
+
+describe('PATCH /api/admin/promotional-codes/[id]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    requireAdminMock.mockResolvedValue({ ok: true, user: { id: 'admin' } })
+  })
+
+  it('toggles is_active only and returns the code', async () => {
+    const update = vi.fn(() => ({ eq: () => ({ select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { id: ID }, error: null }) }) }) }))
+    const single = vi.fn().mockResolvedValue({ data: { id: ID, is_active: false }, error: null })
+    const select = vi.fn(() => ({ eq: () => ({ single }) }))
+    supabaseAdminMock.mockReturnValue({ from: () => ({ update, select }) })
+    const response = await patch({ is_active: false })
+    expect(response.status).toBe(200)
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ is_active: false }))
+    expect(Object.keys((update.mock.calls[0] as unknown[])[0] as object).sort()).toEqual(['is_active', 'updated_at'])
+    expect((await response.json()).promotionalCode.is_active).toBe(false)
+  })
+
+  it('rejects a body that is not exactly { is_active: boolean }', async () => {
+    expect((await patch({ is_active: 'yes' })).status).toBe(400)
+    expect((await patch({ is_active: true, code: 'X' })).status).toBe(400)
+    expect(supabaseAdminMock).not.toHaveBeenCalled()
+  })
+
+  it('answers 404 when the code does not exist', async () => {
+    const update = vi.fn(() => ({ eq: () => ({ select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }) }))
+    supabaseAdminMock.mockReturnValue({ from: () => ({ update }) })
+    expect((await patch({ is_active: true })).status).toBe(404)
+  })
+
+  it('refuses a non-admin', async () => {
+    requireAdminMock.mockResolvedValue({ ok: false, response: new Response(null, { status: 403 }) })
+    expect((await patch({ is_active: true })).status).toBe(403)
     expect(supabaseAdminMock).not.toHaveBeenCalled()
   })
 })
