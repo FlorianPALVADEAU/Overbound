@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import type { MarketingRecipient } from '@/lib/email/marketing'
 import { filterSuppressed } from '@/lib/email/suppression'
 import { hasProvenConsent } from '@/lib/email/consent'
+import { loadSegmentIdentity } from '@/lib/email/segmentStore'
 
 /**
  * Marketing audience, read from Supabase only (FDR-0007: Supabase is the source of truth,
@@ -28,6 +29,7 @@ export interface ListSubscriber {
   subscribed: boolean
   source: string | null
   subscribedAt: string | null
+  unsubscribedAt?: string | null
 }
 
 type ProfileName = { first_name: string | null; last_name: string | null }
@@ -42,12 +44,13 @@ interface SubscriptionRow {
   subscribed: boolean | null
   source: string | null
   subscribed_at: string | null
+  unsubscribed_at: string | null
 }
 
 // No `profiles` embed: list_subscriptions.user_id references auth.users, not profiles, so PostgREST
 // finds no relationship to embed. Names are read from profiles separately (fetchProfileNames).
 const SUBSCRIPTION_COLUMNS =
-  'id, list_id, user_id, email, first_name, last_name, subscribed, source, subscribed_at'
+  'id, list_id, user_id, email, first_name, last_name, subscribed, source, subscribed_at, unsubscribed_at'
 
 const normalizeEmail = (value: string | null | undefined) => value?.trim().toLowerCase() ?? ''
 
@@ -60,8 +63,9 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /** Ids of the active lists matching the selector; no selector means every active list. */
-async function resolveActiveListIds(selector: AudienceSelector): Promise<string[]> {
-  let query = supabaseAdmin().from('distribution_lists').select('id').eq('active', true)
+async function resolveActiveListIds(selector: AudienceSelector, options: { includeInactive?: boolean } = {}): Promise<string[]> {
+  let query = supabaseAdmin().from('distribution_lists').select('id')
+  if (!options.includeInactive) query = query.eq('active', true)
   if (selector.listIds) query = query.in('id', selector.listIds)
   if (selector.listSlugs) query = query.in('slug', selector.listSlugs)
 
@@ -161,13 +165,16 @@ export async function listSubscribers(
       subscribed: Boolean(row.subscribed),
       source: row.source,
       subscribedAt: row.subscribed_at,
+      unsubscribedAt: row.unsubscribed_at ?? null,
     })
   }
   return subscribers
 }
 
+type Candidate = Pick<ListSubscriber, 'userId' | 'email' | 'firstName'>
+
 /** One recipient per address; keeps the entry that knows the account and the name. */
-function dedupeByEmail(subscribers: ListSubscriber[]): MarketingRecipient[] {
+function dedupeByEmail(subscribers: Candidate[]): MarketingRecipient[] {
   const byEmail = new Map<string, MarketingRecipient>()
 
   for (const subscriber of subscribers) {
@@ -212,16 +219,49 @@ async function dropNonImmediateDigest(recipients: MarketingRecipient[]): Promise
 }
 
 /**
+ * A person who turned a list off themselves: unsubscribe link, preferences page or admin. A row that
+ * was never subscribed (account default, no date at all) is not a choice and does not count.
+ */
+const isExplicitOptOut = (subscriber: ListSubscriber) =>
+  !subscriber.subscribed && Boolean(subscriber.unsubscribedAt ?? subscriber.subscribedAt)
+
+/**
+ * Buyers (owner decision 2026-11-19): anyone with a non-cancelled registration receives marketing,
+ * whatever the lists say, unless they opted out of a list themselves. Accounts keep their user id so
+ * the digest opt-out still applies downstream.
+ */
+async function resolveBuyers(optedOut: Set<string>): Promise<Candidate[]> {
+  const identity = await loadSegmentIdentity('registered')
+  const accountEmails = await fetchAuthEmails(new Set(identity.userIds))
+
+  const byEmail = new Map<string, Candidate>()
+  for (const [userId, rawEmail] of accountEmails) {
+    byEmail.set(normalizeEmail(rawEmail), { userId, email: normalizeEmail(rawEmail), firstName: null })
+  }
+  for (const email of identity.emails) {
+    if (!byEmail.has(email)) byEmail.set(email, { userId: null, email, firstName: null })
+  }
+  return Array.from(byEmail.values()).filter((buyer) => !optedOut.has(buyer.email))
+}
+
+/**
  * Who may receive a marketing mail for the selected lists (all active lists when none is given):
- * subscribed accounts and email-only subscribers whose consent can be traced to a source,
- * one entry per address, minus digest opt-outs and minus addresses suppressed after a bounce or
- * complaint. Throws rather than widening the audience.
+ * subscribed accounts and email-only subscribers whose consent can be traced to a source, plus every
+ * buyer, one entry per address, minus explicit list opt-outs, digest opt-outs and addresses
+ * suppressed after a bounce or complaint. Throws rather than widening the audience.
  */
 export async function resolveAudience(selector: AudienceSelector = {}): Promise<MarketingRecipient[]> {
   const listIds = await resolveActiveListIds(selector)
   const subscribers = await listSubscribers(listIds, { subscribedOnly: true })
   const proven = subscribers.filter((subscriber) => hasProvenConsent(subscriber.source))
-  const withDigestPreference = await dropNonImmediateDigest(dedupeByEmail(proven))
+
+  // An opt-out from a list that was retired since still counts: the person said no.
+  const allListIds = await resolveActiveListIds({}, { includeInactive: true })
+  const everyRow = await listSubscribers(allListIds, { subscribedOnly: false })
+  const optedOut = new Set(everyRow.filter(isExplicitOptOut).map((row) => row.email))
+  const buyers = await resolveBuyers(optedOut)
+
+  const withDigestPreference = await dropNonImmediateDigest(dedupeByEmail([...proven, ...buyers]))
   return filterSuppressed(withDigestPreference)
 }
 

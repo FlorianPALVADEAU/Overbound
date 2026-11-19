@@ -51,6 +51,8 @@ type NavLeaf = {
   href: string
   /** Opens in a new tab (off-site link). */
   external?: boolean
+  /** Lien mis en avant : couleur d'action, gras, souligné. */
+  highlight?: boolean
 }
 
 type NavGroup = {
@@ -142,7 +144,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
   }
 
   const navItems: NavItem[] = [
-    { type: 'link', name: 'Événement', href: featuredEventHref },
+    { type: 'link', name: 'Inscription Paris 2027', href: featuredEventHref, highlight: true },
     { type: 'link', name: 'Devenir bénévole', href: '/volunteers' },
     { type: 'link', name: 'Entreprises', href: '/entreprises' },
     {
@@ -271,7 +273,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
     >
       {/* Same content width and gutters as every page section (design system) */}
       <div className={containerClass()}>
-        <div className="w-full relative grid h-14 sm:h-16 grid-cols-[1fr_auto_1fr] grid-rows-1 items-stretch">
+        <div className="w-full relative grid h-14 sm:h-16 grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-1 items-stretch gap-4">
           
           {/* Logo - responsive text visibility */}
           <div className="flex items-center justify-self-start z-10 py-2 pr-2">
@@ -295,7 +297,7 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
           {/* In the flex flow (not absolute) so the nav can never slide under the logo or the actions */}
           <div className="flex h-full min-w-0 items-center justify-center">
             {/* Navigation Desktop - hidden sur mobile/tablet */}
-            <nav aria-label="Navigation principale" className="hidden h-full items-center space-x-4 whitespace-nowrap align-center xl:space-x-8 lg:flex">
+            <nav aria-label="Navigation principale" className="hidden h-full items-center space-x-4 whitespace-nowrap align-center xl:space-x-6 lg:flex">
               {navItems.map((item) =>
                 item.type === 'dropdown' ? (
                   <div
@@ -339,8 +341,18 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     key={item.name}
                     href={item.href}
                     aria-current={currentFor(item.href)}
-                    className="cursor-pointer flex h-full items-center text-sm uppercase font-medium text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base"
+                    className={`cursor-pointer flex h-full items-center text-sm uppercase transition-colors hover:text-primary aria-[current=page]:text-primary xl:text-base ${
+                      item.highlight
+                        ? 'font-semibold text-warning underline underline-offset-8 decoration-2 hover:text-warning/80 aria-[current=page]:text-warning'
+                        : 'font-medium text-foreground'
+                    }`}
                   >
+                    {item.highlight ? (
+                      <span className="relative mr-2 flex size-2" aria-hidden="true">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-warning opacity-75 motion-safe:animate-ping" />
+                        <span className="relative inline-flex size-2 rounded-full bg-warning" />
+                      </span>
+                    ) : null}
                     {item.name}
                   </Link>
                 ),
@@ -485,7 +497,11 @@ export function Header({ user, profile, alerts, isLoading }: HeaderProps) {
                     key={item.name}
                     href={item.href}
                     aria-current={currentFor(item.href)}
-                    className="flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold text-foreground transition-colors hover:text-primary aria-[current=page]:text-primary"
+                    className={`flex min-h-11 w-full items-center px-6 py-3 text-base font-semibold transition-colors hover:text-primary aria-[current=page]:text-primary ${
+                      item.highlight
+                        ? 'text-warning underline underline-offset-4 decoration-2 hover:text-warning/80 aria-[current=page]:text-warning'
+                        : 'text-foreground'
+                    }`}
                     onClick={closeMobileMenu}
                   >
                     {item.name}

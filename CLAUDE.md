@@ -91,6 +91,7 @@ TDD sur domaine et use-cases. Chaque use-case : au moins un test succès + un te
 - Nouveau compte = abonné à rien. Popup : seulement les listes promises (`selectPopupConsentLists`).
 - Écrire `list_subscriptions` et `notification_preferences` ensemble, toujours avec une `source`.
 - Segments d'envoi (inscrits, non-inscrits, bénévoles) : `resolveSegmentedAudience`. Un segment restreint, il ne crée pas de droit d'envoi.
+- Décision du 2026-11-19 (propriétaire) : les lignes `legacy-unproven:popup*` restent envoyables, et tout acheteur (inscription non annulée) reçoit le marketing sans abonnement à une liste (`resolveBuyers` dans `audience.ts`). Une désinscription volontaire prime : ligne `subscribed = false` avec `unsubscribed_at` ou `subscribed_at` (`isExplicitOptOut`), `email_suppressions`, digest `never`. Risque assumé : l'exception client (CPCE L.34-5) exige information et opposition au checkout, non implémentées.
 - Voir FDR-0007, amendement 2026-11-08.
 
 ### CGV : versionnage obligatoire

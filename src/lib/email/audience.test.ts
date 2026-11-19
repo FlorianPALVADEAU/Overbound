@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { supabaseAdminMock, filterSuppressedMock } = vi.hoisted(() => ({
+const { supabaseAdminMock, filterSuppressedMock, loadSegmentIdentityMock } = vi.hoisted(() => ({
   supabaseAdminMock: vi.fn(),
   filterSuppressedMock: vi.fn(),
+  loadSegmentIdentityMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({ supabaseAdmin: supabaseAdminMock }))
 vi.mock('@/lib/email/suppression', () => ({ filterSuppressed: filterSuppressedMock }))
+vi.mock('@/lib/email/segmentStore', () => ({ loadSegmentIdentity: loadSegmentIdentityMock }))
 
 import { listSubscribers, resolveAudience, resolveReconsentAudience } from './audience'
+
+beforeEach(() => {
+  loadSegmentIdentityMock.mockResolvedValue({ userIds: new Set(), emails: new Set() })
+})
 
 type Result = { data: unknown; error: { message: string } | null }
 
@@ -204,7 +210,8 @@ describe('resolveAudience', () => {
     const audience = await resolveAudience()
 
     expect(audience).toHaveLength(1005)
-    expect((tables.list_subscriptions as { range: unknown }).range).toHaveBeenCalledTimes(2)
+    // two full reads: the subscribed rows, then every row to find the explicit opt-outs
+    expect((tables.list_subscriptions as { range: unknown }).range).toHaveBeenCalledTimes(4)
   })
 
   it('returns an empty audience, without reading subscriptions, when no active list matches', async () => {
@@ -235,6 +242,7 @@ describe('consent provenance', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     filterSuppressedMock.mockImplementation(async (recipients: unknown[]) => recipients)
+    loadSegmentIdentityMock.mockResolvedValue({ userIds: new Set(), emails: new Set() })
   })
 
   const withSource = (row: ReturnType<typeof emailOnly>, source: string | null) => ({ ...row, source })
@@ -254,7 +262,67 @@ describe('consent provenance', () => {
 
     const audience = await resolveAudience()
 
-    expect(audience.map((r) => r.email)).toEqual(['traced@x.fr'])
+    expect(audience.map((r) => r.email)).toEqual(['traced@x.fr', 'legacy-popup@x.fr'])
+  })
+
+  const buyers = (emails: string[], userIds: string[] = []) =>
+    loadSegmentIdentityMock.mockResolvedValue({ userIds: new Set(userIds), emails: new Set(emails) })
+
+  it('writes to a buyer with no subscription row at all', async () => {
+    buyers(['buyer@x.fr'])
+    givenDatabase({ subscriptions: { data: [], error: null } })
+
+    const audience = await resolveAudience()
+
+    expect(loadSegmentIdentityMock).toHaveBeenCalledWith('registered')
+    expect(audience.map((r) => r.email)).toEqual(['buyer@x.fr'])
+  })
+
+  it('does not write to someone who is neither traced nor a buyer', async () => {
+    givenDatabase({ subscriptions: { data: [withSource(emailOnly('s1', 'stranger@x.fr'), 'legacy-unproven')], error: null } })
+
+    expect(await resolveAudience()).toEqual([])
+  })
+
+  it('leaves out a buyer who turned a list off themselves', async () => {
+    buyers(['gone@x.fr', 'stays@x.fr'])
+    givenDatabase({
+      subscriptions: {
+        data: [
+          { ...withSource(emailOnly('s1', 'gone@x.fr'), 'legacy-unproven'), subscribed: false, unsubscribed_at: '2026-11-10T10:00:00Z' },
+          { ...withSource(emailOnly('s2', 'stays@x.fr'), 'legacy-unproven'), subscribed: false, subscribed_at: null, unsubscribed_at: null },
+        ],
+        error: null,
+      },
+    })
+
+    const audience = await resolveAudience()
+
+    expect(audience.map((r) => r.email)).toEqual(['stays@x.fr'])
+  })
+
+  it('treats a list switched off after being on as an opt-out, even without an unsubscribe date', async () => {
+    buyers(['toggled@x.fr'])
+    givenDatabase({
+      subscriptions: {
+        data: [{ ...withSource(emailOnly('s1', 'toggled@x.fr'), 'legacy-unproven'), subscribed: false, subscribed_at: '2026-03-01T10:00:00Z' }],
+        error: null,
+      },
+    })
+
+    expect(await resolveAudience()).toEqual([])
+  })
+
+  it('keeps the account id of a buyer so the digest opt-out still applies', async () => {
+    buyers([], ['u1'])
+    const { tables } = givenDatabase({
+      subscriptions: { data: [], error: null },
+      preferences: { data: [{ user_id: 'u1', digest_frequency: 'never' }], error: null },
+      users: [{ id: 'u1', email: 'account@x.fr' }],
+    })
+
+    expect(await resolveAudience()).toEqual([])
+    expect((tables.notification_preferences as { in: unknown }).in).toHaveBeenCalled()
   })
 
   it('keeps an address that has one traced list even if another list is untraced', async () => {
@@ -295,7 +363,7 @@ describe('resolveReconsentAudience', () => {
 
     const audience = await resolveReconsentAudience()
 
-    expect(audience.map((r) => r.email)).toEqual(['legacy@x.fr', 'popup-legacy@x.fr'])
+    expect(audience.map((r) => r.email)).toEqual(['legacy@x.fr'])
   })
 
   it('returns nobody when every subscription is traced', async () => {
