@@ -15,11 +15,15 @@ interface SaleTeaserEmailProps {
 /** Condensed poster face where installed (Mac, Windows, iOS); wider fallbacks are sized for in the mobile rules. */
 const DISPLAY_FONT = "Impact, 'Arial Narrow Bold', 'Helvetica Neue', Arial, sans-serif"
 
-const PAGE = '#0e0e0e'
+const PAGE = '#eceee9'
+const BAND = '#141414'
 const CARD = '#141414'
+const SURFACE = '#1c1c1c'
+const INK = '#ffffff'
+const TEXT = '#c9ccd1'
+const MUTED = '#8d9199'
 const HAIRLINE = '#2a2a2a'
-const SOFT = '#c9ccd1'
-const QUIET = '#8d9199'
+const GREEN_TEXT = '#26aa26'
 
 /** Participants of the first edition (12 September 2026), as published in the recap article. */
 const FIRST_EDITION_PARTICIPANTS = 330
@@ -45,7 +49,7 @@ const text = {
     fontWeight: 700,
     letterSpacing: '3px',
     textTransform: 'uppercase',
-    color: EMAIL_COLORS.action,
+    color: GREEN_TEXT,
   },
   title: {
     margin: '0 0 16px 0',
@@ -54,18 +58,18 @@ const text = {
     lineHeight: '36px',
     fontWeight: 400,
     textTransform: 'uppercase',
-    color: '#ffffff',
+    color: INK,
   },
-  body: { margin: '0 0 16px 0', fontFamily: EMAIL_FONT, fontSize: '16px', lineHeight: '26px', color: SOFT },
+  body: { margin: '0 0 16px 0', fontFamily: EMAIL_FONT, fontSize: '16px', lineHeight: '26px', color: TEXT },
   label: {
     margin: '0 0 4px 0',
     fontFamily: EMAIL_FONT,
     fontSize: '11px',
     letterSpacing: '2px',
     textTransform: 'uppercase',
-    color: QUIET,
+    color: MUTED,
   },
-  value: { margin: 0, fontFamily: EMAIL_FONT, fontSize: '15px', lineHeight: '22px', fontWeight: 700, color: '#ffffff' },
+  value: { margin: 0, fontFamily: EMAIL_FONT, fontSize: '15px', lineHeight: '22px', fontWeight: 700, color: INK },
 } satisfies Record<string, React.CSSProperties>
 
 function Stat({ number, label, divider }: { number: string; label: string; divider?: boolean }) {
@@ -78,7 +82,7 @@ function Stat({ number, label, divider }: { number: string; label: string; divid
     >
       <p
         className="stat-number"
-        style={{ margin: 0, fontFamily: DISPLAY_FONT, fontSize: '48px', lineHeight: '50px', fontWeight: 400, color: EMAIL_COLORS.action }}
+        style={{ margin: 0, fontFamily: DISPLAY_FONT, fontSize: '48px', lineHeight: '50px', fontWeight: 400, color: GREEN_TEXT }}
       >
         {number}
       </p>
@@ -103,12 +107,12 @@ function Format({ name, children }: { name: string; children: React.ReactNode })
           lineHeight: '26px',
           fontWeight: 400,
           textTransform: 'uppercase',
-          color: '#ffffff',
+          color: INK,
         }}
       >
         {name}
       </p>
-      <p style={{ margin: 0, fontFamily: EMAIL_FONT, fontSize: '15px', lineHeight: '24px', color: SOFT }}>{children}</p>
+      <p style={{ margin: 0, fontFamily: EMAIL_FONT, fontSize: '15px', lineHeight: '24px', color: TEXT }}>{children}</p>
     </td>
   )
 }
@@ -135,7 +139,7 @@ export function SaleTeaserEmail({ firstName, content, unsubscribeUrl }: SaleTeas
           <table role="presentation" width="100%" cellPadding={0} cellSpacing={0} border={0}>
             <tbody>
               <tr>
-                <td align="center" style={{ padding: '24px 0 36px 0', backgroundColor: CARD }}>
+                <td align="center" style={{ padding: '24px 0 36px 0', backgroundColor: BAND }}>
                   <Img src={getWhiteLogoUrl()} alt="Overbound" width={48} style={{ display: 'block', margin: '0 auto 8px auto' }} />
                   <Img
                     src={content.countdownUrl}
@@ -209,7 +213,7 @@ export function SaleTeaserEmail({ firstName, content, unsubscribeUrl }: SaleTeas
                 <td className="pad" style={{ padding: '48px 32px 12px 32px', backgroundColor: CARD }}>
                   <p style={text.eyebrow}>La 2e édition</p>
                   <p style={text.title}>On remet ça. Avec toi ?</p>
-                  <p style={{ ...text.body, color: '#ffffff', fontSize: '17px', lineHeight: '27px' }}>
+                  <p style={{ ...text.body, color: INK, fontSize: '17px', lineHeight: '27px' }}>
                     {firstName ? `${firstName}, plus` : 'Plus'} de {FIRST_EDITION_PARTICIPANTS} personnes ont pris le
                     départ de la première édition, le 12 septembre. Le {content.eventDateLabel}, la boucle repart, et on
                     veut une ligne de départ encore plus fournie.
@@ -290,7 +294,7 @@ export function SaleTeaserEmail({ firstName, content, unsubscribeUrl }: SaleTeas
                   <p style={{ ...text.title, fontSize: '40px', lineHeight: '42px' }}>
                     {content.salesWeekday}, {content.salesTime}.
                     <br />
-                    <span style={{ color: EMAIL_COLORS.action }}>Sois là.</span>
+                    <span style={{ color: GREEN_TEXT }}>Sois là.</span>
                   </p>
                   {tshirtQuota ? (
                     <p style={text.body}>
@@ -346,20 +350,20 @@ export function SaleTeaserEmail({ firstName, content, unsubscribeUrl }: SaleTeas
               </tr>
 
               <tr>
-                <td className="pad" style={{ padding: '20px 32px 28px 32px', backgroundColor: CARD, borderTop: `1px solid ${HAIRLINE}` }}>
-                  <p style={{ margin: 0, fontFamily: EMAIL_FONT, fontSize: '12px', lineHeight: '19px', color: QUIET }}>
+                <td className="pad" style={{ padding: '20px 32px 28px 32px', backgroundColor: SURFACE, borderTop: `1px solid ${HAIRLINE}` }}>
+                  <p style={{ margin: 0, fontFamily: EMAIL_FONT, fontSize: '12px', lineHeight: '19px', color: MUTED }}>
                     Tu reçois cet email parce que tu es inscrit·e sur Overbound.
                     {unsubscribeUrl ? (
                       <>
                         {' '}
-                        <a href={unsubscribeUrl} style={{ color: QUIET, textDecoration: 'underline' }}>
+                        <a href={unsubscribeUrl} style={{ color: MUTED, textDecoration: 'underline' }}>
                           Se désinscrire
                         </a>
                         .
                       </>
                     ) : null}{' '}
                     Une question :{' '}
-                    <a href="mailto:contact@overbound-race.com" style={{ color: QUIET, textDecoration: 'underline' }}>
+                    <a href="mailto:contact@overbound-race.com" style={{ color: MUTED, textDecoration: 'underline' }}>
                       contact@overbound-race.com
                     </a>
                   </p>
