@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { AdminEventSummary } from '@/app/api/admin/events/eventsQueries'
 import type { LuckyWheelCampaignPayload, LuckyWheelCommercialPhase } from '@/app/api/admin/lucky-wheel/luckyWheelQueries'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 export interface CampaignFormValues {
   name: string
@@ -105,7 +106,7 @@ export function CampaignFormDialog({
       setError('Les dates de début et de fin sont requises')
       return
     }
-    if (new Date(values.starts_at) >= new Date(values.ends_at)) {
+    if (new Date(parisInputToIso(values.starts_at) ?? values.starts_at) >= new Date(parisInputToIso(values.ends_at) ?? values.ends_at)) {
       setError('La date de fin doit être après la date de début')
       return
     }
@@ -138,8 +139,8 @@ export function CampaignFormDialog({
       name: values.name.trim(),
       enabled: values.enabled,
       paused: values.paused,
-      starts_at: new Date(values.starts_at).toISOString(),
-      ends_at: new Date(values.ends_at).toISOString(),
+      starts_at: parisInputToIso(values.starts_at) ?? values.starts_at,
+      ends_at: parisInputToIso(values.ends_at) ?? values.ends_at,
       commercial_phase: values.commercial_phase,
       reward_expiration_hours: rewardExpirationHours,
       max_discount_budget: maxDiscountBudget,

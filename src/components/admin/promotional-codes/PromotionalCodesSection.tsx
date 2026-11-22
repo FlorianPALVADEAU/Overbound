@@ -23,6 +23,7 @@ import {
   type AdminPromotionalCodePayload,
 } from '@/app/api/admin/promotional-codes/promotionalCodesQueries'
 import { useAdminEvents } from '@/app/api/admin/events/eventsQueries'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -62,8 +63,8 @@ function buildFormValues(code?: PromotionalCode): PromotionalCodeFormValues {
     discountType,
     discountValue,
     currency: code.currency,
-    valid_from: new Date(code.valid_from).toISOString().slice(0, 16),
-    valid_until: new Date(code.valid_until).toISOString().slice(0, 16),
+    valid_from: isoToParisInput(code.valid_from),
+    valid_until: isoToParisInput(code.valid_until),
     usage_limit: code.usage_limit?.toString() || '',
     is_active: code.is_active,
     event_ids: (code.events || []).map((event) => event.event_id),
@@ -226,8 +227,8 @@ export function PromotionalCodesSection() {
       discount_percent: values.discountType === 'percent' ? discountValue : null,
       discount_amount: values.discountType === 'amount' ? discountValue : null,
       currency: values.currency || 'eur',
-      valid_from: new Date(values.valid_from).toISOString(),
-      valid_until: new Date(values.valid_until).toISOString(),
+      valid_from: parisInputToIso(values.valid_from) ?? values.valid_from,
+      valid_until: parisInputToIso(values.valid_until) ?? values.valid_until,
       usage_limit: parsedUsageLimit,
       is_active: values.is_active,
       event_ids: values.event_ids,

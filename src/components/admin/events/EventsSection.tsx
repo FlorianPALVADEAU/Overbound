@@ -26,6 +26,7 @@ import { DeleteConfirmationDialog } from '@/components/admin/ui/DeleteConfirmati
 import axiosClient from '@/app/api/axiosClient'
 import { OperationsList, type OperationsListAction, type OperationsListColumn } from '@/components/admin/operations'
 import { parseOperationsListUrlState, writeOperationsListUrlState } from '@/components/admin/operations/operationsListUrlState'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -62,8 +63,8 @@ function buildFormValues(event?: Event): EventFormValues {
     subtitle: event.subtitle || '',
     description: event.description || '',
     image_url: event.image_url || '',
-    date: new Date(event.date).toISOString().slice(0, 16),
-    sales_start: event.sales_start ? new Date(event.sales_start).toISOString().slice(0, 16) : '',
+    date: isoToParisInput(event.date),
+    sales_start: isoToParisInput(event.sales_start),
     location: event.location,
     latitude: event.latitude?.toString() || '',
     longitude: event.longitude?.toString() || '',
@@ -85,8 +86,8 @@ function toPayload(values: EventFormValues): AdminEventPayload {
     subtitle: values.subtitle || null,
     description: values.description || null,
     image_url: values.image_url || null,
-    date: new Date(values.date).toISOString(),
-    sales_start: values.sales_start ? new Date(values.sales_start).toISOString() : null,
+    date: parisInputToIso(values.date) ?? values.date,
+    sales_start: values.sales_start ? (parisInputToIso(values.sales_start) ?? values.sales_start) : null,
     location: values.location,
     latitude: values.latitude ? parseFloat(values.latitude) : null,
     longitude: values.longitude ? parseFloat(values.longitude) : null,

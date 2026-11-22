@@ -40,19 +40,14 @@ import {
   type OperationsListColumn,
   type OperationsListFilter,
 } from '@/components/admin/operations'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 interface MessageState {
   type: 'success' | 'error'
   text: string
 }
 
-const toLocalDateTimeInput = (value: unknown): string => {
-  if (typeof value !== 'string' || !value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const offsetMs = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
-}
+const toLocalDateTimeInput = (value: unknown): string => (typeof value === 'string' ? isoToParisInput(value) : '')
 
 function buildFormValues(ticket?: Ticket): TicketFormValues {
   if (!ticket) {
@@ -308,7 +303,7 @@ export function TicketsSection() {
         departure_mode: values.departure_mode,
         departure_change_policy: values.departure_change_policy,
         fixed_start_time: values.departure_mode === 'fixed' && values.fixed_start_time
-          ? new Date(values.fixed_start_time).toISOString()
+          ? (parisInputToIso(values.fixed_start_time) ?? values.fixed_start_time)
           : null,
         ...(companion.config ? { open_companion: companion.config } : {}),
       },

@@ -33,6 +33,8 @@ export type EmailPhoto =
   | 'P1102323'
   | 'P1102426'
   | 'chain-carry3'
+  | 'a-group-of-friend-celebrating-after-a-race'
+  | 'benevoles-33'
   | 'log-carry1'
   | 'tire-drag'
   | 'tire-flip'

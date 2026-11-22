@@ -21,6 +21,7 @@ import {
 } from '@/app/api/admin/promotions/promotionsQueries'
 import type { Promotion } from '@/types/Promotion'
 import { Plus } from 'lucide-react'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 interface MessageState {
   type: 'success' | 'error'
@@ -41,21 +42,9 @@ const DEFAULT_FORM_VALUES: PromotionFormValues = {
   popup_config: null,
 }
 
-const dateToInputValue = (value: string | null | undefined) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const offsetMs = date.getTimezoneOffset() * 60 * 1000
-  const localDate = new Date(date.getTime() - offsetMs)
-  return localDate.toISOString().slice(0, 16)
-}
+const dateToInputValue = (value: string | null | undefined) => isoToParisInput(value)
 
-const inputValueToIso = (value: string) => {
-  if (!value) return null
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return null
-  return date.toISOString()
-}
+const inputValueToIso = (value: string) => parisInputToIso(value)
 
 function buildFormValues(promotion?: Promotion): PromotionFormValues {
   if (!promotion) {

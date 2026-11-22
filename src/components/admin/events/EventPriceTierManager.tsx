@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Trash2, Calendar, Percent, MoveUp, MoveDown } from 'lucide-react'
 import type { EventPriceTier } from '@/types/EventPriceTier'
 import { formatDiscount } from '@/types/EventPriceTier'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 interface EventPriceTierManagerProps {
   eventId: string
@@ -33,10 +34,10 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
           name: tier.name,
           discount_percentage: tier.discount_percentage.toString(),
           available_from: tier.available_from
-            ? new Date(tier.available_from).toISOString().slice(0, 16)
+            ? isoToParisInput(tier.available_from)
             : '',
           available_until: tier.available_until
-            ? new Date(tier.available_until).toISOString().slice(0, 16)
+            ? isoToParisInput(tier.available_until)
             : '',
           display_order: tier.display_order,
           max_registrations: tier.max_registrations != null ? tier.max_registrations.toString() : '',
@@ -64,10 +65,10 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
           name: tier.name,
           discount_percentage: tier.discount_percentage.toString(),
           available_from: tier.available_from
-            ? new Date(tier.available_from).toISOString().slice(0, 16)
+            ? isoToParisInput(tier.available_from)
             : '',
           available_until: tier.available_until
-            ? new Date(tier.available_until).toISOString().slice(0, 16)
+            ? isoToParisInput(tier.available_until)
             : '',
           display_order: tier.display_order,
           max_registrations: tier.max_registrations != null ? tier.max_registrations.toString() : '',
@@ -139,8 +140,8 @@ export function EventPriceTierManager({ eventId, tiers, onTiersChange }: EventPr
           event_id: eventId,
           name: tier.name,
           discount_percentage: parseInt(tier.discount_percentage, 10),
-          available_from: tier.available_from || null,
-          available_until: tier.available_until || null,
+          available_from: parisInputToIso(tier.available_from),
+          available_until: parisInputToIso(tier.available_until),
           display_order: index,
           max_registrations: tier.max_registrations === '' ? null : parseInt(tier.max_registrations, 10),
         }

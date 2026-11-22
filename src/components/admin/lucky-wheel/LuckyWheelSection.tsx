@@ -38,13 +38,14 @@ import {
 } from './CampaignFormDialog'
 import { RewardTable } from './RewardTable'
 import { RewardFormDialog, DEFAULT_REWARD_FORM_VALUES, type RewardFormValues } from './RewardFormDialog'
+import { isoToParisInput } from '@/lib/dateTimeInput'
 
 interface MessageState {
   type: 'success' | 'error' | 'warning'
   text: string
 }
 
-const toDatetimeLocal = (iso: string) => new Date(iso).toISOString().slice(0, 16)
+const toDatetimeLocal = (iso: string) => isoToParisInput(iso)
 
 function buildCampaignFormValues(campaign?: LuckyWheelCampaign): CampaignFormValues {
   if (!campaign) return DEFAULT_CAMPAIGN_FORM_VALUES

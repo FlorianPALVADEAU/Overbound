@@ -26,6 +26,7 @@ import { Switch } from '@/components/ui/switch'
 import { OperationsList, type OperationsListColumn } from '@/components/admin/operations'
 import { Eye, RefreshCw, Save, Download, Plus, Trash2 } from 'lucide-react'
 import { formatClockTimeParis } from '@/lib/dateTime'
+import { isoToParisInput, parisInputToIso } from '@/lib/dateTimeInput'
 
 interface EventWavesSectionProps {
   eventId: string
@@ -40,13 +41,7 @@ type EditRow = {
   dirty: boolean
 }
 
-const toLocalDateTimeInput = (value?: string | null) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const offsetMs = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
-}
+const toLocalDateTimeInput = (value?: string | null) => isoToParisInput(value)
 
 const formatClockTime = (value?: string | null) => {
   return formatClockTimeParis(value) ?? '—'
@@ -110,8 +105,8 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     const capacity = Number.parseInt(newCapacity, 10)
     const count = Number.parseInt(seriesCount, 10)
     const intervalMinutes = Number.parseInt(seriesInterval, 10)
-    const startTime = new Date(newStartTime)
-    if (!newStartTime || Number.isNaN(startTime.getTime()) || capacity < 0) return
+    const startTimeIso = parisInputToIso(newStartTime)
+    if (!startTimeIso || capacity < 0) return
     if (mode === 'series' && (count < 1 || intervalMinutes < 1)) return
 
     setProvisioning(true)
@@ -120,7 +115,7 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     try {
       await provisionAdminEventWaves(eventId, ticketId, {
         mode,
-        start_time: startTime.toISOString(),
+        start_time: startTimeIso,
         capacity,
         ...(mode === 'series' ? { count, interval_minutes: intervalMinutes } : {}),
       })
@@ -177,14 +172,14 @@ export function EventWavesSection({ eventId, ticketId, ticketName }: EventWavesS
     const row = editRows[waveIndex]
     if (!row) return
     const capacityValue = Number.parseInt(row.capacity, 10)
-    const startTime = new Date(row.startTime)
-    if (!Number.isFinite(capacityValue) || capacityValue < 0 || Number.isNaN(startTime.getTime())) return
+    const startTimeIso = parisInputToIso(row.startTime)
+    if (!Number.isFinite(capacityValue) || capacityValue < 0 || !startTimeIso) return
 
     setSavingWave(waveIndex)
     try {
       await updateAdminEventWave(eventId, ticketId, {
         wave_index: waveIndex,
-        start_time: startTime.toISOString(),
+        start_time: startTimeIso,
         capacity: capacityValue,
         is_closed: row.isClosed,
       })
