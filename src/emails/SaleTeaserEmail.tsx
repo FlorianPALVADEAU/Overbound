@@ -116,7 +116,7 @@ function Format({ name, children }: { name: string; children: React.ReactNode })
 export function SaleTeaserEmail({ firstName, content, unsubscribeUrl }: SaleTeaserEmailProps) {
   const { tshirtQuota } = content
   const heroUrl = getEmailPhotoUrl('log-carry1')
-  const friendsUrl = getEmailPhotoUrl('a-group-of-friend-celebrating-after-a-race')
+  const friendsUrl = getEmailPhotoUrl('benevoles-33')
 
   return (
     <Html lang="fr" dir="ltr">
@@ -266,7 +266,7 @@ export function SaleTeaserEmail({ firstName, content, unsubscribeUrl }: SaleTeas
                 <td style={{ backgroundColor: CARD }}>
                   <Img
                     src={friendsUrl}
-                    alt="Trois amis qui rient après une course Overbound"
+                    alt="Participants Overbound en pleine course, souriants"
                     width={600}
                     style={{ display: 'block', width: '100%', maxWidth: '600px', height: 'auto' }}
                   />
