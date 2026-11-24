@@ -15,14 +15,6 @@
     {
       "path": "/api/cron/safety-data-purge",
       "schedule": "17 3 * * *"
-    },
-    {
-      "path": "/api/cron/sale-teaser",
-      "schedule": "0 8 24 11 *"
-    },
-    {
-      "path": "/api/cron/sale-teaser",
-      "schedule": "10 8 24 11 *"
     }
   ]
 }
