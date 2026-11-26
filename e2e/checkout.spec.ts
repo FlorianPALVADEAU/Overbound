@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { EVENT_SLUG, chooseSex, fillFirstParticipant, signWaiver, stubCheckoutApis } from './support/checkout'
+import { EVENT_SLUG, chooseSex, fillBirthDate, fillFirstParticipant, signWaiver, stubCheckoutApis } from './support/checkout'
 
 const REGISTER_URL = `/events/${EVENT_SLUG}/register`
 
@@ -72,15 +72,15 @@ test.describe('Checkout', () => {
     expect(capture.registrationBody()).toMatchObject({ participants: [{ sex: 'femme' }] })
   })
 
-  test('a participant under 18 is refused on the birth date, which keeps the rest of the form locked', async ({ page }) => {
+  test('a participant under 18 is refused on the birth date and cannot pay', async ({ page }) => {
     const capture = await stubCheckoutApis(page, { signedIn: true })
     await page.goto(REGISTER_URL)
 
     await fillFirstParticipant(page)
-    await page.locator('#participant-1-birthDate').fill('2020-01-01')
+    await fillBirthDate(page.locator('#participant-1-birthDate'), '2020-01-01')
 
     await expect(page.getByText("Il faut avoir 18 ans le jour de l'événement.")).toBeVisible()
-    await expect(page.locator('#participant-1-firstName')).toBeDisabled()
+    await payButton(page).click()
     expect(capture.paymentIntentBody()).toBeNull()
   })
 })

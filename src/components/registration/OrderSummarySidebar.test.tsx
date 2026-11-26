@@ -27,20 +27,15 @@ const baseProps = {
 }
 
 describe('OrderSummarySidebar', () => {
-  it('keeps the order detail toggle clickable while the order is locked', () => {
-    render(<OrderSummarySidebar {...baseProps} locked />)
+  it('keeps the order detail toggle clickable', () => {
+    render(<OrderSummarySidebar {...baseProps} />)
     const toggle = screen.getByRole('button', { name: 'Voir le détail (2 lignes)' })
     expect(toggle).toBeEnabled()
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
   })
 
-  it('disables the promo code input while the order is locked', () => {
-    render(<OrderSummarySidebar {...baseProps} locked />)
-    expect(screen.getByRole('textbox')).toBeDisabled()
-  })
-
-  it('leaves the promo code input enabled when nothing is locked', () => {
+  it('keeps the promo code input enabled', () => {
     render(<OrderSummarySidebar {...baseProps} />)
     expect(screen.getByRole('textbox')).toBeEnabled()
   })

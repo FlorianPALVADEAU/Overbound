@@ -18,6 +18,7 @@ import { participantFieldId, type ParticipantField } from '@/lib/checkout/fieldI
 import { PARTICIPANT_SEXES, type ParticipantSex } from '@/lib/checkout/participantSex'
 import type { ParticipantErrors } from '@/lib/checkout/checkoutValidation'
 import type { CompanionOffer } from '@/lib/tickets/openCompanion'
+import BirthDateField from './BirthDateField'
 import CompanionOption from './CompanionOption'
 import type { EventTicket, Participant } from './types'
 
@@ -38,8 +39,6 @@ interface ParticipantFormProps {
   /** The free T-shirt offer still covers this participant. */
   tshirtOffered: boolean
   isMinor: boolean
-  /** No valid birth date yet: only the birth date stays editable, every other field is disabled. */
-  locked: boolean
   onCompanionToggle: (participantId: string, enabled: boolean) => void
   onCompanionWaveSelect: (participantId: string, waveIndex: number | null) => void
 }
@@ -57,7 +56,6 @@ export default function ParticipantForm({
   currency,
   tshirtOffered,
   isMinor,
-  locked,
   onCompanionToggle,
   onCompanionWaveSelect,
 }: ParticipantFormProps) {
@@ -143,15 +141,16 @@ export default function ParticipantForm({
     <div className="space-y-8 p-5">
       <div className="space-y-4">
         <h3 className="text-eyebrow font-semibold uppercase text-subtle">Participant</h3>
-        <div className="sm:max-w-xs">
-          {field('birthDate', 'Date de naissance', {
-            type: 'date',
-            autoComplete: 'bday',
-          })}
-        </div>
+        <BirthDateField
+          id={idOf('birthDate')}
+          value={participant.birthDate}
+          onChange={(iso) => onFieldChange(participant.id, 'birthDate', iso)}
+          error={errors.birthDate}
+          errorId={errorId('birthDate')}
+        />
       </div>
 
-      <fieldset disabled={locked} className="contents space-y-8">
+      <div className="space-y-8">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             {field('firstName', 'Prénom', {
@@ -419,7 +418,7 @@ export default function ParticipantForm({
           ) : null}
           {errorText('healthDataConsent')}
         </div>
-      </fieldset>
+      </div>
     </div>
   )
 }

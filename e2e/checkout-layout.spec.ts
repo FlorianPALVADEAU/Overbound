@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { EVENT_SLUG, stubCheckoutApis } from './support/checkout'
+import { EVENT_SLUG, fillBirthDate, stubCheckoutApis } from './support/checkout'
 import { assertNoElementOverflowsParent, assertNoHorizontalScroll, assertTapTargetsAreLargeEnough } from './support/layout'
 
 // The generic responsive spec loads /register against the live database and
@@ -25,8 +25,7 @@ test.describe('Checkout layout', () => {
   test('the checkout with every error showing respects the responsive contract', async ({ page }) => {
     await stubCheckoutApis(page, { signedIn: true })
     await page.goto(`/events/${EVENT_SLUG}/register`)
-    // Payment stays locked until the birth date is valid.
-    await page.locator('#participant-1-birthDate').fill('1990-05-04')
+    await fillBirthDate(page.locator('#participant-1-birthDate'), '1990-05-04')
     await page.locator('#participant-1-firstName').waitFor()
     await page.getByRole('button', { name: 'Payer en sécurité' }).filter({ visible: true }).first().click()
     await page.getByText('Ce champ est obligatoire.').first().waitFor()

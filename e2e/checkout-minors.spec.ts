@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { EVENT_SLUG, fillParticipant, signWaiver, stubCheckoutApis, type StubParticipant } from './support/checkout'
+import { EVENT_SLUG, fillBirthDate, fillParticipant, signWaiver, stubCheckoutApis, type StubParticipant } from './support/checkout'
 
 const REGISTER_URL = `/events/${EVENT_SLUG}/register`
 
@@ -155,7 +155,7 @@ test.describe('Checkout — participants aged 16 and 17', () => {
   test('a 15 year old is refused even when the event admits minors', async ({ page }) => {
     const capture = await openCheckout(page)
 
-    await page.locator('#participant-1-birthDate').fill('2015-01-01')
+    await fillBirthDate(page.locator('#participant-1-birthDate'), '2015-01-01')
 
     await expect(page.getByText("Il faut avoir 16 ans le jour de l'événement.")).toBeVisible()
     await expect(page.locator('#participant-1-firstName')).toBeDisabled()
@@ -167,7 +167,7 @@ test.describe('Checkout — participants aged 16 and 17', () => {
 
     await fillParticipant(page, 1, LEA)
     await page.getByRole('button').filter({ hasText: 'À compléter' }).first().click()
-    await page.locator('#participant-2-birthDate').fill('2016-01-01')
+    await fillBirthDate(page.locator('#participant-2-birthDate'), '2016-01-01')
 
     await expect(page.getByText("Il faut avoir 16 ans le jour de l'événement.")).toBeVisible()
     await expect(page.locator('#participant-2-firstName')).toBeDisabled()
@@ -177,7 +177,7 @@ test.describe('Checkout — participants aged 16 and 17', () => {
   test('an event limited to adults refuses a 17 year old', async ({ page }) => {
     const capture = await openCheckout(page, 1, 18)
 
-    await page.locator('#participant-1-birthDate').fill(LEA.birthDate)
+    await fillBirthDate(page.locator('#participant-1-birthDate'), LEA.birthDate)
 
     await expect(page.getByText("Il faut avoir 18 ans le jour de l'événement.")).toBeVisible()
     await expect(page.locator('#minor-attestation')).toHaveCount(0)

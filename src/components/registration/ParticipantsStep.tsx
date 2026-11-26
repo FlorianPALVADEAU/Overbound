@@ -52,8 +52,6 @@ export default function ParticipantsStep({
   onCompanionWaveSelect,
   tshirtOffer = null,
 }: ParticipantsStepProps) {
-  // A participant stays locked until a valid birth date: no other field, SAS or option until then.
-  const isLocked = (participant: Participant) => !participant.birthDate.trim() || Boolean(birthDateRefusals[participant.id])
   // One shortcut at a time: under the first participant others could follow.
   const leader = groupAnchor ? undefined : participants.find((participant) => participantsToAlign(participants, participant.id).length > 0)
   const ids = participants.map((participant) => participant.id)
@@ -123,7 +121,6 @@ export default function ParticipantsStep({
               currency={currency}
               tshirtOffered={isParticipantOffered(tshirtOffer, index)}
               isMinor={isMinorOnEventDate(participant.birthDate, eventDate)}
-              locked={isLocked(participant)}
               onCompanionToggle={onCompanionToggle}
               onCompanionWaveSelect={onCompanionWaveSelect}
               collapsible={collapsible}

@@ -30,12 +30,16 @@ import InlineAuthStep from './InlineAuthStep'
 import OptionsStep from './OptionsStep'
 import OrderSummarySidebar from './OrderSummarySidebar'
 import ParticipantsStep from './ParticipantsStep'
+import PaymentSection, { type CardPaymentHandle } from './PaymentSection'
 import RegistrationHeader from './RegistrationHeader'
 import RegistrationPaymentBar, { PayButton } from './RegistrationPaymentBar'
 import RegistrationSection from './RegistrationSection'
 import { OrderLines } from './summary'
 import TicketSelectionStep from './TicketSelectionStep'
 import type { MultiStepEventRegistrationProps } from './types'
+
+/** Stripe refuses to charge less than 50 cents: below it the order is free or priced wrongly. */
+const MIN_CARD_AMOUNT_CENTS = 50
 
 /** The checkout page: it wires the steps together and holds no business rule of its own. */
 export default function MultiStepEventRegistration({
@@ -55,6 +59,7 @@ export default function MultiStepEventRegistration({
   const { data: myGroup } = useMyGroup({ enabled: Boolean(user) })
   const suppressEmptyParticipantsSyncRef = useRef(false)
   const participantsSectionRef = useRef<HTMLElement>(null)
+  const cardPaymentRef = useRef<CardPaymentHandle>(null)
   const [authReason, setAuthReason] = useState<'payment' | null>(null)
   useAutoJoinInvite(inviteCode, Boolean(user))
   const currency = (tickets.find((ticket) => ticket.currency)?.currency ?? 'eur').toLowerCase()
@@ -137,7 +142,6 @@ export default function MultiStepEventRegistration({
       }),
     [participants, event.date, event.minimum_age, ticketMap],
   )
-  const detailsLocked = participants.some((participant) => !participant.birthDate.trim() || Boolean(ageRefusals[participant.id]))
 
   const { validation, showErrors, revealErrors } = useCheckoutValidation({
     participants,
@@ -193,6 +197,7 @@ export default function MultiStepEventRegistration({
     isSignedIn: Boolean(user),
     revealErrors,
     requestSignIn: () => setAuthReason('payment'),
+    cardPayment: cardPaymentRef,
     preparedPayment:
       payment.clientSecret && payment.paymentIntentId && payment.pricing
         ? {
@@ -312,8 +317,7 @@ export default function MultiStepEventRegistration({
 
             {totalParticipants > 0 ? (
               <RegistrationSection index={3} title="Options" optional>
-                <fieldset disabled={detailsLocked} className="contents">
-                  <div className="space-y-3">
+                <div className="space-y-3">
                     <FlexibleTicketOption
                       participants={participants}
                       onChange={(participantId, flexible) => handleParticipantChange(participantId, 'flexible', flexible)}
@@ -330,15 +334,13 @@ export default function MultiStepEventRegistration({
                         onSizeForAll={upsellState.setUpsellSizeForAll}
                       />
                     ) : null}
-                  </div>
-                </fieldset>
+                </div>
               </RegistrationSection>
             ) : null}
 
             {totalParticipants > 0 ? (
               <RegistrationSection index={4} title="Décharge et signature" isComplete={validation.sections.confirmation}>
-                <fieldset disabled={detailsLocked} className="contents">
-                  <ConfirmationStep
+                <ConfirmationStep
                     disclaimerAccepted={consents.disclaimerAccepted}
                     rulebookAccepted={consents.rulebookAccepted}
                     signatureImage={consents.signatureImage}
@@ -356,7 +358,12 @@ export default function MultiStepEventRegistration({
                     minorNames={minorNames}
                     onMinorAttestationChange={setConsent('minorAttestation')}
                   />
-                </fieldset>
+              </RegistrationSection>
+            ) : null}
+
+            {totalParticipants > 0 && summary.totalDue >= MIN_CARD_AMOUNT_CENTS ? (
+              <RegistrationSection index={5} title="Paiement">
+                <PaymentSection ref={cardPaymentRef} amountCents={summary.totalDue} currency={summary.currency} />
               </RegistrationSection>
             ) : null}
           </div>
@@ -364,7 +371,6 @@ export default function MultiStepEventRegistration({
 
         {/* Always in view while the form scrolls; scrolls on its own if taller than the screen. */}
         <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto">
-          {/* Promo code and payment stay locked while a birth date is missing or refused; the detail stays open. */}
           <OrderSummarySidebar
             lines={lines}
             totalCents={summary.totalDue}
@@ -382,7 +388,6 @@ export default function MultiStepEventRegistration({
             onRemovePromo={promo.removePromo}
             submissionMessage={submission.message}
             payAction={payButton}
-            locked={detailsLocked}
           />
         </aside>
       </div>

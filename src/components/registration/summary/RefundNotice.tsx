@@ -14,6 +14,8 @@ export default function RefundNotice({ hasFlexible, className }: RefundNoticePro
     <div className={cn('text-xs text-muted-foreground', className)}>
       <Link
         href="/cgv#annulation-participant"
+        target="_blank"
+        rel="noreferrer"
         className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-foreground"
       >
         Voir les CGV

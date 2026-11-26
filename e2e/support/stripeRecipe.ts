@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { fillBirthDate } from './checkout'
 import { disableAutomaticPopups } from './popups'
 
 // Real flow against a dev project and Stripe TEST mode: nothing is stubbed.
@@ -68,8 +69,7 @@ export const fillParticipant = async (page: Page, n: number, { wave }: { wave: b
   // Direct child only: the wave picker inside the panel is also a button with aria-expanded="false".
   const folded = page.locator(`#participant-panel-participant-${n} > button[aria-expanded="false"]`)
   if (await folded.count()) await folded.click()
-  // The birth date unlocks the rest of the participant form: it comes first.
-  await id('birthDate').fill('1990-05-04')
+  await fillBirthDate(id('birthDate'), '1990-05-04')
   await id('firstName').fill(`Prénom${n}`)
   await id('lastName').fill(`Nom${n}`)
   await id('email').fill(`participant${n}@example.com`)
@@ -126,16 +126,15 @@ export const clickPay = async (page: Page) => {
   await page.getByRole('button', { name: 'Payer en sécurité' }).filter({ visible: true }).first().click()
 }
 
-/** Types a card into the Stripe Payment Element and pays. */
+/** Types a card into the Stripe Payment Element of the checkout page, then pays. */
 export const payWithCard = async (page: Page, card: string) => {
-  await page.waitForURL(`**/events/${RECIPE_EVENT_SLUG}/register/payment`, { timeout: 30_000 })
   const frame = page.frameLocator('iframe[name^="__privateStripeFrame"]').first()
   await frame.locator('[name="number"]').fill(card, { timeout: 30_000 })
   await frame.locator('[name="expiry"]').fill('1234')
   await frame.locator('[name="cvc"]').fill('123')
   const postal = frame.locator('[name="postalCode"]')
   if (await postal.count()) await postal.fill('75001')
-  await page.getByRole('button', { name: /^Payer / }).click()
+  await clickPay(page)
 }
 
 export const expectSuccess = async (page: Page) => {

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Page, Request } from '@playwright/test'
+import type { Locator, Page, Request } from '@playwright/test'
 import { disableAutomaticPopups } from './popups'
 
 // The checkout reads everything from its own APIs. Specs answer them with a
@@ -157,7 +157,7 @@ export const chooseSex = async (page: Page, position: number, sex: StubSex) => {
 /** Fills participant 1 completely, SAS included. `sex: null` leaves the sex to the visitor. */
 export const fillFirstParticipant = async (page: Page, sex: StubSex | null = 'femme') => {
   // The birth date unlocks the rest of the form: it comes first.
-  await page.locator('#participant-1-birthDate').fill('1990-05-04')
+  await fillBirthDate(page.locator('#participant-1-birthDate'), '1990-05-04')
   await page.locator('#participant-1-firstName').fill('Camille')
   await page.locator('#participant-1-lastName').fill('Martin')
   await page.locator('#participant-1-email').fill('camille@example.com')
@@ -183,7 +183,7 @@ export interface StubParticipant {
 export const fillParticipant = async (page: Page, position: number, participant: StubParticipant) => {
   if (position > 1) await page.getByRole('button').filter({ hasText: 'À compléter' }).first().click()
   const field = (name: string) => page.locator(`#participant-${position}-${name}`)
-  await field('birthDate').fill(participant.birthDate)
+  await fillBirthDate(field('birthDate'), participant.birthDate)
   await field('firstName').fill(participant.firstName)
   await field('lastName').fill(participant.lastName)
   await field('email').fill(participant.email)
@@ -214,4 +214,13 @@ export const signWaiver = async (page: Page) => {
   await page.mouse.move(box.x + 120, box.y + 80, { steps: 8 })
   await page.mouse.move(box.x + 200, box.y + 50, { steps: 8 })
   await page.mouse.up()
+}
+
+/** The birth date is three boxes (day, month, year): `day` is the first one, the others sit beside it. */
+export const fillBirthDate = async (day: Locator, iso: string) => {
+  const [year, month, dayOfMonth] = iso.split('-')
+  const group = day.locator('xpath=..')
+  await day.fill(dayOfMonth)
+  await group.getByLabel('Mois').fill(month)
+  await group.getByLabel('Année').fill(year)
 }
