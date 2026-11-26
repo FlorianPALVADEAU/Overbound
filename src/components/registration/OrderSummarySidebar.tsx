@@ -16,7 +16,7 @@ interface OrderSummarySidebarProps {
   upsellCount: number
   /** One label per format that got the group discount, empty when none applies. */
   groupDiscountLabels: string[]
-  /** Honest reasons to add a bib or order now: next group tier, real end of the current tier. */
+  /** Honest reasons to add a bib: the next group tier. */
   nudges?: string[]
   /** Why the order cannot be priced or a code was left out, in the visitor's words. */
   pricingNotices: string[]

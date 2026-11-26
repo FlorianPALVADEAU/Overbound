@@ -230,7 +230,7 @@ export default function MultiStepEventRegistration({
     },
     { open: 0, ranked: 0 },
   )
-  const nudges = checkoutNudges({ formatCounts, sellingTier, tiers: eventPriceTiers })
+  const nudges = checkoutNudges({ formatCounts })
   const upsellCount = upsellState.upsellSummaryItems.reduce((sum, item) => sum + item.quantity, 0)
   const hasFlexible = flexibleBySlot.some(Boolean)
   const isBusy = isCreating || submission.isSubmitting || authReason !== null
