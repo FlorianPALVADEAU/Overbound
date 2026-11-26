@@ -16,6 +16,8 @@ interface OrderSummarySidebarProps {
   upsellCount: number
   /** One label per format that got the group discount, empty when none applies. */
   groupDiscountLabels: string[]
+  /** Honest reasons to add a bib or order now: next group tier, real end of the current tier. */
+  nudges?: string[]
   /** Why the order cannot be priced or a code was left out, in the visitor's words. */
   pricingNotices: string[]
   appliedPromos: AppliedPromo[]
@@ -39,6 +41,7 @@ export default function OrderSummarySidebar({
   ticketCount,
   upsellCount,
   groupDiscountLabels,
+  nudges = [],
   pricingNotices,
   appliedPromos,
   promoInput,
@@ -68,6 +71,12 @@ export default function OrderSummarySidebar({
           ))}
         </div>
       )}
+
+      {nudges.map((nudge) => (
+        <p key={nudge} className="mt-3 rounded-xl bg-primary/10 p-3 text-sm font-medium text-foreground">
+          {nudge}
+        </p>
+      ))}
 
       {pricingNotices.map((notice) => (
         <p key={notice} className="mt-3 text-xs font-medium text-destructive">

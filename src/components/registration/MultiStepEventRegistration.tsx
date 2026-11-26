@@ -18,6 +18,7 @@ import { usePromoCode } from '@/hooks/registration/usePromoCode'
 import { useRegistrationDraftSync } from '@/hooks/registration/useRegistrationDraftSync'
 import { useTicketSelections } from '@/hooks/registration/useTicketSelections'
 import { useUpsells } from '@/hooks/registration/useUpsells'
+import { checkoutNudges } from '@/lib/checkout/checkoutNudges'
 import { minorParticipantNames } from '@/lib/checkout/minorParticipants'
 import { ADULT_AGE } from '@/lib/checkout/participantAge'
 import { birthDateRefusals } from '@/lib/checkout/ageRefusals'
@@ -221,6 +222,15 @@ export default function MultiStepEventRegistration({
     ...(checkout.pricing?.rejections ?? []).map(promoRejectionMessage),
   ]
   const sellingTier = eventPriceTiers.find((tier) => tier.id === checkout.sellingTierId) ?? null
+  const formatCounts = selectedTicketSlots.reduce(
+    (counts, ticketId) => {
+      const ticket = ticketMap[ticketId]
+      if (ticket) counts[isOpenFormatTicket(ticket.name, ticket.race?.name) ? 'open' : 'ranked'] += 1
+      return counts
+    },
+    { open: 0, ranked: 0 },
+  )
+  const nudges = checkoutNudges({ formatCounts, sellingTier, tiers: eventPriceTiers })
   const upsellCount = upsellState.upsellSummaryItems.reduce((sum, item) => sum + item.quantity, 0)
   const hasFlexible = flexibleBySlot.some(Boolean)
   const isBusy = isCreating || submission.isSubmitting || authReason !== null
@@ -379,6 +389,7 @@ export default function MultiStepEventRegistration({
             ticketCount={totalParticipants}
             upsellCount={upsellCount}
             groupDiscountLabels={summary.groupDiscount?.applied ? summary.groupDiscount.lines.map(groupDiscountLabel) : []}
+            nudges={nudges}
             pricingNotices={pricingNotices}
             appliedPromos={promo.appliedPromos}
             promoInput={promo.promoInput}
